@@ -1043,14 +1043,14 @@ Useful for CNC G-code generation where only arcs and lines are supported.
 Converts this curve to an equivalent BSpline representation.
 
 ```swift
-public func toBSpline(parameterisation: OCCTParameterisationType = OCCTParameterisationType(rawValue: 0)) -> Curve2D?
+public func toBSpline(_ parameterisation: Parameterisation = .tangentHalfAngle) -> Curve2D?
 ```
 
 A bounded analytic curve (circle, ellipse, arc) can be represented exactly as a rational BSpline. Required before using BSpline-specific query APIs.
 
 There is no tolerance, and never was one that did anything: `Geom2dConvert::CurveToBSplineCurve` takes no tolerance, only a `Convert_ParameterisationType`, and every parameterisation but `Polynomial` is exact.
 
-- **Parameters:** `parameterisation`, how a conic's angular parameter is rewritten; see [`OCCTParameterisationType`](#occtparameterisationtype).
+- **Parameters:** `parameterisation`, how a conic's angular parameter is rewritten; see [`Parameterisation`](#parameterisation).
 - **Returns:** BSpline curve, or `nil` when OCCT rejects the pairing. That includes `TgtThetaOver2_1` and `TgtThetaOver2_2` on an arc wider than their documented limits, and every parameterisation on an unbounded curve such as a `Curve2D.line`.
 - **OCCT:** `Geom2dConvert::CurveToBSplineCurve(curve, parameterisation)`.
 - **Example:**
@@ -1059,44 +1059,48 @@ There is no tolerance, and never was one that did anything: `Geom2dConvert::Curv
   if let bsp = circle.toBSpline() {
       print(bsp.degree!, bsp.poleCount!)     // 2, 6
   }
-  if let bsp = circle.toBSpline(parameterisation: OCCTParameterisationType(rawValue: 5)) {
+  if let bsp = circle.toBSpline(.quasiAngular) {
       print(bsp.degree!, bsp.poleCount!)     // 6, 6
   }
   ```
 
 ---
 
-### `OCCTParameterisationType`
+### `Parameterisation`
 
 How a conic's angular parameter is rewritten when it becomes a B-spline. Mirrors `Convert_ParameterisationType`.
 
 ```swift
-public struct OCCTParameterisationType: RawRepresentable, Sendable {
-    public let rawValue: UInt32
-    public init(rawValue: UInt32) { self.rawValue = rawValue }
-
-    static let tgtThetaOver2       = OCCTParameterisationType(rawValue: 0)
-    static let tgtThetaOver2_1     = OCCTParameterisationType(rawValue: 1)
-    static let tgtThetaOver2_2     = OCCTParameterisationType(rawValue: 2)
-    static let tgtThetaOver2_3     = OCCTParameterisationType(rawValue: 3)
-    static let tgtThetaOver2_4     = OCCTParameterisationType(rawValue: 4)
-    static let quasiAngular        = OCCTParameterisationType(rawValue: 5)
-    static let rationalC1          = OCCTParameterisationType(rawValue: 6)
-    static let polynomial          = OCCTParameterisationType(rawValue: 7)
+public enum Parameterisation: UInt32, Sendable {
+    /// `t = tan(theta / 2)`, with the span count derived from the opening angle. The default.
+    case tangentHalfAngle = 0
+    /// `tangentHalfAngle` forced to one span. Requires an opening angle up to 0.9999 pi.
+    case tangentHalfAngle1 = 1
+    /// `tangentHalfAngle` forced to two spans. Requires an opening angle up to 1.9999 pi.
+    case tangentHalfAngle2 = 2
+    /// `tangentHalfAngle` forced to three spans.
+    case tangentHalfAngle3 = 3
+    /// `tangentHalfAngle` forced to four spans.
+    case tangentHalfAngle4 = 4
+    /// Parameter close to the conic's own angular parameter.
+    case quasiAngular = 5
+    /// Rational, with a C1-continuous denominator across spans.
+    case rationalC1 = 6
+    /// Non-rational, eight poles, and the only approximate option.
+    case polynomial = 7
 }
 ```
 
 | Case | Meaning | On a full circle of radius 5 |
 |---|---|---|
-| `tgtThetaOver2` | `t = tan(theta / 2)`, span count derived from the opening angle | degree 2, 6 poles, rational, exact |
-| `tgtThetaOver2_1` | forced to one span, opening angle up to 0.9999 pi | rejected (`nil`) |
-| `tgtThetaOver2_2` | forced to two spans, opening angle up to 1.9999 pi | rejected (`nil`) |
-| `tgtThetaOver2_3` | forced to three spans | degree 2, 6 poles, rational, exact |
-| `tgtThetaOver2_4` | forced to four spans | degree 2, 8 poles, rational, exact |
+| `tangentHalfAngle` | `t = tan(theta / 2)`, span count derived from the opening angle | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle1` | forced to one span, opening angle up to 0.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle2` | forced to two spans, opening angle up to 1.9999 pi | rejected (`nil`) |
+| `tangentHalfAngle3` | forced to three spans | degree 2, 6 poles, rational, exact |
+| `tangentHalfAngle4` | forced to four spans | degree 2, 8 poles, rational, exact |
 | `quasiAngular` | parameter close to the conic's own angular parameter | degree 6, 6 poles, rational, exact |
 | `rationalC1` | C1-continuous denominator across spans | degree 4, 12 poles, rational, exact |
-| `polynomial` | polynomial approximation | degree 7, 7 poles, approximate |
-| `polynomial` | non-rational, and the only approximate option | degree 7, 7 poles, 6.5e-06 relative radial error |
+| `polynomial` | polynomial approximation (non-rational, only approximate option) | degree 7, 7 poles, 6.5e-06 relative radial error |
 
 - **OCCT:** `Convert_ParameterisationType`.
 
