@@ -163,7 +163,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert geometry to direct faces (canonical surfaces)
+    /// Convert geometry to direct faces (canonical surfaces).
     ///
     /// - Returns: Shape with canonical surfaces, or nil on failure
     public func directFaces() -> Shape? {
@@ -171,7 +171,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Scale shape geometry by a factor
+    /// Scale shape geometry by a factor.
     ///
     /// Unlike `scaled(by:)` which applies a geometric transform, this modifies the
     /// underlying surface and curve definitions.
@@ -220,7 +220,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert swept surfaces to elementary (canonical) surfaces
+    /// Convert swept surfaces to elementary (canonical) surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func sweptToElementary() -> Shape? {
@@ -228,7 +228,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert surfaces of revolution to elementary surfaces
+    /// Convert surfaces of revolution to elementary surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func revolutionToElementary() -> Shape? {
@@ -236,7 +236,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert all surfaces to BSpline
+    /// Convert all surfaces to BSpline.
     ///
     /// - Returns: Shape with BSpline surfaces, or nil on failure
     public func convertedToBSpline() -> Shape? {
@@ -244,7 +244,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Sew disconnected faces in this shape together
+    /// Sew disconnected faces in this shape together.
     ///
     /// - Parameter tolerance: Sewing tolerance (default: 1e-6)
     /// - Returns: Sewn shape, or nil on failure
@@ -253,7 +253,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Upgrade shape: sew + make solid + heal pipeline
+    /// Upgrade shape: sew + make solid + heal pipeline.
     ///
     /// Performs a complete upgrade of the shape by sewing disconnected faces,
     /// attempting to create a solid from shells, and applying shape healing.
@@ -350,7 +350,7 @@ extension Shape {
         guard let h = OCCTShapeSameParameter(handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
-    /// Mark smooth (G1-continuous) edges as "regular."
+    /// Mark smooth (G1-continuous) edges as "regular".
     ///
     /// Downstream algorithms can skip regular edges for better performance.
     /// The angular tolerance controls what is considered "smooth."
@@ -383,13 +383,13 @@ extension Shape {
 
     // MARK: - Free Boundary Analysis (v0.39.0)
 
-    /// Result of free boundary analysis
+    /// Result of free boundary analysis.
     public struct FreeBoundsResult: Sendable {
-        /// Compound shape containing all free boundary wires
+        /// Compound shape containing all free boundary wires.
         public let wires: Shape
-        /// Number of closed free boundary wires
+        /// Number of closed free boundary wires.
         public let closedCount: Int
-        /// Number of open free boundary wires
+        /// Number of open free boundary wires.
         public let openCount: Int
     }
 
@@ -466,7 +466,7 @@ extension Shape {
 
     // MARK: - Geometry Conversion (v0.41.0)
 
-    /// Convert all surfaces to BSpline form
+    /// Convert all surfaces to BSpline form.
     ///
     /// Uses ShapeCustom::ConvertToBSpline to convert extrusion, revolution,
     /// offset, and/or planar surfaces to BSpline representation.
@@ -487,7 +487,7 @@ extension Shape {
         return Shape(handle: h)
     }
 
-    /// Convert surfaces to revolution form
+    /// Convert surfaces to revolution form.
     ///
     /// Uses ShapeCustom::ConvertToRevolution to convert surfaces that can be
     /// represented as surfaces of revolution.
@@ -510,8 +510,9 @@ extension Shape {
 
     // MARK: - BRepCheck_Face per-wire diagnostics (#266 follow-up)
 
-    /// `BRepCheck_Face` — do this face's boundary wires intersect one another? Returns
-    /// `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
+    /// `BRepCheck_Face` — do this face's boundary wires intersect one another?
+    ///
+    /// Returns `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
     /// if the shape isn't a single face. `geometricControls` enables the (costlier) geometric checks.
     public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
@@ -520,15 +521,18 @@ extension Shape {
     }
 
     /// `BRepCheck_Face` — are the face's wires correctly nested (one outer, the rest enclosed as
-    /// holes)? Returns `.invalidImbricationOfWires` when nesting is wrong.
+    /// holes)?
+    ///
+    /// Returns `.invalidImbricationOfWires` when nesting is wrong.
     public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
             rawValue: Int32(OCCTBRepCheckFaceClassifyWires(handle, geometricControls).rawValue))
             ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)? Returns
-    /// `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
+    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)?
+    ///
+    /// Returns `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
     public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
             rawValue: Int32(OCCTBRepCheckFaceOrientationOfWires(handle, geometricControls).rawValue)
@@ -719,13 +723,13 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Result of free bounds analysis
+    /// Result of free bounds analysis.
     public struct FreeBoundsAnalysis: Sendable {
-        /// Total number of free bounds
+        /// Total number of free bounds.
         public let totalCount: Int
-        /// Number of closed free bounds
+        /// Number of closed free bounds.
         public let closedCount: Int
-        /// Number of open free bounds
+        /// Number of open free bounds.
         public let openCount: Int
     }
 
@@ -827,9 +831,9 @@ extension Shape {
 
     /// Result of wire vertex analysis.
     public struct WireVertexAnalysis {
-        /// Number of edges in the wire
+        /// Number of edges in the wire.
         public let edgeCount: Int
-        /// Whether the analysis completed successfully
+        /// Whether the analysis completed successfully.
         public let isDone: Bool
     }
 
@@ -867,11 +871,11 @@ extension Shape {
 
     /// Result of fitting a plane to a set of points.
     public struct NearestPlane {
-        /// Normal direction of the fitted plane
+        /// Normal direction of the fitted plane.
         public let normal: SIMD3<Double>
-        /// A point on the fitted plane
+        /// A point on the fitted plane.
         public let origin: SIMD3<Double>
-        /// Maximum distance from any input point to the fitted plane
+        /// Maximum distance from any input point to the fitted plane.
         public let maxDeviation: Double
     }
 
@@ -913,8 +917,7 @@ extension Shape {
 
     // MARK: BRepTools_Modifier + NurbsConvertModification
 
-    /// Convert shape to NURBS via `BRepTools_Modifier` directly, skipping
-    /// ``convertedToNURBS()``'s vertex-tolerance correction pass.
+    /// Convert shape to NURBS via `BRepTools_Modifier`, skipping the vertex-tolerance correction pass of ``convertedToNURBS()``.
     ///
     /// This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification`
     /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally — the two are
@@ -953,12 +956,12 @@ extension Shape {
 
     // MARK: - ShapeAnalysis_TransferParametersProj
 
-    /// Transfer a parameter from edge to face coordinate system via projection
+    /// Transfer a parameter from edge to face coordinate system via projection.
     public func transferParameterToFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, true)
     }
 
-    /// Transfer a parameter from face to edge coordinate system via projection
+    /// Transfer a parameter from face to edge coordinate system via projection.
     public func transferParameterFromFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, false)
     }
@@ -1128,11 +1131,11 @@ extension Shape {
 
     // MARK: - ShapeUpgrade_EdgeDivide
 
-    /// Result of edge divide analysis
+    /// Result of edge divide analysis.
     public struct EdgeDivideResult: Sendable {
-        /// Whether the edge has a 2D curve on the face
+        /// Whether the edge has a 2D curve on the face.
         public let hasCurve2d: Bool
-        /// Whether the edge has a 3D curve
+        /// Whether the edge has a 3D curve.
         public let hasCurve3d: Bool
     }
 
@@ -1261,12 +1264,22 @@ extension Shape {
     /// ```
     ///
     /// - Parameters:
+    ///   - shape: The shape to restrict
+    ///   - approxSurface: Whether to approximate surfaces (default: true)
+    ///   - approxCurve3d: Whether to approximate 3D curves (default: true)
+    ///   - approxCurve2d: Whether to approximate 2D curves (default: true)
+    ///   - tol3d: 3D tolerance (default: 0.01)
+    ///   - tol2d: 2D tolerance (default: 0.01)
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
     ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
     ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
     ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
+    ///   - maxDegree: Maximum BSpline degree (default: 5)
+    ///   - maxSegments: Maximum number of segments (default: 20)
+    ///   - priorityDegree: If true, prioritize degree over segments (default: true)
+    ///   - convertRational: Allow rational BSplines (default: false)
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(
         _ shape: Shape,
@@ -1549,18 +1562,21 @@ extension Shape {
     }
 
     /// Get the tolerance value of the shape's sub-shapes.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE, 3=SHELL
     public func toleranceValue(mode: ToleranceMode, subShapeType: Int32 = 8) -> Double {
         OCCTShapeToleranceValue(handle, mode.rawValue, subShapeType)
     }
 
     /// Count sub-shapes with tolerance over a given value.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE
     public func toleranceOverCount(value: Double, subShapeType: Int32 = 8) -> Int {
         Int(OCCTShapeToleranceOverCount(handle, value, subShapeType))
     }
 
     /// Count sub-shapes with tolerance in a given range.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE
     public func toleranceInRangeCount(min: Double, max: Double, subShapeType: Int32 = 8) -> Int {
         Int(OCCTShapeToleranceInRangeCount(handle, min, max, subShapeType))
@@ -1568,12 +1584,16 @@ extension Shape {
 }
 
 extension Shape {
-    /// Add missing 3D curve to an edge. Returns true if fixed.
+    /// Add missing 3D curve to an edge.
+    ///
+    /// Returns true if fixed.
     public static func fixEdgeAddCurve3d(_ edge: Shape) -> Bool {
         OCCTShapeFixEdgeAddCurve3d(edge.handle)
     }
 
     /// Add missing PCurve to an edge on a face.
+    ///
+    /// Returns true if fixed.
     public static func fixEdgeAddPCurve(_ edge: Shape, face: Shape, isSeam: Bool = false) -> Bool {
         OCCTShapeFixEdgeAddPCurve(edge.handle, face.handle, isSeam)
     }

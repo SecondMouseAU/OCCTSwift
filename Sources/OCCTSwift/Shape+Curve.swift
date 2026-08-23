@@ -127,7 +127,7 @@ extension Shape {
 
     // MARK: - Approx_CurvilinearParameter
 
-    /// Reparameterize an edge curve by arc length, returning a BSpline edge
+    /// Reparameterize an edge curve by arc length, returning a BSpline edge.
     public func curvilinearParameter(
         tolerance: Double = 1e-3, maxDegree: Int = 8, maxSegments: Int = 50
     ) -> Shape? {
@@ -142,8 +142,11 @@ extension Shape {
 
     /// Evaluate points along a U-iso curve on a face at given U parameter.
     ///
-    /// - Parameter count: Desired number of evaluations, honoured within `1...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Parameters:
+    ///   - u: U parameter value on the face.
+    ///   - count: Desired number of evaluations, honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Returns: Array of 3D points along the iso curve.
     public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>] {
         guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)
@@ -153,8 +156,11 @@ extension Shape {
 
     /// Evaluate points along a V-iso curve on a face at given V parameter.
     ///
-    /// - Parameter count: Desired number of evaluations, honoured within `1...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Parameters:
+    ///   - v: V parameter value on the face.
+    ///   - count: Desired number of evaluations, honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Returns: Array of 3D points along the iso curve.
     public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>] {
         guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)
@@ -162,13 +168,13 @@ extension Shape {
         return unpackSIMD3(outPoints, count: count)
     }
 
-    /// Extract a U-iso curve from a face as an edge
+    /// Extract a U-iso curve from a face as an edge.
     public func uIsoCurveEdge(u: Double, vMin: Double, vMax: Double) -> Shape? {
         guard let h = OCCTAdaptor3dIsoCurveEdge(handle, 0, u, vMin, vMax) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Extract a V-iso curve from a face as an edge
+    /// Extract a V-iso curve from a face as an edge.
     public func vIsoCurveEdge(v: Double, uMin: Double, uMax: Double) -> Shape? {
         guard let h = OCCTAdaptor3dIsoCurveEdge(handle, 1, v, uMin, uMax) else { return nil }
         return Shape(handle: h)
@@ -342,13 +348,16 @@ extension Shape {
         return params
     }
 
-    /// Uniformly sample an edge by point count. Returns parameter values.
+    /// Uniformly sample an edge by point count.
+    ///
+    /// Returns parameter values.
     ///
     /// - Parameter pointCount: Desired number of samples, honoured within `2...`
     ///   ``Sampling/maximumSampleCount``, else `nil`. OCCT's sampler documents the lower bound but
     ///   cannot enforce it in a Release kernel, and used to answer a request for zero with five
     ///   parameters (#501); the upper bound is this layer's, since `pointCount` is cast to the
     ///   bridge's `int32_t` and used to abort the process past it (#558).
+    /// - Returns: Array of parameter values, or nil if the request is out of bounds.
     public func uniformAbscissa(pointCount: Int) -> [Double]? {
         guard let pointCount = Sampling.requested(pointCount) else { return nil }
         return sizeAndFillUniformAbscissa {
@@ -356,7 +365,9 @@ extension Shape {
         }
     }
 
-    /// Uniformly sample an edge by arc distance. Returns parameter values.
+    /// Uniformly sample an edge by arc distance.
+    ///
+    /// Returns parameter values.
     ///
     /// - Parameter distance: Arc-length spacing between samples, greater than 0. A spacing small
     ///   enough that it implies more than ``Sampling/maximumSampleCount`` points is rejected
@@ -382,6 +393,7 @@ extension Shape {
     ///   used sampling entry point, to remove one already-cheap (single unsubdivided quadrature,
     ///   O(spans) not O(points)) call. Left unchanged rather than trading a simple, already-tested
     ///   two-call idiom for that risk.
+    /// - Returns: Array of parameter values, or nil if the request is out of bounds.
     public func uniformAbscissa(distance: Double) -> [Double]? {
         let domain = edgeAdaptorDomain
         let len = OCCTEdgeArcLengthQuickEstimate(handle, domain.lowerBound, domain.upperBound)
@@ -391,8 +403,12 @@ extension Shape {
 
     /// Uniformly sample an edge by point count within parameter range.
     ///
-    /// - Parameter pointCount: Desired number of samples, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``, else `nil` (#501, #558).
+    /// - Parameters:
+    ///   - pointCount: Desired number of samples, honoured within `2...`
+    ///     ``Sampling/maximumSampleCount``, else `nil` (#501, #558).
+    ///   - u1: Start parameter.
+    ///   - u2: End parameter.
+    /// - Returns: Array of parameter values, or nil if the request is out of bounds.
     public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]? {
         guard let pointCount = Sampling.requested(pointCount) else { return nil }
         return sizeAndFillUniformAbscissa {
@@ -402,8 +418,12 @@ extension Shape {
 
     /// Uniformly sample an edge by arc distance within parameter range.
     ///
-    /// - Parameter distance: see ``uniformAbscissa(distance:)`` — the same ceiling and the same
-    ///   cheap estimate behind it, measured over `[u1, u2]` instead of the whole edge (#853, #862).
+    /// - Parameters:
+    ///   - distance: see ``uniformAbscissa(distance:)`` — the same ceiling and the same
+    ///     cheap estimate behind it, measured over `[u1, u2]` instead of the whole edge (#853, #862).
+    ///   - u1: Start parameter.
+    ///   - u2: End parameter.
+    /// - Returns: Array of parameter values, or nil if the request is out of bounds.
     public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double]? {
         let len = OCCTEdgeArcLengthQuickEstimate(handle, u1, u2)
         guard Sampling.impliedCount(length: len, spacing: distance) != nil else { return nil }

@@ -2,9 +2,10 @@ import Foundation
 import OCCTBridge
 
 /// Image pixel map wrapping OCCT Image_AlienPixMap.
+///
 /// Supports creating, reading, writing, and manipulating pixel images.
 public final class PixMap: @unchecked Sendable {
-    /// Image pixel format
+    /// Image pixel format.
     public enum Format: Int32, Sendable {
         case gray = 1
         case alpha = 2
@@ -15,7 +16,7 @@ public final class PixMap: @unchecked Sendable {
         case rgba = 7
         case bgra = 8
 
-        /// Bytes per pixel for this format
+        /// Bytes per pixel for this format.
         public var bytesPerPixel: Int {
             Int(OCCTImageSizePixelBytes(rawValue))
         }
@@ -23,7 +24,7 @@ public final class PixMap: @unchecked Sendable {
 
     internal let handle: OCCTImageRef
 
-    /// Create an empty pixel map
+    /// Create an empty pixel map.
     public init?() {
         guard let h = OCCTImageCreate() else { return nil }
         self.handle = h
@@ -33,44 +34,44 @@ public final class PixMap: @unchecked Sendable {
         OCCTImageRelease(handle)
     }
 
-    /// Initialize with given format and dimensions (uninitialized data)
+    /// Initialize with given format and dimensions (uninitialized data).
     @discardableResult
     public func initTrash(format: Format, width: Int, height: Int) -> Bool {
         OCCTImageInitTrash(handle, format.rawValue, Int32(width), Int32(height))
     }
 
-    /// Copy data from another pixel map
+    /// Copy data from another pixel map.
     @discardableResult
     public func initCopy(from source: PixMap) -> Bool {
         OCCTImageInitCopy(handle, source.handle)
     }
 
-    /// Clear (deallocate) image data
+    /// Clear (deallocate) image data.
     public func clear() {
         OCCTImageClear(handle)
     }
 
-    /// Image width in pixels
+    /// Image width in pixels.
     public var width: Int {
         Int(OCCTImageWidth(handle))
     }
 
-    /// Image height in pixels
+    /// Image height in pixels.
     public var height: Int {
         Int(OCCTImageHeight(handle))
     }
 
-    /// Image pixel format
+    /// Image pixel format.
     public var format: Format {
         Format(rawValue: OCCTImageFormat(handle)) ?? .rgb
     }
 
-    /// Whether the image is empty (no data)
+    /// Whether the image is empty (no data).
     public var isEmpty: Bool {
         OCCTImageIsEmpty(handle)
     }
 
-    /// Get pixel color at coordinates (RGBA)
+    /// Get pixel color at coordinates (RGBA).
     public func pixel(at x: Int, y: Int) -> Color {
         var r: Float = 0
         var g: Float = 0
@@ -80,32 +81,32 @@ public final class PixMap: @unchecked Sendable {
         return Color(red: Double(r), green: Double(g), blue: Double(b), alpha: Double(a))
     }
 
-    /// Set pixel color at coordinates
+    /// Set pixel color at coordinates.
     public func setPixel(at x: Int, y: Int, color: Color) {
         OCCTImageSetPixel(
             handle, Int32(x), Int32(y),
             Float(color.red), Float(color.green), Float(color.blue), Float(color.alpha))
     }
 
-    /// Save image to file (format determined by extension: .ppm, .png, .jpg, .bmp, .tga)
+    /// Save image to file (format determined by extension: .ppm, .png, .jpg, .bmp, .tga).
     @discardableResult
     public func save(to path: String) -> Bool {
         OCCTImageSave(handle, path)
     }
 
-    /// Load image from file
+    /// Load image from file.
     @discardableResult
     public func load(from path: String) -> Bool {
         OCCTImageLoad(handle, path)
     }
 
-    /// Apply gamma correction (1.0 = no change)
+    /// Apply gamma correction (1.0 = no change).
     @discardableResult
     public func adjustGamma(_ gamma: Double) -> Bool {
         OCCTImageAdjustGamma(handle, gamma)
     }
 
-    /// Whether top-down is the default row order for the image library
+    /// Whether top-down is the default row order for the image library.
     public static var isTopDownDefault: Bool {
         OCCTImageIsTopDownDefault()
     }

@@ -18,12 +18,12 @@ public final class LawFunction: @unchecked Sendable {
 
     // MARK: - Evaluation
 
-    /// Evaluate the law function at a given parameter
+    /// Evaluate the law function at a given parameter.
     public func value(at parameter: Double) -> Double {
         OCCTLawFunctionValue(handle, parameter)
     }
 
-    /// Parameter bounds of the law function
+    /// Parameter bounds of the law function.
     public var bounds: ClosedRange<Double> {
         var first: Double = 0
         var last: Double = 0
@@ -33,7 +33,7 @@ public final class LawFunction: @unchecked Sendable {
 
     // MARK: - Factory Methods
 
-    /// Create a constant law: the value is uniform over [first, last]
+    /// Create a constant law: the value is uniform over [first, last].
     public static func constant(
         _ value: Double, from first: Double = 0,
         to last: Double = 1
@@ -42,7 +42,7 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create a linear law: value ramps from startValue to endValue
+    /// Create a linear law: value ramps from startValue to endValue.
     public static func linear(
         from startValue: Double, to endValue: Double,
         parameterRange: ClosedRange<Double> = 0...1
@@ -55,7 +55,7 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create an S-curve law: smooth sigmoid transition between start and end values
+    /// Create an S-curve law: smooth sigmoid transition between start and end values.
     public static func sCurve(
         from startValue: Double, to endValue: Double,
         parameterRange: ClosedRange<Double> = 0...1
@@ -68,10 +68,12 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create an interpolated law from (parameter, value) pairs
+    /// Create an interpolated law from (parameter, value) pairs.
+    ///
     /// - Parameters:
     ///   - points: Array of (parameter, value) tuples in ascending parameter order
     ///   - periodic: Whether the law is periodic
+    /// - Returns: Interpolated law function, or nil if fewer than 2 points provided
     public static func interpolate(
         points: [(parameter: Double, value: Double)],
         periodic: Bool = false
@@ -90,12 +92,14 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create a BSpline law from control poles and knot vector
+    /// Create a BSpline law from control poles and knot vector.
+    ///
     /// - Parameters:
     ///   - poles: Control point values (1D)
     ///   - knots: Knot values
     ///   - multiplicities: Knot multiplicities
     ///   - degree: Polynomial degree
+    /// - Returns: BSpline law function, or nil if validation fails
     public static func bspline(
         poles: [Double], knots: [Double],
         multiplicities: [Int32],

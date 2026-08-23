@@ -392,10 +392,10 @@ extension Shape {
     }
 
     /// Whether any order in a batch of *point* constraints would fail
-    /// `GeomPlate_PointConstraint`'s own domain check (#437), i.e. whether any element is
-    /// ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// Checks if any order fails the point constraint domain check (#437).
     ///
-    /// The one shared implementation behind both plate-point entry points' rejection guard:
+    /// Tests whether any element is ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// Shared implementation for both plate-point entry points' rejection guard:
     /// `plateSurface(through:orders:)` and, via ``plateMixedRejectsPointOrders(_:)``,
     /// `plateSurface(pointConstraints:curveConstraints:)`. Each passes its own `orders` shape
     /// (a flat array here, a `(point, order)` tuple array there), but both defer the actual
@@ -405,10 +405,10 @@ extension Shape {
         orders.contains(where: \.isUnsupportedForPointConstraint)
     }
 
-    /// Whether any point constraint here would fail `GeomPlate_PointConstraint`'s own domain
-    /// check (#437). Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
-    /// `(point, order)` tuple shape.
+    /// Checks if any point constraint fails the point constraint domain check (#437).
     ///
+    /// Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
+    /// `(point, order)` tuple shape.
     /// Deliberately takes only `points`, not `curves`: `GeomPlate_CurveConstraint` has no such
     /// restriction, so curve orders must never be able to influence this decision. That is a
     /// property of this function's own *signature*, not just its body: there is no `curves`
@@ -633,7 +633,7 @@ extension Shape {
 
     // MARK: - Find Surface (v0.40.0)
 
-    /// Find the underlying geometric surface of a shape (wire or edges)
+    /// Find the underlying geometric surface of a shape (wire or edges).
     ///
     /// Analyzes the edges of a shape to determine if they lie on a common surface.
     /// - Parameters:
@@ -652,9 +652,9 @@ extension Shape {
 
     /// Result of a curve-on-surface consistency check.
     public struct CurveOnSurfaceCheck {
-        /// Maximum deviation between 3D edge curves and their pcurves on faces
+        /// Maximum deviation between 3D edge curves and their pcurves on faces.
         public let maxDistance: Double
-        /// Curve parameter where the maximum deviation occurs
+        /// Curve parameter where the maximum deviation occurs.
         public let maxParameter: Double
     }
 
@@ -725,9 +725,9 @@ extension Shape {
 
     // MARK: - BRepGProp_Face integration (#266 follow-up)
 
-    /// `BRepGProp_Face` Gauss-integration orders (number of integration points) in U and V — the
-    /// quadrature this face needs for exact surface integrals. Non-trivial only for BSpline faces;
-    /// nil if the shape isn't a single face.
+    /// `BRepGProp_Face` Gauss-integration orders in U and V — the quadrature this face needs for exact surface integrals.
+    ///
+    /// Non-trivial only for BSpline faces; nil if the shape isn't a single face.
     public var faceIntegrationOrders: (u: Int, v: Int)? {
         var u: Int32 = 0
         var v: Int32 = 0
@@ -851,9 +851,9 @@ extension Shape {
 
     /// Result of a pipe sweep operation.
     public struct PipeSweepResult {
-        /// The swept pipe shape
+        /// The swept pipe shape.
         public let shape: Shape
-        /// Surface approximation error
+        /// Surface approximation error.
         public let errorOnSurface: Double
     }
 
@@ -930,7 +930,7 @@ extension Shape {
             tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
     }
 
-    /// Evaluate draft trihedron frame on an edge at a parameter
+    /// Evaluate draft trihedron frame on an edge at a parameter.
     public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double)
         -> TrihedronFrame?
     {
@@ -939,12 +939,12 @@ extension Shape {
                 handle, param, biNormal.x, biNormal.y, biNormal.z, angle))
     }
 
-    /// Evaluate discrete trihedron frame on an edge at a parameter
+    /// Evaluate discrete trihedron frame on an edge at a parameter.
     public func discreteTrihedron(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillDiscreteTrihedron(handle, param))
     }
 
-    /// Evaluate corrected Frenet frame on an edge at a parameter
+    /// Evaluate corrected Frenet frame on an edge at a parameter.
     public func correctedFrenet(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillCorrectedFrenet(handle, param))
     }
@@ -985,7 +985,7 @@ extension Shape {
         return FillingPoleGrid(poles: poles, nbU: Int(nbU), nbV: Int(nbV))
     }
 
-    /// Compute Coons filling pole grid from 4 boundary point arrays
+    /// Compute Coons filling pole grid from 4 boundary point arrays.
     public static func coonsFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
@@ -995,7 +995,7 @@ extension Shape {
             boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCoonsPoles)
     }
 
-    /// Compute curved filling pole grid from 4 boundary point arrays
+    /// Compute curved filling pole grid from 4 boundary point arrays.
     public static func curvedFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
@@ -1010,6 +1010,10 @@ extension Shape {
     /// Evaluate Coons algorithmic patch from 4 boundary edges.
     ///
     /// - Parameters:
+    ///   - edge1: First boundary edge.
+    ///   - edge2: Second boundary edge.
+    ///   - edge3: Third boundary edge.
+    ///   - edge4: Fourth boundary edge.
     ///   - evalU: Evaluations in U, at least 1.
     ///   - evalV: Evaluations in V, at least 1.
     /// - Returns: The evaluated grid, or nil if the patch is degenerate or the grid cannot be
@@ -1032,7 +1036,7 @@ extension Shape {
 
     // MARK: - GeomFill_Sweep
 
-    /// Sweep a section edge along a path edge to create a surface face
+    /// Sweep a section edge along a path edge to create a surface face.
     public static func geomFillSweep(path: Shape, section: Shape) -> Shape? {
         guard let h = OCCTGeomFillSweep(path.handle, section.handle) else { return nil }
         return Shape(handle: h)
@@ -1040,7 +1044,7 @@ extension Shape {
 
     // MARK: - GeomFill_EvolvedSection
 
-    /// Get evolved section info for an edge curve
+    /// Get evolved section info for an edge curve.
     public func evolvedSectionInfo() -> EvolvedSectionInfo {
         let r = OCCTGeomFillEvolvedSectionInfo(handle)
         return EvolvedSectionInfo(
@@ -1060,9 +1064,9 @@ extension Shape {
 
     /// Result of a surface transition analysis.
     public struct SurfaceTransitionResult: Sendable {
-        /// State before crossing the surface
+        /// State before crossing the surface.
         public let stateBefore: TopologicalState
-        /// State after crossing the surface
+        /// State after crossing the surface.
         public let stateAfter: TopologicalState
     }
 
@@ -1234,7 +1238,9 @@ extension Shape {
 
 extension Shape {
 
-    /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.
+    /// Get tangent in U direction on a face at (u, v).
+    ///
+    /// Returns nil if tangent is undefined.
     public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>? {
         var dx = 0.0
         var dy = 0.0
@@ -1243,8 +1249,9 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane
-    /// (companion to ``faceLPropTangentU(u:v:)``). Returns nil if the V tangent is undefined.
+    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane (companion to ``faceLPropTangentU(u:v:)``).
+    ///
+    /// Returns nil if the V tangent is undefined.
     public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {
         var dx = 0.0
         var dy = 0.0
