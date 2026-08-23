@@ -2621,14 +2621,15 @@ public final class Shape: @unchecked Sendable {
     /// }
     /// ```
     public func isSelfIntersectingDetailed(timeout: Double = 30) -> SelfIntersectionDetailedResult {
-        var totalPairs: Int32 = 0
         var totalFacePairs: Int32 = 0
+        var facesChecked: Int32 = 0
         var timeSpent: Double = 0.0
         let code = OCCTShapeSelfIntersectsDetailed(
-            handle, timeout, &totalPairs, &totalFacePairs, &timeSpent)
+            handle, timeout, &facesChecked, &totalFacePairs, &timeSpent)
         return SelfIntersectionDetailedResult(
             code: code,
             totalFacePairs: Int(totalFacePairs),
+            facesChecked: Int(facesChecked),
             timeSpent: timeSpent)
     }
 
