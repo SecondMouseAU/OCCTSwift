@@ -935,13 +935,13 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Compute the bisector curve between a point and this curve.
     public func bisector(
-        withPoint point: SIMD2<Double>, origin: SIMD2<Double>,
+        withPoint point: SIMD2<Double>, maxDistance: Double = 500,
         side: Bool = true
     ) -> Curve2D? {
         guard
             let h = OCCTCurve2DBisectorPC(
                 point.x, point.y, handle,
-                origin.x, origin.y, side)
+                maxDistance, side)
         else { return nil }
         return Curve2D(handle: h)
     }
@@ -1087,8 +1087,8 @@ public final class Curve2D: @unchecked Sendable {
     // MARK: - Conversion
 
     /// Convert this curve to an equivalent B-spline representation.
-    public func toBSpline(tolerance: Double = 1e-6) -> Curve2D? {
-        guard let h = OCCTCurve2DToBSpline(handle, tolerance) else { return nil }
+    public func toBSpline(parameterisation: OCCTParameterisationType = OCCTParameterisationType(rawValue: 0)) -> Curve2D? {
+        guard let h = OCCTCurve2DToBSpline(handle, parameterisation) else { return nil }
         return Curve2D(handle: h)
     }
 
@@ -3388,28 +3388,28 @@ extension Curve2D {
     /// Translate the 2D curve in place by (dx, dy).
     @discardableResult
     public func translate(dx: Double, dy: Double) -> Bool {
-        OCCTCurve2DTransform(handle, TransformType2D.translation.rawValue, dx, dy, 0, 0, 0)
+        OCCTCurve2DTransform(handle, TransformType2D.translation.rawValue, dx, dy, 0, 0)
     }
 
     /// Rotate the 2D curve in place around a center point by the given angle (radians).
     @discardableResult
     public func rotate(center: SIMD2<Double>, angle: Double) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0, 0)
+            handle, TransformType2D.rotation.rawValue, center.x, center.y, angle, 0)
     }
 
     /// Scale the 2D curve in place from a center point by the given factor.
     @discardableResult
     public func scale(center: SIMD2<Double>, factor: Double) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0, 0)
+            handle, TransformType2D.scale.rawValue, center.x, center.y, factor, 0)
     }
 
     /// Mirror the 2D curve in place through a point.
     @discardableResult
     public func mirrorPoint(_ point: SIMD2<Double>) -> Bool {
         OCCTCurve2DTransform(
-            handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0, 0)
+            handle, TransformType2D.mirrorPoint.rawValue, point.x, point.y, 0, 0)
     }
 
     /// Mirror the 2D curve in place through an axis.
@@ -3417,7 +3417,7 @@ extension Curve2D {
     public func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Bool {
         OCCTCurve2DTransform(
             handle, TransformType2D.mirrorAxis.rawValue,
-            origin.x, origin.y, direction.x, direction.y, 0)
+            origin.x, origin.y, direction.x, direction.y)
     }
 }
 

@@ -602,9 +602,10 @@ public final class Shape: @unchecked Sendable {
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
+        var timedOut: Int32 = 0
         guard
             let handle = OCCTShapeUnionEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, &timedOut)
         else { return nil }
         return Shape(handle: handle)
     }
@@ -628,9 +629,10 @@ public final class Shape: @unchecked Sendable {
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
+        var timedOut: Int32 = 0
         guard
             let handle = OCCTShapeSubtractEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, &timedOut)
         else { return nil }
         return Shape(handle: handle)
     }
@@ -653,9 +655,10 @@ public final class Shape: @unchecked Sendable {
         _ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
         timeout: Double = Shape.defaultBooleanTimeout
     ) -> Shape? {
+        var timedOut: Int32 = 0
         guard
             let handle = OCCTShapeIntersectEx(
-                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout)
+                self.handle, other.handle, fuzzyValue, glue.rawValue, timeout, &timedOut)
         else { return nil }
         return Shape(handle: handle)
     }
@@ -1901,12 +1904,14 @@ public final class Shape: @unchecked Sendable {
         profile: Wire, onFace faceIndex: Int, direction: SIMD3<Double>, height: Double, fuse: Bool
     ) -> Shape? {
         guard faceIndex >= 0 else { return nil }
+        // Use OCCTShapePrismUntilFace with untilFaceIndex = -1 for through-all
         guard
-            let handle = OCCTShapeFeaturePrism(
+            let handle = OCCTShapePrismUntilFace(
                 self.handle, profile.handle,
                 Int32(faceIndex),
                 direction.x, direction.y, direction.z,
-                height, fuse)
+                fuse ? 1 : 0,
+                -1)  // -1 = thru-all
         else {
             return nil
         }
@@ -2470,11 +2475,12 @@ public final class Shape: @unchecked Sendable {
     /// ```
     public func isSelfIntersectingDetailed(timeout: Double = 30) -> SelfIntersectionDetailedResult {
         var totalPairs: Int32 = 0
+        var totalFacePairs: Int32 = 0
         var timeSpent: Double = 0.0
-        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &totalPairs, &timeSpent)
+        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &totalPairs, &totalFacePairs, &timeSpent)
         return SelfIntersectionDetailedResult(
             code: code,
-            totalFacePairs: Int(totalPairs),
+            totalFacePairs: Int(totalFacePairs),
             timeSpent: timeSpent)
     }
 
