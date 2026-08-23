@@ -10,7 +10,7 @@ import simd
 //
 // Usage pattern:
 //
-//   let sheet = Sheet(size: .A3, orientation: .landscape,
+//   let sheet = Sheet(size: .a3, orientation: .landscape,
 //                     projection: .first,
 //                     title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
 //   let writer = DXFWriter()
@@ -139,7 +139,7 @@ public struct Sheet: Sendable, Hashable {
     /// three edges for A0-A3; 7 mm / 7 mm / 7 mm / 10 mm for A4.
     public var inset: (left: Double, right: Double, top: Double, bottom: Double) {
         switch size {
-        case .A0, .A1, .A2, .A3:
+        case .a0, .a1, .a2, .a3:
             return (left: 20, right: 10, top: 10, bottom: 10)
         case .a4:
             return (left: 20, right: 10, top: 10, bottom: 10)

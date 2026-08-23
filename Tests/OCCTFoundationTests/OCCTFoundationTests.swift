@@ -1538,7 +1538,7 @@ struct ThreadSafetyTests {
 struct SheetStandardLayoutTests {
     @Test("First-angle layout places top below front")
     func firstAngleTopBelow() {
-        let sheet = Sheet(size: .A3, orientation: .landscape, projection: .first)
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
               let layout = sheet.standardLayout(of: box) else {
             Issue.record("setup nil"); return
@@ -1548,7 +1548,7 @@ struct SheetStandardLayoutTests {
 
     @Test("Third-angle layout places top above front")
     func thirdAngleTopAbove() {
-        let sheet = Sheet(size: .A3, orientation: .landscape, projection: .third)
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .third)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
               let layout = sheet.standardLayout(of: box) else {
             Issue.record("setup nil"); return
@@ -1558,7 +1558,7 @@ struct SheetStandardLayoutTests {
 
     @Test("All four placed views fall inside the inner frame")
     func viewsFitInsideInnerFrame() {
-        let sheet = Sheet(size: .A3, orientation: .landscape, projection: .first)
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
               let layout = sheet.standardLayout(of: box, margin: 20) else {
             Issue.record("setup nil"); return
@@ -1574,7 +1574,7 @@ struct SheetStandardLayoutTests {
 
     @Test("includeIso: false omits the isometric view")
     func includeIsoFalseOmits() {
-        let sheet = Sheet(size: .A3)
+        let sheet = Sheet(size: .a3)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
               let layout = sheet.standardLayout(of: box, includeIso: false) else {
             Issue.record("setup nil"); return
@@ -1585,7 +1585,7 @@ struct SheetStandardLayoutTests {
 
     @Test("render(into:) emits geometry for every placed view")
     func renderEmitsEveryView() {
-        let sheet = Sheet(size: .A3)
+        let sheet = Sheet(size: .a3)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
               let layout = sheet.standardLayout(of: box) else {
             Issue.record("setup nil"); return
@@ -1641,7 +1641,7 @@ struct BillOfMaterialsTests {
 
     @Test("Sheet.renderBOM places the BOM inside the inner frame")
     func sheetRenderBOM() {
-        let sheet = Sheet(size: .A3, orientation: .landscape)
+        let sheet = Sheet(size: .a3, orientation: .landscape)
         let bom = BillOfMaterials(items: [
             .init(number: 1, description: "Part 1")
         ])

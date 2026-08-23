@@ -431,13 +431,13 @@ private func emitRadial(_ d: DrawingDimension.Radial, into ops: DrawingPrimitive
 private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimitiveOps) {
     let cos = cos(d.leaderAngle)
     let sin = sin(d.leaderAngle)
-    let pA = SIMD2(d.centre.x - d.radius * cos_, d.centre.y - d.radius * sin_)
-    let pB = SIMD2(d.centre.x + d.radius * cos_, d.centre.y + d.radius * sin_)
+    let pA = SIMD2(d.centre.x - d.radius * cos, d.centre.y - d.radius * sin)
+    let pB = SIMD2(d.centre.x + d.radius * cos, d.centre.y + d.radius * sin)
     ops.addLine(pA, pB, "DIMENSION")
-    let tip = SIMD2(pB.x + 5 * cos_, pB.y + 5 * sin_)
+    let tip = SIMD2(pB.x + 5 * cos, pB.y + 5 * sin)
     let base = d.label ?? String(format: "⌀%.2f", d.value)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
-    let perp = SIMD2(-sin_, cos_)
+    let perp = SIMD2(-sin, cos)
     emitTolerancedText(
         parts, at: tip, height: 3.5, rotationDeg: 0,
         stackOffset: perp * 2.0, into: ops)

@@ -2001,7 +2001,7 @@ struct PDFWriterTests {
 
     @Test("Sheet + standardLayout round-trips through writePDF")
     func sheetWritePDF() throws {
-        let sheet = Sheet(size: .A4, orientation: .landscape)
+        let sheet = Sheet(size: .a4, orientation: .landscape)
         guard let box = Shape.box(width: 20, height: 10, depth: 5),
               let layout = sheet.standardLayout(of: box) else {
             Issue.record("setup nil"); return
