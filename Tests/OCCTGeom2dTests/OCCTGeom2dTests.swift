@@ -3929,7 +3929,8 @@ struct Curve2DBSplineLocalTests {
                 let span = c.bsplineLocateU(u: u, paramTol: 1e-10)
                 if span.i1 > 0 && span.i2 > 0 {
                     let r = c.bsplineLocalD2(u: u, fromK1: span.i1, toK2: span.i2)
-                    #expect(simd_length(r.point) > 0 || simd_length(r.point) == 0)  // just check no crash
+                    // Just check no crash - this assertion always passes
+                    #expect(simd_length(r.point) > 0 || simd_length(r.point) == 0)
                 }
             }
         }
@@ -4910,7 +4911,8 @@ struct Curve2DProjectionParityTests {
     func noPerpendicularFootAgreesAcrossTheFour() throws {
         let cases: [(Curve2D, SIMD2<Double>, Double)] = [
             (Self.segment, SIMD2(100, 0), 90),  // past the end, nearest is (10, 0)
-            (Self.segment, SIMD2(-50, 3), 2509.0.squareRoot()),  // before the start, nearest is (0, 0)
+            // Before the start, nearest is (0, 0)
+            (Self.segment, SIMD2(-50, 3), 2509.0.squareRoot()),
             (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0), 5),  // centre: tied at r
         ]
         for (curve, p, truth) in cases {

@@ -6,7 +6,8 @@ import simd
 public enum TransformUtils {
     /// 3x4 matrix result (row-major).
     public struct Matrix3x4: Sendable {
-        public let values: [Double]  // 12 elements: [a11,a12,a13,a14, a21,a22,a23,a24, a31,a32,a33,a34]
+        public let values: [Double]
+        // 12 elements: [a11,a12,a13,a14, a21,a22,a23,a24, a31,a32,a33,a34]
     }
 
     /// Compute displacement transform from one coordinate system to another.
