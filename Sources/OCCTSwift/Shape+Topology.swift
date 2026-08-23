@@ -6,8 +6,9 @@ extension Shape {
 
     /// Number of vertices (corners) in the shape.
     ///
-    /// ``nbVertices`` was a second spelling of this same question, backed by a bare
-    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// `nbVertices` was a second spelling of this same question, backed by a bare.
+    ///
+    /// TopExp_Explorer occurrence walk instead of this deduplicated count, and is deprecated in.
     /// favour of this one (#651).
     public var vertexCount: Int {
         Int(OCCTShapeGetVertexCount(handle))
@@ -59,7 +60,9 @@ extension Shape {
     /// - Parameters:
     ///   - other: The shape to compare against.
     ///   - tolerance: Maximum distance (model units) at which two faces count as proximate.
-    ///   - deflection: Linear mesh deflection (mm) for the proximity triangulation. Default `0.1`.
+    ///   - deflection: Linear mesh deflection (mm) for the proximity triangulation.
+    ///
+    ///   Default `0.1`.
     /// - Returns: The index pairs of faces closer than the tolerance, empty when none are.
     public func proximityFaces(with other: Shape, tolerance: Double, deflection: Double = 0.1)
         -> [FaceProximityPair]
@@ -80,15 +83,19 @@ extension Shape {
 
     /// Whether this shape self-intersects.
     ///
-    /// - Warning: Deprecated (#1088). This runs unbounded, and its `Bool` cannot separate a clean
-    ///   shape from a check that could not run: both are `false`. Prefer
-    ///   ``isSelfIntersecting(timeout:)``, which bounds the work and returns `nil` when the answer
+    /// - Warning: Deprecated (#1088).
+    ///
+    /// This runs unbounded, and its Bool cannot separate a clean.
+    ///   shape from a check that could not run: both are false.
+    ///
+    ///   Prefer.
+    ///   ``isSelfIntersecting(timeout:)``, which bounds the work and returns nil when the answer
     ///   is indeterminate.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// print(box.isSelfIntersecting(timeout: 30) == false)  // true: clean, and it completed
-    /// ```
+    /// ```.
     @available(
         *, deprecated,
         message: "Unbounded; false also means unknown. Use isSelfIntersecting(timeout:). #1088"
@@ -167,7 +174,7 @@ extension Shape {
     }
     /// Create a shell from a parametric surface.
     ///
-    /// Converts a `Surface` to a topological shell shape.
+    /// Converts a Surface to a topological shell shape.
     ///
     /// - Parameter surface: The parametric surface to convert
     /// - Returns: A shell shape, or nil on failure
@@ -186,7 +193,7 @@ extension Shape {
     }
     /// Merge connected edges that lie on the same curve.
     ///
-    /// Removes unnecessary edge splits introduced by boolean operations
+    /// Removes unnecessary edge splits introduced by boolean operations.
     /// or other operations, simplifying the topology.
     ///
     /// - Returns: Shape with fused edges, or nil on failure
@@ -194,31 +201,35 @@ extension Shape {
         guard let h = OCCTShapeFuseEdges(handle) else { return nil }
         return Shape(handle: h)
     }
-    /// A census of sub-shape *occurrences* in this shape, from `ShapeAnalysis_ShapeContents`.
+    /// A census of sub-shape *occurrences* in this shape, from ShapeAnalysis_ShapeContents.
     ///
-    /// This is a complexity metric, not the addressable sub-shape enumeration. It counts one
-    /// entry per visit in the topology tree, so a sub-shape reachable from two parents is
+    /// This is a complexity metric, not the addressable sub-shape enumeration.
+    ///
+    /// It counts one.
+    /// entry per visit in the topology tree, so a sub-shape reachable from two parents is.
     /// counted twice, and every edge of a box is counted once per adjacent face:
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.edgeCount)          // 12, the distinct edges, and the addressable ones
-    /// print(box.contents.edges)     // 24, one per (face, edge) visit
-    /// print(box.faceCount)          // 6
-    /// print(box.contents.faces)     // 6, a box shares no face, so these agree
-    /// ```
+    /// print(box.edgeCount)          // 12, the distinct edges, and the addressable ones.
+    /// print(box.contents.edges)     // 24, one per (face, edge) visit.
+    /// print(box.faceCount)          // 6.
+    /// print(box.contents.faces)     // 6, a box shares no face, so these agree.
+    /// ```.
     ///
-    /// **None of these numbers is an index bound.** `0..<contents.faces` overruns
-    /// ``face(at:)`` on any shape with a shared face; use ``faceCount``.
+    /// **None of these numbers is an index bound.** `0..<contents.faces` overruns.
+    /// ``face(at:)`` on any shape with a shared face; use `faceCount`.
     ///
     /// There is a third count in play, and it is a third rule again:
-    /// ``contentsExtended()``'s `nbSharedFaces` and friends deduplicate with the location
-    /// *discarded*, so unlike ``faceCount``, which follows `TopoDS_Shape::IsSame` and keeps
-    /// placements apart, they also collapse two instances of one body. Measured on the pinned
-    /// kernel (`Scripts/repro/541-face-index-contract/`), on a compound of a box with a
-    /// ``moved(dx:dy:dz:)`` copy of itself: `faceCount` 12, `contents.faces` 12,
-    /// `nbSharedFaces` 6. (``translated(by:)`` does not make an instance, it rebuilds through
-    /// `BRepBuilderAPI_Transform`, so the copy shares nothing and all three read 12.)
+    /// ``contentsExtended()``'s nbSharedFaces and friends deduplicate with the location.
+    /// *discarded*, so unlike `faceCount`, which follows `TopoDS_Shape::IsSame` and keeps
+    /// placements apart, they also collapse two instances of one body.
+    ///
+    /// Measured on the pinned.
+    /// kernel (`Scripts/repro/541-face-index-contract/`), on a compound of a box with a.
+    /// ``moved(dx:dy:dz:)`` copy of itself: faceCount 12, `contents.faces` 12,
+    /// nbSharedFaces 6. (``translated(by:)`` does not make an instance, it rebuilds through
+    /// BRepBuilderAPI_Transform, so the copy shares nothing and all three read 12.).
     ///
     /// - Returns: Counts of solids, shells, faces, wires, edges, vertices, and free
     ///   (unconnected) elements.
@@ -293,17 +304,21 @@ extension Shape {
         return Shape(handle: h)
     }
 
-    /// Create a face from a surface bounded by a **3D wire**, trimming the surface to the wire's
+    /// Create a face from a surface bounded by a **3D wire**, trimming the surface to the wire's.
     /// footprint.
     ///
     /// Useful for reconstruction: trim a fitted analytic surface (cylinder / cone /
     /// sphere / B-spline) to a region's real boundary instead of a rectangular UV patch.
     ///
     /// Two strategies, tried in order:
-    /// 1. If the wire genuinely lies on the surface (its edges have, or admit, pcurves), build the
-    ///    face directly (`BRepBuilderAPI_MakeFace` + `ShapeFix_Face` to project pcurves), exact.
-    /// 2. Otherwise (e.g. a sampled boundary polyline whose straight chords don't lie on the
-    ///    surface), project the wire's ordered points onto the surface's UV and trim by that
+    /// 1.
+    ///
+    /// If the wire genuinely lies on the surface (its edges have, or admit, pcurves), build the.
+    ///    face directly (BRepBuilderAPI_MakeFace + ShapeFix_Face to project pcurves), exact.
+    /// 2.
+    ///
+    /// Otherwise (e.g. a sampled boundary polyline whose straight chords don't lie on the.
+    ///    surface), project the wire's ordered points onto the surface's UV and trim by that.
     ///    polygon, robust, the same path as ``Surface/toFace(uvBoundary:)``.
     ///
     /// If you already have the boundary in UV space, call ``Surface/toFace(uvBoundary:)`` directly.
@@ -311,7 +326,9 @@ extension Shape {
     /// - Parameters:
     ///   - surface: The parametric surface to trim.
     ///   - boundary: A closed wire on (or near) the surface.
-    /// - Returns: The trimmed face, or nil on failure. Note: a boundary crossing a periodic seam
+    /// - Returns: The trimmed face, or nil on failure.
+    ///
+    /// Note: a boundary crossing a periodic seam
     ///   (e.g. the u = 0/2π seam of a cylinder) isn't handled by the projection fallback.
     public static func face(from surface: Surface, boundary: Wire) -> Shape? {
         // 1) Exact: the wire lies on the surface.
@@ -335,29 +352,34 @@ extension Shape {
         return surface.toFace(uvBoundary: uv)
     }
 
-    /// Create a face from a surface trimmed by an **outer** wire with **interior hole** wires
+    /// Create a face from a surface trimmed by an **outer** wire with **interior hole** wires.
     /// (windows / cutouts), a single trimmed face with real openings.
     ///
-    /// Wraps `BRepBuilderAPI_MakeFace(surface, outer)` then `.Add(hole)` per inner wire, then
-    /// `ShapeFix_Face` to project pcurves onto the surface and orient the holes. Unlike the
+    /// Wraps `BRepBuilderAPI_MakeFace(surface, outer)` then `.Add(hole)` per inner wire, then.
+    ///
+    /// ShapeFix_Face to project pcurves onto the surface and orient the holes.
+    ///
+    /// Unlike the.
     /// single-loop ``face(from:boundary:)``, this represents a panel whose surface has cutouts,
-    /// e.g. a fitted B-spline carbody side panel with window/door openings, so the surface doesn't
+    /// e.g. a fitted B-spline carbody side panel with window/door openings, so the surface doesn't.
     /// span (balloon over) the windows.
     ///
-    /// All wires must lie on (or near) the surface, typically a fitted analytic / B-spline surface
-    /// and the region's real boundary loops. The inner wires are interior loops fully inside `outer`.
+    /// All wires must lie on (or near) the surface, typically a fitted analytic / B-spline surface.
+    /// and the region's real boundary loops.
     ///
-    /// ```swift
+    /// The inner wires are interior loops fully inside outer.
+    ///
+    /// ```swift.
     /// // Trim a fitted panel surface to its outline, with two window cutouts:
     /// let panel = Shape.face(from: fittedSurface, outer: outline, innerWires: [window1, window2])
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - surface: The parametric surface to trim.
     ///   - outer: The closed outer boundary wire on (or near) the surface.
     ///   - innerWires: Closed interior loops (holes) on the surface; empty gives a plain trimmed face.
     /// - Returns: The trimmed face-with-holes, or nil on failure (e.g. a wire off the surface, a
-    ///   self-intersecting loop, or a hole not enclosed by `outer`).
+    ///   self-intersecting loop, or a hole not enclosed by outer).
     public static func face(from surface: Surface, outer: Wire, innerWires: [Wire]) -> Shape? {
         let handles: [OCCTWireRef?] = innerWires.map { $0.handle }
         guard
@@ -371,7 +393,7 @@ extension Shape {
     }
     /// Reconstruct faces from a compound of loose edges.
     ///
-    /// Takes a shape containing edges and tries to build closed wires,
+    /// Takes a shape containing edges and tries to build closed wires,.
     /// then creates faces from those wires.
     ///
     /// - Parameters:
@@ -387,20 +409,25 @@ extension Shape {
     /// Useful for cleaning up imported geometry with tolerance issues.
     ///
     /// Equivalent to `fixSmallEdges(tolerance:dropSmall: true)`, both build a
-    /// `ShapeFix_Wireframe` with the same precision/drop-mode/perform sequence. The two used to
-    /// default to different tolerances (`1e-6` here vs `1e-7` there) for the identical underlying
-    /// call; aligned to `1e-7` (#839), matching `fixSmallEdges` and its sibling `fixWireGaps`, so
-    /// an edge near that boundary is no longer dropped by one and kept by the other depending
+    /// ShapeFix_Wireframe with the same precision/drop-mode/perform sequence.
+    ///
+    /// The two used to.
+    /// default to different tolerances (`1e-6` here vs `1e-7` there) for the identical underlying.
+    /// call; aligned to `1e-7` (#839), matching fixSmallEdges and its sibling fixWireGaps, so.
+    /// an edge near that boundary is no longer dropped by one and kept by the other depending.
     /// only on which of the two near-identical entry points was called.
     ///
     /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
-    ///   implicit default, not just an internal-consistency fix, a 10x tightening, the opposite
+    ///   implicit default, not just an internal-consistency fix, a 10x tightening, the opposite.
     ///   direction from ``Shape/classifyPoint2d(u:v:tolerance:)``'s #840 change on this same PR.
-    ///   An edge sized in the `1e-7..1e-6` range that used to be silently dropped under the old
-    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal,
-    ///   e.g. imported CAD geometry containing such a sliver edge that a subsequent boolean or
-    ///   meshing call depended on being pre-removed can now fail, or produce a different result,
-    ///   with no error at this call site itself. Pass `tolerance:` explicitly to pin a specific
+    ///
+    ///   An edge sized in the `1e-7..1e-6` range that used to be silently dropped under the old.
+    ///   `1e-6` default now survives under the new `1e-7` default, with no compile-time signal,.
+    ///   e.g. imported CAD geometry containing such a sliver edge that a subsequent boolean or.
+    ///   meshing call depended on being pre-removed can now fail, or produce a different result,.
+    ///   with no error at this call site itself.
+    ///
+    ///   Pass `tolerance:` explicitly to pin a specific
     ///   value across the upgrade (PR #870 aggregate review).
     ///
     /// - Parameter tolerance: Tolerance below which edges are considered small
@@ -431,10 +458,14 @@ extension Shape {
     }
     /// Create a deep, independent copy of this shape.
     ///
-    /// Backed by `BRepBuilderAPI_Copy`. When `copyGeometry`/`copyMesh` are `true`, this clones the
-    /// actual `Geom_Surface`/`Geom_Curve`/`Poly_Triangulation` objects, not just topology, unlike
-    /// the no-argument instance ``deepCopy()``, which never clones geometry regardless of these
-    /// flags. See `docs/thread-safety.md` for why that distinction matters for concurrent use.
+    /// Backed by BRepBuilderAPI_Copy.
+    ///
+    /// When copyGeometry/copyMesh are true, this clones the.
+    /// actual Geom_Surface/Geom_Curve/Poly_Triangulation objects, not just topology, unlike.
+    /// the no-argument instance ``deepCopy()``, which never clones geometry regardless of these.
+    /// flags.
+    ///
+    /// See `docs/thread-safety.md` for why that distinction matters for concurrent use.
     ///
     /// - Parameters:
     ///   - copyGeometry: If true, copy the underlying geometry (default: true).
@@ -448,83 +479,91 @@ extension Shape {
     ///
     /// A named spelling of `subShapeCount(ofType: .solid)`, reading the same enumeration, so
     /// "distinct solid" means what it does there: one body reachable from two parents counts once,
-    /// two *placements* of it count twice. (#502)
+    /// two *placements* of it count twice (#502).
     ///
-    /// ```swift
+    /// ```swift.
     /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
     /// let b = Shape.box(origin: SIMD3(50, 0, 0), width: 10, height: 10, depth: 10)!
-    /// print(Shape.compound([a, b])!.solidCount)   // 2
-    /// print(a.solidCount)                         // 1, a solid is its own sub-shape
-    /// ```
+    /// print(Shape.compound([a, b])!.solidCount)   // 2.
+    /// print(a.solidCount)                         // 1, a solid is its own sub-shape.
+    /// ```.
     public var solidCount: Int { subShapeCount(ofType: .solid) }
 
     /// Extract all solid sub-shapes, in enumeration order.
     ///
-    /// ```swift
-    /// let part = Shape.compound([
+    /// ```swift.
+    /// let part = Shape.compound([.
     ///     Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!,
     ///     Shape.box(origin: SIMD3(50, 0, 0), width: 4, height: 4, depth: 4)!,
-    /// ])!
-    /// print(part.solids.count)                       // 2
-    /// print(part.solids.map(\.volume))               // [1000.0, 64.0]
-    /// ```
+    /// ])!.
+    /// print(part.solids.count)                       // 2.
+    /// print(part.solids.map(\.volume))               // [1000.0, 64.0].
+    /// ```.
     public var solids: [Shape] { subShapes(ofType: .solid) }
 
     /// Number of shell sub-shapes.
     ///
     /// A named spelling of `subShapeCount(ofType: .shell)`. A shell reused by two solids (the
-    /// shape `solidFromShells` produces when handed the same shell twice) is one shell. (#502)
+    /// shape solidFromShells produces when handed the same shell twice) is one shell (#502).
     ///
-    /// ```swift
+    /// ```swift.
     /// let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
     ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
-    /// print(hollow.shellCount)   // 2, the outer boundary and the cavity
-    /// ```
+    /// print(hollow.shellCount)   // 2, the outer boundary and the cavity.
+    /// ```.
     public var shellCount: Int { subShapeCount(ofType: .shell) }
 
     /// The **outer shell** of this solid (`BRepClass3d::OuterShell`).
     ///
-    /// For a solid with internal voids (multiple shells, e.g. a body with a cavity), this
-    /// returns the shell that bounds the outer body, distinguishing it from the inner void
-    /// shells. Useful for decomposing a part into outer-body + cavities.
+    /// For a solid with internal voids (multiple shells, e.g. a body with a cavity), this.
+    /// returns the shell that bounds the outer body, distinguishing it from the inner void.
+    /// shells.
     ///
-    /// Returns `nil` unless this shape denotes exactly **one** solid, i.e. it is a solid, or a
-    /// compound/compsolid wrapping a single solid. A container holding two or more solids has no
-    /// single outer shell to name, so it gets `nil` rather than one arbitrary member's shell;
-    /// use ``outerShells`` for those. (#211, #439)
+    /// Useful for decomposing a part into outer-body + cavities.
     ///
-    /// ```swift
+    /// Returns nil unless this shape denotes exactly **one** solid, i.e. it is a solid, or a.
+    /// compound/compsolid wrapping a single solid. A container holding two or more solids has no.
+    /// single outer shell to name, so it gets nil rather than one arbitrary member's shell;.
+    /// use `outerShells` for those (#211, #439).
+    ///
+    /// ```swift.
     /// let hollow = Shape.box(width: 20, height: 20, depth: 20)!
     ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
-    /// print(hollow.outerShell?.faceCount ?? -1)     // 6, the 20-cube's boundary
-    /// print(hollow.innerShells.count)               // 1, the cavity
+    /// print(hollow.outerShell?.faceCount ?? -1)     // 6, the 20-cube's boundary.
+    /// print(hollow.innerShells.count)               // 1, the cavity.
     ///
     /// // Two bodies in one compound: nil, not the first body's shell.
     /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
     /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
-    /// print(Shape.compound([a, b])!.outerShell == nil)   // true
-    /// ```
+    /// print(Shape.compound([a, b])!.outerShell == nil)   // true.
+    /// ```.
     public var outerShell: Shape? {
         OCCTShapeOuterShell(handle).map(Shape.init(handle:))
     }
 
     /// The **outer shell of every solid** in this shape, in exploration order.
     ///
-    /// The multi-body counterpart of ``outerShell``: one shell per solid, so a compound of two
-    /// bodies yields two shells. Empty for a shape with no solids. Equivalent to
+    /// The multi-body counterpart of `outerShell`: one shell per solid, so a compound of two
+    /// bodies yields two shells.
+    ///
+    /// Empty for a shape with no solids.
+    ///
+    /// Equivalent to.
     /// `solids.compactMap(\.outerShell)`, in a single traversal.
     ///
-    /// Note that these shells drop internal void walls by design (that is what an *outer* shell
-    /// is). To measure against the complete boundary of a multi-body part, cavities included,
+    /// Note that these shells drop internal void walls by design (that is what an *outer* shell.
+    /// is).
+    ///
+    /// To measure against the complete boundary of a multi-body part, cavities included,.
     /// use `Shape.compound(subShapes(ofType: .face))` instead. (#439)
     ///
-    /// ```swift
+    /// ```swift.
     /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
     /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
-    /// let part = Shape.compound([a, b])!
-    /// print(part.outerShells.count)                    // 2
-    /// print(part.outerShells.map(\.faceCount))         // [6, 6]
-    /// ```
+    /// let part = Shape.compound([a, b])!.
+    /// print(part.outerShells.count)                    // 2.
+    /// print(part.outerShells.map(\.faceCount))         // [6, 6].
+    /// ```.
     public var outerShells: [Shape] {
         let count = OCCTShapeOuterShells(handle, nil, 0)
         guard count > 0 else { return [] }
@@ -533,19 +572,21 @@ extension Shape {
         return handles.prefix(Int(actual)).compactMap { h in h.map { Shape(handle: $0) } }
     }
 
-    /// The **inner** (void / cavity) shells of this solid, every shell except ``outerShell``.
+    /// The **inner** (void / cavity) shells of this solid, every shell except `outerShell`.
     ///
-    /// Empty for a solid with no internal voids, and, following the same single-solid rule as
-    /// ``outerShell``, for a non-solid or a container holding two or more solids. Pairs with
-    /// ``outerShell`` to decompose a part into outer body + cavities; for a multi-body part,
-    /// take each solid separately (`solids.flatMap(\.innerShells)`). (#212, #439)
+    /// Empty for a solid with no internal voids, and, following the same single-solid rule as.
+    /// `outerShell`, for a non-solid or a container holding two or more solids.
     ///
-    /// ```swift
+    /// Pairs with.
+    /// `outerShell` to decompose a part into outer body + cavities; for a multi-body part,.
+    /// take each solid separately (`solids.flatMap(\.innerShells)`) (#212, #439).
+    ///
+    /// ```swift.
     /// let block = Shape.box(width: 20, height: 20, depth: 20)!
     /// let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!
-    /// let hollow = block.subtracting(cavity)!
-    /// print(hollow.innerShells.count)      // 1
-    /// ```
+    /// let hollow = block.subtracting(cavity)!.
+    /// print(hollow.innerShells.count)      // 1.
+    /// ```.
     public var innerShells: [Shape] {
         let count = OCCTShapeInnerShells(handle, nil, 0)
         guard count > 0 else { return [] }
@@ -556,41 +597,41 @@ extension Shape {
 
     /// Extract all shell sub-shapes, in enumeration order.
     ///
-    /// ```swift
+    /// ```swift.
     /// let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
     ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
-    /// print(hollow.shells.count)   // 2
-    /// ```
+    /// print(hollow.shells.count)   // 2.
+    /// ```.
     ///
-    /// To tell the boundary from the cavities, use ``outerShell`` / ``innerShells`` instead;
+    /// To tell the boundary from the cavities, use `outerShell` / `innerShells` instead;.
     /// this is the plain enumeration and puts no meaning on the order.
     public var shells: [Shape] { subShapes(ofType: .shell) }
 
     /// Number of wire sub-shapes.
     ///
     /// A named spelling of `subShapeCount(ofType: .wire)`. A wire used to build two faces counts
-    /// once, since it is one wire seen from two parents. (#502)
+    /// once, since it is one wire seen from two parents (#502).
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 5, depth: 3)!
-    /// print(box.wireCount)   // 6, one boundary wire per face
-    /// ```
+    /// print(box.wireCount)   // 6, one boundary wire per face.
+    /// ```.
     public var wireCount: Int { subShapeCount(ofType: .wire) }
 
     /// Extract all wire sub-shapes, in enumeration order.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 5, depth: 3)!
-    /// print(box.wires.count)                       // 6
-    /// print(box.wires.compactMap(Wire.init).count)  // 6, as typed Wire objects
-    /// ```
+    /// print(box.wires.count)                       // 6.
+    /// print(box.wires.compactMap(Wire.init).count)  // 6, as typed Wire objects.
+    /// ```.
     public var wires: [Shape] { subShapes(ofType: .wire) }
 
     // MARK: - Shape Surgery (v0.41.0)
 
     /// Remove sub-shapes from this shape.
     ///
-    /// Uses BRepTools_ReShape to surgically remove faces, edges, or vertices
+    /// Uses BRepTools_ReShape to surgically remove faces, edges, or vertices.
     /// while preserving the remaining topology.
     /// - Parameter subShapes: Sub-shapes to remove
     /// - Returns: Shape with sub-shapes removed, or nil on failure
@@ -628,7 +669,7 @@ extension Shape {
 
     /// Create restricted faces from a face and wire boundaries.
     ///
-    /// Uses BRepAlgo_FaceRestrictor to build faces on the underlying surface
+    /// Uses BRepAlgo_FaceRestrictor to build faces on the underlying surface.
     /// of this shape's first face, bounded by the given wires.
     /// - Parameter boundaries: Wire boundaries that define the restricted regions
     /// - Returns: Array of restricted face shapes, or nil on failure
@@ -655,12 +696,16 @@ extension Shape {
 
     /// Create a solid from one or more shell shapes.
     ///
-    /// Uses BRepBuilderAPI_MakeSolid to construct a solid from shells extracted from
-    /// the given shapes. The first shape provides the outer shell, and additional shapes
+    /// Uses BRepBuilderAPI_MakeSolid to construct a solid from shells extracted from.
+    /// the given shapes.
+    ///
+    /// The first shape provides the outer shell, and additional shapes.
     /// provide cavity (inner) shells.
     ///
     /// - Note: Each element contributes only the **first** shell found in it, so pass one
-    ///   shape per shell rather than a compound of several. An element holding no shell is
+    ///   shape per shell rather than a compound of several.
+    ///
+    ///   An element holding no shell is.
     ///   skipped silently, except the first, which fails the whole call.
     ///
     /// - Parameter shells: Array of shapes containing shells (first = outer, rest = cavities)
@@ -680,6 +725,7 @@ extension Shape {
     /// Subdivide faces whose area exceeds a maximum threshold.
     ///
     /// Uses ShapeUpgrade_ShapeDivideArea to split faces larger than the specified area.
+    ///
     /// Useful for mesh quality control and FEA preprocessing.
     ///
     /// - Parameter maxArea: Maximum face area, faces larger than this are split
@@ -715,6 +761,7 @@ extension Shape {
     /// Check faces for degenerate conditions (spot, strip, twisted).
     ///
     /// Uses ShapeAnalysis_CheckSmallFace to analyze each face of the shape.
+    ///
     /// Returns only faces that have at least one degenerate condition.
     ///
     /// - Parameter tolerance: Analysis tolerance (default 1e-6)
@@ -741,8 +788,10 @@ extension Shape {
 
     /// Connect edges by merging shared vertices in the shape.
     ///
-    /// Uses ShapeFix_EdgeConnect to identify edges that share geometric positions
-    /// and merges their vertices. Useful for healing imported geometry where
+    /// Uses ShapeFix_EdgeConnect to identify edges that share geometric positions.
+    /// and merges their vertices.
+    ///
+    /// Useful for healing imported geometry where.
     /// topologically disconnected edges actually meet at the same point.
     ///
     /// - Returns: Shape with connected edges, or nil on failure
@@ -755,27 +804,27 @@ extension Shape {
 
     /// Edge concavity type from BRepOffset_Analyse.
     public enum EdgeConcavity: Sendable {
-        /// Edge connects two faces at a convex angle (outer edge of a box)
+        /// Edge connects two faces at a convex angle (outer edge of a box).
         case convex
-        /// Edge connects two faces at a concave angle (inner edge of a groove)
+        /// Edge connects two faces at a concave angle (inner edge of a groove).
         case concave
-        /// Edge connects two faces that are tangent (smooth transition)
+        /// Edge connects two faces that are tangent (smooth transition).
         case tangent
     }
 
-    /// Classify all edges by their concavity type using `BRepOffset_Analyse`.
+    /// Classify all edges by their concavity type using BRepOffset_Analyse.
     ///
-    /// Analyzes the angles between adjacent faces at each edge to determine
+    /// Analyzes the angles between adjacent faces at each edge to determine.
     /// whether each edge is convex, concave, or tangent.
     ///
-    /// One entry per distinct edge, in ``edges()`` order, so `result[n].0.index == n`, and the
-    /// classification at position `n` describes `edges()[n]`:
+    /// One entry per distinct edge, in ``edges()`` order, so `result[n].0.index == n`, and the.
+    /// classification at position n describes `edges()[n]`:
     ///
-    /// ```swift
-    /// for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
-    ///     print("inside corner at edge \(edge.index), length \(edge.length)")
-    /// }
-    /// ```
+    /// ```swift.
+    /// for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {.
+    ///     print("inside corner at edge \(edge.index), length \(edge.length)").
+    /// }.
+    /// ```.
     ///
     /// - Parameter angle: Threshold angle for tangent classification (radians, default 0.01)
     /// - Returns: Array of (edge, concavity) pairs, or nil on error
@@ -808,13 +857,13 @@ extension Shape {
 
     /// Count edges of a specific concavity type.
     ///
-    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount``, before #613
+    /// Counts distinct edges, so the three type counts sum to at most `edgeCount`, before #613.
     /// this counted topology *occurrences* and a 12-edge box reported 24 convex edges.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
-    /// ```
+    /// box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount.
+    /// ```.
     ///
     /// - Parameters:
     ///   - type: Concavity type to count
@@ -835,16 +884,18 @@ extension Shape {
 
     /// Select edges of this shape that satisfy a geometric predicate.
     ///
-    /// This is the robust alternative to picking edges by raw index from
-    /// ``edges()``, the index shifts as soon as the model parameters change,
-    /// whereas a geometric predicate keeps selecting the right edge. The returned
-    /// edges carry their parent index, so they feed straight into
+    /// This is the robust alternative to picking edges by raw index from.
+    /// ``edges()``, the index shifts as soon as the model parameters change,.
+    /// whereas a geometric predicate keeps selecting the right edge.
+    ///
+    /// The returned.
+    /// edges carry their parent index, so they feed straight into.
     /// ``filleted(edges:radius:)`` / ``chamferedTwoDistances(_:)`` etc.
     ///
-    /// ```swift
-    /// // Round only the long edges (> 50 mm) of a bracket
+    /// ```swift.
+    /// // Round only the long edges (> 50 mm) of a bracket.
     /// let rounded = bracket.filleted(edges: bracket.edges { $0.length > 50 }, radius: 2)
-    /// ```
+    /// ```.
     ///
     /// - Parameter predicate: Returns true for edges to keep.
     /// - Returns: The matching edges (possibly empty), each with a valid index.
@@ -852,16 +903,18 @@ extension Shape {
         edges().filter(predicate)
     }
 
-    /// The concave edges of this solid (interior angle > 180°, e.g. the inside
+    /// The concave edges of this solid (interior angle > 180°, e.g. the inside.
     /// corner of an L-bracket or the bottom of a groove).
     ///
-    /// These are the edges you usually want to *fillet*, a concave fillet adds
-    /// material to soften an inside corner. Selecting them geometrically avoids the
+    /// These are the edges you usually want to *fillet*, a concave fillet adds.
+    /// material to soften an inside corner.
+    ///
+    /// Selecting them geometrically avoids the.
     /// fragile "iterate `edges()` and guess the index" workaround.
     ///
-    /// ```swift
+    /// ```swift.
     /// let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 3)
-    /// ```
+    /// ```.
     ///
     /// - Parameter angle: Threshold (radians) below which an edge counts as tangent
     ///   rather than concave (default 0.01).
@@ -870,10 +923,10 @@ extension Shape {
         (edgeConcavities(angle: angle) ?? []).compactMap { $0.1 == .concave ? $0.0 : nil }
     }
 
-    /// The convex edges of this solid (interior angle < 180°, e.g. the outer
+    /// The convex edges of this solid (interior angle < 180°, e.g. the outer.
     /// corners of a box).
     ///
-    /// These are the edges you usually want to *chamfer* or round on the outside of
+    /// These are the edges you usually want to *chamfer* or round on the outside of.
     /// a part.
     ///
     /// - Parameter angle: Threshold (radians) below which an edge counts as tangent
@@ -885,13 +938,15 @@ extension Shape {
 
     /// Select straight edges whose direction is parallel to the given axis.
     ///
-    /// Only line edges are considered (curved edges have no single direction). The
+    /// Only line edges are considered (curved edges have no single direction).
+    ///
+    /// The.
     /// test is sign-agnostic: an edge pointing along `+axis` or `-axis` both match.
     ///
-    /// ```swift
-    /// // Round every vertical edge of an extruded prism
+    /// ```swift.
+    /// // Round every vertical edge of an extruded prism.
     /// let rounded = part.filleted(edges: part.edges(parallelTo: SIMD3(0, 0, 1)), radius: 2)
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - axis: The reference direction (need not be unit length).
@@ -914,8 +969,10 @@ extension Shape {
 
     /// Select edges fully contained within an axis-aligned bounding region.
     ///
-    /// An edge matches when its entire bounding box lies inside the box spanned by
-    /// `min`...`max` (inclusive). Useful for fillets that should only touch a
+    /// An edge matches when its entire bounding box lies inside the box spanned by.
+    /// min...max (inclusive).
+    ///
+    /// Useful for fillets that should only touch a.
     /// localised region of an already-built solid.
     ///
     /// - Parameters:
@@ -1000,7 +1057,7 @@ extension Shape {
 
     /// Get detailed error status codes for this shape.
     ///
-    /// Returns all individual error codes found during validation, useful for diagnosing exactly
+    /// Returns all individual error codes found during validation, useful for diagnosing exactly.
     /// what's wrong with an invalid shape.
     ///
     /// - Returns: Array of check status codes
@@ -1017,18 +1074,22 @@ extension Shape {
 
     /// Find edges in common between this shape and another.
     ///
-    /// Uses `LocOpe_FindEdges` to identify shared edges. The returned edges belong to **this**
-    /// shape, and each carries its ``Edge/index`` into ``edges()``, so a found edge feeds straight
+    /// Uses LocOpe_FindEdges to identify shared edges.
+    ///
+    /// The returned edges belong to **this**.
+    /// shape, and each carries its ``Edge/index`` into ``edges()``, so a found edge feeds straight.
     /// into ``filleted(edges:radius:)`` and every other index-taking method.
     ///
-    /// ```swift
-    /// // Round the seam where two halves of a split block meet
+    /// ```swift.
+    /// // Round the seam where two halves of a split block meet.
     /// let seam = lower.commonEdges(with: upper)
     /// let rounded = lower.filleted(edges: seam, radius: 1)
-    /// ```
+    /// ```.
     ///
-    /// The finder reports one entry per matched pair, so a single edge of this shape can appear
-    /// more than once when it matches several edges of `other`. Dedupe on ``Edge/index`` if you
+    /// The finder reports one entry per matched pair, so a single edge of this shape can appear.
+    /// more than once when it matches several edges of other.
+    ///
+    /// Dedupe on ``Edge/index`` if you.
     /// need one entry per distinct edge.
     ///
     /// - Parameter other: Shape to compare with
@@ -1057,17 +1118,19 @@ extension Shape {
 
     /// Find edges of this shape that lie in a specific face.
     ///
-    /// Uses `LocOpe_FindEdgesInFace`. Each returned edge carries its ``Edge/index`` into
+    /// Uses LocOpe_FindEdgesInFace.
+    ///
+    /// Each returned edge carries its ``Edge/index`` into.
     /// ``edges()``, so it can be handed to any index-taking method:
     ///
-    /// ```swift
+    /// ```swift.
     /// let onTop = block.edgesInFace(at: 3)
     /// let rounded = block.filleted(edges: onTop, radius: 2)
     ///
-    /// // The index addresses the same edge through either route
-    /// let e = onTop[0]
+    /// // The index addresses the same edge through either route.
+    /// let e = onTop[0].
     /// block.edge(at: e.index)   // the very same edge
-    /// ```
+    /// ```.
     ///
     /// - Parameter faceIndex: Index of the face to check, in the ``faces()`` enumeration (0-based)
     /// - Returns: Array of edges found in the face, each with a valid index into ``edges()``.
@@ -1100,17 +1163,21 @@ extension Shape {
         OCCTBRepCheckSubShapeValid(handle, Int32(type.rawValue), Int32(index))
     }
 
-    /// A typealias for the canonical ``ShapeType`` (#844).
+    /// A typealias for the canonical `ShapeType` (#844).
     ///
-    /// This used to be an independent local `TopAbs_ShapeEnum` mirror, used only by
+    /// This used to be an independent local TopAbs_ShapeEnum mirror, used only by.
     /// ``isSubShapeValid(type:at:)`` above, before #844 consolidated the four independent Swift
-    /// mirrors of `TopAbs_ShapeEnum` in this package into one. Kept as a deprecated alias (rather
-    /// than deleted outright) for source compatibility with external code that spells
-    /// `Shape.TopAbs_ShapeEnum` explicitly, a stored variable's type annotation, or a function
-    /// parameter type, matching this same PR's own migration pattern for every other type it
-    /// consolidated (``ShapeFilterType``, and the deprecated `[Double]`-taking overloads on the
-    /// transform-matrix methods). Case names differ slightly from the old enum's own casing
-    /// (`ShapeType.compSolid` vs. the old `.compsolid`), since this is now literally `ShapeType`,
+    /// mirrors of TopAbs_ShapeEnum in this package into one.
+    ///
+    /// Kept as a deprecated alias (rather.
+    /// than deleted outright) for source compatibility with external code that spells.
+    /// `Shape.TopAbs_ShapeEnum` explicitly, a stored variable's type annotation, or a function.
+    /// parameter type, matching this same PR's own migration pattern for every other type it.
+    /// consolidated (`ShapeFilterType`, and the deprecated `[Double]`-taking overloads on the.
+    /// transform-matrix methods).
+    ///
+    /// Case names differ slightly from the old enum's own casing.
+    /// (`ShapeType.compSolid` vs. the old `.compsolid`), since this is now literally ShapeType,.
     /// not a copy of it.
     @available(*, deprecated, renamed: "ShapeType")
     public typealias TopAbs_ShapeEnum = ShapeType
@@ -1167,9 +1234,9 @@ extension Shape {
     public struct EdgeEdgeExtrema: Sendable {
         /// Minimum distance between the edges.
         public let distance: Double
-        /// Parameter on the first edge at closest point.
+        /// Parameter       on the first edge at closest point.
         public let paramOnEdge1: Double
-        /// Parameter on the second edge at closest point.
+        /// Parameter       on the second edge at closest point.
         public let paramOnEdge2: Double
         /// Closest point on edge 1.
         public let pointOnEdge1: SIMD3<Double>
@@ -1196,7 +1263,7 @@ extension Shape {
 
     /// Substitute a sub-shape within this shape.
     ///
-    /// Replaces one topological sub-shape (vertex, edge, face) with another
+    /// Replaces one topological sub-shape (vertex, edge, face) with another.
     /// and rebuilds the parent shape.
     ///
     /// - Parameters:
@@ -1341,11 +1408,11 @@ extension Shape {
         public let normals: [SIMD3<Double>]
     }
 
-    /// Unpacks the bridge's raw `points`/`normals` double arrays (3 doubles per sample, `count`
-    /// samples) into a `PointCloudResult`, freeing both buffers.
+    /// Unpacks the bridge's raw points/normals double arrays (3 doubles per sample, count.
+    /// samples) into a PointCloudResult, freeing both buffers.
     ///
     /// Shared by ``pointCloudByTriangulation()``/``pointCloudByDensity(_:)`` (#796), the two
-    /// differ only in which bridge call produces the raw arrays, not in how the result is
+    /// differ only in which bridge call produces the raw arrays, not in how the result is.
     /// unpacked.
     private static func unpackPointCloud(
         points: UnsafeMutablePointer<Double>,
@@ -1405,25 +1472,25 @@ extension Shape {
     /// Fine-grained HLR edge categories for exact and polygon-based hidden line removal.
     public enum HLREdgeCategory: Int32, Sendable {
         case visibleSharp = 0
-        /// Visible C0-continuity (sharp) edges
+        /// Visible C0-continuity (sharp) edges.
         case visibleSmooth = 1
-        /// Visible G1-continuity (smooth) edges
+        /// Visible G1-continuity (smooth) edges.
         case visibleSewn = 2
-        /// Visible CN-continuity (sewn) edges
+        /// Visible CN-continuity (sewn) edges.
         case visibleOutline = 3
-        /// Visible silhouette/outline edges
+        /// Visible silhouette/outline edges.
         case visibleIso = 4
-        /// Visible isoparameter lines (exact HLR only)
+        /// Visible isoparameter lines (exact HLR only).
         case visibleOutline3d = 5
-        /// Visible outline edges in 3D (exact HLR only)
+        /// Visible outline edges in 3D (exact HLR only).
         case hiddenSharp = 6
-        /// Hidden C0-continuity (sharp) edges
+        /// Hidden C0-continuity (sharp) edges.
         case hiddenSmooth = 7
-        /// Hidden G1-continuity (smooth) edges
+        /// Hidden G1-continuity (smooth) edges.
         case hiddenSewn = 8
-        /// Hidden CN-continuity (sewn) edges
+        /// Hidden CN-continuity (sewn) edges.
         case hiddenOutline = 9
-        /// Hidden silhouette/outline edges
+        /// Hidden silhouette/outline edges.
         case hiddenIso = 10/// Hidden isoparameter lines (exact HLR only)
     }
 
@@ -1433,9 +1500,9 @@ extension Shape {
         case isoLine = 1
         case outLine = 2
         case rg1Line = 3
-        /// G1-continuity smooth
+        /// G1-continuity smooth.
         case rgNLine = 4
-        /// CN-continuity sewn
+        /// CN-continuity sewn.
         case sharp = 5/// C0-continuity sharp
     }
 
@@ -1451,17 +1518,24 @@ extension Shape {
 
     /// Get edges by fine-grained category using fast polygon-based HLR.
     ///
-    /// Polyhedral HLR projects the shape's *triangulation*, so it is dramatically faster than
-    /// exact `hlrEdges` on curved surfaces, e.g. ~48× on an analytic helicoid thread (#196).
+    /// Polyhedral HLR projects the shape's *triangulation*, so it is dramatically faster than.
+    /// exact hlrEdges on curved surfaces, e.g. ~48× on an analytic helicoid thread (#196).
+    ///
     /// Prefer this for 2D drawings of threaded / curved solids.
     ///
     /// - Parameters:
     ///   - direction: View direction.
     ///   - category: Edge category to extract.
-    ///   - deflection: Linear mesh deflection (mm) for the internal triangulation. Smaller = finer
-    ///     drawing (more, shorter edges); larger = coarser and faster. Default `0.1`. Meshing is
-    ///     *incremental* (`BRepMesh_IncrementalMesh`): it refines but never coarsens an existing
-    ///     triangulation, so on a shape already meshed more finely (e.g. by a prior export) this
+    ///   - deflection: Linear mesh deflection (mm) for the internal triangulation.
+    ///
+    ///   Smaller = finer.
+    ///     drawing (more, shorter edges); larger = coarser and faster.
+    ///
+    ///     Default `0.1`.
+    ///
+    ///     Meshing is.
+    ///     *incremental* (BRepMesh_IncrementalMesh): it refines but never coarsens an existing
+    ///     triangulation, so on a shape already meshed more finely (e.g. by a prior export) this.
     ///     value is a floor, not an override.
     /// - Note: `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are not available for poly HLR.
     /// - Returns: The projected polyline edges, or nil if the projection failed.
@@ -1569,10 +1643,12 @@ extension Shape {
 
     /// Deep copy a shape via BRepTools_CopyModification.
     ///
-    /// Same underlying mechanism as ``copy(copyGeometry:copyMesh:)`` (`BRepBuilderAPI_Copy` is a
-    /// thin wrapper around this same class), reached directly instead, note the different
-    /// `copyMesh` default (`true` here vs. `false` on `copy()`). Clones geometry/mesh when the
-    /// respective flag is `true`, unlike the no-argument instance ``deepCopy()``, which never does.
+    /// Same underlying mechanism as ``copy(copyGeometry:copyMesh:)`` (BRepBuilderAPI_Copy is a
+    /// thin wrapper around this same class), reached directly instead, note the different.
+    /// copyMesh default (true here vs. false on `copy()`).
+    ///
+    /// Clones geometry/mesh when the.
+    /// respective flag is true, unlike the no-argument instance ``deepCopy()``, which never does.
     public static func deepCopy(_ shape: Shape, copyGeometry: Bool = true, copyMesh: Bool = true)
         -> Shape?
     {
@@ -1744,10 +1820,10 @@ extension Shape {
 
     /// Get maximum tolerance of sub-shapes of given type. type: 6=EDGE, 4=FACE, 7=VERTEX.
     ///
-    /// This is the real `TopAbs_ShapeEnum` ordinal, the same convention ``ShapeType``'s raw
-    /// values use and the same one the `ShapeType`-typed `maxTolerance(type:)` overload passes
-    /// through unchanged, but NOT the same as the compressed `Int` `maxTolerance(type: Int)`
-    /// overload uses (#833): the two `Int`-based overloads disagree on what `2` means.
+    /// This is the real TopAbs_ShapeEnum ordinal, the same convention `ShapeType`'s raw.
+    /// values use and the same one the ShapeType-typed `maxTolerance(type:)` overload passes
+    /// through unchanged, but NOT the same as the compressed Int `maxTolerance(type: Int)`
+    /// overload uses (#833): the two Int-based overloads disagree on what 2 means.
     public func maxTolerance(subShapeType: Int) -> Double {
         OCCTBRepToolMaxTolerance(handle, Int32(subShapeType))
     }
@@ -1791,6 +1867,7 @@ extension Shape {
     /// Get the polygon-on-triangulation indices of a meshed edge.
     ///
     /// Returns 1-based node indices into the triangulation.
+    ///
     /// The shape should be meshed first.
     /// - Parameter edge: The edge shape
     /// - Returns: Array of 1-based node indices, or nil if not available
@@ -1856,13 +1933,17 @@ extension Shape {
 
     /// Create a deep copy of this shape (independent copy with new topology).
     ///
-    /// - Note: **Topology only** (#831). Backed by `TNaming_CopyShape::CopyTool`, which builds new
-    ///   `TopoDS_TShape`s but assigns the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/
-    ///   `Handle(Poly_Triangulation)` to the copy, no geometry or mesh cloning. For a copy whose
-    ///   geometry is also independent (e.g. for concurrent use on separate threads, see
+    /// - Note: **Topology only** (#831).
+    ///
+    /// Backed by `TNaming_CopyShape::CopyTool`, which builds new
+    ///   TopoDS_TShapes but assigns the *same* `Handle(Geom_Surface)`/`Handle(Geom_Curve)`/.
+    ///   `Handle(Poly_Triangulation)` to the copy, no geometry or mesh cloning.
+    ///
+    ///   For a copy whose.
+    ///   geometry is also independent (e.g. for concurrent use on separate threads, see.
     ///   `docs/thread-safety.md`), use ``copy(copyGeometry:copyMesh:)`` or the static
-    ///   ``deepCopy(_:copyGeometry:copyMesh:)`` instead, both backed by `BRepTools_CopyModification`
-    ///   / `BRepBuilderAPI_Copy`, which do clone the geometry when `copyGeometry` is `true`.
+    ///   ``deepCopy(_:copyGeometry:copyMesh:)`` instead, both backed by BRepTools_CopyModification
+    ///   / BRepBuilderAPI_Copy, which do clone the geometry when copyGeometry is true.
     public func deepCopy() -> Shape? {
         guard let ref = OCCTShapeDeepCopy(handle) else { return nil }
         return Shape(handle: ref)
@@ -1939,14 +2020,18 @@ extension Shape {
     /// Classification state for a point relative to a solid.
     ///
     /// - Note: ``classify(point:tolerance:)`` (`Shape+Analysis.swift`) answers the identical
-    ///   question, same `BRepClass3d_SolidClassifier` mechanism (#851), same tolerance
-    ///   semantics, same underlying `TopAbs_State` values, but returns the separately-declared
-    ///   ``PointClassification`` instead. The two enums share raw values case-for-case (`inside=0,
+    ///   question, same BRepClass3d_SolidClassifier mechanism (#851), same tolerance.
+    ///   semantics, same underlying TopAbs_State values, but returns the separately-declared.
+    ///   `PointClassification` instead.
+    ///
+    ///   The two enums share raw values case-for-case (`inside=0,.
     ///   outside=1, on/onBoundary=2, unknown=3`) but **not** case names (`.on` here vs.
-    ///   `.onBoundary` there), so they are intentionally kept as two declarations rather than a
-    ///   typealias, unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a
-    ///   typealias here would silently rename one side's cases and break source compatibility for
-    ///   whichever spelling was renamed away. Do not conflate the two by raw value across API
+    ///   `.onBoundary` there), so they are intentionally kept as two declarations rather than a.
+    ///   typealias, unlike ``Face/SurfaceType`` (#850), whose case names matched exactly, a.
+    ///   typealias here would silently rename one side's cases and break source compatibility for.
+    ///   whichever spelling was renamed away.
+    ///
+    ///   Do not conflate the two by raw value across API.
     ///   boundaries you don't control.
     public enum PointState: Int32 {
         case inside = 0
@@ -1958,9 +2043,11 @@ extension Shape {
     /// Classify a 3D point relative to this solid shape.
     ///
     /// Equivalent to ``classify(point:tolerance:)``, both route through
-    /// `BRepClass3d_SolidClassifier` (#851), but returns ``PointState`` instead of
-    /// ``PointClassification``. Prefer whichever result enum your call site already uses; the two
-    /// never disagree since they share one bridge mechanism and a common `TopAbs_State` mapping.
+    /// BRepClass3d_SolidClassifier (#851), but returns `PointState` instead of.
+    /// `PointClassification`.
+    ///
+    /// Prefer whichever result enum your call site already uses; the two.
+    /// never disagree since they share one bridge mechanism and a common TopAbs_State mapping.
     ///
     /// - Parameters:
     ///   - point: The 3D point to classify
@@ -2068,29 +2155,33 @@ extension Shape {
         return counts.map { Int($0) }
     }
 
-    /// The 0-based indices of the faces adjacent to `edge` within this shape.
+    /// The 0-based indices of the faces adjacent to edge within this shape.
     ///
     /// The indices address the same enumeration ``Shape/face(at:)`` reads, so they can be handed
-    /// straight to it. They used to be 1-based, which named the face before the intended one and
+    /// straight to it.
+    ///
+    /// They used to be 1-based, which named the face before the intended one and.
     /// could never name face 0 (#541).
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let edge = box.subShapes(ofType: .edge).first!
     /// for i in box.adjacentFaces(forEdge: edge) {
     ///     print(box.face(at: i)!.area())   // the two faces meeting at that edge
-    /// }
-    /// ```
+    /// }.
+    /// ```.
     public func adjacentFaces(forEdge edge: Shape) -> [Int] {
         var indices = [Int32](repeating: 0, count: 64)
         let count = Int(OCCTEdgeAdjacentFaces(handle, edge.handle, &indices, 64))
         return indices.prefix(count).map { Int($0) }
     }
 
-    /// The 0-based indices of the edges meeting `vertex` within this shape.
+    /// The 0-based indices of the edges meeting vertex within this shape.
     ///
     /// The indices address the same enumeration ``Shape/subShape(type:index:)`` reads for
-    /// `.edge`. They used to be 1-based (#541).
+    /// `.edge`.
+    ///
+    /// They used to be 1-based (#541).
     public func adjacentEdges(forVertex vertex: Shape) -> [Int] {
         var indices = [Int32](repeating: 0, count: 64)
         let count = Int(OCCTVertexAdjacentEdges(handle, vertex.handle, &indices, 64))
@@ -2235,26 +2326,30 @@ extension Shape {
         OCCTShapeIsConvex(handle)
     }
 
-    /// Whether the underlying `TopoDS_Shape` is null.
+    /// Whether the underlying TopoDS_Shape is null.
     ///
     /// This is `TopoDS_Shape::IsNull()`, nothing more: it answers "is there a shape here at all",
-    /// not "does this shape have any content". The two differ, and the difference is a trap that
-    /// the old name (`isEmptyShape`) invited:
+    /// not "does this shape have any content".
     ///
-    /// ```swift
+    /// The two differ, and the difference is a trap that.
+    /// the old name (isEmptyShape) invited:
+    ///
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.emptied!.faces().count)   // 0, no content
-    /// print(box.emptied!.isNull)          // false, it is still a Solid
-    /// print(box.nullified!.isNull)        // true
-    /// ```
+    /// print(box.emptied!.faces().count)   // 0, no content.
+    /// print(box.emptied!.isNull)          // false, it is still a Solid.
+    /// print(box.nullified!.isNull)        // true.
+    /// ```.
     ///
-    /// `emptied` keeps the type and drops the sub-shapes, so it is empty in the ordinary sense and
-    /// not null. Only a nullified shape is null.
+    /// emptied keeps the type and drops the sub-shapes, so it is empty in the ordinary sense and.
+    /// not null.
+    ///
+    /// Only a nullified shape is null.
     public var isNull: Bool {
         OCCTShapeIsEmpty(handle)
     }
 
-    /// Whether the underlying `TopoDS_Shape` is null.
+    /// Whether the underlying TopoDS_Shape is null.
     @available(
         *, deprecated, renamed: "isNull",
         message: """
@@ -2395,24 +2490,24 @@ extension Shape {
 
     /// Add a hole (inner wire) to a face.
     ///
-    /// The hole wire may be **polygonal or curved** (a `Wire.circle`, an arc, joined arcs) and may
+    /// The hole wire may be **polygonal or curved** (a `Wire.circle`, an arc, joined arcs) and may.
     /// wind either way: the wire is reoriented as needed so the hole always *removes* area, and the
     /// holed face extrudes into a valid solid with a real through hole.
     ///
-    /// ```swift
+    /// ```swift.
     /// let plate = Shape.face(from: Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0),
-    ///                                              SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
+    ///                                              SIMD3(20, 20, 0), SIMD3(0, 20, 0)],.
     ///                                             closed: true)!, planar: true)!
     /// let bore = Shape.fromWire(Wire.circle(origin: SIMD3(10, 10, 0),
     ///                                       normal: SIMD3(0, 0, 1), radius: 3)!)!
     /// let holed = Shape.faceAddHole(face: plate, wire: bore)!
-    /// holed.surfaceArea          // 400 - pi*9
+    /// holed.surfaceArea          // 400 - pi*9.
     /// holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
-    /// ```
+    /// ```.
     ///
     /// - Returns: The face with the hole added, or nil if the wire cannot serve as a hole for this
-    ///   face, it encloses no area (see #234), or it does not lie inside the face's boundary, so
-    ///   neither winding yields a valid face. A degenerate or unusable hole is declined rather than
+    ///   face, it encloses no area (see #234), or it does not lie inside the face's boundary, so.
+    ///   neither winding yields a valid face. A degenerate or unusable hole is declined rather than.
     ///   returned as an invalid face, which is what breaks callers downstream.
     public static func faceAddHole(face: Shape, wire: Shape) -> Shape? {
         guard let ref = OCCTMakeFaceAddHole(face.handle, wire.handle) else { return nil }
@@ -2608,18 +2703,20 @@ extension Shape {
 
     /// Max tolerance of sub-shapes of the given type.
     ///
-    /// Additive, ``ShapeType``-typed sibling of the legacy `maxTolerance(type: Int)` overload
-    /// below (#833): that overload and ``maxTolerance(subShapeType:)`` each accept a raw `Int`
+    /// Additive, `ShapeType`-typed sibling of the legacy `maxTolerance(type: Int)` overload
+    /// below (#833): that overload and ``maxTolerance(subShapeType:)`` each accept a raw Int
     /// with a DIFFERENT encoding for the same concept, `maxTolerance(type: 2)` means FACE there,
-    /// while `maxTolerance(subShapeType: 2)` means `TopAbs_SOLID` (and silently returns 0, since
-    /// `BRep_Tool::MaxTolerance` only handles VERTEX/EDGE/FACE). This overload uses ``ShapeType``,
-    /// whose raw values already match the real `TopAbs_ShapeEnum` ordinals `maxTolerance
+    /// while `maxTolerance(subShapeType: 2)` means TopAbs_SOLID (and silently returns 0, since
+    /// `BRep_Tool::MaxTolerance` only handles VERTEX/EDGE/FACE).
+    ///
+    /// This overload uses `ShapeType`,.
+    /// whose raw values already match the real TopAbs_ShapeEnum ordinals `maxTolerance.
     /// (subShapeType:)` expects, so both typed and unambiguous entry points now agree.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// print(box.maxTolerance(type: .face))
-    /// ```
+    /// ```.
     ///
     /// - Parameter type: Sub-shape type to measure.
     /// - SeeAlso: `maxTolerance(subShapeType:)`, which queries the identical tolerance data via
@@ -2631,28 +2728,31 @@ extension Shape {
 
     /// Min tolerance of sub-shapes of the given type.
     ///
-    /// See the `ShapeType`-typed `maxTolerance(type:)` overload above for why this additive
-    /// overload exists alongside the legacy `Int`-based one below (#833).
+    /// See the ShapeType-typed `maxTolerance(type:)` overload above for why this additive
+    /// overload exists alongside the legacy Int-based one below (#833).
     public func minTolerance(type: ShapeType) -> Double {
         OCCTShapeMinToleranceOfType(handle, Int32(type.rawValue))
     }
 
     /// Average tolerance of sub-shapes of the given type.
     ///
-    /// See the `ShapeType`-typed `maxTolerance(type:)` overload above for why this additive
-    /// overload exists alongside the legacy `Int`-based one below (#833).
+    /// See the ShapeType-typed `maxTolerance(type:)` overload above for why this additive
+    /// overload exists alongside the legacy Int-based one below (#833).
     public func avgTolerance(type: ShapeType) -> Double {
         OCCTShapeAvgToleranceOfType(handle, Int32(type.rawValue))
     }
 
     /// Max tolerance of sub-shapes of given type (0=vertex, 1=edge, 2=face).
     ///
-    /// - Warning: **Legacy.** This `Int` encoding is compressed and specific to this method,
-    ///   `0`/`1`/`2` mean vertex/edge/face here, but `maxTolerance(subShapeType:)` below uses a
-    ///   DIFFERENT `Int` convention (real `TopAbs_ShapeEnum` ordinals) for the same idea, so the
+    /// - Warning: **Legacy.** This Int encoding is compressed and specific to this method,
+    ///   0/1/2 mean vertex/edge/face here, but `maxTolerance(subShapeType:)` below uses a
+    ///   DIFFERENT Int convention (real TopAbs_ShapeEnum ordinals) for the same idea, so the.
     ///   same integer passed to the wrong one silently measures the wrong sub-shape kind (#833).
-    ///   Prefer the `ShapeType`-typed `maxTolerance(type:)` overload above, which removes the
-    ///   ambiguity. Kept, unchanged, for source compatibility.
+    ///
+    ///   Prefer the ShapeType-typed `maxTolerance(type:)` overload above, which removes the
+    ///   ambiguity.
+    ///
+    ///   Kept, unchanged, for source compatibility.
     public func maxTolerance(type: Int) -> Double {
         OCCTShapeMaxTolerance(handle, Int32(type))
     }
@@ -2660,7 +2760,9 @@ extension Shape {
     /// Min tolerance of sub-shapes of given type.
     ///
     /// - Warning: **Legacy.** Same compressed 0/1/2 encoding as `maxTolerance(type: Int)` above,
-    ///   and the same caveat (#833). Prefer the `ShapeType`-typed `minTolerance(type:)` overload
+    ///   and the same caveat (#833).
+    ///
+    ///   Prefer the ShapeType-typed `minTolerance(type:)` overload
     ///   above.
     public func minTolerance(type: Int) -> Double {
         OCCTShapeMinTolerance(handle, Int32(type))
@@ -2669,7 +2771,9 @@ extension Shape {
     /// Average tolerance of sub-shapes of given type.
     ///
     /// - Warning: **Legacy.** Same compressed 0/1/2 encoding as `maxTolerance(type: Int)` above,
-    ///   and the same caveat (#833). Prefer the `ShapeType`-typed `avgTolerance(type:)` overload
+    ///   and the same caveat (#833).
+    ///
+    ///   Prefer the ShapeType-typed `avgTolerance(type:)` overload
     ///   above.
     public func avgTolerance(type: Int) -> Double {
         OCCTShapeAvgTolerance(handle, Int32(type))
@@ -2695,18 +2799,22 @@ extension Shape {
     /// - Parameters:
     ///   - center: Ellipse centre.
     ///   - normal: Normal of the plane the ellipse lies in.
-    ///   - majorRadius: Major radius. Must be `> 0`.
-    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
-    /// - Returns: The edge, or `nil` if the radii do not describe an ellipse.
+    ///   - majorRadius: Major radius.
     ///
-    /// `BRepBuilderAPI_MakeEdge` reports `IsDone()` for a degenerate conic, so without the radius
+    ///   Must be `> 0`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0` and no larger than majorRadius.
+    /// - Returns: The edge, or nil if the radii do not describe an ellipse.
+    ///
+    /// BRepBuilderAPI_MakeEdge reports `IsDone()` for a degenerate conic, so without the radius.
     /// check this returned a live edge carrying a curve that is really a point (#554).
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func edgeFromEllipse(
         center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
         majorRadius: Double, minorRadius: Double
@@ -2724,11 +2832,11 @@ extension Shape {
     ///
     /// Same radius contract as `edgeFromEllipse(center:normal:majorRadius:minorRadius:)`.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 5, u1: 0, u2: .pi)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 0, u1: 0, u2: .pi) == nil)
-    /// ```
+    /// ```.
     public static func edgeFromEllipseArc(
         center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
         majorRadius: Double, minorRadius: Double,
@@ -2747,11 +2855,11 @@ extension Shape {
     ///
     /// Both radii must be `> 0`, with no ordering constraint between them.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 3, u1: 0, u2: 1)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 0, u1: 0, u2: 1) == nil)
-    /// ```
+    /// ```.
     public static func edgeFromHyperbolaArc(
         center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
         majorRadius: Double, minorRadius: Double,
@@ -2768,13 +2876,13 @@ extension Shape {
 
     /// Create a parabola arc edge.
     ///
-    /// `focalLength` must be `> 0`; at zero the parabola is a straight line along its own axis.
+    /// focalLength must be `> 0`; at zero the parabola is a straight line along its own axis.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Shape.edgeFromParabolaArc(focalLength: 4, u1: 0, u2: 1)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Shape.edgeFromParabolaArc(focalLength: 0, u1: 0, u2: 1) == nil)
-    /// ```
+    /// ```.
     public static func edgeFromParabolaArc(
         center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
         focalLength: Double, u1: Double, u2: Double
@@ -2862,10 +2970,13 @@ extension Shape {
 
     /// Create a face from a gp_Plane with UV bounds.
     ///
-    /// Delegates to ``faceFromPlane(origin:normal:uRange:vRange:tolerance:)`` above. The two were
-    /// added independently, ~51 releases apart, and always drove the same underlying
-    /// `BRepLib_MakeFace` engine, this overload only differed by omitting the `tolerance`
-    /// parameter, silently pinning it to whatever `BRepBuilderAPI_MakeFace`'s tolerance-less
+    /// Delegates to ``faceFromPlane(origin:normal:uRange:vRange:tolerance:)`` above.
+    ///
+    /// The two were.
+    /// added independently, ~51 releases apart, and always drove the same underlying.
+    ///
+    /// BRepLib_MakeFace engine, this overload only differed by omitting the tolerance.
+    /// parameter, silently pinning it to whatever the BRepBuilderAPI_MakeFace\'s tolerance-less.
     /// constructor hardcodes internally (`Precision::Confusion()`, `1e-7`), which is now this
     /// overload's own default so existing callers see byte-identical geometry (#841).
     ///
@@ -2874,7 +2985,9 @@ extension Shape {
     ///   - normal: The plane normal.
     ///   - uBounds: Trim range in U.
     ///   - vBounds: Trim range in V.
-    ///   - tolerance: Degeneracy tolerance, forwarded to `BRepLib_MakeFace`. Defaults to
+    ///   - tolerance: Degeneracy tolerance, forwarded to BRepLib_MakeFace.
+    ///
+    ///   Defaults to.
     ///     `Precision::Confusion()` (`1e-7`), matching what this overload silently used before
     ///     #841.
     /// - Returns: The planar face, or nil if OCCT declined to build it.
@@ -2899,7 +3012,9 @@ extension Shape {
     ///   - radius: The cylinder radius.
     ///   - uBounds: Trim range in U.
     ///   - vBounds: Trim range in V.
-    ///   - tolerance: Degeneracy tolerance, forwarded to `BRepLib_MakeFace`. Defaults to
+    ///   - tolerance: Degeneracy tolerance, forwarded to BRepLib_MakeFace.
+    ///
+    ///   Defaults to.
     ///     `Precision::Confusion()` (`1e-7`), matching what this overload silently used before
     ///     #841.
     /// - Returns: The cylindrical face, or nil if OCCT declined to build it.
@@ -3016,33 +3131,42 @@ extension Shape {
 
     /// Build a 3D curve for every edge of this shape that has only pcurves.
     ///
-    /// Edges from a loft, a sweep, or a surface-based face can carry a 2D curve on their support
-    /// surface and no 3D curve at all. Anything that walks edge geometry, discretisation, length,
-    /// export, needs the 3D curve, so this fills them in. Edges that already have one are left
+    /// Edges from a loft, a sweep, or a surface-based face can carry a 2D curve on their support.
+    /// surface and no 3D curve at all.
+    ///
+    /// Anything that walks edge geometry, discretisation, length,.
+    /// export, needs the 3D curve, so this fills them in.
+    ///
+    /// Edges that already have one are left.
     /// exactly as they are, so calling it twice costs nothing the second time.
     ///
-    /// ```swift
+    /// ```swift.
     /// // An edge built from a pcurve on a cylinder has no 3D curve until this runs.
     /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10)!
     /// let pcurve = Curve2D.line(through: SIMD2(0.2, -3), direction: SIMD2(0.6, 0.8))!
     /// let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: cylinder, u1: 0, u2: 2)!
     ///
-    /// print(edge.extractEdgeCurve3D() == nil)   // true
-    /// print(edge.buildCurves3d())               // true
-    /// print(edge.extractEdgeCurve3D() != nil)   // true, a BSpline approximating the helix
-    /// print(edge.edgeTolerance)                 // 1e-05, the tolerance lands on the edge
-    /// ```
+    /// print(edge.extractEdgeCurve3D() == nil)   // true.
+    /// print(edge.buildCurves3d())               // true.
+    /// print(edge.extractEdgeCurve3D() != nil)   // true, a BSpline approximating the helix.
+    /// print(edge.edgeTolerance)                 // 1e-05, the tolerance lands on the edge.
+    /// ```.
     ///
     /// - Parameter tolerance: Approximation tolerance, and also the rebuilt edge's tolerance floor
     ///   (OCCT sets the edge tolerance to this value, not to the deviation it actually achieved).
-    ///   The default is OCCT's own default for the operation. A tighter value buys a closer curve
-    ///   for a pole or two more, measured on a helix, `1e-5` deviates from the exact curve by
-    ///   2.6e-6 and `1e-7` by 9.0e-8, but it also claims an edge tolerance the approximation may
-    ///   not be able to keep on hard geometry. Ignored when the pcurve lies on a plane: that case
+    ///
+    ///   The default is OCCT's own default for the operation. A tighter value buys a closer curve.
+    ///   for a pole or two more, measured on a helix, `1e-5` deviates from the exact curve by.
+    ///   2.6e-6 and `1e-7` by 9.0e-8, but it also claims an edge tolerance the approximation may.
+    ///   not be able to keep on hard geometry.
+    ///
+    ///   Ignored when the pcurve lies on a plane: that case
     ///   is analytic and exact.
-    /// - Returns: `false` if any single edge could not be given a 3D curve (a degenerate edge with
-    ///   no planar pcurve, or one stripped of every representation). The edges that did succeed are
-    ///   still modified, so `false` means "partially built", not "nothing happened".
+    /// - Returns: false if any single edge could not be given a 3D curve (a degenerate edge with
+    ///   no planar pcurve, or one stripped of every representation).
+    ///
+    ///   The edges that did succeed are.
+    ///   still modified, so false means "partially built", not "nothing happened".
     @discardableResult
     public func buildCurves3d(tolerance: Double = 1e-5) -> Bool {
         OCCTBRepLibBuildCurves3dForShape(handle, tolerance)
@@ -3089,32 +3213,32 @@ extension Shape {
 
     /// Number of unique edges in this shape.
     ///
-    /// Same value as ``edgeCount``.
+    /// Same value as `edgeCount`.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.uniqueEdgeCount == box.edgeCount)   // true, 12 either way
-    /// ```
+    /// print(box.uniqueEdgeCount == box.edgeCount)   // true, 12 either way.
+    /// ```.
     public var uniqueEdgeCount: Int { Int(OCCTShapeUniqueEdgeCount(handle)) }
 
     /// Number of unique faces in this shape.
     ///
-    /// Same value as ``faceCount``.
+    /// Same value as `faceCount`.
     public var uniqueFaceCount: Int { Int(OCCTShapeUniqueFaceCount(handle)) }
 
     /// Number of unique vertices in this shape.
     ///
-    /// Same value as ``vertexCount``.
+    /// Same value as `vertexCount`.
     public var uniqueVertexCount: Int { Int(OCCTShapeUniqueVertexCount(handle)) }
 
     /// Count unique sub-shapes of a specific type.
     ///
     /// Same value as ``subShapeCount(ofType:)``.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// print(box.uniqueSubShapeCount(ofType: .wire))   // 6
-    /// ```
+    /// ```.
     public func uniqueSubShapeCount(ofType type: ShapeType) -> Int {
         Int(OCCTShapeUniqueSubShapeCount(handle, Int32(type.rawValue)))
     }
@@ -3260,17 +3384,18 @@ extension Shape {
 
     /// The continuity of the surface across an edge between two faces.
     ///
-    /// A sharp join reports ``ContinuityClass/c0``, a fillet's tangent join
-    /// ``ContinuityClass/g1``, and a seam edge on an elementary surface (a cylinder's or
+    /// A sharp join reports ``ContinuityClass/c0``, a fillet's tangent join.
+    /// ``ContinuityClass/g1``, and a seam edge on an elementary surface (a cylinder's or.
     /// sphere's) ``ContinuityClass/cN``, `BRepLib::ContinuityOfFaces` short-circuits to CN for
-    /// those, and promotes any elementary pair that measures C2 to CN as well. ``ContinuityClass/c3``
+    /// those, and promotes any elementary pair that measures C2 to CN as well. ``ContinuityClass/c3``.
     /// is the one class it never returns.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// let faces = box.faces(), edges = box.edges()
+    /// let faces = box.faces(), edges = box.edges().
+    ///
     /// Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
-    /// ```
+    /// ```.
     ///
     /// - Returns: The measured class, or nil if the arguments are not an edge and two faces that
     ///   share it (OCCT throwing, or a null handle).
@@ -3292,18 +3417,21 @@ extension Shape {
 extension Shape {
     /// Get a nullified copy of the shape.
     ///
-    /// The result has **no topological type**: `TopoDS_Shape::Nullify()` clears the `TShape`
-    /// handle outright rather than emptying a shape of a kept type. Every type query answers the
-    /// absence rather than a type, and ``isEmptyShape`` is the query that reports it directly.
-    /// For a copy that keeps its type and loses only its sub-shapes, use ``emptied``.
+    /// The result has **no topological type**: `TopoDS_Shape::Nullify()` clears the TShape
+    /// handle outright rather than emptying a shape of a kept type.
     ///
-    /// ```swift
+    /// Every type query answers the.
+    /// absence rather than a type, and `isEmptyShape` is the query that reports it directly.
+    ///
+    /// For a copy that keeps its type and loses only its sub-shapes, use `emptied`.
+    ///
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// let nulled = box.nullified!
-    /// print(nulled.isNull)  // true
-    /// print(nulled.shapeType)     // Unknown, not Solid
-    /// print(nulled.typeName)      // nil
-    /// ```
+    /// let nulled = box.nullified!.
+    /// print(nulled.isNull)  // true.
+    /// print(nulled.shapeType)     // Unknown, not Solid.
+    /// print(nulled.typeName)      // nil.
+    /// ```.
     @available(
         *, deprecated,
         message: """
@@ -3330,9 +3458,13 @@ extension Shape {
 
     /// A copy of the shape with its sub-shapes dropped, keeping its type.
     ///
-    /// `TopoDS_Shape::EmptyCopied()`. The result has no content but is **not** null, so `isNull`
-    /// reports `false` for it and `shapeType` still answers the original type. That is the
-    /// distinction `isEmptyShape` used to blur, which is why it was renamed (#1034).
+    /// `TopoDS_Shape::EmptyCopied()`.
+    ///
+    /// The result has no content but is **not** null, so isNull.
+    /// reports false for it and shapeType still answers the original type.
+    ///
+    /// That is the.
+    /// distinction isEmptyShape used to blur, which is why it was renamed (#1034).
     public var emptied: Shape? {
         guard let h = OCCTShapeEmptied(handle) else { return nil }
         return Shape(handle: h)

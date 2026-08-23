@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Value-type wrapper for XCAFPrs_Style — visual presentation style.
+/// Value-type wrapper for XCAFPrs_Style (visual presentation style).
 public struct PresentationStyle: Sendable {
     /// Surface color (RGB).
     public var surfaceColor: (red: Double, green: Double, blue: Double)?

@@ -22,25 +22,31 @@ public final class CurveProfiler: @unchecked Sendable {
 
     /// Add a curve to the profiler.
     ///
-    /// If `curve` wraps a null `Geom_Curve` handle, the curve is silently dropped instead of
+    /// If curve wraps a null Geom_Curve handle, the curve is silently dropped instead of.
     /// being added: `GeomFill_Profiler::AddCurve` dereferences it unconditionally, so passing
-    /// a null handle through uncatchably crashes the process (#710). No public `Curve3D` factory
-    /// can currently produce that state, so this is defensive hardening rather than a documented
-    /// live failure mode; it is called out here because a drop has no signal at the call site
-    /// itself. It only shows up indirectly: the profiler ends up holding one fewer curve than the
-    /// caller believes, so a `curveIndex` passed to `poles(curveIndex:)` that counted the dropped
+    /// a null handle through uncatchably crashes the process (#710).
+    ///
+    /// No public Curve3D factory.
+    /// can currently produce that state, so this is defensive hardening rather than a documented.
+    /// live failure mode; it is called out here because a drop has no signal at the call site.
+    /// itself.
+    ///
+    /// It only shows up indirectly: the profiler ends up holding one fewer curve than the
+    /// caller believes, so a curveIndex passed to `poles(curveIndex:)` that counted the dropped
     /// curve addresses the wrong curve (or falls out of range and returns `[]`).
     ///
-    /// ```swift
-    /// let profiler = CurveProfiler.create()
-    /// profiler.addCurve(curve1)
-    /// profiler.addCurve(curve2)
-    /// ```
+    /// ```swift.
+    /// let profiler = CurveProfiler.create().
+    /// profiler.addCurve(curve1).
+    /// profiler.addCurve(curve2).
+    /// ```.
     public func addCurve(_ curve: Curve3D) {
         OCCTGeomFillProfilerAddCurve(handle, curve.handle)
     }
 
-    /// Perform the homogenization. Returns true on success.
+    /// Perform the homogenization.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func perform(tolerance: Double = 1e-6) -> Bool {
         OCCTGeomFillProfilerPerform(handle, tolerance)

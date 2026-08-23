@@ -6,11 +6,13 @@ import simd
 public final class Face: @unchecked Sendable {
     internal let handle: OCCTFaceRef
 
-    /// This face's 0-based position in its parent shape's face enumeration, or -1 when the face
+    /// This face's 0-based position in its parent shape's face enumeration, or -1 when the face.
     /// was not produced from a parent.
     ///
     /// The same token ``Shape/face(at:)`` takes, and the one every face-index-taking method on
-    /// `Shape` expects. It is only meaningful against the shape it came from.
+    /// Shape expects.
+    ///
+    /// It is only meaningful against the shape it came from.
     public let index: Int
 
     internal init(handle: OCCTFaceRef, index: Int = -1) {
@@ -20,7 +22,7 @@ public final class Face: @unchecked Sendable {
 
     /// Construct a Face from a Shape that wraps a TopoDS_Face.
     ///
-    /// Returns nil if `shape` is null or wraps a non-face topology type.
+    /// Returns nil if shape is null or wraps a non-face topology type.
     public convenience init?(_ shape: Shape) {
         guard let h = OCCTFaceFromShape(shape.handle) else { return nil }
         self.init(handle: h)
@@ -45,29 +47,30 @@ public final class Face: @unchecked Sendable {
 
     /// The orientation this face carries in the shape it came from.
     ///
-    /// This is the flag that decides which side of the surface ``normal`` and
+    /// This is the flag that decides which side of the surface `normal` and.
     /// ``normal(atU:v:)`` report: both reverse the surface normal exactly when this is
-    /// ``Shape/Orientation/reversed``. OCCT's own definition is that a face's orientation names
-    /// which side of it is *material*, for a space bounded by a face, the default region is on
+    /// ``Shape/Orientation/reversed``. OCCT's own definition is that a face's orientation names.
+    /// which side of it is *material*, for a space bounded by a face, the default region is on.
     /// the negative side of the surface normal.
     ///
     /// #614: a face can appear in one shape twice with opposite orientations, the ordinary
-    /// result of a split leaving two solids that share a wall. ``Shape/faces()`` keeps one entry
+    /// result of a split leaving two solids that share a wall. ``Shape/faces()`` keeps one entry.
     /// per distinct face and so can only carry one of them; ``Shape/orientedFaces()`` keeps both.
-    /// Two entries of `orientedFaces()` with the same ``index`` and different `orientation` are
+    ///
+    /// Two entries of `orientedFaces()` with the same `index` and different orientation are.
     /// the two sides of one shared wall.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// if let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-    ///    let compound = Shape.compound(halves) {
+    ///    let compound = Shape.compound(halves) {.
     ///     let shared = Dictionary(grouping: compound.orientedFaces(), by: \.index)
-    ///         .filter { $0.value.count > 1 }
-    ///     for (index, sides) in shared {
-    ///         print(index, sides.map(\.orientation))   // [.forward, .reversed]
-    ///     }
-    /// }
-    /// ```
+    ///         .filter { $0.value.count > 1 }.
+    ///     for (index, sides) in shared {.
+    ///         print(index, sides.map(\.orientation))   // [.forward, .reversed].
+    ///     }.
+    /// }.
+    /// ```.
     public var orientation: Shape.Orientation {
         Shape.Orientation(rawValue: OCCTFaceGetOrientation(handle)) ?? .forward
     }
@@ -84,25 +87,31 @@ public final class Face: @unchecked Sendable {
     ///
     /// - Note: This box is enlarged by the face's mesh deflection whenever the shape has already
     ///   been meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior); the same
-    ///   `Face` can report a looser box after a call to ``Shape/mesh(linearDeflection:angularDeflection:)``
-    ///   than before it, with no other change. Code that needs a bound tied only to the face's own
-    ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
+    ///   Face can report a looser box after a call to ``Shape/mesh(linearDeflection:angularDeflection:)``
+    ///   than before it, with no other change.
     ///
-    /// - Returns: The box as `(min, max)` corners, or `nil` when the face contributes no geometry
+    ///   Code that needs a bound tied only to the face's own.
+    ///   geometry, independent of any prior meshing, should use `exactBounds` instead (#733).
+    ///
+    /// - Returns: The box as `(min, max)` corners, or nil when the face contributes no geometry
     ///   to it (#943). A genuinely zero-size face at the world origin returns a real all-zero box.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBounds)
     }
 
-    /// The two bounds accessors differ only in which bridge function they call, so the six-out-
+    /// The two bounds accessors differ only in which bridge function they call, so the six-out-.
     /// parameter dance lives here once.
     ///
-    /// A third variant, or a validity check on the result, then has one place to go rather than
-    /// two that can drift apart. Delegates to ``unwrapAxisComponentsIfSuccessful(_:)``
-    /// (`SIMD3Unpacking.swift`) for the actual six-out-param unpack, rather than hand-rolling a
+    /// A third variant, or a validity check on the result, then has one place to go rather than.
+    /// two that can drift apart.
+    ///
+    /// Delegates to ``unwrapAxisComponentsIfSuccessful(_:)``
+    /// (`SIMD3Unpacking.swift`) for the actual six-out-param unpack, rather than hand-rolling a.
     /// second copy of it: the two helpers read the identical shape, and a bare, unlabeled return
-    /// type is what makes the delegation a one-liner (#908, following #903/#904's fix to
-    /// `unwrapAxisComponents` itself). The `IfSuccessful` variant is what carries the bridge's
+    /// type is what makes the delegation a one-liner (#908, following #903/#904's fix to.
+    /// unwrapAxisComponents itself).
+    ///
+    /// The IfSuccessful variant is what carries the bridge's.
     /// void-vs-measured verdict, which the six doubles cannot express on their own (#943).
     private func boundsVia(
         _ fn: (
@@ -114,20 +123,22 @@ public final class Face: @unchecked Sendable {
         unwrapAxisComponentsIfSuccessful { fn(handle, $0, $1, $2, $3, $4, $5) }
     }
 
-    /// The face's bounding box computed from its exact geometry only, ignoring any triangulation
+    /// The face's bounding box computed from its exact geometry only, ignoring any triangulation.
     /// the face may carry (#733).
     ///
-    /// `bounds` calls into `BRepBndLib::Add` with `useTriangulation=true` (OCCT's own default),
-    /// which enlarges the result by the mesh's deflection whenever a triangulation is present,
-    /// so its answer depends on whether *anything* meshed this shape before this call, not only on
-    /// the face's geometry. Measured on the cylindrical wall of a bored pocket (#733's repro): at
-    /// the library's own default deflection (0.1) the low-Z bound drifted by 0.029 units after
-    /// meshing, ~300x AAG's own 1e-4 floor/wall tolerance, and even the finest deflection tried
-    /// (0.001) still drifted 5x past it. `exactBounds` is unaffected by meshing at any deflection,
-    /// which is what ``AAG`` uses internally for its own floor/wall matching.
+    /// bounds calls into `BRepBndLib::Add` with `useTriangulation=true` (OCCT's own default),
+    /// which enlarges the result by the mesh's deflection whenever a triangulation is present,.
+    /// so its answer depends on whether *anything* meshed this shape before this call, not only on.
+    /// the face's geometry.
     ///
-    /// - Returns: The box as `(min, max)` corners, or `nil` when the face contributes no geometry
-    ///   to it (#943), on the same contract as ``bounds``.
+    /// Measured on the cylindrical wall of a bored pocket (#733's repro): at
+    /// the library's own default deflection (0.1) the low-Z bound drifted by 0.029 units after.
+    /// meshing, ~300x AAG's own 1e-4 floor/wall tolerance, and even the finest deflection tried.
+    /// (0.001) still drifted 5x past it. exactBounds is unaffected by meshing at any deflection,.
+    /// which is what `AAG` uses internally for its own floor/wall matching.
+    ///
+    /// - Returns: The box as `(min, max)` corners, or nil when the face contributes no geometry
+    ///   to it (#943), on the same contract as `bounds`.
     internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         boundsVia(OCCTFaceGetBoundsExact)
     }
@@ -137,8 +148,8 @@ public final class Face: @unchecked Sendable {
         OCCTFaceIsPlanar(handle)
     }
 
-    /// Shared "fetch the normal, compare its Z component" shape behind all four orientation
-    /// predicates below (#843): `false` when the face has no normal, `test(n.z)` otherwise.
+    /// Shared "fetch the normal, compare its Z component" shape behind all four orientation.
+    /// predicates below (#843): false when the face has no normal, `test(n.z)` otherwise.
     private func normalZTest(_ test: (Double) -> Bool) -> Bool {
         guard let n = normal else { return false }
         return test(n.z)
@@ -148,36 +159,39 @@ public final class Face: @unchecked Sendable {
     ///
     /// Logically `isUpwardFacing(tolerance:) || isDownwardFacing(tolerance:)` (#843), but not
     /// implemented by calling them: `||` only short-circuits the second operand when the first is
-    /// true, so delegating to both public methods fetches `normal` twice, a fresh
-    /// `BRepLProp_SLProps` construction/solve through the bridge each time, not a cached read, for
-    /// every non-upward-facing face. That is most faces in a per-face scan
-    /// (`Shape.horizontalFaces()`, `facesByZLevel()`, `AAG.buildGraph()`), so this inlines
-    /// `normalZTest`'s "fetch once, test the one value" shape directly against both thresholds
+    /// true, so delegating to both public methods fetches normal twice, a fresh.
+    ///
+    /// BRepLProp_SLProps construction/solve through the bridge each time, not a cached read, for.
+    /// every non-upward-facing face.
+    ///
+    /// That is most faces in a per-face scan.
+    /// (`Shape.horizontalFaces()`, `facesByZLevel()`, `AAG.buildGraph()`), so this inlines.
+    /// the normalZTest\'s "fetch once, test the one value" shape directly against both thresholds.
     /// instead (found in review of #859).
     ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
-    /// - Returns: `true` when the face's normal is within `tolerance` of straight up or down.
+    /// - Returns: true when the face's normal is within tolerance of straight up or down.
     public func isHorizontal(tolerance: Double = 0.01) -> Bool {
         normalZTest { abs($0) > cos(tolerance) }
     }
 
     /// Check if the face is upward-facing (normal points up).
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
-    /// - Returns: `true` when the face's normal is within `tolerance` of straight up.
+    /// - Returns: true when the face's normal is within tolerance of straight up.
     public func isUpwardFacing(tolerance: Double = 0.01) -> Bool {
         normalZTest { $0 > cos(tolerance) }
     }
 
     /// Check if the face is downward-facing (normal points down).
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
-    /// - Returns: `true` when the face's normal is within `tolerance` of straight down.
+    /// - Returns: true when the face's normal is within tolerance of straight down.
     public func isDownwardFacing(tolerance: Double = 0.01) -> Bool {
         normalZTest { $0 < -cos(tolerance) }
     }
 
     /// Check if the face is vertical (normal is horizontal).
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
-    /// - Returns: `true` when the face's normal is within `tolerance` of horizontal.
+    /// - Returns: true when the face's normal is within tolerance of horizontal.
     public func isVertical(tolerance: Double = 0.01) -> Bool {
         normalZTest { abs($0) < sin(tolerance) }
     }
@@ -195,10 +209,10 @@ public final class Face: @unchecked Sendable {
 
     // MARK: - Surface Properties (v0.18.0)
 
-    /// Surface type classification (matches `GeomAbs_SurfaceType`).
+    /// Surface type classification (matches GeomAbs_SurfaceType).
     ///
-    /// The same 11-case classification as ``Surface/SurfaceType``, this is a typealias for it,
-    /// not a separate declaration, so a face's ``surfaceType`` and its geometry's own
+    /// The same 11-case classification as ``Surface/SurfaceType``, this is a typealias for it,.
+    /// not a separate declaration, so a face's `surfaceType` and its geometry's own.
     /// `Surface.surfaceKind` can never disagree about what case means what ordinal (#850).
     public typealias SurfaceType = Surface.SurfaceType
 
@@ -353,46 +367,54 @@ public final class Face: @unchecked Sendable {
 extension Shape {
     /// Every **distinct** face of this shape, in enumeration order, the *indexing* enumeration.
     ///
-    /// Each returned ``Face`` carries its own ``Face/index``, which is its position here and the
+    /// Each returned `Face` carries its own ``Face/index``, which is its position here and the.
     /// token ``Shape/face(at:)``, ``Shape/drafted(faces:direction:angle:neutralPlane:)``,
     /// ``Shape/shelled(thickness:openFaces:)`` and ``Shape/withoutFeatures(faces:)`` all address.
     ///
-    /// This is the enumeration ``Shape/faceCount`` counts. Before #541 it was a separate walk that
-    /// yielded one entry per *occurrence* in the topology tree, so a face reachable from two
+    /// This is the enumeration ``Shape/faceCount`` counts.
+    ///
+    /// Before #541 it was a separate walk that.
+    /// yielded one entry per *occurrence* in the topology tree, so a face reachable from two.
     /// parents appeared twice and the surplus indices named faces nothing else could address.
     ///
-    /// ## Identity, not orientation
+    /// ## Identity, not orientation.
     ///
     /// Faces are distinguished here the way OCCT distinguishes them for an index: by
     /// `TopoDS_Shape::IsSame`, which compares the underlying surface and placement and
-    /// **ignores orientation**. A face that occurs in this shape twice with opposite orientations
+    /// **ignores orientation**. A face that occurs in this shape twice with opposite orientations.
     ///, the ordinary result of a split leaving two solids that share a wall, is therefore *one*
     /// entry here, carrying whichever orientation was reached first.
     ///
     /// That matters because ``Face/normal(atU:v:)`` and ``Face/normal`` derive which *side* they
-    /// point to from that orientation. For a shared wall, the single entry's normal points out of
-    /// one owning solid and **into** the other. Use ``orientedFaces()`` whenever the normal's
-    /// direction matters; use this whenever the index matters. (#614)
+    /// point to from that orientation.
     ///
-    /// ```swift
+    /// For a shared wall, the single entry's normal points out of.
+    /// one owning solid and **into** the other.
+    ///
+    /// Use ``orientedFaces()`` whenever the normal's.
+    /// direction matters; use this whenever the index matters (#614).
+    ///
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     ///
     /// // Indexing: one entry per distinct face, safe to hand to any face-index API.
-    /// let top = box.faces().filter { $0.isUpwardFacing() }
+    /// let top = box.faces().filter { $0.isUpwardFacing() }.
     /// if let hollow = box.shelled(thickness: 1.0, openFaces: top) {
-    ///     print(hollow.faceCount)   // the open box
-    /// }
+    ///     print(hollow.faceCount)   // the open box.
+    /// }.
     ///
     /// // A split solid shares its cut face, so the two enumerations differ in length.
     /// if let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-    ///    let compound = Shape.compound(halves) {
-    ///     print(compound.faces().count)          // 11 distinct faces
-    ///     print(compound.orientedFaces().count)  // 12 occurrences, the wall, twice
-    /// }
-    /// ```
+    ///    let compound = Shape.compound(halves) {.
+    ///     print(compound.faces().count)          // 11 distinct faces.
+    ///     print(compound.orientedFaces().count)  // 12 occurrences, the wall, twice.
+    /// }.
+    /// ```.
     ///
     /// - Returns: Every distinct face, so `faces()[k].index == k`, or an empty array if any face
-    ///   could not be built. Never a short array, which would shift every later ordinal (#979).
+    ///   could not be built.
+    ///
+    ///   Never a short array, which would shift every later ordinal (#979).
     public func faces() -> [Face] {
         var count: Int32 = 0
         guard let faceArray = OCCTShapeGetFaces(handle, &count) else {
@@ -408,46 +430,52 @@ extension Shape {
             release: OCCTFaceRelease)
     }
 
-    /// Every face **occurrence** in this shape, each carrying the orientation it has in its
+    /// Every face **occurrence** in this shape, each carrying the orientation it has in its.
     /// parent, the *geometry* enumeration.
     ///
     /// Walk this, not ``faces()``, whenever the direction of a face normal matters: rendering,
-    /// CAM, per-face area or flux accumulation, anything that asks "which way is out". A face
-    /// shared by two solids appears **twice**, once per owner, each time with the orientation that
+    /// CAM, per-face area or flux accumulation, anything that asks "which way is out". A face.
+    /// shared by two solids appears **twice**, once per owner, each time with the orientation that.
     /// makes ``Face/normal(atU:v:)`` point *out* of that owner.
     ///
-    /// This mirrors how OCCT itself handles orientation-sensitive face work: `BRepGProp`, whose
-    /// volume integral needs each face's outward side, walks a `TopExp_Explorer` and reads the
-    /// orientation off the traversal rather than out of an index map, and where it deduplicates,
+    /// This mirrors how OCCT itself handles orientation-sensitive face work: BRepGProp, whose
+    /// volume integral needs each face's outward side, walks a TopExp_Explorer and reads the.
+    /// orientation off the traversal rather than out of an index map, and where it deduplicates,.
     /// it keeps one map *per orientation* so a shared wall's two sides both survive.
     ///
     /// - Note: An entry's position in this array is an **occurrence number, not a face index**,
-    ///   two positions can name the same face. Each returned ``Face`` still carries the correct
-    ///   ``Face/index`` into ``faces()``, so an occurrence remains addressable by every
-    ///   face-index-taking method on `Shape`. Entries sharing an `index` are the several sides of
+    ///   two positions can name the same face.
+    ///
+    ///   Each returned `Face` still carries the correct.
+    ///   ``Face/index`` into ``faces()``, so an occurrence remains addressable by every.
+    ///   face-index-taking method on Shape.
+    ///
+    ///   Entries sharing an index are the several sides of.
     ///   one shared face.
     ///
-    /// On any shape whose faces are not shared this returns exactly ``faces()``, in the same
-    /// order, with the same indices. (#614)
+    /// On any shape whose faces are not shared this returns exactly ``faces()``, in the same.
+    /// order, with the same indices (#614).
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// guard let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-    ///       let compound = Shape.compound(halves) else { return }
+    ///       let compound = Shape.compound(halves) else { return }.
     ///
     /// // Outward normals for the whole assembly, shared wall included.
-    /// for face in compound.orientedFaces() {
-    ///     if let uv = face.uvBounds {
+    /// for face in compound.orientedFaces() {.
+    ///     if let uv = face.uvBounds {.
     ///         let n = face.normal(atU: (uv.uMin + uv.uMax) / 2,
     ///                             v: (uv.vMin + uv.vMax) / 2)
-    ///         print(face.index, face.orientation, n ?? .zero)
-    ///     }
-    /// }
+    ///         print(face.index, face.orientation, n ?? .zero).
+    ///     }.
+    /// }.
     /// // The cut face appears twice under one index: once .forward, once .reversed,
     /// // with opposite normals, one outward per solid.
-    /// ```
+    /// ```.
     ///
-    /// - Returns: Every face occurrence, or an empty array if any could not be built. Never a
+    /// - Returns: Every face occurrence, or an empty array if any could not be built.
+    ///
+    /// Never a.
     ///   short array, which would shift every later occurrence number (#979).
     public func orientedFaces() -> [Face] {
         let capacity = Int(OCCTShapeGetFaceOccurrenceCount(handle))
@@ -473,26 +501,29 @@ extension Shape {
 
     /// Every horizontal face occurrence, normals pointing up or down.
     ///
-    /// Reads ``orientedFaces()``, not ``faces()``. "Horizontal" is a statement about the face
+    /// Reads ``orientedFaces()``, not ``faces()``. "Horizontal" is a statement about the face.
     /// *normal*, and `faces()` cannot carry a shared face's second orientation: on a solid split
-    /// into two bodies the shared wall is horizontal from **both** sides, and filtering `faces()`
+    /// into two bodies the shared wall is horizontal from **both** sides, and filtering `faces()`.
     /// found only the side that happened to be stored, silently losing the other body's floor.
-    /// Measured on an origin-centred 10mm box cut at z=4, this returned **3** where the geometry
-    /// has **4** horizontal occurrences. (#614)
+    ///
+    /// Measured on an origin-centred 10mm box cut at z=4, this returned **3** where the geometry.
+    /// has **4** horizontal occurrences (#614).
     ///
     /// - Note: Because a shared face contributes one entry per side, this array can contain two
-    ///   `Face` values with the same ``Face/index``. On a shape whose faces are not shared, the
+    ///   Face values with the same ``Face/index``.
+    ///
+    ///   On a shape whose faces are not shared, the.
     ///   common case, the result is identical to filtering `faces()`.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// print(box.horizontalFaces().count)   // 2, top and bottom, nothing shared
+    /// print(box.horizontalFaces().count)   // 2, top and bottom, nothing shared.
     ///
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
-    /// let compound = Shape.compound(halves)!
+    /// let compound = Shape.compound(halves)!.
     /// print(compound.horizontalFaces().count)   // 4: outer top, outer bottom, and the
-    ///                                           // shared wall once per owning solid
-    /// ```
+    ///                                           // shared wall once per owning solid.
+    /// ```.
     ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
     /// - Returns: Every horizontal face occurrence, per ``orientedFaces()``'s occurrence semantics.
@@ -502,33 +533,41 @@ extension Shape {
 
     /// Upward-facing horizontal face occurrences (potential pocket floors).
     ///
-    /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does, "upward-facing"
-    /// is a statement about the normal, which `faces()` cannot carry for a shared face. (#614)
+    /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does, "upward-facing".
+    /// is a statement about the normal, which `faces()` cannot carry for a shared face (#614).
     ///
     /// - Note: Like ``horizontalFaces()``, this selects over *occurrences* and so **can** return
-    ///   two entries with the same ``Face/index``. Dedupe on `index` (or use ``faces()``) if you
-    ///   need one entry per distinct face. It is only for the shared-wall case, two solids whose
-    ///   parents impose *opposite* orientations, that at most one side can face up, because the
-    ///   two normals are opposed. That is a property of opposed normals, not a guarantee of this
+    ///   two entries with the same ``Face/index``.
+    ///
+    ///   Dedupe on index (or use ``faces()``) if you.
+    ///   need one entry per distinct face.
+    ///
+    ///   It is only for the shared-wall case, two solids whose.
+    ///   parents impose *opposite* orientations, that at most one side can face up, because the.
+    ///   two normals are opposed.
+    ///
+    ///   That is a property of opposed normals, not a guarantee of this.
     ///   method: when a face is reached twice through parents imposing the *same* orientation, both
     ///   entries qualify. `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`.
     ///
-    /// - Note: `isUpwardFacing` tests `n.z > cos(tolerance)`, so a `tolerance` of π/2 or more makes
-    ///   the threshold non-positive and admits faces that do not point up at all, including both
-    ///   sides of a *vertical* shared wall, whose normals have `n.z == 0`. On a two-solid split,
+    /// - Note: isUpwardFacing tests `n.z > cos(tolerance)`, so a tolerance of π/2 or more makes
+    ///   the threshold non-positive and admits faces that do not point up at all, including both.
+    ///   sides of a *vertical* shared wall, whose normals have `n.z == 0`.
+    ///
+    ///   On a two-solid split,.
     ///   `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
-    /// let compound = Shape.compound(halves)!
+    /// let compound = Shape.compound(halves)!.
     /// // The outer top, plus the shared wall as seen from the lower solid (its ceiling).
-    /// print(compound.upwardFaces().count)   // 2, opposed normals, so only one side faces up
+    /// print(compound.upwardFaces().count)   // 2, opposed normals, so only one side faces up.
     ///
     /// // But a shape compounded with itself reaches each face twice at the SAME orientation:
-    /// let doubled = Shape.compound([box, box])!
-    /// print(doubled.upwardFaces().map(\.index))   // [5, 5], the same face, twice
-    /// ```
+    /// let doubled = Shape.compound([box, box])!.
+    /// print(doubled.upwardFaces().map(\.index))   // [5, 5], the same face, twice.
+    /// ```.
     ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees).
     /// - Returns: Upward-facing horizontal face occurrences, per ``orientedFaces()``'s occurrence
@@ -540,16 +579,16 @@ extension Shape {
     /// Get faces grouped by Z level (for CAM pocket detection).
     ///
     /// Built from ``horizontalFaces()``, so it inherits that method's occurrence semantics: a wall
-    /// shared by two bodies lands in its Z group **twice**, once per side, where filtering
-    /// `faces()` reported it once and only from whichever side happened to be stored. (#614)
+    /// shared by two bodies lands in its Z group **twice**, once per side, where filtering.
+    /// `faces()` reported it once and only from whichever side happened to be stored (#614).
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
-    /// let compound = Shape.compound(halves)!
-    /// let levels = compound.facesByZLevel()
+    /// let compound = Shape.compound(halves)!.
+    /// let levels = compound.facesByZLevel().
     /// print(levels.mapValues(\.count))   // [-5.0: 1, 4.0: 2, 5.0: 1]
-    /// ```
+    /// ```.
     ///
     /// - Parameter tolerance: Z tolerance for grouping faces
     /// - Returns: Dictionary mapping Z levels to arrays of faces at that level
@@ -594,7 +633,7 @@ extension Face {
 
     /// Get the natural parametric bounds of this face using BRepGProp_Face.
     ///
-    /// Unlike `uvBounds` (which uses BRepTools::UVBounds), this uses BRepGProp_Face::Bounds
+    /// Unlike uvBounds (which uses BRepTools::UVBounds), this uses BRepGProp_Face::Bounds
     /// which accounts for face orientation and provides integration-ready parametric bounds.
     ///
     /// - Returns: UV bounds as (uMin, uMax, vMin, vMax), or nil on error
@@ -612,8 +651,11 @@ extension Face {
     /// Evaluate the face surface at UV parameters using BRepGProp_Face.
     ///
     /// Returns both the 3D point and the unnormalized surface normal at (u, v).
-    /// The normal is the cross product of partial derivatives (dS/du x dS/dv),
-    /// whose magnitude equals the local surface area element. This is useful for
+    ///
+    /// The normal is the cross product of partial derivatives (dS/du x dS/dv),.
+    /// whose magnitude equals the local surface area element.
+    ///
+    /// This is useful for.
     /// surface integration (e.g., computing surface area, flux integrals).
     ///
     /// - Parameters:
@@ -643,20 +685,22 @@ extension Face {
 
     /// Fix face problems such as incorrect wire orientation, missing seams, and surface parameters.
     ///
-    /// The underlying `ShapeFix_Face` is given a `ShapeBuild_ReShape` context up front (#484), so
-    /// the fixes that record replacements, a missing seam, or the degenerate apex edge a wire
-    /// belting a cone's full period needs, actually apply. Without one they silently no-op and the
+    /// The underlying ShapeFix_Face is given a ShapeBuild_ReShape context up front (#484), so.
+    /// the fixes that record replacements, a missing seam, or the degenerate apex edge a wire.
+    /// belting a cone's full period needs, actually apply.
+    ///
+    /// Without one they silently no-op and the.
     /// face comes back unhealed.
     ///
     /// - Parameter tolerance: Tolerance for fixing operations
     /// - Returns: Fixed face as a shape, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Fix a face with wire orientation issues
+    /// ```swift.
+    /// // Fix a face with wire orientation issues.
     /// let fixedShape = problematicFace.fixed(tolerance: 0.001)
-    /// ```
+    /// ```.
     public func fixed(tolerance: Double = 1e-6) -> Shape? {
         guard let result = OCCTFaceFix(handle, tolerance) else {
             return nil
@@ -694,7 +738,7 @@ extension Face {
 extension Face {
     /// Create a draft prism (tapered extrusion) from this face.
     ///
-    /// Uses LocOpe_DPrism for creating tapered extrusions with different
+    /// Uses LocOpe_DPrism for creating tapered extrusions with different.
     /// heights on each end and a draft angle.
     ///
     /// - Parameters:
@@ -726,7 +770,7 @@ extension Face {
 extension Face {
     /// Check the validity of this face using BRepCheck_Face.
     ///
-    /// Uses BRepCheck_Face for face-specific validation including
+    /// Uses BRepCheck_Face for face-specific validation including.
     /// wire intersection checks, surface validity, etc.
     ///
     /// - Returns: Check result
@@ -744,12 +788,12 @@ extension Face {
 extension Face {
     /// Compute mesh properties for a triangulated face.
     ///
-    /// ```swift
+    /// ```swift.
     /// shape.triangulate(deflection: 0.1)
     /// let p = shape.faces()[0].meshProps(type: .surface)
-    /// p.mass            // the triangulated area
-    /// p.centerOfMass    // its centroid, nil if the face carries no triangulation
-    /// ```
+    /// p.mass            // the triangulated area.
+    /// p.centerOfMass    // its centroid, nil if the face carries no triangulation.
+    /// ```.
     public func meshProps(type: MeshPropsType) -> MeshPropsResult {
         let t: OCCTMeshPropsType = (type == .surface) ? OCCTMeshPropsSurface : OCCTMeshPropsVolume
         let r = OCCTMeshPropsCompute(handle, t)
@@ -776,11 +820,11 @@ extension Face {
 extension Face {
     /// Compute surface inertia (area and center of mass).
     ///
-    /// ```swift
+    /// ```swift.
     /// let f = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0]
-    /// f.surfaceInertia.area          // 600
-    /// f.surfaceInertia.centerOfMass  // the face's area centroid
-    /// ```
+    /// f.surfaceInertia.area          // 600.
+    /// f.surfaceInertia.centerOfMass  // the face's area centroid.
+    /// ```.
     public var surfaceInertia: FaceSurfaceInertia {
         let r = OCCTBRepGPropSinert(handle)
         return FaceSurfaceInertia(
@@ -802,17 +846,17 @@ extension Face {
 extension Face {
     /// Compute volume inertia contribution from this face.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
+    /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face.
     ///
     /// // A face whose own plane contains the reference point (the origin) contributes nothing.
     /// // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
     /// let shifted = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(0, 0, 5))!
-    /// let coplanar = shifted.faces().first { $0.volumeInertia.volume == 0 }!
-    /// coplanar.volumeInertia.volume         // 0, a real summand
-    /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid
-    /// ```
+    /// let coplanar = shifted.faces().first { $0.volumeInertia.volume == 0 }!.
+    /// coplanar.volumeInertia.volume         // 0, a real summand.
+    /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid.
+    /// ```.
     public var volumeInertia: FaceVolumeInertia {
         let r = OCCTBRepGPropVinert(handle)
         return FaceVolumeInertia(

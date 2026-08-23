@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// A 2D geometric transformation backed by `Geom2d_Transformation`.
+/// A 2D geometric transformation backed by Geom2d_Transformation.
 ///
 /// Supports translation, rotation, scaling, mirroring, and composition.
 public final class Transform2D: @unchecked Sendable {
@@ -101,7 +101,7 @@ public final class Transform2D: @unchecked Sendable {
         return Transform2D(handle: h)
     }
 
-    /// Raise this transformation to the `n`-th power.
+    /// Raise this transformation to the n-th power.
     public func powered(_ n: Int32) -> Transform2D? {
         guard let h = OCCTTransform2DPowered(handle, n) else { return nil }
         return Transform2D(handle: h)

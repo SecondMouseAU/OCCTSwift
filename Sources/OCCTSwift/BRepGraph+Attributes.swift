@@ -16,7 +16,9 @@ import OCCTBridge
 // MARK: - AttrValue
 
 extension BRepGraph {
-    /// A typed, Codable attribute value. Closed set keeps the snapshot round-trip lossless.
+    /// A typed, Codable attribute value.
+    ///
+    /// Closed set keeps the snapshot round-trip lossless.
     public enum AttrValue: Codable, Hashable, Sendable {
         case bool(Bool)
         case int(Int)
@@ -47,8 +49,10 @@ extension BRepGraph {
 
 /// Per-node attribute bag keyed by ``BRepGraph/NodeRef``.
 ///
-/// Keys are caller-namespaced strings (e.g. `"reconstruct.residualRMS"`). Encodes as a
-/// deterministically-ordered array of `{node, attrs}` entries — JSON object keys must be
+/// Keys are caller-namespaced strings (e.g. `"reconstruct.residualRMS"`).
+///
+/// Encodes as a.
+/// deterministically-ordered array of `{node, attrs}` entries (JSON object keys must be).
 /// strings, and the sorted order keeps snapshots diffable and round-trips stable.
 public struct NodeAttributeStore: Codable, Sendable, Equatable {
     public private(set) var storage: [BRepGraph.NodeRef: [String: BRepGraph.AttrValue]]
@@ -77,7 +81,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
         storage[node, default: [:]][key] = value
     }
 
-    /// Remove one attribute. Drops the node entry entirely once its last attribute is cleared.
+    /// Remove one attribute.
+    ///
+    /// Drops the node entry entirely once its last attribute is cleared.
     public mutating func clear(_ key: String, for node: BRepGraph.NodeRef) {
         guard var attrs = storage[node] else { return }
         attrs[key] = nil
@@ -96,7 +102,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     // with `JSONEncoder.outputFormatting = .sortedKeys` — or `GraphSnapshot.canonicalEncoder()`
     // — for byte-stable, diffable output. JSONEncoder hash-orders object keys otherwise.)
 
-    /// One `key: value` attribute pair. Encoding attributes as a sorted array (rather than a
+    /// One `key: value` attribute pair.
+    ///
+    /// Encoding attributes as a sorted array (rather than a.
     /// `[String: AttrValue]` dictionary) avoids JSON's non-deterministic dictionary key order.
     private struct KeyValue: Codable {
         let key: String
@@ -142,11 +150,16 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
 
 /// A persistable, round-trippable snapshot of a graph's attributes plus its source shape.
 ///
-/// The graph *structure* is not serialized — it is re-derived deterministically by rebuilding
-/// `BRepGraph` from `brep`. Only the source shape (as a BREP string) and the attribute
+/// The graph *structure* is not serialized (it is re-derived deterministically by rebuilding).
+///
+/// BRepGraph from brep.
+///
+/// Only the source shape (as a BREP string) and the attribute.
 /// store travel in the snapshot.
 public struct GraphSnapshot: Codable, Sendable, Equatable {
-    /// Current on-disk format version. Bump on any breaking schema change.
+    /// Current on-disk format version.
+    ///
+    /// Bump on any breaking schema change.
     public static let currentFormatVersion = 1
 
     /// BREP serialization of the source shape (re-derives the graph structure on load).
@@ -165,10 +178,10 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
         self.formatVersion = formatVersion
     }
 
-    /// A `JSONEncoder` configured for byte-stable, diffable output (`.sortedKeys`).
+    /// A JSONEncoder configured for byte-stable, diffable output (`.sortedKeys`).
     ///
-    /// The attribute store already emits its arrays in deterministic order; pairing that with
-    /// `.sortedKeys` makes the whole snapshot reproducible byte-for-byte across runs — useful
+    /// The attribute store already emits its arrays in deterministic order; pairing that with.
+    /// `.sortedKeys` makes the whole snapshot reproducible byte-for-byte across runs (useful).
     /// for versioned sessions and golden-file tests.
     public static func canonicalEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
@@ -177,7 +190,7 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
     }
 }
 
-/// Errors raised while snapshotting or rebuilding a `BRepGraph`.
+/// Errors raised while snapshotting or rebuilding a BRepGraph.
 public enum GraphSnapshotError: Error, Equatable, Sendable {
     /// The graph has no captured source shape to serialize (e.g. built from a handle directly).
     case noSourceShape
@@ -213,9 +226,13 @@ extension BRepGraph {
     /// Rebuild a graph from a snapshot: deserialize the BREP, rebuild the graph (non-parallel
     /// for deterministic node indexing), and reattach the attributes.
     ///
-    /// - Important: Attributes are keyed by `NodeRef` (`kind` + `index`). This relies on
-    ///   `BRepGraph(shape:)` producing identical node indexing for the same BREP — which is
-    ///   why the rebuild pins `parallel: false`. See the round-trip determinism test.
+    /// - Important: Attributes are keyed by NodeRef (kind + index).
+    ///
+    /// This relies on.
+    ///   `BRepGraph(shape:)` producing identical node indexing for the same BREP (which is).
+    ///   why the rebuild pins `parallel: false`.
+    ///
+    ///   See the round-trip determinism test.
     public convenience init(snapshot: GraphSnapshot) throws {
         guard snapshot.formatVersion <= GraphSnapshot.currentFormatVersion else {
             throw GraphSnapshotError.unsupportedFormatVersion(snapshot.formatVersion)

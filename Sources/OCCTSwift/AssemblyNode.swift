@@ -5,18 +5,18 @@ import simd
 /// A node in an XDE assembly tree.
 ///
 /// Represents a part or sub-assembly in a STEP file with:
-/// - Name (if assigned in CAD software)
-/// - Transform (position/rotation relative to parent)
-/// - Color (if assigned)
-/// - PBR Material (if available)
-/// - Children (for assemblies)
-/// - Shape (for parts)
+/// - Name (if assigned in CAD software).
+/// - Transform (position/rotation relative to parent).
+/// - Color (if assigned).
+/// - PBR Material (if available).
+/// - Children (for assemblies).
+/// - Shape (for parts).
 public final class AssemblyNode: @unchecked Sendable {
     unowned let document: Document
 
     /// The XCAF label identifier for this node.
     ///
-    /// Stable across calls within a single `Document` instance; round-trips with
+    /// Stable across calls within a single Document instance; round-trips with.
     /// `Document.node(at:)`.
     public let labelId: Int64
 
@@ -161,7 +161,7 @@ public final class AssemblyNode: @unchecked Sendable {
 
     /// The shape geometry (with transform applied).
     ///
-    /// Returns nil for pure assemblies that have no direct geometry
+    /// Returns nil for pure assemblies that have no direct geometry.
     public var shape: Shape? {
         guard let shapeHandle = OCCTDocumentGetShapeWithLocation(document.handle, labelId) else {
             return nil
@@ -367,8 +367,8 @@ extension AssemblyNode {
     /// - Parameters:
     ///   - lower: Lower bound index
     ///   - upper: Upper bound index
-    /// - Returns: `true` when the `TDataStd_IntegerArray` attribute was set on this
-    ///   label; `false` if the document or the label is null, or OCCT raised.
+    /// - Returns: true when the TDataStd_IntegerArray attribute was set on this
+    ///   label; false if the document or the label is null, or OCCT raised.
     @discardableResult
     public func initIntegerArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitIntegerArray(document.handle, labelId, lower, upper)
@@ -406,8 +406,8 @@ extension AssemblyNode {
     /// - Parameters:
     ///   - lower: Lower bound index
     ///   - upper: Upper bound index
-    /// - Returns: `true` when the `TDataStd_RealArray` attribute was set on this
-    ///   label; `false` if the document or the label is null, or OCCT raised.
+    /// - Returns: true when the TDataStd_RealArray attribute was set on this
+    ///   label; false if the document or the label is null, or OCCT raised.
     @discardableResult
     public func initRealArray(lower: Int32, upper: Int32) -> Bool {
         OCCTDocumentInitRealArray(document.handle, labelId, lower, upper)
@@ -640,41 +640,54 @@ extension AssemblyNode {
 
     /// Set a triangulation attribute on this label by meshing a shape.
     ///
-    /// Meshes the shape and stores **every** face's triangulation, merged into one
-    /// `Poly_Triangulation` in the shape's own coordinate system: per-face locations are
-    /// applied to the nodes, and reversed faces have their winding and node normals flipped
-    /// so the stored mesh is consistently outward. Node normals survive only if every
-    /// contributing face carries them; per-face UV nodes are dropped, since they index
+    /// Meshes the shape and stores **every** face's triangulation, merged into one.
+    ///
+    /// Poly_Triangulation in the shape's own coordinate system: per-face locations are
+    /// applied to the nodes, and reversed faces have their winding and node normals flipped.
+    /// so the stored mesh is consistently outward.
+    ///
+    /// Node normals survive only if every.
+    /// contributing face carries them; per-face UV nodes are dropped, since they index.
     /// parameter spaces that no longer mean anything once the faces are pooled.
     ///
     /// - Important: **The stored coordinate frame changed in the same release as the
-    ///   every-face fix.** This previously stored one face's nodes in that *face's* local
-    ///   frame, discarding its `TopLoc_Location`. It now stores them in the **shape's**
-    ///   frame. For a shape with a non-identity location (an assembly component, anything
+    ///   every-face fix.** This previously stored one face's nodes in that *face's* local.
+    ///   frame, discarding its TopLoc_Location.
+    ///
+    ///   It now stores them in the **shape's**.
+    ///   frame.
+    ///
+    ///   For a shape with a non-identity location (an assembly component, anything.
     ///   from ``Shape/transformed(by:)``) the numbers therefore move, independently of the
     ///   node-count change: a box translated to (100, 200, 300) used to store a node at the
-    ///   origin and now stores it at (100, 200, 300). Re-read any persisted OCAF document
+    ///   origin and now stores it at (100, 200, 300).
+    ///
+    ///   Re-read any persisted OCAF document.
     ///   that was written before this change if you compare stored triangulations.
     ///
     /// - Note: Node normals are transformed and reversed here, which
     ///   ``Shape/mesh(linearDeflection:angularDeflection:)`` does not do for its own
-    ///   ``Mesh/normals`` (only its winding swap matches). The two therefore disagree for a
-    ///   located or reversed face. `BRepMesh_IncrementalMesh` does not produce node normals
-    ///   at all, so this only arises for a face carrying a triangulation from elsewhere,
+    ///   ``Mesh/normals`` (only its winding swap matches).
+    ///
+    ///   The two therefore disagree for a.
+    ///   located or reversed face. BRepMesh_IncrementalMesh does not produce node normals.
+    ///   at all, so this only arises for a face carrying a triangulation from elsewhere,.
     ///   such as glTF import.
     ///
-    /// ```swift
-    /// let label = doc.createLabel()!
+    /// ```swift.
+    /// let label = doc.createLabel()!.
     /// label.setTriangulationFromShape(Shape.box(width: 10, height: 10, depth: 10)!,
     ///                                 deflection: 1.0)
-    /// print(label.triangulationNodeCount)      // 24, all six faces, not 4
-    /// print(label.triangulationTriangleCount)  // 12
-    /// ```
+    /// print(label.triangulationNodeCount)      // 24, all six faces, not 4.
+    /// print(label.triangulationTriangleCount)  // 12.
+    /// ```.
     ///
     /// - Parameters:
-    ///   - shape: The shape to mesh. Faces at any depth are included.
+    ///   - shape: The shape to mesh.
+    ///
+    ///   Faces at any depth are included.
     ///   - deflection: Linear meshing deflection (default: 1.0).
-    /// - Returns: `false` if the shape has no face, or if nothing in it meshed.
+    /// - Returns: false if the shape has no face, or if nothing in it meshed.
     @discardableResult
     public func setTriangulationFromShape(_ shape: Shape, deflection: Double = 1.0) -> Bool {
         OCCTDocumentSetTriangulationFromShape(document.handle, labelId, shape.handle, deflection)
@@ -697,19 +710,19 @@ extension AssemblyNode {
 
     /// Read one node of the triangulation attribute, in the frame it was stored in.
     ///
-    /// Nodes are numbered from 1, as `Poly_Triangulation` numbers them.
+    /// Nodes are numbered from 1, as Poly_Triangulation numbers them.
     /// ``setTriangulationFromShape(_:deflection:)`` stores them in the **shape's** coordinate
     /// frame, so a located shape's nodes come back in absolute coordinates.
     ///
-    /// ```swift
+    /// ```swift.
     /// let moved = Shape.box(width: 10, height: 10, depth: 10)!.moved(dx: 100, dy: 200, dz: 300)!
     /// label.setTriangulationFromShape(moved, deflection: 1.0)
     /// let node = label.triangulationNode(at: 1)!   // absolute, not the box's local frame
-    /// ```
+    /// ```.
     ///
     /// - Parameter index: 1-based node index.
-    /// - Returns: The node position, or `nil` if this label has no triangulation attribute or
-    ///   `index` is out of range.
+    /// - Returns: The node position, or nil if this label has no triangulation attribute or
+    ///   index is out of range.
     public func triangulationNode(at index: Int32) -> SIMD3<Double>? {
         var xyz = [Double](repeating: 0, count: 3)
         guard OCCTDocumentTriangulationNode(document.handle, labelId, index, &xyz) else {
@@ -721,19 +734,20 @@ extension AssemblyNode {
     /// Read one node normal of the triangulation attribute, in the frame it was stored in.
     ///
     /// Node normals only exist when the meshed faces carried them.
-    /// `BRepMesh_IncrementalMesh` does not produce any, so this returns `nil` for anything
-    /// meshed from B-Rep, and a value for a shape whose faces arrived with a triangulation
+    ///
+    /// BRepMesh_IncrementalMesh does not produce any, so this returns nil for anything.
+    /// meshed from B-Rep, and a value for a shape whose faces arrived with a triangulation.
     /// from elsewhere, such as glTF import.
     ///
-    /// ```swift
+    /// ```swift.
     /// let imported = Shape.loadGLTF(from: url)!    // glTF meshes carry vertex normals
     /// label.setTriangulationFromShape(imported, deflection: 1.0)
     /// let n = label.triangulationNode(at: 1).flatMap { _ in label.triangulationNormal(at: 1) }
-    /// ```
+    /// ```.
     ///
     /// - Parameter index: 1-based node index.
-    /// - Returns: The unit normal, or `nil` if this label has no triangulation attribute, the
-    ///   stored triangulation has no node normals, or `index` is out of range.
+    /// - Returns: The unit normal, or nil if this label has no triangulation attribute, the
+    ///   stored triangulation has no node normals, or index is out of range.
     public func triangulationNormal(at index: Int32) -> SIMD3<Double>? {
         var xyz = [Double](repeating: 0, count: 3)
         guard OCCTDocumentTriangulationNormal(document.handle, labelId, index, &xyz) else {

@@ -2,16 +2,17 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// XDE Document for loading STEP files with assembly structure,
+/// XDE Document for loading STEP files with assembly structure,.
 /// names, colors, and materials.
 ///
-/// Use `Document` when you need to:.
+/// Use Document when you need to:.
+///
 /// For simple geometry-only import, use `Shape.load(from:)` instead.
 ///
-/// - Preserve assembly hierarchy from STEP files
-/// - Access part names and structure
-/// - Read colors and PBR materials
-/// - Export with metadata preserved
+/// - Preserve assembly hierarchy from STEP files.
+/// - Access part names and structure.
+/// - Read colors and PBR materials.
+/// - Export with metadata preserved.
 public final class Document: @unchecked Sendable {
     internal let handle: OCCTDocumentRef
 
@@ -32,10 +33,12 @@ public final class Document: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - url: URL to the STEP file.
-    ///   - progress: Optional reporter for read progress and cancellation. Pass `nil` to
+    ///   - progress: Optional reporter for read progress and cancellation.
+    ///
+    ///   Pass nil to.
     ///     load without progress reporting.
     /// - Returns: Document containing the assembly structure.
-    /// - Throws: `DocumentError` if loading fails.
+    /// - Throws: DocumentError if loading fails.
     public static func load(from url: URL, progress: ImportProgress? = nil) throws -> Document {
         var cancelled: Bool = false
         let handle: OCCTDocumentRef? = withImportProgress(progress) { ctx in
@@ -58,7 +61,8 @@ public final class Document: @unchecked Sendable {
     /// Write the document to a STEP file with progress + cancellation.
     ///
     /// `ImportError.importFailed` on other failure (the case name reuses.
-    /// `ImportError` because we share the cancellation channel, see #98).
+    ///
+    /// ImportError because we share the cancellation channel, see #98).
     ///
     /// - Throws: `ImportError.cancelled` if cancelled cooperatively,
     public func writeSTEP(to url: URL, progress: ImportProgress?) throws {
@@ -98,11 +102,12 @@ public final class Document: @unchecked Sendable {
         return nodes
     }
 
-    /// Look up an `AssemblyNode` by its XCAF labelId.
+    /// Look up an AssemblyNode by its XCAF labelId.
     ///
-    /// Returns `nil` if `labelId` does not refer to a label in this document.
-    /// LabelIds are stable within a single `Document` instance, a labelId.
-    /// obtained from `rootNodes` traversal can be passed back here later in.
+    /// Returns nil if labelId does not refer to a label in this document.
+    ///
+    /// LabelIds are stable within a single Document instance, a labelId.
+    /// obtained from rootNodes traversal can be passed back here later in.
     /// the same session to recover the corresponding node.
     public func node(at labelId: Int64) -> AssemblyNode? {
         // Warm up the labelId registry. On a freshly-loaded document the
@@ -179,7 +184,7 @@ public final class Document: @unchecked Sendable {
     /// Write the document to a STEP file (preserves assembly structure, colors, materials).
     ///
     /// - Parameter url: Output file URL.
-    /// - Throws: `DocumentError` if writing fails
+    /// - Throws: DocumentError if writing fails
     public func write(to url: URL) throws {
         if !OCCTDocumentWriteSTEP(handle, url.path) {
             throw DocumentError.writeFailed(url: url)
@@ -342,9 +347,11 @@ extension Document {
 extension Document {
     /// Decode a NUL-terminated buffer a bridge accessor filled.
     ///
-    /// Shared by every `Document` accessor that reads a string through a `char` buffer, so the
-    /// decode is written once rather than once per call site. It lives in its own section rather
-    /// than beside any one of them, because a helper filed under a domain is a helper the next
+    /// Shared by every Document accessor that reads a string through a char buffer, so the.
+    /// decode is written once rather than once per call site.
+    ///
+    /// It lives in its own section rather.
+    /// than beside any one of them, because a helper filed under a domain is a helper the next.
     /// domain's author does not find.
     static func string(fromCString buffer: [CChar]) -> String {
         buffer.withUnsafeBufferPointer { ptr in
@@ -361,6 +368,7 @@ extension Document {
     /// Get the length unit of this document.
     ///
     /// Returns the unit scale and name stored in the STEP file.
+    ///
     /// Common values: 1.0 = mm, 10.0 = cm, 1000.0 = m, 25.4 = inch.
     public var lengthUnit: LengthUnit? {
         var scale: Double = 0
@@ -599,6 +607,7 @@ extension Document {
     ///
     ///
     /// Format is determined by storage format.
+    ///
     /// Call `defineAllFormats()` or specific format registration before saving.
     public func saveOCAF(to path: String) -> StoreStatus {
         let raw = OCCTDocumentSaveOCAF(handle, path)
@@ -948,32 +957,36 @@ extension Document {
     /// Add a component occurrence with a FULL placement, from a 12-element GROUPED matrix.
     ///
     /// `[r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz]`: the nine rotation values, then the three
-    /// translations. This is ``Matrix12Grouped``'s layout, not ``TransformMatrix3D``'s.
+    /// translations.
     ///
-    /// A reflection is accepted and applied, which is the opposite of what this doc comment said
+    /// This is `Matrix12Grouped`'s layout, not `TransformMatrix3D`'s.
+    ///
+    /// A reflection is accepted and applied, which is the opposite of what this doc comment said.
     /// until #1009 measured it: `gp_Trsf::SetValues` names a null determinant as its only
-    /// precondition, not orthonormality, and it is compiled inside OCCT's Release library where
-    /// that precondition is removed outright. See #174 for the original request.
+    /// precondition, not orthonormality, and it is compiled inside OCCT's Release library where.
+    /// that precondition is removed outright.
     ///
-    /// ```swift
+    /// See #174 for the original request.
+    ///
+    /// ```swift.
     /// // Mirror a part in X, then place the mirrored occurrence in an assembly.
-    /// let doc = Document.create()!
+    /// let doc = Document.create()!.
     /// let part = doc.addShape(Shape.box(width: 10, height: 10, depth: 10)!, makeAssembly: false)
-    /// let assembly = doc.newShapeLabel()
+    /// let assembly = doc.newShapeLabel().
     /// doc.addComponent(assemblyLabelId: assembly, shapeLabelId: part, matrix: [
     ///     -1, 0, 0,   // r00 r01 r02, negative determinant: a mirror in X
-    ///      0, 1, 0,   // r10 r11 r12
-    ///      0, 0, 1,   // r20 r21 r22
-    ///      0, 0, 0    // tx  ty  tz
-    /// ])
-    /// doc.updateAssemblies()
-    /// ```
+    ///      0, 1, 0,   // r10 r11 r12.
+    ///      0, 0, 1,   // r20 r21 r22.
+    ///      0, 0, 0    // tx  ty  tz.
+    /// ]).
+    /// doc.updateAssemblies().
+    /// ```.
     ///
     /// - Parameters:
     ///   - assemblyLabelId: The parent assembly label.
     ///   - shapeLabelId: The shape to instantiate.
     ///   - matrix: Twelve doubles in GROUPED order.
-    /// - Returns: The component label id, or -1 if `matrix` does not hold exactly twelve values or
+    /// - Returns: The component label id, or -1 if matrix does not hold exactly twelve values or
     ///   the component could not be created.
     @discardableResult
     public func addComponent(assemblyLabelId: Int64, shapeLabelId: Int64, matrix: [Double]) -> Int64
@@ -1053,7 +1066,7 @@ extension Document {
 
     /// Get color for a shape (not by label).
     ///
-    /// `alpha` reflects the real stored value (#763), a shape colored via.
+    /// alpha reflects the real stored value (#763), a shape colored via.
     /// ``setShapeColor(_:color:type:)`` or imported from a file with a transparent surface style.
     /// reports its actual alpha, rather than always 1.0.
     /// - shape: The shape to query.
@@ -1279,8 +1292,8 @@ extension Document {
     /// Create a new directory attribute on a label.
     ///
     /// - Parameter labelTag: Label child tag (0 = main label).
-    /// - Returns: `true` when a `TDataStd_Directory` attribute was created on the
-    ///   label; `false` if OCCT returned a null handle or raised.
+    /// - Returns: true when a TDataStd_Directory attribute was created on the
+    ///   label; false if OCCT returned a null handle or raised.
     @discardableResult
     public func createDirectory(at labelTag: Int = 0) -> Bool {
         OCCTDocumentDirectoryNew(handle, Int32(labelTag))
@@ -1474,8 +1487,8 @@ extension Document {
 
     /// Count of geometric tolerance objects via XCAFDimTolObjects_Tool.
     ///
-    /// `0` when any datum attached to a tolerance is one OCCT cannot read without crashing
-    /// (#1030), which is indistinguishable from a document with no tolerances; see
+    /// 0 when any datum attached to a tolerance is one OCCT cannot read without crashing.
+    /// (#1030), which is indistinguishable from a document with no tolerances; see.
     /// `docs/reference/Annotation.md`.
     public var dimTolToolToleranceCount: Int {
         Int(OCCTDocumentDimTolToleranceCount(handle))
@@ -2072,8 +2085,8 @@ extension Document {
 
     /// The number of the currently open transaction, or 0 when none is open.
     ///
-    /// A document holds at most one transaction, so this is never greater than 1; use
-    /// `hasOpenTransaction` when the open/closed state is all that is wanted.
+    /// A document holds at most one transaction, so this is never greater than 1; use.
+    /// hasOpenTransaction when the open/closed state is all that is wanted.
     public var transactionNumber: Int {
         Int(OCCTDocumentGetTransactionNumber(handle))
     }
@@ -2442,13 +2455,15 @@ extension Document {
     /// Count the number of assembly items in the document.
     ///
     /// - Parameter maxDepth: Maximum traversal depth (0 = unlimited).
-    /// - Returns: The number of items `XCAFDoc_AssemblyIterator` visits, `0` if the document is
-    ///   null or OCCT raised, and `nil` when the walk hit its 100,000-item bound so the number
+    /// - Returns: The number of items XCAFDoc_AssemblyIterator visits, 0 if the document is
+    ///   null or OCCT raised, and nil when the walk hit its 100,000-item bound so the number.
     ///   would be a floor rather than a count (#964).
     ///
-    /// The bound exists because `XCAFDoc_AssemblyIterator` keeps no visited set, so a malformed
-    /// self-referencing assembly would iterate to `INT_MAX` depth. It is reported rather than
-    /// returned silently: before #964 a document with more items answered `100001`,
+    /// The bound exists because XCAFDoc_AssemblyIterator keeps no visited set, so a malformed.
+    /// self-referencing assembly would iterate to INT_MAX depth.
+    ///
+    /// It is reported rather than.
+    /// returned silently: before #964 a document with more items answered 100001,
     /// indistinguishable from one that genuinely had that many.
     public func assemblyItemCount(maxDepth: Int = 0) -> Int? {
         var truncated = false

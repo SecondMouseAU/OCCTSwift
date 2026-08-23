@@ -24,16 +24,16 @@ import simd
 // MARK: - ISO 5457 paper sizes
 
 public enum PaperSize: String, Sendable, Hashable, CaseIterable {
-    case A0, A1, A2, A3, A4
+    case a0, a1, a2, a3, a4
 
     /// ISO 5457 trimmed-sheet dimensions in mm, landscape orientation.
     public var dimensions: SIMD2<Double> {
         switch self {
-        case .A0: return SIMD2(1189, 841)
-        case .A1: return SIMD2(841, 594)
-        case .A2: return SIMD2(594, 420)
-        case .A3: return SIMD2(420, 297)
-        case .A4: return SIMD2(297, 210)
+        case .a0: return SIMD2(1189, 841)
+        case .a1: return SIMD2(841, 594)
+        case .a2: return SIMD2(594, 420)
+        case .a3: return SIMD2(420, 297)
+        case .a4: return SIMD2(297, 210)
         }
     }
 
@@ -133,14 +133,15 @@ public struct Sheet: Sendable, Hashable {
     /// Overall sheet dimensions in mm.
     public var dimensions: SIMD2<Double> { size.size(in: orientation) }
 
-    /// The drawable area inside the border (the "inner frame"). ISO 5457
-    /// specifies a 20 mm binding margin on the left and 10 mm on the other
+    /// The drawable area inside the border (the "inner frame"). ISO 5457.
+    ///
+    /// specifies a 20 mm binding margin on the left and 10 mm on the other.
     /// three edges for A0-A3; 7 mm / 7 mm / 7 mm / 10 mm for A4.
     public var inset: (left: Double, right: Double, top: Double, bottom: Double) {
         switch size {
         case .A0, .A1, .A2, .A3:
             return (left: 20, right: 10, top: 10, bottom: 10)
-        case .A4:
+        case .a4:
             return (left: 20, right: 10, top: 10, bottom: 10)
         }
     }
@@ -155,8 +156,10 @@ public struct Sheet: Sendable, Hashable {
         )
     }
 
-    /// Render the border + centring marks + title block + projection symbol
-    /// onto the writer. Uses BORDER, TITLE, TEXT, and CENTER layers.
+    /// Render the border + centring marks + title block + projection symbol.
+    /// onto the writer.
+    ///
+    /// Uses BORDER, TITLE, TEXT, and CENTER layers.
     public func render(into writer: DXFWriter) {
         let d = dimensions
         // Outer trimmed sheet edge
@@ -253,6 +256,7 @@ public struct Sheet: Sendable, Hashable {
 
 public enum ProjectionSymbol {
     /// Render a projection-angle symbol at the given 2D origin.
+    ///
     /// First-angle symbol: truncated-cone front view on the left, circle side
     ///                     view on the right.
     /// Third-angle symbol: circle side view on the left, truncated-cone front

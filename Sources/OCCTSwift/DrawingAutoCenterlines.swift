@@ -9,25 +9,31 @@ import simd
 // with a configurable overshoot.
 
 extension Drawing {
-    /// Result of auto-centreline generation, returned separately so callers can
-    /// inspect what was added without re-querying `annotations`.
+    /// Result of auto-centreline generation, returned separately so callers can.
+    /// inspect what was added without re-querying annotations.
     public struct AutoCentrelineResult: Sendable {
         public let added: [DrawingAnnotation]
         public let skipped: [ShapeAxis]  // axes that projected to a point in view
     }
 
-    /// Project the shape's axes of revolution into this drawing's view plane and
+    /// Project the shape's axes of revolution into this drawing's view plane and.
     /// add them as `.chain` centrelines.
     ///
     /// - Parameters:
     ///   - shape: The source 3D shape (typically the one this drawing was projected from).
-    ///   - viewDirection: The projection direction used to create this drawing. Pass the same
+    ///   - viewDirection: The projection direction used to create this drawing.
+    ///
+    ///   Pass the same.
     ///     vector you used for `Drawing.project(_:direction:)`; assumed unit-length.
     ///   - overshoot: Extra length (drawing units) added past the drawing bounding box on
-    ///     both ends of the projected axis. Default 5.
+    ///     both ends of the projected axis.
+    ///
+    ///     Default 5.
     ///   - tolerance: Axis-deduplication tolerance passed to `Shape.revolutionAxes`.
-    ///   - bounds: Optional override for the 2D bounding box used for clipping. When nil,
-    ///     falls back to a sensible default (±1000 square centred at origin), the caller
+    ///   - bounds: Optional override for the 2D bounding box used for clipping.
+    ///
+    ///   When nil,.
+    ///     falls back to a sensible default (±1000 square centred at origin), the caller.
     ///     should pass the drawing's actual bbox when it's known.
     /// - Returns: The added centrelines plus any axes skipped because they projected to a point.
     @discardableResult
@@ -71,11 +77,12 @@ extension Drawing {
         public let skipped: [Edge]  // edges whose circle projects edge-on
     }
 
-    /// Walk the circular edges of `shape` and add a `.centermark` at each visible circle's
+    /// Walk the circular edges of shape and add a `.centermark` at each visible circle's.
     /// projected centre.
     ///
     /// A circle is visible when its plane normal isn't parallel to the view direction.
-    /// Complements `addAutoCentrelines`, which handles revolution axes.
+    ///
+    /// Complements addAutoCentrelines, which handles revolution axes.
     @discardableResult
     public func addAutoCentermarks(
         from shape: Shape,
@@ -120,9 +127,9 @@ extension Drawing {
 // module-wide, not drawing-specific: 3 of its 5 call sites are geometry/construction code, the
 // same misplacement finding 11 fixed for the bridge-unwrap helpers this file never had.
 
-/// Project a 3D point onto the 2D plane perpendicular to `viewDirection`, using
-/// `perpendicularBasis(to:)`, the same perpendicular-axis algorithm `gp_Ax2` uses
-/// to build the `HLRAlgo_Projector` `OCCTDrawingCreate` projects this drawing's own
+/// Project a 3D point onto the 2D plane perpendicular to viewDirection, using.
+/// `perpendicularBasis(to:)`, the same perpendicular-axis algorithm gp_Ax2 uses
+/// to build the HLRAlgo_Projector OCCTDrawingCreate projects this drawing's own.
 /// edges with.
 internal func projectPointToPlane(
     _ p: SIMD3<Double>,
@@ -132,12 +139,14 @@ internal func projectPointToPlane(
     return SIMD2(simd_dot(p, right), simd_dot(p, up))
 }
 
-/// Project a 3D axis (origin + direction) into the 2D plane perpendicular to
-/// `viewDirection` and clip to the given bounds.
+/// Project a 3D axis (origin + direction) into the 2D plane perpendicular to.
+/// viewDirection and clip to the given bounds.
 ///
-/// Returns nil if the axis projects to a point (i.e. it is parallel to the view direction). The
-/// 2D coordinate frame matches `projectPointToPlane`'s: X along `perpendicularBasis(to:)`'s
-/// `right`, Y along its `up`.
+/// Returns nil if the axis projects to a point (i.e. it is parallel to the view direction).
+///
+/// The.
+/// 2D coordinate frame matches the projectPointToPlane\'s: X along `perpendicularBasis(to:)`'s
+/// right, Y along its up.
 internal func projectAxisToPlane(
     origin: SIMD3<Double>,
     direction: SIMD3<Double>,

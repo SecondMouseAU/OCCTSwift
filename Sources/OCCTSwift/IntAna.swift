@@ -95,7 +95,7 @@ public enum IntAna {
         public let points: [SIMD3<Double>]
     }
 
-    /// Intersect two planes — result is typically a line.
+    /// Intersect two planes (result is typically a line).
     public static func planePlane(
         p1Origin: SIMD3<Double>, p1Normal: SIMD3<Double>,
         p2Origin: SIMD3<Double>, p2Normal: SIMD3<Double>
@@ -108,7 +108,7 @@ public enum IntAna {
         return quadQuadResultFromC(r)
     }
 
-    /// Intersect a plane with a sphere — result is typically a circle.
+    /// Intersect a plane with a sphere (result is typically a circle).
     public static func planeSphere(
         planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>,
         sphereCenter: SIMD3<Double>, sphereAxis: SIMD3<Double>,

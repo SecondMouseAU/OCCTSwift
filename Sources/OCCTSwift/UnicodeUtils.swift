@@ -32,7 +32,7 @@ public enum UnicodeUtils {
     /// Convert from UTF-8 to current format.
     ///
     /// - Parameter maxSize: Output buffer *capacity* in bytes (default 4096), clamped into
-    ///   `0...` ``Sampling/maximumSampleCount``; 0 or less returns `nil` (#622).
+    ///   `0...` ``Sampling/maximumSampleCount``; 0 or less returns nil (#622).
     public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String? {
         let maxSize = Sampling.capacity(maxSize)
         guard maxSize > 0 else { return nil }

@@ -6,7 +6,9 @@ import simd
 public final class MeshFaceIterator: @unchecked Sendable {
     internal let handle: OCCTMeshFaceIterRef
 
-    /// Create a face iterator. The shape should already be meshed (BRepMesh_IncrementalMesh).
+    /// Create a face iterator.
+    ///
+    /// The shape should already be meshed (BRepMesh_IncrementalMesh).
     public init?(shape: Shape) {
         guard let h = OCCTMeshFaceIterCreate(shape.handle) else { return nil }
         self.handle = h

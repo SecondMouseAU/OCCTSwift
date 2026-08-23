@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// A 2D geometric point backed by `Geom2d_CartesianPoint`.
+/// A 2D geometric point backed by Geom2d_CartesianPoint.
 public final class Point2D: @unchecked Sendable {
     internal let handle: OCCTPoint2DRef
 
@@ -79,24 +79,28 @@ public final class Point2D: @unchecked Sendable {
     /// - Returns: The distance to the nearest point of the curve, or `.infinity` if there is no
     ///   curve to measure to.
     ///
-    /// Measured over the curve's own domain, ends included, so it is the true minimum rather than
-    /// the nearest perpendicular foot. A point beyond the end of a bounded curve is measured to
-    /// that end, and a circle's centre to the radius. Agrees exactly with
+    /// Measured over the curve's own domain, ends included, so it is the true minimum rather than.
+    /// the nearest perpendicular foot. A point beyond the end of a bounded curve is measured to.
+    /// that end, and a circle's centre to the radius.
+    ///
+    /// Agrees exactly with.
     /// `Curve2D.project(point:)` and `Curve2D.nearestParameter(to:)`, which share its bridge path.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// let above = Point2D(x: 5, y: 3)!
     /// #expect(abs(above.distance(to: segment) - 3) < 1e-9)
     ///
     /// let pastTheEnd = Point2D(x: 100, y: 0)!
     /// #expect(pastTheEnd.distance(to: segment) == 90)   // to the end at (10, 0)
-    /// ```
+    /// ```.
     ///
-    /// Two sentinels have been retired from this one method. It first returned the bridge's raw
-    /// `-1` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`)
-    /// read as "touching" — the opposite of the truth (#413). `.infinity` replaced it, which was
-    /// safe but still discarded a real, finite distance; #615 measures it instead. `.infinity` now
+    /// Two sentinels have been retired from this one method.
+    ///
+    /// It first returned the bridge's raw.
+    /// `-1` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`).
+    /// read as "touching". (the opposite of the truth (#413). `.infinity` replaced it, which was).
+    /// safe but still discarded a real, finite distance; #615 measures it instead. `.infinity` now.
     /// means only that the curve could not be read at all.
     public func distance(to curve: Curve2D) -> Double {
         let d = OCCTPoint2DDistanceToCurve(handle, curve.handle)

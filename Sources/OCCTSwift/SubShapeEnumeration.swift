@@ -1,8 +1,10 @@
 /// Wraps one sub-shape enumeration's handles in order, or refuses the whole enumeration.
 ///
-/// A position in a sub-shape enumeration is an ordinal, not just a place in a list, so a hole is
+/// A position in a sub-shape enumeration is an ordinal, not just a place in a list, so a hole is.
 /// not representable: skipping a missing element shifts every later one down and each then answers
-/// for its neighbour. See `docs/API_REFERENCE.md`, "Sub-Shape Extraction" (#979).
+/// for its neighbour.
+///
+/// See `docs/API_REFERENCE.md`, "Sub-Shape Extraction" (#979).
 ///
 /// - Parameters:
 ///   - handles: One optional handle per ordinal, in enumeration order.

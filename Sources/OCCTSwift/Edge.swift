@@ -16,8 +16,8 @@ public final class Edge: @unchecked Sendable {
 
     /// Construct an Edge from a Shape that wraps a TopoDS_Edge.
     ///
-    /// Returns nil
-    /// if `shape` is null or wraps a non-edge topology type.
+    /// Returns nil.
+    /// if shape is null or wraps a non-edge topology type.
     public convenience init?(_ shape: Shape) {
         guard let h = OCCTEdgeFromShape(shape.handle) else { return nil }
         self.init(handle: h)
@@ -36,8 +36,8 @@ public final class Edge: @unchecked Sendable {
 
     /// Get the bounding box of the edge.
     ///
-    /// - Returns: The box as `(min, max)` corners, or `nil` when the edge contributes no geometry
-    ///   to it (#943). A genuinely zero-length edge at the world origin returns a real all-zero
+    /// - Returns: The box as `(min, max)` corners, or nil when the edge contributes no geometry
+    ///   to it (#943). A genuinely zero-length edge at the world origin returns a real all-zero.
     ///   box: the verdict comes from OCCT's own `Bnd_Box::IsVoid()`, not from the values.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>)? {
         unwrapAxisComponentsIfSuccessful { OCCTEdgeGetBounds(handle, $0, $1, $2, $3, $4, $5) }
@@ -168,20 +168,20 @@ public final class Edge: @unchecked Sendable {
 
     /// Project a 3D point onto this edge's curve, giving the closest point on the edge.
     ///
-    /// The answer is always inside the edge's own parameter range (``parameterBounds``), and always
+    /// The answer is always inside the edge's own parameter range (`parameterBounds`), and always.
     /// the true nearest point: where the point has no perpendicular foot on the edge, the nearest
     /// point is one of its ends, and that is what comes back.
     ///
-    /// ```swift
+    /// ```swift.
     /// let edge = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!.edges()[0]
     ///
     /// let beyond = edge.project(point: SIMD3(100, 0, 0))!
-    /// #expect(beyond.point == SIMD3(8, 0, 0))   // the end of the edge
-    /// #expect(beyond.distance == 92)
-    /// ```
+    /// #expect(beyond.point == SIMD3(8, 0, 0))   // the end of the edge.
+    /// #expect(beyond.distance == 92).
+    /// ```.
     ///
-    /// Before #539 this returned `nil` for that point, because the underlying extrema search finds
-    /// no perpendicular foot there, and on an arc it could report the *far* side of the arc as the
+    /// Before #539 this returned nil for that point, because the underlying extrema search finds.
+    /// no perpendicular foot there, and on an arc it could report the *far* side of the arc as the.
     /// nearest point.
     ///
     /// - Returns: The closest point, or nil for an edge with no 3D curve to project onto.
@@ -198,24 +198,27 @@ public final class Edge: @unchecked Sendable {
     /// Shortest distance from a 3D point to this edge.
     ///
     /// A one-liner over ``project(point:)``, so it measures to the same nearest point: over the
-    /// edge's own parameter range, ends included. Returns nil only for an edge with no 3D curve
-    /// (typically a pcurve-only edge from a loft or sweep before `BuildCurves3d`).
+    /// edge's own parameter range, ends included.
+    ///
+    /// Returns nil only for an edge with no 3D curve.
+    /// (typically a pcurve-only edge from a loft or sweep before BuildCurves3d).
     public func distance(to point: SIMD3<Double>) -> Double? {
         project(point: point)?.distance
     }
 
-    /// The 3D curve underlying this edge as a standalone `Curve3D`.
+    /// The 3D curve underlying this edge as a standalone Curve3D.
     ///
-    /// Returns nil for edges with no 3D curve representation (rare, typically
-    /// pcurve-only edges from lofted / swept shapes before `BuildCurves3d`).
-    /// Internally the returned curve is a `Geom_TrimmedCurve` over the edge's
-    /// parameter range, so consumers get a finite handle even when the
+    /// Returns nil for edges with no 3D curve representation (rare, typically.
+    /// pcurve-only edges from lofted / swept shapes before BuildCurves3d).
+    ///
+    /// Internally the returned curve is a Geom_TrimmedCurve over the edge's.
+    /// parameter range, so consumers get a finite handle even when the.
     /// underlying geometry is an unbounded line or circle.
     ///
     /// Use cases:
-    /// - Extract `CircleProperties` from a circular edge via `curve3D?.circleProperties`
-    /// - Emit native DXF `CIRCLE` / `LINE` entities instead of tessellated polylines
-    /// - Feed edge geometry into parametric sampling / analysis pipelines
+    /// - Extract CircleProperties from a circular edge via `curve3D?.circleProperties`.
+    /// - Emit native DXF CIRCLE / LINE entities instead of tessellated polylines.
+    /// - Feed edge geometry into parametric sampling / analysis pipelines.
     public var curve3D: Curve3D? {
         guard let ref = OCCTEdgeGetCurve3D(handle) else { return nil }
         return Curve3D(handle: ref)
@@ -225,8 +228,10 @@ public final class Edge: @unchecked Sendable {
 
     /// Get points along the edge curve.
     /// - Parameter count: Number of points to generate (default: automatic based on length),
-    ///   honoured within `2`...``Sampling/maximumSampleCount``; outside that range the result
-    ///   is empty (#558). The automatic default is bounded too: a long enough edge implies more
+    ///   honoured within 2...``Sampling/maximumSampleCount``; outside that range the result.
+    ///   is empty (#558).
+    ///
+    ///   The automatic default is bounded too: a long enough edge implies more
     ///   points at 0.5mm spacing than the ceiling can serve.
     /// - Returns: Array of 3D points along the edge
     public func points(count: Int? = nil) -> [SIMD3<Double>] {
@@ -269,12 +274,15 @@ extension Shape {
     /// ``edges()``/``edge(at:)`` walk.
     ///
     /// An edge reachable from two adjacent faces is counted once here, not once per face: a plain
-    /// box has 12 edges by this count even though every one of them borders two faces. See
-    /// ``edges()`` for the identity rule this follows and why it does not need an
+    /// box has 12 edges by this count even though every one of them borders two faces.
+    ///
+    /// See.
+    /// ``edges()`` for the identity rule this follows and why it does not need an.
     /// orientation-preserving counterpart the way ``Shape/faces()`` does.
     ///
-    /// ``nbEdges`` was a second spelling of this same question, backed by a bare
-    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// `nbEdges` was a second spelling of this same question, backed by a bare.
+    ///
+    /// TopExp_Explorer occurrence walk instead of this deduplicated count, and is deprecated in.
     /// favour of this one (#651).
     public var edgeCount: Int {
         Int(OCCTShapeGetTotalEdgeCount(handle))
@@ -291,38 +299,48 @@ extension Shape {
     }
 
     /// Every **distinct** edge of this shape, in enumeration order: the same `TopExp::MapShapes`
-    /// enumeration ``edgeCount`` counts.
+    /// enumeration `edgeCount` counts.
     ///
-    /// ## Identity, not orientation
+    /// ## Identity, not orientation.
     ///
     /// Edges are distinguished the way OCCT distinguishes them for an index: by
     /// `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and **ignores
-    /// orientation**. An edge reachable from two owners, the ordinary case of any two adjacent
-    /// faces on one solid, collapses to a single entry here, carrying whichever orientation was
+    /// orientation**.
+    ///
+    /// An edge reachable from two owners, the ordinary case of any two adjacent.
+    /// faces on one solid, collapses to a single entry here, carrying whichever orientation was.
     /// reached first.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// print(box.edges().count)    // 12: the distinct, addressable edges
     /// print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_ShapeContents
-    /// ```
+    /// ```.
     ///
-    /// Unlike ``Shape/faces()``, this collapse is **not** a defect (#638, following #614's own
-    /// method rather than assuming the analogy holds). #614 was a defect because
-    /// `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes
-    /// the answer. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and
+    /// Unlike ``Shape/faces()``, this collapse is **not** a defect (#638, following #614's own.
+    /// method rather than assuming the analogy holds). #614 was a defect because.
+    /// `Face.normal(atU:v:)` reverses on TopAbs_REVERSED, so a face's stored orientation changes
+    /// the answer.
+    ///
+    /// Edge has no such consumer: it exposes no `.orientation` accessor at all, and
     /// every geometric query on it, ``Edge/tangent(at:)``, ``Edge/point(at:)``,
-    /// ``Edge/parameterBounds``, ``Edge/curvature(at:)``, reads the edge's underlying `Geom_Curve`
-    /// through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A
-    /// bridge-wide audit found no site that derives an orientation-dependent answer from an edge
-    /// obtained here; the one edge-orientation branch in the bridge
-    /// (`occtSampleWirePoints`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the
-    /// wire it samples, not from an edge this method returns. If a future `Edge.orientation`
-    /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming
-    /// the collapse is still safe. See `Scripts/repro/cluster-a-subshape-enumeration/`.
+    /// ``Edge/parameterBounds``, ``Edge/curvature(at:)``, reads the edge's underlying Geom_Curve
+    /// through `BRep_Tool::Curve`, which is defined independently of TopAbs_Orientation. A
+    /// bridge-wide audit found no site that derives an orientation-dependent answer from an edge.
+    /// obtained here; the one edge-orientation branch in the bridge.
+    /// (occtSampleWirePoints) reads orientation fresh off a BRepTools_WireExplorer walk of the.
+    /// wire it samples, not from an edge this method returns.
+    ///
+    /// If a future `Edge.orientation`.
+    /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming.
+    /// the collapse is still safe.
+    ///
+    /// See `Scripts/repro/cluster-a-subshape-enumeration/`.
     ///
     /// - Returns: Every distinct edge, so `edges()[k].index == k`, or an empty array if any edge
-    ///   could not be built. Never a short array, which would shift every later ordinal (#979).
+    ///   could not be built.
+    ///
+    ///   Never a short array, which would shift every later ordinal (#979).
     public func edges() -> [Edge] {
         // Each element is already an owning Edge, so discarding one releases its handle and the
         // enumeration helper has nothing of its own to release.
@@ -348,7 +366,7 @@ extension Edge {
 
     /// Whether this edge is a seam edge on the given face.
     ///
-    /// A seam edge appears twice on a face with different orientations
+    /// A seam edge appears twice on a face with different orientations.
     /// (e.g., the seam of a cylindrical face).
     ///
     /// - Parameter face: The face to check against
@@ -359,24 +377,35 @@ extension Edge {
 
     /// Get the faces adjacent to this edge within the given shape.
     ///
-    /// Most interior edges have exactly 2 adjacent faces. Boundary edges have 1.
+    /// Most interior edges have exactly 2 adjacent faces.
     ///
-    /// **Reports at most two, even where more bound the edge** (#777). An edge can bound three or
-    /// more faces in a compound whose solids share a face, and this returns whichever two the
+    /// Boundary edges have 1.
+    ///
+    /// **Reports at most two, even where more bound the edge** (#777).
+    ///
+    /// An edge can bound three or.
+    /// more faces in a compound whose solids share a face, and this returns whichever two the.
     /// underlying `TopExp::MapShapesAndAncestors` list holds first, with no signal that it
-    /// truncated. Measured on two solids sharing one cut face: each of the four shared edges is
-    /// bounded by four face occurrences, three distinct under `IsSame`, and this hands back two
-    /// `Face` values.
+    /// truncated.
+    ///
+    /// Measured on two solids sharing one cut face: each of the four shared edges is
+    /// bounded by four face occurrences, three distinct under IsSame, and this hands back two.
+    ///
+    /// Face values.
     ///
     /// ``Shape/adjacentFaces(forEdge:)`` sees more of them, and is not a complete answer either:
-    /// it walks `MapShapesAndUniqueAncestors` through an `IsSame`-keyed map, so it reports the
-    /// three DISTINCT faces rather than the four occurrences, and it caps at 64 with no signal
-    /// when it truncates. Neither entry point can currently report an occurrence set. Tracked as
+    /// it walks MapShapesAndUniqueAncestors through an IsSame-keyed map, so it reports the.
+    /// three DISTINCT faces rather than the four occurrences, and it caps at 64 with no signal.
+    /// when it truncates.
+    ///
+    /// Neither entry point can currently report an occurrence set.
+    ///
+    /// Tracked as.
     /// #1087.
     ///
     /// - Parameter shape: The shape containing this edge
     /// - Returns: Tuple of (face1, face2) where face2 may be nil for boundary edges,
-    ///   or nil if the edge has no adjacent faces
+    ///   or nil if the edge has no adjacent faces.
     public func adjacentFaces(in shape: Shape) -> (Face, Face?)? {
         var face1: OCCTFaceRef?
         var face2: OCCTFaceRef?
@@ -389,7 +418,7 @@ extension Edge {
 
     /// Compute the dihedral angle between two faces at this edge.
     ///
-    /// The dihedral angle is measured between the face normals at the specified
+    /// The dihedral angle is measured between the face normals at the specified.
     /// parameter along the edge curve.
     ///
     /// - Parameters:
@@ -421,7 +450,7 @@ extension Edge {
 
     /// Approximate this edge's curve as a BSpline curve.
     ///
-    /// Uses Approx_Curve3d to convert the edge's underlying curve (any type)
+    /// Uses Approx_Curve3d to convert the edge's underlying curve (any type).
     /// into a BSpline representation with controlled tolerance and degree.
     ///
     /// - Parameters:
@@ -582,18 +611,20 @@ extension Edge {
     ///
     /// The first parameter is always the start of the edge and the last is always its end.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
     ///     let params = edge.quasiUniformParameters(count: 10)
-    ///     #expect(params.count == 10)
-    /// }
-    /// ```
+    ///     #expect(params.count == 10).
+    /// }.
+    /// ```.
     ///
     /// - Parameter count: Desired number of sample points, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). Shares
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    ///
+    ///   Shares.
     ///   the contract of ``Curve3D/quasiUniformParameters(count:)``, which wraps the same
-    ///   `GCPnts_QuasiUniformAbscissa` for the standalone-curve case.
-    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
+    ///   GCPnts_QuasiUniformAbscissa for the standalone-curve case.
+    /// - Returns: Array of parameter values, never more than count of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
         guard let count = Sampling.requested(count) else { return [] }
         var params = [Double](repeating: 0, count: count)
@@ -625,11 +656,11 @@ extension Edge {
 extension Edge {
     /// Compute curve linear inertia (length and center of mass).
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
-    /// e.curveInertia.length          // 10
-    /// e.curveInertia.centerOfMass    // (5,0,0)
-    /// ```
+    /// e.curveInertia.length          // 10.
+    /// e.curveInertia.centerOfMass    // (5,0,0).
+    /// ```.
     public var curveInertia: CurveInertia {
         let r = OCCTBRepGPropCinert(handle)
         return CurveInertia(

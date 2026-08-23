@@ -15,20 +15,22 @@
 
 /// Unpacks a flat, tightly-packed `(x0,y0,z0, x1,y1,z1, ...)` buffer into `[SIMD3<Scalar>]`.
 ///
-/// `count` is the number of `SIMD3` elements to read, always the *actual* number of valid
-/// entries in `buffer` (typically a bridge call's own returned/written count), never a
-/// requested or upper-bound count. Passing a requested count for a buffer a bridge call only
+/// count is the number of SIMD3 elements to read, always the *actual* number of valid.
+/// entries in buffer (typically a bridge call's own returned/written count), never a.
+/// requested or upper-bound count.
+///
+/// Passing a requested count for a buffer a bridge call only.
 /// partially filled would read stale or uninitialized entries past the true written range.
 ///
-/// Works for any random-access, `Int`-indexed buffer of a SIMD-compatible scalar, a plain
-/// `[Double]`/`[Float]` array, or an `UnsafeBufferPointer`/`UnsafeMutableBufferPointer` obtained
+/// Works for any random-access, Int-indexed buffer of a SIMD-compatible scalar, a plain.
+/// `[Double]`/`[Float]` array, or an UnsafeBufferPointer/UnsafeMutableBufferPointer obtained.
 /// from `withUnsafe(Mutable)BufferPointer`.
 ///
-/// ```swift
+/// ```swift.
 /// let flat: [Double] = [1, 2, 3, 4, 5, 6]
 /// let points = unpackSIMD3(flat, count: 2)
-/// #expect(points == [SIMD3(1, 2, 3), SIMD3(4, 5, 6)])
-/// ```
+/// #expect(points == [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]).
+/// ```.
 internal func unpackSIMD3<Buffer: RandomAccessCollection, Scalar>(
     _ buffer: Buffer, count: Int
 ) -> [SIMD3<Scalar>] where Buffer.Element == Scalar, Buffer.Index == Int, Scalar: SIMDScalar {
@@ -46,7 +48,7 @@ internal func unpackSIMD3<Buffer: RandomAccessCollection, Scalar>(
 // the #914 review, finding 11, module-wide, not ShapeAxis-specific, and this is this project's
 // designated home for exactly this duplication class, #419)
 
-/// Reads an origin/direction pair from a six-`Double`-out-param `OCCT*Axis`-shaped bridge call,
+/// Reads an origin/direction pair from a six-Double-out-param `OCCT*Axis`-shaped bridge call,.
 /// given as a closure already bound to the caller's own handle.
 /// - Returns: element 0 is origin, element 1 is direction, by position; the caller's own
 ///   declared return type supplies whatever labels it wants.
@@ -66,7 +68,7 @@ func unwrapAxisComponents(
     return (SIMD3(px, py, pz), SIMD3(dx, dy, dz))
 }
 
-/// Reads a point or direction from a three-`Double`-out-param bridge call, given as a closure
+/// Reads a point or direction from a three-Double-out-param bridge call, given as a closure.
 /// already bound to the caller's own handle and any other arguments.
 func unwrapVectorComponents(
     _ bridgeCall: (
@@ -80,11 +82,12 @@ func unwrapVectorComponents(
     return SIMD3(x, y, z)
 }
 
-/// The `unwrapVectorComponents(_:)` sibling for a three-`Double`-out-param bridge call that
-/// reports success/failure through its own `Bool` return, rather than always writing a value,
-/// `nil` on failure, matching every call site's existing `guard ... else { return nil }` idiom
-/// (#899 covered the always-succeeds shape; this one was still hand-rolled at 8 call sites across
-/// `Curve3D`/`Surface`, found in the #914 review, finding 10).
+/// The `unwrapVectorComponents(_:)` sibling for a three-Double-out-param bridge call that
+/// reports success/failure through its own Bool return, rather than always writing a value,.
+/// nil on failure, matching every call site's existing `guard ... else { return nil }` idiom.
+/// (#899 covered the always-succeeds shape; this one was still hand-rolled at 8 call sites across.
+///
+/// Curve3D/Surface, found in the #914 review, finding 10).
 func unwrapVectorComponentsIfSuccessful(
     _ bridgeCall: (
         UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>, UnsafeMutablePointer<Double>
@@ -97,12 +100,12 @@ func unwrapVectorComponentsIfSuccessful(
     return SIMD3(x, y, z)
 }
 
-/// The `unwrapAxisComponents(_:)` sibling for a six-`Double`-out-param bridge call that reports
-/// success/failure through its own `Bool` return.
+/// The `unwrapAxisComponents(_:)` sibling for a six-Double-out-param bridge call that reports
+/// success/failure through its own Bool return.
 ///
 /// The bounding-box entry points are the reason this exists: a void box and a genuinely zero-size
-/// box at the world origin write the same six zeros, so the values cannot carry the distinction
-/// and only the `Bool` can (#943). `nil` on failure, matching every call site's existing
+/// box at the world origin write the same six zeros, so the values cannot carry the distinction.
+/// and only the Bool can (#943). nil on failure, matching every call site's existing.
 /// `guard ... else { return nil }` idiom.
 /// - Returns: element 0 is the low corner (or origin), element 1 the high corner (or direction),
 ///   by position; the caller's own declared return type supplies whatever labels it wants.

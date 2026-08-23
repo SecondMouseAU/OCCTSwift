@@ -2,14 +2,16 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Configuration for a rendering Z-layer that controls depth testing, polygon offset,
+/// Configuration for a rendering Z-layer that controls depth testing, polygon offset,.
 /// and other render-pass properties.
 ///
-/// Wraps OCCT's `Graphic3d_ZLayerSettings`. In a Metal renderer, these settings map to:
-/// - `MTLDepthStencilDescriptor` (depth test/write)
-/// - Depth attachment `loadAction` (clear depth)
-/// - `setDepthBias()` on `MTLRenderCommandEncoder` (polygon offset)
-/// - Render pass ordering (layer priority)
+/// Wraps OCCT's Graphic3d_ZLayerSettings.
+///
+/// In a Metal renderer, these settings map to:
+/// - MTLDepthStencilDescriptor (depth test/write).
+/// - Depth attachment loadAction (clear depth).
+/// - `setDepthBias()` on MTLRenderCommandEncoder (polygon offset).
+/// - Render pass ordering (layer priority).
 public final class ZLayerSettings: @unchecked Sendable {
     internal let handle: OCCTZLayerSettingsRef
 
@@ -42,8 +44,8 @@ public final class ZLayerSettings: @unchecked Sendable {
     /// Polygon offset parameters for depth bias.
     ///
     /// Maps to Metal's `setDepthBias(depthBias:slopeScale:clamp:)` on the render encoder.
-    /// - `factor` corresponds to `slopeScale`
-    /// - `units` corresponds to `depthBias`
+    /// - factor corresponds to slopeScale.
+    /// - units corresponds to depthBias.
     public struct PolygonOffset: Sendable {
         public var mode: PolygonOffsetMode
         public var factor: Float
@@ -80,7 +82,7 @@ public final class ZLayerSettings: @unchecked Sendable {
 
     /// Whether to clear the depth buffer before rendering this layer.
     ///
-    /// In Metal, this maps to `loadAction = .clear` on the depth attachment
+    /// In Metal, this maps to `loadAction = .clear` on the depth attachment.
     /// for the layer's render pass.
     public var clearDepth: Bool {
         get { OCCTZLayerSettingsGetClearDepth(handle) }
@@ -116,7 +118,7 @@ public final class ZLayerSettings: @unchecked Sendable {
 
     /// Set a minimal negative depth offset (factor=1, units=-1).
     ///
-    /// Useful for pulling coplanar geometry slightly toward the camera
+    /// Useful for pulling coplanar geometry slightly toward the camera.
     /// (e.g., wireframe overlay on shaded geometry).
     public func setDepthOffsetNegative() {
         OCCTZLayerSettingsSetDepthOffsetNegative(handle)
@@ -153,6 +155,7 @@ public final class ZLayerSettings: @unchecked Sendable {
     /// Distance-based culling threshold.
     ///
     /// Objects farther than this distance from the camera origin are culled.
+    ///
     /// A very large value (default) disables distance culling.
     public var cullingDistance: Double {
         get { OCCTZLayerSettingsGetCullingDistance(handle) }
@@ -162,6 +165,7 @@ public final class ZLayerSettings: @unchecked Sendable {
     /// Size-based culling threshold.
     ///
     /// Objects smaller than this screen-space size are culled.
+    ///
     /// A very large value (default) disables size culling.
     public var cullingSize: Double {
         get { OCCTZLayerSettingsGetCullingSize(handle) }
@@ -172,8 +176,8 @@ public final class ZLayerSettings: @unchecked Sendable {
 
     /// Layer origin for coordinate precision in large scenes.
     ///
-    /// When working with very large coordinates (e.g., geospatial), setting
-    /// a layer origin near the camera avoids floating-point precision issues
+    /// When working with very large coordinates (e.g., geospatial), setting.
+    /// a layer origin near the camera avoids floating-point precision issues.
     /// in the model-view matrix.
     public var origin: SIMD3<Double> {
         get {

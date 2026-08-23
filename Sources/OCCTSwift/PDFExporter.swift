@@ -209,7 +209,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         }
     }
 
-    /// Build the content stream — this is the PDF painting program that
+    /// Build the content stream (this is the PDF painting program that).
     /// renders all staged entities in layer order.
     private func buildContentStream() -> String {
         var s = ""
@@ -330,7 +330,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         return s
     }
 
-    /// Arc from startDeg to endDeg, split into cubic-Bézier chunks of at
+    /// Arc from startDeg to endDeg, split into cubic-Bézier chunks of at.
     /// most 90° each.
     private static func arcPath(
         centre: SIMD2<Double>, radius: Double,

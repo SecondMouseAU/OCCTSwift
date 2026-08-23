@@ -219,7 +219,9 @@ extension ChamferBuilder {
         OCCTChamferBuilderSimulate(handle, Int32(contour))
     }
 
-    /// Get the number of simulated surfaces for a contour (1-based). Call after simulate.
+    /// Get the number of simulated surfaces for a contour (1-based).
+    ///
+    /// Call after simulate.
     public func simulatedSurfaceCount(contour: Int) -> Int {
         Int(OCCTChamferBuilderNbSurf(handle, Int32(contour)))
     }

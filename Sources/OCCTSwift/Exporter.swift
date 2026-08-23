@@ -3,36 +3,36 @@ import OCCTBridge
 
 /// Export shapes to various file formats.
 ///
-/// ## Supported Formats
+/// ## Supported Formats.
 ///
 /// - **STL**: Standard Tessellation Language - for 3D printing
 /// - **STEP**: Standard for Exchange of Product Data - for CAD interoperability
 ///
-/// ## STL Export
+/// ## STL Export.
 ///
-/// ```swift
+/// ```swift.
 /// let shape = Shape.box(width: 10, height: 5, depth: 3)
-/// try Exporter.writeSTL(
+/// try Exporter.writeSTL(.
 ///     shape: shape,
 ///     to: URL(fileURLWithPath: "box.stl"),
 ///     deflection: 0.05
-/// )
-/// ```
+/// ).
+/// ```.
 ///
-/// ## STEP Export
+/// ## STEP Export.
 ///
-/// ```swift
-/// try Exporter.writeSTEP(
+/// ```swift.
+/// try Exporter.writeSTEP(.
 ///     shape: trackAssembly,
 ///     to: URL(fileURLWithPath: "track.step"),
 ///     name: "TrackSection"
-/// )
-/// ```
+/// ).
+/// ```.
 public enum Exporter {
 
     // MARK: - STL Export
 
-    /// Export errors
+    /// Export errors.
     public enum ExportError: Error, LocalizedError {
         case exportFailed(String)
         case invalidPath
@@ -62,29 +62,29 @@ public enum Exporter {
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
     ///   - ascii: If true, write ASCII STL; if false, write binary (default: false)
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     ///
-    /// ## Deflection Guidelines
+    /// ## Deflection Guidelines.
     ///
-    /// | Use Case | Deflection | Notes |
-    /// |----------|------------|-------|
-    /// | Preview | 0.5 | Fast, low detail |
-    /// | FDM printing | 0.1 | Good for 0.2mm layers |
-    /// | High detail FDM | 0.05 | For 0.1mm layers |
-    /// | SLA printing | 0.02 | High detail |
+    /// | Use Case | Deflection | Notes |.
+    /// |----------|------------|-------|.
+    /// | Preview | 0.5 | Fast, low detail |.
+    /// | FDM printing | 0.1 | Good for 0.2mm layers |.
+    /// | High detail FDM | 0.05 | For 0.1mm layers |.
+    /// | SLA printing | 0.02 | High detail |.
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
+    /// ```swift.
     /// let rail = Shape.sweep(profile: railProfile, along: trackPath)
     ///
-    /// // For 3D printing
-    /// try Exporter.writeSTL(
+    /// // For 3D printing.
+    /// try Exporter.writeSTL(.
     ///     shape: rail,
     ///     to: documentsURL.appendingPathComponent("rail.stl"),
     ///     deflection: 0.05
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     public static func writeSTL(
         shape: Shape,
         to url: URL,
@@ -113,14 +113,14 @@ public enum Exporter {
     ///   - deflection: Tessellation quality
     ///
     /// - Returns: STL file data
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     ///
     /// Useful for sharing without writing to disk:
     ///
-    /// ```swift
+    /// ```swift.
     /// let data = try Exporter.stlData(shape: myShape)
     /// // Share via AirDrop, email, etc.
-    /// ```
+    /// ```.
     public static func stlData(
         shape: Shape,
         deflection: Double = 0.1
@@ -142,7 +142,7 @@ public enum Exporter {
 
     /// Export a shape to STEP format for CAD interoperability.
     ///
-    /// STEP (Standard for the Exchange of Product Data) is the industry
+    /// STEP (Standard for the Exchange of Product Data) is the industry.
     /// standard format for exchanging CAD data between different software.
     ///
     /// - Parameters:
@@ -150,31 +150,31 @@ public enum Exporter {
     ///   - url: Destination file URL (should end in .step or .stp)
     ///   - name: Optional name for the shape in the STEP file
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     ///
-    /// ## Use Cases
+    /// ## Use Cases.
     ///
-    /// - Import into Fusion 360, SolidWorks, FreeCAD
-    /// - CNC machining workflows
-    /// - Archiving exact geometry (not tessellated)
+    /// - Import into Fusion 360, SolidWorks, FreeCAD.
+    /// - CNC machining workflows.
+    /// - Archiving exact geometry (not tessellated).
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// let turnout = buildTurnoutAssembly()
+    /// ```swift.
+    /// let turnout = buildTurnoutAssembly().
     ///
-    /// try Exporter.writeSTEP(
+    /// try Exporter.writeSTEP(.
     ///     shape: turnout,
     ///     to: projectURL.appendingPathComponent("turnout_8.step"),
     ///     name: "Number8Turnout"
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     ///
-    /// ## Notes
+    /// ## Notes.
     ///
-    /// - STEP preserves exact B-Rep geometry (not tessellated)
-    /// - File sizes are typically larger than STL
-    /// - Includes topological information (faces, edges, vertices)
+    /// - STEP preserves exact B-Rep geometry (not tessellated).
+    /// - File sizes are typically larger than STL.
+    /// - Includes topological information (faces, edges, vertices).
     public static func writeSTEP(
         shape: Shape,
         to url: URL,
@@ -251,7 +251,7 @@ public enum Exporter {
     ///   - name: Optional name for the shape
     ///
     /// - Returns: STEP file data
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     public static func stepData(
         shape: Shape,
         name: String? = nil
@@ -272,20 +272,20 @@ public enum Exporter {
 
     /// Export a shape to IGES format.
     ///
-    /// IGES (Initial Graphics Exchange Specification) is a legacy CAD format
+    /// IGES (Initial Graphics Exchange Specification) is a legacy CAD format.
     /// still commonly used in manufacturing and older CAD systems.
     ///
     /// - Parameters:
     ///   - shape: The shape to export
     ///   - url: Destination file URL (should end in .igs or .iges)
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     ///
-    /// ## Use Cases
+    /// ## Use Cases.
     ///
-    /// - Legacy CAD system compatibility
-    /// - CNC machines with IGES-only post processors
-    /// - Exchanging data with older software
+    /// - Legacy CAD system compatibility.
+    /// - CNC machines with IGES-only post processors.
+    /// - Exchanging data with older software.
     public static func writeIGES(
         shape: Shape,
         to url: URL
@@ -375,28 +375,32 @@ public enum Exporter {
 
     /// Export a shape to OCCT's native BREP format.
     ///
-    /// BREP is OCCT's native format for exact B-Rep geometry. Benefits:
-    /// - Preserves full precision of the geometry
-    /// - Fast read/write (no format conversion)
-    /// - Includes all topological information
-    /// - Can optionally include triangulation data
+    /// BREP is OCCT's native format for exact B-Rep geometry.
+    ///
+    /// Benefits:
+    /// - Preserves full precision of the geometry.
+    /// - Fast read/write (no format conversion).
+    /// - Includes all topological information.
+    /// - Can optionally include triangulation data.
     ///
     /// - Parameters:
     ///   - shape: The shape to export
     ///   - url: Destination file URL (should end in .brep)
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
-    ///   - allowInvalid: When `true`, skip the `shape.isValid` pre-check and
-    ///     serialize the shape as-is. BREP is OCCT's lossless native format and
+    ///   - allowInvalid: When true, skip the `shape.isValid` pre-check and
+    ///     serialize the shape as-is. BREP is OCCT's lossless native format and.
     ///     `BRepTools::Write` does not require a topologically valid shape, so an
-    ///     in-progress reconstruction (a compound of loose analytic faces, possibly
-    ///     with a few invalid faces) can be persisted and later loaded for
-    ///     measurement / diagnostics. Defaults to `false` (the validity gate,
+    ///     in-progress reconstruction (a compound of loose analytic faces, possibly.
+    ///     with a few invalid faces) can be persisted and later loaded for.
+    ///     measurement / diagnostics.
+    ///
+    ///     Defaults to false (the validity gate,.
     ///     matching the other exporters).
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 20, depth: 30)
     /// try Exporter.writeBREP(shape: box, to: URL(fileURLWithPath: "/tmp/box.brep"))
     ///
@@ -404,13 +408,13 @@ public enum Exporter {
     /// try Exporter.writeBREP(shape: partialCompound,
     ///                        to: URL(fileURLWithPath: "/tmp/wip.brep"),
     ///                        allowInvalid: true)
-    /// ```
+    /// ```.
     ///
-    /// ## Use Cases
+    /// ## Use Cases.
     ///
-    /// - Fast caching of intermediate geometry results
-    /// - Debugging geometry issues
-    /// - Archiving exact geometry for later processing
+    /// - Fast caching of intermediate geometry results.
+    /// - Debugging geometry issues.
+    /// - Archiving exact geometry for later processing.
     public static func writeBREP(
         shape: Shape,
         to url: URL,
@@ -456,7 +460,7 @@ public enum Exporter {
 
     /// Export a shape to OBJ format.
     ///
-    /// OBJ (Wavefront) is a widely supported mesh format for 3D visualization
+    /// OBJ (Wavefront) is a widely supported mesh format for 3D visualization.
     /// and modeling applications.
     ///
     /// - Parameters:
@@ -464,7 +468,7 @@ public enum Exporter {
     ///   - url: Destination file URL (should end in .obj)
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     public static func writeOBJ(
         shape: Shape,
         to url: URL,
@@ -489,7 +493,7 @@ public enum Exporter {
 
     /// Export a shape to PLY format (Stanford Polygon Format).
     ///
-    /// PLY is a simple mesh format commonly used for 3D scanning data
+    /// PLY is a simple mesh format commonly used for 3D scanning data.
     /// and point cloud applications.
     ///
     /// - Parameters:
@@ -497,7 +501,7 @@ public enum Exporter {
     ///   - url: Destination file URL (should end in .ply)
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
     ///
-    /// - Throws: `ExportError` if export fails
+    /// - Throws: ExportError if export fails
     public static func writePLY(
         shape: Shape,
         to url: URL,
@@ -571,20 +575,25 @@ public enum Exporter {
 
     // MARK: - Instanced Assembly STEP Export (#173)
 
-    /// Write an XCAF `Document` as a **product-structured STEP assembly**.
+    /// Write an XCAF Document as a **product-structured STEP assembly**.
     ///
     /// Unlike `writeSTEP(shape:to:)`, which flattens geometry, this preserves the document's
     /// assembly tree: each unique part label is written once as a STEP product
-    /// (`PRODUCT` / `PRODUCT_DEFINITION`) and is referenced by its located component
-    /// occurrences (`NEXT_ASSEMBLY_USAGE_OCCURRENCE` + each component's `TopLoc_Location`).
-    /// File size therefore scales with the number of *unique parts*, not total placements —
-    /// a part placed N times stores one `MANIFOLD_SOLID_BREP`, not N copies — and the file
-    /// opens as an editable assembly in standard CAD viewers. Component names and colors set
+    /// (PRODUCT / PRODUCT_DEFINITION) and is referenced by its located component.
+    /// occurrences (NEXT_ASSEMBLY_USAGE_OCCURRENCE + each component's TopLoc_Location).
+    ///
+    /// File size therefore scales with the number of *unique parts*, not total placements —.
+    /// a part placed N times stores one MANIFOLD_SOLID_BREP, not N copies (and the file).
+    /// opens as an editable assembly in standard CAD viewers.
+    ///
+    /// Component names and colors set.
     /// on the document are written too.
     ///
     /// Build the assembly with `Document.addShape(_:makeAssembly:)` for the part prototypes
     /// and `Document.addComponent(assemblyLabelId:shapeLabelId:matrix:)` for each full-rigid
-    /// (rotation + translation) placement, then call this. The output uses the AP214 schema,
+    /// (rotation + translation) placement, then call this.
+    ///
+    /// The output uses the AP214 schema,.
     /// matching the rest of the STEP writers.
     ///
     /// - Parameters:
@@ -604,14 +613,16 @@ public enum Exporter {
 
     /// Optimize a STEP file by merging duplicate geometric entities.
     ///
-    /// Reads a STEP file, deduplicates shared geometry (surfaces, curves, etc.),
-    /// and writes the optimized result. This can significantly reduce file size
+    /// Reads a STEP file, deduplicates shared geometry (surfaces, curves, etc.),.
+    /// and writes the optimized result.
+    ///
+    /// This can significantly reduce file size.
     /// for models with repeated geometry.
     ///
     /// - Parameters:
     ///   - input: URL of the input STEP file
     ///   - output: URL for the optimized output STEP file
-    /// - Throws: `ExportError` if optimization fails
+    /// - Throws: ExportError if optimization fails
     public static func optimizeSTEP(input: URL, output: URL) throws {
         let inPath = input.path
         let outPath = output.path
@@ -728,13 +739,15 @@ extension Shape {
     ///   - url: Destination file URL
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
-    ///   - allowInvalid: Skip the `isValid` pre-check and serialize as-is
-    ///     (default: false). See ``Exporter/writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)``.
+    ///   - allowInvalid: Skip the isValid pre-check and serialize as-is
+    ///     (default: false).
     ///
-    /// ```swift
+    ///     See ``Exporter/writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)``.
+    ///
+    /// ```swift.
     /// let box = Shape.box(width: 10, height: 20, depth: 30)
     /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
-    /// ```
+    /// ```.
     public func writeBREP(
         to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
         allowInvalid: Bool = false
@@ -781,7 +794,9 @@ extension Exporter {
     /// - Parameters:
     ///   - shape: Shape to export (will be meshed internally).
     ///   - url: Output file URL (.gltf or .glb).
-    ///   - binary: If true, writes binary GLB. If false, writes text GLTF.
+    ///   - binary: If true, writes binary GLB.
+    ///
+    ///   If false, writes text GLTF.
     ///   - deflection: Mesh deflection tolerance.
     public static func writeGLTF(
         shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1

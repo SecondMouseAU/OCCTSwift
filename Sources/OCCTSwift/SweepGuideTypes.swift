@@ -3,13 +3,13 @@ import OCCTBridge
 import simd
 
 /// Shared marshaling for `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`: both call a
-/// bridge `D0` function of the same `(ref, param, 9x double*) -> Bool` shape and pack the same
+/// bridge D0 function of the same `(ref, param, 9x double*) -> Bool` shape and pack the same.
 /// tangent/normal/binormal triple, differing only in which bridge function they call (#796).
 ///
 /// Returns a bare, unlabeled tuple, not `(tangent:, normal:, binormal:)`, so both callers' own
-/// declared return types supply whatever labels they want directly, the same reasoning
+/// declared return types supply whatever labels they want directly, the same reasoning.
 /// `unwrapAxisComponents(_:)` (`ShapeAxis.swift`) was given in #903/#904 (#908): a labeled source
-/// tuple does not implicitly convert into a differently-labeled destination, even when every
+/// tuple does not implicitly convert into a differently-labeled destination, even when every.
 /// caller today happens to agree on the same labels.
 private func evaluateGuideTrihedronD0<Ref>(
     _ ref: Ref, param: Double,

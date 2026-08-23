@@ -35,7 +35,7 @@ public enum DXFError: Error, LocalizedError {
 }
 
 extension Exporter {
-    /// Export a `Drawing` (HLR projection + optional dimensions/annotations) to DXF R12.
+    /// Export a Drawing (HLR projection + optional dimensions/annotations) to DXF R12.
     public static func writeDXF(
         drawing: Drawing, to url: URL,
         deflection: Double = 0.1
@@ -45,7 +45,7 @@ extension Exporter {
         try writer.write(to: url)
     }
 
-    /// Convenience: project the shape along `viewDirection` and export the projection as DXF.
+    /// Convenience: project the shape along viewDirection and export the projection as DXF.
     public static func writeDXF(
         shape: Shape, to url: URL,
         viewDirection: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -58,7 +58,9 @@ extension Exporter {
     }
 }
 
-/// Pure-Swift DXF R12 ASCII writer. Public so callers can stage entities manually
+/// Pure-Swift DXF R12 ASCII writer.
+///
+/// Public so callers can stage entities manually.
 /// (useful for tests and for scripts that compose DXFs from mixed sources).
 public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public let deflection: Double
@@ -115,16 +117,24 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         texts.append((position, text, height, rotationDeg, layer))
     }
 
-    /// Emit a single pre-built dimension as exploded LINE + TEXT entities. Useful for tests
-    /// and for scripts that compose drawings from dimension values without going through a
-    /// `Drawing`. Routes through the shared `DrawingDispatch.swift` dispatcher
-    /// (`emitDimension`), the same as `PDFWriter`/`SVGWriter` -- see #795: this used to be a
-    /// completely separate, independently hand-written pipeline (`emitLinear`/`emitRadial`/
-    /// `emitDiameter`/`emitAngular`/`emitOrdinate`, plus its own `formatTolerance`/
-    /// `TolerancedLabel`, byte-for-byte identical to `DrawingDispatch.swift`'s own private
-    /// copies), kept apart out of caution that DXF's entities might need a different
-    /// intermediate representation. They don't: `DXFWriter` already implements the same five
-    /// primitives `PDFWriter`/`SVGWriter` route through `DrawingPrimitiveOps`, so it gets the
+    /// Emit a single pre-built dimension as exploded LINE + TEXT entities.
+    ///
+    /// Useful for tests.
+    /// and for scripts that compose drawings from dimension values without going through a.
+    ///
+    /// Drawing.
+    ///
+    /// Routes through the shared `DrawingDispatch.swift` dispatcher.
+    /// (emitDimension), the same as PDFWriter/SVGWriter -- see #795: this used to be a
+    /// completely separate, independently hand-written pipeline (emitLinear/emitRadial/.
+    /// emitDiameter/emitAngular/emitOrdinate, plus its own formatTolerance/.
+    ///
+    /// TolerancedLabel, byte-for-byte identical to `DrawingDispatch.swift`'s own private.
+    /// copies), kept apart out of caution that DXF's entities might need a different.
+    /// intermediate representation.
+    ///
+    /// They don't: DXFWriter already implements the same five
+    /// primitives PDFWriter/SVGWriter route through DrawingPrimitiveOps, so it gets the.
     /// identical dispatch for free.
     public func addDimension(_ d: DrawingDimension) {
         emitDimension(d, into: primitiveOps())
@@ -140,8 +150,8 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     // identical logic calling `self.addX` directly instead of through the shared `ops`
     // bundle. #795.
 
-    /// Collect a `Drawing`'s edges, annotations and dimensions onto this writer, optionally
-    /// translated and uniformly scaled -- the shared collection pipeline every 2D exporter
+    /// Collect a the Drawing\'s edges, annotations and dimensions onto this writer, optionally.
+    /// translated and uniformly scaled -- the shared collection pipeline every 2D exporter.
     /// (PDF, SVG, DXF) uses.
     public func collectFromDrawing(
         _ drawing: Drawing,
@@ -151,7 +161,7 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         collectDrawing(drawing, translate: translate, scale: scale, into: self)
     }
 
-    /// Collect a `TransformedDrawing` onto this writer -- convenience for multi-view sheet
+    /// Collect a TransformedDrawing onto this writer -- convenience for multi-view sheet.
     /// composition.
     public func collectFromDrawing(_ transformed: TransformedDrawing) {
         collectFromDrawing(

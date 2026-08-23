@@ -41,7 +41,7 @@ public final class ProjectionOnCurve: @unchecked Sendable {
     /// Minimum distance across all projections.
     public var lowerDistance: Double { OCCTProjOnCurveLowerDistance(ref) }
 
-    /// Parameter of the nearest projection.
+    /// Parameter       of the nearest projection.
     public var lowerParameter: Double { OCCTProjOnCurveLowerParam(ref) }
 }
 

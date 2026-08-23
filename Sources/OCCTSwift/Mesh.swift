@@ -10,17 +10,17 @@ import simd
 
 /// Enhanced parameters for controlling mesh tessellation.
 ///
-/// Use these parameters for fine-grained control over mesh quality,
+/// Use these parameters for fine-grained control over mesh quality,.
 /// especially for CAM toolpath generation or high-quality visualization.
 ///
-/// ## Example
+/// ## Example.
 ///
-/// ```swift
-/// var params = MeshParameters.default
-/// params.deflection = 0.05  // Fine mesh
-/// params.inParallel = true  // Use multiple threads
+/// ```swift.
+/// var params = MeshParameters.default.
+/// params.deflection = 0.05  // Fine mesh.
+/// params.inParallel = true  // Use multiple threads.
 /// let mesh = shape.mesh(parameters: params)
-/// ```
+/// ```.
 public struct MeshParameters: Sendable {
     /// Linear deflection for boundary edges (maximum chord deviation).
     public var deflection: Double
@@ -52,11 +52,15 @@ public struct MeshParameters: Sendable {
     /// Auto-adjust minSize based on edge size.
     public var adjustMinSize: Bool
 
-    /// Allow replacing an existing **finer** triangulation with a coarser one
-    /// (`IMeshTools_Parameters::AllowQualityDecrease`). When re-meshing an already-tessellated
-    /// shape at a different deflection, OCCT keeps the existing mesh if it's "good enough"
-    /// unless this is `true` — set it when you need the new deflection to actually take effect
-    /// (e.g. a deviation re-measure at a finer/coarser resolution). Default `false`. (#211)
+    /// Allow replacing an existing **finer** triangulation with a coarser one.
+    /// (`IMeshTools_Parameters::AllowQualityDecrease`).
+    ///
+    /// When re-meshing an already-tessellated.
+    /// shape at a different deflection, OCCT keeps the existing mesh if it's "good enough".
+    /// unless this is true (set it when you need the new deflection to actually take effect).
+    /// (e.g. a deviation re-measure at a finer/coarser resolution).
+    ///
+    /// Default false (#211).
     public var allowQualityDecrease: Bool = false
 
     /// Default mesh parameters suitable for interactive display.
@@ -98,7 +102,7 @@ public struct MeshParameters: Sendable {
 
 /// A mesh triangle with B-Rep face association and normal.
 ///
-/// Use for CAM operations that need to know which B-Rep face
+/// Use for CAM operations that need to know which B-Rep face.
 /// each triangle came from, or for per-triangle normal access.
 public struct Triangle: Sendable {
     /// Index of first vertex.
@@ -112,23 +116,25 @@ public struct Triangle: Sendable {
 
     /// Source B-Rep face index (-1 if unknown).
     ///
-    /// This allows correlating mesh triangles back to the original
+    /// This allows correlating mesh triangles back to the original.
     /// solid faces, useful for CAM operations like selective re-meshing.
     ///
-    /// It is an index into ``Shape/faces()`` — the same enumeration ``Shape/face(at:)`` and
-    /// ``Face/index`` use — so it is always addressable:
+    /// It is an index into ``Shape/faces()``. (the same enumeration ``Shape/face(at:)`` and).
+    /// ``Face/index`` use (so it is always addressable:).
     ///
-    /// ```swift
-    /// for tri in mesh.trianglesWithFaces() {
+    /// ```swift.
+    /// for tri in mesh.trianglesWithFaces() {.
     ///     if let face = shape.face(at: Int(tri.faceIndex)) {
-    ///         print("triangle on face of area \(face.area)")
-    ///     }
-    /// }
-    /// ```
+    ///         print("triangle on face of area \(face.area)").
+    ///     }.
+    /// }.
+    /// ```.
     ///
-    /// On a shape where one face is shared by two solids, that face is meshed **twice** — once per
-    /// owner, each wound so its normals point out of that owner — and both sets of triangles carry
-    /// the one index that names it. So `faceIndex` values are not unique per face, and the number
+    /// On a shape where one face is shared by two solids, that face is meshed **twice** (once per).
+    /// owner, each wound so its normals point out of that owner (and both sets of triangles carry).
+    /// the one index that names it.
+    ///
+    /// So faceIndex values are not unique per face, and the number.
     /// of distinct values can be less than the number of face occurrences meshed (#613).
     public let faceIndex: Int32
 
@@ -138,17 +144,17 @@ public struct Triangle: Sendable {
 
 /// A triangulated mesh representation of a shape.
 ///
-/// Meshes are created by tessellating a `Shape` and contain triangle data
+/// Meshes are created by tessellating a Shape and contain triangle data.
 /// suitable for visualization (SceneKit, RealityKit) or export (STL, OBJ).
 ///
-/// ## Creating a Mesh
+/// ## Creating a Mesh.
 ///
-/// ```swift
+/// ```swift.
 /// let box = Shape.box(width: 10, height: 5, depth: 3)
 /// let mesh = box.mesh(linearDeflection: 0.1)
-/// ```
+/// ```.
 ///
-/// ## Deflection Parameters
+/// ## Deflection Parameters.
 ///
 /// The quality of tessellation is controlled by deflection:
 /// - **linearDeflection**: Maximum distance between mesh and true surface (mm)
@@ -156,21 +162,21 @@ public struct Triangle: Sendable {
 ///
 /// Smaller values = more triangles = smoother appearance = larger files.
 ///
-/// | Use Case | Linear | Angular |
-/// |----------|--------|---------|
-/// | Quick preview | 0.5 | 1.0 |
-/// | Interactive display | 0.1 | 0.5 |
-/// | 3D printing (FDM) | 0.05 | 0.3 |
-/// | 3D printing (SLA) | 0.02 | 0.2 |
+/// | Use Case | Linear | Angular |.
+/// |----------|--------|---------|.
+/// | Quick preview | 0.5 | 1.0 |.
+/// | Interactive display | 0.1 | 0.5 |.
+/// | 3D printing (FDM) | 0.05 | 0.3 |.
+/// | 3D printing (SLA) | 0.02 | 0.2 |.
 ///
-/// ## Using with SceneKit
+/// ## Using with SceneKit.
 ///
-/// ```swift
-/// let geometry = mesh.sceneKitGeometry()
-/// geometry.materials = [myMaterial]
+/// ```swift.
+/// let geometry = mesh.sceneKitGeometry().
+/// geometry.materials = [myMaterial].
 /// let node = SCNNode(geometry: geometry)
-/// scene.rootNode.addChildNode(node)
-/// ```
+/// scene.rootNode.addChildNode(node).
+/// ```.
 public final class Mesh: @unchecked Sendable {
     internal let handle: OCCTMeshRef
 
@@ -180,18 +186,20 @@ public final class Mesh: @unchecked Sendable {
 
     /// Construct a Mesh directly from raw triangulation arrays.
     ///
-    /// Use this when you have vertex/index data from a mesh-domain algorithm
-    /// (decimation, smoothing, repair, remeshing, OBJ/STL/glTF import) and don't
-    /// have a B-Rep source. For meshes derived from OCCT shapes, use `Shape.mesh()`.
+    /// Use this when you have vertex/index data from a mesh-domain algorithm.
+    /// (decimation, smoothing, repair, remeshing, OBJ/STL/glTF import) and don't.
+    /// have a B-Rep source.
+    ///
+    /// For meshes derived from OCCT shapes, use `Shape.mesh()`.
     ///
     /// - Parameters:
     ///   - vertices: per-vertex positions; length is the vertex count.
     ///   - normals: optional per-vertex normals; if provided, must match `vertices.count`.
-    ///     If `nil`, per-vertex normals are computed by averaging the face normals of
+    ///     If nil, per-vertex normals are computed by averaging the face normals of.
     ///     adjacent triangles (smooth shading default).
     ///   - indices: triangle indices; length must be a multiple of 3, and each value
     ///     must be `< vertices.count`.
-    /// - Returns: `nil` if inputs are invalid (empty, mismatched normal count,
+    /// - Returns: nil if inputs are invalid (empty, mismatched normal count,
     ///   index count not divisible by 3, or any index out of bounds).
     public convenience init?(
         vertices: [SIMD3<Float>],
@@ -275,7 +283,8 @@ public final class Mesh: @unchecked Sendable {
     /// Vertex positions as array of SIMD3<Float>.
     ///
     /// Each vertex is a 3D point (x, y, z).
-    /// Array length equals `vertexCount`.
+    ///
+    /// Array length equals vertexCount.
     public var vertices: [SIMD3<Float>] {
         let count = vertexCount
         guard count > 0 else { return [] }
@@ -301,7 +310,8 @@ public final class Mesh: @unchecked Sendable {
     /// Vertex normals as array of SIMD3<Float>.
     ///
     /// Each normal is a unit vector perpendicular to the surface at that vertex.
-    /// Array length equals `vertexCount`.
+    ///
+    /// Array length equals vertexCount.
     public var normals: [SIMD3<Float>] {
         let count = vertexCount
         guard count > 0 else { return [] }
@@ -327,13 +337,14 @@ public final class Mesh: @unchecked Sendable {
     /// Triangle indices as array of UInt32.
     ///
     /// Every three consecutive indices define one triangle.
+    ///
     /// Array length equals `triangleCount * 3`.
     ///
-    /// ```swift
-    /// // Triangle 0 uses vertices at indices[0], indices[1], indices[2]
-    /// // Triangle 1 uses vertices at indices[3], indices[4], indices[5]
+    /// ```swift.
+    /// // Triangle 0 uses vertices at indices[0], indices[1], indices[2].
+    /// // Triangle 1 uses vertices at indices[3], indices[4], indices[5].
     /// // etc.
-    /// ```
+    /// ```.
     public var indices: [UInt32] {
         let count = triangleCount
         guard count > 0 else { return [] }
@@ -414,14 +425,14 @@ public final class Mesh: @unchecked Sendable {
     /// Get triangles with B-Rep face association and normals.
     ///
     /// This method provides access to per-triangle data including:
-    /// - Vertex indices
-    /// - Source B-Rep face index (for correlating with original solid)
-    /// - Per-triangle normal vector
+    /// - Vertex indices.
+    /// - Source B-Rep face index (for correlating with original solid).
+    /// - Per-triangle normal vector.
     ///
-    /// Useful for CAM operations that need to distinguish triangles
+    /// Useful for CAM operations that need to distinguish triangles.
     /// by their source face, or for custom rendering with per-triangle normals.
     ///
-    /// - Returns: Array of `Triangle` structs
+    /// - Returns: Array of Triangle structs
     public func trianglesWithFaces() -> [Triangle] {
         let count = triangleCount
         guard count > 0 else { return [] }
@@ -456,18 +467,25 @@ public final class Mesh: @unchecked Sendable {
     /// Convert this mesh to a B-Rep shape.
     ///
     /// The mesh triangles are converted to B-Rep faces and sewn together.
-    /// This is useful for performing B-Rep operations on mesh data,
+    ///
+    /// This is useful for performing B-Rep operations on mesh data,.
     /// such as boolean operations.
     ///
     /// - Note: The resulting shape is a shell/compound of planar faces.
     ///         It may not be a valid solid depending on the mesh topology.
     ///
     /// - Parameter weldTolerance: Vertex-merge tolerance used to sew adjacent triangle
-    ///   faces into a shell, in model units. This must scale with the mesh's coordinate
-    ///   magnitude — a value too small for a large-coordinate mesh leaves shared edges
-    ///   unmerged and yields an open shell. The default (`1e-6`) suits meshes around unit
-    ///   scale; raise it for large parts. Must be positive.
-    /// - Returns: A `Shape` representing the mesh geometry, or `nil` on failure
+    ///   faces into a shell, in model units.
+    ///
+    ///   This must scale with the mesh's coordinate.
+    ///   magnitude (a value too small for a large-coordinate mesh leaves shared edges).
+    ///   unmerged and yields an open shell.
+    ///
+    ///   The default (`1e-6`) suits meshes around unit.
+    ///   scale; raise it for large parts.
+    ///
+    ///   Must be positive.
+    /// - Returns: A Shape representing the mesh geometry, or nil on failure
     public func toShape(weldTolerance: Double = 1e-6) -> Shape? {
         guard let shapeHandle = OCCTMeshToShapeWithTolerance(handle, weldTolerance) else {
             return nil
@@ -485,7 +503,7 @@ public final class Mesh: @unchecked Sendable {
     /// - Parameters:
     ///   - other: The mesh to union with
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The union mesh, or `nil` on failure
+    /// - Returns: The union mesh, or nil on failure
     public func union(with other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshUnion(handle, other.handle, deflection) else {
             return nil
@@ -501,7 +519,7 @@ public final class Mesh: @unchecked Sendable {
     /// - Parameters:
     ///   - other: The mesh to subtract
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The difference mesh, or `nil` on failure
+    /// - Returns: The difference mesh, or nil on failure
     public func subtracting(_ other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshSubtract(handle, other.handle, deflection) else {
             return nil
@@ -517,7 +535,7 @@ public final class Mesh: @unchecked Sendable {
     /// - Parameters:
     ///   - other: The mesh to intersect with
     ///   - deflection: Deflection for re-meshing the result (default: 0.1)
-    /// - Returns: The intersection mesh, or `nil` on failure
+    /// - Returns: The intersection mesh, or nil on failure
     public func intersection(with other: Mesh, deflection: Double = 0.1) -> Mesh? {
         guard let resultHandle = OCCTMeshIntersect(handle, other.handle, deflection) else {
             return nil
@@ -532,21 +550,22 @@ public final class Mesh: @unchecked Sendable {
     extension Mesh {
         /// Create a SceneKit geometry from this mesh.
         ///
-        /// - Returns: An `SCNGeometry` suitable for use in a SceneKit scene
+        /// - Returns: An SCNGeometry suitable for use in a SceneKit scene
         ///
         /// The geometry includes vertex positions and normals.
+        ///
         /// Apply materials separately:
         ///
-        /// ```swift
-        /// let geometry = mesh.sceneKitGeometry()
+        /// ```swift.
+        /// let geometry = mesh.sceneKitGeometry().
         ///
-        /// let material = SCNMaterial()
-        /// material.diffuse.contents = UIColor.gray
-        /// material.metalness.contents = 0.8
-        /// geometry.materials = [material]
+        /// let material = SCNMaterial().
+        /// material.diffuse.contents = UIColor.gray.
+        /// material.metalness.contents = 0.8.
+        /// geometry.materials = [material].
         ///
         /// let node = SCNNode(geometry: geometry)
-        /// ```
+        /// ```.
         public func sceneKitGeometry() -> SCNGeometry {
             let vertexData = self.vertexData
             let normalData = self.normalData
@@ -594,7 +613,7 @@ public final class Mesh: @unchecked Sendable {
         /// Create a SceneKit node with this mesh and optional material.
         ///
         /// - Parameter material: Optional material to apply
-        /// - Returns: An `SCNNode` ready to add to a scene
+        /// - Returns: An SCNNode ready to add to a scene
         public func sceneKitNode(material: SCNMaterial? = nil) -> SCNNode {
             let geometry = sceneKitGeometry()
             if let material = material {
@@ -614,14 +633,14 @@ extension Mesh {
     ///
     /// Use with `MTLDevice.makeBuffer(bytes:length:options:)`:
     ///
-    /// ```swift
-    /// let (positions, normals, indices) = mesh.metalBufferData()
-    /// let vertexBuffer = device.makeBuffer(
+    /// ```swift.
+    /// let (positions, normals, indices) = mesh.metalBufferData().
+    /// let vertexBuffer = device.makeBuffer(.
     ///     bytes: positions.bytes,
     ///     length: positions.count,
     ///     options: .storageModeShared
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     public func metalBufferData() -> (positions: Data, normals: Data, indices: Data) {
         let vertexData = self.vertexData
         let normalData = self.normalData
@@ -648,18 +667,18 @@ extension Mesh {
         ///
         /// Use this method to display OCCT geometry in RealityKit-based viewports.
         ///
-        /// ## Example
+        /// ## Example.
         ///
-        /// ```swift
+        /// ```swift.
         /// let box = Shape.box(width: 10, height: 5, depth: 3)
         /// let mesh = box.mesh(linearDeflection: 0.1)
-        /// let meshResource = try mesh.realityKitMeshResource()
+        /// let meshResource = try mesh.realityKitMeshResource().
         ///
         /// let material = SimpleMaterial(color: .gray, isMetallic: true)
         /// let entity = ModelEntity(mesh: meshResource, materials: [material])
-        /// ```
+        /// ```.
         ///
-        /// - Returns: A `MeshResource` suitable for RealityKit
+        /// - Returns: A MeshResource suitable for RealityKit
         /// - Throws: An error if mesh generation fails
         @MainActor
         public func realityKitMeshResource() throws -> MeshResource {
@@ -693,20 +712,20 @@ extension Mesh {
         ///
         /// Convenience method that creates both the MeshResource and ModelEntity.
         ///
-        /// ## Example
+        /// ## Example.
         ///
-        /// ```swift
+        /// ```swift.
         /// let shape = Shape.cylinder(radius: 5, height: 10)
         /// let mesh = shape.mesh(linearDeflection: 0.05)
         ///
-        /// let entity = try mesh.realityKitModelEntity(
+        /// let entity = try mesh.realityKitModelEntity(.
         ///     material: SimpleMaterial(color: .blue, isMetallic: true)
-        /// )
-        /// content.add(entity)
-        /// ```
+        /// ).
+        /// content.add(entity).
+        /// ```.
         ///
         /// - Parameter material: The material to apply to the entity
-        /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
+        /// - Returns: A ModelEntity ready to add to a RealityKit scene
         /// - Throws: An error if mesh generation fails
         @MainActor
         public func realityKitModelEntity(material: RealityKit.Material) throws -> ModelEntity {
@@ -716,7 +735,7 @@ extension Mesh {
 
         /// Create a RealityKit ModelEntity with default gray metallic material.
         ///
-        /// - Returns: A `ModelEntity` ready to add to a RealityKit scene
+        /// - Returns: A ModelEntity ready to add to a RealityKit scene
         /// - Throws: An error if mesh generation fails
         @MainActor
         public func realityKitModelEntity() throws -> ModelEntity {

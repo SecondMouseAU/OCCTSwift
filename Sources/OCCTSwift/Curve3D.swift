@@ -4,7 +4,10 @@ import simd
 
 /// A 3D parametric curve backed by OpenCASCADE Handle(Geom_Curve).
 ///
-/// Mirrors the Curve2D API for 3D space. Wraps lines, circles, ellipses, arcs,
+/// Mirrors the Curve2D API for 3D space.
+///
+/// Wraps lines, circles, ellipses, arcs,.
+///
 /// BSplines, Bezier curves, and trimmed/offset curves polymorphically.
 public final class Curve3D: @unchecked Sendable {
     internal let handle: OCCTCurve3DRef
@@ -19,7 +22,7 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Properties
 
-    /// Parameter domain [first, last].
+    /// Parameter       domain [first, last].
     public var domain: ClosedRange<Double> {
         var first: Double = 0
         var last: Double = 0
@@ -107,17 +110,19 @@ public final class Curve3D: @unchecked Sendable {
     /// - Parameters:
     ///   - center: Circle centre.
     ///   - normal: Normal of the plane the circle lies in.
-    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
-    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///   - radius: Circle radius.
+    ///
+    ///   Must be `> 0`; zero and negative radii return nil.
+    /// - Returns: The circle, or nil if `radius <= 0`.
     ///
     /// `circleFromCenterNormal(center:normal:radius:)` builds the identical circle through
-    /// OCCT's `gce_MakeCirc` algorithm and enforces the same radius contract.
+    /// OCCT's gce_MakeCirc algorithm and enforces the same radius contract.
     ///
-    /// ```swift
+    /// ```swift.
     /// let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)
-    /// #expect(c != nil)
+    /// #expect(c != nil).
     /// #expect(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 0) == nil)
-    /// ```
+    /// ```.
     public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double)
         -> Curve3D?
     {
@@ -149,15 +154,15 @@ public final class Curve3D: @unchecked Sendable {
     /// produce different curves for the same input (#415).
     ///
     /// - Parameters:
-    ///   - p1: First endpoint (maps to `arcOfCircle`'s `start`).
-    ///   - pm: A point on the arc (maps to `arcOfCircle`'s `interior`).
-    ///   - p2: Second endpoint (maps to `arcOfCircle`'s `end`).
-    /// - Returns: Arc curve, or `nil` if the three points are collinear or coincident.
+    ///   - p1: First endpoint (maps to the arcOfCircle\'s start).
+    ///   - pm: A point on the arc (maps to the arcOfCircle\'s interior).
+    ///   - p2: Second endpoint (maps to the arcOfCircle\'s end).
+    /// - Returns: Arc curve, or nil if the three points are collinear or coincident.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
-    /// #expect(arc != nil)
-    /// ```
+    /// #expect(arc != nil).
+    /// ```.
     public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>)
         -> Curve3D?
     {
@@ -169,23 +174,27 @@ public final class Curve3D: @unchecked Sendable {
     /// - Parameters:
     ///   - center: Ellipse centre.
     ///   - normal: Normal of the plane the ellipse lies in.
-    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
-    ///   - minorRadius: Minor radius. Must be `> 0`.
-    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///   - majorRadius: Major radius.
+    ///
+    ///   Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0`.
+    /// - Returns: The ellipse, or nil if the radii violate that contract.
     ///
     /// `ellipseFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
-    /// ellipse through OCCT's `gce_MakeElips` algorithm and enforces the same radius contract.
+    /// ellipse through OCCT's gce_MakeElips algorithm and enforces the same radius contract.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                         majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
-    /// // minor > major, and a zero minor radius, are both rejected
+    /// #expect(e != nil).
+    /// // minor > major, and a zero minor radius, are both rejected.
     /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                         majorRadius: 5, minorRadius: 10) == nil)
     /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                         majorRadius: 10, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func ellipse(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double
@@ -204,17 +213,19 @@ public final class Curve3D: @unchecked Sendable {
     /// - Parameters:
     ///   - center: Parabola apex.
     ///   - normal: Normal of the plane the parabola lies in.
-    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
-    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///   - focal: Focal length.
+    ///
+    ///   Must be `> 0`; zero and negative focal lengths return nil.
+    /// - Returns: The parabola, or nil if `focal <= 0`.
     ///
     /// `parabolaFromCenterNormal(center:normal:focal:)` builds the identical parabola through
-    /// OCCT's `gce_MakeParab` algorithm and enforces the same focal-length contract.
+    /// OCCT's gce_MakeParab algorithm and enforces the same focal-length contract.
     ///
-    /// ```swift
+    /// ```swift.
     /// let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
-    /// #expect(p != nil)
+    /// #expect(p != nil).
     /// #expect(Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 0) == nil)
-    /// ```
+    /// ```.
     public static func parabola(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         focal: Double
@@ -233,21 +244,27 @@ public final class Curve3D: @unchecked Sendable {
     /// - Parameters:
     ///   - center: Hyperbola centre.
     ///   - normal: Normal of the plane the hyperbola lies in.
-    ///   - majorRadius: Major radius. Must be `> 0`.
-    ///   - minorRadius: Minor radius. Must be `> 0`. There is no ordering constraint between
+    ///   - majorRadius: Major radius.
+    ///
+    ///   Must be `> 0`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0`.
+    ///
+    ///   There is no ordering constraint between.
     ///     the two, unlike `ellipse(center:normal:majorRadius:minorRadius:)`.
-    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    /// - Returns: The hyperbola, or nil if either radius is `<= 0`.
     ///
     /// `hyperbolaFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
-    /// hyperbola through OCCT's `gce_MakeHypr` algorithm and enforces the same radius contract.
+    /// hyperbola through OCCT's gce_MakeHypr algorithm and enforces the same radius contract.
     ///
-    /// ```swift
+    /// ```swift.
     /// let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 8, minorRadius: 3)
-    /// #expect(h != nil)
+    /// #expect(h != nil).
     /// #expect(Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 0, minorRadius: 3) == nil)
-    /// ```
+    /// ```.
     public static func hyperbola(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double
@@ -334,17 +351,19 @@ public final class Curve3D: @unchecked Sendable {
     ///   - startTangent: Tangent vector at the first point.
     ///   - endTangent: Tangent vector at the last point.
     ///   - tolerance: Interpolation precision; also the minimum allowed distance between
-    ///     consecutive points. Defaults to `1e-6` and is honored on every call, including
-    ///     the bare 3-argument form.
-    /// - Returns: Interpolated BSpline curve, or `nil` on failure.
+    ///     consecutive points.
     ///
-    /// ```swift
+    ///     Defaults to `1e-6` and is honored on every call, including.
+    ///     the bare 3-argument form.
+    /// - Returns: Interpolated BSpline curve, or nil on failure.
+    ///
+    /// ```swift.
     /// let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 5, 5), SIMD3(10, 0, 0)]
     /// let curve = Curve3D.interpolate(points: pts,
     ///                                 startTangent: SIMD3(1, 1, 1),
     ///                                 endTangent: SIMD3(1, -1, -1),
     ///                                 tolerance: 1e-9)
-    /// ```
+    /// ```.
     public static func interpolate(
         points: [SIMD3<Double>],
         startTangent: SIMD3<Double>,
@@ -380,7 +399,7 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - BSpline Queries
 
-    /// Number of poles (control points), or `nil` if not a BSpline/Bezier.
+    /// Number of poles (control points), or nil if not a BSpline/Bezier.
     public var poleCount: Int? {
         let n = Int(OCCTCurve3DGetPoleCount(handle))
         return n > 0 ? n : nil
@@ -473,33 +492,35 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Arc length of the full curve.
     ///
-    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
-    /// is invalid or the underlying computation fails, rather than collapsing failure into a
-    /// numeric result. `totalArcLength` delegates to this and collapses failure back to `-1.0`
-    /// for source compatibility, prefer this property when you need to tell "failed" apart
+    /// This is the canonical, failure-distinguishing entry point: returns nil if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a.
+    /// numeric result. totalArcLength delegates to this and collapses failure back to `-1.0`.
+    /// for source compatibility, prefer this property when you need to tell "failed" apart.
     /// from "genuinely zero".
     ///
-    /// Backed by `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN`
-    /// intervals and then to that interval halved, quartered, ... until two successive levels
-    /// agree to 1e-9 relative. One fixed-order Gauss rule per interval is not enough wherever the
+    /// Backed by `GCPnts_AbscissaPoint::Length`, applied to each of the curve's GeomAbs_CN
+    /// intervals and then to that interval halved, quartered, ... until two successive levels.
+    /// agree to 1e-9 relative.
+    ///
+    /// One fixed-order Gauss rule per interval is not enough wherever the.
     /// speed `|C'(u)|` varies across it: a whole ellipse measured up to 1.7% long, a parabola over
-    /// `[-100, 100]` 3.1% short and a 5-point interpolation 6.0e-5 out (#603, completing #477's
+    /// `[-100, 100]` 3.1% short and a 5-point interpolation 6.0e-5 out (#603, completing #477's.
     /// per-span split). A line, a circle and a 2-pole Bezier/BSpline keep their exact closed form.
     ///
-    /// The measurement costs roughly 5x what a single quadrature did, an 8 x 3 ellipse 0.11 us to
+    /// The measurement costs roughly 5x what a single quadrature did, an 8 x 3 ellipse 0.11 us to.
     /// 3.5 us, a 200-span BSpline 89 us to 452 us; a line or circle is unchanged at 0.02 us.
     ///
-    /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so
+    /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so.
     /// trim before measuring if that is not what you want.
     ///
-    /// - Returns: Arc length in model units, or `nil` if the OCCT computation fails.
+    /// - Returns: Arc length in model units, or nil if the OCCT computation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// let path = Curve3D.interpolate(points: waypoints)!
-    /// if let total = path.length {
-    ///     let steps = Int((total / stepOver).rounded(.up))
-    /// }
-    /// ```
+    /// if let total = path.length {.
+    ///     let steps = Int((total / stepOver).rounded(.up)).
+    /// }.
+    /// ```.
     public var length: Double? {
         let l = OCCTCurve3DGetLength(handle)
         return l >= 0 ? l : nil
@@ -507,36 +528,45 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Arc length between two parameters.
     ///
-    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
-    /// is invalid or the underlying computation fails, rather than collapsing failure into a
+    /// This is the canonical, failure-distinguishing entry point: returns nil if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a.
     /// numeric result. `arcLength(from:to:)` and `arcLengthBetween(_:_:)` both delegate to this
-    /// and collapse failure back to `-1.0` for source compatibility, prefer this method when
+    /// and collapse failure back to `-1.0` for source compatibility, prefer this method when.
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
-    /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`.
+    /// Same composite integrator as `length`.
     ///
-    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
-    /// itself does not check, and answered them differently per curve type, on an interpolated
-    /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
+    /// The range may be given in either order; equal.
+    /// parameters measure 0.
+    ///
+    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report nil. OCCT
+    /// itself does not check, and answered them differently per curve type, on an interpolated.
+    ///
+    /// BSpline a NaN upper bound measured 0 and a NaN lower bound measured the curve's whole.
     /// length, neither distinguishable from a real result (#548).
     ///
     /// A finite range reaching outside the curve's domain is *not* rejected: it measures the part
-    /// of the range that lies on the curve, so a range wholly outside measures `0` and one
-    /// overhanging an end measures up to that end. A curve whose parameter domain covers a whole
+    /// of the range that lies on the curve, so a range wholly outside measures 0 and one.
+    /// overhanging an end measures up to that end. A curve whose parameter domain covers a whole.
     /// period exists at every parameter, so a *periodic* curve measures the whole range and winds:
-    /// a circle over `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers
+    /// a circle over `[0, 4π]` travels two circumferences.
+    ///
+    /// An arc trimmed from a circle covers.
     /// half a period, so it stops at its own trim (#600).
     ///
     /// - Parameters:
-    ///   - u1: Start parameter. Must be finite.
-    ///   - u2: End parameter. Must be finite.
-    /// - Returns: Arc length in model units, or `nil` if a bound is not finite or the OCCT
+    ///   - u1: Start parameter.
+    ///
+    ///   Must be finite.
+    ///   - u2: End parameter.
+    ///
+    ///   Must be finite.
+    /// - Returns: Arc length in model units, or nil if a bound is not finite or the OCCT
     ///   computation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 1)!
-    /// let d = circle.domain
+    /// let d = circle.domain.
     /// let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)  // ~= pi
     /// let two = circle.length(from: 0, to: 4 * .pi)   // ~= 4pi, two turns: the circle is periodic
     /// let bad = circle.length(from: d.lowerBound, to: .nan)                 // nil, not a number
@@ -544,7 +574,7 @@ public final class Curve3D: @unchecked Sendable {
     /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
     /// let clipped = seg.length(from: 0, to: 20)       // 10, the segment: it is not a whole line
     /// let outside = seg.length(from: 20, to: 30)      // 0, the segment is not there
-    /// ```
+    /// ```.
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
@@ -587,28 +617,31 @@ public final class Curve3D: @unchecked Sendable {
     /// Approximate the curve with a BSpline of specified continuity.
     ///
     /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve2D.approximated` and
-    /// `Surface.approximated` (#406), all three wrap the same `GeomConvert_Approx*`/
-    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// `Surface.approximated` (#406), all three wrap the same `GeomConvert_Approx*`/.
+    ///
+    /// Geom2dConvert_ApproxCurve family applied to a different OCCT geometry hierarchy, not.
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
-    /// Returns the fitted curve whenever OCCT produced one, which, per `HasResult()`, the
+    /// Returns the fitted curve whenever OCCT produced one, which, per `HasResult()`, the.
     /// accessor this shares with ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
-    /// since #491, includes a best-effort fit that did *not* reach `tolerance`. A non-nil result
-    /// is therefore not a promise that `tolerance` was met: `approxWithDetails` reports the actual
-    /// `maxError` and an `isDone` flag for that. (Gating on `IsDone()` would not have helped here;
-    /// measured against this kernel it never rejects an over-tolerance fit, a circle fitted with
-    /// one segment at degree 3 against a 1e-9 tolerance reports `maxError` 5.1 and `isDone` true.)
+    /// since #491, includes a best-effort fit that did *not* reach tolerance. A non-nil result.
+    /// is therefore not a promise that tolerance was met: approxWithDetails reports the actual
+    /// maxError and an isDone flag for that. (Gating on `IsDone()` would not have helped here;.
+    /// measured against this kernel it never rejects an over-tolerance fit, a circle fitted with.
+    /// one segment at degree 3 against a 1e-9 tolerance reports maxError 5.1 and isDone true.).
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
     /// let bspline = circle.approximated(tolerance: 1e-4)
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - tolerance: Maximum approximation error.
-    ///   - continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
-    ///     approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
-    ///     surfaces here as `nil`.
+    ///   - continuity: A `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2).
+    ///
+    ///   The.
+    ///     approximator accepts nothing stricter: AdvApprox throws for C3 and above, which
+    ///     surfaces here as nil.
     ///   - maxSegments: Maximum number of B-spline segments.
     ///   - maxDegree: Maximum polynomial degree.
     /// - Returns: The fitted curve, or nil if the approximation could not be constructed at all.
@@ -632,8 +665,10 @@ public final class Curve3D: @unchecked Sendable {
     ///   - angularDeflection: Maximum angular deviation between consecutive points, in radians.
     ///   - chordalDeflection: Maximum chordal deviation from the true curve.
     ///   - maxPoints: Output *capacity*, clamped into `0...`
-    ///     ``Sampling/maximumSampleCount`` (#558). The deflection criteria decide the actual point
-    ///     count; `maxPoints` only truncates, so clamping an unservable capacity returns the same
+    ///     ``Sampling/maximumSampleCount`` (#558).
+    ///
+    ///     The deflection criteria decide the actual point.
+    ///     count; maxPoints only truncates, so clamping an unservable capacity returns the same.
     ///     points rather than a coarser sampling. A capacity of 0 or less returns empty.
     /// - Returns: The sampled points, in curve order.
     public func drawAdaptive(
@@ -655,18 +690,22 @@ public final class Curve3D: @unchecked Sendable {
     ///
     /// The first point is always the start of the curve and the last is always its end.
     ///
-    /// ```swift
+    /// ```swift.
     /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
     /// let pts = seg.drawUniform(pointCount: 11)
-    /// // pts[5] ≈ SIMD3(5, 0, 0)
-    /// ```
+    /// // pts[5] ≈ SIMD3(5, 0, 0).
+    /// ```.
     ///
     /// - Parameter pointCount: Desired number of output points, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. This is a
-    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser
-    ///   than what was asked for (#558). Before that bound the documented "at least 2, else
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty.
+    ///
+    ///   This is a.
+    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser.
+    ///   than what was asked for (#558).
+    ///
+    ///   Before that bound the documented "at least 2, else.
     ///   empty" was only true of counts down to 0: a negative aborted the process.
-    /// - Returns: Array of 3D points, never more than `pointCount` of them, or empty on failure
+    /// - Returns: Array of 3D points, never more than pointCount of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD3<Double>] {
         guard let pointCount = Sampling.requested(pointCount) else { return [] }
         var buffer = [Double](repeating: 0, count: pointCount * 3)
@@ -694,24 +733,26 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    /// Curvature (1/radius) at parameter u, or nil where the curve has none.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The curvature, or `nil` at a parameter the curve cannot be evaluated at or where
+    /// - Returns: The curvature, or nil at a parameter the curve cannot be evaluated at or where
     ///   `GeomLProp_CLProps::IsTangentDefined()` is false, a point with no significant derivative
-    ///   of any order, such as a Bezier whose control points all coincide. This used to be `0`,
+    ///   of any order, such as a Bezier whose control points all coincide.
+    ///
+    ///   This used to be 0,.
     ///   which is also every straight curve's real curvature (#595).
     ///
     /// A **cusp** is not an absence and is still reported: OCCT calls the curvature there infinite
     /// and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which passes through as a value.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// if let k = circle.curvature(at: 0) { print(k) }   // 0.2, i.e. 1/5
     ///
     /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
     /// line.curvature(at: 3)   // 0, straight, and that is the answer, not a failure
-    /// ```
+    /// ```.
     public func curvature(at u: Double) -> Double? {
         var k = 0.0
         guard OCCTCurve3DGetCurvature(handle, u, &k) else { return nil }
@@ -735,22 +776,24 @@ public final class Curve3D: @unchecked Sendable {
         }
     }
 
-    /// Torsion at parameter `u`, the rate the curve twists out of its osculating plane, or `nil`
+    /// Torsion at parameter u, the rate the curve twists out of its osculating plane, or nil.
     /// where there is no osculating plane to twist out of.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The torsion, or `nil` at a parameter the curve cannot be evaluated at or where
-    ///   the first two derivatives are parallel (a straight stretch), so no osculating plane is
-    ///   defined. That case used to be `0`, which is also every **planar** curve's real torsion,
+    /// - Returns: The torsion, or nil at a parameter the curve cannot be evaluated at or where
+    ///   the first two derivatives are parallel (a straight stretch), so no osculating plane is.
+    ///   defined.
+    ///
+    ///   That case used to be 0, which is also every **planar** curve's real torsion,.
     ///   a circle and a straight line reported the same answer (#595).
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
     /// circle.torsion(at: 1)   // 0, planar, and that is the answer
     ///
     /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
     /// line.torsion(at: 5)     // nil, no osculating plane at all
-    /// ```
+    /// ```.
     public func torsion(at u: Double) -> Double? {
         var t = 0.0
         guard OCCTCurve3DGetTorsion(handle, u, &t) else { return nil }
@@ -779,7 +822,9 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Project this curve onto a plane along a given direction.
     ///
-    /// Uses `GeomProjLib::ProjectOnPlane`. The result is a 3D curve
+    /// Uses `GeomProjLib::ProjectOnPlane`.
+    ///
+    /// The result is a 3D curve.
     /// lying in the target plane.
     /// - Parameters:
     ///   - origin: A point on the target plane
@@ -880,31 +925,39 @@ extension Curve3D {
     ///   - other: The other curve
     ///   - maxCount: Output *capacity* (default 20), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    /// - Returns: Array of extremal distance results. Empty when the curves are parallel: OCCT
-    ///   represents that case as a single unbounded family of equidistant solutions rather than a
-    ///   finite set of point pairs, so there is no `(point1, point2)` pair to report (#636). Use
+    /// - Returns: Array of extremal distance results.
+    ///
+    /// Empty when the curves are parallel: OCCT
+    ///   represents that case as a single unbounded family of equidistant solutions rather than a.
+    ///   finite set of point pairs, so there is no `(point1, point2)` pair to report (#636).
+    ///
+    ///   Use.
     ///   ``minDistance(to:)`` to get the (well-defined) distance in that case.
     ///
-    /// An empty array therefore means one of two different things, and this method cannot tell you
-    /// which: the curves are parallel, or they simply have no extremal relationship. If you need to
-    /// distinguish them, ``extremaCC(range1:other:range2:)`` returns a `CurveCurveExtrema` carrying
-    /// `isParallel` alongside the count, from the same underlying computation.
+    /// An empty array therefore means one of two different things, and this method cannot tell you.
+    /// which: the curves are parallel, or they simply have no extremal relationship.
     ///
-    /// ```swift
+    /// If you need to.
+    /// distinguish them, ``extremaCC(range1:other:range2:)`` returns a CurveCurveExtrema carrying
+    /// isParallel alongside the count, from the same underlying computation.
+    ///
+    /// ```swift.
     /// let a = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))!
     /// let b = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0))!
     ///
     /// let pairs = a.extrema(with: b)              // [], but why?
-    /// if pairs.isEmpty {
+    /// if pairs.isEmpty {.
     ///     let info = a.extremaCC(other: b)
     ///     print(info.isParallel)                  // true: an infinite equidistant family
     ///     print(a.minDistance(to: b) ?? 0)        // 5.0, the well-defined separation
-    /// }
-    /// ```
+    /// }.
+    /// ```.
     ///
-    /// "Parallel" here is OCCT's own predicate, which is narrower than "the tangent directions are
-    /// parallel". Two parallel segments whose parameter ranges do not overlap have a single
-    /// well-defined nearest-endpoint pair; `isParallel` is false for them, and this method returns
+    /// "Parallel" here is OCCT's own predicate, which is narrower than "the tangent directions are.
+    /// parallel".
+    ///
+    /// Two parallel segments whose parameter ranges do not overlap have a single.
+    /// well-defined nearest-endpoint pair; isParallel is false for them, and this method returns.
     /// that pair normally.
     public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaResult] {
         let maxCount = Sampling.capacity(maxCount)
@@ -956,19 +1009,21 @@ extension Curve3D {
 
     /// Convert this curve to an analytical curve if possible.
     ///
-    /// Recognizes if the curve is actually a line, circle, or ellipse within the given tolerance
-    /// and returns the analytical representation. A curve that is already analytical converts to an
+    /// Recognizes if the curve is actually a line, circle, or ellipse within the given tolerance.
+    /// and returns the analytical representation. A curve that is already analytical converts to an.
     /// equal, independent curve rather than being rejected.
     ///
-    /// Examines the curve's whole domain. Use ``toAnalytical(tolerance:first:last:)`` to examine a
+    /// Examines the curve's whole domain.
+    ///
+    /// Use ``toAnalytical(tolerance:first:last:)`` to examine a
     /// sub-range, or ``toAnalyticalWithGap(tolerance:)`` to also get the deviation.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
-    ///     print(analytical.curveKind)   // .circle
-    /// }
-    /// ```
+    ///     print(analytical.curveKind)   // .circle.
+    /// }.
+    /// ```.
     ///
     /// - Parameter tolerance: Recognition tolerance
     /// - Returns: The analytical curve, or nil if not recognizable
@@ -980,25 +1035,27 @@ extension Curve3D {
 
     /// Sample parameter values at quasi-uniform arc-length intervals.
     ///
-    /// Uses `GCPnts_QuasiUniformAbscissa` to distribute sample points
-    /// approximately evenly along the curve's arc length. The first parameter is always the start
+    /// Uses GCPnts_QuasiUniformAbscissa to distribute sample points.
+    /// approximately evenly along the curve's arc length.
+    ///
+    /// The first parameter is always the start.
     /// of the curve's domain and the last is always its end.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
     ///     let params = c.quasiUniformParameters(count: 8)
-    ///     #expect(params.count == 8)
-    ///     #expect(params.last == c.domain.upperBound)
-    /// }
-    /// ```
+    ///     #expect(params.count == 8).
+    ///     #expect(params.last == c.domain.upperBound).
+    /// }.
+    /// ```.
     ///
     /// - Parameter count: Desired number of sample points, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. OCCT's samplers
-    ///   document the lower bound but cannot enforce it in a Release kernel, and below 2 they
-    ///   misbehave rather than fail; the upper bound is this layer's, since `count` sizes a Swift
-    ///   allocation and is cast to the bridge's `int32_t`, and both ends used to abort the
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. OCCT's samplers.
+    ///   document the lower bound but cannot enforce it in a Release kernel, and below 2 they.
+    ///   misbehave rather than fail; the upper bound is this layer's, since count sizes a Swift.
+    ///   allocation and is cast to the bridge's int32_t, and both ends used to abort the.
     ///   process (#558).
-    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
+    /// - Returns: Array of parameter values, never more than count of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
         guard let count = Sampling.requested(count) else { return [] }
         var params = [Double](repeating: 0, count: count)
@@ -1008,14 +1065,16 @@ extension Curve3D {
 
     /// Sample points at quasi-uniform deflection intervals.
     ///
-    /// Uses `GCPnts_QuasiUniformDeflection` to distribute sample points
-    /// such that the chord deviation from the curve stays within the
+    /// Uses GCPnts_QuasiUniformDeflection to distribute sample points.
+    /// such that the chord deviation from the curve stays within the.
     /// given deflection tolerance.
     ///
     /// - Parameters:
     ///   - deflection: Maximum allowed chord deviation
-    ///   - maxPoints: Output *capacity*, clamped into `0`...``Sampling/maximumSampleCount``;
-    ///     0 or less returns empty (#558). The deflection decides the actual point count.
+    ///   - maxPoints: Output *capacity*, clamped into 0...``Sampling/maximumSampleCount``;
+    ///     0 or less returns empty (#558).
+    ///
+    ///     The deflection decides the actual point count.
     /// - Returns: Array of 3D points, or empty array on failure
     public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 500) -> [SIMD3<
         Double
@@ -1032,34 +1091,44 @@ extension Curve3D {
     // Continuity order for knot splitting is `ParametricContinuity` (Continuity.swift); the
     // nested `ContinuityOrder` copy declared here is now a deprecated alias of it. See #398.
 
-    /// Knot parameters at which to split a BSpline so every arc is at least `minContinuity`.
+    /// Knot parameters at which to split a BSpline so every arc is at least minContinuity.
     ///
-    /// Only works on BSpline curves. The result is a set of *split* parameters, not a set of
+    /// Only works on BSpline curves.
+    ///
+    /// The result is a set of *split* parameters, not a set of.
     /// defects: the curve's own first and last knots are always included, so a curve that never
-    /// drops below `minContinuity` returns exactly those two rather than an empty array. Any
+    /// drops below minContinuity returns exactly those two rather than an empty array.
+    ///
+    /// Any.
     /// further entries are interior knots where the curve really is less continuous than asked.
     ///
-    /// A curve's discontinuities are inherently 1D, so parameter values are the natural (and
-    /// only sensible) shape here -- unlike `Surface.knotSplitting` (2D, per-direction counts
-    /// *and* parameters) or `LawFunction.knotSplitting`/`knotSplitParameters` (1D, but split
-    /// across two methods for backward compatibility). See #403 for why these three siblings
+    /// A curve's discontinuities are inherently 1D, so parameter values are the natural (and.
+    /// only sensible) shape here -- unlike `Surface.knotSplitting` (2D, per-direction counts.
+    /// *and* parameters) or `LawFunction.knotSplitting`/knotSplitParameters (1D, but split.
+    /// across two methods for backward compatibility).
+    ///
+    /// See #403 for why these three siblings.
     /// return different shapes.
     ///
-    /// ```swift
-    /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing
+    /// ```swift.
+    /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing.
     /// // below C3 reports anything beyond the two end knots.
     /// let ends   = bspline.continuityBreaks(minContinuity: .c2)  // [first, last]
     /// let breaks = bspline.continuityBreaks(minContinuity: .c3)  // + interior knots
-    /// ```
+    /// ```.
     ///
-    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc. This is a
-    ///   derivative order, and `GeomConvert_BSplineCurveKnotSplitting` splits a knot only when
-    ///   `degree - multiplicity < minContinuity`, so the meaningful range is 0...degree and it
-    ///   saturates there. On a degree-4-or-higher curve ``ParametricContinuity/c3`` is the
-    ///   strictest question this vocabulary can ask; `toBezierSegments()` is the dedicated API
+    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc.
+    ///
+    /// This is a.
+    ///   derivative order, and GeomConvert_BSplineCurveKnotSplitting splits a knot only when.
+    ///   `degree - multiplicity < minContinuity`, so the meaningful range is 0...degree and it.
+    ///   saturates there.
+    ///
+    ///   On a degree-4-or-higher curve ``ParametricContinuity/c3`` is the.
+    ///   strictest question this vocabulary can ask; `toBezierSegments()` is the dedicated API.
     ///   for the every-knot split at the far end of that ladder (#480).
     /// - Returns: Split parameters in ascending order, bounded by the curve's end knots, or
-    ///   nil if the curve is not a BSpline
+    ///   nil if the curve is not a BSpline.
     public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]? {
         // The bridge returns the true split count even when it writes fewer, so one retry at
         // that count is always enough. Worth doing since #398: the old c0...c2 range could not
@@ -1087,6 +1156,7 @@ extension Curve3D {
     /// Create an elliptical arc from angular parameters.
     ///
     /// Creates an arc of an ellipse in the plane defined by center and normal.
+    ///
     /// The major axis is oriented perpendicular to the normal (determined automatically).
     ///
     /// - Parameters:
@@ -1097,22 +1167,22 @@ extension Curve3D {
     ///   - startAngle: Start angle in radians
     ///   - endAngle: End angle in radians
     ///   - counterclockwise: Arc direction (default: true)
-    /// - Returns: The elliptical arc curve, or `nil` on failure, including when the radii do not
+    /// - Returns: The elliptical arc curve, or nil on failure, including when the radii do not
     ///   describe an ellipse.
     ///
-    /// `majorRadius` and `minorRadius` must both be `> 0` with `minorRadius <= majorRadius`, the
+    /// majorRadius and minorRadius must both be `> 0` with `minorRadius <= majorRadius`, the.
     /// same contract `ellipse(center:normal:majorRadius:minorRadius:)` enforces. A zero minor
     /// radius is rejected rather than collapsed onto the major axis.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                majorRadius: 10, minorRadius: 5,
     ///                                startAngle: 0, endAngle: .pi)
-    /// #expect(arc != nil)
+    /// #expect(arc != nil).
     /// #expect(Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                              majorRadius: 10, minorRadius: 0,
     ///                              startAngle: 0, endAngle: .pi) == nil)
-    /// ```
+    /// ```.
     public static func arcOfEllipse(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double,
@@ -1142,23 +1212,28 @@ extension Curve3D {
     ///   - from: Start point (must lie on the ellipse)
     ///   - to: End point (must lie on the ellipse)
     ///   - counterclockwise: Arc direction (default: true)
-    /// - Returns: The elliptical arc curve, or `nil` on failure, including when the radii do not
+    /// - Returns: The elliptical arc curve, or nil on failure, including when the radii do not
     ///   describe an ellipse.
     ///
-    /// Same radius contract as the angular form. It matters more here: this form inverts each
-    /// point back to a parameter, and with a zero minor radius that inversion is `NaN`, which
-    /// OCCT reports as a *successful* construction. Before the radii were checked, this returned
-    /// a live curve whose parameter range and every evaluation were `NaN` (#554).
+    /// Same radius contract as the angular form.
     ///
-    /// ```swift
+    /// It matters more here: this form inverts each
+    /// point back to a parameter, and with a zero minor radius that inversion is NaN, which.
+    ///
+    /// OCCT reports as a *successful* construction.
+    ///
+    /// Before the radii were checked, this returned.
+    /// a live curve whose parameter range and every evaluation were NaN (#554).
+    ///
+    /// ```swift.
     /// let arc = Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                majorRadius: 10, minorRadius: 5,
     ///                                from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0))
-    /// #expect(arc != nil)
+    /// #expect(arc != nil).
     /// #expect(Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                              majorRadius: 10, minorRadius: 0,
     ///                              from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0)) == nil)
-    /// ```
+    /// ```.
     public static func arcOfEllipse(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double,
@@ -1183,8 +1258,10 @@ extension Curve3D {
 
     /// Join multiple curves into a single BSpline curve.
     ///
-    /// Uses GeomConvert_CompCurveToBSplineCurve to concatenate curves
-    /// in order into a single BSpline. Curves must meet end-to-end
+    /// Uses GeomConvert_CompCurveToBSplineCurve to concatenate curves.
+    /// in order into a single BSpline.
+    ///
+    /// Curves must meet end-to-end.
     /// within the given tolerance.
     ///
     /// - Parameters:
@@ -1206,7 +1283,7 @@ extension Curve3D {
     public struct PointProjection: Sendable {
         /// Distance from the original point to the projection.
         public let distance: Double
-        /// Parameter on the curve at the closest point.
+        /// Parameter       on the curve at the closest point.
         public let parameter: Double
         /// Projected point on the curve.
         public let point: SIMD3<Double>
@@ -1214,27 +1291,27 @@ extension Curve3D {
 
     /// Project a point onto this curve to find the closest point on it.
     ///
-    /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
-    /// where the point has no perpendicular foot on the curve, anything past the end of a trimmed
-    /// curve, or off to one side of an arc, the nearest point is an end, and that is what comes
+    /// The answer is always inside this curve's own `domain`, and always the true nearest point:
+    /// where the point has no perpendicular foot on the curve, anything past the end of a trimmed.
+    /// curve, or off to one side of an arc, the nearest point is an end, and that is what comes.
     /// back. ``nearestParameter(to:)`` is the scalar spelling of this and agrees with it exactly
     /// (#615); ``distance(to:precision:)`` is the distance-only one.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     ///     .trimmed(from: 3, to: 8)!
     ///
-    /// let inside = segment.projectPoint(SIMD3(5, 2, 0))
-    /// #expect(inside.parameter == 5)         // the perpendicular foot
-    /// #expect(inside.distance == 2)
+    /// let inside = segment.projectPoint(SIMD3(5, 2, 0)).
+    /// #expect(inside.parameter == 5)         // the perpendicular foot.
+    /// #expect(inside.distance == 2).
     ///
-    /// let beyond = segment.projectPoint(SIMD3(100, 0, 0))
-    /// #expect(beyond.parameter == 8)         // the end of the curve, not of its basis line
-    /// #expect(beyond.distance == 92)
-    /// ```
+    /// let beyond = segment.projectPoint(SIMD3(100, 0, 0)).
+    /// #expect(beyond.parameter == 8)         // the end of the curve, not of its basis line.
+    /// #expect(beyond.distance == 92).
+    /// ```.
     ///
-    /// Before #539 this projected onto the curve's *underlying basis* curve, so the point above came
-    /// back at parameter 100, distance 0, a `distance < tolerance` proximity test read a point 92
+    /// Before #539 this projected onto the curve's *underlying basis* curve, so the point above came.
+    /// back at parameter 100, distance 0, a `distance < tolerance` proximity test read a point 92.
     /// units away as lying on the curve.
     ///
     /// - Parameters:
@@ -1253,16 +1330,16 @@ extension Curve3D {
     /// Shortest distance from a 3D point to this curve.
     ///
     /// Convenience one-liner around ``projectPoint(_:precision:)`` when you only need the scalar
-    /// distance and don't care about the projected point or parameter, so it measures to the same
-    /// nearest point: over this curve's own ``domain``, ends included.
+    /// distance and don't care about the projected point or parameter, so it measures to the same.
+    /// nearest point: over this curve's own `domain`, ends included.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     ///     .trimmed(from: 0, to: .pi)!
     ///
     /// // On the full circle, but not on this half of it: 4.47 from the arc's start.
     /// #expect(abs(arc.distance(to: SIMD3(3, -4, 0)) - 4.47214) < 1e-5)
-    /// ```
+    /// ```.
     public func distance(to point: SIMD3<Double>, precision: Double = 1e-6) -> Double {
         projectPoint(point, precision: precision).distance
     }
@@ -1327,18 +1404,20 @@ extension Curve3D {
     ///   - alpha1: Start parameter value
     ///   - alpha2: End parameter value
     ///   - sense: Direction of parameterization (true = natural)
-    /// - Returns: Trimmed curve representing the arc, or `nil` on failure, including when either
+    /// - Returns: Trimmed curve representing the arc, or nil on failure, including when either
     ///   radius is `<= 0`.
     ///
-    /// Both radii must be `> 0`. Unlike an ellipse there is no ordering constraint between them:
+    /// Both radii must be `> 0`.
+    ///
+    /// Unlike an ellipse there is no ordering constraint between them:
     /// a minor radius larger than the major is an ordinary hyperbola.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Curve3D.arcOfHyperbola(majorRadius: 8, minorRadius: 3, alpha1: 0, alpha2: 1)
-    /// #expect(arc != nil)
+    /// #expect(arc != nil).
     /// #expect(Curve3D.arcOfHyperbola(majorRadius: 8, minorRadius: 0,
     ///                                alpha1: 0, alpha2: 1) == nil)
-    /// ```
+    /// ```.
     public static func arcOfHyperbola(
         center: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -1367,18 +1446,20 @@ extension Curve3D {
     ///   - alpha1: Start parameter value
     ///   - alpha2: End parameter value
     ///   - sense: Direction of parameterization (true = natural)
-    /// - Returns: Trimmed curve representing the arc, or `nil` on failure, including when
-    ///   `focalDistance` is `<= 0`.
+    /// - Returns: Trimmed curve representing the arc, or nil on failure, including when
+    ///   focalDistance is `<= 0`.
     ///
-    /// `focalDistance` must be `> 0`. At zero the parabola degenerates to a straight line along
-    /// its own axis of symmetry, which is `gp_Parab`'s documented behaviour rather than an error
+    /// focalDistance must be `> 0`.
+    ///
+    /// At zero the parabola degenerates to a straight line along.
+    /// its own axis of symmetry, which is the gp_Parab\'s documented behaviour rather than an error.
     /// it reports, so the arc would build and read as a curve.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Curve3D.arcOfParabola(focalDistance: 4, alpha1: 0, alpha2: 1)
-    /// #expect(arc != nil)
+    /// #expect(arc != nil).
     /// #expect(Curve3D.arcOfParabola(focalDistance: 0, alpha1: 0, alpha2: 1) == nil)
-    /// ```
+    /// ```.
     public static func arcOfParabola(
         center: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -1399,7 +1480,10 @@ extension Curve3D {
 
     /// Convert a closed BSpline curve to periodic form.
     ///
-    /// The curve must be closed (first point == last point). The result is a periodic
+    /// The curve must be closed (first point == last point).
+    ///
+    /// The result is a periodic.
+    ///
     /// BSpline curve that seamlessly wraps around.
     ///
     /// - Returns: Periodic curve, or nil if conversion is not possible
@@ -1471,17 +1555,20 @@ extension Curve3D {
 
     /// Result of curve continuity analysis at a junction point.
     public struct ContinuityAnalysis: Sendable {
-        /// The order the junction was actually analysed at: the requested ``ContinuityClass``
+        /// The order the junction was actually analysed at: the requested `ContinuityClass`
         /// after saturation at ``ContinuityClass/c2``.
         ///
         /// This is the request, not a finding. `LocalAnalysis_CurveContinuity::ContinuityStatus()`
-        /// returns the order it was constructed with verbatim, so the only thing it can tell you
-        /// is where a saturated request landed. The findings are ``measured`` and ``holds(_:)``.
-        public let order: ContinuityClass
-        /// The continuity classes this ``order`` actually measured.
+        /// returns the order it was constructed with verbatim, so the only thing it can tell you.
+        /// is where a saturated request landed.
         ///
-        /// Each order computes only its own branch, `.c0` measures C0; `.g1` measures C0 and G1;
+        /// The findings are `measured` and ``holds(_:)``.
+        public let order: ContinuityClass
+        /// The continuity classes this `order` actually measured.
+        ///
+        /// Each order computes only its own branch, `.c0` measures C0; `.g1` measures C0 and G1;.
         /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
+        ///
         /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
         public let measured: Set<ContinuityClass>
         /// Distance between curve endpoints at junction.
@@ -1502,25 +1589,33 @@ extension Curve3D {
         public let g2CurvatureVariation: Double
         /// Bitmask of the classes that hold: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
         ///
-        /// Only ever sets bits for classes in ``measured``, so a clear bit means "does not hold
-        /// *or* was not measured". Prefer ``holds(_:)``, which separates the two.
+        /// Only ever sets bits for classes in `measured`, so a clear bit means "does not hold.
+        /// *or* was not measured".
+        ///
+        /// Prefer ``holds(_:)``, which separates the two.
         public let flags: Int
 
-        /// Whether `continuity` holds at the junction, or `nil` if this ``order`` never measured
+        /// Whether continuity holds at the junction, or nil if this `order` never measured.
         /// it.
         ///
-        /// ```swift
+        /// ```swift.
         /// let a = corner.continuityWith(other, u1: e1, u2: s2, order: .c1)!
-        /// a.holds(.c1)   // false, measured, and the junction is not C1
-        /// a.holds(.g1)   // nil, order .c1 never computes G1
-        /// ```
+        /// a.holds(.c1)   // false, measured, and the junction is not C1.
+        /// a.holds(.g1)   // nil, order .c1 never computes G1.
+        /// ```.
         ///
         /// - Note: This asks *exact-class membership*, "did this analysis report this one
-        ///   class?", not a floor. It never infers one class from another, so a `true` for
-        ///   ``ContinuityClass/g2`` implies nothing about ``ContinuityClass/c1``. To test a
-        ///   *measured* class against a continuity floor instead, use
+        ///   class?", not a floor.
+        ///
+        ///   It never infers one class from another, so a true for.
+        ///   ``ContinuityClass/g2`` implies nothing about ``ContinuityClass/c1``.
+        ///
+        ///   To test a.
+        ///   *measured* class against a continuity floor instead, use.
         ///   ``ContinuityClass/satisfies(_:)``; to rank two measured classes, compare them with
-        ///   `<`/`>=`. Three different questions (#623).
+        ///   `<`/`>=`.
+        ///
+        ///   Three different questions (#623).
         public func holds(_ continuity: ContinuityClass) -> Bool? {
             guard measured.contains(continuity) else { return nil }
             return flags & continuity.analysisFlagBit != 0
@@ -1530,39 +1625,41 @@ extension Curve3D {
         ///
         /// Always measured.
         public var isC0: Bool? { holds(.c0) }
-        /// Whether the junction is geometrically tangent-continuous (G1), or nil if ``order``
+        /// Whether the junction is geometrically tangent-continuous (G1), or nil if `order`.
         /// did not measure G1 (only `.g1` and `.g2` do).
         public var isG1: Bool? { holds(.g1) }
-        /// Whether the junction is parametrically tangent-continuous (C1), or nil if ``order``
+        /// Whether the junction is parametrically tangent-continuous (C1), or nil if `order`.
         /// did not measure C1 (only `.c1` and `.c2` do).
         public var isC1: Bool? { holds(.c1) }
-        /// Whether the junction is geometrically curvature-continuous (G2), or nil if ``order``
+        /// Whether the junction is geometrically curvature-continuous (G2), or nil if `order`.
         /// was not `.g2`.
         public var isG2: Bool? { holds(.g2) }
-        /// Whether the junction is parametrically curvature-continuous (C2), or nil if ``order``
+        /// Whether the junction is parametrically curvature-continuous (C2), or nil if `order`.
         /// was not `.c2`.
         public var isC2: Bool? { holds(.c2) }
 
     }
 
-    /// Analyze continuity between this curve at parameter `u1` and another curve at `u2`.
+    /// Analyze continuity between this curve at parameter u1 and another curve at u2.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Is this junction tangent-continuous? Ask for G1, the .c2 default never measures it.
     /// let a = leftArc.continuityWith(rightArc, u1: leftArc.domain.upperBound,
     ///                                u2: rightArc.domain.lowerBound, order: .g1)
-    /// if a?.holds(.g1) == true { print("tangent, angle \(a!.g1Angle)") }
-    /// ```
+    /// if a?.holds(.g1) == true { print("tangent, angle \(a!.g1Angle)") }.
+    /// ```.
     ///
     /// - Parameters:
     ///   - other: Second curve
     ///   - u1: Parameter on this curve
     ///   - u2: Parameter on second curve
-    ///   - order: Which continuity class to measure. This selects the analysis, not just a
-    ///     ceiling: `LocalAnalysis_CurveContinuity` computes one branch of a switch, so the
+    ///   - order: Which continuity class to measure.
+    ///
+    ///   This selects the analysis, not just a.
+    ///     ceiling: LocalAnalysis_CurveContinuity computes one branch of a switch, so the
     ///     classes outside it are never measured and ``ContinuityAnalysis/holds(_:)`` reports
-    ///     `nil` for them. `.c2` is the strictest question the class can answer, it implements
-    ///     no predicate above C2/G2, so `.c3` and `.cN` saturate to `.c2`, which
+    ///     nil for them. `.c2` is the strictest question the class can answer, it implements.
+    ///     no predicate above C2/G2, so `.c3` and `.cN` saturate to `.c2`, which.
     ///     ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
     public func continuityWith(
@@ -1745,24 +1842,26 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a circle from center, normal, and radius (`gce_MakeCirc`).
+    /// Create a circle from center, normal, and radius (gce_MakeCirc).
     ///
-    /// Geometrically identical to `circle(center:normal:radius:)`, `gce_MakeCirc` builds the
+    /// Geometrically identical to `circle(center:normal:radius:)`, gce_MakeCirc builds the
     /// same `gp_Ax2(center, normal)` frame, and, since #399, enforces the same radius contract.
     ///
     /// - Parameters:
     ///   - center: Circle centre.
     ///   - normal: Normal of the plane the circle lies in.
-    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
-    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///   - radius: Circle radius.
     ///
-    /// ```swift
+    ///   Must be `> 0`; zero and negative radii return nil.
+    /// - Returns: The circle, or nil if `radius <= 0`.
+    ///
+    /// ```swift.
     /// let c = Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), radius: 7)
-    /// #expect(c != nil)
+    /// #expect(c != nil).
     /// // Same rejection as the direct factory: no degenerate zero-radius circle.
     /// #expect(Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                        radius: 0) == nil)
-    /// ```
+    /// ```.
     public static func circleFromCenterNormal(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         radius: Double
@@ -1796,7 +1895,7 @@ extension Curve3D {
         }
     }
 
-    /// Create an ellipse (`gce_MakeElips`).
+    /// Create an ellipse (gce_MakeElips).
     ///
     /// Geometrically identical to `ellipse(center:normal:majorRadius:minorRadius:)` and, since
     /// #399, enforces the same radius contract.
@@ -1804,17 +1903,21 @@ extension Curve3D {
     /// - Parameters:
     ///   - center: Ellipse centre.
     ///   - normal: Normal of the plane the ellipse lies in.
-    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
-    ///   - minorRadius: Minor radius. Must be `> 0`.
-    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///   - majorRadius: Major radius.
     ///
-    /// ```swift
+    ///   Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0`.
+    /// - Returns: The ellipse, or nil if the radii violate that contract.
+    ///
+    /// ```swift.
     /// let e = Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                         majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                         majorRadius: 10, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func ellipseFromCenterNormal(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double,
@@ -1829,7 +1932,7 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a hyperbola (`gce_MakeHypr`).
+    /// Create a hyperbola (gce_MakeHypr).
     ///
     /// Geometrically identical to `hyperbola(center:normal:majorRadius:minorRadius:)` and, since
     /// #399, enforces the same radius contract.
@@ -1837,17 +1940,21 @@ extension Curve3D {
     /// - Parameters:
     ///   - center: Hyperbola centre.
     ///   - normal: Normal of the plane the hyperbola lies in.
-    ///   - majorRadius: Major radius. Must be `> 0`.
-    ///   - minorRadius: Minor radius. Must be `> 0`.
-    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///   - majorRadius: Major radius.
     ///
-    /// ```swift
+    ///   Must be `> 0`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0`.
+    /// - Returns: The hyperbola, or nil if either radius is `<= 0`.
+    ///
+    /// ```swift.
     /// let h = Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                           majorRadius: 8, minorRadius: 3)
-    /// #expect(h != nil)
+    /// #expect(h != nil).
     /// #expect(Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                           majorRadius: 8, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func hyperbolaFromCenterNormal(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double,
@@ -1862,7 +1969,7 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a parabola (`gce_MakeParab`).
+    /// Create a parabola (gce_MakeParab).
     ///
     /// Geometrically identical to `parabola(center:normal:focal:)` and, since #399, enforces the
     /// same focal-length contract.
@@ -1870,15 +1977,17 @@ extension Curve3D {
     /// - Parameters:
     ///   - center: Parabola apex.
     ///   - normal: Normal of the plane the parabola lies in.
-    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
-    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///   - focal: Focal length.
     ///
-    /// ```swift
+    ///   Must be `> 0`; zero and negative focal lengths return nil.
+    /// - Returns: The parabola, or nil if `focal <= 0`.
+    ///
+    /// ```swift.
     /// let p = Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
-    /// #expect(p != nil)
+    /// #expect(p != nil).
     /// #expect(Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
     ///                                          focal: 0) == nil)
-    /// ```
+    /// ```.
     public static func parabolaFromCenterNormal(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         focal: Double
@@ -1932,16 +2041,20 @@ extension Curve3D {
 
         /// Set the radius of the circle.
         ///
-        /// - Parameter r: New radius. Must be `> 0`; zero collapses the circle onto its centre.
-        /// - Returns: `true` if the radius was written, `false` if the curve is not a circle or
-        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        /// - Parameter r: New radius.
         ///
-        /// ```swift
+        /// Must be `> 0`; zero collapses the circle onto its centre.
+        /// - Returns: true if the radius was written, false if the curve is not a circle or
+        ///   r is not a valid radius.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// ```swift.
         /// if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
-        ///     #expect(c.circleProperties.setRadius(8) == true)
-        ///     #expect(c.circleProperties.setRadius(0) == false)
-        /// }
-        /// ```
+        ///     #expect(c.circleProperties.setRadius(8) == true).
+        ///     #expect(c.circleProperties.setRadius(0) == false).
+        /// }.
+        /// ```.
         @discardableResult
         public func setRadius(_ r: Double) -> Bool { OCCTCurve3DCircleSetRadius(handle, r) }
 
@@ -1983,18 +2096,22 @@ extension Curve3D {
 
         /// Set the major radius.
         ///
-        /// - Parameter r: New major radius. Judged against the minor radius already on the
-        ///   curve, so it must be `> 0` and no smaller than the current `minorRadius`.
-        /// - Returns: `true` if the radius was written, `false` if the curve is not an ellipse or
-        ///   the pair would not describe one. On `false` the curve is left as it was.
+        /// - Parameter r: New major radius.
         ///
-        /// ```swift
+        /// Judged against the minor radius already on the.
+        ///   curve, so it must be `> 0` and no smaller than the current minorRadius.
+        /// - Returns: true if the radius was written, false if the curve is not an ellipse or
+        ///   the pair would not describe one.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// ```swift.
         /// if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
         ///                            majorRadius: 10, minorRadius: 5) {
-        ///     #expect(e.ellipseProperties.setMajorRadius(12) == true)
-        ///     #expect(e.ellipseProperties.setMajorRadius(3) == false)  // below the minor
-        /// }
-        /// ```
+        ///     #expect(e.ellipseProperties.setMajorRadius(12) == true).
+        ///     #expect(e.ellipseProperties.setMajorRadius(3) == false)  // below the minor.
+        /// }.
+        /// ```.
         @discardableResult
         public func setMajorRadius(_ r: Double) -> Bool {
             OCCTCurve3DEllipseSetMajorRadius(handle, r)
@@ -2002,21 +2119,25 @@ extension Curve3D {
 
         /// Set the minor radius.
         ///
-        /// - Parameter r: New minor radius. Judged against the major radius already on the curve,
-        ///   so it must be `> 0` and no larger than the current `majorRadius`.
-        /// - Returns: `true` if the radius was written, `false` if the curve is not an ellipse or
-        ///   the pair would not describe one. On `false` the curve is left as it was.
+        /// - Parameter r: New minor radius.
         ///
-        /// Zero is rejected here as it is at construction: it would leave a live `Geom_Ellipse`
+        /// Judged against the major radius already on the curve,.
+        ///   so it must be `> 0` and no larger than the current majorRadius.
+        /// - Returns: true if the radius was written, false if the curve is not an ellipse or
+        ///   the pair would not describe one.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// Zero is rejected here as it is at construction: it would leave a live Geom_Ellipse
         /// that evaluates onto its own major axis at every parameter.
         ///
-        /// ```swift
+        /// ```swift.
         /// if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
         ///                            majorRadius: 10, minorRadius: 5) {
-        ///     #expect(e.ellipseProperties.setMinorRadius(3) == true)
-        ///     #expect(e.ellipseProperties.setMinorRadius(0) == false)
-        /// }
-        /// ```
+        ///     #expect(e.ellipseProperties.setMinorRadius(3) == true).
+        ///     #expect(e.ellipseProperties.setMinorRadius(0) == false).
+        /// }.
+        /// ```.
         @discardableResult
         public func setMinorRadius(_ r: Double) -> Bool {
             OCCTCurve3DEllipseSetMinorRadius(handle, r)
@@ -2066,18 +2187,24 @@ extension Curve3D {
 
         /// Set the major radius.
         ///
-        /// - Parameter r: New major radius. Must be `> 0`. Unlike an ellipse there is no ordering
-        ///   constraint against the minor radius.
-        /// - Returns: `true` if the radius was written, `false` if the curve is not a hyperbola or
-        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        /// - Parameter r: New major radius.
         ///
-        /// ```swift
+        /// Must be `> 0`.
+        ///
+        /// Unlike an ellipse there is no ordering.
+        ///   constraint against the minor radius.
+        /// - Returns: true if the radius was written, false if the curve is not a hyperbola or
+        ///   r is not a valid radius.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// ```swift.
         /// if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
         ///                              majorRadius: 8, minorRadius: 3) {
-        ///     #expect(h.hyperbolaProperties.setMajorRadius(7) == true)
-        ///     #expect(h.hyperbolaProperties.setMajorRadius(0) == false)
-        /// }
-        /// ```
+        ///     #expect(h.hyperbolaProperties.setMajorRadius(7) == true).
+        ///     #expect(h.hyperbolaProperties.setMajorRadius(0) == false).
+        /// }.
+        /// ```.
         @discardableResult
         public func setMajorRadius(_ r: Double) -> Bool {
             OCCTCurve3DHyperbolaSetMajorRadius(handle, r)
@@ -2085,17 +2212,21 @@ extension Curve3D {
 
         /// Set the minor radius.
         ///
-        /// - Parameter r: New minor radius. Must be `> 0`; it may exceed the major radius.
-        /// - Returns: `true` if the radius was written, `false` if the curve is not a hyperbola or
-        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        /// - Parameter r: New minor radius.
         ///
-        /// ```swift
+        /// Must be `> 0`; it may exceed the major radius.
+        /// - Returns: true if the radius was written, false if the curve is not a hyperbola or
+        ///   r is not a valid radius.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// ```swift.
         /// if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
         ///                              majorRadius: 8, minorRadius: 3) {
-        ///     #expect(h.hyperbolaProperties.setMinorRadius(4) == true)
-        ///     #expect(h.hyperbolaProperties.setMinorRadius(0) == false)
-        /// }
-        /// ```
+        ///     #expect(h.hyperbolaProperties.setMinorRadius(4) == true).
+        ///     #expect(h.hyperbolaProperties.setMinorRadius(0) == false).
+        /// }.
+        /// ```.
         @discardableResult
         public func setMinorRadius(_ r: Double) -> Bool {
             OCCTCurve3DHyperbolaSetMinorRadius(handle, r)
@@ -2134,17 +2265,21 @@ extension Curve3D {
 
         /// Set the focal distance.
         ///
-        /// - Parameter f: New focal distance. Must be `> 0`; at zero the parabola degenerates to
-        ///   a straight line along its own axis of symmetry.
-        /// - Returns: `true` if the value was written, `false` if the curve is not a parabola or
-        ///   `f` is not a valid focal distance. On `false` the curve is left as it was.
+        /// - Parameter f: New focal distance.
         ///
-        /// ```swift
+        /// Must be `> 0`; at zero the parabola degenerates to.
+        ///   a straight line along its own axis of symmetry.
+        /// - Returns: true if the value was written, false if the curve is not a parabola or
+        ///   f is not a valid focal distance.
+        ///
+        ///   On false the curve is left as it was.
+        ///
+        /// ```swift.
         /// if let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 4) {
-        ///     #expect(p.parabolaProperties.setFocal(5) == true)
-        ///     #expect(p.parabolaProperties.setFocal(0) == false)
-        /// }
-        /// ```
+        ///     #expect(p.parabolaProperties.setFocal(5) == true).
+        ///     #expect(p.parabolaProperties.setFocal(0) == false).
+        /// }.
+        /// ```.
         @discardableResult
         public func setFocal(_ f: Double) -> Bool { OCCTCurve3DParabolaSetFocal(handle, f) }
 
@@ -2264,24 +2399,28 @@ extension Curve3D {
     /// delegates to it: the two cannot produce different curves for the same input.
     ///
     /// - Parameters:
-    ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
-    ///     do not repeat the first point at the end.
-    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
-    ///     to hardcode with no way to change it (#493).
-    /// - Returns: The periodic curve, or `nil` if interpolation fails.
+    ///   - points: Points to interpolate.
     ///
-    /// ```swift
+    ///   At least 2; the curve closes back to `points[0]`, so.
+    ///     do not repeat the first point at the end.
+    ///   - tolerance: Interpolation tolerance.
+    ///
+    ///   Defaults to `1e-6`, which is what this method used.
+    ///     to hardcode with no way to change it (#493).
+    /// - Returns: The periodic curve, or nil if interpolation fails.
+    ///
+    /// ```swift.
     /// let loop = Curve3D.interpolatePeriodic(points: [
-    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),
-    /// ])
-    /// #expect(loop?.isPeriodic == true)
+    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),.
+    /// ]).
+    /// #expect(loop?.isPeriodic == true).
     ///
     /// // Identical to spelling it out on the general factory:
     /// let same = Curve3D.interpolate(points: [
-    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),
+    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),.
     /// ], closed: true)
-    /// #expect(loop?.domain == same?.domain)
-    /// ```
+    /// #expect(loop?.domain == same?.domain).
+    /// ```.
     public static func interpolatePeriodic(
         points: [SIMD3<Double>],
         tolerance: Double = 1e-6
@@ -2291,8 +2430,10 @@ extension Curve3D {
 
     /// Approximate a 3D BSpline through points with degree and continuity control.
     ///
-    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
-    /// `approximated` family, the fitter accepts every value without failing, it treats the
+    /// continuity is a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3).
+    ///
+    /// Unlike the.
+    /// approximated family, the fitter accepts every value without failing, it treats the.
     /// request as an upper bound on what it will try to achieve.
     public static func approximate(
         points: [SIMD3<Double>],
@@ -2338,10 +2479,14 @@ extension Curve3D {
 
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
     ///
-    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc
-    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
-    /// confusable with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)`
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point.
+    ///
+    /// Returns `-1.0`.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc.
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never.
+    /// confusable with a genuine zero-length result (e.g. `u1 == u2`).
+    ///
+    /// Use `length(from:to:)`
     /// directly if you need an optional rather than a sentinel value.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         length(from: u1, to: u2) ?? -1.0
@@ -2349,13 +2494,13 @@ extension Curve3D {
 
     /// Find the parameter at a given arc length distance from a starting parameter.
     ///
-    /// Measured with the same subdivided quadratures `length` uses, so this and the length it
+    /// Measured with the same subdivided quadratures length uses, so this and the length it.
     /// inverts always agree: `curve.parameterAtLength(curve.length!)` lands on
-    /// `domain.upperBound`. OCCT's own root finder inverts a *single* Gauss quadrature over
-    /// `[startParam, u]`, and fed the accurate total length of an 8 x 3 ellipse it answers 6.2438
+    /// `domain.upperBound`. OCCT's own root finder inverts a *single* Gauss quadrature over.
+    /// `[startParam, u]`, and fed the accurate total length of an 8 x 3 ellipse it answers 6.2438.
     /// for a domain ending at 6.2832 (#603).
     ///
-    /// A distance longer than the curve keeps OCCT's answer, which reports success with a
+    /// A distance longer than the curve keeps OCCT's answer, which reports success with a.
     /// parameter outside the curve's own domain rather than failing.
     ///
     /// - Parameters:
@@ -2363,12 +2508,12 @@ extension Curve3D {
     ///   - startParam: Starting parameter (defaults to curve start).
     /// - Returns: The parameter value at the specified arc length.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                         majorRadius: 10, minorRadius: 1)!
-    /// let half = e.parameterAtLength(e.length! / 2)   // halfway along by arc, not by parameter
-    /// let end = e.parameterAtLength(e.length!)        // e.domain.upperBound
-    /// ```
+    /// let half = e.parameterAtLength(e.length! / 2)   // halfway along by arc, not by parameter.
+    /// let end = e.parameterAtLength(e.length!)        // e.domain.upperBound.
+    /// ```.
     public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double {
         let start = startParam ?? domain.lowerBound
         return OCCTCurve3DParameterAtLength(handle, arcLength, start)
@@ -2376,40 +2521,52 @@ extension Curve3D {
 
     /// Total arc length of the curve within its domain.
     ///
-    /// Delegates to `length`, the failure-distinguishing entry point. Returns `-1.0` if the
-    /// underlying computation fails, arc length is otherwise always non-negative, so this is
-    /// an unambiguous failure sentinel, never confusable with a genuine zero-length curve. Use
-    /// `length` directly if you need an optional rather than a sentinel value.
+    /// Delegates to length, the failure-distinguishing entry point.
+    ///
+    /// Returns `-1.0` if the.
+    /// underlying computation fails, arc length is otherwise always non-negative, so this is.
+    /// an unambiguous failure sentinel, never confusable with a genuine zero-length curve.
+    ///
+    /// Use.
+    /// length directly if you need an optional rather than a sentinel value.
     public var totalArcLength: Double {
         length ?? -1.0
     }
 
     /// Arc length between two parameters.
     ///
-    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc
-    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
-    /// confusable with a genuine zero-length interval (e.g. `param1 == param2`). Use
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point.
+    ///
+    /// Returns `-1.0`.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails, arc.
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never.
+    /// confusable with a genuine zero-length interval (e.g. `param1 == param2`).
+    ///
+    /// Use.
     /// `length(from:to:)` directly if you need an optional rather than a sentinel value.
     public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double {
         length(from: param1, to: param2) ?? -1.0
     }
 
-    /// The parameter of the point on this curve nearest to `point`.
+    /// The parameter of the point on this curve nearest to point.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: The nearest parameter, always inside this curve's own ``domain``, or `nil` if
+    /// - Returns: The nearest parameter, always inside this curve's own `domain`, or nil if
     ///     there is no curve to answer about.
     ///
-    /// The answer is the true nearest point, not the nearest perpendicular foot. Where the point has
-    /// no foot at all, anything past the end of a trimmed curve, or off to one side of an arc, the
-    /// nearest point is an end, and that is what comes back. This is the scalar spelling of
+    /// The answer is the true nearest point, not the nearest perpendicular foot.
+    ///
+    /// Where the point has.
+    /// no foot at all, anything past the end of a trimmed curve, or off to one side of an arc, the.
+    /// nearest point is an end, and that is what comes back.
+    ///
+    /// This is the scalar spelling of.
     /// ``projectPoint(_:precision:)`` and agrees with it exactly; it is the 3D counterpart of
     /// `Curve2D.nearestParameter(to:)`, and it replaces both `closestParameter(to:)` and
     /// `parameterAtPoint(_:)`, which ran the identical projection and disagreed about how to
     /// report its absence.
     ///
-    /// ```swift
+    /// ```swift.
     /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     /// let segment = line.trimmed(from: 3, to: 8)!
     /// #expect(segment.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
@@ -2418,11 +2575,13 @@ extension Curve3D {
     /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     ///     .trimmed(from: 0, to: .pi)!
     /// #expect(arc.nearestParameter(to: SIMD3(0, -6, 0)) == 0)        // the near end, 7.81 away
-    /// ```
+    /// ```.
     ///
-    /// Before #615 this reported `GeomAPI_ProjectPointOnCurve`'s extremum instead: the arc above
-    /// answered π/2, the far side, 11 away, and the segment answered `nil`. `Optional` remains
-    /// because no `Double` can carry a failure signal, every value is a legitimate parameter on
+    /// Before #615 this reported the GeomAPI_ProjectPointOnCurve\'s extremum instead: the arc above
+    /// answered π/2, the far side, 11 away, and the segment answered nil.
+    ///
+    /// Optional remains.
+    /// because no Double can carry a failure signal, every value is a legitimate parameter on.
     /// some curve, not because a point can fail to have a nearest one.
     public func nearestParameter(to point: SIMD3<Double>) -> Double? {
         var parameter = 0.0
@@ -2435,7 +2594,7 @@ extension Curve3D {
     /// Split this curve at C1 discontinuities.
     ///
     /// - Parameters:
-    ///   - continuity: A ``ParametricContinuity`` raw value; the curve is split wherever it
+    ///   - continuity: A `ParametricContinuity` raw value; the curve is split wherever it
     ///     drops below this continuity.
     ///   - tolerance: Geometric tolerance for the continuity check.
     ///   - maxSegments: Output *capacity* (default 32), clamped into `0...`
@@ -2510,26 +2669,28 @@ extension Curve3D {
         return weights
     }
 
-    /// Is the Bezier curve closed?
+    /// Is the Bezier curve closed?.
     public var bezierIsClosed: Bool {
         OCCTCurve3DBezierIsClosed(handle)
     }
 
-    /// Is the Bezier curve periodic?
+    /// Is the Bezier curve periodic?.
     public var bezierIsPeriodic: Bool {
         OCCTCurve3DBezierIsPeriodic(handle)
     }
 
-    /// Bezier curve continuity, as a raw `GeomAbs_Shape` ordinal.
+    /// Bezier curve continuity, as a raw GeomAbs_Shape ordinal.
     ///
-    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier curve is CN by construction, so
-    /// this is `6`; `0` if the curve is not a Bezier. Prefer ``ContinuityClass`` for a named
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier curve is CN by construction, so.
+    /// this is 6; 0 if the curve is not a Bezier.
+    ///
+    /// Prefer `ContinuityClass` for a named.
     /// result (#619).
     public var bezierContinuity: Int {
         Int(OCCTCurve3DBezierContinuity(handle))
     }
 
-    /// Is the Bezier curve at least CN continuous?
+    /// Is the Bezier curve at least CN continuous?.
     public func bezierIsCN(_ n: Int) -> Bool {
         OCCTCurve3DBezierIsCN(handle, Int32(n))
     }
@@ -2650,7 +2811,8 @@ extension Curve3D {
 extension Curve3D {
 
     /// Create a circular helix curve.
-    /// C(t) = R*cos(t)*X + R*sin(t)*Y + (P*t/(2*Pi))*Z
+    ///
+    /// C(t) = R*cos(t)*X + R*sin(t)*Y + (P*t/(2*Pi))*Z.
     /// - Parameters:
     ///   - radius: helix radius (must be > 0)
     ///   - pitch: axial advance per 2*Pi turn (can be negative for left-handed)
@@ -2661,7 +2823,8 @@ extension Curve3D {
     }
 
     /// Create a 3D sine wave curve.
-    /// C(t) = t*X + A*sin(omega*t + phi)*Y
+    ///
+    /// C(t) = t*X + A*sin(omega*t + phi)*Y.
     /// - Parameters:
     ///   - amplitude: wave amplitude (must be > 0)
     ///   - omega: angular frequency (must be > 0)
@@ -2679,7 +2842,7 @@ extension Curve3D {
 
     /// Result of a point-curve extrema computation.
     public struct ExtremumResult: Sendable {
-        /// Parameter on the curve.
+        /// Parameter       on the curve.
         public let parameter: Double
         /// Distance from query point to curve point.
         public let distance: Double
@@ -2762,7 +2925,8 @@ extension Curve3D {
     /// Create a 3D Trigonometric Bezier curve.
     ///
     /// Uses a trigonometric Bernstein-like basis: {1, sin(alpha*t), cos(alpha*t), ...}.
-    /// Parameter domain is [0, pi/alpha].
+    ///
+    /// Parameter       domain is [0, pi/alpha].
     /// - Parameters:
     ///   - poles: control points (count must be odd >= 3)
     ///   - alpha: frequency parameter (> 0)
@@ -2809,8 +2973,10 @@ extension Curve3D {
     /// Create a 3D Algebraic-Hyperbolic-Trigonometric (AHT) Bezier curve.
     ///
     /// Uses a mixed basis: {1, t, ..., t^k, sinh(alpha*t), cosh(alpha*t), sin(beta*t), cos(beta*t)}.
+    ///
     /// Number of poles must equal algDegree+1 + 2*(alpha>0) + 2*(beta>0).
-    /// Parameter range: [0, 1].
+    ///
+    /// Parameter       range: [0, 1].
     /// - Parameters:
     ///   - poles: control points
     ///   - algDegree: algebraic polynomial degree (>= 0)
@@ -2871,21 +3037,24 @@ extension Curve3D {
     /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
     ///
     /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
-    /// performs, one shared `GeomConvert_ApproxCurve` run behind both (#491), with the
-    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// performs, one shared GeomConvert_ApproxCurve run behind both (#491), with the.
+    /// diagnostics OCCT already computed for it.
+    ///
+    /// For identical arguments the two return the same.
     /// curve; use this one when you need to know how close the fit actually came.
     ///
-    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
-    /// for a fit that is *not* within `tolerance`, `isDone` and `maxError` are how you find out.
-    /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
+    /// hasResult is what decides whether curve is populated, and OCCT documents it as true even.
+    /// for a fit that is *not* within tolerance, isDone and maxError are how you find out.
     ///
-    /// ```swift
+    /// So a non-nil curve is not by itself a promise that tolerance was met.
+    ///
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
     /// let fit = circle.approxWithDetails(tolerance: 1e-6)
-    /// if let bspline = fit.curve, fit.isDone {
-    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
-    /// }
-    /// ```
+    /// if let bspline = fit.curve, fit.isDone {.
+    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles").
+    /// }.
+    /// ```.
     public func approxWithDetails(
         tolerance: Double, continuity: ParametricContinuity = .c2,
         maxSegments: Int = 100, maxDegree: Int = 8
@@ -3009,14 +3178,14 @@ extension Curve3D {
 extension Curve3D {
     /// Split this 3D curve at continuity breaks.
     ///
-    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// Criterion is a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above.
     /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
     /// the one consumer of this vocabulary that recognises the whole ladder including CN.
     ///
-    /// ```swift
-    /// // A cubic interpolated BSpline is C2 at its interior knots, so .c3 is what splits it
+    /// ```swift.
+    /// // A cubic interpolated BSpline is C2 at its interior knots, so .c3 is what splits it.
     /// let pieces = curve.splitByContinuity(criterion: 3)
-    /// ```
+    /// ```.
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D] {
         var refs = [OCCTCurve3DRef?](repeating: nil, count: 32)
         let n = refs.withUnsafeMutableBufferPointer { buf in
@@ -3034,20 +3203,22 @@ extension Curve3D {
 extension Curve3D {
     /// Attempt to convert this curve to an analytical form (line, circle, ellipse).
     ///
-    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its
-    /// domain can be recognized there even when the whole domain is not. The result carries the
-    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
-    /// reports a range starting at 0 on the `Geom_Circle` it returns.
+    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its.
+    /// domain can be recognized there even when the whole domain is not.
     ///
-    /// ```swift
+    /// The result carries the.
+    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
+    /// reports a range starting at 0 on the Geom_Circle it returns.
+    ///
+    /// ```swift.
     /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
-    /// let domain = bspline.domain
+    /// let domain = bspline.domain.
     /// if let r = bspline.toAnalytical(tolerance: 1e-4,
     ///                                 first: domain.lowerBound,
     ///                                 last: domain.upperBound) {
-    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
-    /// }
-    /// ```
+    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15.
+    /// }.
+    /// ```.
     ///
     /// - Parameters:
     ///   - tolerance: Recognition tolerance.
@@ -3067,18 +3238,18 @@ extension Curve3D {
         )
     }
 
-    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the
+    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the.
     /// deviation.
     ///
     /// The full-range spelling of ``toAnalytical(tolerance:first:last:)``, and the curve counterpart
     /// of ``Surface/toAnalyticalWithGap(tolerance:)``.
     ///
-    /// ```swift
+    /// ```swift.
     /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
     /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
-    ///     print(r.gap)   // how far the BSpline strayed from the circle
-    /// }
-    /// ```
+    ///     print(r.gap)   // how far the BSpline strayed from the circle.
+    /// }.
+    /// ```.
     ///
     /// - Parameter tolerance: Recognition tolerance.
     /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
@@ -3276,21 +3447,25 @@ extension Curve3D {
     /// - Parameters:
     ///   - center: Ellipse centre.
     ///   - normal: Normal of the plane the ellipse lies in.
-    ///   - majorRadius: Major radius. Must be `> 0`.
-    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
-    /// - Returns: The ellipse, or `nil` if the radii do not describe one.
+    ///   - majorRadius: Major radius.
     ///
-    /// `GC_MakeEllipse` reports `!IsDone()` for negative and inverted radii on its own, but
-    /// accepts zero; the radii are checked here so every route to an ellipse enforces the same
+    ///   Must be `> 0`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0` and no larger than majorRadius.
+    /// - Returns: The ellipse, or nil if the radii do not describe one.
+    ///
+    /// GC_MakeEllipse reports `!IsDone()` for negative and inverted radii on its own, but.
+    /// accepts zero; the radii are checked here so every route to an ellipse enforces the same.
     /// contract as `Curve3D.ellipse(center:normal:majorRadius:minorRadius:)`.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           majorRadius: 10, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func gcEllipse(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double
@@ -3322,12 +3497,12 @@ extension Curve3D {
     /// Same radius contract as `gcEllipse(center:normal:majorRadius:minorRadius:)`; this overload
     /// only adds control over where the major axis points.
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
     ///                           xDirection: SIMD3(1, 0, 0),
     ///                           majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
-    /// ```
+    /// #expect(e != nil).
+    /// ```.
     public static func gcEllipse(
         center: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double
@@ -3349,17 +3524,23 @@ extension Curve3D {
     /// - Parameters:
     ///   - center: Hyperbola centre.
     ///   - normal: Normal of the plane the hyperbola lies in.
-    ///   - majorRadius: Major radius. Must be `> 0`.
-    ///   - minorRadius: Minor radius. Must be `> 0`. No ordering constraint against the major.
-    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///   - majorRadius: Major radius.
     ///
-    /// ```swift
+    ///   Must be `> 0`.
+    ///   - minorRadius: Minor radius.
+    ///
+    ///   Must be `> 0`.
+    ///
+    ///   No ordering constraint against the major.
+    /// - Returns: The hyperbola, or nil if either radius is `<= 0`.
+    ///
+    /// ```swift.
     /// let h = Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                             majorRadius: 8, minorRadius: 3)
-    /// #expect(h != nil)
+    /// #expect(h != nil).
     /// #expect(Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
     ///                             majorRadius: 0, minorRadius: 3) == nil)
-    /// ```
+    /// ```.
     public static func gcHyperbola(
         center: SIMD3<Double>, normal: SIMD3<Double>,
         majorRadius: Double, minorRadius: Double
@@ -3400,22 +3581,26 @@ extension Curve3D {
 }
 
 extension Curve3D {
-    /// Measured global continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
+    /// Measured global continuity of the 3D curve, as a raw GeomAbs_Shape ordinal.
     ///
-    /// The ordinals are `GeomAbs_Shape`'s own declared order, `0=C0, 1=G1, 2=C1, 3=G2,
-    /// 4=C2, 5=C3, 6=CN`, not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    /// The ordinals are the GeomAbs_Shape\'s own declared order, `0=C0, 1=G1, 2=C1, 3=G2,.
+    /// 4=C2, 5=C3, 6=CN`, not a 0/1/2 order.
     ///
-    /// ```swift
+    /// Prefer `continuityClass`, which names them.
+    ///
+    /// ```swift.
     /// // A cubic BSpline with a doubled interior knot is C1, which is ordinal 2 (not 1).
-    /// print(bspline.continuity)        // 2
-    /// print(bspline.continuityClass)   // .c1
-    /// ```
+    /// print(bspline.continuity)        // 2.
+    /// print(bspline.continuityClass)   // .c1.
+    /// ```.
     ///
-    /// - Warning: This is the migration target for the retired `continuityOrder`, but it is not a
-    ///   drop-in one: `continuityOrder` used to answer a different set of numbers
-    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`). A threshold moved across unchanged
-    ///   reads as one class too low, `>= 2` accepts C1 here and accepted C2 there, and `== 99`
-    ///   is now unreachable. Prefer ``continuityClass`` and ``ContinuityClass/satisfies(_:)``,
+    /// - Warning: This is the migration target for the retired continuityOrder, but it is not a
+    ///   drop-in one: continuityOrder used to answer a different set of numbers
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`). A threshold moved across unchanged.
+    ///   reads as one class too low, `>= 2` accepts C1 here and accepted C2 there, and `== 99`.
+    ///   is now unreachable.
+    ///
+    ///   Prefer `continuityClass` and ``ContinuityClass/satisfies(_:)``,
     ///   which cannot be compared against the wrong constant at all (#619).
     public var continuity: Int {
         Int(OCCTCurve3DGetContinuity(handle))
@@ -3423,11 +3608,11 @@ extension Curve3D {
 
     /// Measured global continuity of the 3D curve.
     ///
-    /// ```swift
+    /// ```swift.
     /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))
-    /// print(line?.continuityClass)                  // .cN
-    /// print(line?.continuityClass.satisfies(.c3))   // true
-    /// ```
+    /// print(line?.continuityClass)                  // .cN.
+    /// print(line?.continuityClass.satisfies(.c3))   // true.
+    /// ```.
     public var continuityClass: ContinuityClass {
         ContinuityClass(rawValue: OCCTCurve3DGetContinuity(handle)) ?? .c0
     }
@@ -3680,25 +3865,31 @@ extension Curve3D {
 
     /// Local point-on-curve search from an initial parameter guess.
     ///
-    /// Returns `(parameter, distance)`. Searches a window of ±10% of the domain around
-    /// `initParam` and reports the
-    /// **lowest-distance extremum inside that window**. `initParam` bounds the window; it does not
-    /// rank what is found in it, so the extremum you get back is not necessarily the one nearest
+    /// Returns `(parameter, distance)`.
+    ///
+    /// Searches a window of ±10% of the domain around.
+    /// initParam and reports the.
+    /// **lowest-distance extremum inside that window**. initParam bounds the window; it does not.
+    /// rank what is found in it, so the extremum you get back is not necessarily the one nearest.
     /// your guess, where a window holds several, the one closest to the *query point* wins.
     ///
-    /// The window is what makes the answer local, and a windowed minimum can still be a global
+    /// The window is what makes the answer local, and a windowed minimum can still be a global.
     /// *maximum*: on a half circle of radius 5 queried from `(0, -6, 0)` with a guess of `.pi / 2`,
-    /// the window holds the far side of the arc and this reports 11, where the nearest point on the
-    /// curve is 7.81 away. Use ``nearestParameter(to:)`` or ``projectPoint(_:precision:)`` when you
+    /// the window holds the far side of the arc and this reports 11, where the nearest point on the.
+    /// curve is 7.81 away.
+    ///
+    /// Use ``nearestParameter(to:)`` or ``projectPoint(_:precision:)`` when you
     /// want the global answer.
     ///
-    /// When the window holds no extremum at all, the search falls back to the whole curve, and,
-    /// since #615, to the whole curve's true nearest point, which is what those two report. Before
-    /// #615 the fallback reported an extremum instead, so a guess sitting *on* the nearest point
-    /// returned the point diametrically opposite it, and a bounded segment queried from past its own
-    /// end returned `nil` for every guess.
+    /// When the window holds no extremum at all, the search falls back to the whole curve, and,.
+    /// since #615, to the whole curve's true nearest point, which is what those two report.
     ///
-    /// ```swift
+    /// Before.
+    /// #615 the fallback reported an extremum instead, so a guess sitting *on* the nearest point.
+    /// returned the point diametrically opposite it, and a bounded segment queried from past its own.
+    /// end returned nil for every guess.
+    ///
+    /// ```swift.
     /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     ///     .trimmed(from: 0, to: .pi)!
     ///
@@ -3707,12 +3898,12 @@ extension Curve3D {
     ///
     /// // Guess .pi / 2: an extremum IS nearby, and it is the far side of the arc.
     /// #expect(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: .pi / 2)?.distance == 11)
-    /// ```
+    /// ```.
     ///
-    /// - Returns: `nil` only when the curve cannot be read.
+    /// - Returns: nil only when the curve cannot be read.
     ///
     /// There is no tolerance: both the windowed search and the whole-curve fallback go through
-    /// `GeomAPI_ProjectPointOnCurve`, which takes none.
+    /// GeomAPI_ProjectPointOnCurve, which takes none.
     public func locateNearestPoint(
         _ point: SIMD3<Double>, initParam: Double
     ) -> (parameter: Double, distance: Double)? {
@@ -3732,7 +3923,7 @@ extension Curve3D {
     ///   - point: The 3D point to project.
     ///   - maxResults: Output *capacity* (default 10), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    /// - Returns: Every extremum found, up to `maxResults`.
+    /// - Returns: Every extremum found, up to maxResults.
     public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(
         parameter: Double, distance: Double
     )] {
@@ -3911,12 +4102,12 @@ extension Curve3D {
     /// Equivalent to ``Curve3D/tangentDirection(at:)``.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The unit tangent, or `nil` where every derivative up to order 3 is null.
+    /// - Returns: The unit tangent, or nil where every derivative up to order 3 is null.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// if let t = circle.localTangent(at: 0) { print(t) }   // (0, 1, 0)
-    /// ```
+    /// ```.
     public func localTangent(at u: Double) -> SIMD3<Double>? {
         var tx = 0.0
         var ty = 0.0
@@ -3931,15 +4122,15 @@ extension Curve3D {
     /// Equivalent to ``Curve3D/normal(at:)``.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The normal, or `nil` where the curvature is zero (a straight stretch, or an
+    /// - Returns: The normal, or nil where the curvature is zero (a straight stretch, or an
     ///   inflection) or infinite (a cusp), a normal needs a curvature to point away from.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// let n = circle.localNormal(at: 0)                    // points at the centre
     /// let straight = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     /// #expect(straight.localNormal(at: 0) == nil)          // no curvature, no normal
-    /// ```
+    /// ```.
     public func localNormal(at u: Double) -> SIMD3<Double>? {
         var nx = 0.0
         var ny = 0.0
@@ -3954,14 +4145,16 @@ extension Curve3D {
     /// Equivalent to ``Curve3D/centerOfCurvature(at:)``.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The centre of curvature, or `nil` where the curvature cannot be inverted into a
-    ///   radius: zero (straight or inflecting) or infinite (a cusp). Both cases used to return a
-    ///   point built from `NaN` and infinity rather than `nil` (#494).
+    /// - Returns: The centre of curvature, or nil where the curvature cannot be inverted into a
+    ///   radius: zero (straight or inflecting) or infinite (a cusp).
     ///
-    /// ```swift
+    ///   Both cases used to return a.
+    ///   point built from NaN and infinity rather than nil (#494).
+    ///
+    /// ```swift.
     /// let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 5)!
     /// let c = circle.localCentreOfCurvature(at: 0)   // (1, 2, 0), the circle's own centre
-    /// ```
+    /// ```.
     public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>? {
         var cx = 0.0
         var cy = 0.0
@@ -3974,40 +4167,47 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// Unavailable: this Int reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
-    /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    /// Use `continuityClass` (named cases) or `continuity` (raw ordinal).
     ///
-    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`, a
-    /// scheme of OCCTSwift's own invention that matched neither `GeomAbs_Shape` nor its own doc
-    /// comment, and disagreed with ``continuity`` on the same curve for every class except C0.
-    /// #485 replaced it with the real `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4,
+    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`, a.
+    /// scheme of OCCTSwift's own invention that matched neither GeomAbs_Shape nor its own doc.
+    /// comment, and disagreed with `continuity` on the same curve for every class except C0.
+    /// #485 replaced it with the real GeomAbs_Shape ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4,.
+    ///
     /// C3=5, CN=6`).
     ///
-    /// Every existing threshold check kept compiling across that change and quietly changed
+    /// Every existing threshold check kept compiling across that change and quietly changed.
     /// meaning, which is why the spelling is retired rather than reinterpreted (#619):
     ///
-    /// ```swift
-    /// // Before: `2` was C2. After: `2` is C1, so a merely tangent-continuous curve passed.
-    /// if curve.continuityOrder >= 2 { useAsC2Spline() }
+    /// ```swift.
+    /// // Before: 2 was C2.
+    ///
+    /// After: 2 is C1, so a merely tangent-continuous curve passed.
+    /// if curve.continuityOrder >= 2 { useAsC2Spline() }.
     ///
     /// // The question that idiom meant to ask, asked so it cannot drift again:
-    /// if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
+    /// if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }.
     ///
     /// // And the old `== 99` fast path for analytic geometry, which can never fire again:
-    /// if curve.continuityClass == .cN { useAnalyticFastPath() }
-    /// ```
+    /// if curve.continuityClass == .cN { useAnalyticFastPath() }.
+    /// ```.
     ///
-    /// ``continuity`` is the same `Int` under an honest name if a raw ordinal is genuinely what
+    /// `continuity` is the same Int under an honest name if a raw ordinal is genuinely what.
     /// you want, but it is the *new* ordinal, so re-check any constant compared against it.
     ///
-    /// - Important: The retired encoding had an eighth value the tables above do not show. It
+    /// - Important: The retired encoding had an eighth value the tables above do not show.
+    ///
+    /// It.
     ///   signalled failure out of band, returning `-1` from its `default:` branch and for a null
-    ///   or unreadable handle. ``continuity`` has no such sentinel: it returns `0` in the same
-    ///   situations, and `0` is an ordinary C0 measurement. A migrated
-    ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
-    ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
+    ///   or unreadable handle. `continuity` has no such sentinel: it returns 0 in the same
+    ///   situations, and 0 is an ordinary C0 measurement. A migrated.
+    ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and.
+    ///   an unreadable curve now reads as a genuinely C0 one.
+    ///
+    ///   There is no in-band way to tell the.
     ///   two apart; check the handle before asking.
     @available(
         *, unavailable,

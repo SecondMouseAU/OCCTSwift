@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// A 2D axis placement backed by `Geom2d_AxisPlacement`.
+/// A 2D axis placement backed by Geom2d_AxisPlacement.
 ///
 /// Represents a coordinate system defined by an origin point and a direction vector.
 public final class AxisPlacement2D: @unchecked Sendable {

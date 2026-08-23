@@ -7,15 +7,22 @@ extension Shape {
     /// Apply 2D fillets (rounded corners) to a planar face at specified vertices.
     ///
     /// Uses BRepFilletAPI_MakeFillet2d to round corners of a planar face.
+    ///
     /// Vertex indices are 0-based and correspond to the topological vertex order.
     ///
     /// - Note: Only the **first** face of the receiver is filleted, and the result is that
-    ///   face alone; the other faces of a multi-face shape are neither filleted nor carried
-    ///   through. Vertex indices are numbered within that first face. Call this on one face
+    ///   face alone; the other faces of a multi-face shape are neither filleted nor carried.
+    ///   through.
+    ///
+    ///   Vertex indices are numbered within that first face.
+    ///
+    ///   Call this on one face.
     ///   at a time.
     ///
     /// - Note: An index naming no vertex of that first face fails the whole call rather than being
-    ///   skipped (#568). Previously it was dropped and the corners that did resolve were rounded,
+    ///   skipped (#568).
+    ///
+    ///   Previously it was dropped and the corners that did resolve were rounded,.
     ///   reported as a complete result.
     ///
     /// - Parameters:
@@ -23,11 +30,11 @@ extension Shape {
     ///   - radii: Fillet radius for each vertex (must match vertexIndices count)
     /// - Returns: Modified shape with fillets, or nil on failure
     ///
-    /// ```swift
+    /// ```swift.
     /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
     /// let rounded = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2, 2, 2, 2])
     /// print(rounded?.edgeCount ?? 0)   // 8: four straights and four arcs
-    /// ```
+    /// ```.
     public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape? {
         guard !vertexIndices.isEmpty, vertexIndices.count == radii.count else { return nil }
         let indices = vertexIndices.map { Int32($0) }
@@ -43,26 +50,40 @@ extension Shape {
 
     /// Apply 2D chamfers (angled cuts) to a planar face between adjacent edge pairs.
     ///
-    /// Uses BRepFilletAPI_MakeFillet2d to add chamfers at the intersection of
-    /// adjacent edges. Edge indices are 0-based and correspond to the topological edge order.
+    /// Uses BRepFilletAPI_MakeFillet2d to add chamfers at the intersection of.
+    /// adjacent edges.
+    ///
+    /// Edge indices are 0-based and correspond to the topological edge order.
     ///
     /// - Note: Only the **first** face of the receiver is chamfered, and the result is that
-    ///   face alone; the other faces of a multi-face shape are neither chamfered nor carried
-    ///   through. Edge indices are numbered within that first face. Call this on one face at
+    ///   face alone; the other faces of a multi-face shape are neither chamfered nor carried.
+    ///   through.
+    ///
+    ///   Edge indices are numbered within that first face.
+    ///
+    ///   Call this on one face at.
     ///   a time.
     ///
     /// - Note: *Either* half of a pair naming no edge of that first face fails the whole call
-    ///   rather than being skipped (#568). Previously the pair was dropped and the corners that
+    ///   rather than being skipped (#568).
+    ///
+    ///   Previously the pair was dropped and the corners that.
     ///   did resolve were cut, reported as a complete result.
     ///
     /// - Note: The same edge pair named twice fails the whole call rather than crashing (#705).
     ///   This is an upstream OCCT defect in `BRepFilletAPI_MakeFillet2d::AddChamfer`, not this
     ///   wrapper's own: the pair's second call finds its shared vertex already consumed by the
-    ///   first chamfer, and the resulting failure returns two null edges that `AddChamfer`
-    ///   dereferences without checking for first. The process SIGSEGV'd, uncatchably, before this
-    ///   guard existed. The check is order independent: `(0, 1)` and `(1, 0)` name the same pair
-    ///   and both are refused. Reusing one edge across two *different* pairs is unaffected and
-    ///   still works, e.g. chamfering every corner of a rectangle with
+    ///   first chamfer, and the resulting failure returns two null edges that AddChamfer.
+    ///   dereferences without checking for first.
+    ///
+    ///   The process SIGSEGV'd, uncatchably, before this.
+    ///   guard existed.
+    ///
+    ///   The check is order independent: `(0, 1)` and `(1, 0)` name the same pair
+    ///   and both are refused.
+    ///
+    ///   Reusing one edge across two *different* pairs is unaffected and.
+    ///   still works, e.g. chamfering every corner of a rectangle with.
     ///   `(0, 1), (1, 2), (2, 3), (3, 0)`.
     ///
     /// - Parameters:
@@ -70,14 +91,14 @@ extension Shape {
     ///   - distances: Chamfer distance for each edge pair
     /// - Returns: Modified shape with chamfers, or nil on failure
     ///
-    /// ```swift
+    /// ```swift.
     /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
     /// let cut = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2, 2])
     /// print(cut?.edgeCount ?? 0)   // 6: two corners replaced by chamfer edges
     ///
     /// // A repeated pair is refused, not crashed, and not silently collapsed to one chamfer.
     /// print(face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1, 2]) == nil)   // true
-    /// ```
+    /// ```.
     public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape? {
         guard !edgePairs.isEmpty, edgePairs.count == distances.count else { return nil }
         let edge1Indices = edgePairs.map { Int32($0.0) }
@@ -97,11 +118,11 @@ extension Shape {
 
     /// Result of a 2D analytical fillet operation.
     public struct AnaFilletResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
     }
 
@@ -141,7 +162,7 @@ extension Shape {
 
     /// Compute a 2D analytical fillet between two edges.
     ///
-    /// Convenience overload accepting `Edge` objects directly.
+    /// Convenience overload accepting Edge objects directly.
     public static func anaFillet(
         edge1: Edge, edge2: Edge,
         planeOrigin: SIMD3<Double> = .zero,
@@ -159,7 +180,8 @@ extension Shape {
     /// Compute a 2D analytical fillet between two edges of a wire.
     ///
     /// Extracts edges from the wire and fillets between adjacent pairs.
-    /// Edge indices are 0-based; fillet is computed between edges at `index` and `index+1`.
+    ///
+    /// Edge indices are 0-based; fillet is computed between edges at index and `index+1`.
     ///
     /// - Parameters:
     ///   - wire: Wire containing the edges
@@ -185,20 +207,22 @@ extension Shape {
 
     /// Result of a 2D iterative fillet operation.
     public struct FilletAlgoResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
-        /// Number of fillet solutions found
+        /// Number of fillet solutions found.
         public let resultCount: Int
     }
 
     /// Compute a 2D iterative fillet between two edges in a plane.
     ///
-    /// Uses ChFi2d_FilletAlgo for general 2D fillet computation. Supports
-    /// any edge types (not just lines and arcs like `anaFillet`).
+    /// Uses ChFi2d_FilletAlgo for general 2D fillet computation.
+    ///
+    /// Supports.
+    /// any edge types (not just lines and arcs like anaFillet).
     ///
     /// - Parameters:
     ///   - edge1: First edge shape
@@ -232,7 +256,7 @@ extension Shape {
 
     /// Compute a 2D iterative fillet between two edges.
     ///
-    /// Convenience overload accepting `Edge` objects directly.
+    /// Convenience overload accepting Edge objects directly.
     public static func filletAlgo(
         edge1: Edge, edge2: Edge,
         planeOrigin: SIMD3<Double> = .zero,
@@ -279,14 +303,14 @@ extension Shape {
 
     /// Create a 2D edge from a circle arc with parameter bounds.
     ///
-    /// `radius` must be positive. `BRepBuilderAPI_MakeEdge2d` reports success for a zero radius
-    /// and hands back a zero-length edge with both vertices at the centre (#553), so the radius is
+    /// radius must be positive. BRepBuilderAPI_MakeEdge2d reports success for a zero radius.
+    /// and hands back a zero-length edge with both vertices at the centre (#553), so the radius is.
     /// checked before OCCT sees it. A non-positive radius returns nil.
     ///
-    /// ```swift
+    /// ```swift.
     /// let arc = Shape.edge2dFromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
     ///                                  radius: 3, p1: 0, p2: .pi)
-    /// ```
+    /// ```.
     public static func edge2dFromCircle(
         center: SIMD2<Double>,
         direction: SIMD2<Double>,
@@ -321,13 +345,13 @@ extension Shape {
 
     // MARK: - ProjLib_ComputeApprox
 
-    /// Project this edge's 3D curve onto a face's surface → edge on surface
+    /// Project this edge's 3D curve onto a face's surface → edge on surface.
     public func projectOntoSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTProjLibComputeApprox(handle, face.handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface
+    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface.
     public func projectOntoPolarSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTProjLibComputeApproxOnPolarSurface(handle, face.handle, tolerance) else {
             return nil
@@ -431,20 +455,22 @@ extension Shape {
 
     /// Find circles tangent to 3 circles.
     ///
-    /// Every radius must be positive. A zero-radius argument is a point, and OCCT does not answer
+    /// Every radius must be positive. A zero-radius argument is a point, and OCCT does not answer.
     /// the point question when it is given one: measured (#553), it returns each solution twice,
-    /// because tangency to a circle of radius zero satisfies both the enclosing and the outside
-    /// case at once. Use ``circleTangent2CirclesPoint(c1Center:c1Radius:c2Center:c2Radius:point:tolerance:)``,
+    /// because tangency to a circle of radius zero satisfies both the enclosing and the outside.
+    /// case at once.
+    ///
+    /// Use ``circleTangent2CirclesPoint(c1Center:c1Radius:c2Center:c2Radius:point:tolerance:)``,
     /// ``circleTangentCircle2Points(circleCenter:circleRadius:p1:p2:tolerance:)`` or
     /// ``circleThrough3Points(p1:p2:p3:tolerance:)`` to name a point as a point. A non-positive
     /// radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circles = Shape.circleTangent3Circles(c1Center: SIMD2(0, 0), c1Radius: 2,
     ///                                           c2Center: SIMD2(10, 0), c2Radius: 2,
     ///                                           c3Center: SIMD2(5, 8), c3Radius: 2)
-    /// print(circles.count)   // 8
-    /// ```
+    /// print(circles.count)   // 8.
+    /// ```.
     public static func circleTangent3Circles(
         c1Center: SIMD2<Double>, c1Radius: Double,
         c2Center: SIMD2<Double>, c2Radius: Double,
@@ -467,15 +493,17 @@ extension Shape {
 
     /// Find circles tangent to 2 circles through 1 point.
     ///
-    /// Both radii must be positive. With a zero radius the solution set comes back padded with
+    /// Both radii must be positive.
+    ///
+    /// With a zero radius the solution set comes back padded with.
     /// repeats (#553): measured, four solutions holding two distinct circles. A non-positive
     /// radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circles = Shape.circleTangent2CirclesPoint(c1Center: SIMD2(0, 0), c1Radius: 2,
     ///                                                c2Center: SIMD2(10, 0), c2Radius: 2,
     ///                                                point: SIMD2(5, 8))
-    /// ```
+    /// ```.
     public static func circleTangent2CirclesPoint(
         c1Center: SIMD2<Double>, c1Radius: Double,
         c2Center: SIMD2<Double>, c2Radius: Double,
@@ -496,15 +524,17 @@ extension Shape {
 
     /// Find circles tangent to 1 circle through 2 points.
     ///
-    /// `circleRadius` must be positive. This is the case where reading a zero-radius circle as a
+    /// circleRadius must be positive.
+    ///
+    /// This is the case where reading a zero-radius circle as a.
     /// point fails outright: measured (#553), the solver finds nothing at all, where
     /// ``circleThrough3Points(p1:p2:p3:tolerance:)`` on the same three positions finds the circle
     /// through them. A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circles = Shape.circleTangentCircle2Points(circleCenter: SIMD2(0, 0), circleRadius: 2,
     ///                                                p1: SIMD2(10, 0), p2: SIMD2(5, 8))
-    /// ```
+    /// ```.
     public static func circleTangentCircle2Points(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         p1: SIMD2<Double>, p2: SIMD2<Double>, tolerance: Double = 1e-6
@@ -542,24 +572,28 @@ extension Shape {
 
     /// Classify a 2D point relative to a face boundary in parameter space.
     ///
-    /// Uses IntTools_FClass2d to determine if a point in the face's UV parameter
+    /// Uses IntTools_FClass2d to determine if a point in the face's UV parameter.
     /// space is inside, on, or outside the face boundary.
     ///
-    /// Two other wrapped classifiers answer the identical "in/on/out of the face boundary"
-    /// question for a UV point — `Face.classify(u:v:)` and `Shape.classifyPoint2D(faceIndex:
-    /// u:v:)`, both backed by `BRepClass_FaceClassifier`/`BRepClass_FClassifier` — and both
-    /// default to `1e-6`. This method used to default to `1e-7`, an order of magnitude tighter,
-    /// so a point 5e-7 from the boundary classified `.onBoundary` through the other two but not
+    /// Two other wrapped classifiers answer the identical "in/on/out of the face boundary".
+    /// question for a UV point. (`Face.classify(u:v:)` and `Shape.classifyPoint2D(faceIndex:).
+    /// u:v:)`, both backed by BRepClass_FaceClassifier/BRepClass_FClassifier (and both).
+    /// default to `1e-6`.
+    ///
+    /// This method used to default to `1e-7`, an order of magnitude tighter,.
+    /// so a point 5e-7 from the boundary classified `.onBoundary` through the other two but not.
     /// through this one; aligned to `1e-6` to match (#840). `isHole(tolerance:)`, this method's
-    /// own `IntTools_FClass2d` file-neighbor, keeps its `1e-7` default deliberately — it answers a
+    /// own IntTools_FClass2d file-neighbor, keeps its `1e-7` default deliberately (it answers a).
     /// different question (is this face a hole) than the three UV-boundary classifiers above.
     ///
     /// - Warning: This is a **silent runtime behavior change** for any caller relying on the
-    ///   implicit default, not just an internal-consistency fix. A point ~5e-7 from a face
-    ///   boundary that classified `.outside` under the old `1e-7` default now classifies
-    ///   `.onBoundary` under the new `1e-6` default — a 10x loosening — with no compile-time
-    ///   signal, and downstream accept/reject logic keyed on that classification can change
-    ///   outcome purely from this upgrade for geometry near that boundary band. Pass `tolerance:`
+    ///   implicit default, not just an internal-consistency fix. A point ~5e-7 from a face.
+    ///   boundary that classified `.outside` under the old `1e-7` default now classifies.
+    ///   `.onBoundary` under the new `1e-6` default (a 10x loosening (with no compile-time)).
+    ///   signal, and downstream accept/reject logic keyed on that classification can change.
+    ///   outcome purely from this upgrade for geometry near that boundary band.
+    ///
+    ///   Pass `tolerance:`
     ///   explicitly to pin a specific value across the upgrade (PR #870 aggregate review).
     ///
     /// - Parameters:
@@ -596,11 +630,12 @@ extension Shape {
     /// Add a 2D fillet at a vertex on a planar face.
     ///
     /// This operation works exclusively on **planar faces**, not solids.
+    ///
     /// To fillet a vertex on a solid, first extract the face:
-    /// ```swift
+    /// ```swift.
     /// let face = solid.subShapes(ofType: .face)[faceIndex]
     /// let filleted = face.addFillet2d(vertexIndex: 0, radius: 1.0)
-    /// ```
+    /// ```.
     /// - Parameters:
     ///   - vertexIndex: 0-based index of the vertex to fillet.
     ///   - radius: Fillet radius.
@@ -613,11 +648,12 @@ extension Shape {
     /// Add a 2D chamfer between two edges on a planar face.
     ///
     /// This operation works exclusively on **planar faces**, not solids.
+    ///
     /// To chamfer edges on a solid, first extract the face:
-    /// ```swift
+    /// ```swift.
     /// let face = solid.subShapes(ofType: .face)[faceIndex]
     /// let chamfered = face.addChamfer2d(edge1Index: 0, edge2Index: 1, d1: 1.0, d2: 0.5)
-    /// ```
+    /// ```.
     /// - Parameters:
     ///   - edge1Index: 0-based index of first edge.
     ///   - edge2Index: 0-based index of second edge.
@@ -772,14 +808,16 @@ extension Shape {
 extension Shape {
     /// Create a 2D edge from a full circle.
     ///
-    /// - Parameter radius: circle radius. Must be greater than zero.
-    /// - Returns: the edge, or `nil` if the circle is degenerate.
+    /// - Parameter radius: circle radius.
     ///
-    /// ```swift
+    /// Must be greater than zero.
+    /// - Returns: the edge, or nil if the circle is degenerate.
+    ///
+    /// ```swift.
     /// if let e = Shape.edge2dFullCircle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
-    ///     print(e.edges().count)   // 1
-    /// }
-    /// ```
+    ///     print(e.edges().count)   // 1.
+    /// }.
+    /// ```.
     public static func edge2dFullCircle(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         radius: Double
@@ -796,18 +834,22 @@ extension Shape {
     /// Create a 2D edge from an ellipse.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
-    ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
+    ///   - majorRadius: semi-major axis.
+    ///
+    ///   Must be greater than zero.
+    ///   - minorRadius: semi-minor axis.
+    ///
+    ///   Must be greater than zero and no larger than.
+    ///     majorRadius; equal radii are a circle and are valid.
+    /// - Returns: the edge, or nil if the ellipse is degenerate. OCCT builds a zero-length edge
     ///   from a zero-radius ellipse, and a doubled-back segment from a zero minor radius.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let e = Shape.edge2dEllipse(center: .zero, direction: SIMD2(1, 0),
     ///                                majorRadius: 5, minorRadius: 3) {
-    ///     print(e.edges().count)   // 1
-    /// }
-    /// ```
+    ///     print(e.edges().count)   // 1.
+    /// }.
+    /// ```.
     public static func edge2dEllipse(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         majorRadius: Double, minorRadius: Double
@@ -824,17 +866,21 @@ extension Shape {
     /// Create a 2D edge from an ellipse arc.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
-    ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate.
+    ///   - majorRadius: semi-major axis.
     ///
-    /// ```swift
+    ///   Must be greater than zero.
+    ///   - minorRadius: semi-minor axis.
+    ///
+    ///   Must be greater than zero and no larger than.
+    ///     majorRadius; equal radii are a circle and are valid.
+    /// - Returns: the edge, or nil if the ellipse is degenerate.
+    ///
+    /// ```swift.
     /// if let e = Shape.edge2dEllipseArc(center: .zero, direction: SIMD2(1, 0),
     ///                                   majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) {
-    ///     print(e.edges().count)   // 1
-    /// }
-    /// ```
+    ///     print(e.edges().count)   // 1.
+    /// }.
+    /// ```.
     public static func edge2dEllipseArc(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         majorRadius: Double, minorRadius: Double,

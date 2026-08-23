@@ -20,10 +20,10 @@ import simd
 //   - Optional callout text with a leader line (e.g. "M10×1.5")
 
 extension DrawingAnnotation {
-    /// ISO 6410 cosmetic thread — side view pattern.
+    /// ISO 6410 cosmetic thread (side view pattern).
     ///
-    /// Produces two parallel lines on the CENTER layer spanning the thread
-    /// length inside the shank's side-view silhouette, plus an optional
+    /// Produces two parallel lines on the CENTER layer spanning the thread.
+    /// length inside the shank's side-view silhouette, plus an optional.
     /// callout label on the TEXT layer.
     public static func cosmeticThreadSideView(
         axisStart: SIMD2<Double>,  // thread start projected into the 2D view
@@ -70,14 +70,16 @@ extension DrawingAnnotation {
         return result
     }
 
-    /// ISO 6410 cosmetic thread — end-view (circular) pattern.
+    /// ISO 6410 cosmetic thread. (end-view (circular) pattern).
     ///
     /// Produces a 3/4 broken arc at the minor diameter: typically three arcs
-    /// covering 0-90°, 90°-180°, and 180°-315° with a visible gap near one
+    /// covering 0-90°, 90°-180°, and 180°-315° with a visible gap near one.
     /// quadrant, indicating the thread.
     ///
-    /// Returns a description the consumer can render onto a drawing. The
-    /// broken-arc segments are returned as `(centre, radius, startAngle,
+    /// Returns a description the consumer can render onto a drawing.
+    ///
+    /// The.
+    /// broken-arc segments are returned as `(centre, radius, startAngle,.
     /// endAngle)` triples ready to pass to DXFWriter.addArc.
     public static func cosmeticThreadEndView(
         centre: SIMD2<Double>,
@@ -110,7 +112,9 @@ extension DrawingAnnotation {
 
 extension Drawing {
     /// Convenience: add an ISO 6410 cosmetic thread side-view pattern plus
-    /// optional callout to this drawing. Returns the added annotations for
+    /// optional callout to this drawing.
+    ///
+    /// Returns the added annotations for.
     /// further manipulation.
     @discardableResult
     public func addCosmeticThreadSide(

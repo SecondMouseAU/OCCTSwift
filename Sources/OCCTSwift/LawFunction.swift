@@ -3,7 +3,7 @@ import OCCTBridge
 
 /// An evolution function defining how a scalar value varies along a parameter range.
 ///
-/// Used with `Shape.pipeShellWithLaw()` for variable-section sweeps where the
+/// Used with `Shape.pipeShellWithLaw()` for variable-section sweeps where the.
 /// cross-section scales smoothly along the spine path.
 public final class LawFunction: @unchecked Sendable {
     internal let handle: OCCTLawFunctionRef
@@ -18,12 +18,12 @@ public final class LawFunction: @unchecked Sendable {
 
     // MARK: - Evaluation
 
-    /// Evaluate the law function at a given parameter
+    /// Evaluate the law function at a given parameter.
     public func value(at parameter: Double) -> Double {
         OCCTLawFunctionValue(handle, parameter)
     }
 
-    /// Parameter bounds of the law function
+    /// Parameters:      bounds of the law function.
     public var bounds: ClosedRange<Double> {
         var first: Double = 0
         var last: Double = 0
@@ -68,7 +68,7 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create an interpolated law from (parameter, value) pairs
+    /// Create an interpolated law from (parameter, value) pairs.
     /// - Parameters:
     ///   - points: Array of (parameter, value) tuples in ascending parameter order
     ///   - periodic: Whether the law is periodic
@@ -90,7 +90,7 @@ public final class LawFunction: @unchecked Sendable {
         return LawFunction(handle: h)
     }
 
-    /// Create a BSpline law from control poles and knot vector
+    /// Create a BSpline law from control poles and knot vector.
     /// - Parameters:
     ///   - poles: Control point values (1D)
     ///   - knots: Knot values
@@ -142,21 +142,27 @@ public final class LawFunction: @unchecked Sendable {
 
     /// Find knot indices where a BSpline law drops below given continuity.
     ///
-    /// Only works on BSpline-based law functions. Returns raw indices into the underlying
-    /// `Law_BSpline`'s own knot table -- not directly usable against `value(at:)` or
-    /// `bounds`, since this API exposes no way to read that knot table back. See
+    /// Only works on BSpline-based law functions.
+    ///
+    /// Returns raw indices into the underlying.
+    /// the Law_BSpline\'s own knot table -- not directly usable against `value(at:)` or
+    /// bounds, since this API exposes no way to read that knot table back.
+    ///
+    /// See.
     /// `knotSplitParameters(continuityOrder:)` for the actual parameter values (#403).
     ///
-    /// ```swift
+    /// ```swift.
     /// let indices = law.knotSplitting(continuityOrder: .c2)
     /// let params  = law.knotSplitParameters(continuityOrder: .c2)
     /// // Same analyzer over the same law: indices[i] is the knot-table index of params[i],
     /// // so the two always agree on count, however many splits the law has (#481).
-    /// ```
+    /// ```.
     ///
-    /// - Parameter continuityOrder: Minimum continuity to require of each arc. This is a
-    ///   derivative order, and `Law_BSplineKnotSplitting` splits a knot only when
-    ///   `degree - multiplicity < continuityOrder`, so the meaningful range is 0...degree and it
+    /// - Parameter continuityOrder: Minimum continuity to require of each arc.
+    ///
+    /// This is a.
+    ///   derivative order, and Law_BSplineKnotSplitting splits a knot only when.
+    ///   `degree - multiplicity < continuityOrder`, so the meaningful range is 0...degree and it.
     ///   saturates there: a cubic law with simple interior knots is already C2 at every
     ///   interior knot, and only ``ParametricContinuity/c3`` reports them (#480).
     /// - Returns: Array of knot indices where continuity breaks, or empty array
@@ -182,21 +188,23 @@ public final class LawFunction: @unchecked Sendable {
         return indices.prefix(Int(count)).map(Int.init)
     }
 
-    /// Parameter values (not raw knot indices) at which continuity drops below `continuityOrder`.
+    /// Parameter       values (not raw knot indices) at which continuity drops below continuityOrder.
     ///
     /// The law-function analogue of `Curve3D.continuityBreaks`: a law's discontinuities,
-    /// like a curve's, are inherently 1D, so parameter values (directly usable with
-    /// `value(at:)`, and bounded by `bounds`) are the natural shape here too -- unlike
+    /// like a curve's, are inherently 1D, so parameter values (directly usable with.
+    /// `value(at:)`, and bounded by bounds) are the natural shape here too -- unlike
     /// `knotSplitting(continuityOrder:)`'s raw indices, which the public API otherwise
-    /// exposes no way to interpret. Added alongside `Surface.knotSplitting`'s new parameter
+    /// exposes no way to interpret.
+    ///
+    /// Added alongside `Surface.knotSplitting`'s new parameter.
     /// fields in #403: same "cheap to compute, previously dropped" gap.
     ///
-    /// ```swift
-    /// // A cubic law with simple interior knots is already C2 there, so .c3 is the order
+    /// ```swift.
+    /// // A cubic law with simple interior knots is already C2 there, so .c3 is the order.
     /// // that reports its interior knots; anything below returns just the two end knots.
     /// let breaks = law.knotSplitParameters(continuityOrder: .c3)
-    /// // breaks are real parameters within law.bounds, usable e.g. as sweep split points
-    /// ```
+    /// // breaks are real parameters within law.bounds, usable e.g. as sweep split points.
+    /// ```.
     ///
     /// - Parameter continuityOrder: Minimum continuity to require of each arc, same derivative
     ///   order contract as `knotSplitting(continuityOrder:)` (#480)

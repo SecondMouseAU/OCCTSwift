@@ -2,11 +2,12 @@ import Foundation
 import OCCTBridge
 
 /// Date/time wrapping OCCT Quantity_Date.
+///
 /// Represents a date from January 1, 1979 onward with microsecond precision.
 public struct OCCTDate: Sendable, Equatable, Comparable {
-    /// Internal seconds from epoch (Jan 1, 1979)
+    /// Internal seconds from epoch (Jan 1, 1979).
     internal let sec: Int32
-    /// Internal microseconds
+    /// Internal microseconds.
     internal let usec: Int32
 
     internal init(sec: Int32, usec: Int32) {
@@ -14,7 +15,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         self.usec = usec
     }
 
-    /// Create a date from components (year must be >= 1979)
+    /// Create a date from components (year must be >= 1979).
     public init?(
         month: Int, day: Int, year: Int, hour: Int = 0, minute: Int = 0,
         second: Int = 0, millisecond: Int = 0, microsecond: Int = 0
@@ -31,7 +32,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         self.usec = u
     }
 
-    /// Default date (Jan 1, 1979 00:00:00)
+    /// Default date (Jan 1, 1979 00:00:00).
     public static var epoch: OCCTDate {
         var s: Int32 = 0
         var u: Int32 = 0
@@ -39,7 +40,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         return OCCTDate(sec: s, usec: u)
     }
 
-    /// Decomposed date components
+    /// Decomposed date components.
     public var components:
         (
             month: Int, day: Int, year: Int, hour: Int, minute: Int,
@@ -62,7 +63,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
     public var millisecond: Int { components.millisecond }
     public var microsecond: Int { components.microsecond }
 
-    /// Add a period to this date
+    /// Add a period to this date.
     public func adding(_ period: Period) -> OCCTDate {
         var s: Int32 = 0
         var u: Int32 = 0
@@ -70,7 +71,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         return OCCTDate(sec: s, usec: u)
     }
 
-    /// Subtract a period from this date
+    /// Subtract a period from this date.
     public func subtracting(_ period: Period) -> OCCTDate? {
         var s: Int32 = 0
         var u: Int32 = 0
@@ -78,7 +79,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         return OCCTDate(sec: s, usec: u)
     }
 
-    /// Difference between this date and another (absolute value)
+    /// Difference between this date and another (absolute value).
     public func difference(to other: OCCTDate) -> Period {
         var s: Int32 = 0
         var u: Int32 = 0
@@ -86,17 +87,17 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
         return Period(sec: s, usec: u)
     }
 
-    /// Add period operator
+    /// Add period operator.
     public static func + (date: OCCTDate, period: Period) -> OCCTDate {
         date.adding(period)
     }
 
-    /// Subtract period operator
+    /// Subtract period operator.
     public static func - (date: OCCTDate, period: Period) -> OCCTDate? {
         date.subtracting(period)
     }
 
-    /// Check if date values are valid
+    /// Check if date values are valid.
     public static func isValid(
         month: Int, day: Int, year: Int, hour: Int = 0,
         minute: Int = 0, second: Int = 0,
@@ -108,7 +109,7 @@ public struct OCCTDate: Sendable, Equatable, Comparable {
             Int32(millisecond), Int32(microsecond))
     }
 
-    /// Check if a year is a leap year
+    /// Check if a year is a leap year.
     public static func isLeap(year: Int) -> Bool {
         OCCTDateIsLeap(Int32(year))
     }

@@ -82,22 +82,24 @@ public final class SectionBuilder: @unchecked Sendable {
     /// Get the ancestor face on the first shape for a section edge.
     ///
     /// - Parameter edge: A section result edge, obtained from ``build()``'s own result shape.
-    /// - Returns: The ancestor face, or `nil` if `edge` has no ancestor face on the first
-    ///   argument, or if the most recent ``build()`` call on this instance did not succeed. This
+    /// - Returns: The ancestor face, or nil if edge has no ancestor face on the first
+    ///   argument, or if the most recent ``build()`` call on this instance did not succeed.
+    ///
+    ///   This.
     ///   is checked explicitly on every call, including on a reused builder: calling
     ///   ``init1(shape:)``/``init1(plane:_:_:_:)``/``init1(surface:)`` (or the ``init2(shape:)``
-    ///   family) after a successful build, or a rebuild that fails, both invalidate the previous
-    ///   build's result, without this check a stale or failed rebuild could otherwise return an
-    ///   earlier successful build's geometry instead of `nil`.
+    ///   family) after a successful build, or a rebuild that fails, both invalidate the previous.
+    ///   build's result, without this check a stale or failed rebuild could otherwise return an.
+    ///   earlier successful build's geometry instead of nil.
     ///
-    /// ```swift
+    /// ```swift.
     /// let builder = SectionBuilder(shape1: box, shape2: sphere)!
     /// guard let section = builder.build(), let edge = section.subShapes(ofType: .edge).first else { return }
     /// let originFace = builder.ancestorFaceOn1(edge: edge)  // which box face this edge came from
     ///
     /// builder.init1(shape: anotherShape)      // invalidates the build above
     /// builder.ancestorFaceOn1(edge: edge)      // nil, not the previous build's face
-    /// ```
+    /// ```.
     public func ancestorFaceOn1(edge: Shape) -> Shape? {
         guard let ref = OCCTSectionBuilderAncestorFaceOn1(handle, edge.handle) else { return nil }
         return Shape(handle: ref)
@@ -106,8 +108,8 @@ public final class SectionBuilder: @unchecked Sendable {
     /// Get the ancestor face on the second shape for a section edge.
     ///
     /// - Parameter edge: A section result edge, obtained from ``build()``'s own result shape.
-    /// - Returns: The ancestor face, or `nil` if `edge` has no ancestor face on the second
-    ///   argument, or if the most recent ``build()`` call on this instance did not succeed, see
+    /// - Returns: The ancestor face, or nil if edge has no ancestor face on the second
+    ///   argument, or if the most recent ``build()`` call on this instance did not succeed, see.
     ///   ``ancestorFaceOn1(edge:)`` for why this is checked explicitly on every call, including
     ///   on a reused builder.
     public func ancestorFaceOn2(edge: Shape) -> Shape? {

@@ -3,6 +3,7 @@ import OCCTBridge
 import simd
 
 /// Standalone evaluators for analytical curves and surfaces.
+///
 /// These evaluate mathematical functions without creating persistent Curve3D/Surface objects.
 
 public enum GeomEval {
@@ -10,7 +11,8 @@ public enum GeomEval {
     // MARK: 3D Curves
 
     /// Evaluate a circular helix at parameter u.
-    /// C(t) = R*cos(t)*X + R*sin(t)*Y + (P*t/(2*Pi))*Z
+    ///
+    /// C(t) = R*cos(t)*X + R*sin(t)*Y + (P*t/(2*Pi))*Z.
     public static func circularHelixD0(radius: Double, pitch: Double, u: Double) -> SIMD3<Double> {
         var px = 0.0
         var py = 0.0
@@ -52,7 +54,8 @@ public enum GeomEval {
     }
 
     /// Evaluate a 3D sine wave at parameter u.
-    /// C(t) = t*X + A*sin(omega*t + phi)*Y
+    ///
+    /// C(t) = t*X + A*sin(omega*t + phi)*Y.
     public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u: Double)
         -> SIMD3<Double>
     {
@@ -80,7 +83,8 @@ public enum GeomEval {
     // MARK: Surfaces
 
     /// Evaluate an ellipsoid at (u, v).
-    /// P(u,v) = A*cos(v)*cos(u)*X + B*cos(v)*sin(u)*Y + C*sin(v)*Z
+    ///
+    /// P(u,v) = A*cos(v)*cos(u)*X + B*cos(v)*sin(u)*Y + C*sin(v)*Z.
     public static func ellipsoidD0(a: Double, b: Double, c: Double, u: Double, v: Double) -> SIMD3<
         Double
     > {
@@ -136,7 +140,8 @@ public enum GeomEval {
 public enum Geom2dEval {
 
     /// Evaluate an Archimedean spiral at parameter u.
-    /// C(t) = (a + b*t)*cos(t)*X + (a + b*t)*sin(t)*Y
+    ///
+    /// C(t) = (a + b*t)*cos(t)*X + (a + b*t)*sin(t)*Y.
     public static func archimedeanSpiralD0(initialRadius: Double, growthRate: Double, u: Double)
         -> SIMD2<Double>
     {
@@ -159,7 +164,8 @@ public enum Geom2dEval {
     }
 
     /// Evaluate a logarithmic spiral at parameter u.
-    /// C(t) = a*exp(b*t)*cos(t)*X + a*exp(b*t)*sin(t)*Y
+    ///
+    /// C(t) = a*exp(b*t)*cos(t)*X + a*exp(b*t)*sin(t)*Y.
     public static func logarithmicSpiralD0(scale: Double, growthExponent: Double, u: Double)
         -> SIMD2<Double>
     {
@@ -182,7 +188,8 @@ public enum Geom2dEval {
     }
 
     /// Evaluate a circle involute at parameter u.
-    /// C(t) = R*(cos(t) + t*sin(t))*X + R*(sin(t) - t*cos(t))*Y
+    ///
+    /// C(t) = R*(cos(t) + t*sin(t))*X + R*(sin(t) - t*cos(t))*Y.
     /// - Returns: The evaluated point on the circle involute.
     public static func circleInvoluteD0(radius: Double, u: Double) -> SIMD2<Double> {
         var px = 0.0
@@ -204,7 +211,8 @@ public enum Geom2dEval {
     }
 
     /// Evaluate a circle involute at parameter u with explicit placement.
-    /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+    ///
+    /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir.
     /// - Parameters:
     ///   - origin: The origin point O of the involute's coordinate system.
     ///   - direction: The X direction vector (YDir is computed as perpendicular).
@@ -235,7 +243,8 @@ public enum Geom2dEval {
     }
 
     /// Evaluate a 2D sine wave at parameter u.
-    /// C(t) = t*X + A*sin(omega*t + phi)*Y
+    ///
+    /// C(t) = t*X + A*sin(omega*t + phi)*Y.
     public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u: Double)
         -> SIMD2<Double>
     {

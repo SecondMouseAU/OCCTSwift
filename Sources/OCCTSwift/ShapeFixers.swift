@@ -89,7 +89,7 @@ public final class FaceFixer: @unchecked Sendable {
 
     // MARK: - Per-pass control (#266 follow-up)
 
-    /// An individual `ShapeFix_Face` healing pass that can be toggled before ``perform()``.
+    /// An individual ShapeFix_Face healing pass that can be toggled before ``perform()``.
     public enum Pass: Int32, Sendable {
         case wire = 0
         case orientation, addNaturalBound, missingSeam, smallAreaWire,
@@ -106,12 +106,12 @@ public final class FaceFixer: @unchecked Sendable {
 
     /// Enable / disable an individual healing pass before calling ``perform()``.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Heal a face but DON'T add the surface's natural bound (which can balloon a trimmed face):
     /// let fixer = FaceFixer(face: f)
-    /// fixer?.setMode(.addNaturalBound, .off)
-    /// fixer?.perform()
-    /// ```
+    /// fixer?.setMode(.addNaturalBound, .off).
+    /// fixer?.perform().
+    /// ```.
     public func setMode(_ pass: Pass, _ toggle: Toggle) {
         OCCTFaceFixerSetMode(ref, pass.rawValue, toggle.rawValue)
     }
@@ -134,60 +134,67 @@ public final class FaceFixer: @unchecked Sendable {
     /// Split a wire that loops back on itself.
     @discardableResult public func fixLoopWire() -> Bool { OCCTFaceFixerFixLoopWire(ref) }
 
-    /// The result of the fix — usually a face, but a **shell** when ``fixMissingSeam()`` split the
-    /// face into several. Unlike ``face`` (always a face), this returns the true multi-face result.
+    /// The result of the fix. (usually a face, but a **shell** when ``fixMissingSeam()`` split the).
+    /// face into several.
+    ///
+    /// Unlike `face` (always a face), this returns the true multi-face result.
     public var result: Shape? {
         guard let r = OCCTFaceFixerResult(ref) else { return nil }
         return Shape(handle: r)
     }
 
-    /// The `ShapeExtend_Status` flag space, shared with ``ShapeFixer`` — see ``ShapeFixStatus``.
+    /// The ShapeExtend_Status flag space, shared with `ShapeFixer` (see `ShapeFixStatus`).
     ///
-    /// Was previously a `FaceFixer`-local enum whose raw values shifted everything from `.fail1`
-    /// through `.done` by one ordinal (there was no slot for OCCT's combined `DONE` flag, which
-    /// sits between `DONE8` and `FAIL1`), so e.g. `.done` actually queried `ShapeExtend_FAIL8`.
-    /// Now a typealias to the corrected, shared type — same case names, correct raw values (#849).
+    /// Was previously a FaceFixer-local enum whose raw values shifted everything from `.fail1`.
+    /// through `.done` by one ordinal (there was no slot for OCCT's combined DONE flag, which.
+    /// sits between DONE8 and FAIL1), so e.g. `.done` actually queried ShapeExtend_FAIL8.
+    ///
+    /// Now a typealias to the corrected, shared type. (same case names, correct raw values (#849)).
     public typealias Status = ShapeFixStatus
 
-    /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was
+    /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was.
     /// fixed, `.fail` = a pass failed).
     ///
-    /// `ShapeFix_Face`'s own header documents these flags — `FAIL5`...`FAIL8` are never assigned:
+    /// the ShapeFix_Face\'s own header documents these flags (FAIL5...FAIL8 are never assigned:).
     ///
-    /// | Case | Meaning for `ShapeFix_Face` |
-    /// |---|---|
-    /// | `.ok` | The face needed no fix at all. |
-    /// | `.done1` | Some wire was fixed (`ShapeFix_Wire` pass). |
-    /// | `.done2` | Wire orientation was fixed. |
-    /// | `.done3` | A missing seam was added. |
-    /// | `.done4` | A small-area wire was removed. |
-    /// | `.done5` | A natural bound was added. |
-    /// | `.done6` | Not assigned by `ShapeFix_Face`. |
-    /// | `.done7` | Not assigned by `ShapeFix_Face`. |
-    /// | `.done8` | The face may have been split. |
-    /// | `.fail1` | Some failure while fixing a wire. |
-    /// | `.fail2` | Could not fix wire orientation. |
-    /// | `.fail3` | Could not add a missing seam. |
-    /// | `.fail4` | Could not remove a small-area wire. |
-    /// | `.fail5`...`.fail8` | Not assigned by `ShapeFix_Face`. |
+    /// | Case | Meaning for ShapeFix_Face |.
+    /// |---|---|.
+    /// | `.ok` | The face needed no fix at all. |.
+    /// | `.done1` | Some wire was fixed (ShapeFix_Wire pass). |.
+    /// | `.done2` | Wire orientation was fixed. |.
+    /// | `.done3` | A missing seam was added. |.
+    /// | `.done4` | A small-area wire was removed. |.
+    /// | `.done5` | A natural bound was added. |.
+    /// | `.done6` | Not assigned by ShapeFix_Face. |.
+    /// | `.done7` | Not assigned by ShapeFix_Face. |.
+    /// | `.done8` | The face may have been split. |.
+    /// | `.fail1` | Some failure while fixing a wire. |.
+    /// | `.fail2` | Could not fix wire orientation. |.
+    /// | `.fail3` | Could not add a missing seam. |.
+    /// | `.fail4` | Could not remove a small-area wire. |.
+    /// | `.fail5`...`.fail8` | Not assigned by ShapeFix_Face. |.
     /// | `.done` | Any `.done1`...`.done8` flag is set: something was fixed. |
     /// | `.fail` | Any `.fail1`...`.fail8` flag is set: some pass failed. |
     ///
-    /// ```swift
+    /// ```swift.
     /// let fixer = FaceFixer(face: badFace)
-    /// fixer?.perform()
-    /// if fixer?.status(.done) == true {
-    ///     // something was fixed
-    /// }
-    /// ```
+    /// fixer?.perform().
+    /// if fixer?.status(.done) == true {.
+    ///     // something was fixed.
+    /// }.
+    /// ```.
     public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
 
-    /// Clamp the maximum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    /// Clamp the maximum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
     public func setMaxTolerance(_ maxTolerance: Double) {
         OCCTFaceFixerSetMaxTolerance(ref, maxTolerance)
     }
 
-    /// Clamp the minimum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    /// Clamp the minimum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
     public func setMinTolerance(_ minTolerance: Double) {
         OCCTFaceFixerSetMinTolerance(ref, minTolerance)
     }

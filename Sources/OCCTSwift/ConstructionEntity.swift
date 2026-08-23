@@ -41,7 +41,7 @@ public struct Placement: Sendable, Hashable {
 
     /// Map a 2D point in the placement's local (x, y) plane to 3D world space.
     ///
-    /// - Parameter p: 2D coordinates where `x` scales `xAxis` and `y` scales `yAxis`.
+    /// - Parameter p: 2D coordinates where x scales xAxis and y scales yAxis.
     /// - Returns: The corresponding 3D point: `origin + x * xAxis + y * yAxis`.
     public func lift(_ p: SIMD2<Double>) -> SIMD3<Double> {
         origin + p.x * xAxis + p.y * yAxis
@@ -50,25 +50,26 @@ public struct Placement: Sendable, Hashable {
 
 /// Fusion 360-style recipe for a construction plane.
 ///
-/// Each variant carries its defining inputs as `TopologyRef`s, resolved against the graph at use
+/// Each variant carries its defining inputs as TopologyRefs, resolved against the graph at use.
 /// time.
 public indirect enum ConstructionPlane: Sendable, Hashable {
     case absolute(origin: SIMD3<Double>, normal: SIMD3<Double>)
 
-    /// Plane parallel to `face`, offset by `distance` along the face normal.
+    /// Plane parallel to face, offset by distance along the face normal.
     case offsetFromFace(face: TopologyRef, distance: Double)
 
-    /// Plane containing `axis` edge, rotated `angleDeg` from a reference plane.
+    /// Plane containing axis edge, rotated angleDeg from a reference plane.
+    ///
     /// Reference plane is deduced from the first face adjacent to the axis.
     case throughAxis(axis: TopologyRef, angleDeg: Double)
 
-    /// Plane tangent to `face` at a point (`at` resolves to a vertex on that face).
+    /// Plane tangent to face at a point (at resolves to a vertex on that face).
     case tangentToFace(face: TopologyRef, at: TopologyRef)
 
     /// Midplane between two parallel faces.
     case midPlane(TopologyRef, TopologyRef)
 
-    /// Plane defined by three points (`a`, `b`, `c` resolve to vertices).
+    /// Plane defined by three points (a, b, c resolve to vertices).
     case byThreePoints(TopologyRef, TopologyRef, TopologyRef)
 
     /// Plane normal to an edge at parameter t (0..1 along the edge).
@@ -78,18 +79,22 @@ public indirect enum ConstructionPlane: Sendable, Hashable {
 public indirect enum ConstructionAxis: Sendable, Hashable {
     case absolute(origin: SIMD3<Double>, direction: SIMD3<Double>)
 
-    /// Axis coinciding with an edge's underlying line (for linear edges) or the
+    /// Axis coinciding with an edge's underlying line (for linear edges) or the.
     /// axis of revolution (for cylindrical / conical edges).
     case alongEdge(TopologyRef)
 
-    /// Axis normal to a face at a reference point. For planar faces the direction
+    /// Axis normal to a face at a reference point.
+    ///
+    /// For planar faces the direction.
     /// is the face normal; for cylindrical faces it's the rotation axis.
     case normalToFace(face: TopologyRef, at: TopologyRef)
 
     /// Axis through two points.
     case throughPoints(TopologyRef, TopologyRef)
 
-    /// Intersection of two planes. Falls back to the absolute origin if the
+    /// Intersection of two planes.
+    ///
+    /// Falls back to the absolute origin if the.
     /// planes are parallel.
     case intersectionOfPlanes(ConstructionPlane, ConstructionPlane)
 }
@@ -282,14 +287,17 @@ extension BRepGraph {
         }
     }
 
-    /// Degeneracy threshold shared by every `resolve` guard below.
+    /// Degeneracy threshold shared by every resolve guard below.
     ///
-    /// The five call sites compare three different kinds of quantity, a raw distance, a cross
-    /// product's area-scale magnitude, and a unit-vector dot/cross, that happen to share this
+    /// The five call sites compare three different kinds of quantity, a raw distance, a cross.
+    /// product's area-scale magnitude, and a unit-vector dot/cross, that happen to share this.
     /// literal today by coincidence, not because they are numerically comparable (#887).
-    /// Per-site tuning isn't supported today: `requireNonDegenerate` takes no per-call epsilon
-    /// argument, so every call site shares this one constant. Supporting it would mean adding an
-    /// epsilon parameter to `requireNonDegenerate`, and picking a real per-site value, not
+    ///
+    /// Per-site tuning isn't supported today: requireNonDegenerate takes no per-call epsilon
+    /// argument, so every call site shares this one constant.
+    ///
+    /// Supporting it would mean adding an.
+    /// epsilon parameter to requireNonDegenerate, and picking a real per-site value, not.
     /// inventing one without measurement (#726) (#894 finding 5).
     private static let degeneracyEpsilon = 1e-9
 
@@ -297,76 +305,93 @@ extension BRepGraph {
     ///
     /// Used by ``axesAgree(_:_:)``: every adjacent cylindrical/conical face's axis must agree
     /// before `revolutionAxis(ofEdgeAt:)` returns a definitive answer (finding 1, first pass).
-    /// `resolveEdgeDirection` originally had a second use, a chord-parallel-to-the-candidate-axis
-    /// check standing in for "is this edge a straight seam", but that check was never true for a
-    /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero
-    /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant
-    /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings
+    /// resolveEdgeDirection originally had a second use, a chord-parallel-to-the-candidate-axis.
+    /// check standing in for "is this edge a straight seam", but that check was never true for a.
+    /// straight seam on a *cone* (a cone's generatrix meets its axis at the cone's own nonzero.
+    /// half-angle, never 0) and could misfire true for a helical edge whose two-point secant.
+    /// happens to land near-parallel to the axis by coincidence of the sweep angle (both findings.
     /// 1/3, second pass). ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``
-    /// replaces it with a direct geometric test that doesn't need this tolerance at all (finding
-    /// 1, third pass), so this constant is `axesAgree`'s alone again.
+    /// replaces it with a direct geometric test that doesn't need this tolerance at all (finding.
+    /// 1, third pass), so this constant is the axesAgree\'s alone again.
     ///
     /// `OCCTPrecision.angular` (`Precision::Angular()`, 1e-12), not a hand-invented literal: this
-    /// codebase has a documented history of a hardcoded direction-comparison tolerance silently
-    /// drifting from the canonical one (`docs/reference/Surface-Analysis.md`'s "ten times looser
+    /// codebase has a documented history of a hardcoded direction-comparison tolerance silently.
+    /// drifting from the canonical one (`docs/reference/Surface-Analysis.md`'s "ten times looser.
     /// than `Precision::Confusion()`" note; #494/#529 are whole issues about exactly this).
+    ///
     /// Verified, not assumed, that the tighter value is safe here: swapped in and re-ran the full
-    /// `OCCTBRepGraphTests` and `OCCTMiscTests` targets (#894 finding 6, second pass), no
-    /// behavior changed, since a genuine adjacent-face-axis comparison (either the identical
-    /// `TopoDS_Face` read twice, or a BOP-split piece sharing the same analytic `Geom_Surface`
-    /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two
-    /// genuinely different cylinders (e.g. this file's T-branch fixture) disagree by orders of
+    /// OCCTBRepGraphTests and OCCTMiscTests targets (#894 finding 6, second pass), no.
+    /// behavior changed, since a genuine adjacent-face-axis comparison (either the identical.
+    ///
+    /// TopoDS_Face read twice, or a BOP-split piece sharing the same analytic Geom_Surface.
+    /// handle) agrees to within floating-point noise far tighter than even 1e-12, while two.
+    /// genuinely different cylinders (e.g. this file's T-branch fixture) disagree by orders of.
     /// magnitude more than either tolerance.
     ///
-    /// **This value is a cosine tolerance, not a direct radian one, despite the name's own
-    /// provenance claim above.** `axesAgree` below compares it against `|dot(a, b)| - 1|`, not
-    /// against an angle from `acos`. For unit vectors separated by a small angle θ,
-    /// `1 - |cos θ| ≈ θ²/2`, so the guard actually admits any θ up to
-    /// `sqrt(2 × OCCTPrecision.angular) ≈ 1.41e-6` rad, about six orders of magnitude looser than
+    /// **This value is a cosine tolerance, not a direct radian one, despite the name's own.
+    /// provenance claim above.** axesAgree below compares it against `|dot(a, b)| - 1|`, not.
+    /// against an angle from acos.
+    ///
+    /// For unit vectors separated by a small angle θ,.
+    /// `1 - |cos θ| ≈ θ²/2`, so the guard actually admits any θ up to.
+    /// `sqrt(2 × OCCTPrecision.angular) ≈ 1.41e-6` rad, about six orders of magnitude looser than.
     /// `Precision::Angular()`'s own 1e-12 rad, and looser than a direct `acos(dot(a, b)) <
     /// OCCTPrecision.angular` comparison would be by the same factor (#914 review, second round).
+    ///
     /// Not a live bug: on a 100mm part that's ~0.14 µm of divergence over the part's length,
-    /// harmless in practice and well inside the margin the verification paragraph above already
-    /// measured (floating-point-noise agreement vs. orders-of-magnitude disagreement), but the
-    /// quantity being compared is `angular²/2`-equivalent, not `angular` itself, and a future
+    /// harmless in practice and well inside the margin the verification paragraph above already.
+    /// measured (floating-point-noise agreement vs. orders-of-magnitude disagreement), but the.
+    /// quantity being compared is `angular²/2`-equivalent, not angular itself, and a future.
     /// tightening of this constant should account for the squaring.
     private static let axisDirectionAgreementCosineTolerance = OCCTPrecision.angular
 
-    /// Distance threshold for "this point sits on this axis line". Used two ways:
+    /// Distance threshold for "this point sits on this axis line".
+    ///
+    /// Used two ways:
     ///
     /// - ``axesAgree(_:_:)``: the perpendicular offset between one candidate axis's origin and
-    ///   the line through another, so two same-diameter but genuinely distinct bores don't
-    ///   count as one (finding 1, first pass). Used directly, unmodified, the two faces being
-    ///   compared here are either the identical `TopoDS_Face` read twice or a BOP-split piece
-    ///   sharing the same analytic `Geom_Surface` handle, so machine precision is the right bar.
+    ///   the line through another, so two same-diameter but genuinely distinct bores don't.
+    ///   count as one (finding 1, first pass).
+    ///
+    ///   Used directly, unmodified, the two faces being.
+    ///   compared here are either the identical TopoDS_Face read twice or a BOP-split piece.
+    ///   sharing the same analytic Geom_Surface handle, so machine precision is the right bar.
     /// - ``coaxialCrossSection(of:bounds:start:end:axis:edgeTolerance:)``: the FLOOR under how
-    ///   much a sampled point's height along the axis, or its radius from it, may vary across the
-    ///   edge before it stops counting as a genuine perpendicular cross-section (finding 1, third
-    ///   pass). The actual comparison there is `max(edge's own measured BRep_Tool::Tolerance,
+    ///   much a sampled point's height along the axis, or its radius from it, may vary across the.
+    ///   edge before it stops counting as a genuine perpendicular cross-section (finding 1, third.
+    ///   pass).
+    ///
+    ///   The actual comparison there is `max(edge's own measured BRep_Tool::Tolerance,
     ///   this floor)`, not this constant alone: a real edge that has survived a Boolean/fillet
-    ///   commonly measures 1e-4-1e-3, far looser than this machine-precision value, and this
-    ///   constant alone rejected genuine circular rims on exactly that kind of edge (#894
-    ///   finding 2, fifth pass). The floor still applies to a pristine, machine-precision edge,
-    ///   `max` never makes the check LOOSER than this value, only ever loosens it upward to match
+    ///   commonly measures 1e-4-1e-3, far looser than this machine-precision value, and this.
+    ///   constant alone rejected genuine circular rims on exactly that kind of edge (#894.
+    ///   finding 2, fifth pass).
+    ///
+    ///   The floor still applies to a pristine, machine-precision edge,.
+    ///   max never makes the check LOOSER than this value, only ever loosens it upward to match.
     ///   what the edge itself already measures.
     ///
-    /// A fixed absolute threshold, like ``degeneracyEpsilon`` above, not a fraction of model
+    /// A fixed absolute threshold, like `degeneracyEpsilon` above, not a fraction of model.
     /// scale. `OCCTPrecision.confusion` (`Precision::Confusion()`, 1e-7), the canonical "points
-    /// closer than this are 'same'" distance, not a hand-invented literal, for the same reason as
-    /// ``axisDirectionAgreementCosineTolerance`` above (#894 finding 6, second pass); also
-    /// verified against the full test sweep described there. This is 10x tighter than the `1e-6`
+    /// closer than this are 'same'" distance, not a hand-invented literal, for the same reason as.
+    /// `axisDirectionAgreementCosineTolerance` above (#894 finding 6, second pass); also.
+    /// verified against the full test sweep described there.
+    ///
+    /// This is 10x tighter than the `1e-6`.
     /// it replaces and than `Shape.revolutionAxes(tolerance:)`'s own default (`ShapeAxis.swift`)
-    /// and the bridge-side `axesCoincide` it wraps (`OCCTBridge_Topology.mm`), not because either
-    /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;
-    /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared
-    /// function to actually call across that boundary), but so a future retune of one is at least
-    /// discoverable from the other (finding 4, third pass). The two are independent constants
-    /// (`1e-7` here vs. `revolutionAxes`' `1e-6`), not required to match.
+    /// and the bridge-side axesCoincide it wraps (`OCCTBridge_Topology.mm`), not because either.
+    /// is called from here (that dedup runs in the C++ layer over every face of a whole shape;.
+    /// this code only ever compares the 1-2 faces adjacent to a single edge, so there's no shared.
+    /// function to actually call across that boundary), but so a future retune of one is at least.
+    /// discoverable from the other (finding 4, third pass).
+    ///
+    /// The two are independent constants.
+    /// (`1e-7` here vs. revolutionAxes' `1e-6`), not required to match.
     private static let axisOriginAgreementDistanceTolerance = OCCTPrecision.confusion
 
     /// Shared "is this magnitude effectively zero" guard: fails with `.degenerate(message)` when
-    /// `magnitude` is below ``degeneracyEpsilon``, otherwise succeeds with `value`. `value` is an
-    /// autoclosure so a division or normalization that depends on `magnitude` being safe is never
+    /// magnitude is below `degeneracyEpsilon`, otherwise succeeds with value. value is an.
+    /// autoclosure so a division or normalization that depends on magnitude being safe is never.
     /// evaluated on the failing path.
     private func requireNonDegenerate<T>(
         _ magnitude: Double, _ value: @autoclosure () -> T, _ message: String
@@ -377,14 +402,16 @@ extension BRepGraph {
         return .success(value())
     }
 
-    /// Resolves `ref` to a node of the given `kind`, extracting a typed topology element via
-    /// `extract`, and failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    /// Resolves ref to a node of the given kind, extracting a typed topology element via.
+    /// extract, and failing with `.notApplicable`/`.missingGeometry` as appropriate.
     ///
     /// Shared by `resolveFace(_:)` and `resolveEdge(_:)` below, which used to duplicate this
-    /// unwrap→kind-guard→extract→success shape independently, the same
+    /// unwrap→kind-guard→extract→success shape independently, the same.
     /// `unwrapTopology(ref)` → kind check → `shape(nodeKind:nodeIndex:)` → first-element →
-    /// success-tuple steps, differing only in the `NodeKind` and the extracted type (#897
-    /// review, third pass, finding 1). Unlabeled, like `projectedNormal(on:at:)` below, for the
+    /// success-tuple steps, differing only in the NodeKind and the extracted type (#897.
+    /// review, third pass, finding 1).
+    ///
+    /// Unlabeled, like `projectedNormal(on:at:)` below, for the
     /// same reason (`okf/policies/code-style.md`), every call site of `resolveFace(_:)`/
     /// `resolveEdge(_:)` already destructures positionally, never by label, so the labels those
     /// two used to bake in were pure documentation, costless to drop (#897 review, third pass).
@@ -405,7 +432,7 @@ extension BRepGraph {
         }
     }
 
-    /// Resolves `ref` to a face node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    /// Resolves ref to a face node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
     ///
     /// Shared by every face-based resolver below.
     private func resolveFace(_ ref: TopologyRef) -> Result<
@@ -414,9 +441,9 @@ extension BRepGraph {
         return resolveTopologyNode(ref, kind: .face, expected: "a face") { $0.faces().first }
     }
 
-    /// Resolves `ref` to an edge node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
+    /// Resolves ref to an edge node, failing with `.notApplicable`/`.missingGeometry` as appropriate.
     ///
-    /// Shared by `resolveEdgeDirection` and `resolveEdgePointAndTangent` below.
+    /// Shared by resolveEdgeDirection and resolveEdgePointAndTangent below.
     private func resolveEdge(_ ref: TopologyRef) -> Result<
         (NodeRef, Edge), ConstructionResolutionError
     > {
@@ -425,7 +452,7 @@ extension BRepGraph {
 
     /// Face-representative point + normal, sampled at the face's UV-domain midpoint.
     ///
-    /// Used by `.offsetFromFace` and `.midPlane`, which genuinely want a
+    /// Used by `.offsetFromFace` and `.midPlane`, which genuinely want a.
     /// face-representative sample rather than a point-specific value.
     private func resolveFaceOrigin(_ ref: TopologyRef) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
@@ -439,12 +466,12 @@ extension BRepGraph {
         }
     }
 
-    /// Face-representative point only, sampled at the face's UV-domain midpoint,
+    /// Face-representative point only, sampled at the face's UV-domain midpoint,.
     /// without evaluating the normal.
     ///
-    /// Used by `resolveVertexPoint`'s face-ref fallback, which, unlike
-    /// `resolveFaceOrigin`'s callers, only ever reads the point, so this skips the
-    /// unused `normal(atU:v:)` evaluation `resolveFaceOrigin`'s `uvMidpointSample()`
+    /// Used by the resolveVertexPoint\'s face-ref fallback, which, unlike.
+    /// the resolveFaceOrigin\'s callers, only ever reads the point, so this skips the.
+    /// unused `normal(atU:v:)` evaluation the resolveFaceOrigin\'s `uvMidpointSample()`
     /// would otherwise pay for on every `.byThreePoints`/`.tangentToFace(at:)`
     /// resolution through this path (#897 review, finding 9).
     private func resolveFacePoint(_ ref: TopologyRef) -> Result<
@@ -459,44 +486,46 @@ extension BRepGraph {
         }
     }
 
-    /// The surface normal at the projected location of `point` on the face, and
+    /// The surface normal at the projected location of point on the face, and.
     /// the point actually used.
     ///
-    /// That returned point is `point` itself only when `point` already lies on
-    /// `face` (#897 review, finding 2), closer to the truth than the raw `point`,
+    /// That returned point is point itself only when point already lies on.
+    /// face (#897 review, finding 2), closer to the truth than the raw point,.
     /// not a guaranteed on-face location: `Face.project(point:)` bounds its search to
-    /// `face`'s UV bounds (`BRepTools::UVBounds`, a rectangular box in parameter
-    /// space), not the exact trimmed boundary, so for a non-convex or holed face the
-    /// result can land inside that box but outside the real trimmed region (#914
-    /// review, finding 3, the specific "point past a face's v-range converges
-    /// anyway" reproducer that finding proposed was checked directly against the
-    /// bridge and does NOT reproduce: `GeomAPI_ProjectPointOnSurf`'s bounded
-    /// constructor genuinely constrains convergence to those bounds, confirmed with a
-    /// cylindrical face trimmed to `v ∈ [0, 10]`, projecting a point at `v = 25` on
-    /// the same infinite cylinder, `project(point:)` correctly returns `nil`, not a
+    /// the face\'s UV bounds (`BRepTools::UVBounds`, a rectangular box in parameter
+    /// space), not the exact trimmed boundary, so for a non-convex or holed face the.
+    /// result can land inside that box but outside the real trimmed region (#914.
+    /// review, finding 3, the specific "point past a face's v-range converges.
+    /// anyway" reproducer that finding proposed was checked directly against the.
+    /// bridge and does NOT reproduce: the GeomAPI_ProjectPointOnSurf\'s bounded
+    /// constructor genuinely constrains convergence to those bounds, confirmed with a.
+    /// cylindrical face trimmed to `v ∈ [0, 10]`, projecting a point at `v = 25` on.
+    /// the same infinite cylinder, `project(point:)` correctly returns nil, not a
     /// point at `v = 25`).
     ///
-    /// Falls back to the UV-midpoint sample (point AND normal together, so the two
-    /// stay mutually consistent) when the projection itself fails to converge,
-    /// `nil`, not just a defensive guard: `GeomAPI_ProjectPointOnSurf`'s gradient
-    /// search has no stationary point to find for a point equidistant from an entire
-    /// symmetric surface, e.g. a sphere's or torus's own center projected onto its
-    /// own lateral face (measured directly, #897 review, second xhigh pass, finding
-    /// 1/3). Falls back to the UV-midpoint normal ALONE, keeping the real projected
-    /// point as the origin, when the projection succeeds but the local normal at
-    /// that exact location is undefined, a genuine parametric singularity (e.g. a
-    /// cone apex) distinct from a projection failure; `projection.point` there is
-    /// still within `face`'s UV bounds, with the same box-vs-exact-boundary caveat
+    /// Falls back to the UV-midpoint sample (point AND normal together, so the two.
+    /// stay mutually consistent) when the projection itself fails to converge,.
+    /// nil, not just a defensive guard: the GeomAPI_ProjectPointOnSurf\'s gradient
+    /// search has no stationary point to find for a point equidistant from an entire.
+    /// symmetric surface, e.g. a sphere's or torus's own center projected onto its.
+    /// own lateral face (measured directly, #897 review, second xhigh pass, finding.
+    /// 1/3).
+    ///
+    /// Falls back to the UV-midpoint normal ALONE, keeping the real projected.
+    /// point as the origin, when the projection succeeds but the local normal at.
+    /// that exact location is undefined, a genuine parametric singularity (e.g. a.
+    /// cone apex) distinct from a projection failure; `projection.point` there is.
+    /// still within the face\'s UV bounds, with the same box-vs-exact-boundary caveat.
     /// as above.
     ///
-    /// Shared by `resolveFaceNormal` (`.tangentToFace`) and `resolveFaceAxisDirection`'s
-    /// no-`primaryAxis` fallback (`.normalToFace`), both used to duplicate this same
-    /// project→normal→fallback shape independently (#897 review, second xhigh pass,
+    /// Shared by resolveFaceNormal (`.tangentToFace`) and the resolveFaceAxisDirection\'s.
+    /// no-primaryAxis fallback (`.normalToFace`), both used to duplicate this same.
+    /// project→normal→fallback shape independently (#897 review, second xhigh pass,.
     /// finding 9).
     ///
     /// Unlabeled: an internal function returning a tuple with baked-in labels forces
-    /// every call site whose own labels differ into a two-step bind-then-relabel
-    /// instead of a direct return (`okf/policies/code-style.md`, established on this
+    /// every call site whose own labels differ into a two-step bind-then-relabel.
+    /// instead of a direct return (`okf/policies/code-style.md`, established on this.
     /// same file's sibling `ShapeAxis.swift` by #903/#904; #897 review, third pass).
     private func projectedNormal(on face: Face, at point: SIMD3<Double>) -> (
         SIMD3<Double>, SIMD3<Double>
@@ -514,14 +543,16 @@ extension BRepGraph {
 
     /// The `(point, normal)` `.tangentToFace` needs, via ``projectedNormal(on:at:)``.
     ///
-    /// Used by `.tangentToFace` so the plane is tangent at the requested point, not
+    /// Used by `.tangentToFace` so the plane is tangent at the requested point, not.
     /// at the face's unrelated UV midpoint (#879). `face.normal(atU:v:)` reports
-    /// `nil` at a genuine parametric singularity (`GeomLProp_SLProps::IsNormalDefined()`
-    /// false, the two tangent directions coincide, not merely shrink; see
-    /// `docs/reference/Face.md`'s `normal` entry). Before this point-specific
-    /// resolution existed, `tangentToFace` always used the UV-midpoint normal and so
-    /// always succeeded for any face with valid `uvBounds`; ``projectedNormal(on:at:)``'s
-    /// fallback on either failure mode instead of failing outright preserves that
+    /// nil at a genuine parametric singularity (`GeomLProp_SLProps::IsNormalDefined()`
+    /// false, the two tangent directions coincide, not merely shrink; see.
+    /// `docs/reference/Face.md`'s normal entry).
+    ///
+    /// Before this point-specific.
+    /// resolution existed, tangentToFace always used the UV-midpoint normal and so.
+    /// always succeeded for any face with valid uvBounds; ``projectedNormal(on:at:)``'s
+    /// fallback on either failure mode instead of failing outright preserves that.
     /// property (PR #897 review, 3rd + xhigh pass).
     private func resolveFaceNormal(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
@@ -535,62 +566,73 @@ extension BRepGraph {
         }
     }
 
-    /// The direction (and its own on-axis or on-face anchor point) the normalToFace
+    /// The direction (and its own on-axis or on-face anchor point) the normalToFace.
     /// doc promises.
     ///
-    /// The surface's own axis of revolution (`Face.primaryAxis`) for
-    /// cylindrical/conical/toroidal/revolved faces, an ALLOW-list, not a deny-list,
-    /// so a future `ShapeAxis.Kind` this file doesn't yet know about defaults to the
-    /// safe normal-based fallback below rather than silently being treated as a
-    /// genuine axis (PR #897 review, finding 8), NOT the same allow-list as the
+    /// The surface's own axis of revolution (`Face.primaryAxis`) for.
+    /// cylindrical/conical/toroidal/revolved faces, an ALLOW-list, not a deny-list,.
+    /// so a future `ShapeAxis.Kind` this file doesn't yet know about defaults to the.
+    /// safe normal-based fallback below rather than silently being treated as a.
+    /// genuine axis (PR #897 review, finding 8), NOT the same allow-list as the.
     /// sibling `revolutionAxis(ofEdgeAt:)` a few dozen lines above, despite an earlier
     /// version of this comment claiming so: that one only accepts `.cylinder`/`.cone`
-    /// (#897 review, third pass), `.torus`/`.revolution` faces have a genuine
-    /// `primaryAxis` this branch correctly uses, but an edge merely adjacent to one
-    /// doesn't get the same recognition from `alongEdge`, a real (if narrow)
-    /// inconsistency between the two `Construction*` APIs, not a documentation bug to
+    /// (#897 review, third pass), `.torus`/`.revolution` faces have a genuine.
+    /// primaryAxis this branch correctly uses, but an edge merely adjacent to one.
+    /// doesn't get the same recognition from alongEdge, a real (if narrow).
+    /// inconsistency between the two `Construction*` APIs, not a documentation bug to.
     /// paper over, tracked, not fixed, here.
     ///
-    /// The returned point is `point` projected onto the true axis line, `axis.origin
-    /// + ((point - axis.origin) · direction) * direction`, not `point` itself: a
-    /// true rotation axis's direction is the same everywhere on the surface, but its
-    /// LOCATION is not `point` unless `point` already happens to sit on that line,
-    /// which it generally doesn't (a vertex `at` names is usually on the surface,
-    /// offset from the true centerline by the cylinder's own radius). Pairing the
-    /// correct direction with an off-axis point would describe a different line
-    /// entirely, parallel to, but not coincident with, the true axis (#897 review,
-    /// third pass). Kept edge-local rather than snapped to `axis.origin` itself
-    /// (which can be far from `point`, e.g. a cylinder's base under a rim near its
-    /// top), matching `resolveEdgeDirection`'s identical projection a few dozen lines
+    /// The returned point is point projected onto the true axis line, `axis.origin.
+    /// + ((point - axis.origin) · direction) * direction`, not point itself: a
+    /// true rotation axis's direction is the same everywhere on the surface, but its.
+    ///
+    /// LOCATION is not point unless point already happens to sit on that line,.
+    /// which it generally doesn't (a vertex at names is usually on the surface,.
+    /// offset from the true centerline by the cylinder's own radius).
+    ///
+    /// Pairing the.
+    /// correct direction with an off-axis point would describe a different line.
+    /// entirely, parallel to, but not coincident with, the true axis (#897 review,.
+    /// third pass).
+    ///
+    /// Kept edge-local rather than snapped to `axis.origin` itself.
+    /// (which can be far from point, e.g. a cylinder's base under a rim near its.
+    /// top), matching the resolveEdgeDirection\'s identical projection a few dozen lines.
     /// below.
     ///
-    /// Falls back to ``projectedNormal(on:at:)``, the local surface normal at `point`'s
-    /// own projected location, and the point it was actually evaluated at, for planes
-    /// and free-form/BSpline faces, which have no `primaryAxis` at all: the same
-    /// point-aware projection `resolveFaceNormal` uses for `tangentToFace`, so the
-    /// direction varies with `point`, and its paired origin is never a different point
-    /// than the one the direction was measured at (#897 review, finding 4 + second
+    /// Falls back to ``projectedNormal(on:at:)``, the local surface normal at the point\'s
+    /// own projected location, and the point it was actually evaluated at, for planes.
+    /// and free-form/BSpline faces, which have no primaryAxis at all: the same
+    /// point-aware projection resolveFaceNormal uses for tangentToFace, so the.
+    /// direction varies with point, and its paired origin is never a different point.
+    /// than the one the direction was measured at (#897 review, finding 4 + second.
     /// xhigh pass finding 2).
     ///
-    /// Falls back to the UV-midpoint SAMPLE, point and normal together, not
+    /// Falls back to the UV-midpoint SAMPLE, point and normal together, not.
     /// `projectedNormal(on:at:)`'s point-aware resolution above, but also not the raw
-    /// `point` paired with an unrelated normal, for `.extrusion` and `.sphere`,
-    /// which DO have a `primaryAxis` but not a genuine one: extrusion's `direction`
-    /// is the sweep direction of `Geom_SurfaceOfLinearExtrusion`, tangent to the
-    /// surface, not a normal. Sphere has no intrinsic rotation axis at all (it's
-    /// symmetric about every axis through its center), so
-    /// `gp_Sphere::Position().Direction()`, what `primaryAxis` reports for a sphere
+    /// point paired with an unrelated normal, for `.extrusion` and `.sphere`,.
+    /// which DO have a primaryAxis but not a genuine one: extrusion's direction
+    /// is the sweep direction of Geom_SurfaceOfLinearExtrusion, tangent to the.
+    /// surface, not a normal.
+    ///
+    /// Sphere has no intrinsic rotation axis at all (it's.
+    /// symmetric about every axis through its center), so.
+    /// `gp_Sphere::Position().Direction()`, what primaryAxis reports for a sphere
     ///, is just the arbitrary construction-frame pole (`FeatureRecognition.swift`'s
-    /// `isMaterialRadiallyInward` already carries this same exclusion for the
-    /// identical reason). These two are deliberately kept off the point-aware path: a
-    /// sphere's TRUE local normal at its own pole is parallel to this very (excluded)
-    /// axis, the radial direction from center, so making this branch point-aware
-    /// there would silently reproduce the excluded axis by another route at exactly
-    /// the vertex the exclusion exists to guard (see
-    /// `normalToFaceSphereFallsBackToNormal`). But pairing the raw, possibly off-face
-    /// `point` with a normal sampled at the UNRELATED UV midpoint is its own
-    /// origin/direction mismatch (#897 review, third pass), the same class of bug
-    /// this whole function exists to fix elsewhere, so both come from the UV
+    /// isMaterialRadiallyInward already carries this same exclusion for the.
+    /// identical reason).
+    ///
+    /// These two are deliberately kept off the point-aware path: a
+    /// sphere's TRUE local normal at its own pole is parallel to this very (excluded).
+    /// axis, the radial direction from center, so making this branch point-aware.
+    /// there would silently reproduce the excluded axis by another route at exactly.
+    /// the vertex the exclusion exists to guard (see.
+    /// normalToFaceSphereFallsBackToNormal).
+    ///
+    /// But pairing the raw, possibly off-face.
+    /// point with a normal sampled at the UNRELATED UV midpoint is its own.
+    /// origin/direction mismatch (#897 review, third pass), the same class of bug.
+    /// this whole function exists to fix elsewhere, so both come from the UV.
     /// midpoint together instead.
     private func resolveFaceAxisDirection(_ ref: TopologyRef, at point: SIMD3<Double>) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
@@ -618,16 +660,18 @@ extension BRepGraph {
         }
     }
 
-    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`), the
-    /// same quantity `ShapeMeasurements.measure()` reports for the same face,
-    /// not the UV-midpoint approximation `resolveFaceOrigin` uses (#884).
+    /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`), the.
+    /// same quantity `ShapeMeasurements.measure()` reports for the same face,.
+    /// not the UV-midpoint approximation resolveFaceOrigin uses (#884).
     ///
-    /// `centerOfMass` is nil exactly when `area == 0` at the Swift level (see
-    /// `MassProperties.swift`), but the bridge function behind it (`OCCTBRepGPropSinert`)
-    /// catches any exception and returns a zero-initialized result on failure too, so a
-    /// self-intersecting or otherwise ill-conditioned face whose `BRepGProp_Sinert`
-    /// computation genuinely fails is indistinguishable, at this layer, from one that's
-    /// truly zero-area. The failure message says so rather than diagnosing a specific
+    /// centerOfMass is nil exactly when `area == 0` at the Swift level (see.
+    /// `MassProperties.swift`), but the bridge function behind it (OCCTBRepGPropSinert).
+    /// catches any exception and returns a zero-initialized result on failure too, so a.
+    /// self-intersecting or otherwise ill-conditioned face whose BRepGProp_Sinert.
+    /// computation genuinely fails is indistinguishable, at this layer, from one that's.
+    /// truly zero-area.
+    ///
+    /// The failure message says so rather than diagnosing a specific.
     /// cause this API can't actually tell apart (#897 review, third pass).
     private func resolveFaceCentroid(_ ref: TopologyRef) -> Result<
         SIMD3<Double>, ConstructionResolutionError
@@ -644,19 +688,22 @@ extension BRepGraph {
 
     /// The true rotation axis of a cylindrical/conical edge, read off its adjacent face(s).
     ///
-    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone, the two
-    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883), and returns a
+    /// Collects every adjacent face's ``Face/primaryAxis`` that is a cylinder or cone, the two.
+    /// surface kinds `ConstructionAxis.alongEdge`'s own doc promises (#883), and returns a.
     /// definitive axis only when every candidate agrees with the first, per ``axesAgree(_:_:)``.
-    /// An edge at a branch (a T-junction between two non-coaxial cylindrical faces, or any
-    /// blended transition) has more than one disagreeing candidate; `nil` there tells the caller
-    /// to fall back to the endpoint secant instead of silently picking whichever face happened to
-    /// sort first (#894 finding 1). Planar and free-form neighbours, and edges with no face
-    /// adjacency at all, contribute no candidate at all, so this is `nil` for them too.
     ///
-    /// `internal`, not `private`: `ConstructionAxisTests.alongEdgeBranchWithDisagreeingAxesFallsBackToChord`
-    /// calls this directly (via `@testable import`) instead of hand-rolling a parallel copy of the
-    /// candidate-gathering loop's disagreement test with its own drifted tolerance (#894 finding 5,
-    /// second pass). `count-operations.py` only counts `public` declarations, so this stays out of
+    /// An edge at a branch (a T-junction between two non-coaxial cylindrical faces, or any.
+    /// blended transition) has more than one disagreeing candidate; nil there tells the caller.
+    /// to fall back to the endpoint secant instead of silently picking whichever face happened to.
+    /// sort first (#894 finding 1).
+    ///
+    /// Planar and free-form neighbours, and edges with no face.
+    /// adjacency at all, contribute no candidate at all, so this is nil for them too.
+    ///
+    /// internal, not private: `ConstructionAxisTests.alongEdgeBranchWithDisagreeingAxesFallsBackToChord`
+    /// calls this directly (via `@testable import`) instead of hand-rolling a parallel copy of the.
+    /// candidate-gathering loop's disagreement test with its own drifted tolerance (#894 finding 5,.
+    /// second pass). `count-operations.py` only counts public declarations, so this stays out of.
     /// the operation count either way.
     func revolutionAxis(ofEdgeAt edgeIndex: Int) -> ShapeAxis? {
         var candidates: [ShapeAxis] = []
@@ -675,12 +722,12 @@ extension BRepGraph {
 
     /// Whether two candidate revolution axes describe the same line.
     ///
-    /// Their directions must be parallel or anti-parallel within
-    /// ``axisDirectionAgreementCosineTolerance``, and `other`'s origin must lie within
-    /// ``axisOriginAgreementDistanceTolerance`` of the line through `reference`, not merely a
+    /// Their directions must be parallel or anti-parallel within.
+    /// `axisDirectionAgreementCosineTolerance`, and the other\'s origin must lie within.
+    /// `axisOriginAgreementDistanceTolerance` of the line through reference, not merely a.
     /// parallel offset line, e.g. two same-diameter but genuinely distinct bores (#894 finding 1).
     ///
-    /// `internal`, not `private`, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
+    /// internal, not private, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
     /// (#894 finding 5, second pass).
     func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
         let referenceDirection = simd_normalize(reference.direction)
@@ -697,9 +744,11 @@ extension BRepGraph {
     }
 
     /// - Returns: `(origin, direction)`, unlabeled, an internal function returning a tuple with
-    ///   baked-in labels forces every call site whose own labels differ into a two-step
-    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
-    ///   second round). The public `resolve(_ axis:)` above returns this directly and its own
+    ///   baked-in labels forces every call site whose own labels differ into a two-step.
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,.
+    ///   second round).
+    ///
+    ///   The public `resolve(_ axis:)` above returns this directly and its own
     ///   declared, labeled `(origin:, direction:)` return type supplies the labels for that call.
     private func resolveEdgeDirection(_ ref: TopologyRef) -> Result<
         (SIMD3<Double>, SIMD3<Double>), ConstructionResolutionError
@@ -820,39 +869,45 @@ extension BRepGraph {
         }
     }
 
-    /// Whether `edge` is genuinely a circular cross-section of `axis`, a closed rim, or an open
+    /// Whether edge is genuinely a circular cross-section of axis, a closed rim, or an open.
     /// arc bounding one, rather than merely non-linear and adjacent to the right kind of face.
     ///
-    /// Every point of an edge that bounds a cylindrical or conical face already sits at that
-    /// surface's own radius from the axis by construction, so radius-from-axis alone can't tell a
-    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder, both lie
-    /// exactly on the wall (#894 finding 1, third pass). What does distinguish them is height
+    /// Every point of an edge that bounds a cylindrical or conical face already sits at that.
+    /// surface's own radius from the axis by construction, so radius-from-axis alone can't tell a.
+    /// true circular rim from the elliptical edge an OBLIQUE plane cuts from a cylinder, both lie.
+    /// exactly on the wall (#894 finding 1, third pass).
+    ///
+    /// What does distinguish them is height.
     /// along the axis: a genuine perpendicular cross-section's points all sit at the same signed
-    /// distance along `axis.direction`; an oblique-cut ellipse's height varies as you go around
-    /// it. Checking both radius and height also rejects two cases finding 1's own second-pass
+    /// distance along `axis.direction`; an oblique-cut ellipse's height varies as you go around.
+    /// it.
+    ///
+    /// Checking both radius and height also rejects two cases finding 1's own second-pass.
     /// follow-ups raised against the chord-parallel-to-axis check this replaced: a straight seam
-    /// reparameterized as a BSpline (round-1 finding 3) runs ALONG the axis, so its height changes
-    /// across the edge rather than staying constant; a helical edge's height changes with the
-    /// sweep angle the same way, regardless of how close its two-point secant happens to land to
-    /// the axis direction by coincidence of the pitch. Both fall through to the endpoint-secant
-    /// fallback in `resolveEdgeDirection`, which is already the right answer for a true straight
+    /// reparameterized as a BSpline (round-1 finding 3) runs ALONG the axis, so its height changes.
+    /// across the edge rather than staying constant; a helical edge's height changes with the.
+    /// sweep angle the same way, regardless of how close its two-point secant happens to land to.
+    /// the axis direction by coincidence of the pitch.
+    ///
+    /// Both fall through to the endpoint-secant.
+    /// fallback in resolveEdgeDirection, which is already the right answer for a true straight.
     /// line and the most honest available answer for a helix.
     ///
-    /// Samples `start`, `end`, and three interior points rather than just the two endpoints,
-    /// since two points on any curve are trivially "coplanar" and "equidistant", the check needs
-    /// enough samples to actually see curvature/tilt across the edge's own span, not just at its
+    /// Samples start, end, and three interior points rather than just the two endpoints,.
+    /// since two points on any curve are trivially "coplanar" and "equidistant", the check needs.
+    /// enough samples to actually see curvature/tilt across the edge's own span, not just at its.
     /// ends.
     ///
-    /// The height/radius comparison tolerance is `max(edgeTolerance,
+    /// The height/radius comparison tolerance is `max(edgeTolerance,.
     /// axisOriginAgreementDistanceTolerance)`, not the latter alone: a real edge that has survived
     /// a Boolean/fillet routinely measures `BRep_Tool::Tolerance` in the 1e-4-1e-3 range,
-    /// looser than the machine-precision `axisOriginAgreementDistanceTolerance` floor, and
-    /// comparing sampled noise against that floor alone rejected genuine circular rims outright
-    /// (#894 finding 2, fifth pass). `edgeTolerance` is the caller's own measured value for this
+    /// looser than the machine-precision axisOriginAgreementDistanceTolerance floor, and.
+    /// comparing sampled noise against that floor alone rejected genuine circular rims outright.
+    /// (#894 finding 2, fifth pass). edgeTolerance is the caller's own measured value for this.
     /// edge (`BRepGraph.edgeTolerance(_:)`, wrapping `BRep_Tool::Tolerance`), not invented here,
     /// this function stays a pure geometric test of its arguments, with no lookup of its own.
-    /// `internal`, not `private`, so `ConstructionAxisTests` can exercise the tolerance derivation
-    /// directly against controlled sample noise, for the same testability reason as
+    /// internal, not private, so ConstructionAxisTests can exercise the tolerance derivation.
+    /// directly against controlled sample noise, for the same testability reason as.
     /// `revolutionAxis(ofEdgeAt:)`/`axesAgree(_:_:)` (#894 finding 5, second pass).
     func coaxialCrossSection(
         of edge: Edge, bounds: (first: Double, last: Double), start: SIMD3<Double>,

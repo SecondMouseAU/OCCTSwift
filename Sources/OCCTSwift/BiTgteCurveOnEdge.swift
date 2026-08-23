@@ -16,7 +16,7 @@ public final class BiTgteCurveOnEdge: @unchecked Sendable {
 
     deinit { OCCTBiTgteCurveOnEdgeRelease(handle) }
 
-    /// Parameter domain of the curve.
+    /// Parameter       domain of the curve.
     public var domain: ClosedRange<Double> {
         var first = 0.0
         var last = 0.0

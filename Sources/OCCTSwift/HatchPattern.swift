@@ -12,23 +12,25 @@ public struct HatchSegment: Sendable {
 
 /// Generate 2D hatch patterns within polygon boundaries.
 ///
-/// Hatch patterns fill a closed 2D polygon with parallel line segments
-/// at a given spacing. Useful for cross-hatching in technical drawings
+/// Hatch patterns fill a closed 2D polygon with parallel line segments.
+/// at a given spacing.
+///
+/// Useful for cross-hatching in technical drawings.
 /// and toolpath generation in CAM.
 ///
-/// ## Example
+/// ## Example.
 ///
-/// ```swift
-/// // Hatch a rectangle with horizontal lines spaced 2mm apart
+/// ```swift.
+/// // Hatch a rectangle with horizontal lines spaced 2mm apart.
 /// let boundary: [SIMD2<Double>] = [
-///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5), SIMD2(0, 5)
-/// ]
-/// let segments = HatchPattern.generate(
+///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5), SIMD2(0, 5).
+/// ].
+/// let segments = HatchPattern.generate(.
 ///     boundary: boundary,
 ///     direction: SIMD2(1, 0),
 ///     spacing: 2.0
-/// )
-/// ```
+/// ).
+/// ```.
 public enum HatchPattern {
     /// Generate hatch line segments within a 2D polygon boundary.
     ///

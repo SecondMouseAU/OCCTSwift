@@ -39,7 +39,7 @@ public enum Vector3DMath {
     public static func dot(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
         OCCTXYZDot(a.x, a.y, a.z, b.x, b.y, b.z)
     }
-    /// Scalar triple product a . (b x c).
+    /// Scalar triple product a  (b x c).
     public static func dotCross(_ a: SIMD3<Double>, _ b: SIMD3<Double>, _ c: SIMD3<Double>)
         -> Double
     {

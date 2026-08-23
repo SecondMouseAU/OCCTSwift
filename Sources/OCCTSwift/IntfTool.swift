@@ -12,7 +12,9 @@ public final class IntfTool: @unchecked Sendable {
 
     deinit { OCCTIntfToolRelease(handle) }
 
-    /// Clip a line to a bounding box. Returns number of segments.
+    /// Clip a line to a bounding box.
+    ///
+    /// Returns number of segments.
     @discardableResult
     public func clipLineToBox(
         lineOrigin: SIMD3<Double>, lineDirection: SIMD3<Double>,

@@ -92,19 +92,21 @@ public enum ExtremaElC {
 
     /// Distance between a 3D line and ellipse.
     ///
-    /// `majorRadius` and `minorRadius` must describe an ellipse (both `> 0`, minor no larger than
-    /// major). A degenerate ellipse returns `[]`: measured, `Extrema_ExtElC` reports
+    /// majorRadius and minorRadius must describe an ellipse (both `> 0`, minor no larger than.
+    /// major). A degenerate ellipse returns `[]`: measured, Extrema_ExtElC reports
     /// `IsParallel()` against a zero-radius ellipse whatever the line does (#554).
     ///
-    /// ```swift
+    /// ```swift.
     /// let ex = ExtremaElC.lineToEllipse(linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(1, 0, 1),
     ///                                   center: .zero, normal: SIMD3(0, 0, 1),
     ///                                   xDir: SIMD3(1, 0, 0),
     ///                                   majorRadius: 5, minorRadius: 3)
-    /// #expect(!ex.isEmpty)
-    /// ```
+    /// #expect(!ex.isEmpty).
+    /// ```.
     ///
-    /// There is no tolerance: `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none. Only its line/line and
+    /// There is no tolerance: `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none.
+    ///
+    /// Only its line/line and.
     /// line/circle siblings do.
     public static func lineToEllipse(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
@@ -329,18 +331,18 @@ public enum ExtremaPointCurve {
 
     /// Distance from a point to a 3D ellipse.
     ///
-    /// `majorRadius` and `minorRadius` must describe an ellipse (both `> 0`, minor no larger than
-    /// major). A degenerate ellipse returns `[]`, because OCCT does not answer the degenerate
-    /// question here: measured, `Extrema_ExtPElC` reports no extrema at all against a zero-radius
+    /// majorRadius and minorRadius must describe an ellipse (both `> 0`, minor no larger than.
+    /// major). A degenerate ellipse returns `[]`, because OCCT does not answer the degenerate.
+    /// question here: measured, Extrema_ExtPElC reports no extrema at all against a zero-radius
     /// ellipse rather than the one at its centre (#554).
     ///
-    /// ```swift
+    /// ```swift.
     /// let ex = ExtremaPointCurve.pointToEllipse(point: SIMD3(10, 0, 0),
     ///                                           center: .zero, normal: SIMD3(0, 0, 1),
     ///                                           xDir: SIMD3(1, 0, 0),
     ///                                           majorRadius: 5, minorRadius: 3)
-    /// #expect(ex.count == 2)
-    /// ```
+    /// #expect(ex.count == 2).
+    /// ```.
     public static func pointToEllipse(
         point: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
@@ -368,14 +370,14 @@ public enum ExtremaPointCurve {
 
     /// Distance from a point to a 3D parabola.
     ///
-    /// `focal` must be `> 0`; a degenerate parabola returns `[]`.
+    /// focal must be `> 0`; a degenerate parabola returns `[]`.
     ///
-    /// ```swift
+    /// ```swift.
     /// let ex = ExtremaPointCurve.pointToParabola(point: SIMD3(10, 0, 0),
     ///                                            center: .zero, normal: SIMD3(0, 0, 1),
     ///                                            xDir: SIMD3(1, 0, 0), focal: 2)
-    /// #expect(!ex.isEmpty)
-    /// ```
+    /// #expect(!ex.isEmpty).
+    /// ```.
     public static func pointToParabola(
         point: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,

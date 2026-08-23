@@ -24,7 +24,9 @@ public enum EdgeAnalysis {
         OCCTEdgeIsSeamSA(edge.handle, face.handle)
     }
 
-    /// Check same parameter consistency. Returns (ok, maxDeviation).
+    /// Check same parameter consistency.
+    ///
+    /// Returns (ok, maxDeviation).
     public static func checkSameParameter(_ edge: Shape) -> (ok: Bool, maxDeviation: Double) {
         var maxdev = 0.0
         let ok = OCCTEdgeCheckSameParameter(edge.handle, &maxdev)
@@ -67,7 +69,9 @@ public enum EdgeAnalysis {
         return SIMD3(x, y, z)
     }
 
-    /// Check vertex tolerances on a face edge. Returns (ok, toler1, toler2).
+    /// Check vertex tolerances on a face edge.
+    ///
+    /// Returns (ok, toler1, toler2).
     public static func checkVertexTolerance(_ edge: Shape, face: Shape) -> (
         ok: Bool, toler1: Double, toler2: Double
     ) {
@@ -77,7 +81,9 @@ public enum EdgeAnalysis {
         return (ok, t1, t2)
     }
 
-    /// Check if two edges overlap. Returns (overlapping, tolerance).
+    /// Check if two edges overlap.
+    ///
+    /// Returns (overlapping, tolerance).
     public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape) -> (
         overlapping: Bool, tolerance: Double
     ) {

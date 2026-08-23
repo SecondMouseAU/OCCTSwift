@@ -19,13 +19,17 @@ import simd
 // tidy in a 2x2 grid.
 
 extension Sheet {
-    /// Auto-compose front / top / side / iso views of `shape` onto this sheet
-    /// at the supplied scale. Views are sized to fit the sheet's inner frame
-    /// (less `margin` on each outer edge and `margin/2` between cells).
+    /// Auto-compose front / top / side / iso views of shape onto this sheet.
+    /// at the supplied scale.
     ///
-    /// If `scale` is smaller than the fit-to-cell scale computed from the
-    /// widest view, the caller's value wins (some views may not fill their
-    /// cell). Returns nil if any of the front / top / side projections fail.
+    /// Views are sized to fit the sheet's inner frame.
+    /// (less margin on each outer edge and `margin/2` between cells).
+    ///
+    /// If scale is smaller than the fit-to-cell scale computed from the.
+    /// widest view, the caller's value wins (some views may not fill their.
+    /// cell).
+    ///
+    /// Returns nil if any of the front / top / side projections fail.
     public func standardLayout(
         of shape: Shape,
         scale: DrawingScale = .one,
@@ -125,9 +129,11 @@ extension Sheet {
     }
 }
 
-/// Result of `Sheet.standardLayout(of:scale:)`. Each `PlacedView` holds the
-/// original unannotated `Drawing` (so callers can attach additional dimensions
-/// or centrelines to a specific view) plus the offset and scale that
+/// Result of `Sheet.standardLayout(of:scale:)`.
+///
+/// Each PlacedView holds the.
+/// original unannotated Drawing (so callers can attach additional dimensions.
+/// or centrelines to a specific view) plus the offset and scale that.
 /// `render(into:)` will apply when emitting.
 public struct StandardLayout: Sendable {
     public let front: PlacedView
@@ -148,7 +154,7 @@ public struct StandardLayout: Sendable {
         return all
     }
 
-    /// Emit every view onto a writer via its `TransformedDrawing`.
+    /// Emit every view onto a writer via its TransformedDrawing.
     public func render(into writer: DXFWriter) {
         for p in placed {
             writer.collectFromDrawing(p.drawing, translate: p.offset, scale: p.scale)

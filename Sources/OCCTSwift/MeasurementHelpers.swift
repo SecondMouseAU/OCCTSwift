@@ -11,15 +11,18 @@ import simd
 // MARK: - Angles
 
 extension Edge {
-    /// This edge's curve parameter at a normalized `[0, 1]` fraction of its parameter
-    /// bounds, via naive linear interpolation over the raw parameter domain, NOT arc
+    /// This edge's curve parameter at a normalized `[0, 1]` fraction of its parameter.
+    /// bounds, via naive linear interpolation over the raw parameter domain, NOT arc.
     /// length. `Shape.edgeParameterAtFraction(_:)` is the arc-length-accurate variant
-    /// (#603); the two disagree on non-uniformly-parameterized curves (ellipses,
-    /// BSplines). `fraction` is clamped to `[0, 1]` first.
+    /// (#603); the two disagree on non-uniformly-parameterized curves (ellipses,.
     ///
-    /// Internal: the shared fraction→parameter idiom `resolveEdgePointAndTangent`/
-    /// `resolveEdgeDirection` (`ConstructionEntity.swift`) and `angle(to:atParameter:)`
-    /// below both used to inline separately (#888). Named distinctly from
+    /// BSplines). fraction is clamped to `[0, 1]` first.
+    ///
+    /// Internal: the shared fraction→parameter idiom resolveEdgePointAndTangent/
+    /// resolveEdgeDirection (`ConstructionEntity.swift`) and `angle(to:atParameter:)`
+    /// below both used to inline separately (#888).
+    ///
+    /// Named distinctly from.
     /// `edgeParameterAtFraction(_:)` so the two don't read as interchangeable (PR #897
     /// review, finding 10).
     internal func parameterByLinearFraction(_ fraction: Double) -> Double? {
@@ -28,12 +31,16 @@ extension Edge {
         return bounds.first + (bounds.last - bounds.first) * clamped
     }
 
-    /// Angle between this edge's tangent and another edge's tangent, measured at
+    /// Angle between this edge's tangent and another edge's tangent, measured at.
     /// their respective mid-parameters.
     ///
-    /// Returns radians in [0, π]. For straight edges the result is the line-line
-    /// angle. For curved edges it's the angle between the mid-curve tangents,
-    /// useful as an approximation but note the angle varies along a curve; pass
+    /// Returns radians in [0, π].
+    ///
+    /// For straight edges the result is the line-line.
+    /// angle.
+    ///
+    /// For curved edges it's the angle between the mid-curve tangents,.
+    /// useful as an approximation but note the angle varies along a curve; pass.
     /// `atParameter:` for a specific point.
     public func angle(to other: Edge, atParameter t: Double = 0.5) -> Double? {
         guard let p = parameterByLinearFraction(t), let op = other.parameterByLinearFraction(t)
@@ -46,7 +53,9 @@ extension Edge {
 
     /// Whether this edge is parallel to another at the given tangent-comparison tolerance (radians).
     ///
-    /// Convenience over `angle(to:)`. Shares its tolerance-comparison formula with
+    /// Convenience over `angle(to:)`.
+    ///
+    /// Shares its tolerance-comparison formula with.
     /// `normalsAreParallel(_:_:toleranceRadians:)` below via `angleIsParallel(_:toleranceRadians:)`
     /// instead of inlining its own copy (PR #897 review, second xhigh pass, finding 6/11).
     public func isParallel(to other: Edge, toleranceRadians: Double = 1e-4) -> Bool? {
@@ -54,7 +63,7 @@ extension Edge {
         return angleIsParallel(a, toleranceRadians: toleranceRadians)
     }
 
-    /// Whether this edge is perpendicular to another at the given tangent-comparison
+    /// Whether this edge is perpendicular to another at the given tangent-comparison.
     /// tolerance (radians).
     public func isPerpendicular(to other: Edge, toleranceRadians: Double = 1e-4) -> Bool? {
         guard let a = angle(to: other) else { return nil }
@@ -63,11 +72,11 @@ extension Edge {
 }
 
 extension Face {
-    /// This face's UV-domain midpoint, shared by `uvMidpointPoint()`, `uvMidpointNormal()`,
+    /// This face's UV-domain midpoint, shared by `uvMidpointPoint()`, `uvMidpointNormal()`,.
     /// and `uvMidpointSample()` below.
     ///
     /// - Returns: `(u, v)`, unlabeled, an internal function returning a tuple with baked-in
-    ///   labels forces every call site whose own labels differ into a two-step bind-then-relabel
+    ///   labels forces every call site whose own labels differ into a two-step bind-then-relabel.
     ///   instead of a direct return (`okf/policies/code-style.md`; #914 review, second round).
     private var uvMidpoint: (Double, Double)? {
         guard let bounds = uvBounds else { return nil }
@@ -77,7 +86,7 @@ extension Face {
     /// This face's point sampled at its UV-domain midpoint, without evaluating the normal too.
     ///
     /// Use this over `uvMidpointSample()` when only the point is needed (e.g.
-    /// `revolutionProperties`, PR #897 review) to skip a redundant `normal(atU:v:)` evaluation.
+    /// revolutionProperties, PR #897 review) to skip a redundant `normal(atU:v:)` evaluation.
     internal func uvMidpointPoint() -> SIMD3<Double>? {
         guard let (u, v) = uvMidpoint else { return nil }
         return point(atU: u, v: v)
@@ -86,31 +95,35 @@ extension Face {
     /// This face's normal sampled at its UV-domain midpoint, without evaluating the point too.
     ///
     /// Use this over `uvMidpointSample()` when only the normal is needed (e.g. `angle(to:)`,
-    /// `resolveFaceAxisDirection`'s fallback, PR #897 review) to skip a redundant
+    /// the resolveFaceAxisDirection\'s fallback, PR #897 review) to skip a redundant.
     /// `point(atU:v:)` evaluation.
     internal func uvMidpointNormal() -> SIMD3<Double>? {
         guard let (u, v) = uvMidpoint else { return nil }
         return normal(atU: u, v: v)
     }
 
-    /// This face's point + normal sampled at its UV-domain midpoint, a cheap,
-    /// always-available representative sample, not the area centroid (see
+    /// This face's point + normal sampled at its UV-domain midpoint, a cheap,.
+    /// always-available representative sample, not the area centroid (see.
     /// `surfaceInertia.centerOfMass` for that).
     ///
     /// Internal: this formula used to be reimplemented inline at 7 call sites
-    /// across `ConstructionEntity.swift` and this file (#889). Callers that only
-    /// need one of the two components should call `uvMidpointPoint()` /
+    /// across `ConstructionEntity.swift` and this file (#889).
+    ///
+    /// Callers that only.
+    /// need one of the two components should call `uvMidpointPoint()` /.
     /// `uvMidpointNormal()` directly instead, to avoid paying for the unused one.
     ///
-    /// Computes `uvMidpoint` once and evaluates both `point(atU:v:)`/`normal(atU:v:)`
-    /// against it directly, rather than delegating to `uvMidpointPoint()`/
-    /// `uvMidpointNormal()`, those each independently re-derive `uvMidpoint`, which
-    /// would fetch `uvBounds` twice per call here (PR #897 review, 2nd pass).
+    /// Computes uvMidpoint once and evaluates both `point(atU:v:)`/`normal(atU:v:)`
+    /// against it directly, rather than delegating to `uvMidpointPoint()`/.
+    /// `uvMidpointNormal()`, those each independently re-derive uvMidpoint, which.
+    /// would fetch uvBounds twice per call here (PR #897 review, 2nd pass).
     ///
     /// - Returns: `(point, normal)`, unlabeled, an internal function returning a tuple with
-    ///   baked-in labels forces every call site whose own labels differ into a two-step
-    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914
-    ///   review, second round). Every call site destructures into named locals immediately, so
+    ///   baked-in labels forces every call site whose own labels differ into a two-step.
+    ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914.
+    ///   review, second round).
+    ///
+    ///   Every call site destructures into named locals immediately, so.
     ///   this costs nothing at the point of use.
     internal func uvMidpointSample() -> (SIMD3<Double>, SIMD3<Double>)? {
         guard let (u, v) = uvMidpoint else { return nil }
@@ -124,7 +137,9 @@ extension Face {
 
     /// Angle between this face's normal and another face's normal, evaluated at the UV midpoint of each.
     ///
-    /// Returns radians in [0, π]. For two planar faces this is the dihedral angle
+    /// Returns radians in [0, π].
+    ///
+    /// For two planar faces this is the dihedral angle.
     /// + π/2 correction; for curved faces it's a point estimate.
     public func angle(to other: Face) -> Double? {
         guard let normal = uvMidpointNormal(), let otherNormal = other.uvMidpointNormal() else {
@@ -150,22 +165,25 @@ extension Face {
         return abs(a - .pi / 2) < toleranceRadians
     }
 
-    /// Whether this face is coplanar with another, normals parallel AND origin
-    /// lies on the other face's plane. `nil` (not `false`) when either face's
+    /// Whether this face is coplanar with another, normals parallel AND origin.
+    /// lies on the other face's plane. nil (not false) when either face's.
+    ///
     /// UV-midpoint normal/point is unavailable, or when the two faces aren't parallel.
     ///
-    /// Checks the (cheaper) normals first and only evaluates each face's UV-midpoint
-    /// *point* once the normals are confirmed parallel, an all-pairs coplanarity sweep
-    /// (feature recognition, symmetry detection) spends most of its calls on non-parallel
-    /// pairs, so short-circuiting there matters. Computes each face's `uvMidpoint` tuple
-    /// exactly once (`mid`/`otherMid`), reusing it for both the normal and (if reached)
-    /// point evaluation directly, NOT via `uvMidpointNormal()` then `uvMidpointPoint()`,
-    /// which would each independently re-derive `uvMidpoint` (a real `uvBounds` bridge
-    /// call, no caching), fetching it twice per face on a parallel pair instead of once
-    /// (PR #897 review, third pass, finding 3, a regression the second xhigh pass's own
+    /// Checks the (cheaper) normals first and only evaluates each face's UV-midpoint.
+    /// *point* once the normals are confirmed parallel, an all-pairs coplanarity sweep.
+    /// (feature recognition, symmetry detection) spends most of its calls on non-parallel.
+    /// pairs, so short-circuiting there matters.
+    ///
+    /// Computes each face's uvMidpoint tuple.
+    /// exactly once (mid/otherMid), reusing it for both the normal and (if reached).
+    /// point evaluation directly, NOT via `uvMidpointNormal()` then `uvMidpointPoint()`,.
+    /// which would each independently re-derive uvMidpoint (a real uvBounds bridge.
+    /// call, no caching), fetching it twice per face on a parallel pair instead of once.
+    /// (PR #897 review, third pass, finding 3, a regression the second xhigh pass's own.
     /// finding-7 fix introduced while fixing a different, real problem: this file's
-    /// `uvMidpointSample()` doc already warns delegating to the split accessors "would
-    /// fetch `uvBounds` twice per call").
+    /// `uvMidpointSample()` doc already warns delegating to the split accessors "would.
+    /// fetch uvBounds twice per call").
     public func isCoplanar(with other: Face, tolerance: Double = 1e-6) -> Bool? {
         guard let (midU, midV) = uvMidpoint, let (otherMidU, otherMidV) = other.uvMidpoint else {
             return nil
@@ -211,10 +229,10 @@ extension ConstructionPlane {
 
 /// Unsigned angle in [0, π] between two 3D vectors.
 ///
-/// Returns nil for degenerate (near-zero-length) input, this doc already claimed
-/// nil for that case while the implementation unconditionally returned `0`, silently
-/// reporting a degenerate/near-singular normal as "parallel" to anything through
-/// `normalsAreParallel` below (PR #897 review, finding 5).
+/// Returns nil for degenerate (near-zero-length) input, this doc already claimed.
+/// nil for that case while the implementation unconditionally returned 0, silently.
+/// reporting a degenerate/near-singular normal as "parallel" to anything through.
+/// normalsAreParallel below (PR #897 review, finding 5).
 public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double? {
     let la = simd_length(a)
     let lb = simd_length(b)
@@ -223,26 +241,26 @@ public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Dou
     return acos(max(-1.0, min(1.0, cosTheta)))
 }
 
-/// Whether `angle` (already computed, radians in `[0, π]`) is within `toleranceRadians` of `0`
-/// or `π`, i.e. whether the two directions it was measured between are parallel or
+/// Whether angle (already computed, radians in `[0, π]`) is within toleranceRadians of 0.
+/// or π, i.e. whether the two directions it was measured between are parallel or.
 /// anti-parallel.
 ///
 /// Shared by `Edge.isParallel(to:)` above and `normalsAreParallel(_:_:toleranceRadians:)` below,
-/// which used to each inline this identical comparison independently (PR #897 review, second
-/// xhigh pass, finding 6/11), a future correction to the boundary behavior (e.g. exactly at
+/// which used to each inline this identical comparison independently (PR #897 review, second.
+/// xhigh pass, finding 6/11), a future correction to the boundary behavior (e.g. exactly at.
 /// `angle == toleranceRadians`) now only has one implementation to fix.
 internal func angleIsParallel(_ angle: Double, toleranceRadians: Double) -> Bool {
     angle < toleranceRadians || (.pi - angle) < toleranceRadians
 }
 
-/// Whether two already-sampled face normals are parallel (or anti-parallel) within
-/// `toleranceRadians`. `nil` (not `false`) when either normal is degenerate
-/// (near-zero-length), propagated from `unsignedAngle`, rather than reporting a
+/// Whether two already-sampled face normals are parallel (or anti-parallel) within.
+/// toleranceRadians. nil (not false) when either normal is degenerate.
+/// (near-zero-length), propagated from unsignedAngle, rather than reporting a.
 /// degenerate normal as parallel to everything (PR #897 review, finding 5).
 ///
 /// Shared by `Face.isParallel(to:)` and `Face.isCoplanar(with:)` so callers that
-/// already hold both normals (`isCoplanar`, from its own `uvMidpointSample()` calls)
-/// don't have to re-derive them just to reuse the tolerance check (PR #897 review,
+/// already hold both normals (isCoplanar, from its own `uvMidpointSample()` calls).
+/// don't have to re-derive them just to reuse the tolerance check (PR #897 review,.
 /// 3rd + 4th pass).
 internal func normalsAreParallel(
     _ normal: SIMD3<Double>, _ otherNormal: SIMD3<Double>, toleranceRadians: Double

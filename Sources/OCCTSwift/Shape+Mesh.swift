@@ -100,7 +100,9 @@ extension Shape {
         return SIMD3(x, y, z)
     }
 
-    /// Get the node indices of a triangle (1-based index). Returns 1-based node indices.
+    /// Get the node indices of a triangle (1-based index).
+    ///
+    /// Returns 1-based node indices.
     public func triangulationTriangle(at index: Int32) -> (Int32, Int32, Int32) {
         var n1: Int32 = 0
         var n2: Int32 = 0
@@ -159,20 +161,26 @@ extension Shape {
 extension Shape {
 
     /// Write this shape's triangulation to a binary STL file.
+    ///
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - filePath: Output file path.
-    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation.
+    ///
+    ///   Default `0.1`.
     /// - Returns: true on success.
     public func writeSTLBinary(to filePath: String, deflection: Double = 0.1) -> Bool {
         OCCTShapeWriteSTLBinary(handle, filePath, deflection)
     }
 
     /// Write this shape's triangulation to an ASCII STL file.
+    ///
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - filePath: Output file path.
-    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation.
+    ///
+    ///   Default `0.1`.
     /// - Returns: true on success.
     public func writeSTLAscii(to filePath: String, deflection: Double = 0.1) -> Bool {
         OCCTShapeWriteSTLAscii(handle, filePath, deflection)
@@ -190,10 +198,11 @@ extension Shape {
 extension Shape {
 
     /// Get adjacent triangles for a triangle in a meshed face.
+    ///
     /// The three triangles adjacent to one triangle of a face's triangulation.
     ///
-    /// `faceIndex` is 0-based, like ``Face/index`` and every other face index in this API (#541).
-    /// `triangleIndex` and the returned neighbour indices are `Poly_Triangulation`'s own 1-based
+    /// faceIndex is 0-based, like ``Face/index`` and every other face index in this API (#541).
+    /// triangleIndex and the returned neighbour indices are the Poly_Triangulation\'s own 1-based.
     /// triangle numbers; 0 means no neighbour on that side.
     public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)? {
         var a1: Int32 = 0
@@ -209,8 +218,8 @@ extension Shape {
 
     /// A triangle containing the given node of a face's triangulation.
     ///
-    /// `faceIndex` is 0-based (#541); `nodeIndex` and the returned triangle index are
-    /// `Poly_Triangulation`'s own 1-based numbers.
+    /// faceIndex is 0-based (#541); nodeIndex and the returned triangle index are.
+    /// the Poly_Triangulation\'s own 1-based numbers.
     public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int? {
         let idx = Int(OCCTMeshNodeTriangle(handle, Int32(faceIndex), Int32(nodeIndex)))
         return idx > 0 ? idx : nil
@@ -218,7 +227,7 @@ extension Shape {
 
     /// Count triangles sharing a node (triangle fan count).
     ///
-    /// `faceIndex` is 0-based (#541); `nodeIndex` is `Poly_Triangulation`'s own 1-based number.
+    /// faceIndex is 0-based (#541); nodeIndex is the Poly_Triangulation\'s own 1-based number.
     public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int {
         Int(OCCTMeshNodeTriangleCount(handle, Int32(faceIndex), Int32(nodeIndex)))
     }

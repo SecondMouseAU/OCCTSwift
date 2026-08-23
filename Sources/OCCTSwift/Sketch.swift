@@ -24,7 +24,7 @@ public struct SketchElement: Sendable, Hashable {
 
         /// Ordered 2D sample points along this curve.
         ///
-        /// Lines and polylines are exact; arcs and circles are tessellated using the given `segmentsPerRadian` density.
+        /// Lines and polylines are exact; arcs and circles are tessellated using the given segmentsPerRadian density.
         public func tessellate2D(segmentsPerRadian: Int = 16) -> [SIMD2<Double>] {
             switch self {
             case .line(let from, let to):
@@ -97,15 +97,15 @@ public struct Sketch: Sendable, Hashable {
 }
 
 extension Sketch {
-    /// Build a 3D closed profile wire from the sketch's non-construction elements,
+    /// Build a 3D closed profile wire from the sketch's non-construction elements,.
     /// placed on the host construction plane.
     ///
-    /// Construction elements are filtered out at this single site, upstream uses
-    /// of the sketch (solver, constraint editor, agent-facing accessors) see the
+    /// Construction elements are filtered out at this single site, upstream uses.
+    /// of the sketch (solver, constraint editor, agent-facing accessors) see the.
     /// full element set including construction.
     ///
     /// - Parameters:
-    ///   - context: The construction context that registered `hostPlane`.
+    ///   - context: The construction context that registered hostPlane.
     ///   - graph: A BRepGraph against which to resolve the host plane's recipe.
     /// - Returns: A closed Wire on the resolved plane, or nil if the host plane
     ///   fails to resolve or no profile elements exist.

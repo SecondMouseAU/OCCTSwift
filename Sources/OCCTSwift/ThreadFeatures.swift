@@ -46,13 +46,16 @@ public enum ThreadForm: String, Sendable, Codable, CaseIterable {
     case custom  // arbitrary cross-section (see ThreadSpec.customProfile)
 }
 
-/// A thread's tooth cross-section over ONE pitch, normalized, the general representation behind
+/// A thread's tooth cross-section over ONE pitch, normalized, the general representation behind.
 /// every standard form and the entry point for threading with a custom shape.
 ///
-/// `axial` runs 0…1 along the pitch; `depth` runs 0 (crest, at the major radius) … 1 (root, at the
-/// minor radius). Vertices are ordered by increasing `axial`; the profile is periodic
+/// axial runs 0…1 along the pitch; depth runs 0 (crest, at the major radius) … 1 (root, at the.
+/// minor radius).
+///
+/// Vertices are ordered by increasing axial; the profile is periodic.
 /// (`first.axial == 0`, `last.axial == 1`, `first.depth == last.depth`) so consecutive teeth tile.
-/// The modeler maps a vertex to 3D as radius `rMajor − depth·cutDepth`, axial position `axial·pitch`,
+///
+/// The modeler maps a vertex to 3D as radius `rMajor − depth·cutDepth`, axial position `axial·pitch`,.
 /// helix angle `θ(z) + handed·axial·2π`.
 public struct ThreadProfile: Sendable, Hashable, Codable {
 
@@ -69,7 +72,7 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
     /// Validate and create a custom profile.
     ///
-    /// Returns nil unless the vertices form a well-ordered, periodic, full-depth-spanning tooth
+    /// Returns nil unless the vertices form a well-ordered, periodic, full-depth-spanning tooth.
     /// outline (the contract above).
     public init?(vertices: [Vertex]) {
         let eps = 1e-9
@@ -99,17 +102,17 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     public struct Segment: Sendable, Hashable {
         public let a: Vertex, b: Vertex, kind: SegmentKind
 
-        /// Whether this segment is a flat lying at `depth` (0 = crest, 1 = root).
+        /// Whether this segment is a flat lying at depth (0 = crest, 1 = root).
         ///
         /// The one place the crest/root classification is spelled out: the crest lookup the direct
-        /// rod build starts from, ``ThreadProfile/hasCrestFlat`` and
+        /// rod build starts from, ``ThreadProfile/hasCrestFlat`` and.
         /// ``ThreadProfile/flatWidthFraction(atDepth:)`` all ask through here (#991).
         func isFlat(atDepth depth: Double) -> Bool {
             kind == .flat && abs(a.depth - depth) < 1e-6
         }
     }
-    /// One segment per consecutive vertex pair: `flat` (constant depth → an arc), `wall` (constant
-    /// axial → a radial line, e.g. square threads), or `flank` (sloped → a sampled spline).
+    /// One segment per consecutive vertex pair: flat (constant depth → an arc), wall (constant
+    /// axial → a radial line, e.g. square threads), or flank (sloped → a sampled spline).
     public var segments: [Segment] {
         var out: [Segment] = []
         out.reserveCapacity(vertices.count - 1)
@@ -129,22 +132,23 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
         segments.contains { $0.isFlat(atDepth: 0) && abs($0.b.axial - $0.a.axial) > 1e-9 }
     }
 
-    /// Total axial width of the flats at `depth` (0 = crest, 1 = root), as a fraction of the pitch.
+    /// Total axial width of the flats at depth (0 = crest, 1 = root), as a fraction of the pitch.
     ///
-    /// Multiply by a spec's pitch for a width in mm. A pointed crest, or any depth the profile has
+    /// Multiply by a spec's pitch for a width in mm. A pointed crest, or any depth the profile has.
     /// no flat at, answers 0.
     func flatWidthFraction(atDepth depth: Double) -> Double {
         segments.filter { $0.isFlat(atDepth: depth) }
             .reduce(0) { $0 + ($1.b.axial - $1.a.axial) }
     }
 
-    /// Whether this profile can be built by the smooth, boolean-free direct rod path
+    /// Whether this profile can be built by the smooth, boolean-free direct rod path.
     /// (``Shape/threadedRod(customProfile:nominalDiameter:pitch:cutDepth:length:axisOrigin:axisDirection:leftHanded:)``
-    /// and the direct branch of `threadedShaft`).
+    /// and the direct branch of threadedShaft).
     ///
-    /// It requires a real **crest flat** (so the unthreaded margin can attach) and **at most two
+    /// It requires a real **crest flat** (so the unthreaded margin can attach) and **at most two.
     /// flank segments** (piecewise-linear forms: trapezoidal / ACME / square / buttress / worm).
-    /// Pointed-crest or many-flank (rounded / knuckle) profiles return `false` and must use the
+    ///
+    /// Pointed-crest or many-flank (rounded / knuckle) profiles return false and must use the.
     /// faceted boolean cut path instead.
     public var supportsSmoothRodBuild: Bool {
         hasCrestFlat && segments.filter { $0.kind == .flank }.count <= 2
@@ -154,10 +158,14 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
     /// Truncated trapezoid: root half-flats at the ends, a crest flat, straight flanks between.
     ///
-    /// `cf`/`rf` are the crest/root flat widths as fractions of the pitch, and `centre` is where
-    /// the crest flat's midpoint sits along it. The default 0.5 makes the tooth symmetric; moving
-    /// it makes one flank steeper than the other, which is what an asymmetric form such as
-    /// buttress is. Every built-in piecewise-linear profile on this type comes from here (#988).
+    /// cf/rf are the crest/root flat widths as fractions of the pitch, and centre is where.
+    /// the crest flat's midpoint sits along it.
+    ///
+    /// The default 0.5 makes the tooth symmetric; moving.
+    /// it makes one flank steeper than the other, which is what an asymmetric form such as.
+    /// buttress is.
+    ///
+    /// Every built-in piecewise-linear profile on this type comes from here (#988).
     static func trapezoid(
         crestFlatFraction cf: Double, rootFlatFraction rf: Double,
         crestCentreFraction centre: Double = 0.5
@@ -182,8 +190,8 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     ) -> ThreadProfile {
         trapezoid(crestFlatFraction: crestFlatFraction, rootFlatFraction: rootFlatFraction)
     }
-    /// A rounded thread: straight `halfFlankDeg` flanks with circular-arc crest & root (radius solved
-    /// for tangency), plus a small crest/root land so the smooth direct build can attach a crest. `h`
+    /// A rounded thread: straight halfFlankDeg flanks with circular-arc crest & root (radius solved
+    /// for tangency), plus a small crest/root land so the smooth direct build can attach a crest. h.
     /// is the depth as a fraction of pitch (must equal the form's `cutDepth / P`).
     static func rounded(h: Double, halfFlankDeg: Double, flat: Double = 0.05, samples: Int = 4)
         -> ThreadProfile
@@ -215,8 +223,8 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     }
     /// Whitworth / BSW / BSP 55°, `cutDepth = 0.640327·P`.
     ///
-    /// BS 84 rounds the outer/inner sixth of the tooth; this is the standard flat-truncation of
-    /// that form (crest flat = root flat = P/6, the straight 55° flank spanning the middle
+    /// BS 84 rounds the outer/inner sixth of the tooth; this is the standard flat-truncation of.
+    /// that form (crest flat = root flat = P/6, the straight 55° flank spanning the middle.
     /// two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false` loft spike past
     /// the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
     public static let whitworth55 = trapezoid(crestFlatFraction: 1.0 / 6, rootFlatFraction: 1.0 / 6)
@@ -228,19 +236,24 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
     /// Square, 0° radial walls, equal land and groove (`cutDepth = P/2`).
     ///
     /// The limiting trapezoid: crest and root flats each half the pitch leave the flanks no axial
-    /// run at all, so they classify as `wall` rather than `flank`. The six vertices are bit-for-bit
+    /// run at all, so they classify as wall rather than flank.
+    ///
+    /// The six vertices are bit-for-bit.
     /// the ones this constant used to spell out as a literal list.
     public static let square = trapezoid(crestFlatFraction: 0.5, rootFlatFraction: 0.5)
     /// Buttress (DIN 513), asymmetric 3° load flank / 30° clearance flank (33° total), `cutDepth = 0.86777·P`.
     ///
-    /// (Bolt core d3 = d − 2·0.86777·P, verified against the DIN 513 table, e.g. S 10×2 → d3 = 6.528.)
+    /// (Bolt core d3 = d − 2·0.86777·P, verified against the DIN 513 table, e.g. S 10×2 → d3 = 6.528.).
+    ///
     /// The near-radial load flank rises steeply to the crest; the 30° clearance flank falls back to the root.
+    ///
     /// The off-centre crest is what makes the two flanks differ: crest 0.1422…0.4022, root flat
     /// 0…0.0968 and 0.9032…1, bit-for-bit the vertices this constant used to spell out.
     public static let buttress = trapezoid(
         crestFlatFraction: 0.26, rootFlatFraction: 0.1936, crestCentreFraction: 0.2722)
     /// Knuckle / round thread (DIN 405): 30°-included (15° per side) flanks with circular-arc rounded
-    /// crest and root, at the standard depth `0.55·P` (bolt minor d3 = d − 1.1·P, verified against the
+    /// crest and root, at the standard depth `0.55·P` (bolt minor d3 = d − 1.1·P, verified against the.
+    ///
     /// DIN 405 dimension table).
     ///
     /// Small crest/root lands are kept so the smooth direct build can attach a crest.
@@ -249,13 +262,18 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
 
 /// How a thread terminates at its ends.
 public enum RunoutStyle: Sendable, Hashable {
-    /// Hard-stop at each end (no runout). Cheap and exact but manufacturing-unrealistic.
+    /// Hard-stop at each end (no runout).
+    ///
+    /// Cheap and exact but manufacturing-unrealistic.
     case none
-    /// Fillet the last `turns` worth of helix into the underlying surface.
+    /// Fillet the last turns worth of helix into the underlying surface.
+    ///
     /// Currently implemented as a post-boolean fillet pass of the given radius.
     case filleted(radius: Double)
-    /// Taper the V-profile to zero depth over the last `turns` revolutions using a
-    /// law-scaled sweep. Requires pipe-shell law support, falls back to `.filleted`
+    /// Taper the V-profile to zero depth over the last turns revolutions using a.
+    /// law-scaled sweep.
+    ///
+    /// Requires pipe-shell law support, falls back to `.filleted`.
     /// when law scaling is unavailable.
     case tapered(turns: Double)
 }
@@ -263,34 +281,42 @@ public enum RunoutStyle: Sendable, Hashable {
 /// Which construction path ``Shape/threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)``
 /// uses to build an external thread.
 ///
-/// For a thread on a plain coaxial cylinder (the overwhelmingly common case) both modes now
-/// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257), so there is
-/// no longer a reason to choose between them. The boolean cut path remains only for the cases the
-/// direct build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted
-/// and unreliable**. A third case, `.boolean`, which forced the cut path even where direct worked,
+/// For a thread on a plain coaxial cylinder (the overwhelmingly common case) both modes now.
+/// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257), so there is.
+/// no longer a reason to choose between them.
+///
+/// The boolean cut path remains only for the cases the.
+/// direct build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted.
+/// and unreliable**. A third case, `.boolean`, which forced the cut path even where direct worked,.
 /// was deprecated in v1.8.1 and its *case* removed in v2.0.0 (#254, #784).
 ///
-/// - Important: This type shipped `Codable` in v1.8.1 with three cases, so a value persisted by a
+/// - Important: This type shipped Codable in v1.8.1 with three cases, so a value persisted by a
 ///   host app while `.boolean` still existed decodes correctly today: `init(from:)` recognises the
-///   legacy `"boolean"` key and maps it to ``direct``, matching what every buildable thread already
-///   resolved `.boolean` to before the case was removed. `.boolean` cannot be *encoded* again (the
-///   case no longer exists to construct), so this is one-directional, decode-only compatibility,
-///   not a live third case. #784's own migration guide names this as the one removal in that PR
+///   legacy `"boolean"` key and maps it to `direct`, matching what every buildable thread already.
+///   resolved `.boolean` to before the case was removed. `.boolean` cannot be *encoded* again (the.
+///   case no longer exists to construct), so this is one-directional, decode-only compatibility,.
+///   not a live third case. #784's own migration guide names this as the one removal in that PR.
 ///   that is a persisted-data concern rather than a source-compatibility one.
 public enum ThreadBuild: Sendable, Hashable, Codable {
-    /// Smooth, boolean-free direct rod build (#213; multi-start #257) for single- and multi-start
-    /// threads on a plain coaxial cylinder; the boolean cut path otherwise (non-cylinder / rounded /
-    /// tapered). The recommended default. The earlier crest-overshoot concern (#222) was shown by
-    /// #232 to be a `Bnd_Box` control-hull over-report, not real geometry: the direct crest is
+    /// Smooth, boolean-free direct rod build (#213; multi-start #257) for single- and multi-start.
+    /// threads on a plain coaxial cylinder; the boolean cut path otherwise (non-cylinder / rounded /.
+    /// tapered).
+    ///
+    /// The recommended default.
+    ///
+    /// The earlier crest-overshoot concern (#222) was shown by.
+    /// #232 to be a Bnd_Box control-hull over-report, not real geometry: the direct crest is
     /// in-envelope.
     case auto
-    /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build is
-    /// unavailable (non-cylinder target, rounded/tapered form, or a construction failure). For a
-    /// coaxial cylinder this is identical to ``auto``.
+    /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build is.
+    /// unavailable (non-cylinder target, rounded/tapered form, or a construction failure).
+    ///
+    /// For a.
+    /// coaxial cylinder this is identical to `auto`.
     case direct
 
-    /// Matches the case names Swift's synthesized `Codable` used for this enum's three cases before
-    /// v2.0.0 (`{"auto":{}}`, `{"direct":{}}`, `{"boolean":{}}`), plus the retired `boolean` key kept
+    /// Matches the case names Swift's synthesized Codable used for this enum's three cases before.
+    /// v2.0.0 (`{"auto":{}}`, `{"direct":{}}`, `{"boolean":{}}`), plus the retired boolean key kept
     /// here for decoding only.
     private enum CodingKeys: String, CodingKey {
         case auto, direct, boolean
@@ -355,7 +381,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         self.customCutDepth = customCutDepth
     }
 
-    /// Thread a cylinder with an arbitrary cross-section (`ThreadProfile`), "any valid shape".
+    /// Thread a cylinder with an arbitrary cross-section (ThreadProfile), "any valid shape".
     public init(
         customProfile: ThreadProfile, nominalDiameter: Double, pitch: Double,
         cutDepth: Double, leftHanded: Bool = false
@@ -379,7 +405,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         }
     }
 
-    /// Practical radial thread depth (crest → root), form-dependent. `customCutDepth` overrides.
+    /// Practical radial thread depth (crest → root), form-dependent. customCutDepth overrides.
     public var cutDepth: Double {
         if let c = customCutDepth { return c }
         switch form {
@@ -422,18 +448,22 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
     /// P/4.
     public var rootFlat: Double { pitch / 4 }
 
-    /// Minor diameter (inner diameter of the threaded feature, where thread roots sit
+    /// Minor diameter (inner diameter of the threaded feature, where thread roots sit.
     /// for external threads, where thread crests sit for internal threads).
     ///
-    /// Form-dependent via `cutDepth`.
+    /// Form-dependent via cutDepth.
     public var minorDiameter: Double { nominalDiameter - 2 * cutDepth }
 
     /// Parse a thread designation.
     ///
     /// Recognises:
-    /// metric `M5x0.8` / `M10`; Unified/UNC/UNF/SAE `1/4-20 UNC`, `3/8-16`; trapezoidal `Tr40x7[LH]`;
-    /// ACME `1.5-4 ACME`; Whitworth `W1/2` / `1/2 BSW`; BSP parallel `G1/2`; BSP taper `R1/2`/`Rc1/2`;
-    /// NPT `1/2-14 NPT`. Returns nil on unrecognised input.
+    /// metric `M5x0.8` / M10; Unified/UNC/UNF/SAE `1/4-20 UNC`, `3/8-16`; trapezoidal `Tr40x7[LH]`;.
+    ///
+    /// ACME `1.5-4 ACME`; Whitworth `W1/2` / `1/2 BSW`; BSP parallel `G1/2`; BSP taper `R1/2`/`Rc1/2`;.
+    ///
+    /// NPT `1/2-14 NPT`.
+    ///
+    /// Returns nil on unrecognised input.
     public static func parse(_ text: String) -> ThreadSpec? {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         if let m = parseMetric(trimmed) { return m }
@@ -536,9 +566,11 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
 
     /// An imperial `"<diameter>-<threads per inch>"` designation, converted to millimetres.
     ///
-    /// The Unified and ACME designations differ only in the suffix their own parse method has
-    /// already stripped, so both come through here (#989). The diameter may be a fraction
-    /// (`1/4`) or a decimal (`1.5`); the thread count runs to the first space, so a trailing
+    /// The Unified and ACME designations differ only in the suffix their own parse method has.
+    /// already stripped, so both come through here (#989).
+    ///
+    /// The diameter may be a fraction.
+    /// (`1/4`) or a decimal (`1.5`); the thread count runs to the first space, so a trailing.
     /// series name (`1/4-20 UNC`) is ignored rather than rejected.
     private static func parseInchDesignation(_ text: String, form: ThreadForm) -> ThreadSpec? {
         let sep = text.split(separator: "-", maxSplits: 1)
@@ -585,10 +617,14 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
 /// sits on where the helix starts.
 ///
 /// Delegates to the module-wide `perpendicularBasis(to:)` rather than constructing a second
-/// perpendicular of its own (#990). Kept as a named wrapper because *which* of that function's two
+/// perpendicular of its own (#990).
+///
+/// Kept as a named wrapper because *which* of that function's two.
 /// elements is taken is a decision both call sites have to make the same way: the second one,
-/// which reproduces the clocking this file shipped for the +Z, +X and +Y axes, where the first is
-/// 90 degrees away. See `Scripts/repro/990-orthonormal-radial-basis/`.
+/// which reproduces the clocking this file shipped for the +Z, +X and +Y axes, where the first is.
+/// 90 degrees away.
+///
+/// See `Scripts/repro/990-orthonormal-radial-basis/`.
 private func orthonormalRadial(axis: SIMD3<Double>) -> SIMD3<Double> {
     perpendicularBasis(to: axis).1
 }
@@ -627,26 +663,31 @@ extension Shape {
 
     /// Cut a helical V-profile thread into a cylindrical shaft.
     ///
-    /// - Parameters: as `threadedHole`, but `length` replaces `depth`.
+    /// - Parameters: as threadedHole, but length replaces depth.
     ///
-    /// When `self` is a plain cylinder coaxial with the axis (the overwhelmingly common case),
-    /// this builds the threaded rod *directly* as a smooth, BRepCheck-valid solid (no boolean),
-    /// see ``buildThreadedRodDirect`` and OCCTSwift #213. **Multi-start** threads (`starts > 1`)
+    /// When self is a plain cylinder coaxial with the axis (the overwhelmingly common case),.
+    /// this builds the threaded rod *directly* as a smooth, BRepCheck-valid solid (no boolean),.
+    /// see `buildThreadedRodDirect` and OCCTSwift #213. **Multi-start** threads (`starts > 1`).
     /// build directly too (#257): N teeth tile the turn at lead = N·pitch, giving a continuous
-    /// interleaved multi-helix. For non-cylinder targets, rounded/tapered forms, or if the direct
-    /// build fails, it falls back to the boolean cut path (``applyThreadCut``).
+    /// interleaved multi-helix.
+    ///
+    /// For non-cylinder targets, rounded/tapered forms, or if the direct.
+    /// build fails, it falls back to the boolean cut path (`applyThreadCut`).
     ///
     /// - Parameters:
     ///   - axisOrigin: A point on the thread axis.
     ///   - axisDirection: The thread axis direction; normalized internally.
     ///   - spec: The thread form, diameter and pitch to cut.
-    ///   - length: Threaded length along the axis. Defaults to twice the nominal diameter.
+    ///   - length: Threaded length along the axis.
+    ///
+    ///   Defaults to twice the nominal diameter.
     ///   - starts: Number of thread starts; the lead is `starts * pitch`.
     ///   - runout: How the thread terminates at each end.
     ///   - build: chooses the construction path. `.auto` (default) and `.direct` use the
-    ///     smooth, boolean-free direct build for single- and multi-start coaxial cylinders,
+    ///     smooth, boolean-free direct build for single- and multi-start coaxial cylinders,.
     ///     falling back to the faceted cut path only for non-cylinder / rounded / tapered cases.
-    ///     See ``ThreadBuild``.
+    ///
+    ///     See `ThreadBuild`.
     /// - Returns: The threaded solid, or nil when the sweep or the boolean cut fails.
     public func threadedShaft(
         axisOrigin: SIMD3<Double>,
@@ -685,24 +726,33 @@ extension Shape {
             helixRadius: spec.nominalDiameter / 2)
     }
 
-    /// Build a smooth worm / screw thread from a **custom radial cross-section**, directly and with
+    /// Build a smooth worm / screw thread from a **custom radial cross-section**, directly and with.
     /// **no boolean**, the discoverable entry point for the #225 use case.
     ///
-    /// This is the right way to turn a custom tooth profile into a solid thread. The tempting
-    /// alternative, `helicalSweep` the profile, then `union`/`subtract` it with a coaxial cylinder,
-    /// produces a BRepCheck-invalid (union) or collapsed (subtract) result that no fuzzy value or
-    /// heal pass recovers, because OCCT's BOP can't resolve the coincident/tangent helicoid faces
-    /// (OCCTSwift #225, #213, #181). Instead this composes the thread region (a `ruled:false`
-    /// cam-slice loft of the profile, swept along the exact helix) with the core cylinder by pure
-    /// sewing, so the result is BRepCheck-valid and analytic (a handful of B-spline faces → a small
+    /// This is the right way to turn a custom tooth profile into a solid thread.
+    ///
+    /// The tempting.
+    /// alternative, helicalSweep the profile, then union/subtract it with a coaxial cylinder,.
+    /// produces a BRepCheck-invalid (union) or collapsed (subtract) result that no fuzzy value or.
+    /// heal pass recovers, because OCCT's BOP can't resolve the coincident/tangent helicoid faces.
+    /// (OCCTSwift #225, #213, #181).
+    ///
+    /// Instead this composes the thread region (a `ruled:false`
+    /// cam-slice loft of the profile, swept along the exact helix) with the core cylinder by pure.
+    /// sewing, so the result is BRepCheck-valid and analytic (a handful of B-spline faces → a small.
+    ///
     /// STEP, not a faceted multi-MB one).
     ///
-    /// The cross-section is a ``ThreadProfile`` in normalized `(axial, depth)` coordinates: `axial`
-    /// 0…1 spans one pitch, `depth` 0 = crest (at `nominalDiameter / 2`) … 1 = root (at
-    /// `nominalDiameter / 2 − cutDepth`). The profile must satisfy ``ThreadProfile/supportsSmoothRodBuild``
-    /// (a real crest flat, ≤ 2 flanks). For the standard named forms, prefer
+    /// The cross-section is a `ThreadProfile` in normalized `(axial, depth)` coordinates: axial
+    /// 0…1 spans one pitch, depth 0 = crest (at `nominalDiameter / 2`) … 1 = root (at.
+    /// `nominalDiameter / 2 − cutDepth`).
+    ///
+    /// The profile must satisfy ``ThreadProfile/supportsSmoothRodBuild``.
+    /// (a real crest flat, ≤ 2 flanks).
+    ///
+    /// For the standard named forms, prefer.
     /// ``threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)`` with a
-    /// `ThreadForm` spec.
+    /// ThreadForm spec.
     ///
     /// - Parameters:
     ///   - customProfile: The tooth cross-section (must be ``ThreadProfile/supportsSmoothRodBuild``).
@@ -713,8 +763,8 @@ extension Shape {
     ///   - axisOrigin: A point on the rod axis (the thread start).
     ///   - axisDirection: The rod axis direction.
     ///   - leftHanded: Helix handedness.
-    /// - Returns: A valid, smooth threaded rod, or `nil` if the inputs are degenerate, the profile
-    ///   isn't smooth-rod-buildable, or the direct build can't produce a valid solid (it never
+    /// - Returns: A valid, smooth threaded rod, or nil if the inputs are degenerate, the profile
+    ///   isn't smooth-rod-buildable, or the direct build can't produce a valid solid (it never.
     ///   silently falls back to an invalid boolean result).
     public static func threadedRod(
         customProfile: ThreadProfile,
@@ -748,13 +798,13 @@ extension Shape {
         return rod
     }
 
-    /// Build a smooth external threaded rod directly (no boolean) when `self` is a plain cylinder
+    /// Build a smooth external threaded rod directly (no boolean) when self is a plain cylinder.
     /// of radius ≈ `spec.nominalDiameter / 2` coaxial with the axis (#213).
     ///
-    /// Returns nil, so the caller falls back to the boolean cut, when `self` is not such a
-    /// cylinder, or the build isn't a sound thread. `threadedRodSolid` lofts the thread's
-    /// cross-section (`ruled=false`, smooth, solid-to-axis, flat caps) and sews on any unthreaded
-    /// margin; the boolean engine is never invoked, so the result is orientation-robust and valid
+    /// Returns nil, so the caller falls back to the boolean cut, when self is not such a.
+    /// cylinder, or the build isn't a sound thread. threadedRodSolid lofts the thread's.
+    /// cross-section (`ruled=false`, smooth, solid-to-axis, flat caps) and sews on any unthreaded.
+    /// margin; the boolean engine is never invoked, so the result is orientation-robust and valid.
     /// where the cut path is faceted.
     private func buildThreadedRodDirect(
         axisOrigin: SIMD3<Double>,
@@ -816,18 +866,23 @@ extension Shape {
         return result
     }
 
-    /// Build the smooth external threaded rod by composing already-wrapped OCCT primitives,
+    /// Build the smooth external threaded rod by composing already-wrapped OCCT primitives,.
+    ///
     /// NO boolean, so the result is orientation-robust AND BRepCheck-valid (#213).
     ///
-    /// The kernel bridge stays a thin wrapper; all the thread-specific geometry lives here in
+    /// The kernel bridge stays a thin wrapper; all the thread-specific geometry lives here in.
+    ///
     /// Swift.
     ///
-    /// The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section
+    /// The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section.
     /// (a "cam": root arc → flank spiral → crest arc → flank spiral, rotated by the helix per
     /// z-slice), one BSpline face per cam edge (a handful of faces, flat caps, solid-to-axis).
+    ///
     /// Any unthreaded margin is closed by pure SEWING: a single-loop "shoulder" face (the circle's
-    /// non-crest arc + the cam's non-crest edges; the crest arc joins the thread crest band
-    /// straight to the cylinder) + the plain cylinder lateral + a flat end disk. Returns nil on
+    /// non-crest arc + the cam's non-crest edges; the crest arc joins the thread crest band.
+    /// straight to the cylinder) + the plain cylinder lateral + a flat end disk.
+    ///
+    /// Returns nil on.
     /// any construction failure (the caller then falls back to the boolean cut path).
     fileprivate static func threadedRodSolid(
         origin: SIMD3<Double>, axis: SIMD3<Double>, radial0: SIMD3<Double>,
@@ -1160,20 +1215,22 @@ extension Shape {
         }
     }
 
-    /// Screw-motion cutter (the path for internal threads, non-cylinder targets, and any non-60°-V
+    /// Screw-motion cutter (the path for internal threads, non-cylinder targets, and any non-60°-V.
     /// form): sweep the V-groove cross-section through a pure screw motion (rotate about the axis +
     /// translate along it) and loft the closely-spaced sections.
     ///
-    /// Internal cuts (apexSign +1) loft it SMOOTH (`ruled=false`), cutting a smooth helical cutter
-    /// into a thick wall is robust, so internal threads come out smooth; external fallbacks
-    /// (apexSign −1) loft it faceted, since subtracting a smooth cutter from a thin external
+    /// Internal cuts (apexSign +1) loft it SMOOTH (`ruled=false`), cutting a smooth helical cutter.
+    /// into a thick wall is robust, so internal threads come out smooth; external fallbacks.
+    /// (apexSign −1) loft it faceted, since subtracting a smooth cutter from a thin external.
     /// cylinder is the unreliable case (#187/#213).
     ///
-    /// The groove is a trapezoid derived from the form's `profile`: its bottom (the thread root) is
-    /// the root-flat width, its mouth (at the blank surface) is the inter-crest span (pitch − crest
-    /// flat). This is exact for the trapezoidal forms (ISO/Unified, Whitworth/BSP, ACME, Tr, square)
-    /// and a faceted trapezoidal approximation for asymmetric/rounded forms (buttress, knuckle) and
-    /// custom profiles, the *external* smooth build reproduces those exactly; the cut path trades a
+    /// The groove is a trapezoid derived from the form's profile: its bottom (the thread root) is
+    /// the root-flat width, its mouth (at the blank surface) is the inter-crest span (pitch − crest.
+    /// flat).
+    ///
+    /// This is exact for the trapezoidal forms (ISO/Unified, Whitworth/BSP, ACME, Tr, square).
+    /// and a faceted trapezoidal approximation for asymmetric/rounded forms (buttress, knuckle) and.
+    /// custom profiles, the *external* smooth build reproduces those exactly; the cut path trades a.
     /// little fidelity for a robust boolean.
     fileprivate static func screwSweptThreadCutter(
         axisOrigin: SIMD3<Double>, axis: SIMD3<Double>,

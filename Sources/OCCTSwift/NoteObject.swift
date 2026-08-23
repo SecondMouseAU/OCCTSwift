@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Wrapper for XCAFNoteObjects_NoteObject — note annotation data.
+/// Wrapper for XCAFNoteObjects_NoteObject (note annotation data).
 public final class NoteObject: @unchecked Sendable {
     private let handle: OCCTNoteObjectRef
 

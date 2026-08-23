@@ -4,7 +4,9 @@ import simd
 
 /// Interleaved triangle mesh data suitable for Metal vertex buffers.
 ///
-/// Vertices and normals are stored per-vertex. Indices define triangles
+/// Vertices and normals are stored per-vertex.
+///
+/// Indices define triangles.
 /// (3 indices per triangle).
 public struct ShadedMeshData: Sendable {
     /// Per-vertex positions.
@@ -22,8 +24,10 @@ public struct ShadedMeshData: Sendable {
 
 /// Edge wireframe data suitable for Metal line rendering.
 ///
-/// Vertices are 3D positions. `segmentStarts` marks where each edge polyline
-/// begins in the vertex array. Segment `i` spans vertices from
+/// Vertices are 3D positions. segmentStarts marks where each edge polyline.
+/// begins in the vertex array.
+///
+/// Segment i spans vertices from.
 /// `segmentStarts[i]` to `segmentStarts[i+1] - 1` (or end of array for the last).
 public struct EdgeMeshData: Sendable {
     /// All edge polyline vertices.
@@ -39,9 +43,13 @@ public struct EdgeMeshData: Sendable {
 extension Shape {
     /// Extract a triangulated mesh from the shape for shaded rendering.
     ///
-    /// - Parameter deflection: Tessellation chord deviation. Smaller values produce
-    ///   finer meshes. Default is 0.1.
-    /// - Returns: Shaded mesh data, or `nil` if tessellation fails.
+    /// - Parameter deflection: Tessellation chord deviation.
+    ///
+    /// Smaller values produce.
+    ///   finer meshes.
+    ///
+    ///   Default is 0.1.
+    /// - Returns: Shaded mesh data, or nil if tessellation fails.
     public func shadedMesh(deflection: Double = 0.1) -> ShadedMeshData? {
         var data = OCCTShadedMeshData()
         guard OCCTShapeGetShadedMesh(handle, deflection, &data) else {
@@ -84,8 +92,10 @@ extension Shape {
 
     /// Extract edge wireframe polylines from the shape.
     ///
-    /// - Parameter deflection: Tessellation chord deviation. Default is 0.1.
-    /// - Returns: Edge mesh data, or `nil` if extraction fails.
+    /// - Parameter deflection: Tessellation chord deviation.
+    ///
+    /// Default is 0.1.
+    /// - Returns: Edge mesh data, or nil if extraction fails.
     public func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()
         guard OCCTShapeGetEdgeMesh(handle, deflection, &data) else {
@@ -116,13 +126,13 @@ extension Shape {
         return EdgeMeshData(vertices: positions, segmentStarts: starts)
     }
 
-    /// Extract a triangulated mesh using a ``DisplayDrawer`` for tessellation control.
+    /// Extract a triangulated mesh using a `DisplayDrawer` for tessellation control.
     ///
-    /// The drawer's deflection type, deviation coefficient/angle, and other
+    /// The drawer's deflection type, deviation coefficient/angle, and other.
     /// tessellation parameters are used instead of a fixed deflection value.
     ///
     /// - Parameter drawer: The display drawer controlling tessellation quality.
-    /// - Returns: Shaded mesh data, or `nil` if tessellation fails.
+    /// - Returns: Shaded mesh data, or nil if tessellation fails.
     public func shadedMesh(drawer: DisplayDrawer) -> ShadedMeshData? {
         var data = OCCTShadedMeshData()
         guard OCCTShapeGetShadedMeshWithDrawer(handle, drawer.handle, &data) else {
@@ -161,10 +171,10 @@ extension Shape {
         return ShadedMeshData(vertices: positions, normals: normals, indices: indices)
     }
 
-    /// Extract edge wireframe polylines using a ``DisplayDrawer`` for tessellation control.
+    /// Extract edge wireframe polylines using a `DisplayDrawer` for tessellation control.
     ///
     /// - Parameter drawer: The display drawer controlling tessellation quality.
-    /// - Returns: Edge mesh data, or `nil` if extraction fails.
+    /// - Returns: Edge mesh data, or nil if extraction fails.
     public func edgeMesh(drawer: DisplayDrawer) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()
         guard OCCTShapeGetEdgeMeshWithDrawer(handle, drawer.handle, &data) else {

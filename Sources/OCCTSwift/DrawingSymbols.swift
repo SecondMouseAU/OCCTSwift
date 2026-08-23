@@ -17,7 +17,7 @@ public enum SurfaceFinishSymbol: String, Sendable, Hashable, Codable {
 
 extension DrawingAnnotation {
     /// ISO 1302 surface finish annotation: a check-mark style symbol with Ra
-    /// value, a leader line pointing at the feature, and an optional
+    /// value, a leader line pointing at the feature, and an optional.
     /// production-method text block.
     public static func surfaceFinish(
         at position: SIMD2<Double>,
@@ -106,7 +106,9 @@ extension DrawingAnnotation {
 
 // MARK: - GD&T symbols (ISO 1101)
 
-/// ISO 1101 geometric characteristic symbol. Matches `Document.GeomToleranceType`
+/// ISO 1101 geometric characteristic symbol.
+///
+/// Matches `Document.GeomToleranceType`.
 /// raw values for easy round-trip from XDE into drawings.
 public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case straightness, flatness, circularity, cylindricity
@@ -115,9 +117,10 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case position, concentricity, symmetry, coaxiality
     case circularRunout, totalRunout
 
-    /// Unicode glyph or short textual representation — used when emitting to
-    /// DXF via plain TEXT. (Full Unicode glyphs render in AutoCAD but require
-    /// a TrueType font; the textual form is always safe.)
+    /// Unicode glyph or short textual representation (used when emitting to).
+    ///
+    /// DXF via plain TEXT. (Full Unicode glyphs render in AutoCAD but require.
+    /// a TrueType font; the textual form is always safe.).
     public var glyph: String {
         switch self {
         case .straightness: return "STR"
@@ -140,10 +143,10 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
 }
 
 extension DrawingAnnotation {
-    /// ISO 1101 feature control frame — the classic rectangular box with
+    /// ISO 1101 feature control frame (the classic rectangular box with).
     /// symbol | tolerance | datum references.
     ///
-    /// Example: `[⌖] [0.1 Ⓜ] [A] [B] [C]` — positional tolerance 0.1 at
+    /// Example: `[⌖] [0.1 Ⓜ] [A] [B] [C]` (positional tolerance 0.1 at).
     /// maximum material condition relative to datums A, B, C.
     public static func featureControlFrame(
         at position: SIMD2<Double>,
@@ -247,7 +250,7 @@ extension DrawingAnnotation {
         return result
     }
 
-    /// ISO 1101 datum feature symbol — letter in a box with triangle pointer.
+    /// ISO 1101 datum feature symbol (letter in a box with triangle pointer).
     public static func datumFeature(
         label: String,  // single letter like "A"
         at position: SIMD2<Double>,
@@ -294,12 +297,14 @@ extension DrawingAnnotation {
 // MARK: - Detail view + break lines (G5)
 
 extension Drawing {
-    /// Compose a detail view of a region from this drawing, scaled up and
-    /// placed at `placement`. Returns a `TransformedDrawing` ready to pass to
+    /// Compose a detail view of a region from this drawing, scaled up and.
+    /// placed at placement.
+    ///
+    /// Returns a TransformedDrawing ready to pass to.
     /// `DXFWriter.collectFromDrawing`.
     ///
-    /// Caller should pair with a `DrawingAnnotation.textLabel` marker on the
-    /// parent view indicating the detail bubble + a textLabel on the detail
+    /// Caller should pair with a `DrawingAnnotation.textLabel` marker on the.
+    /// parent view indicating the detail bubble + a textLabel on the detail.
     /// placement indicating the scale, e.g. "DETAIL A  2:1".
     public func detailView(at placement: SIMD2<Double>, scale: Double) -> TransformedDrawing {
         transformed(translate: placement, scale: scale)
@@ -307,7 +312,9 @@ extension Drawing {
 }
 
 extension DrawingAnnotation {
-    /// ISO 128-30 break line marking compressed length. Renders as a short
+    /// ISO 128-30 break line marking compressed length.
+    ///
+    /// Renders as a short.
     /// zigzag at the midpoint of the two endpoints.
     public static func breakLine(
         from: SIMD2<Double>, to: SIMD2<Double>,

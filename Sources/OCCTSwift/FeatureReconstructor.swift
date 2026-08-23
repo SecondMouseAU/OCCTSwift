@@ -180,16 +180,18 @@ public struct FeatureReconstructor: Sendable {
         public let fulfilled: [String]
         public let skipped: [Skipped]
         public let annotations: [Annotation]
-        /// Per-feature `ShapeHistoryRef` retained from history-recording
+        /// Per-feature ShapeHistoryRef retained from history-recording.
         /// builders (booleans + the Tier-2 modification ops, when used).
         ///
-        /// Keyed by the feature id passed in `FeatureSpec.*.id`. Features
-        /// without an id are not retained here, their history can't be
+        /// Keyed by the feature id passed in `FeatureSpec.*.id`.
+        ///
+        /// Features.
+        /// without an id are not retained here, their history can't be.
         /// remapped without a key.
         ///
         /// Use this to walk selection IDs across chained features:
         /// `result.histories["my_hole"]?.record(of: face)` returns the
-        /// post-cut derivatives of `face`.
+        /// post-cut derivatives of face.
         public let histories: [String: ShapeHistoryRef]
     }
 
@@ -216,15 +218,17 @@ public struct FeatureReconstructor: Sendable {
 
     // MARK: - Entry point
 
-    /// Sentinel id under which a non-nil `inputBody` is registered in
-    /// `namedShapes`.
+    /// Sentinel id under which a non-nil inputBody is registered in.
+    /// namedShapes.
     ///
-    /// Boolean operands, fillet/chamfer `.onFeature` selectors, and any other feature spec that references a named shape
-    /// can use this key to address the starting body. JSON envelopes can
-    /// emit it as a literal string. The leading `@` keeps it disjoint from
-    /// any feature id a caller is likely to supply; if a feature does
-    /// register an id of `"@input"`, it shadows the input under standard
-    /// last-write-wins semantics for `namedShapes`.
+    /// Boolean operands, fillet/chamfer `.onFeature` selectors, and any other feature spec that references a named shape.
+    /// can use this key to address the starting body. JSON envelopes can.
+    /// emit it as a literal string.
+    ///
+    /// The leading `@` keeps it disjoint from.
+    /// any feature id a caller is likely to supply; if a feature does.
+    /// register an id of `"@input"`, it shadows the input under standard.
+    /// last-write-wins semantics for namedShapes.
     public static let inputBodySentinel = "@input"
 
     public static func build(
@@ -636,7 +640,7 @@ public struct FeatureReconstructor: Sendable {
 
     // MARK: - Edge-selector helpers
 
-    /// Edge indices in `shape` whose midpoint lies within `tolerance` of `point`.
+    /// Edge indices in shape whose midpoint lies within tolerance of point.
     ///
     /// Index space matches `shape.subShapes(ofType: .edge)` / `shape.edges()`,
     /// both are TopExp_MapShapes traversals in canonical order.
@@ -657,10 +661,12 @@ public struct FeatureReconstructor: Sendable {
         return matching.isEmpty ? nil : matching
     }
 
-    /// Edge indices of `target` that were "contributed by" `source`, heuristic.
+    /// Edge indices of target that were "contributed by" source, heuristic.
     ///
-    /// edges of target whose midpoint lies within a small tolerance of any edge
-    /// midpoint of source. Useful for "fillet the edges the extrude created"
+    /// edges of target whose midpoint lies within a small tolerance of any edge.
+    /// midpoint of source.
+    ///
+    /// Useful for "fillet the edges the extrude created".
     /// without needing full BRepGraph history.
     private static func edgeIndicesContributedBy(
         target: Shape,
@@ -722,8 +728,10 @@ public struct FeatureReconstructor: Sendable {
 extension FeatureReconstructor {
     /// Minimal JSON front end: parses a top-level `{"features": [...]}` object.
     ///
-    /// with `kind`-discriminated entries. The full schema mirrors the OCCTDesignLoop
-    /// part_graph.py contract; this is a starting surface for JSON-driven
+    /// with kind-discriminated entries.
+    ///
+    /// The full schema mirrors the OCCTDesignLoop.
+    /// part_graph.py contract; this is a starting surface for JSON-driven.
     /// dispatch, to be extended as the schema stabilises.
     public static func buildJSON(
         _ data: Data,
@@ -763,8 +771,8 @@ extension FeatureReconstructor {
 
 private struct FeatureEntry: Decodable {
     let spec: FeatureSpec?
-    /// Set when `kind` did not match any recognised case. `buildJSON` reads
-    /// this to emit an `unsupported` skip so callers can detect typos /
+    /// Set when kind did not match any recognised case. buildJSON reads.
+    /// this to emit an unsupported skip so callers can detect typos /.
     /// schema drift instead of features silently disappearing.
     let unknownKind: String?
     let unknownID: String?

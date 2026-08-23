@@ -12,19 +12,20 @@ public struct PolynomialRoots: Sendable {
 
 /// Analytical polynomial solvers for degrees 2-4.
 ///
-/// Uses OCCT's numerically stable implementations with
+/// Uses OCCT's numerically stable implementations with.
+///
 /// Newton-Raphson refinement and degenerate case handling.
 ///
-/// ## Example
+/// ## Example.
 ///
-/// ```swift
-/// // Solve x² - 5x + 6 = 0  →  x = 2, 3
+/// ```swift.
+/// // Solve x² - 5x + 6 = 0  →  x = 2, 3.
 /// let result = PolynomialSolver.quadratic(a: 1, b: -5, c: 6)
-/// // result.roots == [2.0, 3.0]
+/// // result.roots == [2.0, 3.0].
 ///
-/// // Solve x³ - 6x² + 11x - 6 = 0  →  x = 1, 2, 3
+/// // Solve x³ - 6x² + 11x - 6 = 0  →  x = 1, 2, 3.
 /// let cubic = PolynomialSolver.cubic(a: 1, b: -6, c: 11, d: -6)
-/// ```
+/// ```.
 public enum PolynomialSolver {
     /// Solve a quadratic equation: ax² + bx + c = 0
     ///

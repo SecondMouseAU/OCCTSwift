@@ -48,7 +48,9 @@ extension Exporter {
 }
 
 public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
-    /// Explicit viewBox override. When nil, the writer computes the viewBox
+    /// Explicit viewBox override.
+    ///
+    /// When nil, the writer computes the viewBox.
     /// from the staged content's bounding box at `write(to:)` time.
     public var viewBox: (min: SIMD2<Double>, size: SIMD2<Double>)?
     public let deflection: Double

@@ -9,6 +9,7 @@ extension Shape {
     /// Create a B-spline surface from a grid of control points.
     ///
     /// The surface interpolates approximately through the control point grid.
+    ///
     /// Control points are specified in row-major order (U varies fastest).
     ///
     /// - Parameters:
@@ -17,18 +18,18 @@ extension Shape {
     ///   - vDegree: Degree in V direction (default 3 for cubic)
     /// - Returns: A face shape from the B-spline surface, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Create a 4x4 control point grid for a curved surface
+    /// ```swift.
+    /// // Create a 4x4 control point grid for a curved surface.
     /// let poles: [[SIMD3<Double>]] = [
-    ///     [SIMD3(0, 0, 0), SIMD3(0, 10, 0), SIMD3(0, 20, 0), SIMD3(0, 30, 0)],
-    ///     [SIMD3(10, 0, 2), SIMD3(10, 10, 2), SIMD3(10, 20, 2), SIMD3(10, 30, 2)],
-    ///     [SIMD3(20, 0, 2), SIMD3(20, 10, 2), SIMD3(20, 20, 2), SIMD3(20, 30, 2)],
-    ///     [SIMD3(30, 0, 0), SIMD3(30, 10, 0), SIMD3(30, 20, 0), SIMD3(30, 30, 0)]
-    /// ]
+    ///     [SIMD3(0, 0, 0), SIMD3(0, 10, 0), SIMD3(0, 20, 0), SIMD3(0, 30, 0)],.
+    ///     [SIMD3(10, 0, 2), SIMD3(10, 10, 2), SIMD3(10, 20, 2), SIMD3(10, 30, 2)],.
+    ///     [SIMD3(20, 0, 2), SIMD3(20, 10, 2), SIMD3(20, 20, 2), SIMD3(20, 30, 2)],.
+    ///     [SIMD3(30, 0, 0), SIMD3(30, 10, 0), SIMD3(30, 20, 0), SIMD3(30, 30, 0)].
+    /// ].
     /// let surface = Shape.surface(poles: poles)
-    /// ```
+    /// ```.
     public static func surface(
         poles: [[SIMD3<Double>]],
         uDegree: Int = 3,
@@ -82,14 +83,18 @@ extension Shape {
 
     /// Fill an N-sided boundary with a smooth surface.
     ///
-    /// Creates a surface that passes through the given boundary wires
+    /// Creates a surface that passes through the given boundary wires.
     /// with the specified continuity.
     ///
-    /// Tangency (`.g1`) and curvature (`.g2`) continuity need a surface to be continuous
-    /// *with*. This overload uses each boundary edge's own underlying surface, so any
-    /// continuity above `.c0` requires every boundary edge to have been borrowed from an
-    /// existing face; a boundary built from free-standing wires has nothing to match and
-    /// returns nil. To fill an opening smoothly into the shape around it, use
+    /// Tangency (`.g1`) and curvature (`.g2`) continuity need a surface to be continuous.
+    /// *with*.
+    ///
+    /// This overload uses each boundary edge's own underlying surface, so any.
+    /// continuity above `.c0` requires every boundary edge to have been borrowed from an.
+    /// existing face; a boundary built from free-standing wires has nothing to match and.
+    /// returns nil.
+    ///
+    /// To fill an opening smoothly into the shape around it, use.
     /// ``fill(boundaries:supportedBy:parameters:)``; to name the reference face per edge,
     /// use ``fill(constraints:parameters:)``.
     ///
@@ -98,21 +103,21 @@ extension Shape {
     ///   - parameters: Filling parameters (continuity, tolerance, etc.)
     /// - Returns: Face shape covering the boundary, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Fill a 4-sided boundary with a smooth surface
+    /// ```swift.
+    /// // Fill a 4-sided boundary with a smooth surface.
     /// let wire1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
     /// let wire2 = Wire.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 5))
     /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))
     /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))
     ///
     /// // Free-standing wires have no surface to be tangent to, so fill positionally.
-    /// let patch = Shape.fill(
+    /// let patch = Shape.fill(.
     ///     boundaries: [wire1, wire2, wire3, wire4],
     ///     parameters: FillingParameters(continuity: .g0)
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     public static func fill(
         boundaries: [Wire],
         parameters: FillingParameters = FillingParameters()
@@ -134,9 +139,9 @@ extension Shape {
     /// Fill an N-sided boundary, continuous with the shape surrounding it.
     ///
     /// The "cap this opening" case: each boundary edge takes its tangency/curvature
-    /// reference from that edge's own face in `support`, so a `.g1` fill leaves the
-    /// boundary along the surrounding walls instead of flat across them. A boundary edge
-    /// that isn't part of `support` falls back to its own underlying surface, and failing
+    /// reference from that edge's own face in support, so a `.g1` fill leaves the.
+    /// boundary along the surrounding walls instead of flat across them. A boundary edge.
+    /// that isn't part of support falls back to its own underlying surface, and failing.
     /// that is constrained positionally.
     ///
     /// - Parameters:
@@ -145,25 +150,25 @@ extension Shape {
     ///   - parameters: Filling parameters (continuity, tolerance, etc.)
     /// - Returns: Face shape covering the boundary, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Cap the open top of a truncated sphere, tangent to the spherical wall
+    /// ```swift.
+    /// // Cap the open top of a truncated sphere, tangent to the spherical wall.
     /// let bowl = Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
     ///                         radius: 10, angle1: -.pi / 2, angle2: 50 * .pi / 180)!
     ///
-    /// // the open rim is the topmost closed edge
-    /// let rim = bowl.edges()
-    ///     .filter { $0.isClosed3D }
+    /// // the open rim is the topmost closed edge.
+    /// let rim = bowl.edges().
+    ///     .filter { $0.isClosed3D }.
     ///     .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
     ///
-    /// let cap = Shape.fill(
+    /// let cap = Shape.fill(.
     ///     boundaries: [Wire.wireFromEdges([rim])!],
     ///     supportedBy: bowl,
     ///     parameters: FillingParameters(continuity: .g1)
-    /// )
-    /// // cap leaves the rim along the sphere instead of closing it with a flat disc
-    /// ```
+    /// ).
+    /// // cap leaves the rim along the sphere instead of closing it with a flat disc.
+    /// ```.
     public static func fill(
         boundaries: [Wire],
         supportedBy support: Shape,
@@ -188,26 +193,26 @@ extension Shape {
     /// Fill a surface from explicit per-edge constraints.
     ///
     /// The precise form of ``fill(boundaries:parameters:)``: every edge names its own
-    /// reference face and continuity order, and may bound the resulting face or act as an
-    /// internal constraint the surface must also satisfy. `parameters.continuity` is
-    /// ignored — each constraint carries its own.
+    /// reference face and continuity order, and may bound the resulting face or act as an.
+    /// internal constraint the surface must also satisfy. `parameters.continuity` is.
+    /// ignored (each constraint carries its own).
     ///
     /// - Parameters:
     ///   - constraints: Edge constraints defining the surface
     ///   - parameters: Filling parameters (tolerance, degree, segments; continuity unused)
     /// - Returns: Face shape satisfying the constraints, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Curvature-continuous against the wall the rim came from, positional elsewhere
+    /// ```swift.
+    /// // Curvature-continuous against the wall the rim came from, positional elsewhere.
     /// let wall = rim.adjacentFaces(in: bowl)!.0
     ///
     /// let patch = Shape.fill(constraints: [
     ///     FillConstraint(edge: rim, support: wall, continuity: .g2),
     ///     FillConstraint(edge: freeEdge, continuity: .g0)
-    /// ])
-    /// ```
+    /// ]).
+    /// ```.
     public static func fill(
         constraints: [FillConstraint],
         parameters: FillingParameters = FillingParameters()
@@ -242,7 +247,7 @@ extension Shape {
 
     /// Create a surface constrained to pass through specific points.
     ///
-    /// Uses a plate surface algorithm to create a smooth surface
+    /// Uses a plate surface algorithm to create a smooth surface.
     /// that interpolates through all given points.
     ///
     /// - Parameters:
@@ -250,21 +255,25 @@ extension Shape {
     ///   - tolerance: Surface approximation tolerance
     /// - Returns: Surface face, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Create a surface through scattered points
-    /// let surface = Shape.plateSurface(
+    /// ```swift.
+    /// // Create a surface through scattered points.
+    /// let surface = Shape.plateSurface(.
     ///     through: [
-    ///         SIMD3(0, 0, 0),
-    ///         SIMD3(10, 0, 1),
-    ///         SIMD3(10, 10, 2),
-    ///         SIMD3(0, 10, 1),
-    ///         SIMD3(5, 5, 3)  // Point in middle raises surface
-    ///     ],
+    ///         SIMD3(0, 0, 0),.
+    ///
+    ///         SIMD3(10, 0, 1),.
+    ///
+    ///         SIMD3(10, 10, 2),.
+    ///
+    ///         SIMD3(0, 10, 1),.
+    ///
+    ///         SIMD3(5, 5, 3)  // Point in middle raises surface.
+    ///     ],.
     ///     tolerance: 0.01
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     public static func plateSurface(
         through points: [SIMD3<Double>],
         tolerance: Double = 0.01
@@ -292,7 +301,7 @@ extension Shape {
 
     /// Create a surface constrained by boundary curves.
     ///
-    /// Uses a plate surface algorithm to create a smooth surface
+    /// Uses a plate surface algorithm to create a smooth surface.
     /// that follows the given boundary curves with specified continuity.
     ///
     /// - Parameters:
@@ -301,19 +310,19 @@ extension Shape {
     ///   - tolerance: Surface approximation tolerance
     /// - Returns: Surface face, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Create a surface bounded by curves
-    /// let curve1 = Wire.bspline([...])
-    /// let curve2 = Wire.bspline([...])
+    /// ```swift.
+    /// // Create a surface bounded by curves.
+    /// let curve1 = Wire.bspline([...]).
+    /// let curve2 = Wire.bspline([...]).
     ///
-    /// let surface = Shape.plateSurface(
+    /// let surface = Shape.plateSurface(.
     ///     constrainedBy: [curve1, curve2],
     ///     continuity: .g1,
     ///     tolerance: 0.01
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     public static func plateSurface(
         constrainedBy curves: [Wire],
         continuity: SurfaceContinuity = .g1,
@@ -342,16 +351,18 @@ extension Shape {
 
     /// Create a plate surface through points with specified constraint orders per point.
     ///
-    /// Each point can independently specify G0 (position only) or G1 (position + tangent)
-    /// continuity. **`.g2` always returns `nil`**: a bare point carries no curvature to match,
-    /// so `GeomPlate_PointConstraint` rejects order 2 outright (#437). This is checked here,
+    /// Each point can independently specify G0 (position only) or G1 (position + tangent).
+    /// continuity. **`.g2` always returns nil**: a bare point carries no curvature to match,
+    /// so GeomPlate_PointConstraint rejects order 2 outright (#437).
+    ///
+    /// This is checked here,.
     /// before any constraint is built; see ``SurfaceContinuity/isUnsupportedForPointConstraint``.
     ///
-    /// ```swift
-    /// // .g2 anywhere in `orders` is rejected up front; the call below is always nil.
+    /// ```swift.
+    /// // .g2 anywhere in orders is rejected up front; the call below is always nil.
     /// let rejected = Shape.plateSurface(through: points,
     ///                                    orders: Array(repeating: .g2, count: points.count))
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - points: Array of 3D points the surface must satisfy
@@ -391,27 +402,33 @@ extension Shape {
         return Shape(handle: result)
     }
 
-    /// Whether any order in a batch of *point* constraints would fail
-    /// `GeomPlate_PointConstraint`'s own domain check (#437), i.e. whether any element is
+    /// Whether any order in a batch of *point* constraints would fail.
+    /// the GeomPlate_PointConstraint\'s own domain check (#437), i.e. whether any element is.
     /// ``SurfaceContinuity/isUnsupportedForPointConstraint``.
     ///
     /// The one shared implementation behind both plate-point entry points' rejection guard:
     /// `plateSurface(through:orders:)` and, via ``plateMixedRejectsPointOrders(_:)``,
-    /// `plateSurface(pointConstraints:curveConstraints:)`. Each passes its own `orders` shape
-    /// (a flat array here, a `(point, order)` tuple array there), but both defer the actual
-    /// domain question to this one function rather than each re-testing
-    /// `isUnsupportedForPointConstraint` inline.
+    /// `plateSurface(pointConstraints:curveConstraints:)`.
+    ///
+    /// Each passes its own orders shape.
+    /// (a flat array here, a `(point, order)` tuple array there), but both defer the actual.
+    /// domain question to this one function rather than each re-testing.
+    /// isUnsupportedForPointConstraint inline.
     static func plateRejectsPointOrders(_ orders: some Sequence<SurfaceContinuity>) -> Bool {
         orders.contains(where: \.isUnsupportedForPointConstraint)
     }
 
-    /// Whether any point constraint here would fail `GeomPlate_PointConstraint`'s own domain
-    /// check (#437). Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
+    /// Whether any point constraint here would fail the GeomPlate_PointConstraint\'s own domain.
+    /// check (#437).
+    ///
+    /// Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
     /// `(point, order)` tuple shape.
     ///
-    /// Deliberately takes only `points`, not `curves`: `GeomPlate_CurveConstraint` has no such
-    /// restriction, so curve orders must never be able to influence this decision. That is a
-    /// property of this function's own *signature*, not just its body: there is no `curves`
+    /// Deliberately takes only points, not curves: GeomPlate_CurveConstraint has no such
+    /// restriction, so curve orders must never be able to influence this decision.
+    ///
+    /// That is a.
+    /// property of this function's own *signature*, not just its body: there is no curves
     /// parameter for a future edit to reach for by mistake.
     static func plateMixedRejectsPointOrders(
         _ points: [(point: SIMD3<Double>, order: SurfaceContinuity)]
@@ -421,22 +438,24 @@ extension Shape {
 
     /// Create a plate surface with mixed point and curve constraints.
     ///
-    /// Combines point constraints (each with its own continuity order) and
+    /// Combines point constraints (each with its own continuity order) and.
     /// curve constraints (wires with continuity orders) into a single plate surface.
     ///
-    /// `.g2` is rejected up front for a **point** constraint (`GeomPlate_PointConstraint` rejects
-    /// order 2 outright, #437) but is fine for a **curve** constraint (`GeomPlate_CurveConstraint`
-    /// accepts order 2 directly); see ``SurfaceContinuity/isUnsupportedForPointConstraint``. Only
-    /// `points`' orders are checked; `curves`' orders are not.
+    /// `.g2` is rejected up front for a **point** constraint (GeomPlate_PointConstraint rejects.
+    /// order 2 outright, #437) but is fine for a **curve** constraint (GeomPlate_CurveConstraint.
+    /// accepts order 2 directly); see ``SurfaceContinuity/isUnsupportedForPointConstraint``.
     ///
-    /// ```swift
+    /// Only.
+    /// points' orders are checked; curves' orders are not.
+    ///
+    /// ```swift.
     /// // A point held to G0 alongside a rectangular boundary wire held to G0.
     /// // A .g2 point order here would make the whole call return nil (see above).
-    /// let surface = Shape.plateSurface(
+    /// let surface = Shape.plateSurface(.
     ///     pointConstraints: [(point: SIMD3(5, 5, 3), order: .g0)],
     ///     curveConstraints: [(wire: boundaryWire, order: .g0)]
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     ///
     /// - Parameters:
     ///   - points: Point constraints with positions and orders (`.g2` always rejected, see above)
@@ -488,6 +507,7 @@ extension Shape {
     /// Find the underlying surface of a shape (edges or wire).
     ///
     /// Determines the best-fit surface for a set of edges or a wire.
+    ///
     /// Useful for reconstructing faces from imported wireframes.
     ///
     /// - Parameter tolerance: Surface fitting tolerance
@@ -499,7 +519,7 @@ extension Shape {
     /// Create a solid of revolution by revolving a meridian curve.
     ///
     /// Unlike `revolution(profile:...)` which takes a wire profile,
-    /// this creates a revolution directly from a `Geom_Curve`.
+    /// this creates a revolution directly from a Geom_Curve.
     ///
     /// - Parameters:
     ///   - meridian: The curve to revolve
@@ -524,7 +544,7 @@ extension Shape {
     }
     /// Add a revolution form (revolved rib or groove) to a shape.
     ///
-    /// Similar to `addingLinearRib`, but the rib follows a rotational
+    /// Similar to addingLinearRib, but the rib follows a rotational.
     /// path around the given axis.
     ///
     /// - Parameters:
@@ -554,6 +574,7 @@ extension Shape {
     /// Add a revolved feature (boss or pocket) to a shape.
     ///
     /// Revolves a profile around an axis to add or remove material.
+    ///
     /// Commonly used for turned parts (lathe operations).
     ///
     /// - Parameters:
@@ -633,7 +654,7 @@ extension Shape {
 
     // MARK: - Find Surface (v0.40.0)
 
-    /// Find the underlying geometric surface of a shape (wire or edges)
+    /// Find the underlying geometric surface of a shape (wire or edges).
     ///
     /// Analyzes the edges of a shape to determine if they lie on a common surface.
     /// - Parameters:
@@ -652,16 +673,17 @@ extension Shape {
 
     /// Result of a curve-on-surface consistency check.
     public struct CurveOnSurfaceCheck {
-        /// Maximum deviation between 3D edge curves and their pcurves on faces
+        /// Maximum deviation between 3D edge curves and their pcurves on faces.
         public let maxDistance: Double
-        /// Curve parameter where the maximum deviation occurs
+        /// Curve parameter where the maximum deviation occurs.
         public let maxParameter: Double
     }
 
     /// Check edge-on-surface consistency.
     ///
-    /// Examines all edge-face pairs in the shape and reports the maximum deviation
+    /// Examines all edge-face pairs in the shape and reports the maximum deviation.
     /// between each edge's 3D curve and its parametric curve (pcurve) on the face surface.
+    ///
     /// Useful for validating imported geometry or checking repair results.
     ///
     /// - Returns: Check result with max distance and parameter, or nil if check fails
@@ -725,8 +747,10 @@ extension Shape {
 
     // MARK: - BRepGProp_Face integration (#266 follow-up)
 
-    /// `BRepGProp_Face` Gauss-integration orders (number of integration points) in U and V — the
-    /// quadrature this face needs for exact surface integrals. Non-trivial only for BSpline faces;
+    /// BRepGProp_Face Gauss-integration orders (number of integration points) in U and V (the).
+    /// quadrature this face needs for exact surface integrals.
+    ///
+    /// Non-trivial only for BSpline faces;.
     /// nil if the shape isn't a single face.
     public var faceIntegrationOrders: (u: Int, v: Int)? {
         var u: Int32 = 0
@@ -735,7 +759,7 @@ extension Shape {
         return (Int(u), Int(v))
     }
 
-    /// `BRepGProp_Face` U-direction integration knots — the BSpline span boundaries used when
+    /// BRepGProp_Face U-direction integration knots (the BSpline span boundaries used when).
     /// integrating over the face's U range (just `[uMin, uMax]` for non-BSpline faces).
     public func faceIntegrationKnotsU() -> [Double] {
         var buffer = [Double](repeating: 0, count: 256)
@@ -744,7 +768,7 @@ extension Shape {
         return Array(buffer.prefix(Int(n)))
     }
 
-    /// `BRepGProp_Face` V-direction integration knots — companion to ``faceIntegrationKnotsU()``.
+    /// BRepGProp_Face V-direction integration knots. (companion to ``faceIntegrationKnotsU()``).
     public func faceIntegrationKnotsV() -> [Double] {
         var buffer = [Double](repeating: 0, count: 256)
         let n = OCCTBRepGPropFaceVKnots(handle, &buffer, 256)
@@ -752,8 +776,8 @@ extension Shape {
         return Array(buffer.prefix(Int(n)))
     }
 
-    /// `BRepGProp_Face` precision-driven surface integration parameters: the Gauss `order` (number of
-    /// points) needed for tolerance `precision`, and the number of U / V subintervals. nil if the
+    /// BRepGProp_Face precision-driven surface integration parameters: the Gauss order (number of
+    /// points) needed for tolerance precision, and the number of U / V subintervals. nil if the.
     /// shape isn't a single face.
     public func faceSurfaceIntegration(precision: Double = 1e-6) -> (
         order: Int, uSubs: Int, vSubs: Int
@@ -767,8 +791,8 @@ extension Shape {
         return (Int(order), Int(u), Int(v))
     }
 
-    /// `BRepGProp_Face` boundary integration: loads face edge `edgeIndex` as the boundary arc and
-    /// returns its integration `order` (for `precision`), subinterval count, and knot values.
+    /// BRepGProp_Face boundary integration: loads face edge edgeIndex as the boundary arc and
+    /// returns its integration order (for precision), subinterval count, and knot values.
     /// nil if the shape isn't a face or the edge can't be loaded.
     public func faceBoundaryIntegration(edgeIndex: Int, precision: Double = 1e-6)
         -> (order: Int, subs: Int, knots: [Double])?
@@ -789,6 +813,7 @@ extension Shape {
     /// Perform a pipe sweep of this shape along a wire spine with shape tracking.
     ///
     /// Uses LocOpe_Pipe to sweep a face profile along a wire path.
+    ///
     /// Unlike the regular pipe sweep, this tracks generated sub-shapes.
     ///
     /// - Parameter spine: Wire spine to sweep along
@@ -829,10 +854,12 @@ extension Shape {
 
     /// Continuity level for shape division.
     ///
-    /// Deliberately kept separate from ``ParametricContinuity`` (#398): this is a strict
-    /// superset, and `cn`, `g1` and `g2` are accepted only by
-    /// ``divided(at:tolerance:)``. Every other continuity-floor call site silently defaults an
-    /// unrecognised value, so widening them to this type would trade a compile error for a wrong
+    /// Deliberately kept separate from `ParametricContinuity` (#398): this is a strict
+    /// superset, and cn, g1 and g2 are accepted only by.
+    /// ``divided(at:tolerance:)``.
+    ///
+    /// Every other continuity-floor call site silently defaults an.
+    /// unrecognised value, so widening them to this type would trade a compile error for a wrong.
     /// answer.
     ///
     /// - Note: Used by ``divided(at:tolerance:)`` alone since #438 folded the narrower
@@ -851,9 +878,9 @@ extension Shape {
 
     /// Result of a pipe sweep operation.
     public struct PipeSweepResult {
-        /// The swept pipe shape
+        /// The swept pipe shape.
         public let shape: Shape
-        /// Surface approximation error
+        /// Surface approximation error.
         public let errorOnSurface: Double
     }
 
@@ -878,21 +905,22 @@ extension Shape {
     /// Build a plate surface through point constraints.
     ///
     /// Creates a smooth BSpline surface that passes through or near the given points.
+    ///
     /// Useful for creating surfaces from scattered point data.
     ///
-    /// The fit subdivides into more Bezier patches until it is within `tolerance` of the plate.
-    /// `maxSegments` caps that subdivision; **1 is clamped to 2**, because a single patch cannot be
-    /// cut and the approximator then ignores its own error criterion entirely, which makes
-    /// `tolerance` unenforceable rather than merely coarse (#571).
+    /// The fit subdivides into more Bezier patches until it is within tolerance of the plate.
+    /// maxSegments caps that subdivision; **1 is clamped to 2**, because a single patch cannot be.
+    /// cut and the approximator then ignores its own error criterion entirely, which makes.
+    /// tolerance unenforceable rather than merely coarse (#571).
     ///
-    /// ```swift
+    /// ```swift.
     /// let points: [SIMD3<Double>] = [
-    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),
-    /// ]
+    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),.
+    /// ].
     /// if let face = Shape.plateSurface(points: points, tolerance: 1e-3) {
-    ///     print(face.surfaceArea ?? 0)
-    /// }
-    /// ```
+    ///     print(face.surfaceArea ?? 0).
+    /// }.
+    /// ```.
     ///
     /// - Parameters:
     ///   - points: Array of 3D points to fit the surface through
@@ -921,7 +949,7 @@ extension Shape {
 
     // MARK: - GeomFill Trihedron Laws
 
-    /// Shared unpacking for the `OCCTTrihedronFrame` raw struct every trihedron-law bridge call
+    /// Shared unpacking for the OCCTTrihedronFrame raw struct every trihedron-law bridge call.
     /// returns: a zero-length tangent means the law is degenerate at this parameter (#796).
     private static func trihedronFrame(from r: OCCTTrihedronFrame) -> TrihedronFrame? {
         let t = SIMD3(r.tx, r.ty, r.tz)
@@ -930,7 +958,7 @@ extension Shape {
             tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
     }
 
-    /// Evaluate draft trihedron frame on an edge at a parameter
+    /// Evaluate draft trihedron frame on an edge at a parameter.
     public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double)
         -> TrihedronFrame?
     {
@@ -939,20 +967,20 @@ extension Shape {
                 handle, param, biNormal.x, biNormal.y, biNormal.z, angle))
     }
 
-    /// Evaluate discrete trihedron frame on an edge at a parameter
+    /// Evaluate discrete trihedron frame on an edge at a parameter.
     public func discreteTrihedron(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillDiscreteTrihedron(handle, param))
     }
 
-    /// Evaluate corrected Frenet frame on an edge at a parameter
+    /// Evaluate corrected Frenet frame on an edge at a parameter.
     public func correctedFrenet(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillCorrectedFrenet(handle, param))
     }
 
     // MARK: - GeomFill_Coons / GeomFill_Curved
 
-    /// Shared marshaling for `coonsFilling`/`curvedFilling`: both validate and flatten the same 4
-    /// boundary-point arrays, size the same output buffer, and unflatten the same pole grid shape —
+    /// Shared marshaling for coonsFilling/curvedFilling: both validate and flatten the same 4
+    /// boundary-point arrays, size the same output buffer, and unflatten the same pole grid shape —.
     /// they differ only in which bridge fill function computes the poles (#796).
     private static func fillPoleGrid(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
@@ -985,7 +1013,7 @@ extension Shape {
         return FillingPoleGrid(poles: poles, nbU: Int(nbU), nbV: Int(nbV))
     }
 
-    /// Compute Coons filling pole grid from 4 boundary point arrays
+    /// Compute Coons filling pole grid from 4 boundary point arrays.
     public static func coonsFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
@@ -995,7 +1023,7 @@ extension Shape {
             boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCoonsPoles)
     }
 
-    /// Compute curved filling pole grid from 4 boundary point arrays
+    /// Compute curved filling pole grid from 4 boundary point arrays.
     public static func curvedFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
@@ -1032,7 +1060,7 @@ extension Shape {
 
     // MARK: - GeomFill_Sweep
 
-    /// Sweep a section edge along a path edge to create a surface face
+    /// Sweep a section edge along a path edge to create a surface face.
     public static func geomFillSweep(path: Shape, section: Shape) -> Shape? {
         guard let h = OCCTGeomFillSweep(path.handle, section.handle) else { return nil }
         return Shape(handle: h)
@@ -1040,7 +1068,7 @@ extension Shape {
 
     // MARK: - GeomFill_EvolvedSection
 
-    /// Get evolved section info for an edge curve
+    /// Get evolved section info for an edge curve.
     public func evolvedSectionInfo() -> EvolvedSectionInfo {
         let r = OCCTGeomFillEvolvedSectionInfo(handle)
         return EvolvedSectionInfo(
@@ -1060,15 +1088,15 @@ extension Shape {
 
     /// Result of a surface transition analysis.
     public struct SurfaceTransitionResult: Sendable {
-        /// State before crossing the surface
+        /// State before crossing the surface.
         public let stateBefore: TopologicalState
-        /// State after crossing the surface
+        /// State after crossing the surface.
         public let stateAfter: TopologicalState
     }
 
     /// Analyze a surface transition along a curve crossing a surface boundary.
     ///
-    /// Determines the topological state (IN/OUT) before and after crossing a surface,
+    /// Determines the topological state (IN/OUT) before and after crossing a surface,.
     /// given the curve tangent, boundary normal, and surface normal at the crossing point.
     ///
     /// - Parameters:
@@ -1100,7 +1128,7 @@ extension Shape {
 
     /// Analyze a surface transition with curvature information.
     ///
-    /// Extended version that accounts for surface curvature at the crossing point,
+    /// Extended version that accounts for surface curvature at the crossing point,.
     /// providing more accurate transition analysis for curved surfaces.
     ///
     /// - Parameters:
@@ -1234,7 +1262,9 @@ extension Shape {
 
 extension Shape {
 
-    /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.
+    /// Get tangent in U direction on a face at (u, v).
+    ///
+    /// Returns nil if tangent is undefined.
     public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>? {
         var dx = 0.0
         var dy = 0.0
@@ -1243,8 +1273,10 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane
-    /// (companion to ``faceLPropTangentU(u:v:)``). Returns nil if the V tangent is undefined.
+    /// Get tangent in V direction on a face at (u, v) (the second axis of the tangent plane).
+    /// (companion to ``faceLPropTangentU(u:v:)``).
+    ///
+    /// Returns nil if the V tangent is undefined.
     public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {
         var dx = 0.0
         var dy = 0.0

@@ -108,9 +108,11 @@ extension PipeShellBuilder {
 
     /// Enable or disable build history tracking.
     ///
-    /// History is disabled by default to avoid a segfault on closed spine+profile
-    /// geometries (OCCT bug in `BRepFill_PipeShell::BuildHistory`). Enable only
-    /// if you need `generated`/`modified`/`isDeleted` queries on the result.
+    /// History is disabled by default to avoid a segfault on closed spine+profile.
+    /// geometries (OCCT bug in `BRepFill_PipeShell::BuildHistory`).
+    ///
+    /// Enable only.
+    /// if you need generated/modified/isDeleted queries on the result.
     public func setBuildHistory(_ enabled: Bool) {
         OCCTPipeShellSetBuildHistory(ref, enabled)
     }
@@ -148,6 +150,7 @@ extension PipeShellBuilder {
     }
 
     /// Simulate the pipe shell with a given number of sections.
+    ///
     /// Returns an array of simulated section shapes (wire cross-sections along the spine).
     public func simulate(numberOfSections: Int) -> [Shape] {
         var count: Int32 = 0

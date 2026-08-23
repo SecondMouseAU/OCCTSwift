@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// A STEP file header manager for reading and writing header fields
+/// A STEP file header manager for reading and writing header fields.
 /// (name, timestamp, author, organization, preprocessor version, originating system).
 public final class StepHeader: @unchecked Sendable {
     let handle: OCCTStepHeaderRef

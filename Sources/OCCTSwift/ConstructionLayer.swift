@@ -29,7 +29,7 @@ extension Document {
 
     /// Add a shape to the document tagged with the CONSTRUCTION XCAF layer.
     ///
-    /// On STEP/IGES export the layer tag is preserved; on import, the shape shows up as a
+    /// On STEP/IGES export the layer tag is preserved; on import, the shape shows up as a.
     /// regular topology entry with its layer name recoverable via `AssemblyNode.layers`.
     @discardableResult
     public func addConstructionShape(_ shape: Shape) -> Int64 {
@@ -54,8 +54,10 @@ extension Document {
 extension ConstructionContext {
     /// Options for the size of materialised construction shapes.
     ///
-    /// These are finite stand-ins for the underlying infinite / unbounded geometry, so we need a
-    /// size. Defaults are sensible for models in the millimetre range.
+    /// These are finite stand-ins for the underlying infinite / unbounded geometry, so we need a.
+    /// size.
+    ///
+    /// Defaults are sensible for models in the millimetre range.
     public struct MaterializeOptions: Sendable {
         public var planeHalfSize: Double = 100
         public var axisHalfLength: Double = 100
@@ -65,21 +67,26 @@ extension ConstructionContext {
         }
     }
 
-    /// Materialise all construction entities as `TopoDS_Shape`s on the document's
-    /// CONSTRUCTION layer. Each resolved placement becomes a finite representative
+    /// Materialise all construction entities as TopoDS_Shapes on the document's.
+    ///
+    /// CONSTRUCTION layer.
+    ///
+    /// Each resolved placement becomes a finite representative.
     /// shape:
-    /// - Planes → a rectangular face (2 × `planeHalfSize`) centred on the plane origin
-    /// - Axes   → an edge of length 2 × `axisHalfLength` centred on the axis origin
-    /// - Points → a vertex
+    /// - Planes → a rectangular face (2 × planeHalfSize) centred on the plane origin.
+    /// - Axes   → an edge of length 2 × axisHalfLength centred on the axis origin.
+    /// - Points → a vertex.
     ///
     /// Returns a breakdown of what got materialised and what failed to resolve.
     ///
-    /// Reads every plane/axis/point as one atomic cross-store snapshot up front
-    /// (`allEntitiesSnapshot`, PR #898 review finding 1), so a concurrent `removeAll()`/
-    /// `remove()` can't be observed mid-flight, some kinds already cleared, others not, the same
-    /// torn-cross-store-read bug class `count()` was fixed for. The per-entity resolve/build/add
-    /// work below runs entirely against that local snapshot, outside any `ConstructionContext`
-    /// lock, see the doc comment on `allEntitiesSnapshot` for why that's safe.
+    /// Reads every plane/axis/point as one atomic cross-store snapshot up front.
+    /// (allEntitiesSnapshot, PR #898 review finding 1), so a concurrent `removeAll()`/.
+    /// `remove()` can't be observed mid-flight, some kinds already cleared, others not, the same.
+    /// torn-cross-store-read bug class `count()` was fixed for.
+    ///
+    /// The per-entity resolve/build/add.
+    /// work below runs entirely against that local snapshot, outside any ConstructionContext.
+    /// lock, see the doc comment on allEntitiesSnapshot for why that's safe.
     @discardableResult
     public func materialize(
         in document: Document,
@@ -156,18 +163,18 @@ extension ConstructionContext {
 
     /// Shared shape for the three per-kind loops in `materialize(in:graph:options:)`, above
     /// (#886): resolve-failure, shape-build-failure and add-failure are reported the same way for
-    /// every entity kind, and only the resolution, the shape builder, the "add to document" step
+    /// every entity kind, and only the resolution, the shape builder, the "add to document" step.
     /// and the three failure-case constructors differ.
     ///
-    /// `addShape` is injected rather than calling `document.addConstructionShape` directly so
-    /// this can be unit-tested against a controllable failure without needing a real OCCT-level
-    /// failure to trigger it (`internal`, not `private`, for exactly that reason, PR #898 review,
+    /// addShape is injected rather than calling `document.addConstructionShape` directly so.
+    /// this can be unit-tested against a controllable failure without needing a real OCCT-level.
+    /// failure to trigger it (internal, not private, for exactly that reason, PR #898 review,.
     /// finding 4).
     ///
     /// `document.addConstructionShape` (`ConstructionLayer.swift:39` at the time of the review)
-    /// returns a negative `Int64` on failure, this used to skip straight to
+    /// returns a negative Int64 on failure, this used to skip straight to.
     /// `.success((id: id, labelId: labelId))` without checking, so a failed add was still counted
-    /// as materialized with a garbage negative `labelId` and no actual CONSTRUCTION-layer shape in
+    /// as materialized with a garbage negative labelId and no actual CONSTRUCTION-layer shape in.
     /// the document.
     internal func materializeOne<ID, Resolved>(
         id: ID,
@@ -191,9 +198,11 @@ extension ConstructionContext {
 
     /// Outcome of `materializeOne(...)`.
     ///
-    /// Either the new construction-layer shape's ID/label pair, or the `MaterializationFailure`
-    /// that explains why there isn't one. Not `Result<_, _>`, `MaterializationFailure` is a
-    /// plain `Sendable` value, not an `Error`, by design (see its own declaration).
+    /// Either the new construction-layer shape's ID/label pair, or the MaterializationFailure.
+    /// that explains why there isn't one.
+    ///
+    /// Not `Result<_, _>`, MaterializationFailure is a.
+    /// plain Sendable value, not an Error, by design (see its own declaration).
     internal enum MaterializeOutcome<ID> {
         case success((id: ID, labelId: Int64))
         case failure(MaterializationFailure)
@@ -217,8 +226,8 @@ extension ConstructionContext {
         case planeShapeFailed(PlaneID)
         case axisShapeFailed(AxisID)
         case pointShapeFailed(PointID)
-        /// The representative shape built fine, but `Document.addConstructionShape` failed to add
-        /// it (returned a negative label ID), distinct from `planeShapeFailed`/etc. above, which
+        /// The representative shape built fine, but `Document.addConstructionShape` failed to add.
+        /// it (returned a negative label ID), distinct from planeShapeFailed/etc. above, which.
         /// mean no shape was ever built at all (PR #898 review, finding 4).
         case planeAddFailed(PlaneID)
         case axisAddFailed(AxisID)
@@ -276,7 +285,7 @@ extension ConstructionContext {
 
 // Helpers: small shims over existing Wire → Shape bridges.
 extension Shape {
-    /// Create a shape wrapping a wire (useful when you need a shape rather than
+    /// Create a shape wrapping a wire (useful when you need a shape rather than.
     /// a face for a degenerate / open wire).
     internal static func shape(from wire: Wire) -> Shape? {
         guard let h = OCCTShapeFromWire(wire.handle) else { return nil }

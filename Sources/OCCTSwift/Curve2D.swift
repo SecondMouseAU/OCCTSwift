@@ -2,27 +2,28 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// A parametric 2D curve backed by `Geom2d_Curve`.
+/// A parametric 2D curve backed by Geom2d_Curve.
 ///
-/// `Curve2D` wraps the full OpenCASCADE `Geom2d` package polymorphically:
-/// lines, segments, circles, arcs, ellipses, parabolas, hyperbolas,
+/// Curve2D wraps the full OpenCASCADE Geom2d package polymorphically:
+/// lines, segments, circles, arcs, ellipses, parabolas, hyperbolas,.
+///
 /// B-splines, and Bezier curves are all represented by this single type.
 ///
-/// ## Creating Curves
+/// ## Creating Curves.
 ///
-/// ```swift
+/// ```swift.
 /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5))
 /// let circle = Curve2D.circle(center: .zero, radius: 5)
 /// let arc = Curve2D.arcOfCircle(center: .zero, radius: 5,
 ///                               startAngle: 0, endAngle: .pi / 2)
-/// ```
+/// ```.
 ///
-/// ## Discretizing for Metal Rendering
+/// ## Discretizing for Metal Rendering.
 ///
-/// ```swift
-/// let polyline = circle!.drawAdaptive()  // → [SIMD2<Double>]
+/// ```swift.
+/// let polyline = circle!.drawAdaptive()  // → [SIMD2<Double>].
 /// let uniform  = circle!.drawUniform(pointCount: 64)
-/// ```
+/// ```.
 public final class Curve2D: @unchecked Sendable {
     internal let handle: OCCTCurve2DRef
 
@@ -54,7 +55,7 @@ public final class Curve2D: @unchecked Sendable {
         OCCTCurve2DIsPeriodic(handle)
     }
 
-    /// The period of the curve, or `nil` if the curve is not periodic.
+    /// The period of the curve, or nil if the curve is not periodic.
     public var period: Double? {
         guard isPeriodic else { return nil }
         return OCCTCurve2DGetPeriod(handle)
@@ -72,7 +73,7 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Evaluation
 
-    /// Evaluate the curve position at parameter `u`.
+    /// Evaluate the curve position at parameter u.
     public func point(at u: Double) -> SIMD2<Double> {
         var x: Double = 0
         var y: Double = 0
@@ -80,7 +81,7 @@ public final class Curve2D: @unchecked Sendable {
         return SIMD2(x, y)
     }
 
-    /// Evaluate position and first derivative (tangent) at parameter `u`.
+    /// Evaluate position and first derivative (tangent) at parameter u.
     public func d1(at u: Double) -> (point: SIMD2<Double>, tangent: SIMD2<Double>) {
         var px: Double = 0
         var py: Double = 0
@@ -90,7 +91,7 @@ public final class Curve2D: @unchecked Sendable {
         return (SIMD2(px, py), SIMD2(vx, vy))
     }
 
-    /// Evaluate position, first derivative, and second derivative at parameter `u`.
+    /// Evaluate position, first derivative, and second derivative at parameter u.
     public func d2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>) {
         var px: Double = 0
         var py: Double = 0
@@ -122,17 +123,19 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - center: Circle centre.
-    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
-    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///   - radius: Circle radius.
+    ///
+    ///   Must be `> 0`; zero and negative radii return nil.
+    /// - Returns: The circle, or nil if `radius <= 0`.
     ///
     /// `circleFromCenterRadius(center:radius:)` builds the identical circle through OCCT's
-    /// `gce_MakeCirc2d` algorithm and enforces the same radius contract.
+    /// gce_MakeCirc2d algorithm and enforces the same radius contract.
     ///
-    /// ```swift
+    /// ```swift.
     /// let c = Curve2D.circle(center: .zero, radius: 5)
-    /// #expect(c?.isPeriodic == true)
+    /// #expect(c?.isPeriodic == true).
     /// #expect(Curve2D.circle(center: .zero, radius: 0) == nil)
-    /// ```
+    /// ```.
     public static func circle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
         guard let h = OCCTCurve2DCreateCircle(center.x, center.y, radius) else { return nil }
         return Curve2D(handle: h)
@@ -166,28 +169,30 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Create a circle involute curve (gear tooth profile).
     ///
-    /// The involute is defined by C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
+    /// The involute is defined by C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir.
     /// where O is the origin, XDir/YDir form the placement coordinate system, and R is the base radius.
     ///
     /// - Parameters:
     ///   - origin: The origin point O of the involute's coordinate system.
     ///   - direction: The X direction vector (YDir is computed as perpendicular, i.e., rotated 90° CCW).
-    ///   - radius: The base circle radius. Must be `> 0`; zero and negative radii return `nil`.
-    /// - Returns: The circle involute curve, or `nil` if `radius <= 0`.
+    ///   - radius: The base circle radius.
     ///
-    /// ```swift
-    /// // Standard involute at origin with X axis
+    ///   Must be `> 0`; zero and negative radii return nil.
+    /// - Returns: The circle involute curve, or nil if `radius <= 0`.
+    ///
+    /// ```swift.
+    /// // Standard involute at origin with X axis.
     /// let involute = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 5)
     ///
-    /// // Involute at (10, 20) rotated 45 degrees
-    /// let angle = .pi / 4
-    /// let dir = SIMD2(cos(angle), sin(angle))
+    /// // Involute at (10, 20) rotated 45 degrees.
+    /// let angle = .pi / 4.
+    /// let dir = SIMD2(cos(angle), sin(angle)).
     /// let involute = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: dir, radius: 5)
     ///
-    /// // Mirror for opposite flank (negate X direction to flip YDir)
+    /// // Mirror for opposite flank (negate X direction to flip YDir).
     /// let mirrored = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 5)
-    /// // YDir becomes (0, -1) - this produces the mirrored flank
-    /// ```
+    /// // YDir becomes (0, -1) - this produces the mirrored flank.
+    /// ```.
     public static func circleInvolute(
         origin: SIMD2<Double>, direction: SIMD2<Double>,
         radius: Double
@@ -206,18 +211,22 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - center: Center point
-    ///   - majorRadius: Semi-major axis length. Must be `> 0` and `>= minorRadius`.
-    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
-    ///   - rotation: Rotation of the major axis from the X axis (radians)
-    /// - Returns: The ellipse, or `nil` if either radius is not positive or `minorRadius` exceeds
-    ///   `majorRadius`.
+    ///   - majorRadius: Semi-major axis length.
     ///
-    /// ```swift
+    ///   Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Semi-minor axis length.
+    ///
+    ///   Must be `> 0`.
+    ///   - rotation: Rotation of the major axis from the X axis (radians)
+    /// - Returns: The ellipse, or nil if either radius is not positive or minorRadius exceeds
+    ///   majorRadius.
+    ///
+    /// ```swift.
     /// let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
     /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 10) == nil)
-    /// ```
+    /// ```.
     public static func ellipse(
         center: SIMD2<Double>, majorRadius: Double,
         minorRadius: Double, rotation: Double = 0
@@ -250,15 +259,17 @@ public final class Curve2D: @unchecked Sendable {
     /// - Parameters:
     ///   - focus: Focus point of the parabola
     ///   - direction: Axis direction (from vertex toward focus)
-    ///   - focalLength: Distance from vertex to focus. Must be `> 0`; at zero the parabola
-    ///     degenerates into a line parallel to its own axis.
-    /// - Returns: The parabola, or `nil` if `focalLength <= 0`.
+    ///   - focalLength: Distance from vertex to focus.
     ///
-    /// ```swift
+    ///   Must be `> 0`; at zero the parabola.
+    ///     degenerates into a line parallel to its own axis.
+    /// - Returns: The parabola, or nil if `focalLength <= 0`.
+    ///
+    /// ```swift.
     /// let p = Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 1)
-    /// #expect(p != nil)
+    /// #expect(p != nil).
     /// #expect(Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 0) == nil)
-    /// ```
+    /// ```.
     public static func parabola(
         focus: SIMD2<Double>, direction: SIMD2<Double>,
         focalLength: Double
@@ -279,17 +290,21 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - center: Center point
-    ///   - majorRadius: Semi-major axis length. Must be `> 0`.
-    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
-    ///   - rotation: Rotation of the major axis from the X axis (radians)
-    /// - Returns: The hyperbola, or `nil` if either radius is not positive.
+    ///   - majorRadius: Semi-major axis length.
     ///
-    /// ```swift
+    ///   Must be `> 0`.
+    ///   - minorRadius: Semi-minor axis length.
+    ///
+    ///   Must be `> 0`.
+    ///   - rotation: Rotation of the major axis from the X axis (radians)
+    /// - Returns: The hyperbola, or nil if either radius is not positive.
+    ///
+    /// ```swift.
     /// let h = Curve2D.hyperbola(center: .zero, majorRadius: 5, minorRadius: 3)
-    /// #expect(h != nil)
+    /// #expect(h != nil).
     /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 3, minorRadius: 5) != nil)
     /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func hyperbola(
         center: SIMD2<Double>, majorRadius: Double,
         minorRadius: Double, rotation: Double = 0
@@ -311,8 +326,10 @@ public final class Curve2D: @unchecked Sendable {
     ///   - angularDeflection: Maximum angular deflection in radians (default 0.1)
     ///   - chordalDeflection: Maximum chordal deflection (default 0.01)
     ///   - maxPoints: Output *capacity* (default 4096), clamped into `0...`
-    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558). The deflection
-    ///     criteria decide the actual point count, so clamping an unservable capacity returns the
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
+    ///
+    ///     The deflection.
+    ///     criteria decide the actual point count, so clamping an unservable capacity returns the.
     ///     same points rather than a coarser sampling.
     /// - Returns: Array of 2D points approximating the curve
     public func drawAdaptive(
@@ -330,22 +347,26 @@ public final class Curve2D: @unchecked Sendable {
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
-    /// Discretize the curve with at most `pointCount` uniformly-spaced-by-arc-length points.
+    /// Discretize the curve with at most pointCount uniformly-spaced-by-arc-length points.
     ///
     /// The first point is always the start of the curve and the last is always its end.
     ///
-    /// ```swift
+    /// ```swift.
     /// let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
     /// let pts = seg.drawUniform(pointCount: 11)
-    /// // pts[5] ≈ SIMD2(5, 0)
-    /// ```
+    /// // pts[5] ≈ SIMD2(5, 0).
+    /// ```.
     ///
     /// - Parameter pointCount: Desired number of output points, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. This is a
-    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser
-    ///   than what was asked for (#558). Before that bound the documented "at least 2, else
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty.
+    ///
+    ///   This is a.
+    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser.
+    ///   than what was asked for (#558).
+    ///
+    ///   Before that bound the documented "at least 2, else.
     ///   empty" was only true of counts down to 0: a negative aborted the process.
-    /// - Returns: Array of 2D points, never more than `pointCount` of them, or empty on failure
+    /// - Returns: Array of 2D points, never more than pointCount of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD2<Double>] {
         guard let pointCount = Sampling.requested(pointCount) else { return [] }
         var buffer = [Double](repeating: 0, count: pointCount * 2)
@@ -428,21 +449,23 @@ public final class Curve2D: @unchecked Sendable {
     /// Interpolate a smooth B-spline curve through the given points.
     ///
     /// - Parameters:
-    ///   - points: Points to interpolate. At least 2.
-    ///   - closed: Pass `true` for a periodic loop that closes back to `points[0]`; do not repeat
+    ///   - points: Points to interpolate.
+    ///
+    ///   At least 2.
+    ///   - closed: Pass true for a periodic loop that closes back to `points[0]`; do not repeat
     ///     the first point at the end. `interpolatePeriodic(points:tolerance:)` is a spelling of
     ///     this case and delegates here.
     ///   - tolerance: Interpolation tolerance.
-    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    /// - Returns: The interpolated curve, or nil if interpolation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// let open = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 3), SIMD2(10, 0)])
-    /// #expect(open?.isPeriodic == false)
+    /// #expect(open?.isPeriodic == false).
     ///
     /// let loop = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8)],
     ///                                closed: true, tolerance: 1e-4)
-    /// #expect(loop?.isPeriodic == true)
-    /// ```
+    /// #expect(loop?.isPeriodic == true).
+    /// ```.
     public static func interpolate(
         through points: [SIMD2<Double>], closed: Bool = false,
         tolerance: Double = 1e-6
@@ -480,7 +503,7 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Interpolate through points with per-point tangent constraints at arbitrary indices.
     ///
-    /// Use this when you need tangent continuity at specific interior transition points,
+    /// Use this when you need tangent continuity at specific interior transition points,.
     /// for example where a straight section meets a circular arc in a composite curve.
     ///
     /// - Parameters:
@@ -489,7 +512,7 @@ public final class Curve2D: @unchecked Sendable {
     ///               Indices not present in the dictionary are unconstrained (C2 computed).
     ///   - closed: Whether the resulting curve should be closed/periodic.
     ///   - tolerance: Point coincidence tolerance (default 1e-6).
-    /// - Returns: A B-spline interpolating curve, or `nil` on failure.
+    /// - Returns: A B-spline interpolating curve, or nil on failure.
     /// - Note: Resolves GitHub issue #38.
     public static func interpolate(
         through points: [SIMD2<Double>],
@@ -541,13 +564,13 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - BSpline Queries
 
-    /// The number of control points (poles), or `nil` if not a BSpline/Bezier.
+    /// The number of control points (poles), or nil if not a BSpline/Bezier.
     public var poleCount: Int? {
         let n = Int(OCCTCurve2DGetPoleCount(handle))
         return n > 0 ? n : nil
     }
 
-    /// The control points (poles), or `nil` if not a BSpline/Bezier.
+    /// The control points (poles), or nil if not a BSpline/Bezier.
     public var poles: [SIMD2<Double>]? {
         guard let count = poleCount else { return nil }
         var buffer = [Double](repeating: 0, count: count * 2)
@@ -556,7 +579,7 @@ public final class Curve2D: @unchecked Sendable {
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
-    /// The curve degree, or `nil` if not a BSpline/Bezier.
+    /// The curve degree, or nil if not a BSpline/Bezier.
     public var degree: Int? {
         let d = Int(OCCTCurve2DGetDegree(handle))
         return d >= 0 ? d : nil
@@ -564,7 +587,7 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Operations
 
-    /// Create a trimmed copy of this curve between parameters `from` and `to`.
+    /// Create a trimmed copy of this curve between parameters from and to.
     public func trimmed(from u1: Double, to u2: Double) -> Curve2D? {
         guard let h = OCCTCurve2DTrim(handle, u1, u2) else { return nil }
         return Curve2D(handle: h)
@@ -618,17 +641,17 @@ public final class Curve2D: @unchecked Sendable {
         return Curve2D(handle: h)
     }
 
-    /// The total arc length of the curve, or `nil` on error.
+    /// The total arc length of the curve, or nil on error.
     ///
-    /// Measured per `GeomAbs_CN` interval and subdivided until two successive levels agree to
-    /// 1e-9 relative. A whole 2D ellipse used to measure 0.337% long on the single Gauss
+    /// Measured per GeomAbs_CN interval and subdivided until two successive levels agree to.
+    /// 1e-9 relative. A whole 2D ellipse used to measure 0.337% long on the single Gauss.
     /// quadrature `GCPnts_AbscissaPoint::Length` hands a one-interval curve, the same defect and
     /// the same numbers as the 3D spelling, since both reach one shared template (#603).
     ///
-    /// ```swift
+    /// ```swift.
     /// let e = Curve2D.ellipse(center: .zero, majorRadius: 8, minorRadius: 3)!
-    /// let circumference = e.length!   // 36.36686, not 36.48943
-    /// ```
+    /// let circumference = e.length!   // 36.36686, not 36.48943.
+    /// ```.
     public var length: Double? {
         let l = OCCTCurve2DGetLength(handle)
         return l >= 0 ? l : nil
@@ -636,25 +659,27 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Arc length between two parameter values.
     ///
-    /// This is the canonical, failure-distinguishing entry point: `nil` when the computation
+    /// This is the canonical, failure-distinguishing entry point: nil when the computation
     /// fails, rather than a number that could be mistaken for a real zero-length segment.
     /// `arcLength(from:to:)` delegates to this and collapses failure back to `-1.0`.
     ///
-    /// The range may be given in either order; equal parameters measure `0`.
+    /// The range may be given in either order; equal parameters measure 0.
     ///
-    /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
-    /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
+    /// Both bounds must also be finite: `.nan` and `±.infinity` report nil. OCCT's integrator
+    /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured 0.
     /// and a NaN lower bound the curve's whole length; see ``Curve3D/length(from:to:)`` for the
     /// mechanism (#548).
     ///
-    /// A range reaching outside the curve's domain measures the part of it that lies on the curve,
-    /// so a range wholly outside measures `0`. A curve whose domain covers a whole period exists at
-    /// every parameter, so a periodic one measures the whole range and winds (#600). The 3D
+    /// A range reaching outside the curve's domain measures the part of it that lies on the curve,.
+    /// so a range wholly outside measures 0. A curve whose domain covers a whole period exists at.
+    /// every parameter, so a periodic one measures the whole range and winds (#600).
+    ///
+    /// The 3D.
     /// spelling answers identically on the same geometry.
     ///
-    /// ```swift
+    /// ```swift.
     /// let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 5), SIMD2(20, 0)])!
-    /// let d = c.domain
+    /// let d = c.domain.
     /// let half = c.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
     /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
     ///
@@ -662,26 +687,28 @@ public final class Curve2D: @unchecked Sendable {
     /// let quarter = circle.length(from: 0, to: .pi / 2)   // ≈ 7.854
     /// let reversed = circle.length(from: .pi / 2, to: 0)  // the same 7.854
     /// let two = circle.length(from: 0, to: 4 * .pi)       // two circumferences
-    /// ```
+    /// ```.
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
     }
 
-    /// Returns the curve parameter at the given arc-length distance from `fromParameter`.
+    /// Returns the curve parameter at the given arc-length distance from fromParameter.
     ///
-    /// Use this to trim a curve to a specific arc length, or to place features at
+    /// Use this to trim a curve to a specific arc length, or to place features at.
     /// measured positions along a composite curve.
     ///
     /// - Parameters:
-    ///   - arcLength: The desired arc-length distance to travel from `fromParameter`.
+    ///   - arcLength: The desired arc-length distance to travel from fromParameter.
     ///                May be negative to travel in the reverse direction.
-    ///   - fromParameter: The starting parameter. Defaults to `domain.lowerBound`
+    ///   - fromParameter: The starting parameter.
+    ///
+    ///   Defaults to `domain.lowerBound`.
     ///                    (the start of the curve).
     /// - Returns: The parameter value at the given arc-length distance,
-    ///            or `nil` if the computation fails (e.g. distance exceeds the curve).
-    /// - Note: Shares the subdivided measurement with `length`, so the two agree:
-    ///         `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own
+    ///            or nil if the computation fails (e.g. distance exceeds the curve).
+    /// - Note: Shares the subdivided measurement with length, so the two agree:
+    ///         `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own.
     ///         root finder inverts a single quadrature and would not (#603).
     /// - Note: Resolves GitHub issue #37.
     public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? = nil) -> Double?
@@ -693,28 +720,32 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Local Properties (Curvature, Normal, Inflection)
 
-    /// The curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    /// The curvature (1/radius) at parameter u, or nil where the curve has none.
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: The curvature (`0` for a straight segment, which is a real answer), or `nil` at
-    ///   a parameter the curve cannot be evaluated at and where
-    ///   `GeomLProp_CLProps2d::IsTangentDefined()` is false. Straight and undefined used to be the
-    ///   same `0` (#595).
+    /// - Returns: The curvature (0 for a straight segment, which is a real answer), or nil at
+    ///   a parameter the curve cannot be evaluated at and where.
+    ///   `GeomLProp_CLProps2d::IsTangentDefined()` is false.
     ///
-    /// A **cusp** is still reported, as `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`,
-    /// meaning infinite curvature): an answer, not an absence. Matches ``Curve3D/curvature(at:)``.
+    ///   Straight and undefined used to be the.
+    ///   same 0 (#595).
     ///
-    /// ```swift
+    /// A **cusp** is still reported, as `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`,.
+    /// meaning infinite curvature): an answer, not an absence.
+    ///
+    /// Matches ``Curve3D/curvature(at:)``.
+    ///
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 4)!
     /// if let k = circle.curvature(at: 1) { #expect(abs(k - 0.25) < 1e-12) }
-    /// ```
+    /// ```.
     public func curvature(at u: Double) -> Double? {
         var k = 0.0
         guard OCCTCurve2DGetCurvature(handle, u, &k) else { return nil }
         return k
     }
 
-    /// The unit normal vector at parameter `u`, or `nil` if undefined (e.g. on a straight line).
+    /// The unit normal vector at parameter u, or nil if undefined (e.g. on a straight line).
     public func normal(at u: Double) -> SIMD2<Double>? {
         var nx: Double = 0
         var ny: Double = 0
@@ -722,7 +753,7 @@ public final class Curve2D: @unchecked Sendable {
         return SIMD2(nx, ny)
     }
 
-    /// The unit tangent direction at parameter `u`, or `nil` if undefined.
+    /// The unit tangent direction at parameter u, or nil if undefined.
     public func tangentDirection(at u: Double) -> SIMD2<Double>? {
         var tx: Double = 0
         var ty: Double = 0
@@ -730,8 +761,8 @@ public final class Curve2D: @unchecked Sendable {
         return SIMD2(tx, ty)
     }
 
-    /// The center of curvature (osculating circle center) at parameter `u`,
-    /// or `nil` if curvature is zero (straight segment).
+    /// The center of curvature (osculating circle center) at parameter u,.
+    /// or nil if curvature is zero (straight segment).
     public func centerOfCurvature(at u: Double) -> SIMD2<Double>? {
         var cx: Double = 0
         var cy: Double = 0
@@ -816,36 +847,43 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Conversion Extras
 
-    /// Re-approximate this curve's whole parameter domain as a B-spline, with a single
+    /// Re-approximate this curve's whole parameter domain as a B-spline, with a single.
     /// scalar tolerance and explicit continuity control.
     ///
-    /// Wraps `Geom2dConvert_ApproxCurve`, which fits the curve's entire native range in one
-    /// pass. This is a **different OCCT algorithm** from
+    /// Wraps Geom2dConvert_ApproxCurve, which fits the curve's entire native range in one.
+    /// pass.
+    ///
+    /// This is a **different OCCT algorithm** from.
     /// ``approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)``, not a
     /// whole-domain shorthand for it: the two aren't interchangeable by adding or dropping a
     /// range, and their tolerance defaults (`1e-3` here vs. `1e-6` there) are not comparable:
-    /// this one bounds a single whole-curve error, the other bounds independent per-axis error
+    /// this one bounds a single whole-curve error, the other bounds independent per-axis error.
     /// on a restricted range.
     ///
     /// - Parameters:
     ///   - tolerance: Maximum approximation error, applied over the whole curve
-    ///   - continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
-    ///     approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
-    ///     surfaces here as `nil`.
+    ///   - continuity: A `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2).
+    ///
+    ///   The.
+    ///     approximator accepts nothing stricter: AdvApprox throws for C3 and above, which
+    ///     surfaces here as nil.
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
     ///
     /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve3D.approximated` and
-    /// `Surface.approximated` (#406). All three wrap the same `GeomConvert_Approx*`/
-    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// `Surface.approximated` (#406).
+    ///
+    /// All three wrap the same `GeomConvert_Approx*`/.
+    ///
+    /// Geom2dConvert_ApproxCurve family applied to a different OCCT geometry hierarchy, not.
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
-    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    /// - Returns: Approximated BSpline curve, or nil on failure
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let approx = circle.approximated(tolerance: 1e-3, continuity: 2)
-    /// ```
+    /// ```.
     public func approximated(
         tolerance: Double = 1e-3, continuity: Int = 2,
         maxSegments: Int = 100, maxDegree: Int = 8
@@ -861,19 +899,23 @@ public final class Curve2D: @unchecked Sendable {
     /// Find knot indices where a B-spline has continuity discontinuities.
     ///
     /// Indices are 1-based into the curve's own knot table, so `bsplineKnot(index:)` turns
-    /// each one into a parameter. The first and last knots are always included, so a curve
-    /// that never drops below `continuity` reports exactly those two.
+    /// each one into a parameter.
     ///
-    /// ```swift
-    /// // A cubic 2D BSpline with simple interior knots is already C2 there, so .c3 is the
+    /// The first and last knots are always included, so a curve.
+    /// that never drops below continuity reports exactly those two.
+    ///
+    /// ```swift.
+    /// // A cubic 2D BSpline with simple interior knots is already C2 there, so .c3 is the.
     /// // order that reports its interior knots.
     /// let indices = curve.splitIndicesAtDiscontinuities(continuity: .c3)
     /// let params = indices?.map { curve.bsplineKnot(index: $0) }
-    /// ```
+    /// ```.
     ///
-    /// - Parameter continuity: Minimum continuity to require of each arc. This is a derivative
-    ///   order, and `Geom2dConvert_BSplineCurveKnotSplitting` splits a knot only when
-    ///   `degree - multiplicity < continuity`, so the meaningful range is 0...degree and it
+    /// - Parameter continuity: Minimum continuity to require of each arc.
+    ///
+    /// This is a derivative.
+    ///   order, and Geom2dConvert_BSplineCurveKnotSplitting splits a knot only when.
+    ///   `degree - multiplicity < continuity`, so the meaningful range is 0...degree and it.
     ///   saturates there (#480).
     /// - Returns: Array of knot indices where the curve drops below the requested continuity, or nil if not a B-spline.
     public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]? {
@@ -938,19 +980,19 @@ public final class Curve2D: @unchecked Sendable {
     /// - Parameters:
     ///   - point: The point to bisect against.
     ///   - maxDistance: Trims the bisector so no point on it is further than this from the curve.
-    ///     500 is OCCT's own default. A distance smaller than the point's own offset from the
-    ///     curve leaves nothing to return, and yields `nil`.
+    ///     500 is OCCT's own default. A distance smaller than the point's own offset from the.
+    ///     curve leaves nothing to return, and yields nil.
     ///   - side: Which side of the curve the bisector lies on.
-    /// - Returns: The bisector curve, or `nil` if OCCT produced nothing within `maxDistance`.
+    /// - Returns: The bisector curve, or nil if OCCT produced nothing within maxDistance.
     ///
     /// There is no origin, unlike ``bisector(with:origin:side:)``: `Bisector_BisecPC::Perform`
     /// takes none, where `Bisector_BisecCC::Perform` does.
     ///
-    /// ```swift
+    /// ```swift.
     /// let line = Curve2D.line(point: .zero, direction: SIMD2(1, 0))!
     /// line.bisector(withPoint: SIMD2(0, 4), maxDistance: 10)    // parametrised over [-8, 8]
     /// line.bisector(withPoint: SIMD2(0, 4), maxDistance: 100)   // parametrised over [-28, 28]
-    /// ```
+    /// ```.
     public func bisector(
         withPoint point: SIMD2<Double>, maxDistance: Double = 500,
         side: Bool = true
@@ -990,27 +1032,27 @@ public final class Curve2D: @unchecked Sendable {
     /// Project a point onto this curve, returning the nearest projection.
     ///
     /// - Parameter p: Point to project.
-    /// - Returns: The nearest projection, or `nil` if there is no curve to answer about.
+    /// - Returns: The nearest projection, or nil if there is no curve to answer about.
     ///
-    /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
-    /// where the point has no perpendicular foot on the curve (anything past the end of a trimmed
-    /// curve, or off to one side of an arc), the nearest point is an end, and that is what comes
-    /// back. `project(_:)` (the `Point2D` overload), `Point2D.distance(to:)` and
+    /// The answer is always inside this curve's own `domain`, and always the true nearest point:
+    /// where the point has no perpendicular foot on the curve (anything past the end of a trimmed.
+    /// curve, or off to one side of an arc), the nearest point is an end, and that is what comes.
+    /// back. `project(_:)` (the Point2D overload), `Point2D.distance(to:)` and
     /// ``nearestParameter(to:)`` compute the same nearest solution through the same shared bridge
     /// path and agree with it exactly.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// let hit = segment.project(point: SIMD2(5, 3))
-    /// #expect(hit?.distance == 3)
+    /// #expect(hit?.distance == 3).
     /// #expect(segment.project(point: SIMD2(100, 0))?.distance == 90)   // past the end: the end
     ///
     /// let arc = Curve2D.circle(center: .zero, radius: 5)!.trimmed(from: 0, to: .pi)!
     /// #expect(arc.project(point: SIMD2(0, -6))?.parameter == 0)        // the near end, 7.81 away
-    /// ```
+    /// ```.
     ///
-    /// Before #615 this reported `Geom2dAPI_ProjectPointOnCurve`'s extremum instead: the arc above
-    /// answered π/2, the far side, 11 away, and `nil` for the segment. ``allProjections(of:)`` asks
+    /// Before #615 this reported the Geom2dAPI_ProjectPointOnCurve\'s extremum instead: the arc above
+    /// answered π/2, the far side, 11 away, and nil for the segment. ``allProjections(of:)`` asks
     /// for the extrema, which is a different question, and still reports none in both cases.
     public func project(point p: SIMD2<Double>) -> Curve2DProjection? {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
@@ -1019,31 +1061,33 @@ public final class Curve2D: @unchecked Sendable {
             point: SIMD2(r.x, r.y), parameter: r.parameter, distance: r.distance)
     }
 
-    /// The parameter of the point on this curve nearest to `point`.
+    /// The parameter of the point on this curve nearest to point.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: The nearest parameter, always inside this curve's own ``domain``, or `nil` if
+    /// - Returns: The nearest parameter, always inside this curve's own `domain`, or nil if
     ///     there is no curve to answer about.
     ///
     /// The scalar form of ``project(point:)``, computed by the same shared bridge path and agreeing
-    /// with it and with `Point2D.distance(to:)` exactly. Like them it reports the true nearest
-    /// point rather than the nearest perpendicular foot, so a point past the end of a bounded curve
+    /// with it and with `Point2D.distance(to:)` exactly.
+    ///
+    /// Like them it reports the true nearest.
+    /// point rather than the nearest perpendicular foot, so a point past the end of a bounded curve.
     /// answers with that end.
     ///
-    /// This replaces the deprecated `parameterAtPoint(_:)` because no `Double` can carry a failure
-    /// signal: `0` is a legitimate parameter on any curve whose domain includes it, and so is every
+    /// This replaces the deprecated `parameterAtPoint(_:)` because no Double can carry a failure
+    /// signal: 0 is a legitimate parameter on any curve whose domain includes it, and so is every
     /// other value.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// #expect(segment.nearestParameter(to: SIMD2(5, 3)) == 5)
     /// #expect(segment.nearestParameter(to: SIMD2(100, 0)) == 10)   // past the end: the end
     ///
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
-    /// // Equidistant everywhere, so every point is a nearest one; it names a tied parameter
+    /// // Equidistant everywhere, so every point is a nearest one; it names a tied parameter.
     /// // rather than refusing to answer (#615).
     /// #expect(circle.nearestParameter(to: .zero) != nil)
-    /// ```
+    /// ```.
     public func nearestParameter(to point: SIMD2<Double>) -> Double? {
         var parameter = 0.0
         guard OCCTCurve2DNearestParameter(handle, point.x, point.y, &parameter) else { return nil }
@@ -1052,19 +1096,22 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Project a point onto this curve, returning every projection.
     ///
-    /// This asks for the **extrema** of the distance function (the perpendicular feet), which is a
+    /// This asks for the **extrema** of the distance function (the perpendicular feet), which is a.
     /// different question from "the nearest point", and since #615 gives a visibly different answer.
-    /// A bounded curve queried from beyond its end has no perpendicular foot at all, so this
+    ///
+    /// A bounded curve queried from beyond its end has no perpendicular foot at all, so this.
     /// correctly returns empty where ``project(point:)`` and ``nearestParameter(to:)`` answer with
-    /// the end. An extremum may also be a local *maximum*: on a half arc queried from the far side
+    /// the end.
+    ///
+    /// An extremum may also be a local *maximum*: on a half arc queried from the far side
     /// the only element here is the point furthest away.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// #expect(segment.allProjections(of: SIMD2(5, 3)).count == 1)      // a foot at (5, 0)
     /// #expect(segment.allProjections(of: SIMD2(100, 0)).isEmpty)       // no foot past the end
     /// #expect(segment.project(point: SIMD2(100, 0))?.parameter == 10)  // but a nearest point
-    /// ```
+    /// ```.
     public func allProjections(of p: SIMD2<Double>) -> [Curve2DProjection] {
         var buffer = [OCCTCurve2DProjection](repeating: OCCTCurve2DProjection(), count: 64)
         let n = Int(OCCTCurve2DProjectPointAll(handle, p.x, p.y, &buffer, 64))
@@ -1103,28 +1150,36 @@ public final class Curve2D: @unchecked Sendable {
 
     /// How a conic's angular parameter is rewritten when it becomes a B-spline.
     ///
-    /// Every case but ``polynomial`` is exact: evaluating the result at any parameter gives a point
-    /// exactly on the original circle or ellipse. They differ in degree, pole count and knot
-    /// structure, not in fidelity. ``polynomial`` is non-rational and approximate.
+    /// Every case but `polynomial` is exact: evaluating the result at any parameter gives a point
+    /// exactly on the original circle or ellipse.
     ///
-    /// ```swift
+    /// They differ in degree, pole count and knot.
+    /// structure, not in fidelity. `polynomial` is non-rational and approximate.
+    ///
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
-    /// circle.toBSpline()?.degree                          // 2, six poles, rational
-    /// circle.toBSpline(.quasiAngular)?.degree             // 6, six poles, rational
-    /// circle.toBSpline(.polynomial)?.degree               // 7, seven poles, not rational
-    /// ```
+    /// circle.toBSpline()?.degree                          // 2, six poles, rational.
+    /// circle.toBSpline(.quasiAngular)?.degree             // 6, six poles, rational.
+    /// circle.toBSpline(.polynomial)?.degree               // 7, seven poles, not rational.
+    /// ```.
     public enum Parameterisation: UInt32, Sendable {
-        /// `t = tan(theta / 2)`, with the span count derived from the opening angle. The default.
+        /// `t = tan(theta / 2)`, with the span count derived from the opening angle.
+        ///
+        /// The default.
         case tangentHalfAngle = 0
-        /// `tangentHalfAngle` forced to one span. Requires an opening angle up to 0.9999 pi.
+        /// tangentHalfAngle forced to one span.
+        ///
+        /// Requires an opening angle up to 0.9999 pi.
         case tangentHalfAngle1 = 1
-        /// `tangentHalfAngle` forced to two spans. Requires an opening angle up to 1.9999 pi.
+        /// tangentHalfAngle forced to two spans.
+        ///
+        /// Requires an opening angle up to 1.9999 pi.
         case tangentHalfAngle2 = 2
-        /// `tangentHalfAngle` forced to three spans.
+        /// tangentHalfAngle forced to three spans.
         case tangentHalfAngle3 = 3
-        /// `tangentHalfAngle` forced to four spans.
+        /// tangentHalfAngle forced to four spans.
         case tangentHalfAngle4 = 4
-        /// Parameter close to the conic's own angular parameter.
+        /// Parameter       close to the conic's own angular parameter.
         case quasiAngular = 5
         /// Rational, with a C1-continuous denominator across spans.
         case rationalC1 = 6
@@ -1134,11 +1189,13 @@ public final class Curve2D: @unchecked Sendable {
 
     /// Convert this curve to an equivalent B-spline representation.
     ///
-    /// - Parameter parameterisation: How a conic's angular parameter is rewritten. There is no
+    /// - Parameter parameterisation: How a conic's angular parameter is rewritten.
+    ///
+    /// There is no.
     ///   tolerance: `Geom2dConvert::CurveToBSplineCurve` takes none, and every parameterisation
     ///   but ``Parameterisation/polynomial`` is exact.
-    /// - Returns: `nil` when OCCT rejects the pairing, which includes
-    ///   ``Parameterisation/tangentHalfAngle1`` and ``Parameterisation/tangentHalfAngle2`` on an
+    /// - Returns: nil when OCCT rejects the pairing, which includes
+    ///   ``Parameterisation/tangentHalfAngle1`` and ``Parameterisation/tangentHalfAngle2`` on an.
     ///   arc wider than their documented limits, and any parameterisation on an unbounded curve.
     public func toBSpline(_ parameterisation: Parameterisation = .tangentHalfAngle) -> Curve2D? {
         guard
@@ -1179,9 +1236,9 @@ public final class Curve2D: @unchecked Sendable {
 public struct Curve2DIntersection: Sendable {
     /// The intersection point in 2D space.
     public let point: SIMD2<Double>
-    /// Parameter on the first curve at the intersection.
+    /// Parameter       on the first curve at the intersection.
     public let parameter1: Double
-    /// Parameter on the second curve at the intersection.
+    /// Parameter       on the second curve at the intersection.
     public let parameter2: Double
 }
 
@@ -1201,9 +1258,9 @@ public struct Curve2DExtremaResult: Sendable {
     public let pointOnCurve1: SIMD2<Double>
     /// The point on the second curve at the extremum.
     public let pointOnCurve2: SIMD2<Double>
-    /// Parameter on the first curve.
+    /// Parameter       on the first curve.
     public let parameter1: Double
-    /// Parameter on the second curve.
+    /// Parameter       on the second curve.
     public let parameter2: Double
     /// The distance between the two points.
     public let distance: Double
@@ -1264,20 +1321,20 @@ public struct Curve2DHatchSegment: Sendable {
 
 /// Constraint-based 2D geometric construction (circle/line solver).
 ///
-/// Wraps the OpenCASCADE `Geom2dGcc` package: given tangency, passing-through,
+/// Wraps the OpenCASCADE Geom2dGcc package: given tangency, passing-through,
 /// and radius constraints, finds all circles or lines satisfying them.
 ///
-/// ## Examples
+/// ## Examples.
 ///
-/// ```swift
-/// // Circle tangent to two circles with a given radius
-/// let solutions = Curve2DGcc.circlesTangentToTwoCurves(
+/// ```swift.
+/// // Circle tangent to two circles with a given radius.
+/// let solutions = Curve2DGcc.circlesTangentToTwoCurves(.
 ///     c1, .unqualified, c2, .unqualified, radius: 3)
 ///
-/// // Line tangent to a circle through a point
-/// let lines = Curve2DGcc.linesTangentToPoint(circle, .outside,
+/// // Line tangent to a circle through a point.
+/// let lines = Curve2DGcc.linesTangentToPoint(circle, .outside,.
 ///                                            point: SIMD2(10, 0))
-/// ```
+/// ```.
 public enum Curve2DGcc {
 
     // MARK: - Circle Construction
@@ -1498,19 +1555,19 @@ public enum Curve2DGcc {
 extension Curve2D {
     /// Evaluate the curve at multiple parameters in one call.
     ///
-    /// Uses OCCT's optimized grid evaluator for better performance than
+    /// Uses OCCT's optimized grid evaluator for better performance than.
     /// calling `point(at:)` repeatedly.
     ///
     /// - Parameter parameters: Array of parameter values
     /// - Returns: Array of evaluated 2D points
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let params = stride(from: 0.0, through: 2 * .pi, by: 0.01).map { $0 }
-    /// let points = circle.evaluateGrid(params)
-    /// ```
+    /// let points = circle.evaluateGrid(params).
+    /// ```.
     public func evaluateGrid(_ parameters: [Double]) -> [SIMD2<Double>] {
         guard !parameters.isEmpty else { return [] }
         var outXY = [Double](repeating: 0, count: parameters.count * 2)
@@ -1581,7 +1638,7 @@ extension Curve2D {
     ///
     /// - Parameter tolerance: Maximum allowed deviation from a straight line
     /// - Returns: Tuple of (isLinear, deviation) where deviation is the actual maximum
-    ///   deviation from the line, or nil if not a BSpline curve
+    ///   deviation from the line, or nil if not a BSpline curve.
     public func isLinear(tolerance: Double = 1e-6) -> (isLinear: Bool, deviation: Double)? {
         var deviation: Double = 0
         let result = OCCTCurve2DIsLinear(handle, tolerance, &deviation)
@@ -1590,7 +1647,7 @@ extension Curve2D {
 
     /// Convert a nearly-linear 2D curve to a line.
     ///
-    /// If this curve is within tolerance of a straight line, returns the equivalent
+    /// If this curve is within tolerance of a straight line, returns the equivalent.
     /// line curve along with reparametrized bounds.
     ///
     /// - Parameters:
@@ -1615,7 +1672,7 @@ extension Curve2D {
 
     /// Simplify a 2D BSpline curve by removing unnecessary knots.
     ///
-    /// Modifies this curve in place by removing knots that don't affect the
+    /// Modifies this curve in place by removing knots that don't affect the.
     /// shape within the given tolerance.
     ///
     /// - Parameter tolerance: Maximum allowed deviation
@@ -1625,16 +1682,20 @@ extension Curve2D {
         OCCTCurve2DSimplifyBSpline(handle, tolerance)
     }
 
-    /// Approximate an explicit parameter sub-range of this 2D curve as a BSpline, with
+    /// Approximate an explicit parameter sub-range of this 2D curve as a BSpline, with.
     /// independent U/V tolerances.
     ///
-    /// Wraps `Approx_Curve2d`, which fits only `[first, last]` and tracks separate U/V error
-    /// bounds. This is a **different OCCT algorithm** from
+    /// Wraps Approx_Curve2d, which fits only `[first, last]` and tracks separate U/V error.
+    /// bounds.
+    ///
+    /// This is a **different OCCT algorithm** from.
     /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)``, not that method with an
-    /// added range. A caller cannot migrate incrementally between the two by adding
-    /// `first`/`last`, since switching overloads changes the algorithm, the tolerance
-    /// semantics, and the default tolerance magnitude (`1e-6` here vs. `1e-3` there) all at
-    /// once. Continuity is fixed at C2 and is not configurable through this overload; use
+    /// added range. A caller cannot migrate incrementally between the two by adding.
+    /// first/last, since switching overloads changes the algorithm, the tolerance.
+    /// semantics, and the default tolerance magnitude (`1e-6` here vs. `1e-3` there) all at.
+    /// once.
+    ///
+    /// Continuity is fixed at C2 and is not configurable through this overload; use.
     /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)`` if you need a different
     /// continuity order.
     ///
@@ -1645,14 +1706,14 @@ extension Curve2D {
     ///   - toleranceV: Tolerance in V direction (default 1e-6)
     ///   - maxDegree: Maximum BSpline degree (default 8)
     ///   - maxSegments: Maximum number of segments (default 100)
-    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    /// - Returns: Approximated BSpline curve, or nil on failure
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 10)!
-    /// let d = circle.domain
+    /// let d = circle.domain.
     /// let approx = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
     ///                                          toleranceU: 1e-6, toleranceV: 1e-6)
-    /// ```
+    /// ```.
     public func approximatedInRange(
         first: Double, last: Double,
         toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
@@ -1699,6 +1760,7 @@ public struct BisecSolution: Sendable {
 /// Analytical 2D bisector computations (GccAna module).
 ///
 /// Computes bisectors between combinations of points, lines, and circles.
+///
 /// Bisectors are the loci of points equidistant from two geometric elements.
 public enum GccAnaBisector {
 
@@ -1740,7 +1802,7 @@ public enum GccAnaBisector {
 
     /// Bisector between a line and a point.
     ///
-    /// The result is typically a parabola with the point as focus
+    /// The result is typically a parabola with the point as focus.
     /// and the line as directrix.
     public static func ofLineAndPoint(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
@@ -1763,23 +1825,25 @@ public enum GccAnaBisector {
     ///
     /// Returns curves equidistant from both circles (up to 4 solutions).
     ///
-    /// Both radii must be positive. A radius of zero describes a point rather than a circle, and
+    /// Both radii must be positive. A radius of zero describes a point rather than a circle, and.
     /// the solver does not answer the point question when it is given one: measured (#553), it
-    /// returns each solution twice, and with both radii zero two of the three solutions are
-    /// hyperbolas of major radius zero, a conic this API refuses to construct. Ask about points
+    /// returns each solution twice, and with both radii zero two of the three solutions are.
+    /// hyperbolas of major radius zero, a conic this API refuses to construct.
+    ///
+    /// Ask about points.
     /// through ``ofPoints(_:_:)`` or ``ofCircleAndPoint(center:radius:point:)`` instead. A
     /// non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let bisectors = GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 3,
     ///                                          center2: SIMD2(10, 0), radius2: 2)
-    /// print(bisectors.count)   // 4
+    /// print(bisectors.count)   // 4.
     ///
     /// // A point is not a zero-radius circle here:
     /// GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 0,
     ///                          center2: SIMD2(10, 0), radius2: 2)   // []
-    /// GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(10, 0))            // the perpendicular bisector
-    /// ```
+    /// GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(10, 0))            // the perpendicular bisector.
+    /// ```.
     public static func ofCircles(
         center1: SIMD2<Double>, radius1: Double,
         center2: SIMD2<Double>, radius2: Double
@@ -1801,16 +1865,18 @@ public enum GccAnaBisector {
 
     /// Bisectors between a circle and a line.
     ///
-    /// The radius must be positive. With a radius of zero the solver returns the point/line
-    /// parabola twice rather than once (#553); ask about a point through
+    /// The radius must be positive.
+    ///
+    /// With a radius of zero the solver returns the point/line.
+    /// parabola twice rather than once (#553); ask about a point through.
     /// ``ofLineAndPoint(linePoint:lineDir:point:)``. A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let bisectors = GccAnaBisector.ofCircleAndLine(center: SIMD2(0, 5), radius: 2,
     ///                                                linePoint: SIMD2(0, 0),
     ///                                                lineDir: SIMD2(1, 0))
-    /// print(bisectors.count)   // 2 parabolas
-    /// ```
+    /// print(bisectors.count)   // 2 parabolas.
+    /// ```.
     public static func ofCircleAndLine(
         center: SIMD2<Double>, radius: Double,
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
@@ -1832,16 +1898,20 @@ public enum GccAnaBisector {
 
     /// Bisectors between a circle and a point.
     ///
-    /// The radius must be positive. This is the family where a zero radius is furthest from the
+    /// The radius must be positive.
+    ///
+    /// This is the family where a zero radius is furthest from the.
     /// point reading: measured (#553), it returns two hyperbolas of major radius zero, where the
-    /// bisector of two points is a straight line. Use ``ofPoints(_:_:)`` for that. A non-positive
+    /// bisector of two points is a straight line.
+    ///
+    /// Use ``ofPoints(_:_:)`` for that. A non-positive
     /// radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let bisectors = GccAnaBisector.ofCircleAndPoint(center: SIMD2(0, 0), radius: 2,
     ///                                                 point: SIMD2(6, 0))
-    /// print(bisectors.count)   // 2 hyperbola branches
-    /// ```
+    /// print(bisectors.count)   // 2 hyperbola branches.
+    /// ```.
     public static func ofCircleAndPoint(
         center: SIMD2<Double>, radius: Double,
         point: SIMD2<Double>
@@ -1886,17 +1956,19 @@ extension Curve2DGcc {
 
     /// Lines tangent to a circle, parallel to a reference line.
     ///
-    /// `circleRadius` must be positive. With a radius of zero the solver returns the single line
+    /// circleRadius must be positive.
+    ///
+    /// With a radius of zero the solver returns the single line.
     /// through the centre twice (#553); ``lineParallelThrough(point:parallelTo:lineDir:)`` is the
-    /// entry point for that question and returns it once. A non-positive radius returns an empty
+    /// entry point for that question and returns it once. A non-positive radius returns an empty.
     /// array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let tangents = Curve2DGcc.linesTangentParallel(circleCenter: SIMD2(0, 0), circleRadius: 4,
     ///                                                parallelTo: SIMD2(0, 0),
     ///                                                lineDir: SIMD2(1, 0))
-    /// print(tangents.count)   // 2, at y = 4 and y = -4
-    /// ```
+    /// print(tangents.count)   // 2, at y = 4 and y = -4.
+    /// ```.
     public static func linesTangentParallel(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         qualifier: Curve2DQualifier = .unqualified,
@@ -1936,18 +2008,20 @@ extension Curve2DGcc {
 
     /// Lines tangent to a circle, perpendicular to a reference line.
     ///
-    /// `circleRadius` must be positive. With a radius of zero the solver returns the single line
-    /// through the centre twice (#553); use
+    /// circleRadius must be positive.
+    ///
+    /// With a radius of zero the solver returns the single line.
+    /// through the centre twice (#553); use.
     /// ``linePerpendicularThrough(point:perpendicularTo:lineDir:)`` for the point question. A
     /// non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let tangents = Curve2DGcc.linesTangentPerpendicular(circleCenter: SIMD2(0, 0),
     ///                                                     circleRadius: 4,
     ///                                                     perpendicularTo: SIMD2(0, 0),
     ///                                                     lineDir: SIMD2(1, 0))
-    /// print(tangents.count)   // 2, at x = 4 and x = -4
-    /// ```
+    /// print(tangents.count)   // 2, at x = 4 and x = -4.
+    /// ```.
     public static func linesTangentPerpendicular(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         qualifier: Curve2DQualifier = .unqualified,
@@ -2032,16 +2106,18 @@ extension Curve2DGcc {
 
     /// Circles tangent to a line, center on a line, with given radius.
     ///
-    /// `radius` is the radius of the circles to find, and it must be positive. Asked for zero the
-    /// solver obliges and returns solution circles of radius zero (#553), which is a point rather
+    /// radius is the radius of the circles to find, and it must be positive.
+    ///
+    /// Asked for zero the.
+    /// solver obliges and returns solution circles of radius zero (#553), which is a point rather.
     /// than the circle the caller asked for. A non-positive radius returns an empty array.
     ///
-    /// ```swift
-    /// let circles = Curve2DGcc.circlesTangentToLineOnLineWithRadius(
+    /// ```swift.
+    /// let circles = Curve2DGcc.circlesTangentToLineOnLineWithRadius(.
     ///     linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
     ///     centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 2)
-    /// print(circles.map(\.radius))   // every solution has radius 2
-    /// ```
+    /// print(circles.map(\.radius))   // every solution has radius 2.
+    /// ```.
     public static func circlesTangentToLineOnLineWithRadius(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         qualifier: Curve2DQualifier = .unqualified,
@@ -2088,14 +2164,14 @@ extension Curve2DGcc {
 
     /// Circles tangent to a curve, center on a curve, with given radius (Geom2dGcc).
     ///
-    /// `radius` is the radius of the circles to find, and it must be positive; zero would ask for
+    /// radius is the radius of the circles to find, and it must be positive; zero would ask for.
     /// a solution circle that is a point (#553). A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
     ///       let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)) else { return }
     /// let circles = Curve2DGcc.circlesTangentOnCurveWithRadius(line, centerOn: centerOn, radius: 2)
-    /// ```
+    /// ```.
     public static func circlesTangentOnCurveWithRadius(
         _ curve: Curve2D, _ qualifier: Curve2DQualifier = .unqualified,
         centerOn: Curve2D,
@@ -2122,9 +2198,9 @@ extension Curve2DGcc {
 public struct Intersection2DPoint: Sendable {
     /// The intersection point.
     public let point: SIMD2<Double>
-    /// Parameter on the first curve.
+    /// Parameter       on the first curve.
     public let param1: Double
-    /// Parameter on the second curve.
+    /// Parameter       on the second curve.
     public let param2: Double
 }
 
@@ -2151,16 +2227,16 @@ public enum IntAna2d {
 
     /// Intersect a 2D line and circle.
     ///
-    /// `circleRadius` must be positive. A zero-radius circle is a point, and asking whether a
+    /// circleRadius must be positive. A zero-radius circle is a point, and asking whether a.
     /// point lies on a line is not an intersection query: measured (#553), OCCT answers with the
-    /// centre and a `param2` of NaN, since a point has no parameter on a circle that is not
+    /// centre and a param2 of NaN, since a point has no parameter on a circle that is not.
     /// there. A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let hits = IntAna2d.intersectLineCircle(linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
     ///                                         circleCenter: SIMD2(0, 0), circleRadius: 3)
-    /// print(hits.map(\.point))   // (3, 0) and (-3, 0)
-    /// ```
+    /// print(hits.map(\.point))   // (3, 0) and (-3, 0).
+    /// ```.
     public static func intersectLineCircle(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double
@@ -2180,16 +2256,16 @@ public enum IntAna2d {
 
     /// Intersect two 2D circles.
     ///
-    /// Both radii must be positive, for the same reason as
+    /// Both radii must be positive, for the same reason as.
     /// ``intersectLineCircle(linePoint:lineDir:circleCenter:circleRadius:)``: a zero radius makes
-    /// the argument a point, not a curve to intersect (#553). A non-positive radius returns an
+    /// the argument a point, not a curve to intersect (#553). A non-positive radius returns an.
     /// empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let hits = IntAna2d.intersectCircles(center1: SIMD2(0, 0), radius1: 3,
     ///                                      center2: SIMD2(4, 0), radius2: 3)
-    /// print(hits.count)   // 2
-    /// ```
+    /// print(hits.count)   // 2.
+    /// ```.
     public static func intersectCircles(
         center1: SIMD2<Double>, radius1: Double,
         center2: SIMD2<Double>, radius2: Double
@@ -2216,9 +2292,9 @@ public struct Extrema2DResult: Sendable {
     public let squareDistance: Double
     /// Distance at this extremum.
     public var distance: Double { squareDistance.squareRoot() }
-    /// Parameter on the first curve.
+    /// Parameter       on the first curve.
     public let param1: Double
-    /// Parameter on the second curve.
+    /// Parameter       on the second curve.
     public let param2: Double
     /// Closest point on the first curve.
     public let point1: SIMD2<Double>
@@ -2231,7 +2307,9 @@ public enum Extrema2d {
 
     /// Distance between two parallel 2D lines.
     ///
-    /// - Returns: Tuple of (isParallel, results). If parallel, one result with distance is returned.
+    /// - Returns: Tuple of (isParallel, results).
+    ///
+    /// If parallel, one result with distance is returned.
     public static func distanceBetweenLines(
         line1Point: SIMD2<Double>, line1Dir: SIMD2<Double>,
         line2Point: SIMD2<Double>, line2Dir: SIMD2<Double>,
@@ -2256,17 +2334,19 @@ public enum Extrema2d {
 
     /// Distance between a 2D line and circle.
     ///
-    /// `circleRadius` must be positive. With a radius of zero the extrema come back correct but
+    /// circleRadius must be positive.
+    ///
+    /// With a radius of zero the extrema come back correct but.
     /// duplicated (#553); ``distanceFromPointToLine(point:linePoint:lineDir:)`` answers the point
     /// question directly. A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let extrema = Extrema2d.distanceBetweenLineAndCircle(linePoint: SIMD2(0, 10),
     ///                                                      lineDir: SIMD2(1, 0),
     ///                                                      circleCenter: SIMD2(0, 0),
     ///                                                      circleRadius: 3)
-    /// print(extrema.map(\.distance))   // 7 and 13
-    /// ```
+    /// print(extrema.map(\.distance))   // 7 and 13.
+    /// ```.
     public static func distanceBetweenLineAndCircle(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double,
@@ -2289,16 +2369,18 @@ public enum Extrema2d {
 
     /// Closest/farthest points on a 2D circle from a point.
     ///
-    /// `circleRadius` must be positive. This is the family where a zero radius loses the answer
+    /// circleRadius must be positive.
+    ///
+    /// This is the family where a zero radius loses the answer.
     /// outright: measured (#553), OCCT reports no extremum at all rather than the distance to the
     /// centre. A non-positive radius returns an empty array.
     ///
-    /// ```swift
+    /// ```swift.
     /// let extrema = Extrema2d.distanceFromPointToCircle(point: SIMD2(0, 10),
     ///                                                   circleCenter: SIMD2(0, 0),
     ///                                                   circleRadius: 3)
-    /// print(extrema.map(\.distance))   // 7 and 13
-    /// ```
+    /// print(extrema.map(\.distance))   // 7 and 13.
+    /// ```.
     public static func distanceFromPointToCircle(
         point: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double,
@@ -2365,9 +2447,11 @@ public enum Extrema2d {
 
 /// Type of curvature feature point.
 ///
-/// A same-cases, different-ordering vocabulary for `Curve2DSpecialPointType`, kept for
-/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`. Both are derived
-/// from a single `GeomLProp_CurAndInf2d` computation (`curvatureExtrema()`/`inflectionPoints()`);
+/// A same-cases, different-ordering vocabulary for Curve2DSpecialPointType, kept for.
+/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`.
+///
+/// Both are derived.
+/// from a single GeomLProp_CurAndInf2d computation (`curvatureExtrema()`/`inflectionPoints()`);.
 /// see `CurInfType.init(_:)` for the (test-pinned) mapping between the two.
 public enum CurInfType: Int32, Sendable {
     case curvatureMinimum = 0
@@ -2376,7 +2460,7 @@ public enum CurInfType: Int32, Sendable {
 }
 
 extension CurInfType {
-    /// Maps from the `Curve2DSpecialPointType` vocabulary used by the plain family.
+    /// Maps from the Curve2DSpecialPointType vocabulary used by the plain family.
     public init(_ type: Curve2DSpecialPointType) {
         switch type {
         case .inflection: self = .inflection
@@ -2388,7 +2472,7 @@ extension CurInfType {
 
 /// A curvature feature point on a 2D curve.
 public struct CurInfPoint: Sendable {
-    /// Parameter value on the curve.
+    /// Parameter       value on the curve.
     public let parameter: Double
     /// Type of feature (min/max curvature, or inflection).
     public let type: CurInfType
@@ -2397,16 +2481,16 @@ public struct CurInfPoint: Sendable {
 extension Curve2D {
     /// Find curvature extrema (min/max) on this 2D curve with type classification.
     ///
-    /// Delegates to `curvatureExtrema()`, the same `GeomLProp_CurAndInf2d` computation,
-    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
+    /// Delegates to `curvatureExtrema()`, the same GeomLProp_CurAndInf2d computation,.
+    /// translating its results into the CurInfPoint/CurInfType vocabulary.
     public func curvatureExtremaDetailed() -> [CurInfPoint] {
         curvatureExtrema().map { CurInfPoint(parameter: $0.parameter, type: CurInfType($0.type)) }
     }
 
     /// Find inflection points on this 2D curve with type information.
     ///
-    /// Delegates to `inflectionPoints()`, the same `GeomLProp_CurAndInf2d` computation,
-    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
+    /// Delegates to `inflectionPoints()`, the same GeomLProp_CurAndInf2d computation,.
+    /// translating its results into the CurInfPoint/CurInfType vocabulary.
     public func inflectionPointsDetailed() -> [CurInfPoint] {
         inflectionPoints().map { CurInfPoint(parameter: $0, type: .inflection) }
     }
@@ -2499,36 +2583,38 @@ extension Curve2D {
 
     // MARK: - Point2D Integration
 
-    /// Evaluate the curve at parameter `t`, returning a `Point2D`.
+    /// Evaluate the curve at parameter t, returning a Point2D.
     public func pointAt(_ t: Double) -> Point2D? {
         guard let h = OCCTCurve2DPointAt(handle, t) else { return nil }
         return Point2D(handle: h)
     }
 
-    /// Create a line segment between two `Point2D` instances.
+    /// Create a line segment between two Point2D instances.
     public static func segment(from p1: Point2D, to p2: Point2D) -> Curve2D? {
         guard let h = OCCTCurve2DSegmentFromPoints(p1.handle, p2.handle) else { return nil }
         return Curve2D(handle: h)
     }
 
-    /// Project a `Point2D` onto this curve.
+    /// Project a Point2D onto this curve.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: `(parameter, distance)` of the nearest solution, or `nil` if there is no curve to
+    /// - Returns: `(parameter, distance)` of the nearest solution, or nil if there is no curve to
     ///   answer about.
     ///
     /// The same nearest-solution computation as ``project(point:)``, returned without the projected
     /// point itself, so it reports the true nearest point over the curve's own domain: a point past
-    /// the end answers with that end (#615). Note that a parameter of `0` is a perfectly ordinary
-    /// success (projecting a segment's own start point onto it returns exactly that), so `nil` is
+    /// the end answers with that end (#615).
+    ///
+    /// Note that a parameter of 0 is a perfectly ordinary.
+    /// success (projecting a segment's own start point onto it returns exactly that), so nil is.
     /// the only failure signal.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// let start = Point2D(x: 0, y: 0)!
-    /// #expect(segment.project(start)?.parameter == 0)                    // success, at parameter 0
+    /// #expect(segment.project(start)?.parameter == 0)                    // success, at parameter 0.
     /// #expect(segment.project(Point2D(x: 100, y: 0)!)?.parameter == 10)  // past the end: the end
-    /// ```
+    /// ```.
     public func project(_ point: Point2D) -> (parameter: Double, distance: Double)? {
         var dist: Double = 0
         let param = OCCTCurve2DProjectPoint2D(handle, point.handle, &dist)
@@ -2548,7 +2634,7 @@ extension Curve2D {
 
     /// Create a fair curve (batten) between two 2D points.
     ///
-    /// A batten is a curve of minimal energy passing through two points with specified
+    /// A batten is a curve of minimal energy passing through two points with specified.
     /// constraint orders, height, slope, and angles.
     ///
     /// - Parameters:
@@ -2584,6 +2670,7 @@ extension Curve2D {
     /// Create a fair curve with minimal variation between two 2D points.
     ///
     /// Like a batten but minimizes curvature variation, producing smoother curves.
+    ///
     /// Supports additional curvature and physical ratio constraints.
     ///
     /// - Parameters:
@@ -2653,22 +2740,24 @@ extension Curve2D {
             point2: SIMD2(r.x2, r.y2), param2: r.param2)
     }
 
-    /// Create a 2D circle from center + radius (`gce_MakeCirc2d`).
+    /// Create a 2D circle from center + radius (gce_MakeCirc2d).
     ///
-    /// Geometrically identical to `circle(center:radius:)` (both produce a `Geom2d_Circle` on the
+    /// Geometrically identical to `circle(center:radius:)` (both produce a Geom2d_Circle on the
     /// same X-axis-oriented frame) and, since #411, enforces the same radius contract.
     ///
     /// - Parameters:
     ///   - center: Circle centre.
-    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
-    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///   - radius: Circle radius.
     ///
-    /// ```swift
+    ///   Must be `> 0`; zero and negative radii return nil.
+    /// - Returns: The circle, or nil if `radius <= 0`.
+    ///
+    /// ```swift.
     /// let c = Curve2D.circleFromCenterRadius(center: .zero, radius: 5)
-    /// #expect(c != nil)
+    /// #expect(c != nil).
     /// // Same rejection as the direct factory: no degenerate zero-radius circle.
     /// #expect(Curve2D.circleFromCenterRadius(center: .zero, radius: 0) == nil)
-    /// ```
+    /// ```.
     public static func circleFromCenterRadius(
         center: SIMD2<Double>,
         radius: Double
@@ -2704,30 +2793,34 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D ellipse from centre, major-axis direction and radii (`gce_MakeElips2d`).
+    /// Create a 2D ellipse from centre, major-axis direction and radii (gce_MakeElips2d).
     ///
     /// Geometrically identical to `ellipse(center:majorRadius:minorRadius:rotation:)`, which takes
-    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the
+    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the.
     /// same radius contract.
     ///
     /// - Parameters:
     ///   - center: Ellipse centre.
     ///   - direction: Major-axis direction.
-    ///   - majorRadius: Semi-major axis length. Must be `> 0` and `>= minorRadius`.
-    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
-    /// - Returns: The ellipse, or `nil` if either radius is not positive or `minorRadius` exceeds
-    ///   `majorRadius`.
+    ///   - majorRadius: Semi-major axis length.
     ///
-    /// ```swift
+    ///   Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Semi-minor axis length.
+    ///
+    ///   Must be `> 0`.
+    /// - Returns: The ellipse, or nil if either radius is not positive or minorRadius exceeds
+    ///   majorRadius.
+    ///
+    /// ```swift.
     /// let e = Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                      majorRadius: 8, minorRadius: 4)
-    /// #expect(e != nil)
+    /// #expect(e != nil).
     /// // Same rejections as the direct factory: no degenerate ellipse, no negative minor radius.
     /// #expect(Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                      majorRadius: 0, minorRadius: 0) == nil)
     /// #expect(Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                      majorRadius: 5, minorRadius: -3) == nil)
-    /// ```
+    /// ```.
     public static func ellipseFromCenterDir(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         majorRadius: Double,
@@ -2741,10 +2834,10 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D hyperbola from centre, major-axis direction and radii (`gce_MakeHypr2d`).
+    /// Create a 2D hyperbola from centre, major-axis direction and radii (gce_MakeHypr2d).
     ///
     /// Geometrically identical to `hyperbola(center:majorRadius:minorRadius:rotation:)`, which takes
-    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the
+    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the.
     /// same radius contract.
     ///
     /// Unlike an ellipse, a hyperbola puts no ordering on its radii: a minor radius larger than the
@@ -2753,21 +2846,25 @@ extension Curve2D {
     /// - Parameters:
     ///   - center: Hyperbola centre.
     ///   - direction: Major-axis direction.
-    ///   - majorRadius: Semi-major axis length. Must be `> 0`.
-    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
-    /// - Returns: The hyperbola, or `nil` if either radius is not positive.
+    ///   - majorRadius: Semi-major axis length.
     ///
-    /// ```swift
+    ///   Must be `> 0`.
+    ///   - minorRadius: Semi-minor axis length.
+    ///
+    ///   Must be `> 0`.
+    /// - Returns: The hyperbola, or nil if either radius is not positive.
+    ///
+    /// ```swift.
     /// let h = Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                        majorRadius: 6, minorRadius: 3)
-    /// #expect(h != nil)
+    /// #expect(h != nil).
     /// // Minor larger than major is a valid hyperbola, unlike for an ellipse.
     /// #expect(Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                        majorRadius: 3, minorRadius: 6) != nil)
     /// // Same rejection as the direct factory: no degenerate zero-radius hyperbola.
     /// #expect(Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
     ///                                        majorRadius: 0, minorRadius: 0) == nil)
-    /// ```
+    /// ```.
     public static func hyperbolaFromCenterDir(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         majorRadius: Double,
@@ -2781,26 +2878,30 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D parabola from a point on its axis of symmetry, that axis' direction, and the
-    /// focal length (`gce_MakeParab2d`).
+    /// Create a 2D parabola from a point on its axis of symmetry, that axis' direction, and the.
+    /// focal length (gce_MakeParab2d).
     ///
-    /// `center` is the parabola's vertex, so this places the curve the same way
+    /// center is the parabola's vertex, so this places the curve the same way.
     /// `parabola(focus:direction:focalLength:)` does once that factory has stepped back from the
-    /// focus to the vertex. Since #487 both enforce the same focal-length contract.
+    /// focus to the vertex.
+    ///
+    /// Since #487 both enforce the same focal-length contract.
     ///
     /// - Parameters:
     ///   - center: Vertex of the parabola.
     ///   - direction: Direction of the axis of symmetry.
-    ///   - focal: Distance from vertex to focus. Must be `> 0`; at zero the parabola degenerates
-    ///     into a line parallel to its own axis.
-    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///   - focal: Distance from vertex to focus.
     ///
-    /// ```swift
+    ///   Must be `> 0`; at zero the parabola degenerates.
+    ///     into a line parallel to its own axis.
+    /// - Returns: The parabola, or nil if `focal <= 0`.
+    ///
+    /// ```swift.
     /// let p = Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 3)
-    /// #expect(p != nil)
+    /// #expect(p != nil).
     /// // Same rejection as the direct factory: a zero focal length is a line, not a parabola.
     /// #expect(Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 0) == nil)
-    /// ```
+    /// ```.
     public static func parabolaFromCenterDir(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         focal: Double
@@ -3062,23 +3163,27 @@ extension Curve2D {
     /// Interpolate a 2D BSpline through points with endpoint tangents.
     ///
     /// A spelling of `interpolate(through:startTangent:endTangent:tolerance:)` with the `points:`
-    /// argument label, and it delegates to it, so the two cannot produce different curves for the
+    /// argument label, and it delegates to it, so the two cannot produce different curves for the.
     /// same input.
     ///
     /// - Parameters:
-    ///   - points: Points to interpolate. At least 2.
+    ///   - points: Points to interpolate.
+    ///
+    ///   At least 2.
     ///   - startTangent: Tangent direction at the first point.
     ///   - endTangent: Tangent direction at the last point.
-    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
-    ///     to hardcode with no way to change it (#410).
-    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    ///   - tolerance: Interpolation tolerance.
     ///
-    /// ```swift
+    ///   Defaults to `1e-6`, which is what this method used.
+    ///     to hardcode with no way to change it (#410).
+    /// - Returns: The interpolated curve, or nil if interpolation fails.
+    ///
+    /// ```swift.
     /// let curve = Curve2D.interpolate(points: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)],
     ///                                  startTangent: SIMD2(1, 1), endTangent: SIMD2(1, -1),
     ///                                  tolerance: 1e-4)
-    /// #expect(curve != nil)
-    /// ```
+    /// #expect(curve != nil).
+    /// ```.
     public static func interpolate(
         points: [SIMD2<Double>],
         startTangent: SIMD2<Double>,
@@ -3096,24 +3201,28 @@ extension Curve2D {
     /// delegates to it, so the two cannot produce different curves for the same input.
     ///
     /// - Parameters:
-    ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
-    ///     do not repeat the first point at the end.
-    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
-    ///     to hardcode with no way to change it (#412).
-    /// - Returns: The periodic curve, or `nil` if interpolation fails.
+    ///   - points: Points to interpolate.
     ///
-    /// ```swift
+    ///   At least 2; the curve closes back to `points[0]`, so.
+    ///     do not repeat the first point at the end.
+    ///   - tolerance: Interpolation tolerance.
+    ///
+    ///   Defaults to `1e-6`, which is what this method used.
+    ///     to hardcode with no way to change it (#412).
+    /// - Returns: The periodic curve, or nil if interpolation fails.
+    ///
+    /// ```swift.
     /// let loop = Curve2D.interpolatePeriodic(points: [
-    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
-    /// ])
-    /// #expect(loop?.isPeriodic == true)
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),.
+    /// ]).
+    /// #expect(loop?.isPeriodic == true).
     ///
     /// // Identical to spelling it out on the general factory:
     /// let same = Curve2D.interpolate(through: [
-    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),.
     /// ], closed: true)
-    /// #expect(loop?.domain == same?.domain)
-    /// ```
+    /// #expect(loop?.domain == same?.domain).
+    /// ```.
     public static func interpolatePeriodic(
         points: [SIMD2<Double>],
         tolerance: Double = 1e-6
@@ -3123,8 +3232,10 @@ extension Curve2D {
 
     /// Approximate a 2D BSpline through points with degree and continuity control.
     ///
-    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
-    /// `approximated` family, the fitter accepts every value without failing: it treats the
+    /// continuity is a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3).
+    ///
+    /// Unlike the.
+    /// approximated family, the fitter accepts every value without failing: it treats the
     /// request as an upper bound on what it will try to achieve.
     public static func approximate(
         points: [SIMD2<Double>],
@@ -3144,24 +3255,30 @@ extension Curve2D {
         return Curve2D(handle: ref)
     }
 
-    /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
+    /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
     ///
     /// Delegates to ``length(from:to:)``, the failure-distinguishing entry point, and shares its
-    /// contract: the range may be given in either order, equal parameters measure `0`, an
-    /// out-of-domain range measures only the part that lies on the curve (winding a periodic
-    /// one, #600), and a non-finite bound (`.nan` or `±.infinity`) fails rather than propagating
-    /// (#548). Returns `-1.0` if the computation fails. Arc length is otherwise always
-    /// non-negative, so this is an unambiguous failure sentinel, never confusable with a genuine
-    /// zero-length segment. Use ``length(from:to:)`` directly if you need an optional rather
+    /// contract: the range may be given in either order, equal parameters measure 0, an
+    /// out-of-domain range measures only the part that lies on the curve (winding a periodic.
+    /// one, #600), and a non-finite bound (`.nan` or `±.infinity`) fails rather than propagating.
+    /// (#548).
+    ///
+    /// Returns `-1.0` if the computation fails.
+    ///
+    /// Arc length is otherwise always.
+    /// non-negative, so this is an unambiguous failure sentinel, never confusable with a genuine.
+    /// zero-length segment.
+    ///
+    /// Use ``length(from:to:)`` directly if you need an optional rather
     /// than a sentinel value.
     ///
-    /// ```swift
+    /// ```swift.
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let half = circle.arcLength(from: 0, to: .pi)      // ≈ 15.71
     /// let same = circle.arcLength(from: .pi, to: 0)      // the same 15.71
-    /// ```
+    /// ```.
     ///
-    /// - Note: Until #549 this measured through a pre-bounded `Geom2dAdaptor_Curve`, which
+    /// - Note: Until #549 this measured through a pre-bounded Geom2dAdaptor_Curve, which
     ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots:
     ///   4771.88 for a BSpline 457.26 long, past what #600 fixed on the surviving delegate.
     ///   `Curve3D.arcLength(from:to:)` dropped the same adaptor in #506.
@@ -3172,7 +3289,7 @@ extension Curve2D {
     /// Split this curve at C1 discontinuities.
     ///
     /// - Parameters:
-    ///   - continuity: `1` or less splits at C1 discontinuities; above `1` returns the curve
+    ///   - continuity: 1 or less splits at C1 discontinuities; above 1 returns the curve
     ///     unsplit, as a single segment.
     ///   - tolerance: Knot-removal tolerance passed to the underlying conversion.
     ///   - maxSegments: Output *capacity* (default 32), clamped into `0...`
@@ -3347,25 +3464,27 @@ extension Curve2D {
         return result
     }
 
-    /// Is the BSpline curve closed?
+    /// Is the BSpline curve closed?.
     public var bsplineIsClosed: Bool {
         OCCTCurve2DBSplineIsClosed(handle)
     }
 
-    /// Is the BSpline curve periodic?
+    /// Is the BSpline curve periodic?.
     public var bsplineIsPeriodic: Bool {
         OCCTCurve2DBSplineIsPeriodic(handle)
     }
 
-    /// BSpline curve continuity, as a raw `GeomAbs_Shape` ordinal
-    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`), so a C2 cubic reports `4`, not `2`.
+    /// BSpline curve continuity, as a raw GeomAbs_Shape ordinal.
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`), so a C2 cubic reports 4, not 2.
     ///
-    /// `0` if the curve is not a BSpline. Prefer ``ContinuityClass`` (#619).
+    /// 0 if the curve is not a BSpline.
+    ///
+    /// Prefer `ContinuityClass` (#619).
     public var bsplineContinuity: Int {
         Int(OCCTCurve2DBSplineContinuity(handle))
     }
 
-    /// Is the BSpline curve at least CN continuous?
+    /// Is the BSpline curve at least CN continuous?.
     public func bsplineIsCN(_ n: Int) -> Bool {
         OCCTCurve2DBSplineIsCN(handle, Int32(n))
     }
@@ -3484,7 +3603,8 @@ extension Curve2D {
     /// Create a 2D Trigonometric Bezier curve.
     ///
     /// Uses a trigonometric Bernstein-like basis: {1, sin(alpha*t), cos(alpha*t), ...}.
-    /// Parameter domain is [0, pi/alpha].
+    ///
+    /// Parameter       domain is [0, pi/alpha].
     /// - Parameters:
     ///   - poles: 2D control points (count must be odd >= 3)
     ///   - alpha: frequency parameter (> 0)
@@ -3505,8 +3625,10 @@ extension Curve2D {
     /// Create a 2D Algebraic-Hyperbolic-Trigonometric (AHT) Bezier curve.
     ///
     /// Uses a mixed basis: {1, t, ..., t^k, sinh(alpha*t), cosh(alpha*t), sin(beta*t), cos(beta*t)}.
+    ///
     /// Number of poles must equal algDegree+1 + 2*(alpha>0) + 2*(beta>0).
-    /// Parameter range: [0, 1].
+    ///
+    /// Parameter       range: [0, 1].
     /// - Parameters:
     ///   - poles: 2D control points
     ///   - algDegree: algebraic polynomial degree (>= 0)
@@ -3590,7 +3712,7 @@ extension Curve2D {
 extension Curve2D {
     /// Split this 2D curve at continuity breaks.
     ///
-    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// Criterion is a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above.
     /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
     /// the one consumer of this vocabulary that recognises the whole ladder including CN.
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D] {
@@ -3691,16 +3813,18 @@ extension Curve2D {
     /// - Parameters:
     ///   - centerX: centre X.
     ///   - centerY: centre Y.
-    ///   - radius: circle radius. Must be greater than zero.
+    ///   - radius: circle radius.
+    ///
+    ///   Must be greater than zero.
     ///   - u1: start angle, in radians.
     ///   - u2: end angle, in radians.
-    /// - Returns: the converted curve, or `nil` if the circle is degenerate.
+    /// - Returns: the converted curve, or nil if the circle is degenerate.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let c = Curve2D.fromCircleArc(centerX: 0, centerY: 0, radius: 5, u1: 0, u2: .pi) {
-    ///     print(c.degree)
-    /// }
-    /// ```
+    ///     print(c.degree).
+    /// }.
+    /// ```.
     public static func fromCircleArc(
         centerX: Double, centerY: Double, radius: Double,
         u1: Double, u2: Double
@@ -3719,20 +3843,24 @@ extension Curve2D {
     /// - Parameters:
     ///   - centerX: centre X.
     ///   - centerY: centre Y.
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
-    ///     `majorRadius`; equal radii are a circle and are valid.
+    ///   - majorRadius: semi-major axis.
+    ///
+    ///   Must be greater than zero.
+    ///   - minorRadius: semi-minor axis.
+    ///
+    ///   Must be greater than zero and no larger than.
+    ///     majorRadius; equal radii are a circle and are valid.
     ///   - u1: start angle, in radians.
     ///   - u2: end angle, in radians.
-    /// - Returns: the converted curve, or `nil` if the ellipse is degenerate.
+    /// - Returns: the converted curve, or nil if the ellipse is degenerate.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let c = Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
     ///                                   majorRadius: 20, minorRadius: 10,
     ///                                   u1: 0, u2: .pi) {
-    ///     print(c.degree)
-    /// }
-    /// ```
+    ///     print(c.degree).
+    /// }.
+    /// ```.
     public static func fromEllipseArc(
         centerX: Double, centerY: Double,
         majorRadius: Double, minorRadius: Double,
@@ -3750,20 +3878,24 @@ extension Curve2D {
     /// - Parameters:
     ///   - centerX: centre X.
     ///   - centerY: centre Y.
-    ///   - majorRadius: major radius. Must be greater than zero.
-    ///   - minorRadius: minor radius. Must be greater than zero. A hyperbola puts no ordering on
+    ///   - majorRadius: major radius.
+    ///
+    ///   Must be greater than zero.
+    ///   - minorRadius: minor radius.
+    ///
+    ///   Must be greater than zero. A hyperbola puts no ordering on.
     ///     its radii, so a minor radius larger than the major is an ordinary hyperbola.
     ///   - u1: start parameter on the hyperbola.
     ///   - u2: end parameter on the hyperbola.
-    /// - Returns: the converted curve, or `nil` if the hyperbola is degenerate.
+    /// - Returns: the converted curve, or nil if the hyperbola is degenerate.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let c = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
     ///                                     majorRadius: 10, minorRadius: 5,
     ///                                     u1: -1, u2: 1) {
-    ///     print(c.degree)
-    /// }
-    /// ```
+    ///     print(c.degree).
+    /// }.
+    /// ```.
     public static func fromHyperbolaArc(
         centerX: Double, centerY: Double,
         majorRadius: Double, minorRadius: Double,
@@ -3781,17 +3913,19 @@ extension Curve2D {
     /// - Parameters:
     ///   - centerX: apex X.
     ///   - centerY: apex Y.
-    ///   - focal: focal length. Must be greater than zero: OCCT converts a focal length of zero
+    ///   - focal: focal length.
+    ///
+    ///   Must be greater than zero: OCCT converts a focal length of zero
     ///     without complaint, into a curve whose poles are all NaN.
     ///   - u1: start parameter on the parabola.
     ///   - u2: end parameter on the parabola.
-    /// - Returns: the converted curve, or `nil` if the parabola is degenerate.
+    /// - Returns: the converted curve, or nil if the parabola is degenerate.
     ///
-    /// ```swift
+    /// ```swift.
     /// if let c = Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 5, u1: -2, u2: 2) {
-    ///     print(c.degree)
-    /// }
-    /// ```
+    ///     print(c.degree).
+    /// }.
+    /// ```.
     public static func fromParabolaArc(
         centerX: Double, centerY: Double, focal: Double,
         u1: Double, u2: Double
@@ -3972,12 +4106,14 @@ extension Curve2D {
 }
 
 extension Curve2D {
-    /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
+    /// Measured global continuity of the 2D curve, as a raw GeomAbs_Shape ordinal.
     ///
-    /// The ordinals are `GeomAbs_Shape`'s own declared order (`0=C0, 1=G1, 2=C1, 3=G2,
-    /// 4=C2, 5=C3, 6=CN`), not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    /// The ordinals are the GeomAbs_Shape\'s own declared order (`0=C0, 1=G1, 2=C1, 3=G2,.
+    /// 4=C2, 5=C3, 6=CN`), not a 0/1/2 order.
     ///
-    /// - Warning: The migration target for the retired `continuityOrder`, but not a drop-in one;
+    /// Prefer `continuityClass`, which names them.
+    ///
+    /// - Warning: The migration target for the retired continuityOrder, but not a drop-in one;
     ///   see ``Curve3D/continuity`` for the constants that shift (#619).
     public var continuity: Int {
         Int(OCCTCurve2DGetContinuity(handle))
@@ -3985,10 +4121,10 @@ extension Curve2D {
 
     /// Measured global continuity of the 2D curve.
     ///
-    /// ```swift
+    /// ```swift.
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
-    /// print(segment?.continuityClass)   // .cN
-    /// ```
+    /// print(segment?.continuityClass)   // .cN.
+    /// ```.
     public var continuityClass: ContinuityClass {
         ContinuityClass(rawValue: OCCTCurve2DGetContinuity(handle)) ?? .c0
     }
@@ -4219,23 +4355,26 @@ extension Curve2D {
 
 extension Curve2D {
 
-    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// Unavailable: this Int reported a hand-invented encoding, and the numbers changed
     /// underneath it.
     ///
-    /// Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    /// Use `continuityClass` (named cases) or `continuity` (raw ordinal).
     ///
     /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
-    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
-    /// `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold
+    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real.
+    ///
+    /// GeomAbs_Shape ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold.
     /// check kept compiling and quietly changed meaning (#619).
     ///
-    /// ```swift
-    /// // Before: `2` was C2. After: `2` is C1.
-    /// if pcurve.continuityOrder >= 2 { treatAsC2() }
+    /// ```swift.
+    /// // Before: 2 was C2.
+    ///
+    /// After: 2 is C1.
+    /// if pcurve.continuityOrder >= 2 { treatAsC2() }.
     ///
     /// // Ask it so it cannot drift again:
-    /// if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
-    /// ```
+    /// if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }.
+    /// ```.
     @available(
         *, unavailable,
         message: """

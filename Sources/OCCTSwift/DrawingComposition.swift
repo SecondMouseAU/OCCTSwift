@@ -26,23 +26,25 @@ public struct TransformedDrawing: @unchecked Sendable {
 }
 
 extension Drawing {
-    /// Return a `TransformedDrawing` wrapping this drawing with a uniform scale
+    /// Return a TransformedDrawing wrapping this drawing with a uniform scale.
     /// and 2D translate.
     ///
     /// Composition pattern:
     ///
-    /// ```swift
-    /// for (view, placement) in layout {
+    /// ```swift.
+    /// for (view, placement) in layout {.
     ///     writer.collectFromDrawing(view.transformed(translate: placement.offset,
     ///                                                 scale: placement.scale))
-    /// }
-    /// ```
+    /// }.
+    /// ```.
     public func transformed(translate: SIMD2<Double>, scale: Double = 1.0) -> TransformedDrawing {
         TransformedDrawing(source: self, translate: translate, scale: scale)
     }
 
-    /// 2D axis-aligned bounding box of the drawing's visible / hidden / outline
-    /// edges, optionally including annotation extents. Returns nil if the
+    /// 2D axis-aligned bounding box of the drawing's visible / hidden / outline.
+    /// edges, optionally including annotation extents.
+    ///
+    /// Returns nil if the.
     /// drawing contains no geometry.
     public func bounds(
         deflection: Double = 0.1,

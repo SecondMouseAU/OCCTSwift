@@ -4,43 +4,43 @@ import simd
 
 /// Result of wire edge ordering analysis using ShapeAnalysis_WireOrder.
 ///
-/// Analyzes a set of edges (defined by their endpoints) and determines
+/// Analyzes a set of edges (defined by their endpoints) and determines.
 /// the order in which they should be connected to form continuous chains.
 ///
-/// ```swift
-/// let edges = [
+/// ```swift.
+/// let edges = [.
 ///     (start: SIMD3(0,0,0), end: SIMD3(10,0,0)),
 ///     (start: SIMD3(10,10,0), end: SIMD3(0,10,0)),
 ///     (start: SIMD3(0,10,0), end: SIMD3(0,0,0)),
 ///     (start: SIMD3(10,0,0), end: SIMD3(10,10,0)),
-/// ]
+/// ].
 /// let result = WireOrder.analyze(edges: edges)
-/// // result.orderedIndices gives the correct ordering
-/// ```
+/// // result.orderedIndices gives the correct ordering.
+/// ```.
 public struct WireOrder: Sendable {
-    /// Status of the wire ordering analysis
+    /// Status of the wire ordering analysis.
     public enum Status: Sendable {
-        /// Edges form a closed loop
+        /// Edges form a closed loop.
         case closed
-        /// Edges form an open chain
+        /// Edges form an open chain.
         case open
-        /// Edges have gaps (not fully connected)
+        /// Edges have gaps (not fully connected).
         case gaps
-        /// Analysis failed
+        /// Analysis failed.
         case failed
     }
 
-    /// An entry in the ordered edge sequence
+    /// An entry in the ordered edge sequence.
     public struct OrderedEdge: Sendable {
-        /// Original edge index (0-based)
+        /// Original edge index (0-based).
         public let originalIndex: Int
-        /// Whether the edge should be reversed in the chain
+        /// Whether the edge should be reversed in the chain.
         public let isReversed: Bool
     }
 
-    /// Status of the ordering analysis
+    /// Status of the ordering analysis.
     public let status: Status
-    /// Ordered sequence of edges
+    /// Ordered sequence of edges.
     public let orderedEdges: [OrderedEdge]
 
     /// Analyze the ordering of edges defined by their start/end 3D points.
@@ -94,9 +94,12 @@ public struct WireOrder: Sendable {
         return decode(result, outOrder: outOrder)
     }
 
-    /// Decode a bridge `OCCTWireOrderResult` and its populated `outOrder` entries into a
-    /// `WireOrder`. Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
-    /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in
+    /// Decode a bridge OCCTWireOrderResult and its populated outOrder entries into a.
+    ///
+    /// WireOrder.
+    ///
+    /// Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
+    /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in.
     /// how the result is interpreted.
     private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry])
         -> WireOrder?

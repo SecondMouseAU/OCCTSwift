@@ -49,7 +49,7 @@ extension Shape {
 
     /// Project a Wire onto another shape along a direction (cylindrical projection).
     ///
-    /// Convenience overload accepting a `Wire` directly.
+    /// Convenience overload accepting a Wire directly.
     public static func projectWire(
         _ wire: Wire, onto target: Shape,
         direction: SIMD3<Double>
@@ -59,7 +59,7 @@ extension Shape {
     }
     /// Project a wire/edge shape onto another shape from a point (conical projection).
     ///
-    /// Unlike cylindrical projection (parallel rays), conical projection fans out
+    /// Unlike cylindrical projection (parallel rays), conical projection fans out.
     /// from a point source, like a spotlight or perspective camera.
     ///
     /// - Parameters:
@@ -81,7 +81,7 @@ extension Shape {
 
     /// Project a Wire onto another shape from a point (conical projection).
     ///
-    /// Convenience overload accepting a `Wire` directly.
+    /// Convenience overload accepting a Wire directly.
     public static func projectWireConical(
         _ wire: Wire, onto target: Shape,
         eye: SIMD3<Double>

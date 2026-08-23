@@ -4,8 +4,8 @@ import simd
 
 /// Builder for Boolean cell operations on shapes.
 ///
-/// Partitions input shapes into cells (volumetric fragments), then lets you
-/// select which cells to include in the result by material ID, and optionally
+/// Partitions input shapes into cells (volumetric fragments), then lets you.
+/// select which cells to include in the result by material ID, and optionally.
 /// merge cells that share the same material.
 public final class CellsBuilder: @unchecked Sendable {
     internal let handle: OCCTCellsBuilderRef

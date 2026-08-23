@@ -2,42 +2,56 @@ import Foundation
 
 /// Sheet-metal composition API.
 ///
-/// Builds bent sheet-metal parts by extruding planar flanges along their sheet
-/// normal, fusing them, then filleting the shared seam edges with the bend
-/// radius. Each flange is a 2D profile in its own `(u, v)` plane; `Bend`
+/// Builds bent sheet-metal parts by extruding planar flanges along their sheet.
+/// normal, fusing them, then filleting the shared seam edges with the bend.
+/// radius.
+///
+/// Each flange is a 2D profile in its own `(u, v)` plane; Bend.
 /// declares which pair of flanges meet and the inside radius of their bend.
 ///
-/// OCCT has no sheet-metal bend primitive, `BRepFeat_Fold` and friends do not
-/// exist. This namespace is the canonical composition of `Shape.extrude`,
-/// `Shape.union`, and `Shape.filleted` that downstream consumers can drive
+/// OCCT has no sheet-metal bend primitive, BRepFeat_Fold and friends do not.
+/// exist.
+///
+/// This namespace is the canonical composition of `Shape.extrude`,.
+/// `Shape.union`, and `Shape.filleted` that downstream consumers can drive.
 /// from a declarative description (see issue #85).
 ///
-/// The reverse direction, unwrapping a bent sheet-metal solid to a flat
-/// cutting pattern, is intended to live in this namespace as well; it is not
+/// The reverse direction, unwrapping a bent sheet-metal solid to a flat.
+/// cutting pattern, is intended to live in this namespace as well; it is not.
 /// yet implemented.
 ///
-/// ## Limitations
+/// ## Limitations.
 ///
-/// - **Bends apply a single radius to the seam edge as-is**, which in OCCT's
-///   classification is the *outside* corner of an L-bracket (the outer
-///   surface of the fold). The inner corner stays sharp. Real sheet-metal
-///   parts want inner radius `r` and outer radius `r + thickness`; modeling
+/// - **Bends apply a single radius to the seam edge as-is**, which in OCCT's.
+///   classification is the *outside* corner of an L-bracket (the outer.
+///   surface of the fold).
+///
+///   The inner corner stays sharp.
+///
+///   Real sheet-metal.
+///   parts want inner radius r and outer radius `r + thickness`; modeling.
 ///   that requires a different construction and is not yet implemented.
-/// - **Stepped seams (v0.151 limitation, lifted in v0.153)**, flanges
-///   meeting along less than their full seam-direction extent (e.g. a narrow
-///   upright on a wider base) now build cleanly. The builder splits the
-///   wider flange at the seam-intersection endpoints before extruding;
-///   the matched-extent middle piece carries the bend, and the outer
-///   pieces stay flat. Issue #86.
+/// - **Stepped seams (v0.151 limitation, lifted in v0.153)**, flanges.
+///   meeting along less than their full seam-direction extent (e.g. a narrow.
+///   upright on a wider base) now build cleanly.
+///
+///   The builder splits the.
+///   wider flange at the seam-intersection endpoints before extruding;.
+///   the matched-extent middle piece carries the bend, and the outer.
+///   pieces stay flat.
+///
+///   Issue #86.
 public enum SheetMetal {
 
     /// A single sheet-metal flange: a closed 2D profile positioned in world
-    /// space via `(origin, uAxis, vAxis)`, extruded along `normal` by the
-    /// builder's `thickness`.
+    /// space via `(origin, uAxis, vAxis)`, extruded along normal by the.
+    /// builder's thickness.
     ///
-    /// `uAxis` and `vAxis` need not be derivable from `normal`, explicit
-    /// control of all three axes lets you position a flange in any world
-    /// orientation without handedness surprises. If `vAxis` is omitted, it is
+    /// uAxis and vAxis need not be derivable from normal, explicit.
+    /// control of all three axes lets you position a flange in any world.
+    /// orientation without handedness surprises.
+    ///
+    /// If vAxis is omitted, it is.
     /// derived as `cross(normal, uAxis)`.
     public struct Flange: Sendable {
         public let id: String
@@ -47,11 +61,14 @@ public enum SheetMetal {
         public let vAxis: SIMD3<Double>
         public let normal: SIMD3<Double>
 
-        /// Lifting frame for `profile`, shared with `Sketch` and `FeatureReconstructor` (#972).
+        /// Lifting frame for profile, shared with Sketch and FeatureReconstructor (#972).
         ///
-        /// Deliberately not `public`. `Placement` documents an *orthonormal* basis, and this one
-        /// is not: `Flange` lets a caller supply any `uAxis`/`vAxis` (see the type's own doc
-        /// comment), and `lift` has to keep scaling by them to match the `worldPoint` it replaced.
+        /// Deliberately not public.
+        ///
+        /// Placement documents an *orthonormal* basis, and this one.
+        /// is not: Flange lets a caller supply any uAxis/vAxis (see the type's own doc
+        /// comment), and lift has to keep scaling by them to match the worldPoint it replaced.
+        ///
         /// Publishing it would hand callers a frame they are entitled to treat as unit.
         let placement: Placement
 
@@ -80,12 +97,18 @@ public enum SheetMetal {
     /// - `.concave`: the metal folds toward itself (interior dihedral < 180°).
     ///   Example: an L-bracket bend where the two flanges face each other.
     /// - `.convex`: the metal folds back on the opposite side (interior dihedral
-    ///   > 180°, reflex angle). Example: a Z-section's middle bend, where the
+    ///   > 180°, reflex angle).
+    ///
+    ///   Example: a Z-section's middle bend, where the
     ///   third flange folds away from the first.
-    /// - `.auto`: inferred from flange-body positions. The Builder uses
-    ///   `concave` if the two flanges' body centroids sit on positions that
-    ///   make the bend natural (b's centroid is on a's `+normal` side); else
-    ///   `convex`. Almost every input matches the inference; explicitly
+    /// - `.auto`: inferred from flange-body positions.
+    ///
+    /// The Builder uses.
+    ///   concave if the two flanges' body centroids sit on positions that.
+    ///   make the bend natural (b's centroid is on a's `+normal` side); else.
+    ///   convex.
+    ///
+    ///   Almost every input matches the inference; explicitly.
     ///   specify only when the geometry is symmetric or you want to override.
     public enum BendDirection: Sendable, Equatable {
         case auto
@@ -93,26 +116,30 @@ public enum SheetMetal {
         case convex
     }
 
-    /// A bend between two flanges, with full control over inside/outside
-    /// radii, material thickness through the bend region, and a direction
+    /// A bend between two flanges, with full control over inside/outside.
+    /// radii, material thickness through the bend region, and a direction.
     /// override.
     ///
     /// Sign conventions follow OCCT's right-hand rule:
     /// - `angle == 0` → flat continuation (metal extends straight, no bend).
     /// - `|angle| == π` → fully closed sheet (folded back on itself).
-    /// - Sign of `angle`: positive for concave bends (L-shape from outside);
-    ///   negative for convex bends (Z's back corner). `nil` means "infer
+    /// - Sign of angle: positive for concave bends (L-shape from outside);
+    ///   negative for convex bends (Z's back corner). nil means "infer.
     ///   from the flange placements".
     ///
-    /// `insideRadius` and `outsideRadius` are independent. The default
-    /// "both sides radiused" sheet-metal bend has
-    /// `outsideRadius == insideRadius + materialThicknessAtBend`. For an
-    /// extruded-angle profile (sharp inside, rounded outside, common in
-    /// turned-edge or stamped parts) set `insideRadius = 0` and
-    /// `outsideRadius` to the desired outer radius.
+    /// insideRadius and outsideRadius are independent.
     ///
-    /// `materialThicknessAtBend` allows the metal in the bend region to be
-    /// thinner than the flange thickness, common in etched parts, where a
+    /// The default.
+    /// "both sides radiused" sheet-metal bend has.
+    /// `outsideRadius == insideRadius + materialThicknessAtBend`.
+    ///
+    /// For an.
+    /// extruded-angle profile (sharp inside, rounded outside, common in.
+    /// turned-edge or stamped parts) set `insideRadius = 0` and.
+    /// outsideRadius to the desired outer radius.
+    ///
+    /// materialThicknessAtBend allows the metal in the bend region to be.
+    /// thinner than the flange thickness, common in etched parts, where a.
     /// thinned bend line allows tighter folds without cracking.
     public struct Bend: Sendable {
         public let fromFlangeID: String
@@ -120,35 +147,41 @@ public enum SheetMetal {
 
         /// Bend angle in radians.
         ///
-        /// 0 = flat continuation, ±π = closed sheet. Positive = concave; negative = convex. `nil` = infer from
+        /// 0 = flat continuation, ±π = closed sheet.
+        ///
+        /// Positive = concave; negative = convex. nil = infer from.
         /// flange placements.
         public let angle: Double?
 
-        /// Inside bend radius (the smaller, concave radius from inside the
+        /// Inside bend radius (the smaller, concave radius from inside the.
         /// metal).
         ///
         /// Set to 0 for a sharp inside corner.
         public let insideRadius: Double
 
-        /// Outside bend radius (the larger, convex radius from outside the
+        /// Outside bend radius (the larger, convex radius from outside the.
         /// metal).
         ///
-        /// `nil` means use the natural sheet-metal default `insideRadius + materialThicknessAtBend`.
+        /// nil means use the natural sheet-metal default `insideRadius + materialThicknessAtBend`.
         public let outsideRadius: Double?
 
         /// Material thickness through the bend region.
         ///
-        /// `nil` means use the Builder's global `thickness`. For etched parts, set to a
+        /// nil means use the Builder's global thickness.
+        ///
+        /// For etched parts, set to a.
         /// fraction of the flange thickness.
         public let materialThicknessAtBend: Double?
 
         /// Explicit direction override; defaults to `.auto`.
         public let direction: BendDirection
 
-        /// Backward-compatible init from v0.151+: `radius` becomes the
+        /// Backward-compatible init from v0.151+: radius becomes the
         /// inside bend radius.
         ///
-        /// Outside radius defaults to `radius + thickness` (the sheet-metal-physics default). Direction is inferred.
+        /// Outside radius defaults to `radius + thickness` (the sheet-metal-physics default).
+        ///
+        /// Direction is inferred.
         public init(from fromID: String, to toID: String, radius: Double) {
             self.fromFlangeID = fromID
             self.toFlangeID = toID
@@ -178,11 +211,15 @@ public enum SheetMetal {
             self.direction = direction
         }
 
-        /// Legacy alias, the `radius` you'd have passed to the
+        /// Legacy alias, the radius you'd have passed to the.
         /// pre-v0.155 init.
         ///
-        /// Equal to `insideRadius`. Deprecated callers retain access without a migration. New callers should use the
-        /// explicit `insideRadius`/`outsideRadius` fields.
+        /// Equal to insideRadius.
+        ///
+        /// Deprecated callers retain access without a migration.
+        ///
+        /// New callers should use the.
+        /// explicit insideRadius/outsideRadius fields.
         public var radius: Double { insideRadius }
     }
 
@@ -233,7 +270,7 @@ public enum SheetMetal {
         }
     }
 
-    /// Composes a list of flanges and bends into a single bent `Shape`.
+    /// Composes a list of flanges and bends into a single bent Shape.
     public struct Builder: Sendable {
         public let thickness: Double
 
@@ -243,21 +280,35 @@ public enum SheetMetal {
 
         /// Build the bent sheet-metal part.
         ///
-        /// 1. Validate inputs.
-        /// 2. For each bend, compute the seam intersection along the seam
-        ///    direction. If a flange's seam edge extends beyond the
-        ///    intersection (a *stepped* seam, one flange wider than the
-        ///    other along the seam), split that flange's profile at the
-        ///    intersection endpoints, producing a matched-extent middle
+        /// 1.
+        ///
+        /// Validate inputs.
+        /// 2.
+        ///
+        /// For each bend, compute the seam intersection along the seam.
+        ///    direction.
+        ///
+        ///    If a flange's seam edge extends beyond the.
+        ///    intersection (a *stepped* seam, one flange wider than the.
+        ///    other along the seam), split that flange's profile at the.
+        ///    intersection endpoints, producing a matched-extent middle.
         ///    piece + flat extensions.
-        /// 3. Extrude each piece along its normal by `thickness`.
-        /// 4. Fuse all pieces.
-        /// 5. For each bend, locate the seam edge(s) between the
-        ///    matched-extent pieces of the two flanges and apply a fillet
+        /// 3.
+        ///
+        /// Extrude each piece along its normal by thickness.
+        /// 4.
+        ///
+        /// Fuse all pieces.
+        /// 5.
+        ///
+        /// For each bend, locate the seam edge(s) between the.
+        ///    matched-extent pieces of the two flanges and apply a fillet.
         ///    of the given radius.
         ///
-        /// For matched-extent flanges, the result is identical to v0.151's
-        /// behaviour. For stepped flanges, where v0.151 threw
+        /// For matched-extent flanges, the result is identical to v0.151's.
+        /// behaviour.
+        ///
+        /// For stepped flanges, where v0.151 threw.
         /// `BuildError.filletFailed`, v0.153 produces a clean bent solid.
         public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape {
             guard thickness > 0 else { throw BuildError.invalidThickness(thickness) }
@@ -419,7 +470,9 @@ public enum SheetMetal {
 
         /// Resolve the bend direction.
         ///
-        /// If the user pinned a direction explicitly, honour it. Otherwise infer from flange-body
+        /// If the user pinned a direction explicitly, honour it.
+        ///
+        /// Otherwise infer from flange-body.
         /// positions: a bend is concave when b's body centroid sits on a's `+normal` side (the two flanges' bodies overlap in volume
         /// around the seam, like an L-bracket); convex otherwise.
         fileprivate static func resolvedDirection(
@@ -440,35 +493,43 @@ public enum SheetMetal {
 
         /// Build a curved-triangle bend-material prism for a convex bend.
         ///
-        /// In a convex bend (e.g. a Z-section's middle bend), the two
-        /// flange bodies touch at a single line, the "kiss line", but
-        /// don't overlap in volume. Filleting that line directly is
-        /// non-manifold (four boundary faces meet at the seam). Instead
-        /// we add a curved-triangle prism that bridges the two flanges'
+        /// In a convex bend (e.g. a Z-section's middle bend), the two.
+        /// flange bodies touch at a single line, the "kiss line", but.
+        /// don't overlap in volume.
+        ///
+        /// Filleting that line directly is.
+        /// non-manifold (four boundary faces meet at the seam).
+        ///
+        /// Instead.
+        /// we add a curved-triangle prism that bridges the two flanges'.
         /// outer-corner edges with a cylindrical fillet on the outside.
         ///
         /// Cross-section in the plane perpendicular to the seam:
-        ///   • Vertex K, the kiss point (where the two flange profile
+        ///   • Vertex K, the kiss point (where the two flange profile.
         ///     edges meet in 3D).
-        ///   • Vertex A, flange a's outer-corner at the seam end. K
-        ///     translated by `a.normal · thickness` along a's body
+        ///   • Vertex A, flange a's outer-corner at the seam end. K.
+        ///     translated by `a.normal · thickness` along a's body.
         ///     extrusion direction.
         ///   • Vertex C, flange b's outer-corner at the seam end.
         ///   • Edges: K→A (line, lying on a's seam-end face), K→C (line,
-        ///     lying on b's seam-end face), C→A (arc of radius |KA|,
-        ///     centred at K, curving through the open quadrant, the
+        ///     lying on b's seam-end face), C→A (arc of radius |KA|,.
+        ///     centred at K, curving through the open quadrant, the.
         ///     "outside" of the bend).
         ///
-        /// The natural arc radius is the distance from the kiss point to
-        /// each flange's outer corner, which equals the flange thickness
-        /// for sheet metal of uniform thickness. This is the radius of
-        /// the rounded outside surface of the bend. The "inside" of the
-        /// bend (at the kiss point) stays sharp, for a fully-rounded
-        /// inside, the caller would need flange placements that leave
-        /// room for the inside cylinder, which is a CAD-design choice
+        /// The natural arc radius is the distance from the kiss point to.
+        /// each flange's outer corner, which equals the flange thickness.
+        /// for sheet metal of uniform thickness.
+        ///
+        /// This is the radius of.
+        /// the rounded outside surface of the bend.
+        ///
+        /// The "inside" of the.
+        /// bend (at the kiss point) stays sharp, for a fully-rounded.
+        /// inside, the caller would need flange placements that leave.
+        /// room for the inside cylinder, which is a CAD-design choice.
         /// rather than a shortcoming of this builder.
         ///
-        /// Returns nil if the geometry can't be constructed (e.g. flange
+        /// Returns nil if the geometry can't be constructed (e.g. flange.
         /// thicknesses differ or the kiss point can't be located).
         fileprivate static func buildConvexBendMaterial(
             bend: Bend,
@@ -561,8 +622,9 @@ public enum SheetMetal {
             return face.extruded(by: extrudeVec)
         }
 
-        /// Build a 3-point arc wire (start → mid → end) using OCCT's
-        /// `GC_MakeArcOfCircle`.
+        /// Build a 3-point arc wire (start → mid → end) using OCCT's.
+        ///
+        /// GC_MakeArcOfCircle.
         ///
         /// The midpoint determines the arc's curvature direction.
         fileprivate static func arcWireThroughThreePoints(
@@ -573,15 +635,17 @@ public enum SheetMetal {
             return Wire.arc(start: start, midpoint: mid, end: end)
         }
 
-        /// Find the seam segment for flange `a` opposite flange `b`.
+        /// Find the seam segment for flange a opposite flange b.
         ///
         /// Returns the two endpoints of the kiss line in 3D.
         ///
-        /// Walks `a`'s profile end-edge (the edge of the profile that
-        /// lies on the seam line, identified by edges parallel to
-        /// `seamUnit`). For a rectangular profile there are typically
-        /// two candidate edges (one at u=0, one at u=max); we pick the
-        /// one closest to flange `b`'s body.
+        /// Walks the a\'s profile end-edge (the edge of the profile that.
+        /// lies on the seam line, identified by edges parallel to.
+        /// seamUnit).
+        ///
+        /// For a rectangular profile there are typically.
+        /// two candidate edges (one at u=0, one at u=max); we pick the.
+        /// one closest to flange the b\'s body.
         fileprivate static func seamSegment(
             of a: Flange,
             seamUnit: SIMD3<Double>,
@@ -617,15 +681,19 @@ public enum SheetMetal {
 
         /// Find the seam edge(s) between two flanges in the fused shape.
         ///
-        /// The bend sits at the intersection of two specific faces, each
-        /// flange's face pointing *toward* the other. Every other edge where
-        /// the two flange planes cross (the convex back corner of an L, for
-        /// instance) lies on the opposite pair of faces, so the toward-plane
+        /// The bend sits at the intersection of two specific faces, each.
+        /// flange's face pointing *toward* the other.
+        ///
+        /// Every other edge where.
+        /// the two flange planes cross (the convex back corner of an L, for.
+        /// instance) lies on the opposite pair of faces, so the toward-plane.
         /// test uniquely selects the bend.
         ///
         /// Note: OCCT classifies an L-bracket's bend edge as CONVEX (looking
-        /// from outside the solid, you turn outward around it). We do not use
-        /// `edgeConcavities`, it splits along-bend behavior by orientation
+        /// from outside the solid, you turn outward around it).
+        ///
+        /// We do not use.
+        /// edgeConcavities, it splits along-bend behavior by orientation.
         /// and does not help discriminate here.
         private static func findSeamEdges(
             in shape: Shape,
@@ -671,23 +739,23 @@ public enum SheetMetal {
         // MARK: - Step-aware bend support (#86, v0.153)
 
         /// Geometry of a single bend: which flanges, the seam direction in
-        /// 3D, and each flange's seam-edge extent in its own profile axis
-        /// that's parallel to `seamUnit`.
+        /// 3D, and each flange's seam-edge extent in its own profile axis.
+        /// that's parallel to seamUnit.
         fileprivate struct BendIntersection {
             let bend: Bend
             let fromFlangeID: String
             let toFlangeID: String
             let radius: Double
             let seamUnit: SIMD3<Double>
-            /// `true` if the seam direction in flange A's profile aligns
-            /// with `uAxis`; `false` if it aligns with `vAxis`.
+            /// true if the seam direction in flange A's profile aligns.
+            /// with uAxis; false if it aligns with vAxis.
             let aSeamAlongU: Bool
             let bSeamAlongU: Bool
             /// A's seam-edge profile-coord range along its split axis.
             let aRange: ClosedRange<Double>
             let bRange: ClosedRange<Double>
-            /// Intersection range along the seam line, in A's split-axis
-            /// profile coords (since seam direction = A's uAxis or vAxis,
+            /// Intersection range along the seam line, in A's split-axis.
+            /// profile coords (since seam direction = A's uAxis or vAxis,.
             /// the intersection projects directly onto that axis).
             let aIntersection: ClosedRange<Double>
             let bIntersection: ClosedRange<Double>
@@ -695,15 +763,15 @@ public enum SheetMetal {
 
         fileprivate struct SplitResult {
             let pieces: [Flange]
-            /// For each bend index that touches this flange, which piece id
+            /// For each bend index that touches this flange, which piece id.
             /// is the matched-extent piece (carries the bend).
             let matchedByBend: [Int: String]
         }
 
-        /// Compute seam direction and intersection range between two
+        /// Compute seam direction and intersection range between two.
         /// rectangular flanges.
         ///
-        /// Falls back to "no split needed" when the seam direction doesn't align with either flange's u or v axis,
+        /// Falls back to "no split needed" when the seam direction doesn't align with either flange's u or v axis,.
         /// that case continues to use the v0.151 single-fillet path with no flange splitting.
         fileprivate static func intersect(bend: Bend, a: Flange, b: Flange) throws
             -> BendIntersection
@@ -777,21 +845,23 @@ public enum SheetMetal {
             return abs(abs(Vector3DMath.dot(an, bn)) - 1.0) < 1e-6
         }
 
-        /// Range of the rectangular profile along its u-axis (if `alongU`)
+        /// Range of the rectangular profile along its u-axis (if alongU).
         /// or v-axis (otherwise).
         ///
-        /// For a 4-vertex rectangle with axis-aligned edges, this is just `[min, max]` of the corresponding
+        /// For a 4-vertex rectangle with axis-aligned edges, this is just `[min, max]` of the corresponding.
         /// component.
         private static func profileRange(of f: Flange, alongU: Bool) -> ClosedRange<Double> {
             let coords: [Double] = alongU ? f.profile.map(\.x) : f.profile.map(\.y)
             return (coords.min() ?? 0)...(coords.max() ?? 0)
         }
 
-        /// For a flange, return the split coordinates along whichever axis
+        /// For a flange, return the split coordinates along whichever axis.
         /// the bends' seams are aligned with.
         ///
-        /// Splits are added at any bend's intersection endpoint that falls strictly inside the
-        /// flange's seam range. Sorted, deduplicated.
+        /// Splits are added at any bend's intersection endpoint that falls strictly inside the.
+        /// flange's seam range.
+        ///
+        /// Sorted, deduplicated.
         fileprivate static func collectSplitsFor(
             flange f: Flange,
             bendInfos: [BendIntersection]
@@ -820,8 +890,8 @@ public enum SheetMetal {
 
         fileprivate enum SplitAxis { case u, v }
 
-        /// Split a rectangular flange along the given splits and identify
-        /// which sub-piece carries each bend (the one spanning the bend's
+        /// Split a rectangular flange along the given splits and identify.
+        /// which sub-piece carries each bend (the one spanning the bend's.
         /// intersection range).
         fileprivate static func splitFlange(
             _ f: Flange,
@@ -898,8 +968,8 @@ public enum SheetMetal {
             return SplitResult(pieces: pieces, matchedByBend: matchedByBend)
         }
 
-        /// Find the piece whose u-or-v range contains the bend's
-        /// intersection range; mark it as the matched piece for `bendIdx`.
+        /// Find the piece whose u-or-v range contains the bend's.
+        /// intersection range; mark it as the matched piece for bendIdx.
         fileprivate static func recordMatched(
             for flangeID: String,
             asPieceID pieceID: String,

@@ -4,11 +4,15 @@ import simd
 
 /// A clipping plane that can be used to cut geometry during rendering.
 ///
-/// Wraps OCCT's `Graphic3d_ClipPlane`. The plane equation `Ax + By + Cz + D = 0`
+/// Wraps OCCT's Graphic3d_ClipPlane.
+///
+/// The plane equation `Ax + By + Cz + D = 0`.
 /// defines the half-space: points with `Ax + By + Cz + D > 0` are visible.
 ///
-/// For Metal rendering, the equation maps directly to `[[clip_distance]]` in the
-/// vertex shader. Apple Silicon supports up to 8 hardware-accelerated clip distances.
+/// For Metal rendering, the equation maps directly to `[[clip_distance]]` in the.
+/// vertex shader.
+///
+/// Apple Silicon supports up to 8 hardware-accelerated clip distances.
 public final class ClipPlane: @unchecked Sendable {
     internal let handle: OCCTClipPlaneRef
 
@@ -99,11 +103,19 @@ public final class ClipPlane: @unchecked Sendable {
 
     /// Whether capping (cross-section fill) is enabled.
     ///
-    /// When enabled, the clipped cross-section surface is rendered. In Metal,
+    /// When enabled, the clipped cross-section surface is rendered.
+    ///
+    /// In Metal,.
     /// this is implemented using the stencil buffer technique:
-    /// 1. Render back faces with stencil increment
-    /// 2. Render front faces with stencil decrement
-    /// 3. Fill where stencil != 0 with capping material
+    /// 1.
+    ///
+    /// Render back faces with stencil increment.
+    /// 2.
+    ///
+    /// Render front faces with stencil decrement.
+    /// 3.
+    ///
+    /// Fill where stencil != 0 with capping material.
     public var isCapping: Bool {
         get { OCCTClipPlaneIsCapping(handle) }
         set { OCCTClipPlaneSetCapping(handle, newValue) }
@@ -161,10 +173,12 @@ public final class ClipPlane: @unchecked Sendable {
 
     /// Chain another clip plane for logical AND clipping (conjunction).
     ///
-    /// When planes are chained, a point must satisfy ALL planes in the chain
-    /// to be considered visible. This creates complex clipping regions.
+    /// When planes are chained, a point must satisfy ALL planes in the chain.
+    /// to be considered visible.
     ///
-    /// - Parameter plane: The next plane in the chain, or `nil` to clear.
+    /// This creates complex clipping regions.
+    ///
+    /// - Parameter plane: The next plane in the chain, or nil to clear.
     public func chainNext(_ plane: ClipPlane?) {
         OCCTClipPlaneSetChainNext(handle, plane?.handle)
     }

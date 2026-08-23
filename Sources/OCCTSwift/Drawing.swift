@@ -4,52 +4,56 @@ import simd
 
 /// 2D projection of a 3D shape using Hidden Line Removal (HLR).
 ///
-/// Use `Drawing` to create technical drawings, 2D views, or DXF exports.
+/// Use Drawing to create technical drawings, 2D views, or DXF exports.
 ///
-/// ```swift
+/// ```swift.
 /// let box = Shape.box(width: 100, height: 50, depth: 30)
 /// let topView = Drawing.project(box, direction: SIMD3(0, 0, 1))
 /// let visibleEdges = topView.edges(ofType: .visible)
-/// ```
+/// ```.
 public final class Drawing: @unchecked Sendable {
 
     /// Projection type for creating 2D views.
     ///
-    /// `Hashable` (which refines `Equatable`), so this keys a dictionary or joins a set. It carries
+    /// Hashable (which refines Equatable), so this keys a dictionary or joins a set.
+    ///
+    /// It carries.
     /// no raw type, so there is no `.rawValue`: an enum cannot declare one alongside an associated
     /// value, and `.perspective` carries a focal distance (#1059).
     ///
     /// - Warning: `.perspective(focus: .nan)` is not equal to itself, so it breaks the set and
-    ///   dictionary contract the way any `Double`-keyed type does. ``Drawing/project(_:direction:type:)``
-    ///   refuses a focal distance that is not strictly positive, so such a case never becomes a
+    ///   dictionary contract the way any Double-keyed type does. ``Drawing/project(_:direction:type:)``
+    ///   refuses a focal distance that is not strictly positive, so such a case never becomes a.
     ///   drawing, but nothing stops one being used as a key.
     ///
-    /// ```swift
+    /// ```swift.
     /// let wanted: [Drawing.ProjectionType] = [.orthographic, .perspective(focus: 50)]
     /// var cache: [Drawing.ProjectionType: Drawing] = [:]
-    /// for type in wanted {
+    /// for type in wanted {.
     ///     if let d = Drawing.project(box, direction: SIMD3(0, 0, 1), type: type) {
-    ///         cache[type] = d
-    ///     }
-    /// }
-    /// ```
+    ///         cache[type] = d.
+    ///     }.
+    /// }.
+    /// ```.
     public enum ProjectionType: Sendable, Hashable {
         /// Orthographic projection (parallel lines).
         case orthographic
-        /// Perspective projection (converging lines) from an eye point at `focus * direction`,
-        /// measured from the **world origin** rather than from the shape. Must be positive, and
-        /// must exceed how far the shape reaches along the view direction from that same origin,
-        /// or the projection returns `nil` rather than a drawing of the geometry behind the eye.
+        /// Perspective projection (converging lines) from an eye point at `focus * direction`,.
+        /// measured from the **world origin** rather than from the shape.
+        ///
+        /// Must be positive, and.
+        /// must exceed how far the shape reaches along the view direction from that same origin,.
+        /// or the projection returns nil rather than a drawing of the geometry behind the eye.
         case perspective(focus: Double)
     }
 
     /// Type of edges in a 2D projection.
     public enum EdgeType: UInt32 {
-        /// Visible edges (not obscured by other geometry)
+        /// Visible edges (not obscured by other geometry).
         case visible = 0
-        /// Hidden edges (behind other geometry)
+        /// Hidden edges (behind other geometry).
         case hidden = 1
-        /// Outline/silhouette edges
+        /// Outline/silhouette edges.
         case outline = 2
     }
 
@@ -144,7 +148,7 @@ public final class Drawing: @unchecked Sendable {
     /// ISO 129-1 §9.3 ordinate dimensioning: a shared origin plus N features,
     /// each shown as an X and Y offset measured from the origin.
     ///
-    /// Features are supplied as tuples of `(position, optional custom label)`;
+    /// Features are supplied as tuples of `(position, optional custom label)`;.
     /// when the label is nil the writer auto-formats the offset value.
     @discardableResult
     public func addOrdinateDimensions(
@@ -206,7 +210,7 @@ public final class Drawing: @unchecked Sendable {
     }
 
     /// Assembly-drawing balloon callout: a numbered circle keyed to a
-    /// `BillOfMaterials` row, optionally with a leader line to the part.
+    /// BillOfMaterials row, optionally with a leader line to the part.
     @discardableResult
     public func addBalloon(
         itemNumber: Int,
@@ -226,11 +230,11 @@ public final class Drawing: @unchecked Sendable {
         return a
     }
 
-    /// ISO 128-40 cutting-plane line marking where a section was cut on the
+    /// ISO 128-40 cutting-plane line marking where a section was cut on the.
     /// parent view.
     ///
-    /// Projects the cutting plane's trace into this drawing's 2D frame and adds a
-    /// typed `.cuttingPlaneLine` annotation. `viewDirection` is the direction this
+    /// Projects the cutting plane's trace into this drawing's 2D frame and adds a.
+    /// typed `.cuttingPlaneLine` annotation. viewDirection is the direction this.
     /// parent drawing was projected along.
     @discardableResult
     public func addCuttingPlaneLine(
@@ -279,7 +283,7 @@ public final class Drawing: @unchecked Sendable {
 
     /// ISO 128-50 section-view hatching over a closed boundary polygon.
     ///
-    /// Angle defaults to 45° and spacing to 3 mm per ISO convention. `islands` are
+    /// Angle defaults to 45° and spacing to 3 mm per ISO convention. islands are.
     /// optional inner boundaries excluded from the fill.
     @discardableResult
     public func addHatch(
@@ -306,21 +310,24 @@ public final class Drawing: @unchecked Sendable {
 
     /// Append a pre-built annotation to this drawing.
     ///
-    /// Usually used to install the result of a static factory like
-    /// `DrawingAnnotation.surfaceFinish(...)` or
+    /// Usually used to install the result of a static factory like.
+    /// `DrawingAnnotation.surfaceFinish(...)` or.
     /// `DrawingAnnotation.featureControlFrame(...)`.
     ///
-    /// This dispatcher covers every `DrawingAnnotation` case (centreline,
-    /// centermark, textLabel, hatch, cuttingPlaneLine). When new cases are
-    /// added to the enum, the compiler will flag this method and consumers
+    /// This dispatcher covers every DrawingAnnotation case (centreline,.
+    /// centermark, textLabel, hatch, cuttingPlaneLine).
+    ///
+    /// When new cases are.
+    /// added to the enum, the compiler will flag this method and consumers.
     /// pick them up automatically, no per-case switch in consumer code.
     public func append(_ annotation: DrawingAnnotation) {
         annotationStore.appendAnnotation(annotation)
     }
 
-    /// Append a batch of pre-built annotations, typically the output of a
-    /// factory returning `[DrawingAnnotation]` (e.g. `.surfaceFinish(...)`,
-    /// `.featureControlFrame(...)`, `.datumFeature(...)`, `.breakLine(...)`,
+    /// Append a batch of pre-built annotations, typically the output of a.
+    ///
+    /// factory returning `[DrawingAnnotation]` (e.g. `.surfaceFinish(...)`,.
+    /// `.featureControlFrame(...)`, `.datumFeature(...)`, `.breakLine(...)`,.
     /// `.cosmeticThreadSideView(...)`).
     public func append(contentsOf annotations: [DrawingAnnotation]) {
         for annotation in annotations {
@@ -346,19 +353,19 @@ public final class Drawing: @unchecked Sendable {
 
     /// Create a 2D projection of a 3D shape.
     ///
-    /// ```swift
+    /// ```swift.
     /// let box = Shape.box(width: 100, height: 50, depth: 30)
     /// let flat = Drawing.project(box, direction: SIMD3(0, 0, 1))
     /// let near = Drawing.project(box, direction: SIMD3(0, 0, 1),
     ///                            type: .perspective(focus: 50))
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - shape: The 3D shape to project
     ///   - direction: View direction (the direction you're looking from)
     ///   - type: Projection type, carrying the focal distance in the perspective case
     /// - Returns: Drawing containing the projected edges, or nil if projection fails or the
-    ///   perspective focal distance is not positive
+    ///   perspective focal distance is not positive.
     public static func project(
         _ shape: Shape,
         direction: SIMD3<Double>,
@@ -413,16 +420,19 @@ public final class Drawing: @unchecked Sendable {
 
     /// Create a fast polygon-based 2D projection of a 3D shape.
     ///
-    /// Uses the triangulation mesh rather than exact geometry for significantly faster
-    /// HLR computation. The result is approximate but perfectly adequate for interactive
+    /// Uses the triangulation mesh rather than exact geometry for significantly faster.
+    ///
+    /// HLR computation.
+    ///
+    /// The result is approximate but perfectly adequate for interactive.
     /// previews and most technical drawing use cases.
     ///
-    /// Orthographic only. `HLRBRep_PolyAlgo` ignores a projector's perspective flag, so there is
+    /// Orthographic only. HLRBRep_PolyAlgo ignores a projector's perspective flag, so there is.
     /// no `type:` parameter here; use ``project(_:direction:type:)`` for a perspective view.
     ///
-    /// ```swift
+    /// ```swift.
     /// let preview = Drawing.projectFast(shape, direction: SIMD3(0, 0, 1), deflection: 0.1)
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - shape: The 3D shape to project

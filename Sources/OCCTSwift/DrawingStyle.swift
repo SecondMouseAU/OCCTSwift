@@ -2,9 +2,13 @@ import Foundation
 
 // MARK: - ISO drawing style conventions (#78 G1, v0.144)
 
-/// ISO 128-20 standard line widths (mm). Thin and thick are applied in a 1:2
-/// ratio per line type. Values are the ISO geometric series — each tier ~1.4×
-/// the previous — and are the only widths recognised by ISO-compliant readers.
+/// ISO 128-20 standard line widths (mm).
+///
+/// Thin and thick are applied in a 1:2
+/// ratio per line type.
+///
+/// Values are the ISO geometric series (each tier ~1.4×).
+/// the previous (and are the only widths recognised by ISO-compliant readers).
 public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
     case w013 = 0.13
     case w018 = 0.18
@@ -23,8 +27,10 @@ public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
 }
 
 extension DrawingLineStyle {
-    /// ISO 128-20 default width for each line style. Consumers can override
-    /// per-entity by setting `width` explicitly on the dimension/annotation.
+    /// ISO 128-20 default width for each line style.
+    ///
+    /// Consumers can override.
+    /// per-entity by setting width explicitly on the dimension/annotation.
     public var defaultWidth: DrawingLineWidth {
         switch self {
         case .solid: return .thin  // continuous thin (visible edges, extension lines)
@@ -35,14 +41,18 @@ extension DrawingLineStyle {
         }
     }
 
-    /// The bold counterpart (0.50 mm) for cutting-plane lines, section
-    /// identifiers, and the visible-edge thickening that ISO 128 recommends
+    /// The bold counterpart (0.50 mm) for cutting-plane lines, section.
+    /// identifiers, and the visible-edge thickening that ISO 128 recommends.
     /// for certain sheet sizes.
     public var boldWidth: DrawingLineWidth { .thick }
 }
 
-/// ISO 3098 text height series in mm. Picking the right height scales dimension
-/// text and title-block text to the sheet size. Each tier is ~1.4× the
+/// ISO 3098 text height series in mm.
+///
+/// Picking the right height scales dimension.
+/// text and title-block text to the sheet size.
+///
+/// Each tier is ~1.4× the.
 /// previous.
 public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
     case h25 = 2.5
@@ -70,8 +80,12 @@ public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
     }
 }
 
-/// ISO 128-21 arrow conventions. Filled closed is the ISO default; open 90°
-/// and open 30° are permitted variants. Arrow length is typically 3× the line
+/// ISO 128-21 arrow conventions.
+///
+/// Filled closed is the ISO default; open 90°.
+/// and open 30° are permitted variants.
+///
+/// Arrow length is typically 3× the line.
 /// width, and width is typically 1/3 of the length.
 public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
     case filledClosed  // solid triangle — ISO default
@@ -87,8 +101,10 @@ public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
 
 // MARK: - ISO 5455 standard scales
 
-/// ISO 5455 preferred drawing scales. The `ratio` is the ratio of drawing-unit
-/// to real-world-unit — `1/ratio` real units drawn as 1 drawing unit.
+/// ISO 5455 preferred drawing scales.
+///
+/// The ratio is the ratio of drawing-unit.
+/// to real-world-unit (`1/ratio` real units drawn as 1 drawing unit).
 ///
 /// Use `.reduction(2)` for 1:2, `.enlargement(5)` for 5:1.
 public enum DrawingScale: Sendable, Hashable {
@@ -97,7 +113,9 @@ public enum DrawingScale: Sendable, Hashable {
     case enlargement(Int)  // N:1
     case custom(Double)  // any ratio
 
-    /// Drawing-to-model scale factor. For 1:2 this is 0.5 (half size);
+    /// Drawing-to-model scale factor.
+    ///
+    /// For 1:2 this is 0.5 (half size);
     /// for 5:1 this is 5.0 (5× enlargement).
     public var factor: Double {
         switch self {

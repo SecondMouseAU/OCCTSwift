@@ -4,7 +4,7 @@ import simd
 
 /// A node in the medial axis graph.
 ///
-/// Each node represents a point on the medial axis with an associated
+/// Each node represents a point on the medial axis with an associated.
 /// inscribed circle radius (distance to the nearest boundary).
 public struct MedialAxisNode: Sendable {
     /// 1-based index of this node in the graph.
@@ -25,7 +25,7 @@ public struct MedialAxisNode: Sendable {
 
 /// An arc in the medial axis graph.
 ///
-/// Each arc represents a bisector curve connecting two nodes and
+/// Each arc represents a bisector curve connecting two nodes and.
 /// separating two boundary elements.
 public struct MedialAxisArc: Sendable {
     /// 1-based index of this arc in the graph.
@@ -49,44 +49,53 @@ public struct MedialAxisArc: Sendable {
 
 /// Medial axis (Voronoi skeleton) of a planar face.
 ///
-/// Computes the locus of centers of maximal inscribed circles within
-/// a 2D profile. The result is a graph of arcs (bisector curves) and
-/// nodes (arc endpoints), each annotated with the distance to the
+/// Computes the locus of centers of maximal inscribed circles within.
+/// a 2D profile.
+///
+/// The result is a graph of arcs (bisector curves) and.
+/// nodes (arc endpoints), each annotated with the distance to the.
 /// nearest boundary.
 ///
 /// Useful for:
-/// - Thin wall detection (`minThickness`)
-/// - Tool path generation (offset from skeleton)
-/// - Shape decomposition and feature recognition
+/// - Thin wall detection (minThickness).
+/// - Tool path generation (offset from skeleton).
+/// - Shape decomposition and feature recognition.
 ///
-/// The input shape must contain at least one planar face. The medial
+/// The input shape must contain at least one planar face.
+///
+/// The medial.
 /// axis is computed from the outer wire of the first face found.
 ///
-/// ```swift
-/// let rect = Shape.makeFace(
+/// ```swift.
+/// let rect = Shape.makeFace(.
 ///     wire: Shape.makePolygon([
-///         SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-///         SIMD3(10, 4, 0), SIMD3(0, 4, 0)
+///         SIMD3(0, 0, 0), SIMD3(10, 0, 0),.
+///
+///         SIMD3(10, 4, 0), SIMD3(0, 4, 0).
 ///     ], closed: true)!
-/// )!
+/// )!.
 /// if let ma = MedialAxis(of: rect) {
 ///     print("Arcs: \(ma.arcCount), Min thickness: \(ma.minThickness)")
-/// }
-/// ```
+/// }.
+/// ```.
 public final class MedialAxis: @unchecked Sendable {
     internal let handle: OCCTMedialAxisRef
 
     /// Compute the medial axis of a planar face.
     ///
     /// - Note: Only the **first** face found is used, and only its outer wire. A shape with
-    ///   several faces returns the same result as that first face on its own; the rest are
-    ///   ignored, not merged. Pass one face at a time to compute a medial axis per face.
+    ///   several faces returns the same result as that first face on its own; the rest are.
+    ///   ignored, not merged.
     ///
-    /// - Note: There is no tolerance. Neither `BRepMAT2d_Explorer::Perform` nor
-    ///   `BRepMAT2d_BisectingLocus::Compute` accepts one; `Compute`'s own knobs are the line index,
+    ///   Pass one face at a time to compute a medial axis per face.
+    ///
+    /// - Note: There is no tolerance.
+    ///
+    /// Neither `BRepMAT2d_Explorer::Perform` nor
+    ///   `BRepMAT2d_BisectingLocus::Compute` accepts one; the Compute\'s own knobs are the line index,
     ///   the side, the join type and the open-result flag, all fixed here at OCCT's defaults.
     ///
-    /// Fails, returning `nil`, if the computation fails or the shape has no faces.
+    /// Fails, returning nil, if the computation fails or the shape has no faces.
     ///
     /// - Parameter shape: A shape containing at least one face.
     public init?(of shape: Shape) {
@@ -167,6 +176,7 @@ public final class MedialAxis: @unchecked Sendable {
     /// Minimum inscribed circle radius across all nodes.
     ///
     /// This represents half of the minimum wall thickness of the shape.
+    ///
     /// Returns -1 if the computation fails.
     public var minThickness: Double {
         OCCTMedialAxisMinThickness(handle)
@@ -192,10 +202,12 @@ public final class MedialAxis: @unchecked Sendable {
     ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     ///
     ///     The name says capacity but the contract is a *request*: the bridge samples the arc's
-    ///     parameter range at exactly `maxPoints` evenly-spaced values rather than letting a
-    ///     deflection criterion pick the count, so it always returns exactly this many points
-    ///     (and nothing at all below 2). That is why an unservable count is rejected here rather
-    ///     than clamped the way the genuinely adaptive samplers clamp theirs, clamping this one
+    ///     parameter range at exactly maxPoints evenly-spaced values rather than letting a.
+    ///     deflection criterion pick the count, so it always returns exactly this many points.
+    ///     (and nothing at all below 2).
+    ///
+    ///     That is why an unservable count is rejected here rather.
+    ///     than clamped the way the genuinely adaptive samplers clamp theirs, clamping this one.
     ///     would hand back a different, coarser sampling than the caller asked for.
     /// - Returns: Array of 2D points along the arc, or empty on error.
     public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>] {
@@ -210,10 +222,14 @@ public final class MedialAxis: @unchecked Sendable {
     /// Sample points along all bisector arcs.
     ///
     /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2, the same
-    ///   fill-exactly request ``drawArc(at:maxPoints:)`` takes, not a capacity. The bound is on
+    ///   fill-exactly request ``drawArc(at:maxPoints:)`` takes, not a capacity.
+    ///
+    ///   The bound is on.
     ///   the **total**: `arcCount * maxPointsPerArc` must not exceed
-    ///   ``Sampling/maximumSampleCount``, else the result is empty (#558). Checking
-    ///   `maxPointsPerArc` on its own is not redundant, since a negative count on a graph with no
+    ///   ``Sampling/maximumSampleCount``, else the result is empty (#558).
+    ///
+    ///   Checking.
+    ///   maxPointsPerArc on its own is not redundant, since a negative count on a graph with no.
     ///   arcs multiplies to a plausible total.
     /// - Returns: Array of polylines, one per arc.
     public func drawAll(maxPointsPerArc: Int = 32) -> [[SIMD2<Double>]] {

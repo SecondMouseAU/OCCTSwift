@@ -14,25 +14,37 @@ import simd
 //   - Cross-section preview in a viewport
 
 extension Shape {
-    /// Slice this shape with a plane and return the contour as a 2D `Drawing`
+    /// Slice this shape with a plane and return the contour as a 2D Drawing.
     /// in the plane's own coordinate frame.
     ///
-    /// The plane's `u` axis (derived from `planeU` if supplied, otherwise
+    /// The plane's u axis (derived from planeU if supplied, otherwise.
     /// `perpendicularBasis(to:)`'s canonical perpendicular) becomes the
-    /// Drawing's X axis; its `v` axis (u × normal) becomes Y. Each 3D
-    /// contour point `p` is projected as `(u · (p − origin), v · (p − origin))`.
+    /// Drawing's X axis; its v axis (u × normal) becomes Y.
+    ///
+    /// Each 3D.
+    /// contour point p is projected as `(u · (p − origin), v · (p − origin))`.
     ///
     /// - Parameters:
     ///   - planeOrigin: Any point on the cutting plane, in world coordinates.
-    ///   - planeNormal: Plane normal. Will be normalised.
-    ///   - planeU: Explicit X axis for the resulting 2D frame. Must be
-    ///     perpendicular to `planeNormal`. When nil (default), the perpendicular
+    ///   - planeNormal: Plane normal.
+    ///
+    ///   Will be normalised.
+    ///   - planeU: Explicit X axis for the resulting 2D frame.
+    ///
+    ///   Must be.
+    ///     perpendicular to planeNormal.
+    ///
+    ///     When nil (default), the perpendicular.
     ///     is derived deterministically via `perpendicularBasis(to:)`.
     ///   - deflection: Tessellation tolerance for edge sampling. ISO-quality
     ///     section drawings typically use 0.01–0.1 mm.
-    /// - Returns: A `Drawing` whose `visibleEdges` contain the 2D contour
-    ///   polylines. Dimensions, centrelines, hatching etc. can be added via
-    ///   the normal `Drawing` API. Returns nil if the plane doesn't intersect
+    /// - Returns: A Drawing whose visibleEdges contain the 2D contour
+    ///   polylines.
+    ///
+    ///   Dimensions, centrelines, hatching etc. can be added via.
+    ///   the normal Drawing API.
+    ///
+    ///   Returns nil if the plane doesn't intersect.
     ///   the shape or projection fails.
     public func section2D(
         planeOrigin: SIMD3<Double>,
@@ -84,8 +96,8 @@ extension Shape {
         return drawing
     }
 
-    /// Derive a deterministic orthonormal basis (u, v) in the plane defined by
-    /// `normal` and the optional explicit `u` direction.
+    /// Derive a deterministic orthonormal basis (u, v) in the plane defined by.
+    /// normal and the optional explicit u direction.
     internal static func sectionPlaneBasis(
         normal: SIMD3<Double>,
         explicitU: SIMD3<Double>?
@@ -122,9 +134,9 @@ extension Shape {
     }
 }
 
-/// A section view spec, contour + optional hatch + optional label, bundled
-/// for convenient composition onto a sheet. `Shape.section2DView(...)` wraps
-/// `section2D` with automatic hatching and an "A-A" label, matching ISO 128-40.
+/// A section view spec, contour + optional hatch + optional label, bundled.
+/// for convenient composition onto a sheet. `Shape.section2DView(...)` wraps.
+/// section2D with automatic hatching and an "A-A" label, matching ISO 128-40.
 extension Shape {
     public struct SectionView: Sendable {
         public let drawing: Drawing
@@ -134,7 +146,7 @@ extension Shape {
     }
 
     /// ISO 128-40-styled section view: slice + hatching + label bundled into a
-    /// single `Drawing` ready to place on a sheet.
+    /// single Drawing ready to place on a sheet.
     public func section2DView(
         planeOrigin: SIMD3<Double>,
         planeNormal: SIMD3<Double>,

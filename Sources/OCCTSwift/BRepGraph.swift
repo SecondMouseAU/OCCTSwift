@@ -10,34 +10,42 @@ import OCCTBridge
 
 /// A graph-based representation of B-Rep topology.
 ///
-/// `BRepGraph` provides cache-friendly traversal, O(1) upward navigation,
-/// and parallel geometry extraction over a shape's topology. Built from a
-/// `Shape`, it indexes all faces, edges, vertices, wires, shells, and solids
+/// BRepGraph provides cache-friendly traversal, O(1) upward navigation,.
+/// and parallel geometry extraction over a shape's topology.
+///
+/// Built from a.
+///
+/// Shape, it indexes all faces, edges, vertices, wires, shells, and solids.
 /// as flat entity vectors with integer cross-references.
 ///
-/// ```swift
+/// ```swift.
 /// let box = Shape.box(width: 10, height: 10, depth: 10)
 /// let graph = BRepGraph(shape: box)!
 /// print(graph.stats)  // faces: 6, edges: 12, vertices: 8
 ///
-/// // Fast adjacency queries
+/// // Fast adjacency queries.
 /// let neighbors = graph.adjacentFaces(of: 0)  // [1, 2, 3, 4]
 /// let shared = graph.sharedEdges(between: 0, and: 1)  // [3]
-/// ```
+/// ```.
 public final class BRepGraph: @unchecked Sendable {
     internal let handle: OCCTBRepGraphRef
 
     /// Per-node attribute store (see `BRepGraph+Attributes.swift`).
     ///
-    /// Holds arbitrary typed metadata keyed by ``NodeRef`` — fit residuals, provenance,
-    /// mesh-region sets, etc. Pure Swift sidecar; never touches the underlying C++ graph.
+    /// Holds arbitrary typed metadata keyed by `NodeRef` (fit residuals, provenance,).
+    /// mesh-region sets, etc.
+    ///
+    /// Pure Swift sidecar; never touches the underlying C++ graph.
+    ///
     /// Serialized via ``snapshot()`` / ``init(snapshot:)``.
     public var attributes = NodeAttributeStore()
 
     /// BREP of the shape this graph was built from, captured at construction.
     ///
-    /// Used by ``snapshot()`` so a session can be reconstructed exactly. `nil` only if the
-    /// shape failed to serialize. Reflects the shape as built; topology-mutating builder ops
+    /// Used by ``snapshot()`` so a session can be reconstructed exactly. nil only if the.
+    /// shape failed to serialize.
+    ///
+    /// Reflects the shape as built; topology-mutating builder ops.
     /// after construction are not re-captured here (rebuild the graph to re-snapshot).
     internal var sourceBREP: String?
 
@@ -60,13 +68,15 @@ public final class BRepGraph: @unchecked Sendable {
     /// Shared count-then-fetch helper for the bridge's `...Count`/`...Indices` accessor pairs.
     ///
     /// Every adjacency/relation query (`adjacentFaces(of:)`, `sharedEdges(between:and:)`,
-    /// `edgeWires(_:)`, `rootProductIndices`, etc.) allocates an `Int32` buffer sized by a
-    /// prior count call, fills it via a bridge `...Indices` function, then maps back to
-    /// `[Int]`. `fetch` receives the buffer's base address to call the bridge function with.
+    /// `edgeWires(_:)`, rootProductIndices, etc.) allocates an Int32 buffer sized by a
+    /// prior count call, fills it via a bridge `...Indices` function, then maps back to.
+    /// `[Int]`. fetch receives the buffer's base address to call the bridge function with.
     ///
     /// Guards `count <= 0`, not just `count == 0`: the underlying bridge `...Count` functions
-    /// derive their result via an unchecked narrowing `(int32_t)` cast from a `size_t`, so a
-    /// sufficiently large (theoretical) graph could produce a negative count. Without this
+    /// derive their result via an unchecked narrowing `(int32_t)` cast from a size_t, so a.
+    /// sufficiently large (theoretical) graph could produce a negative count.
+    ///
+    /// Without this.
     /// guard, `[Int32](repeating:count:)` would trap; with it, a negative count degrades to
     /// `[]` like an empty result.
     private func fetchIndices(count: Int, fetch: (UnsafeMutablePointer<Int32>) -> Void) -> [Int] {
@@ -183,8 +193,11 @@ public final class BRepGraph: @unchecked Sendable {
     // MARK: - Explorers
 
     /// Node kind enumeration matching OCCT BRepGraph_NodeId::Kind.
-    /// Topology kinds 0–5 are core hierarchy; 6/7 are containers; 8 is the
-    /// face-context coedge entity. Assembly kinds (Product, Occurrence) start
+    ///
+    /// Topology kinds 0–5 are core hierarchy; 6/7 are containers; 8 is the.
+    /// face-context coedge entity.
+    ///
+    /// Assembly kinds (Product, Occurrence) start.
     /// at 10, leaving slot 9 reserved for future topology extension.
     public enum NodeKind: Int32, Sendable, Codable {
         case solid = 0
@@ -353,7 +366,9 @@ public final class BRepGraph: @unchecked Sendable {
         return Shape(handle: ref)
     }
 
-    /// Find the node (kind, index) for a shape. Returns nil if not found.
+    /// Find the node (kind, index) for a shape.
+    ///
+    /// Returns nil if not found.
     public func findNode(for shape: Shape) -> (kind: NodeKind, index: Int)? {
         var outKind: Int32 = -1
         var outIndex: Int32 = -1
@@ -552,10 +567,12 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - History Record Readback (v0.141, #72 Phase 0)
 
-    /// A (kind, index) pair identifying a node in a `BRepGraph`.
+    /// A (kind, index) pair identifying a node in a BRepGraph.
     ///
-    /// This is the Swift mirror of OCCT's `BRepGraph_NodeId`. Two pairs with the
-    /// same kind+index refer to the same node **within a given graph instance**;
+    /// This is the Swift mirror of OCCT's BRepGraph_NodeId.
+    ///
+    /// Two pairs with the.
+    /// same kind+index refer to the same node **within a given graph instance**;.
     /// across graph rebuilds you have to translate through the history records.
     public struct NodeRef: Sendable, Hashable, Codable {
         public let kind: NodeKind
@@ -584,7 +601,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// Get a single history record by index.
     ///
     /// - Parameter index: 0-based index into the history log.
-    /// - Returns: The record, or nil if `index` is out of range.
+    /// - Returns: The record, or nil if index is out of range.
     public func historyRecord(at index: Int) -> HistoryRecord? {
         guard index >= 0, index < historyRecordCount else { return nil }
         var opNameBuffer = [CChar](repeating: 0, count: 128)
@@ -674,6 +691,7 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Walk backwards from a derived node to its root original via the reverse map.
+    ///
     /// Returns the node itself if it has no recorded history.
     public func findOriginal(of derived: NodeRef) -> NodeRef {
         var outKind: Int32 = 0
@@ -690,13 +708,15 @@ public final class BRepGraph: @unchecked Sendable {
         return NodeRef(kind: kind, index: Int(outIndex))
     }
 
-    /// True if any history record names `original` as a key (i.e. some recorded
+    /// True if any history record names original as a key (i.e. some recorded.
     /// operation modified or deleted this node).
     ///
-    /// Use this with `findDerived` to disambiguate the two cases that both
-    /// return `[]` from `findDerived`: an explicitly-deleted node has a record
-    /// with empty replacements, while an untouched node is simply absent from
-    /// every record's mapping. See also `findDerivedOrSelf(of:)` for the
+    /// Use this with findDerived to disambiguate the two cases that both.
+    /// return `[]` from findDerived: an explicitly-deleted node has a record
+    /// with empty replacements, while an untouched node is simply absent from.
+    /// every record's mapping.
+    ///
+    /// See also `findDerivedOrSelf(of:)` for the
     /// common "where did this node end up?" lookup.
     public func hasHistoryRecord(for original: NodeRef) -> Bool {
         for record in historyRecords {
@@ -705,22 +725,26 @@ public final class BRepGraph: @unchecked Sendable {
         return false
     }
 
-    /// Walk forwards from an original node and return its derivatives, falling
-    /// back to `[original]` when the node was untouched and `[]` when the node
+    /// Walk forwards from an original node and return its derivatives, falling.
+    /// back to `[original]` when the node was untouched and `[]` when the node.
     /// was explicitly deleted.
     ///
     /// `findDerived(of:)` returns `[]` for both untouched and deleted nodes —
-    /// callers can't tell "this face survived the mutation unchanged" from
-    /// "this face was cut away". This entry point disambiguates by checking
-    /// whether any history record names the node as an `original` key:
+    /// callers can't tell "this face survived the mutation unchanged" from.
+    /// "this face was cut away".
     ///
-    /// - non-empty `findDerived` result → return it (live derivatives)
-    /// - empty result + record present  → `[]` (explicitly deleted)
-    /// - empty result + no record       → `[original]` (untouched, same index)
+    /// This entry point disambiguates by checking.
+    /// whether any history record names the node as an original key:
     ///
-    /// Use this when you want a single deterministic answer to "where did
-    /// this node end up?" — the typical selection-remap case. Use
-    /// `findDerived` + `hasHistoryRecord` directly if you need to distinguish
+    /// - non-empty findDerived result → return it (live derivatives).
+    /// - empty result + record present  → `[]` (explicitly deleted).
+    /// - empty result + no record       → `[original]` (untouched, same index).
+    ///
+    /// Use this when you want a single deterministic answer to "where did.
+    /// this node end up?" (the typical selection-remap case).
+    ///
+    /// Use.
+    /// findDerived + hasHistoryRecord directly if you need to distinguish.
     /// the deleted-vs-untouched cases at the call site.
     public func findDerivedOrSelf(of original: NodeRef) -> [NodeRef] {
         let derived = findDerived(of: original)
@@ -729,10 +753,13 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Walk forwards from an original node to all transitively derived nodes.
+    ///
     /// Returns empty if the node has no recorded descendants.
     ///
     /// **Note:** an empty result is ambiguous between "untouched" and
-    /// "explicitly deleted". Use `findDerivedOrSelf(of:)` for the common
+    /// "explicitly deleted".
+    ///
+    /// Use `findDerivedOrSelf(of:)` for the common
     /// case, or pair this call with `hasHistoryRecord(for:)` to disambiguate.
     public func findDerived(of original: NodeRef) -> [NodeRef] {
         var cap = 16
@@ -771,13 +798,15 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Record a 1-to-N modification event on the graph's history log.
     ///
-    /// Use this when you mutate the graph outside BRepGraph's own builder API
+    /// Use this when you mutate the graph outside BRepGraph's own builder API.
     /// and want your changes to participate in history queries.
     ///
     /// - Parameters:
     ///   - operationName: Human-readable operation label.
     ///   - original: The node that was modified.
-    ///   - replacements: The node(s) that replace it. Empty array = node was deleted.
+    ///   - replacements: The node(s) that replace it.
+    ///
+    ///   Empty array = node was deleted.
     public func recordHistory(
         operationName: String,
         original: NodeRef,
@@ -799,18 +828,20 @@ public final class BRepGraph: @unchecked Sendable {
         }
     }
 
-    /// True if a recorded operation consumed `node`, leaving it no image in the result.
+    /// True if a recorded operation consumed node, leaving it no image in the result.
     ///
     /// This is distinct from having no successors: a node with no history record at
-    /// all is simply untouched, whereas a deleted node was explicitly consumed. Use
+    /// all is simply untouched, whereas a deleted node was explicitly consumed.
+    ///
+    /// Use.
     /// this to tell "the cut removed this edge" apart from "the cut never saw it".
     ///
-    /// ```swift
+    /// ```swift.
     /// let strips = graph.currentForms(of: pinned)
-    /// if strips.isEmpty && graph.historyIsDeleted(pinned) {
-    ///     // consumed by the operation, not merely unrecorded
-    /// }
-    /// ```
+    /// if strips.isEmpty && graph.historyIsDeleted(pinned) {.
+    ///     // consumed by the operation, not merely unrecorded.
+    /// }.
+    /// ```.
     public func historyIsDeleted(_ node: NodeRef) -> Bool {
         OCCTBRepGraphHistoryIsDeleted(handle, node.kind.rawValue, Int32(node.index))
     }
@@ -831,44 +862,48 @@ public final class BRepGraph: @unchecked Sendable {
         }
     }
 
-    /// Add an operation's result to this graph and absorb its history, so the
+    /// Add an operation's result to this graph and absorb its history, so the.
     /// entities you were already holding keep resolving to their successors.
     ///
-    /// This is the supported way to carry a picked face (or edge, or vertex)
-    /// across an operation that rebuilds the shape — a boolean, a fillet, a
-    /// chamfer. Because the input and the result live in the *same* graph
-    /// instance, the `NodeRef`s and `GraphUID`s you already hold stay valid:
-    /// there is no second graph to look them up in, and a UID only ever means
+    /// This is the supported way to carry a picked face (or edge, or vertex).
+    /// across an operation that rebuilds the shape (a boolean, a fillet, a).
+    /// chamfer.
+    ///
+    /// Because the input and the result live in the *same* graph.
+    /// instance, the NodeRefs and GraphUIDs you already hold stay valid:
+    /// there is no second graph to look them up in, and a UID only ever means.
     /// something in the graph that minted it (#295).
     ///
     /// After this call, ``currentForms(of:)`` on an input node returns its
-    /// successors, and the ``TopologyRef`` recipes (`.splitOf`, `.createdBy`)
+    /// successors, and the `TopologyRef` recipes (`.splitOf`, `.createdBy`).
     /// resolve against the records this emits.
     ///
-    /// Build the graph from the operation's *input* shape, not its result — the
+    /// Build the graph from the operation's *input* shape, not its result (the).
     /// input roots must already be in this graph.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Cut a channel across a box's top face, then keep hold of the face.
     /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
     /// let graph = BRepGraph(shape: base)!
     ///
-    /// // The topology root. Note this is findNode(for:), NOT rootNodes — that
+    /// // The topology root.
+    ///
+    /// Note this is findNode(for:), NOT rootNodes (that).
     /// // enumerates Products and is empty for a graph built from a Shape.
     /// let rootNode = graph.findNode(for: base)!
     /// let root = BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index)
     ///
     /// // Identify the top face and pin it BEFORE the cut.
-    /// let faces = base.faces()
-    /// let centroids = base.measure().faceCentroids
-    /// let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset
-    /// let topFace = Shape.fromFace(faces[topIndex])!
+    /// let faces = base.faces().
+    /// let centroids = base.measure().faceCentroids.
+    /// let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset.
+    /// let topFace = Shape.fromFace(faces[topIndex])!.
     /// let topNode = graph.findNode(for: topFace)!
     /// let pinned = BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index)
     ///
     /// // Cut, then hand the result and its history back to the same graph.
     /// let tool = Shape.box(origin: SIMD3(-1, 4, 8), width: 12, height: 2, depth: 4)!
-    /// let (result, history) = base.subtractedWithFullHistory(tool)!
+    /// let (result, history) = base.subtractedWithFullHistory(tool)!.
     /// graph.add(result, absorbing: history, inputRoots: [root], operationName: "channel-cut")
     ///
     /// // The pinned face now resolves to the two strips it was split into.
@@ -876,10 +911,10 @@ public final class BRepGraph: @unchecked Sendable {
     /// // generated on that face, since it unions modified and generated.
     /// let strips = graph.currentForms(of: pinned).filter { $0.kind == .face }   // 2 faces
     /// graph.resolve(.splitOf(original: .literal(pinned), occurrence: 0))        // .success(face)
-    /// ```
+    /// ```.
     ///
     /// - Note: Only vertices, edges, faces and solids are tracked
-    ///   (`BRepTools_History` carries no wires, shells or compounds), so nothing
+    ///   (BRepTools_History carries no wires, shells or compounds), so nothing.
     ///   is recorded for those kinds.
     ///
     /// - Parameters:
@@ -959,22 +994,28 @@ public final class BRepGraph: @unchecked Sendable {
     /// Number of active polygon-on-triangulation reps.
     public var activePolygonOnTriCount: Int { Int(OCCTBRepGraphMeshNbActivePolygonsOnTri(handle)) }
 
-    /// Active triangulation rep id for a face, checking the algorithm-derived mesh cache first
-    /// and falling back to the persistent (STEP-imported) tier. Returns nil if neither tier
+    /// Active triangulation rep id for a face, checking the algorithm-derived mesh cache first.
+    /// and falling back to the persistent (STEP-imported) tier.
+    ///
+    /// Returns nil if neither tier.
     /// has mesh data for the face.
     public func meshFaceActiveTriangulationRepId(_ faceIndex: Int) -> Int? {
         let id = Int(OCCTBRepGraphMeshFaceActiveTriangulationRepId(handle, Int32(faceIndex)))
         return id >= 0 ? id : nil
     }
 
-    /// Active polygon-3D rep id for an edge (cache-first, persistent fallback). Returns nil if
+    /// Active polygon-3D rep id for an edge (cache-first, persistent fallback).
+    ///
+    /// Returns nil if.
     /// neither tier has polygon-3D mesh data for the edge.
     public func meshEdgePolygon3DRepId(_ edgeIndex: Int) -> Int? {
         let id = Int(OCCTBRepGraphMeshEdgePolygon3DRepId(handle, Int32(edgeIndex)))
         return id >= 0 ? id : nil
     }
 
-    /// Whether a coedge has cached mesh data (polygon-on-tri or polygon-2D). Cache-only check
+    /// Whether a coedge has cached mesh data (polygon-on-tri or polygon-2D).
+    ///
+    /// Cache-only check.
     /// — does not consult the persistent tier.
     public func meshCoEdgeHasMesh(_ coedgeIndex: Int) -> Bool {
         OCCTBRepGraphMeshCoEdgeHasMesh(handle, Int32(coedgeIndex))
@@ -982,19 +1023,25 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - MeshCache write API (v0.160.0)
 
-    /// Create a triangulation rep in the graph's mesh storage. Returns the rep id, or nil on failure.
+    /// Create a triangulation rep in the graph's mesh storage.
+    ///
+    /// Returns the rep id, or nil on failure.
     public func createTriangulationRep(_ triangulation: Triangulation) -> Int? {
         let id = Int(OCCTBRepGraphMeshCreateTriangulationRep(handle, triangulation.handle))
         return id >= 0 ? id : nil
     }
 
-    /// Create a polygon-3D rep in the graph's mesh storage. Returns the rep id, or nil on failure.
+    /// Create a polygon-3D rep in the graph's mesh storage.
+    ///
+    /// Returns the rep id, or nil on failure.
     public func createPolygon3DRep(_ polygon: Polygon3D) -> Int? {
         let id = Int(OCCTBRepGraphMeshCreatePolygon3DRep(handle, polygon.handle))
         return id >= 0 ? id : nil
     }
 
-    /// Create a polygon-on-triangulation rep linked to an existing triangulation rep. Returns the rep id, or nil.
+    /// Create a polygon-on-triangulation rep linked to an existing triangulation rep.
+    ///
+    /// Returns the rep id, or nil.
     public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: Int) -> Int? {
         let id = Int(
             OCCTBRepGraphMeshCreatePolygonOnTriRep(handle, polygon.handle, Int32(triRepId)))
@@ -1587,10 +1634,12 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - EditorView Add operations (v0.161.0)
 
-    /// Attach an internal vertex (built from the graph vertex's point) to an edge as a runtime
-    /// supplement attachment. Returns the layer-local attachment uid, or nil on failure.
+    /// Attach an internal vertex (built from the graph vertex's point) to an edge as a runtime.
+    /// supplement attachment.
+    ///
+    /// Returns the layer-local attachment uid, or nil on failure.
     /// - Note: Edge-internal vertices are a supplemental, runtime concept in OCCT 8.0.0p1
-    ///   (`BRepGraph_LayerTopoSupplement`); a clean shape has none until one is added here.
+    ///   (BRepGraph_LayerTopoSupplement); a clean shape has none until one is added here.
     /// - Parameter orientation: accepted for source-compat but ignored by the supplement layer.
     public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientation: Int = 2)
         -> Int?
@@ -1601,10 +1650,12 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Attach a direct vertex (built from the graph vertex's point) to a face as a runtime supplement
-    /// attachment. Returns the layer-local attachment uid, or nil on failure.
+    /// Attach a direct vertex (built from the graph vertex's point) to a face as a runtime supplement.
+    /// attachment.
+    ///
+    /// Returns the layer-local attachment uid, or nil on failure.
     /// - Note: Face-direct vertices are a supplemental, runtime concept in OCCT 8.0.0p1
-    ///   (`BRepGraph_LayerTopoSupplement`); a clean box has none until one is added here.
+    ///   (BRepGraph_LayerTopoSupplement); a clean box has none until one is added here.
     /// - Parameter orientation: accepted for source-compat but ignored by the supplement layer.
     public func faceAddVertex(_ faceIndex: Int, vertexIndex: Int, orientation: Int = 0) -> Int? {
         let id = Int(
@@ -1613,7 +1664,9 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Link an auxiliary non-face child (Wire or Edge) to a shell. Returns child-ref id or nil.
+    /// Link an auxiliary non-face child (Wire or Edge) to a shell.
+    ///
+    /// Returns child-ref id or nil.
     public func shellAddChild(
         _ shellIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
     ) -> Int? {
@@ -1623,7 +1676,9 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Link an auxiliary non-shell child (Edge or Vertex) to a solid. Returns child-ref id or nil.
+    /// Link an auxiliary non-shell child (Edge or Vertex) to a solid.
+    ///
+    /// Returns child-ref id or nil.
     public func solidAddChild(
         _ solidIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
     ) -> Int? {
@@ -1633,7 +1688,9 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Append a single child to an existing compound definition. Returns child-ref id or nil.
+    /// Append a single child to an existing compound definition.
+    ///
+    /// Returns child-ref id or nil.
     public func compoundAddChild(
         _ compoundIndex: Int, childKind: Int, childIndex: Int, orientation: Int = 0
     ) -> Int? {
@@ -1644,7 +1701,9 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Append a single solid to an existing compsolid definition. Returns solid-ref id or nil.
+    /// Append a single solid to an existing compsolid definition.
+    ///
+    /// Returns solid-ref id or nil.
     public func compSolidAddSolid(_ compSolidIndex: Int, solidIndex: Int, orientation: Int = 0)
         -> Int?
     {
@@ -1656,12 +1715,16 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - EditorView Remove operations (v0.161.0)
 
-    /// Detach an exact vertex ref from an edge definition. Returns true if the active usage was removed.
+    /// Detach an exact vertex ref from an edge definition.
+    ///
+    /// Returns true if the active usage was removed.
     public func edgeRemoveVertex(_ edgeIndex: Int, vertexRefIndex: Int) -> Bool {
         OCCTBRepGraphEdgeRemoveVertex(handle, Int32(edgeIndex), Int32(vertexRefIndex))
     }
 
-    /// Remap an edge-owned vertex reference to a different vertex definition. Returns the new vertex-ref id, or nil.
+    /// Remap an edge-owned vertex reference to a different vertex definition.
+    ///
+    /// Returns the new vertex-ref id, or nil.
     public func edgeReplaceVertex(_ edgeIndex: Int, oldVertexRefIndex: Int, newVertexIndex: Int)
         -> Int?
     {
@@ -1676,8 +1739,10 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphWireRemoveCoEdge(handle, Int32(wireIndex), Int32(coedgeRefIndex))
     }
 
-    /// Detach a face-direct vertex supplement attachment by its uid (the value returned by
-    /// `faceAddVertex`). Returns true if the attachment existed and was removed.
+    /// Detach a face-direct vertex supplement attachment by its uid (the value returned by.
+    /// faceAddVertex).
+    ///
+    /// Returns true if the attachment existed and was removed.
     public func faceRemoveVertex(_ faceIndex: Int, attachmentUID: Int) -> Bool {
         OCCTBRepGraphFaceRemoveVertex(handle, Int32(faceIndex), Int64(attachmentUID))
     }
@@ -1819,25 +1884,33 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the geometric regularity (C^k continuity) for an edge across a pair of faces.
     ///
-    /// Pass the same face index as `face1` and `face2` to set the seam continuity across
+    /// Pass the same face index as face1 and face2 to set the seam continuity across.
     /// a closed-surface seam line.
     ///
     /// OCCT 8.0.0 GA reshaped the continuity model: it lives on the (edge, face1, face2)
-    /// triple in `BRepGraph_LayerRegularity`, replacing the per-coedge setters present in
-    /// pre-1.0 (`setCoEdgeContinuity`, `setCoEdgeSeamContinuity`). The explicit seam-pair-id
-    /// setter was removed — seam-pair-id is structural in GA (derived from two coedges on
+    /// triple in BRepGraph_LayerRegularity, replacing the per-coedge setters present in.
+    /// pre-1.0 (setCoEdgeContinuity, setCoEdgeSeamContinuity).
+    ///
+    /// The explicit seam-pair-id.
+    /// setter was removed (seam-pair-id is structural in GA (derived from two coedges on).
     /// the same edge/face with opposite orientations).
     ///
-    /// - Important: This always returns `false` against OCCT 8.0.0p1 and `continuity` is not
-    ///   read at all. `BRepGraph_LayerRegularity` — the only write path in the GA continuity
-    ///   model — does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
-    ///   stub that reports failure. There is no replacement writer; to *read* continuity, use
+    /// - Important: This always returns false against OCCT 8.0.0p1 and continuity is not
+    ///   read at all. BRepGraph_LayerRegularity (the only write path in the GA continuity).
+    ///   model (does not compile in p1 and is absent from libOCCT, so the bridge function is a).
+    ///   stub that reports failure.
+    ///
+    ///   There is no replacement writer; to *read* continuity, use.
     ///   ``Shape/continuity(edge:face1:face2:)`` or ``Shape/maxContinuity(edge:)``, both of which
-    ///   go through the shape-based `BRepLib`/`BRep_Tool` path and are unaffected. Tracked
+    ///   go through the shape-based BRepLib/BRep_Tool path and are unaffected.
+    ///
+    ///   Tracked.
     ///   by #513.
     ///
-    /// - Parameter continuity: Ignored (see above). Was documented as a GeomAbs_Shape value.
-    /// - Returns: Always `false` on OCCT 8.0.0p1.
+    /// - Parameter continuity: Ignored (see above).
+    ///
+    /// Was documented as a GeomAbs_Shape value.
+    /// - Returns: Always false on OCCT 8.0.0p1.
     @discardableResult
     public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool
     {
@@ -1845,13 +1918,13 @@ public final class BRepGraph: @unchecked Sendable {
             handle, Int32(edgeIndex), Int32(face1), Int32(face2), Int32(continuity)) != 0
     }
 
-    /// Set the active triangulation rep on a face (used to bind a fresh triangulation
-    /// to the persistent tier; also see `appendCachedTriangulation` for cache-tier writes).
+    /// Set the active triangulation rep on a face (used to bind a fresh triangulation.
+    /// to the persistent tier; also see appendCachedTriangulation for cache-tier writes).
     public func setFaceTriangulationRep(_ faceIndex: Int, triRepId: Int) {
         OCCTBRepGraphSetFaceTriangulationRep(handle, Int32(faceIndex), Int32(triRepId))
     }
 
-    /// Create a new Curve2DRep from a `Curve2D` and return its rep id, or nil on failure.
+    /// Create a new Curve2DRep from a Curve2D and return its rep id, or nil on failure.
     public func coEdgeCreateCurve2DRep(_ curve2D: Curve2D) -> Int? {
         let id = Int(OCCTBRepGraphCoEdgeCreateCurve2DRep(handle, curve2D.handle))
         return id >= 0 ? id : nil
@@ -1922,7 +1995,10 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - EditorView ProductOps assembly building (v0.163.0)
 
-    /// Wrap an existing topology root in a Product. Pass nil for an identity placement.
+    /// Wrap an existing topology root in a Product.
+    ///
+    /// Pass nil for an identity placement.
+    ///
     /// Returns the new product id, or nil on failure.
     public func linkProductToTopology(
         shapeRootKind: Int, shapeRootIndex: Int,
@@ -1944,13 +2020,17 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Create an empty product (assembly node with no direct topology). Returns product id or nil.
+    /// Create an empty product (assembly node with no direct topology).
+    ///
+    /// Returns product id or nil.
     public func createEmptyProduct() -> Int? {
         let id = Int(OCCTBRepGraphCreateEmptyProduct(handle))
         return id >= 0 ? id : nil
     }
 
-    /// Link two products via a fresh occurrence. Returns the new occurrence id and the new
+    /// Link two products via a fresh occurrence.
+    ///
+    /// Returns the new occurrence id and the new.
     /// occurrence-ref id, or nil on failure.
     /// - Parameter parentOccurrenceIndex: pass nil for an unparented occurrence.
     public func linkProducts(
@@ -1975,12 +2055,16 @@ public final class BRepGraph: @unchecked Sendable {
         return (occurrenceIndex: oid, occurrenceRefIndex: Int(outRef))
     }
 
-    /// Detach an occurrence ref from a product. Returns true if the active usage was removed.
+    /// Detach an occurrence ref from a product.
+    ///
+    /// Returns true if the active usage was removed.
     public func productRemoveOccurrence(_ productIndex: Int, occurrenceRefIndex: Int) -> Bool {
         OCCTBRepGraphProductRemoveOccurrence(handle, Int32(productIndex), Int32(occurrenceRefIndex))
     }
 
-    /// Detach the scalar shape-root from a product. Returns true if a root was detached.
+    /// Detach the scalar shape-root from a product.
+    ///
+    /// Returns true if a root was detached.
     public func productRemoveShapeRoot(_ productIndex: Int) -> Bool {
         OCCTBRepGraphProductRemoveShapeRoot(handle, Int32(productIndex))
     }
@@ -2016,7 +2100,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - MeshView cache entry inspection (v0.164.0)
 
-    /// Detailed accessors for the cached-mesh tier (algorithm-derived). All return absent
+    /// Detailed accessors for the cached-mesh tier (algorithm-derived).
+    ///
+    /// All return absent.
     /// values (false / 0 / nil) when no cache entry exists for the entity.
 
     public func cachedFaceMeshIsPresent(_ faceIndex: Int) -> Bool {
@@ -2072,36 +2158,40 @@ public final class BRepGraph: @unchecked Sendable {
     /// Result of sampling a face surface on a regular UV grid.
     ///
     /// All four parallel arrays share one layout: **U-major**, u varying slowest and v fastest,
-    /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v` — the same
-    /// index ``SurfaceGrid`` and ``SurfaceGridD1`` use (#404/#486).
+    /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v` (the same).
+    /// index `SurfaceGrid` and `SurfaceGridD1` use (#404/#486).
     ///
     /// Prefer ``at(u:v:)`` over spelling the index out, because the two ways to get it wrong fail
     /// differently and neither announces itself:
     ///
-    /// - Using the layout but the **wrong count as the stride** (`u * uSamples + v`) is correct
-    ///   only on a square grid, where the two counts coincide. On a non-square grid it is in
-    ///   range and quietly wrong when `uSamples < vSamples` (3x10 reaches 15 of 30), and past the
+    /// - Using the layout but the **wrong count as the stride** (`u * uSamples + v`) is correct.
+    ///   only on a square grid, where the two counts coincide.
+    ///
+    ///   On a non-square grid it is in.
+    ///   range and quietly wrong when `uSamples < vSamples` (3x10 reaches 15 of 30), and past the.
     ///   end when `uSamples > vSamples` (10x3 reaches 92 of 30).
-    /// - Reading with the **transposed index** (`v * uSamples + u`) never traps at any aspect
+    /// - Reading with the **transposed index** (`v * uSamples + u`) never traps at any aspect.
     ///   ratio: it is a bijection onto the same `0..<uSamples * vSamples` range, so it can only
-    ///   ever be a silent wrong answer. That was the layout this buffer was written in until
+    ///   ever be a silent wrong answer.
+    ///
+    ///   That was the layout this buffer was written in until.
     ///   #617.
     ///
-    /// ```swift
+    /// ```swift.
     /// guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
-    /// else { return }
+    /// else { return }.
     /// // Flat storage is U-major: index (u, v) == u * sample.vSamples + v.
     /// let s = sample.at(u: 9, v: 2)
-    /// print(s.position, s.normal, s.gaussianCurvature, s.meanCurvature)
+    /// print(s.position, s.normal, s.gaussianCurvature, s.meanCurvature).
     ///
     /// // Walk the grid row by row (u outer, v inner) to read the buffers in storage order.
-    /// for u in 0..<sample.uSamples {
-    ///     for v in 0..<sample.vSamples {
+    /// for u in 0..<sample.uSamples {.
+    ///     for v in 0..<sample.vSamples {.
     ///         let mean = sample.at(u: u, v: v).meanCurvature
     ///         if abs(mean) > 1e-6 { print("curved at (\(u), \(v)): \(mean)") }
-    ///     }
-    /// }
-    /// ```
+    ///     }.
+    /// }.
+    /// ```.
     public struct FaceGridSample: Sendable {
         /// Surface positions at grid points, U-major (see ``at(u:v:)``).
         public let positions: [SIMD3<Double>]
@@ -2119,15 +2209,15 @@ public final class BRepGraph: @unchecked Sendable {
         /// Position, normal and curvatures at the given U/V grid index.
         ///
         /// The counterpart of ``SurfaceGrid/at(u:v:)``, resolving the same U-major index through
-        /// the same shared `surfaceGridIndex` helper, so the two grid families cannot drift apart
+        /// the same shared surfaceGridIndex helper, so the two grid families cannot drift apart.
         /// again (#617).
         ///
-        /// ```swift
+        /// ```swift.
         /// if let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 3, vSamples: 10) {
         ///     let corner = sample.at(u: 2, v: 9)
-        ///     print(corner.position, corner.meanCurvature)
-        /// }
-        /// ```
+        ///     print(corner.position, corner.meanCurvature).
+        /// }.
+        /// ```.
         ///
         /// - Parameters:
         ///   - u: U grid index, `0..<uSamples`.
@@ -2157,16 +2247,16 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Sample a face surface on a regular UV grid, evaluating positions, normals, and curvatures.
     ///
-    /// The returned buffers are **U-major** (`u * vSamples + v`); read them through
+    /// The returned buffers are **U-major** (`u * vSamples + v`); read them through.
     /// ``FaceGridSample/at(u:v:)`` rather than indexing by hand.
     ///
-    /// ```swift
+    /// ```swift.
     /// guard let graph = BRepGraph(shape: solid),
     ///       let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
-    /// else { return }
+    /// else { return }.
     /// let midpoint = sample.at(u: 5, v: 1)
-    /// print(midpoint.position, midpoint.gaussianCurvature)
-    /// ```
+    /// print(midpoint.position, midpoint.gaussianCurvature).
+    /// ```.
     ///
     /// - Parameters:
     ///   - faceIndex: Face definition index.
@@ -2174,8 +2264,10 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - vSamples: Number of samples in V direction (must be >= 1).
     /// - Returns: Grid sample data, or nil if face has no surface, sampling fails, or the grid
     ///   cannot be served: the bound is on the **product**, which must not exceed
-    ///   ``Sampling/maximumSampleCount`` (#558). This sampler fills four buffers per point
-    ///   (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost
+    ///   ``Sampling/maximumSampleCount`` (#558).
+    ///
+    ///   This sampler fills four buffers per point.
+    ///   (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost.
     ///   sooner than the point-only samplers do.
     public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> FaceGridSample? {
         guard let total = Sampling.gridTotal(uSamples, vSamples) else { return nil }
@@ -2239,47 +2331,53 @@ public final class BRepGraph: @unchecked Sendable {
     // MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1
 
     /// A durable node identifier: a `(kind, counter)` pair that persists across mutations of
-    /// **the one graph instance that minted it** — compaction, node removal — where a
-    /// `(kind, index)` ``NodeRef`` does not. The counter never repeats within a kind and is
+    /// **the one graph instance that minted it** (compaction, node removal (where a)).
+    /// `(kind, index)` `NodeRef` does not.
+    ///
+    /// The counter never repeats within a kind and is.
     /// stable when vector indices shift. `counter == 0` is the invalid sentinel.
     ///
-    /// The scope is the graph *instance*, not the shape and not a "generation". Every graph
-    /// allocates counters from 1 independently, so the same `(kind, counter)` names some
-    /// unrelated node in every other graph — a box's face UID would otherwise resolve happily
-    /// against a cylinder. ``graphID`` records which instance minted the UID, and
+    /// The scope is the graph *instance*, not the shape and not a "generation".
+    ///
+    /// Every graph.
+    /// allocates counters from 1 independently, so the same `(kind, counter)` names some.
+    /// unrelated node in every other graph (a box's face UID would otherwise resolve happily).
+    /// against a cylinder. `graphID` records which instance minted the UID, and.
     /// ``BRepGraph/node(forUID:)`` rejects one that came from anywhere else (#295).
     ///
-    /// To carry a selection across a *modelling operation* rather than across mutations of one
-    /// graph, absorb the operation's history — see
+    /// To carry a selection across a *modelling operation* rather than across mutations of one.
+    /// graph, absorb the operation's history (see).
     /// ``BRepGraph/add(_:absorbing:inputRoots:operationName:)``.
     ///
-    /// `kind` is the raw `BRepGraph_NodeId::Kind` ordinal
-    /// (0 Solid, 1 Shell, 2 Face, 3 Wire, 4 Edge, 5 Vertex, 6 Compound,
+    /// kind is the raw `BRepGraph_NodeId::Kind` ordinal
+    /// (0 Solid, 1 Shell, 2 Face, 3 Wire, 4 Edge, 5 Vertex, 6 Compound,.
     /// 7 CompSolid, 8 CoEdge, 10 Product, 11 Occurrence).
     ///
-    /// ```swift
+    /// ```swift.
     /// let graph = BRepGraph(shape: box)!
     /// let uid = graph.uid(ofNodeKind: 2, index: 3)!    // a face, by kind + index
     ///
     /// // The UID still names that face after a mutation renumbers the indices:
-    /// graph.compact()
+    /// graph.compact().
     /// if let node = graph.node(forUID: uid) {
-    ///     print("that face is now index \(node.index)")
-    /// }
+    ///     print("that face is now index \(node.index)").
+    /// }.
     ///
     /// // A UID from another graph resolves to nothing, rather than to a wrong node:
     /// let other = BRepGraph(shape: cylinder)!
     /// print(other.node(forUID: uid))      // nil
     /// print(other.contains(uid: uid))     // false
-    /// ```
+    /// ```.
     public struct GraphUID: Sendable, Hashable, Codable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``.
+        /// The instance that minted this UID (its ``BRepGraph/instanceID``).
         ///
-        /// `0` means unstamped: built by hand, or decoded from a payload written before
-        /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
+        /// 0 means unstamped: built by hand, or decoded from a payload written before
+        /// OCCTSwift recorded provenance.
+        ///
+        /// An unstamped UID resolves in no graph.
         public let graphID: UInt64
 
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
@@ -2298,32 +2396,36 @@ public final class BRepGraph: @unchecked Sendable {
             graphID = try c.decodeIfPresent(UInt64.self, forKey: .graphID) ?? 0
         }
 
-        /// True if this UID has a non-zero counter. It may still fail to resolve — because it was
+        /// True if this UID has a non-zero counter.
+        ///
+        /// It may still fail to resolve (because it was).
         /// minted by a different graph, or because its node has since been removed.
         public var isValid: Bool { counter > 0 }
     }
 
     /// A durable reference-entry identifier `(kind, counter)`.
     ///
-    /// Scoped to one graph instance exactly as ``GraphUID`` is, and stamped with ``graphID`` for
+    /// Scoped to one graph instance exactly as `GraphUID` is, and stamped with `graphID` for.
     /// the same reason: reference counters also restart at 1 per graph.
     ///
-    /// `kind` is the raw `BRepGraph_RefId::Kind` ordinal
+    /// kind is the raw `BRepGraph_RefId::Kind` ordinal
     /// (0 Shell, 1 Face, 2 Wire, 3 Vertex, 4 Solid, 5 Child, 6 Occurrence).
     ///
-    /// ```swift
+    /// ```swift.
     /// let graph = BRepGraph(shape: assembly)!
     /// if let uid = graph.uid(ofRefKind: 1, index: 0),      // a face reference
     ///    let ref = graph.ref(forUID: uid) {
-    ///     print("face ref at index \(ref.index)")
-    /// }
-    /// ```
+    ///     print("face ref at index \(ref.index)").
+    /// }.
+    /// ```.
     public struct GraphRefUID: Sendable, Hashable, Codable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
-        /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
+        /// The instance that minted this UID (its ``BRepGraph/instanceID``. 0 means).
+        /// unstamped, which resolves in no graph.
+        ///
+        /// See ``GraphUID/graphID``.
         public let graphID: UInt64
 
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
@@ -2342,26 +2444,28 @@ public final class BRepGraph: @unchecked Sendable {
         public var isValid: Bool { counter > 0 }
     }
 
-    /// A durable generic item identifier covering both definition nodes and reference
-    /// entries. `domain` is 1 for a node, 2 for a reference; `kind` is the raw kind
+    /// A durable generic item identifier covering both definition nodes and reference.
+    /// entries. domain is 1 for a node, 2 for a reference; kind is the raw kind.
     /// ordinal in that domain's enum space.
     ///
-    /// Scoped to one graph instance and stamped with ``graphID``, exactly as ``GraphUID`` is.
+    /// Scoped to one graph instance and stamped with `graphID`, exactly as `GraphUID` is.
     ///
-    /// ```swift
+    /// ```swift.
     /// let graph = BRepGraph(shape: box)!
     /// if let uid = graph.itemUID(ofNodeKind: 2, index: 0),
     ///    let item = graph.item(forUID: uid) {
-    ///     print("domain \(item.domain) kind \(item.kind) index \(item.index)")
-    /// }
-    /// ```
+    ///     print("domain \(item.domain) kind \(item.kind) index \(item.index)").
+    /// }.
+    /// ```.
     public struct GraphItemUID: Sendable, Hashable, Codable {
         public let domain: Int
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
-        /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
+        /// The instance that minted this UID (its ``BRepGraph/instanceID``. 0 means).
+        /// unstamped, which resolves in no graph.
+        ///
+        /// See ``GraphUID/graphID``.
         public let graphID: UInt64
 
         internal init(domain: Int, kind: Int, counter: UInt32, graphID: UInt64) {
@@ -2382,7 +2486,7 @@ public final class BRepGraph: @unchecked Sendable {
         public var isValid: Bool { counter > 0 }
     }
 
-    /// Return the durable UID for a node, or `nil` if the node is invalid/removed/out of bounds.
+    /// Return the durable UID for a node, or nil if the node is invalid/removed/out of bounds.
     /// - Parameters:
     ///   - kind: raw `BRepGraph_NodeId::Kind` ordinal (e.g. 2 = Face).
     ///   - index: per-kind node index.
@@ -2395,11 +2499,11 @@ public final class BRepGraph: @unchecked Sendable {
         return GraphUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve a node UID back to its `(kind, index)`, or `nil` if this graph did not mint it
+    /// Resolve a node UID back to its `(kind, index)`, or nil if this graph did not mint it.
     /// or its node no longer exists here.
     ///
-    /// A UID minted by another graph returns `nil` even when its counter is in range for this
-    /// one — which it usually is, since counters restart per graph (#295).
+    /// A UID minted by another graph returns nil even when its counter is in range for this.
+    /// one. (which it usually is, since counters restart per graph (#295)).
     public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)? {
         guard uid.graphID == instanceID else { return nil }
         var nodeKind: Int32 = 0
@@ -2415,7 +2519,7 @@ public final class BRepGraph: @unchecked Sendable {
         return OCCTBRepGraphHasNodeUID(handle, Int32(uid.kind), uid.counter)
     }
 
-    /// Return the durable RefUID for a reference entry, or `nil` if invalid/removed.
+    /// Return the durable RefUID for a reference entry, or nil if invalid/removed.
     /// - Parameters:
     ///   - kind: raw `BRepGraph_RefId::Kind` ordinal.
     ///   - index: per-kind reference index.
@@ -2428,7 +2532,7 @@ public final class BRepGraph: @unchecked Sendable {
         return GraphRefUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve a RefUID back to its `(kind, index)`, or `nil` if this graph did not mint it
+    /// Resolve a RefUID back to its `(kind, index)`, or nil if this graph did not mint it.
     /// or the reference no longer exists here.
     public func ref(forUID uid: GraphRefUID) -> (kind: Int, index: Int)? {
         guard uid.graphID == instanceID else { return nil }
@@ -2445,7 +2549,7 @@ public final class BRepGraph: @unchecked Sendable {
         return OCCTBRepGraphHasRefUID(handle, Int32(uid.kind), uid.counter)
     }
 
-    /// Return the durable ItemUID for a node, or `nil` if invalid/removed.
+    /// Return the durable ItemUID for a node, or nil if invalid/removed.
     public func itemUID(ofNodeKind kind: Int, index: Int) -> GraphItemUID? {
         var domain: Int32 = 0
         var itemKind: Int32 = 0
@@ -2458,7 +2562,7 @@ public final class BRepGraph: @unchecked Sendable {
             domain: Int(domain), kind: Int(itemKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve an ItemUID back to its `(domain, kind, index)`, or `nil` if this graph did not
+    /// Resolve an ItemUID back to its `(domain, kind, index)`, or nil if this graph did not.
     /// mint it or the item no longer exists here.
     public func item(forUID uid: GraphItemUID) -> (domain: Int, kind: Int, index: Int)? {
         guard uid.graphID == instanceID else { return nil }
@@ -2480,32 +2584,34 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Identifies this graph instance for as long as it lives.
     ///
-    /// Unique among every graph this process builds, and — because the sequence starts at a random
-    /// point — distinct from any other process's ids with overwhelming probability. Every UID this
+    /// Unique among every graph this process builds, and (because the sequence starts at a random).
+    /// point (distinct from any other process's ids with overwhelming probability).
+    ///
+    /// Every UID this.
     /// graph mints carries it, which is how ``node(forUID:)`` tells one of its own nodes from a node
     /// of some other graph (#295).
     ///
     /// Identity here is the graph object, not the geometry: two graphs built from the same shape
-    /// have different ids, and so a UID from one does not resolve in the other. A rebuild is a new
+    /// have different ids, and so a UID from one does not resolve in the other. A rebuild is a new.
     /// graph by the same token.
     ///
     /// ``copy()`` and ``translated(dx:dy:dz:copyGeometry:)`` **inherit** this id, because the kernel
-    /// copies the graph wholesale — it transplants the UID counter space itself, so a copy genuinely
+    /// copies the graph wholesale (it transplants the UID counter space itself, so a copy genuinely).
     /// is the same identity and every UID keeps naming the same node. ``copyFace(_:copyGeometry:)``
     /// does not: it lifts one face into a new graph, which gets its own id.
     ///
-    /// ```swift
+    /// ```swift.
     /// let graph = BRepGraph(shape: box)!
     /// let uid = graph.uid(ofNodeKind: 2, index: 0)!
-    /// print(uid.graphID == graph.instanceID)      // true — this graph minted it
+    /// print(uid.graphID == graph.instanceID)      // true (this graph minted it).
     ///
-    /// let copy = graph.copy()!
-    /// print(copy.instanceID == graph.instanceID)  // true — a copy is the same identity
-    /// print(copy.node(forUID: uid) != nil)        // true — and names the same face
+    /// let copy = graph.copy()!.
+    /// print(copy.instanceID == graph.instanceID)  // true (a copy is the same identity).
+    /// print(copy.node(forUID: uid) != nil)        // true (and names the same face).
     ///
     /// let rebuilt = BRepGraph(shape: box)!    // same shape, new graph
     /// print(rebuilt.node(forUID: uid))            // nil
-    /// ```
+    /// ```.
     public var instanceID: UInt64 {
         OCCTBRepGraphInstanceID(handle)
     }

@@ -79,6 +79,7 @@ extension Shape {
         return Shape(handle: h)
     }
     /// Apply a transformation matrix via BRepTools_TrsfModification.
+    ///
     /// The 3x4 matrix is specified as row-major (a11..a14, a21..a24, a31..a34).
     public static func trsfModification(
         _ shape: Shape,
@@ -97,7 +98,10 @@ extension Shape {
     }
 
     /// Apply a general transformation matrix via BRepTools_GTrsfModification.
-    /// Supports non-uniform scaling. Shape should be NURBS-converted first for non-affine transforms.
+    ///
+    /// Supports non-uniform scaling.
+    ///
+    /// Shape should be NURBS-converted first for non-affine transforms.
     public static func gtrsfModification(
         _ shape: Shape,
         a11: Double, a12: Double, a13: Double, a14: Double,
@@ -113,30 +117,32 @@ extension Shape {
         else { return nil }
         return Shape(handle: ref)
     }
-    /// Apply a rigid transformation (3x3 rotation + translation) described by a
-    /// ``Matrix12Grouped`` matrix (see that type's doc for the GROUPED layout and how it differs
-    /// from ``TransformMatrix3D``'s INTERLEAVED layout — used instead by
-    /// ``transformed(byMatrix:)``/``gTransformed(matrix:)`` — the two are not interchangeable,
-    /// and passing one where the other is expected is now a compile error, not a silently
-    /// garbled transform. See #835.)
+    /// Apply a rigid transformation (3x3 rotation + translation) described by a.
+    /// `Matrix12Grouped` matrix (see that type's doc for the GROUPED layout and how it differs.
+    /// from `TransformMatrix3D`'s INTERLEAVED layout (used instead by).
+    /// ``transformed(byMatrix:)``/``gTransformed(matrix:)`` (the two are not interchangeable,).
+    /// and passing one where the other is expected is now a compile error, not a silently.
+    /// garbled transform.
+    ///
+    /// See #835.).
     ///
     /// - Parameter matrix: The transformation, in GROUPED layout.
-    /// - Returns: The transformed shape, or `nil` if the operation fails.
+    /// - Returns: The transformed shape, or nil if the operation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Pure translation by (5, 0, 0): identity rotation, translation grouped at the end.
-    /// if let matrix = Matrix12Grouped([
-    ///        1, 0, 0,   // r00 r01 r02
-    ///        0, 1, 0,   // r10 r11 r12
-    ///        0, 0, 1,   // r20 r21 r22
-    ///        5, 0, 0    // tx  ty  tz
-    ///    ]),
+    /// if let matrix = Matrix12Grouped([.
+    ///        1, 0, 0,   // r00 r01 r02.
+    ///        0, 1, 0,   // r10 r11 r12.
+    ///        0, 0, 1,   // r20 r21 r22.
+    ///        5, 0, 0    // tx  ty  tz.
+    ///    ]),.
     ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let moved = box.transformed(matrix: matrix),
-    ///    let bb = moved.boundingBox {
-    ///     print(bb.min.x, bb.max.x)  // 5.0 15.0 — box shifted +5 along X, matching tx = 5
-    /// }
-    /// ```
+    ///    let bb = moved.boundingBox {.
+    ///     print(bb.min.x, bb.max.x)  // 5.0 15.0 (box shifted +5 along X, matching tx = 5).
+    /// }.
+    /// ```.
     public func transformed(matrix: Matrix12Grouped) -> Shape? {
         guard
             let ref = matrix.values.withUnsafeBufferPointer({ buf in
@@ -146,9 +152,11 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// - Deprecated: Pass a ``Matrix12Grouped`` instead of a raw `[Double]` — the array's layout
-    ///   can't be checked at compile time (#835). This overload keeps the old `matrix.count == 12`
-    ///   validation (`nil` on a wrong count) for source compatibility.
+    /// - Deprecated: Pass a `Matrix12Grouped` instead of a raw `[Double]` (the array's layout).
+    ///   can't be checked at compile time (#835).
+    ///
+    ///   This overload keeps the old `matrix.count == 12`.
+    ///   validation (nil on a wrong count) for source compatibility.
     @available(
         *, deprecated,
         message:
@@ -159,31 +167,31 @@ extension Shape {
         return transformed(matrix: grouped)
     }
 
-    /// Apply a general affine transformation (rotation + non-uniform scale/shear + translation)
-    /// described by a ``TransformMatrix3D`` matrix (INTERLEAVED layout — see that type's doc) —
-    /// driving a general `gp_GTrsf` (via `BRepBuilderAPI_GTransform`) instead of a rigid
-    /// `gp_Trsf`, so non-uniform scaling and shear are supported where
+    /// Apply a general affine transformation (rotation + non-uniform scale/shear + translation).
+    /// described by a `TransformMatrix3D` matrix (INTERLEAVED layout. (see that type's doc) —).
+    /// driving a general gp_GTrsf (via BRepBuilderAPI_GTransform) instead of a rigid.
+    /// gp_Trsf, so non-uniform scaling and shear are supported where.
     /// ``transformed(byMatrix:)``/``transformed(matrix:)`` would distort or reject them.
     ///
-    /// - Parameter matrix: The transformation, in INTERLEAVED layout — the same layout
-    ///   ``transformed(byMatrix:)`` uses (and `TransformFactory3D`'s builders produce), but this
-    ///   method additionally accepts non-uniform scale/shear where that one is restricted to a
-    ///   rigid `gp_Trsf`.
-    /// - Returns: The transformed shape, or `nil` if the operation fails.
+    /// - Parameter matrix: The transformation, in INTERLEAVED layout (the same layout).
+    ///   ``transformed(byMatrix:)`` uses (and the TransformFactory3D\'s builders produce), but this
+    ///   method additionally accepts non-uniform scale/shear where that one is restricted to a.
+    ///   rigid gp_Trsf.
+    /// - Returns: The transformed shape, or nil if the operation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Non-uniform scale (2x, 1x, 0.5x) about the origin: no rotation, no translation.
-    /// if let matrix = TransformMatrix3D([
-    ///        2, 0, 0,   0,   // r00 r01 r02  tx
-    ///        0, 1, 0,   0,   // r10 r11 r12  ty
-    ///        0, 0, 0.5, 0    // r20 r21 r22  tz
-    ///    ]),
+    /// if let matrix = TransformMatrix3D([.
+    ///        2, 0, 0,   0,   // r00 r01 r02  tx.
+    ///        0, 1, 0,   0,   // r10 r11 r12  ty.
+    ///        0, 0, 0.5, 0    // r20 r21 r22  tz.
+    ///    ]),.
     ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let scaled = box.gTransformed(matrix: matrix),
-    ///    let bb = scaled.boundingBox {
-    ///     print(bb.max.x, bb.max.y, bb.max.z)  // 20.0 10.0 5.0 — X doubled, Y unchanged, Z halved
-    /// }
-    /// ```
+    ///    let bb = scaled.boundingBox {.
+    ///     print(bb.max.x, bb.max.y, bb.max.z)  // 20.0 10.0 5.0 (X doubled, Y unchanged, Z halved).
+    /// }.
+    /// ```.
     public func gTransformed(matrix: TransformMatrix3D) -> Shape? {
         guard
             let ref = matrix.values.withUnsafeBufferPointer({ buf in
@@ -193,9 +201,11 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// - Deprecated: Pass a ``TransformMatrix3D`` instead of a raw `[Double]` — the array's
-    ///   layout can't be checked at compile time (#835). This overload keeps the old
-    ///   `matrix.count == 12` validation (`nil` on a wrong count) for source compatibility.
+    /// - Deprecated: Pass a `TransformMatrix3D` instead of a raw `[Double]` (the array's).
+    ///   layout can't be checked at compile time (#835).
+    ///
+    ///   This overload keeps the old.
+    ///   `matrix.count == 12` validation (nil on a wrong count) for source compatibility.
     @available(
         *, deprecated,
         message:
@@ -208,29 +218,33 @@ extension Shape {
 }
 
 extension Shape {
-    /// Apply a rigid transformation (3x3 rotation + translation) described by a
-    /// ``TransformMatrix3D`` matrix (INTERLEAVED layout — see that type's doc for how it differs
-    /// from ``Matrix12Grouped``'s GROUPED layout, used instead by ``transformed(matrix:)``). Passed
-    /// straight through, positionally, to `gp_Trsf::SetValues(a11, a12, ..., a34)` — no
-    /// re-shuffling. Same layout as ``gTransformed(matrix:)``, but that method additionally
-    /// accepts non-uniform scale/shear; this one is restricted to a rigid `gp_Trsf`.
+    /// Apply a rigid transformation (3x3 rotation + translation) described by a.
+    /// `TransformMatrix3D` matrix (INTERLEAVED layout (see that type's doc for how it differs).
+    /// from `Matrix12Grouped`'s GROUPED layout, used instead by ``transformed(matrix:)``).
+    ///
+    /// Passed.
+    /// straight through, positionally, to `gp_Trsf::SetValues(a11, a12, ..., a34)` (no).
+    /// re-shuffling.
+    ///
+    /// Same layout as ``gTransformed(matrix:)``, but that method additionally
+    /// accepts non-uniform scale/shear; this one is restricted to a rigid gp_Trsf.
     ///
     /// - Parameter matrix: The transformation, in INTERLEAVED layout.
-    /// - Returns: Transformed shape, or `nil` if the operation fails.
+    /// - Returns: Transformed shape, or nil if the operation fails.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Pure translation by (5, 10, 15): identity rotation, translation folded into each row.
-    /// if let matrix = TransformMatrix3D([
-    ///        1, 0, 0, 5,    // a11 a12 a13 a14(tx)
-    ///        0, 1, 0, 10,   // a21 a22 a23 a24(ty)
-    ///        0, 0, 1, 15    // a31 a32 a33 a34(tz)
-    ///    ]),
+    /// if let matrix = TransformMatrix3D([.
+    ///        1, 0, 0, 5,    // a11 a12 a13 a14(tx).
+    ///        0, 1, 0, 10,   // a21 a22 a23 a24(ty).
+    ///        0, 0, 1, 15    // a31 a32 a33 a34(tz).
+    ///    ]),.
     ///    let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
     ///    let moved = box.transformed(byMatrix: matrix),
-    ///    let bb = moved.boundingBox {
-    ///     print(bb.min.x, bb.min.y, bb.min.z)  // 5.0 10.0 15.0
-    /// }
-    /// ```
+    ///    let bb = moved.boundingBox {.
+    ///     print(bb.min.x, bb.min.y, bb.min.z)  // 5.0 10.0 15.0.
+    /// }.
+    /// ```.
     public func transformed(byMatrix matrix: TransformMatrix3D) -> Shape? {
         var result: OCCTShapeRef?
         let v = matrix.values
@@ -244,9 +258,11 @@ extension Shape {
         return Shape(handle: r)
     }
 
-    /// - Deprecated: Pass a ``TransformMatrix3D`` instead of a raw `[Double]` — the array's
-    ///   layout can't be checked at compile time (#835). This overload keeps the old
-    ///   `matrix.count == 12` validation (`nil` on a wrong count) for source compatibility.
+    /// - Deprecated: Pass a `TransformMatrix3D` instead of a raw `[Double]` (the array's).
+    ///   layout can't be checked at compile time (#835).
+    ///
+    ///   This overload keeps the old.
+    ///   `matrix.count == 12` validation (nil on a wrong count) for source compatibility.
     @available(
         *, deprecated,
         message:

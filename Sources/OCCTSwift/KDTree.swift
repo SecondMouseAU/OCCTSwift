@@ -4,27 +4,28 @@ import simd
 
 /// A KD-tree for fast spatial queries on 3D point sets.
 ///
-/// `KDTree` wraps OCCT's `NCollection_KDTree` to provide efficient
+/// KDTree wraps OCCT's NCollection_KDTree to provide efficient.
 /// nearest-neighbor, k-nearest, range, and box queries.
 ///
-/// ## Example
+/// ## Example.
 ///
-/// ```swift
+/// ```swift.
 /// let points: [SIMD3<Double>] = [
-///     SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0),
-///     SIMD3(1, 1, 0), SIMD3(0.5, 0.5, 0)
-/// ]
+///     SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0),.
+///
+///     SIMD3(1, 1, 0), SIMD3(0.5, 0.5, 0).
+/// ].
 /// let tree = KDTree(points: points)!
 ///
-/// // Find nearest point to a query
+/// // Find nearest point to a query.
 /// let (index, distance) = tree.nearest(to: SIMD3(0.4, 0.4, 0))!
 ///
-/// // Find 3 nearest points
+/// // Find 3 nearest points.
 /// let neighbors = tree.kNearest(to: SIMD3(0.5, 0.5, 0), k: 3)
 ///
-/// // Find all points within radius 1.0
+/// // Find all points within radius 1.0.
 /// let nearby = tree.rangeSearch(center: .zero, radius: 1.0)
-/// ```
+/// ```.
 public final class KDTree: @unchecked Sendable {
     internal let handle: OCCTKDTreeRef
 
@@ -61,7 +62,9 @@ public final class KDTree: @unchecked Sendable {
     /// - Parameters:
     ///   - point: The query point
     ///   - k: Output *capacity*, clamped into `0...` ``Sampling/maximumSampleCount``; 0 or less
-    ///     returns empty (#622). Fewer than `k` come back when the tree holds fewer points.
+    ///     returns empty (#622).
+    ///
+    ///     Fewer than k come back when the tree holds fewer points.
     /// - Returns: Array of (0-based index, squared distance) tuples, sorted by distance
     public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDistance: Double)]
     {

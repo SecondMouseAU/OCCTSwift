@@ -12,19 +12,23 @@ import simd
 // moved to `SIMD3Unpacking.swift` in that round, and this one gets its own file rather than
 // joining them there, since it isn't a bridge-unpack helper).
 
-/// Deterministic perpendicular basis for `direction`, matching OCCT's own `gp_Ax2(gp_Pnt,
+/// Deterministic perpendicular basis for direction, matching OCCT's own `gp_Ax2(gp_Pnt,.
 /// gp_Dir)` algorithm: no magnitude threshold, no fallback branch (#881).
 ///
-/// Picks whichever of `direction`'s components has the smallest magnitude and derives the
-/// perpendicular algebraically from it, so it never needs a fallback the way a
-/// `cross(worldUp, direction)` construction does. Shared by every OCCTSwift site that needs a
+/// Picks whichever of the direction\'s components has the smallest magnitude and derives the.
+/// perpendicular algebraically from it, so it never needs a fallback the way a.
+/// `cross(worldUp, direction)` construction does.
+///
+/// Shared by every OCCTSwift site that needs a.
 /// stable basis perpendicular to one direction.
 ///
-/// - Returns: `(right, up)`, unit vectors with `direction` forming a right-handed
-///   basis: `up == cross(direction, right)`. Unlabeled, since every call site already destructures
+/// - Returns: `(right, up)`, unit vectors with direction forming a right-handed
+///   basis: `up == cross(direction, right)`.
+///
+///   Unlabeled, since every call site already destructures.
 ///   positionally (`let (a, b) = perpendicularBasis(to:)`), and an internal function returning a
-///   tuple with baked-in labels forces a call site whose own labels differ into a two-step
-///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
+///   tuple with baked-in labels forces a call site whose own labels differ into a two-step.
+///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,.
 ///   second round).
 internal func perpendicularBasis(to direction: SIMD3<Double>) -> (
     SIMD3<Double>, SIMD3<Double>

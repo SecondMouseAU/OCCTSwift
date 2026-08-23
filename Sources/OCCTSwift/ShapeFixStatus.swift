@@ -16,34 +16,37 @@
 // pinned V8_0_1) and is the one type both classes use now, each with its own meaning table for
 // the per-class DONEi/FAILi slots: see `ShapeFixer.status(_:)` and `FaceFixer.status(_:)`.
 
-/// A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
-/// subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result
-/// through. `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own
-/// meaning to the numbered slots, and a slot it does not use is simply never set. See
+/// A status flag from OCCT's ShapeExtend_Status enum (the flag space every ShapeFix_Root).
+/// subclass (ShapeFix_Shape, ShapeFix_Face, ShapeFix_Wire, ...) reports its fix result.
+/// through. DONE1...DONE8 and FAIL1...FAIL8 are per-class: each subclass assigns its own
+/// meaning to the numbered slots, and a slot it does not use is simply never set.
+///
+/// See.
 /// ``ShapeFixer/status(_:)`` and ``FaceFixer/status(_:)`` for each class's own meaning table.
 ///
 /// Raw values mirror the real OCCT ordinals exactly (`ShapeExtend_Status.hxx`, pinned V8_0_1):
-/// `OK`=0, `DONE1`...`DONE8`=1...8, the combined `DONE`=9, `FAIL1`...`FAIL8`=10...17, the combined
-/// `FAIL`=18. (#849 — a previous, per-class-local encoding shifted everything from `.fail1`
-/// onward by one ordinal; this type replaces it.)
+/// OK=0, DONE1...DONE8=1...8, the combined DONE=9, FAIL1...FAIL8=10...17, the combined.
 ///
-/// ```swift
+/// FAIL=18 (#849 (a previous, per-class-local encoding shifted everything from `.fail1`).
+/// onward by one ordinal; this type replaces it.).
+///
+/// ```swift.
 /// let fixer = FaceFixer(face: badFace)
-/// fixer?.perform()
-/// if fixer?.status(.done) == true {
-///     // something was fixed — ask which pass, per ShapeFix_Face's own DONEi meanings
+/// fixer?.perform().
+/// if fixer?.status(.done) == true {.
+///     // something was fixed (ask which pass, per ShapeFix_Face's own DONEi meanings).
 ///     print(fixer?.status(.done3) == true ? "a missing seam was added" : "some other pass fired")
-/// }
-/// ```
+/// }.
+/// ```.
 public enum ShapeFixStatus: Int32, Sendable, CaseIterable {
     /// Nothing needed fixing.
     case ok = 0
     case done1 = 1
     case done2, done3, done4, done5, done6, done7, done8
-    /// Any `DONE1`...`DONE8` flag is set: something was fixed.
+    /// Any DONE1...DONE8 flag is set: something was fixed.
     case done = 9
     case fail1 = 10
     case fail2, fail3, fail4, fail5, fail6, fail7, fail8
-    /// Any `FAIL1`...`FAIL8` flag is set: some pass failed.
+    /// Any FAIL1...FAIL8 flag is set: some pass failed.
     case fail = 18
 }

@@ -3,23 +3,25 @@ import OCCTBridge
 
 /// A thin plate spline solver for surface deformation.
 ///
-/// `PlateSolver` provides direct access to the OCCT `Plate_Plate` variational
-/// solver. It computes a smooth displacement field that passes through a set
+/// PlateSolver provides direct access to the OCCT Plate_Plate variational.
+/// solver.
+///
+/// It computes a smooth displacement field that passes through a set.
 /// of pinpoint constraints (position and/or derivative) while minimizing bending energy.
 ///
-/// Unlike the higher-level NLPlate methods on `Surface`, `PlateSolver` works
+/// Unlike the higher-level NLPlate methods on Surface, PlateSolver works.
 /// directly in the UV parameter space and returns raw XYZ displacements.
 ///
 /// Usage:
-/// ```swift
-/// let solver = PlateSolver()
+/// ```swift.
+/// let solver = PlateSolver().
 /// solver.loadPinpoint(u: 0, v: 0, position: .zero)
 /// solver.loadPinpoint(u: 1, v: 0, position: SIMD3(1, 0, 0))
 /// solver.loadPinpoint(u: 0.5, v: 0.5, position: SIMD3(0.5, 0.5, 1.0))
-/// if solver.solve() {
+/// if solver.solve() {.
 ///     let point = solver.evaluate(u: 0.5, v: 0.5)
-/// }
-/// ```
+/// }.
+/// ```.
 public final class PlateSolver: @unchecked Sendable {
     internal let handle: OCCTPlateRef
 
@@ -63,7 +65,7 @@ public final class PlateSolver: @unchecked Sendable {
 
     /// Load a geometric-to-continuity (GtoC) constraint at G1 level.
     ///
-    /// Constrains the surface derivatives to transition from one tangent frame
+    /// Constrains the surface derivatives to transition from one tangent frame.
     /// to another at a given UV point.
     ///
     /// - Parameters:
@@ -110,6 +112,7 @@ public final class PlateSolver: @unchecked Sendable {
     /// Evaluate the plate at a UV point.
     ///
     /// Returns the 3D displacement/position computed by the solver.
+    ///
     /// Must call `solve()` first.
     public func evaluate(u: Double, v: Double) -> SIMD3<Double> {
         var x: Double = 0
@@ -190,6 +193,7 @@ extension PlateSolver {
 extension PlateSolver {
 
     /// Load a global translation constraint.
+    ///
     /// All sample points are constrained to translate by the same unknown displacement.
     @discardableResult
     public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool {

@@ -17,18 +17,24 @@ import Foundation
 // and `.offsetFrom` are for ConstructionEntity (Phase 2) and don't belong here.
 
 public indirect enum TopologyRef: Sendable, Hashable {
-    /// Direct reference by current `(kind, index)`. Escape hatch — use sparingly;
+    /// Direct reference by current `(kind, index)`.
+    ///
+    /// Escape hatch (use sparingly;).
     /// it bypasses recipe resolution and breaks on any graph mutation.
     case literal(BRepGraph.NodeRef)
 
-    /// The Nth node of `kind` that appears as a replacement in a history record
-    /// tagged with `operationName`. Deterministic order: (sequenceNumber,
+    /// The Nth node of kind that appears as a replacement in a history record.
+    /// tagged with operationName.
+    ///
+    /// Deterministic order: (sequenceNumber,
     /// original (kind, index), position within replacements vector).
     ///
-    /// When a single creation splits into multiple live descendants over
-    /// subsequent mutations, `leafOccurrence` picks among them; defaults to 0
-    /// (the first leaf in deterministic order). Use `leafOccurrence: nil` to
-    /// disable forward-walk entirely and get the node as originally created —
+    /// When a single creation splits into multiple live descendants over.
+    /// subsequent mutations, leafOccurrence picks among them; defaults to 0.
+    /// (the first leaf in deterministic order).
+    ///
+    /// Use `leafOccurrence: nil` to
+    /// disable forward-walk entirely and get the node as originally created —.
     /// rarely what you want, but useful for history inspection.
     case createdBy(
         operationName: String,
@@ -36,19 +42,23 @@ public indirect enum TopologyRef: Sendable, Hashable {
         occurrence: Int = 0,
         leafOccurrence: Int? = 0)
 
-    /// The Nth descendant of `kind` contained within `parent`.
+    /// The Nth descendant of kind contained within parent.
     ///
-    /// For a solid parent, descendants of kind `.face` are that solid's faces
-    /// (via the graph's child iteration). Order is stable across mutations for
-    /// unmodified parents; for mutated parents the order is whatever the graph
+    /// For a solid parent, descendants of kind `.face` are that solid's faces.
+    /// (via the graph's child iteration).
+    ///
+    /// Order is stable across mutations for.
+    /// unmodified parents; for mutated parents the order is whatever the graph.
     /// reports post-mutation.
     case containedIn(
         parent: TopologyRef,
         kind: BRepGraph.NodeKind,
         occurrence: Int = 0)
 
-    /// The Nth replacement produced by the operation that split `original` into
-    /// multiple nodes. Typical use: picking one of two halves after an edge split.
+    /// The Nth replacement produced by the operation that split original into.
+    /// multiple nodes.
+    ///
+    /// Typical use: picking one of two halves after an edge split.
     case splitOf(original: TopologyRef, occurrence: Int)
 }
 
@@ -63,16 +73,19 @@ public enum TopologyResolutionError: Error, Sendable, Hashable {
 
 extension BRepGraph.NodeRef {
     /// Sentinel for recording pure creations (no meaningful ancestor).
-    /// Matches OCCT's default-constructed `BRepGraph_NodeId` — kind .solid, index -1.
+    ///
+    /// Matches OCCT's default-constructed BRepGraph_NodeId (kind .solid, index -1).
     public static let sentinel = BRepGraph.NodeRef(kind: .solid, index: -1)
 }
 
 extension BRepGraph {
-    /// Resolve a `TopologyRef` recipe against the graph's current state.
+    /// Resolve a TopologyRef recipe against the graph's current state.
     ///
-    /// Recipes are evaluated lazily — `resolve` performs the lookup every call,
-    /// walking history records as needed. For hot paths, the caller can cache
-    /// the resolved `NodeRef` and invalidate on any mutation.
+    /// Recipes are evaluated lazily (resolve performs the lookup every call,).
+    /// walking history records as needed.
+    ///
+    /// For hot paths, the caller can cache.
+    /// the resolved NodeRef and invalidate on any mutation.
     public func resolve(_ ref: TopologyRef) -> Result<NodeRef, TopologyResolutionError> {
         switch ref {
         case .literal(let node):
@@ -99,9 +112,10 @@ extension BRepGraph {
 
     // MARK: - Recipe evaluators
 
-    /// The bounds check shared by every recipe resolver below: `occurrence` must be a
-    /// valid index into `available`, or resolution fails with `.occurrenceOutOfRange`.
-    /// Returns the validated element itself on success, so call sites don't need their
+    /// The bounds check shared by every recipe resolver below: occurrence must be a
+    /// valid index into available, or resolution fails with `.occurrenceOutOfRange`.
+    ///
+    /// Returns the validated element itself on success, so call sites don't need their.
     /// own follow-up bounds check or subscript.
     private func element<T>(
         at occurrence: Int,
@@ -115,10 +129,12 @@ extension BRepGraph {
         return .success(available[occurrence])
     }
 
-    /// Resolves `ancestor` and collapses any failure into `.ancestorMissing(ancestor)` —
-    /// the shared "resolve the ancestor recipe, or fail" step `resolveContainedIn` and
-    /// `resolveSplitOf` each perform before doing their own kind-specific lookup. The
-    /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
+    /// Resolves ancestor and collapses any failure into `.ancestorMissing(ancestor)` —.
+    /// the shared "resolve the ancestor recipe, or fail" step resolveContainedIn and.
+    /// resolveSplitOf each perform before doing their own kind-specific lookup.
+    ///
+    /// The.
+    /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`).
     /// is intentionally discarded, same as both call sites did before consolidation.
     private func resolveAncestor(_ ancestor: TopologyRef) -> Result<
         NodeRef, TopologyResolutionError
@@ -225,18 +241,21 @@ extension BRepGraph {
         }
     }
 
-    /// Walk history forward from `node` to its current form. If `node` has
+    /// Walk history forward from node to its current form.
+    ///
+    /// If node has.
     /// derived descendants, return the first leaf in deterministic order.
     private func currentForm(of node: NodeRef) -> NodeRef {
         let leaves = currentForms(of: node)
         return leaves.first ?? node
     }
 
-    /// All current (live-leaf) descendants of `node`, in deterministic order.
+    /// All current (live-leaf) descendants of node, in deterministic order.
     ///
-    /// A descendant is "live" when it doesn't appear as an original in any
-    /// subsequent history record — i.e. it's the final form of that branch.
-    /// Useful when a single creation has split into multiple live children
+    /// A descendant is "live" when it doesn't appear as an original in any.
+    /// subsequent history record (i.e. it's the final form of that branch).
+    ///
+    /// Useful when a single creation has split into multiple live children.
     /// (e.g., a face created by an extrude, then split by a subsequent fillet).
     public func currentForms(of node: NodeRef) -> [NodeRef] {
         let derived = findDerived(of: node)

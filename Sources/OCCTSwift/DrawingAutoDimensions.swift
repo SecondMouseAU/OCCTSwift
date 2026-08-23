@@ -15,14 +15,14 @@ import simd
 extension Drawing {
     public struct AutoDimensionResult: Sendable {
         public let added: [DrawingDimension]
-        /// Human-readable reasons for edges/features that were skipped,
+        /// Human-readable reasons for edges/features that were skipped,.
         /// useful for debugging why a hole didn't get dimensioned.
         public let skipped: [String]
     }
 
     /// Heuristic dimensions: overall X+Y extent of the shape's projected
-    /// bounding box, plus a diameter dimension on every visible circular edge
-    /// whose radius is at least `minRadius`.
+    /// bounding box, plus a diameter dimension on every visible circular edge.
+    /// whose radius is at least minRadius.
     ///
     /// - Parameters:
     ///   - shape: Source 3D shape (the one this drawing was projected from).

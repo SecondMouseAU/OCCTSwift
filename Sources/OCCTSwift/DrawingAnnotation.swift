@@ -10,8 +10,10 @@ import simd
 // a DXF writer), not as AIS display objects. XDE-backed round-trip is on the
 // v0.139 roadmap if and when STEP AP242 GD&T preservation becomes a requirement.
 
-/// Standard technical-drawing linetypes. Used when rendering a `DrawingDimension`
-/// or `DrawingAnnotation` to DXF, PDF, or a viewport.
+/// Standard technical-drawing linetypes.
+///
+/// Used when rendering a DrawingDimension.
+/// or DrawingAnnotation to DXF, PDF, or a viewport.
 public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
     case solid
     case dashed  // hidden-line pattern
@@ -20,33 +22,39 @@ public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
     case dotted
 }
 
-/// Typed tolerance carried on a `DrawingDimension`. Rendered inline for
-/// symmetric / fit-class cases, or as stacked TEXT (upper + lower) for
+/// Typed tolerance carried on a DrawingDimension.
+///
+/// Rendered inline for.
+/// symmetric / fit-class cases, or as stacked TEXT (upper + lower) for.
 /// bilateral / unilateral / explicit-limits cases in DXF/PDF/SVG output.
 ///
 /// The enum is the typed replacement for the old `label: "⌀10 ±0.05"` escape
 /// hatch: a caller that wants structured tolerance data can set
-/// `tolerance = .symmetric(0.05)` and keep `label` nil, letting the writer
-/// compose the full text from `value` + `tolerance`.
+/// `tolerance = .symmetric(0.05)` and keep label nil, letting the writer.
+/// compose the full text from value + tolerance.
 public enum DrawingTolerance: Sendable, Hashable, Codable {
     /// No tolerance displayed.
     case none
     /// Symmetric ± tolerance: `20 ±0.05`.
     case symmetric(Double)
-    /// Bilateral: `20 +0.10 / -0.05`. Both values are magnitudes; the
+    /// Bilateral: `20 +0.10 / -0.05`.
+    ///
+    /// Both values are magnitudes; the.
     /// writer adds the signs.
     case bilateral(plus: Double, minus: Double)
     /// Unilateral (single-sided): `20 +0.10 / 0` or `20 0 / -0.10`
     /// depending on sign of the value.
     case unilateral(Double)
-    /// ISO 286 fit class appended as a suffix: `H7`, `g6`, `h7/H8`.
+    /// ISO 286 fit class appended as a suffix: H7, g6, `h7/H8`.
     case fitClass(String)
     /// Explicit upper / lower limits stacked over the nominal:
     /// `20 upper / lower` rendered on two lines.
     case limits(lower: Double, upper: Double)
 }
 
-/// A dimension attached to a `Drawing`. Each case carries just the geometric
+/// A dimension attached to a Drawing.
+///
+/// Each case carries just the geometric.
 /// definition needed to render it; there's no OCCT handle inside.
 public enum DrawingDimension: Sendable, Hashable {
     case linear(Linear)
@@ -81,7 +89,7 @@ public enum DrawingDimension: Sendable, Hashable {
             self.tolerance = tolerance
         }
 
-        /// Measured 2D distance between `from` and `to`.
+        /// Measured 2D distance between from and to.
         public var value: Double { simd_distance(from, to) }
     }
 
@@ -180,9 +188,11 @@ public enum DrawingDimension: Sendable, Hashable {
     }
 
     /// ISO 129-1 §9.3 ordinate dimensions: a shared origin plus N features,
-    /// each shown as an X-offset (along the bottom of the view) and Y-offset
-    /// (along the side) measured from the origin. Used for CNC-style
-    /// reference-datum dimensioning where chains of linear dimensions would
+    /// each shown as an X-offset (along the bottom of the view) and Y-offset.
+    /// (along the side) measured from the origin.
+    ///
+    /// Used for CNC-style.
+    /// reference-datum dimensioning where chains of linear dimensions would.
     /// clutter the view.
     public struct Ordinate: Sendable, Hashable, Codable {
         public var origin: SIMD2<Double>
@@ -248,7 +258,7 @@ public enum DrawingDimension: Sendable, Hashable {
     }
 }
 
-/// Non-dimensional 2D annotations attached to a `Drawing` — centrelines, centremarks,
+/// Non-dimensional 2D annotations attached to a Drawing (centrelines, centremarks,).
 /// construction points, free-form text labels, hatch fills, assembly balloons.
 public enum DrawingAnnotation: Sendable, Hashable {
     case centreline(Centreline)
@@ -315,13 +325,15 @@ public enum DrawingAnnotation: Sendable, Hashable {
         }
     }
 
-    /// ISO 128-40 cutting-plane line — the section mark on the parent view
-    /// indicating where a section view was cut. Renders as:
-    /// - heavy-chain segments at each endpoint (~10 mm long)
-    /// - thin-chain segment joining the heavy ends across the view
-    /// - perpendicular arrows at each end pointing in the section's view
-    ///   direction
-    /// - label letter at each arrow (typically capital "A", "B", ...)
+    /// ISO 128-40 cutting-plane line (the section mark on the parent view).
+    /// indicating where a section view was cut.
+    ///
+    /// Renders as:
+    /// - heavy-chain segments at each endpoint (~10 mm long).
+    /// - thin-chain segment joining the heavy ends across the view.
+    /// - perpendicular arrows at each end pointing in the section's view.
+    ///   direction.
+    /// - label letter at each arrow (typically capital "A", "B", ...).
     public struct CuttingPlaneLine: Sendable, Hashable {
         public var label: String
         public var traceStart: SIMD2<Double>
@@ -344,9 +356,10 @@ public enum DrawingAnnotation: Sendable, Hashable {
         }
     }
 
-    /// ISO 128-50 section-view hatching — a closed outer boundary filled with
-    /// parallel lines at `angle` radians, spaced `spacing` drawing-units apart.
-    /// Optional `islands` are inner boundaries (holes) that are subtracted
+    /// ISO 128-50 section-view hatching (a closed outer boundary filled with).
+    /// parallel lines at angle radians, spaced spacing drawing-units apart.
+    ///
+    /// Optional islands are inner boundaries (holes) that are subtracted.
     /// from the hatched region.
     public struct Hatch: Sendable, Hashable {
         public var boundary: [SIMD2<Double>]  // closed polygon (first != last)
@@ -374,9 +387,12 @@ public enum DrawingAnnotation: Sendable, Hashable {
     }
 
     /// Assembly-drawing balloon callout: a numbered circle placed near a
-    /// part, with an optional leader line to the balloon target. Balloon
-    /// `itemNumber` is expected to match a row in the drawing's
-    /// `BillOfMaterials`.
+    /// part, with an optional leader line to the balloon target.
+    ///
+    /// Balloon.
+    /// itemNumber is expected to match a row in the drawing's.
+    ///
+    /// BillOfMaterials.
     public struct Balloon: Sendable, Hashable {
         public var itemNumber: Int
         public var centre: SIMD2<Double>
@@ -400,7 +416,9 @@ public enum DrawingAnnotation: Sendable, Hashable {
     }
 }
 
-/// Storage for drawing-level dimensions and annotations. Wrapped inside `Drawing`
+/// Storage for drawing-level dimensions and annotations.
+///
+/// Wrapped inside Drawing.
 /// so each Drawing carries its own mutable collection without breaking Sendable.
 internal final class DrawingAnnotationStore: @unchecked Sendable {
     private let lock = NSLock()

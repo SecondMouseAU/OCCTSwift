@@ -8,39 +8,42 @@ extension Shape {
 
     /// Fix shape problems with detailed control over what to fix.
     ///
-    /// A second, dedicated `ShapeFix_Shape` entry point beside ``ShapeFixer``: this one offers
-    /// per-mode control (the four flags below) but no independent tolerance range, and
-    /// ``ShapeFixer`` offers `setMinTolerance`/`setMaxTolerance` but no mode control at all — the
+    /// A second, dedicated ShapeFix_Shape entry point beside `ShapeFixer`: this one offers
+    /// per-mode control (the four flags below) but no independent tolerance range, and.
+    /// `ShapeFixer` offers setMinTolerance/setMaxTolerance but no mode control at all (the).
     /// two are not interchangeable (#837).
     ///
     /// - Parameters:
     ///   - tolerance: Tolerance for fixing operations
     ///   - fixSolid: Whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`)
-    ///   - fixShell: Whether to fix **free** shells — shells that aren't part of a solid
+    ///   - fixShell: Whether to fix **free** shells (shells that aren't part of a solid).
     ///     (`ShapeFix_Shape::FixFreeShellMode`)
-    ///   - fixFace: Whether to fix **free** faces — faces that aren't part of a shell
+    ///   - fixFace: Whether to fix **free** faces (faces that aren't part of a shell).
     ///     (`ShapeFix_Shape::FixFreeFaceMode`)
-    ///   - fixWire: Whether to fix **free** wires — wires that aren't part of a face
+    ///   - fixWire: Whether to fix **free** wires (wires that aren't part of a face).
     ///     (`ShapeFix_Shape::FixFreeWireMode`)
     /// - Returns: Fixed shape, or nil on failure
     ///
-    /// `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically — a shell
-    /// not attached to a solid, a face not attached to a shell, a wire not attached to a face —
+    /// fixShell/fixFace/fixWire govern **free** (standalone) content specifically (a shell).
+    /// not attached to a solid, a face not attached to a shell, a wire not attached to a face —.
     /// not shell/face/wire fixing in general: content that *is* attached is always fixed by
-    /// `Perform()`, regardless of these three flags. `ShapeFix_Shape` has no plain
-    /// `FixShellMode`/`FixFaceMode`/`FixWireMode` in this OCCT version to offer broader control.
+    /// `Perform()`, regardless of these three flags.
     ///
-    /// Before #837 these three parameters were accepted but never passed to `ShapeFix_Shape` at
-    /// all — only `fixSolid` had any effect, and the other three silently behaved as if always
-    /// `true` regardless of what was passed, with no error and nothing in the return value to
+    /// ShapeFix_Shape has no plain.
+    ///
+    /// FixShellMode/FixFaceMode/FixWireMode in this OCCT version to offer broader control.
+    ///
+    /// Before #837 these three parameters were accepted but never passed to ShapeFix_Shape at.
+    /// all (only fixSolid had any effect, and the other three silently behaved as if always).
+    /// true regardless of what was passed, with no error and nothing in the return value to.
     /// reveal it.
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
+    /// ```swift.
     /// // Skip fixing free (standalone) shells/faces/wires; only fix solid orientation.
     /// let fixed = shape.fixed(tolerance: 0.001, fixShell: false, fixFace: false, fixWire: false)
-    /// ```
+    /// ```.
     public func fixed(
         tolerance: Double = 1e-6,
         fixSolid: Bool = true,
@@ -62,38 +65,43 @@ extension Shape {
     /// Unify faces and edges lying on the same geometry.
     ///
     /// After boolean operations, shapes often have unnecessary internal subdivisions.
-    /// This method merges faces that share the same underlying surface and edges
+    ///
+    /// This method merges faces that share the same underlying surface and edges.
     /// that share the same underlying curve.
     ///
     /// The receiver is **not** modified: the merge runs on a private copy, so a caller who discards
-    /// the result still holds exactly the shape they started with (#446 — the underlying OCCT
+    /// the result still holds exactly the shape they started with (#446 (the underlying OCCT).
     /// algorithm rewrites sub-shapes of its input, which used to reach the receiver).
     ///
     /// The price of that copy is **identity**: the result shares no sub-shapes with the receiver,
     /// even where nothing was merged, so `isSame(as:)`/`isPartner(with:)`/`isEqual(to:)` answer
-    /// `false` for faces that came through untouched. Code that maps selections or attributes from
-    /// the input onto the result by sub-shape identity has to key off geometry instead. Before #446
-    /// an unmerged face came back identical — but so did the damage this method did to it.
+    /// false for faces that came through untouched.
+    ///
+    /// Code that maps selections or attributes from.
+    /// the input onto the result by sub-shape identity has to key off geometry instead.
+    ///
+    /// Before #446.
+    /// an unmerged face came back identical (but so did the damage this method did to it).
     ///
     /// - Parameters:
     ///   - unifyEdges: Whether to merge edges on same curve (default: true)
     ///   - unifyFaces: Whether to merge faces on same surface (default: true)
-    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true — note
+    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true (note).
     ///     ``UnifySameDomainBuilder/init(shape:unifyEdges:unifyFaces:concatBSplines:)`` defaults
-    ///     this to `false`)
+    ///     this to false).
     /// - Returns: Unified shape, or nil on failure
     ///
-    /// For angular/linear tolerance control, `keepShape`, or internal-edge handling, use
-    /// ``UnifySameDomainBuilder`` instead.
+    /// For angular/linear tolerance control, keepShape, or internal-edge handling, use.
+    /// `UnifySameDomainBuilder` instead.
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // After subtracting multiple cylinders, unify to simplify topology
-    /// let result = box - cyl1 - cyl2 - cyl3
-    /// let clean = result.unified()
-    /// print("Faces reduced from \(result.faceCount) to \(clean.faceCount)")
-    /// ```
+    /// ```swift.
+    /// // After subtracting multiple cylinders, unify to simplify topology.
+    /// let result = box - cyl1 - cyl2 - cyl3.
+    /// let clean = result.unified().
+    /// print("Faces reduced from \(result.faceCount) to \(clean.faceCount)").
+    /// ```.
     public func unified(
         unifyEdges: Bool = true,
         unifyFaces: Bool = true,
@@ -108,18 +116,20 @@ extension Shape {
 
     /// Simplify a shape by unifying same-domain geometry and healing.
     ///
-    /// This is a convenience method that combines `unified()` and `healed()`. As with `unified()`,
+    /// This is a convenience method that combines `unified()` and `healed()`.
+    ///
+    /// As with `unified()`,.
     /// the receiver is not modified (#446).
     ///
     /// - Parameter tolerance: Tolerance for simplification operations
     /// - Returns: Simplified shape, or nil on failure
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // Clean up a complex boolean result
+    /// ```swift.
+    /// // Clean up a complex boolean result.
     /// let simplified = result.simplified(tolerance: 0.001)
-    /// ```
+    /// ```.
     public func simplified(tolerance: Double = 1e-6) -> Shape? {
         guard let result = OCCTShapeSimplify(handle, tolerance) else {
             return nil
@@ -133,26 +143,31 @@ extension Shape {
 
     /// Divide a shape wherever its geometry drops below the required continuity.
     ///
-    /// Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together
-    /// to `continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing
-    /// guide demonstrates. Until #438 this was one of two public entry points over that same OCCT
+    /// Sets the ShapeUpgrade_ShapeDivideContinuity\'s boundary, pcurve AND surface criteria together.
+    /// to continuity, plus `SetSurfaceSegmentMode(true)` (the usage OCCT's own shape-healing).
+    /// guide demonstrates.
+    ///
+    /// Until #438 this was one of two public entry points over that same OCCT.
     /// class: ``dividedByContinuity(criterion:tolerance:)`` (now deprecated, forwarding here) set
-    /// only the boundary criterion, leaving pcurve/surface pinned at the class's own C1
-    /// constructor default regardless of the requested continuity — measured
-    /// (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a
-    /// fixture where this method's own three-criteria behaviour varies (nil/4/4/25 faces at
+    /// only the boundary criterion, leaving pcurve/surface pinned at the class's own C1.
+    /// constructor default regardless of the requested continuity (measured).
+    /// (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a.
+    /// fixture where this method's own three-criteria behaviour varies (nil/4/4/25 faces at.
+    ///
     /// C0/C1/C2/C3).
     ///
-    /// ```swift
+    /// ```swift.
     /// let pieces = shape.divided(at: .c2)
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - continuity: Minimum required continuity. `.cn`, `.g1` and `.g2` are accepted in
-    ///     addition to `.c0`...`.c3` (#438 widened this from ``ParametricContinuity``); OCCT's
-    ///     own criterion setters have no case for G1/G2 and would otherwise silently substitute
+    ///     addition to `.c0`...`.c3` (#438 widened this from `ParametricContinuity`); OCCT's.
+    ///     own criterion setters have no case for G1/G2 and would otherwise silently substitute.
     ///     their own C1 default, so those two are decoded ahead of the call instead.
-    ///   - tolerance: Tolerance for the continuity check. Defaults to `1e-7`
+    ///   - tolerance: Tolerance for the continuity check.
+    ///
+    ///   Defaults to `1e-7`.
     ///     (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438
     ///     added the parameter.
     /// - Returns: Divided shape, or nil if no divisions were needed or on failure.
@@ -163,7 +178,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert geometry to direct faces (canonical surfaces)
+    /// Convert geometry to direct faces (canonical surfaces).
     ///
     /// - Returns: Shape with canonical surfaces, or nil on failure
     public func directFaces() -> Shape? {
@@ -171,7 +186,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Scale shape geometry by a factor
+    /// Scale shape geometry by a factor.
     ///
     /// Unlike `scaled(by:)` which applies a geometric transform, this modifies the
     /// underlying surface and curve definitions.
@@ -185,20 +200,24 @@ extension Shape {
 
     /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
-    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
-    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
-    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    /// This does **not** recognise analytic forms (nothing here converts a BSpline back to a plane,).
+    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the.
+    /// operations that do).
     ///
-    /// Continuity is fixed at C1 here; use
+    /// It approximates each geometry as a BSpline no worse than the supplied.
+    /// tolerances, capped at maxDegree and maxSegments.
+    ///
+    /// Continuity is fixed at C1 here; use.
     /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
-    /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
-    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// to choose it.
+    ///
+    /// Either way OCCT **reduces the continuity it delivers, silently, whenever the.
+    /// requested one cannot meet the tolerance within maxDegree** (measured in #570, a face on an).
     /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
     ///
-    /// ```swift
+    /// ```swift.
     /// let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001)
-    /// ```
+    /// ```.
     ///
     /// - Parameters:
     ///   - surfaceTolerance: Tolerance for surface approximation (default: 0.01)
@@ -220,7 +239,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert swept surfaces to elementary (canonical) surfaces
+    /// Convert swept surfaces to elementary (canonical) surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func sweptToElementary() -> Shape? {
@@ -228,7 +247,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert surfaces of revolution to elementary surfaces
+    /// Convert surfaces of revolution to elementary surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func revolutionToElementary() -> Shape? {
@@ -236,7 +255,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert all surfaces to BSpline
+    /// Convert all surfaces to BSpline.
     ///
     /// - Returns: Shape with BSpline surfaces, or nil on failure
     public func convertedToBSpline() -> Shape? {
@@ -244,7 +263,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Sew disconnected faces in this shape together
+    /// Sew disconnected faces in this shape together.
     ///
     /// - Parameter tolerance: Sewing tolerance (default: 1e-6)
     /// - Returns: Sewn shape, or nil on failure
@@ -255,31 +274,37 @@ extension Shape {
 
     /// Upgrade shape: sew + make solid + heal pipeline
     ///
-    /// Performs a complete upgrade of the shape by sewing disconnected faces,
+    /// Performs a complete upgrade of the shape by sewing disconnected faces,.
     /// attempting to create a solid from shells, and applying shape healing.
     ///
-    /// The solid step builds one solid per *body-bounding* shell the sewing produced, so a
-    /// multi-body part stays a multi-body part; it comes back as a compound of solids, and
-    /// a single body as a bare solid. Body selection is the same rule as ``Shape/solid(from:)``:
-    /// every shell that an **even** number of the other shells in its group enclose, where a
-    /// group is one solid's own shells, or all the shells belonging to no solid — so a free
+    /// The solid step builds one solid per *body-bounding* shell the sewing produced, so a.
+    /// multi-body part stays a multi-body part; it comes back as a compound of solids, and.
+    /// a single body as a bare solid.
+    ///
+    /// Body selection is the same rule as ``Shape/solid(from:)``:
+    /// every shell that an **even** number of the other shells in its group enclose, where a.
+    /// group is one solid's own shells, or all the shells belonging to no solid (so a free).
     /// shell that is itself an even-enclosed cavity is skipped, not turned into a body.
     ///
-    /// ```swift
+    /// ```swift.
     /// // A raw imported mesh holding two separate bodies.
     /// let part = imported.upgraded(tolerance: 1e-6)!
-    /// print(part.solids.count)   // 2, not 1
-    /// ```
+    /// print(part.solids.count)   // 2, not 1.
+    /// ```.
     ///
     /// - Note: Sewing dissolves the solids in the input, so a hollow body reaches the solid
-    ///   step as two free shells and comes back as one body with its **cavity filled**
-    ///   (8000 mm³ for a 7000 mm³ hollow cube). A body nested inside another body's cavity
-    ///   is still read as a body. To heal a hollow part without losing its cavities, use
+    ///   step as two free shells and comes back as one body with its **cavity filled**.
+    ///   (8000 mm³ for a 7000 mm³ hollow cube). A body nested inside another body's cavity.
+    ///   is still read as a body.
+    ///
+    ///   To heal a hollow part without losing its cavities, use.
     ///   ``Shape/fixed(tolerance:)``, which does not sew.
     ///
     /// - Note: The solid step *replaces* the sewn shape rather than merging into it, so
-    ///   content sewing could not attach to a shell (a stray face, a loose edge) is not
-    ///   carried into the result. If the input may contain such content, sew and heal it
+    ///   content sewing could not attach to a shell (a stray face, a loose edge) is not.
+    ///   carried into the result.
+    ///
+    ///   If the input may contain such content, sew and heal it.
     ///   yourself with ``Shape/sewn(tolerance:)`` and ``Shape/fixed(tolerance:)``.
     ///
     /// - Parameter tolerance: Tolerance for sewing and healing (default: 1e-6)
@@ -290,19 +315,23 @@ extension Shape {
     }
     /// Convert all curves and surfaces to NURBS representation.
     ///
-    /// Useful for ensuring uniform representation before export
+    /// Useful for ensuring uniform representation before export.
     /// or for algorithms that require NURBS geometry.
     ///
-    /// Wraps `BRepBuilderAPI_NurbsConvert`, which internally is exactly
-    /// ``nurbsConvertViaModifier()``'s `BRepTools_Modifier` +
-    /// `BRepTools_NurbsConvertModification` pair, plus one more step: `CorrectVertexTol()`.
-    /// Converting an analytic curve/surface to a BSpline approximation can enlarge an edge's
-    /// tolerance to bound the approximation error, and a shared vertex's own tolerance is
-    /// expected to bound everything incident to it — `CorrectVertexTol()` raises a vertex's
+    /// Wraps BRepBuilderAPI_NurbsConvert, which internally is exactly.
+    /// ``nurbsConvertViaModifier()``'s BRepTools_Modifier +.
+    ///
+    /// BRepTools_NurbsConvertModification pair, plus one more step: `CorrectVertexTol()`.
+    ///
+    /// Converting an analytic curve/surface to a BSpline approximation can enlarge an edge's.
+    /// tolerance to bound the approximation error, and a shared vertex's own tolerance is.
+    /// expected to bound everything incident to it. (`CorrectVertexTol()` raises a vertex's).
     /// tolerance to cover any edge meeting it that the conversion touched.
-    /// ``nurbsConvertViaModifier()`` skips that step, so its result can carry a vertex whose
-    /// tolerance is smaller than an edge meeting it, a real (if usually small) conversion-fidelity
-    /// gap `.isValid` will not catch. Prefer this method unless you have a specific reason to drive
+    /// ``nurbsConvertViaModifier()`` skips that step, so its result can carry a vertex whose.
+    /// tolerance is smaller than an edge meeting it, a real (if usually small) conversion-fidelity.
+    /// gap `.isValid` will not catch.
+    ///
+    /// Prefer this method unless you have a specific reason to drive.
     /// the bare modifier pipeline directly (#836).
     ///
     /// - Returns: A new shape with all geometry converted to NURBS, or nil on failure
@@ -331,7 +360,7 @@ extension Shape {
     }
     /// Remove all location transforms, baking them into the geometry.
     ///
-    /// Converts a shape with nested transforms into an equivalent shape
+    /// Converts a shape with nested transforms into an equivalent shape.
     /// where all geometry coordinates are in the global frame.
     ///
     /// - Returns: Shape with locations removed, or nil on failure
@@ -341,7 +370,9 @@ extension Shape {
     }
     /// Enforce same-parameter consistency on the shape.
     ///
-    /// Ensures 3D and 2D curve representations are consistent. Important
+    /// Ensures 3D and 2D curve representations are consistent.
+    ///
+    /// Important.
     /// for imported geometry and after complex operations.
     ///
     /// - Parameter tolerance: Tolerance for same-parameter check
@@ -350,10 +381,11 @@ extension Shape {
         guard let h = OCCTShapeSameParameter(handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
-    /// Mark smooth (G1-continuous) edges as "regular."
+    /// Mark smooth (G1-continuous) edges as "regular.".
     ///
     /// Downstream algorithms can skip regular edges for better performance.
-    /// The angular tolerance controls what is considered "smooth."
+    ///
+    /// The angular tolerance controls what is considered "smooth.".
     ///
     /// - Parameter toleranceDegrees: Angular tolerance in degrees (default: 1e-10)
     /// - Returns: Shape with regularity encoded, or nil on failure
@@ -383,13 +415,13 @@ extension Shape {
 
     // MARK: - Free Boundary Analysis (v0.39.0)
 
-    /// Result of free boundary analysis
+    /// Result of free boundary analysis.
     public struct FreeBoundsResult: Sendable {
-        /// Compound shape containing all free boundary wires
+        /// Compound shape containing all free boundary wires.
         public let wires: Shape
-        /// Number of closed free boundary wires
+        /// Number of closed free boundary wires.
         public let closedCount: Int
-        /// Number of open free boundary wires
+        /// Number of open free boundary wires.
         public let openCount: Int
     }
 
@@ -398,36 +430,52 @@ extension Shape {
     /// Free boundaries indicate gaps in a shell. A watertight shell has no free boundaries.
     ///
     /// - Note: Unlike `Shape.sectionWiresAtZ(_:tolerance:)`, this method is unaffected by OCCT
-    ///   8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408). This method's constructor
-    ///   does reach that same skip, in its own chainage step, so the reason is not that the call
-    ///   graph avoids it. What keeps the result unchanged is upstream: the edges this method feeds
+    ///   8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408).
+    ///
+    ///   This method's constructor.
+    ///   does reach that same skip, in its own chainage step, so the reason is not that the call.
+    ///   graph avoids it.
+    ///
+    ///   What keeps the result unchanged is upstream: the edges this method feeds
     ///   in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case measured that sewing
     ///   stage never produced an `.internal`/`.external` free edge for the skip to act on.
     ///
     ///   ``freeBoundsClosedCount(tolerance:)``, ``freeBoundsClosedWires(tolerance:)`` and
     ///   ``freeBoundsOpenWires(tolerance:)`` share this reasoning unconditionally: each always
-    ///   builds `ShapeAnalysis_FreeBounds` with the `(shape, tolerance, ...)` sewing constructor no
+    ///   builds ShapeAnalysis_FreeBounds with the `(shape, tolerance, ...)` sewing constructor no.
     ///   matter what value is passed, so there is no other branch to consider for them.
     ///
-    ///   ``freeBoundsAnalysis(tolerance:)``, ``FreeBoundsProperties`` and the four accessors built
+    ///   ``freeBoundsAnalysis(tolerance:)``, `FreeBoundsProperties` and the four accessors built
     ///   on it (``closedFreeBoundInfo(tolerance:index:)``, ``openFreeBoundInfo(tolerance:index:)``,
     ///   ``closedFreeBoundWire(tolerance:index:)``, ``openFreeBoundWire(tolerance:index:)``) are
     ///   different: `ShapeAnalysis_FreeBoundsProperties::DispatchBounds()` picks the sewing
-    ///   constructor only when its tolerance is greater than 0; at 0 or below it picks
-    ///   `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead, a constructor with no
+    ///   constructor only when its tolerance is greater than 0; at 0 or below it picks.
+    ///   `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead, a constructor with no.
     ///   sewing stage at all, which takes its edges from `ShapeAnalysis_Shell::CheckOrientedShells`/
-    ///   `FreeEdges()` and reaches the same `ConnectEdgesToWires` skip by a different route. This is
+    ///   `FreeEdges()` and reaches the same ConnectEdgesToWires skip by a different route.
+    ///
+    ///   This is.
     ///   measured directly, not assumed from the sewing case above: the `.internal` exclusion holds
-    ///   on this branch too, and a FORWARD control on the same fixture confirms the two branches are
-    ///   not just trivially agreeing on everything. The sewing branch chains a FORWARD loop entirely
-    ///   inside one face into one closed wire together with that face's outer boundary (3 closed, 0
-    ///   open); the shared-topology branch returns the same loop's four edges unchained (2 closed, 4
-    ///   open). What is not measured, and not claimed, is *why* the INTERNAL loop is absent on the
-    ///   shared-topology branch: that constructor defaults `checkinternaledges` to `false`, so the
-    ///   internal edges may never reach `FreeEdges()` as candidates at all, rather than being
-    ///   collected and then dropped by the same skip the sewing branch's chainage step hits. Both
-    ///   would produce the same observable result, which is the only thing measured here. See
-    ///   `Issue655FreeBoundsInternalOrientationTests` (`OCCTShapeHealingTests`) for both fixtures.
+    ///   on this branch too, and a FORWARD control on the same fixture confirms the two branches are.
+    ///   not just trivially agreeing on everything.
+    ///
+    ///   The sewing branch chains a FORWARD loop entirely.
+    ///   inside one face into one closed wire together with that face's outer boundary (3 closed, 0.
+    ///   open); the shared-topology branch returns the same loop's four edges unchained (2 closed, 4.
+    ///   open).
+    ///
+    ///   What is not measured, and not claimed, is *why* the INTERNAL loop is absent on the.
+    ///   shared-topology branch: that constructor defaults checkinternaledges to false, so the
+    ///   internal edges may never reach `FreeEdges()` as candidates at all, rather than being.
+    ///   collected and then dropped by the same skip the sewing branch's chainage step hits.
+    ///
+    ///   Both.
+    ///   would produce the same observable result, which is the only thing measured here.
+    ///
+    ///   See.
+    ///
+    ///   Issue655FreeBoundsInternalOrientationTests (OCCTShapeHealingTests) for both fixtures.
+    ///
     ///   See #655.
     /// - Parameter sewingTolerance: Tolerance for grouping free edges into wires
     /// - Returns: Free bounds result, or nil if no free boundaries found
@@ -466,7 +514,7 @@ extension Shape {
 
     // MARK: - Geometry Conversion (v0.41.0)
 
-    /// Convert all surfaces to BSpline form
+    /// Convert all surfaces to BSpline form.
     ///
     /// Uses ShapeCustom::ConvertToBSpline to convert extrusion, revolution,
     /// offset, and/or planar surfaces to BSpline representation.
@@ -487,7 +535,7 @@ extension Shape {
         return Shape(handle: h)
     }
 
-    /// Convert surfaces to revolution form
+    /// Convert surfaces to revolution form.
     ///
     /// Uses ShapeCustom::ConvertToRevolution to convert surfaces that can be
     /// represented as surfaces of revolution.
@@ -499,8 +547,10 @@ extension Shape {
 
     /// Purge problematic location datums from the shape.
     ///
-    /// Removes negative-scale and non-unit-scale transforms from the shape and all
-    /// sub-shapes. Useful for cleaning imported geometry from STEP/IGES files.
+    /// Removes negative-scale and non-unit-scale transforms from the shape and all.
+    /// sub-shapes.
+    ///
+    /// Useful for cleaning imported geometry from STEP/IGES files.
     ///
     /// - Returns: Cleaned shape, or nil if purge was unnecessary or failed
     public var purgedLocations: Shape? {
@@ -510,16 +560,16 @@ extension Shape {
 
     // MARK: - BRepCheck_Face per-wire diagnostics (#266 follow-up)
 
-    /// `BRepCheck_Face` — do this face's boundary wires intersect one another? Returns
-    /// `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
-    /// if the shape isn't a single face. `geometricControls` enables the (costlier) geometric checks.
+    /// BRepCheck_Face (do this face's boundary wires intersect one another? Returns).
+    /// `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`.
+    /// if the shape isn't a single face. geometricControls enables the (costlier) geometric checks.
     public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
             rawValue: Int32(OCCTBRepCheckFaceIntersectWires(handle, geometricControls).rawValue))
             ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly nested (one outer, the rest enclosed as
+    /// BRepCheck_Face (are the face's wires correctly nested (one outer, the rest enclosed as).
     /// holes)? Returns `.invalidImbricationOfWires` when nesting is wrong.
     public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
@@ -527,7 +577,7 @@ extension Shape {
             ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)? Returns
+    /// BRepCheck_Face. (are the face's wires correctly oriented (outer CCW, holes CW)? Returns).
     /// `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
     public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus {
         CheckStatus(
@@ -569,28 +619,30 @@ extension Shape {
 
     // MARK: - ShapeFix_FaceConnect
 
-    /// Connect adjacent faces in **every** shell of this shape (`ShapeFix_FaceConnect`).
+    /// Connect adjacent faces in **every** shell of this shape (ShapeFix_FaceConnect).
     ///
-    /// A shape with several shells — a compound of two solids, say — has each shell connected
+    /// A shape with several shells (a compound of two solids, say (has each shell connected)).
     /// independently and the results reassembled: one shell in, one shell out; several in, a
-    /// compound out. Before #484 only the first shell an explorer yielded was processed and the
+    /// compound out.
+    ///
+    /// Before #484 only the first shell an explorer yielded was processed and the.
     /// rest were silently dropped.
     ///
     /// - Parameter tolerance: Connection tolerance.
     /// - Returns: The shape with connected faces, or nil when the input has no shell at all, or
     ///   when no shell could be connected.
     ///
-    /// ## Example
+    /// ## Example.
     ///
-    /// ```swift
-    /// // A compound of two disjoint boxes keeps both shells (12 faces, not 6)
+    /// ```swift.
+    /// // A compound of two disjoint boxes keeps both shells (12 faces, not 6).
     /// let a = Shape.box(width: 10, height: 10, depth: 10)!
     /// let b = Shape.box(width: 6, height: 6, depth: 6)!.translated(by: SIMD3(40, 0, 0))!
-    /// let compound = Shape.compound([a, b])!
+    /// let compound = Shape.compound([a, b])!.
     /// if let connected = compound.connectedFaces(tolerance: 1e-4) {
-    ///     print(connected.faces().count)   // 12
-    /// }
-    /// ```
+    ///     print(connected.faces().count)   // 12.
+    /// }.
+    /// ```.
     public func connectedFaces(tolerance: Double = 1e-4) -> Shape? {
         guard let ref = OCCTShapeFixFaceConnect(handle, tolerance) else { return nil }
         return Shape(handle: ref)
@@ -630,7 +682,7 @@ extension Shape {
 
     /// Divide closed faces in this shape.
     ///
-    /// Uses ShapeUpgrade_ShapeDivideClosed to split faces that
+    /// Uses ShapeUpgrade_ShapeDivideClosed to split faces that.
     /// wrap around completely (e.g., cylinder lateral face).
     ///
     /// - Parameter splitPoints: Number of split points per closed face (default: 1)
@@ -676,18 +728,18 @@ extension Shape {
     ///
     /// Uses ShapeCustom::BSplineRestriction to approximate geometry with simpler BSplines.
     ///
-    /// ```swift
-    /// let simplified = solid.bsplineRestriction(
+    /// ```swift.
+    /// let simplified = solid.bsplineRestriction(.
     ///     tol3d: 0.001, tol2d: 0.001,
     ///     maxDegree: 4, maxSegments: 50,
     ///     continuity3d: .c2, continuity2d: .c2
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     ///
     /// ``Shape/bsplineRestrictionAdvanced(_:approxSurface:approxCurve3d:approxCurve2d:tol3d:tol2d:continuity3d:continuity2d:maxDegree:maxSegments:priorityDegree:convertRational:)``
-    /// drives the same operation with per-geometry-kind switches, and takes the same continuity
-    /// vocabulary — `ShapeCustom::BSplineRestriction` is itself a `ShapeCustom_BSplineRestriction`
-    /// run through `BRepTools_Modifier`, which is what the advanced entry point builds by hand.
+    /// drives the same operation with per-geometry-kind switches, and takes the same continuity.
+    /// vocabulary (`ShapeCustom::BSplineRestriction` is itself a ShapeCustom_BSplineRestriction).
+    /// run through BRepTools_Modifier, which is what the advanced entry point builds by hand.
     ///
     /// - Parameters:
     ///   - tol3d: 3D tolerance (default: 0.01)
@@ -695,10 +747,14 @@ extension Shape {
     ///   - maxDegree: Maximum BSpline degree (default: 8)
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
-    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
-    ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
-    ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
+    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical.
+    ///     maximum.
+    ///
+    ///     This is a **ceiling, not a guarantee** (OCCT reduces the continuity it).
+    ///     delivers, with no diagnostic, whenever the requested one cannot meet tol3d within.
+    ///     maxDegree, and with degreePriority it degrades all the way to C0.
+    ///
+    ///     Measured in #570,.
     ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
@@ -719,45 +775,53 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Result of free bounds analysis
+    /// Result of free bounds analysis.
     public struct FreeBoundsAnalysis: Sendable {
-        /// Total number of free bounds
+        /// Total number of free bounds.
         public let totalCount: Int
-        /// Number of closed free bounds
+        /// Number of closed free bounds.
         public let closedCount: Int
-        /// Number of open free bounds
+        /// Number of open free bounds.
         public let openCount: Int
     }
 
     /// Analyze free bounds (boundary wires) of this shape.
     ///
-    /// Free bounds are chains of edges that belong to only one face, closed into contours where
-    /// they can be. Uses `ShapeAnalysis_FreeBoundsProperties` to find and classify them.
+    /// Free bounds are chains of edges that belong to only one face, closed into contours where.
+    /// they can be.
+    ///
+    /// Uses ShapeAnalysis_FreeBoundsProperties to find and classify them.
     ///
     /// The shape needs to be a compound or shell of faces: the search runs over its direct
-    /// children, so a lone face reports no free bounds at all. In practice the sewing pass closes
+    /// children, so a lone face reports no free bounds at all.
+    ///
+    /// In practice the sewing pass closes.
     /// essentially every contour it finds, so ``FreeBoundsAnalysis/openCount`` is usually 0.
     ///
-    /// Each of the five `…FreeBound…` methods here runs its own analysis. To read several bounds
-    /// of one shape, build a ``FreeBoundsProperties`` instead: it analyses once and answers every
+    /// Each of the five `…FreeBound…` methods here runs its own analysis.
+    ///
+    /// To read several bounds.
+    /// of one shape, build a `FreeBoundsProperties` instead: it analyses once and answers every
     /// query from that one result.
     ///
-    /// ```swift
+    /// ```swift.
     /// let opened = Shape.compound(box.subShapes(ofType: .face).dropLast())!
     /// let analysis = opened.freeBoundsAnalysis(tolerance: 1e-3)
-    /// print(analysis.closedCount)  // 1, the contour around the missing face
+    /// print(analysis.closedCount)  // 1, the contour around the missing face.
     ///
     /// if let bound = opened.closedFreeBoundInfo(tolerance: 1e-3, index: 0) {
-    ///     print(bound.area, bound.perimeter)
-    /// }
-    /// ```
+    ///     print(bound.area, bound.perimeter).
+    /// }.
+    /// ```.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408),
-    ///   at any tolerance, including the `tolerance <= 0` input documented below that routes to a
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408),
+    ///   at any tolerance, including the `tolerance <= 0` input documented below that routes to a.
     ///   different constructor with no sewing stage at all; see ``freeBounds(sewingTolerance:)`` for
-    ///   why, on both branches. See #655.
+    ///   why, on both branches.
+    ///
+    ///   See #655.
     /// - Parameter tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
-    ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared
+    ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared.
     ///   topology instead of from a sewing pass.
     /// - Returns: Analysis summary with bound counts
     public func freeBoundsAnalysis(tolerance: Double) -> FreeBoundsAnalysis {
@@ -774,10 +838,12 @@ extension Shape {
     /// Get properties of a closed free bound.
     ///
     /// See ``freeBoundsAnalysis(tolerance:)`` for what the tolerance selects, and
-    /// ``FreeBoundsProperties`` for reading several bounds without re-analysing each time.
+    /// `FreeBoundsProperties` for reading several bounds without re-analysing each time.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408),
-    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408),
+    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches.
+    ///
+    ///   See #655.
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the closed free bound
@@ -789,10 +855,12 @@ extension Shape {
     /// Get properties of an open free bound.
     ///
     /// See ``freeBoundsAnalysis(tolerance:)`` for what the tolerance selects, and
-    /// ``FreeBoundsProperties`` for reading several bounds without re-analysing each time.
+    /// `FreeBoundsProperties` for reading several bounds without re-analysing each time.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408),
-    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408),
+    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches.
+    ///
+    ///   See #655.
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the open free bound
@@ -803,8 +871,10 @@ extension Shape {
 
     /// Get the wire shape of a closed free bound.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408),
-    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408),
+    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches.
+    ///
+    ///   See #655.
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the closed free bound
@@ -815,8 +885,10 @@ extension Shape {
 
     /// Get the wire shape of an open free bound.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408),
-    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408),
+    ///   at any tolerance; see ``freeBounds(sewingTolerance:)`` for why, on both branches.
+    ///
+    ///   See #655.
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the open free bound
@@ -827,9 +899,9 @@ extension Shape {
 
     /// Result of wire vertex analysis.
     public struct WireVertexAnalysis {
-        /// Number of edges in the wire
+        /// Number of edges in the wire.
         public let edgeCount: Int
-        /// Whether the analysis completed successfully
+        /// Whether the analysis completed successfully.
         public let isDone: Bool
     }
 
@@ -867,11 +939,11 @@ extension Shape {
 
     /// Result of fitting a plane to a set of points.
     public struct NearestPlane {
-        /// Normal direction of the fitted plane
+        /// Normal direction of the fitted plane.
         public let normal: SIMD3<Double>
-        /// A point on the fitted plane
+        /// A point on the fitted plane.
         public let origin: SIMD3<Double>
-        /// Maximum distance from any input point to the fitted plane
+        /// Maximum distance from any input point to the fitted plane.
         public let maxDeviation: Double
     }
 
@@ -913,22 +985,26 @@ extension Shape {
 
     // MARK: BRepTools_Modifier + NurbsConvertModification
 
-    /// Convert shape to NURBS via `BRepTools_Modifier` directly, skipping
+    /// Convert shape to NURBS via BRepTools_Modifier directly, skipping.
     /// ``convertedToNURBS()``'s vertex-tolerance correction pass.
     ///
-    /// This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification`
-    /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally — the two are
-    /// not independent conversion mechanisms; this one is that method's own implementation minus
-    /// its final `CorrectVertexTol()` step. That step matters: converting an analytic
-    /// curve/surface to a BSpline approximation can enlarge an edge's tolerance to bound the
-    /// approximation error, and without the correction a shared vertex's recorded tolerance can
-    /// end up smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid`
+    /// This drives the exact same BRepTools_Modifier + BRepTools_NurbsConvertModification.
+    /// pair ``convertedToNURBS()`` (BRepBuilderAPI_NurbsConvert) uses internally (the two are).
+    /// not independent conversion mechanisms; this one is that method's own implementation minus.
+    /// its final `CorrectVertexTol()` step.
+    ///
+    /// That step matters: converting an analytic
+    /// curve/surface to a BSpline approximation can enlarge an edge's tolerance to bound the.
+    /// approximation error, and without the correction a shared vertex's recorded tolerance can.
+    /// end up smaller than an edge meeting it (a real, silent conversion-fidelity gap `.isValid`).
     /// will not catch (#836).
     ///
-    /// Prefer ``convertedToNURBS()`` for ordinary NURBS conversion. Use this method only when you
-    /// need the bare `BRepTools_Modifier` pipeline directly — e.g. composing the conversion with
-    /// other `BRepTools_Modification` passes in one `BRepTools_Modifier` pass — and will apply
-    /// your own vertex-tolerance correction afterward if the result's vertices need to stay
+    /// Prefer ``convertedToNURBS()`` for ordinary NURBS conversion.
+    ///
+    /// Use this method only when you.
+    /// need the bare BRepTools_Modifier pipeline directly (e.g. composing the conversion with).
+    /// other BRepTools_Modification passes in one BRepTools_Modifier pass (and will apply).
+    /// your own vertex-tolerance correction afterward if the result's vertices need to stay.
     /// consistent with their edges' tolerances.
     public func nurbsConvertViaModifier() -> Shape? {
         guard let h = OCCTBRepToolsModifierNurbsConvert(handle) else { return nil }
@@ -953,12 +1029,12 @@ extension Shape {
 
     // MARK: - ShapeAnalysis_TransferParametersProj
 
-    /// Transfer a parameter from edge to face coordinate system via projection
+    /// Transfer a parameter from edge to face coordinate system via projection.
     public func transferParameterToFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, true)
     }
 
-    /// Transfer a parameter from face to edge coordinate system via projection
+    /// Transfer a parameter from face to edge coordinate system via projection.
     public func transferParameterFromFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, false)
     }
@@ -1069,10 +1145,12 @@ extension Shape {
 
     /// Shape type for filtering compounds.
     ///
-    /// A typealias for the canonical ``ShapeType`` (#844) — this used to be an independent local
-    /// mirror of the same `TopAbs_ShapeEnum` ordinals, with its own, differently-cased `compsolid`
-    /// case (`ShapeType` spells it `compSolid`). `ShapeExtend_Explorer` uses the identical ordinal
-    /// convention every other sub-shape-type API in this package does, so there was no reason for
+    /// A typealias for the canonical `ShapeType` (#844) (this used to be an independent local).
+    /// mirror of the same TopAbs_ShapeEnum ordinals, with its own, differently-cased compsolid.
+    /// case (ShapeType spells it compSolid).
+    ///
+    /// ShapeExtend_Explorer uses the identical ordinal.
+    /// convention every other sub-shape-type API in this package does, so there was no reason for.
     /// a second declaration once the casing was reconciled.
     public typealias ShapeFilterType = ShapeType
 
@@ -1093,8 +1171,8 @@ extension Shape {
     ///
     /// - Parameter lookInsideCompounds: If true, look inside sub-compounds
     /// - Returns: The predominant shape type, or ``ShapeType/unknown`` if the underlying
-    ///   `ShapeExtend_Explorer` walk throws (fixed in PR #870's aggregate review — this used to
-    ///   decode as ``ShapeType/vertex``, a real, legitimate case, indistinguishable from an actual
+    ///   ShapeExtend_Explorer walk throws (fixed in PR #870's aggregate review (this used to).
+    ///   decode as ``ShapeType/vertex``, a real, legitimate case, indistinguishable from an actual.
     ///   vertex-dominated shape).
     public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilterType {
         let raw = OCCTShapeExtendShapeType(handle, lookInsideCompounds)
@@ -1128,11 +1206,11 @@ extension Shape {
 
     // MARK: - ShapeUpgrade_EdgeDivide
 
-    /// Result of edge divide analysis
+    /// Result of edge divide analysis.
     public struct EdgeDivideResult: Sendable {
-        /// Whether the edge has a 2D curve on the face
+        /// Whether the edge has a 2D curve on the face.
         public let hasCurve2d: Bool
-        /// Whether the edge has a 3D curve
+        /// Whether the edge has a 3D curve.
         public let hasCurve3d: Bool
     }
 
@@ -1246,26 +1324,28 @@ extension Shape {
 
     /// Restrict BSpline degree and segments with full control (advanced version).
     ///
-    /// Same operation as
+    /// Same operation as.
     /// ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
-    /// — both drive a `ShapeCustom_BSplineRestriction` through `BRepTools_Modifier` — with
+    /// — both drive a ShapeCustom_BSplineRestriction through BRepTools_Modifier (with).
     /// switches for which geometry kinds to approximate.
     ///
-    /// ```swift
-    /// // Surfaces only, leave the curves alone
-    /// let restricted = Shape.bsplineRestrictionAdvanced(
-    ///     solid,
+    /// ```swift.
+    /// // Surfaces only, leave the curves alone.
+    /// let restricted = Shape.bsplineRestrictionAdvanced(.
+    ///     solid,.
     ///     approxSurface: true, approxCurve3d: false, approxCurve2d: false,
     ///     continuity3d: .c1, continuity2d: .c1
-    /// )
-    /// ```
+    /// ).
+    /// ```.
     ///
     /// - Parameters:
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
-    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical.
+    ///     maximum (the same limit the non-advanced entry point has).
+    ///
+    ///     Also the same ceiling-not-a-.
     ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
-    ///     meet `tol3d` within `maxDegree` (#570).
+    ///     meet tol3d within maxDegree (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(
@@ -1318,91 +1398,105 @@ extension Shape {
 }
 
 extension Shape {
-    /// Fix a solid shape (topology and orientation), using `ShapeFix_Solid`.
+    /// Fix a solid shape (topology and orientation), using ShapeFix_Solid.
     ///
     /// Every solid in the receiver is healed, not just the first: a single-body input
-    /// comes back as a solid, a multi-body one as a compound of one result per input body,
-    /// in exploration order. A compound result is not new to this call — `ShapeFix_Solid`
+    /// comes back as a solid, a multi-body one as a compound of one result per input body,.
+    /// in exploration order. A compound result is not new to this call (ShapeFix_Solid).
     /// already returns one when a single solid's shells resolve into several bodies.
     ///
-    /// Only the receiver's *solids* are visited. Loose shells, faces or wires sitting
-    /// alongside them in a compound are not carried over, and an input holding no solid at
-    /// all returns `nil`. To heal a whole shape of mixed content instead, use
+    /// Only the receiver's *solids* are visited.
+    ///
+    /// Loose shells, faces or wires sitting.
+    /// alongside them in a compound are not carried over, and an input holding no solid at.
+    /// all returns nil.
+    ///
+    /// To heal a whole shape of mixed content instead, use.
     /// ``Shape/fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)``, which wraps
-    /// `ShapeFix_Shape` and preserves everything it is given.
+    /// ShapeFix_Shape and preserves everything it is given.
     ///
     /// - Warning: A result body is usually a healed solid, but **not always**, and no body
-    ///   is ever dropped to make that true. `ShapeFix_Solid` hands back a **shell** when it
-    ///   cannot close one into a solid, and a solid it fails to heal outright is returned
-    ///   **unhealed** rather than discarded. So `result.solids.count` can be lower than the
+    ///   is ever dropped to make that true.
+    ///
+    ///   ShapeFix_Solid hands back a **shell** when it.
+    ///   cannot close one into a solid, and a solid it fails to heal outright is returned.
+    ///   **unhealed** rather than discarded.
+    ///
+    ///   So `result.solids.count` can be lower than the.
     ///   number of input bodies even though nothing was lost.
     ///
-    ///   To spot an unclosed body, walk the result's **direct children** — not
+    ///   To spot an unclosed body, walk the result's **direct children** (not).
     ///   ``Shape/subShapes(ofType:)``, which maps at every depth and so reports one shell
-    ///   for every *healthy* solid too (a compound of two healed solids has two shells, and
+    ///   for every *healthy* solid too (a compound of two healed solids has two shells, and.
     ///   a single healed solid has one):
     ///
-    ///   ```swift
-    ///   let healed = part.fixSolid()!
+    ///   ```swift.
+    ///   let healed = part.fixSolid()!.
     ///   let bodies = (0..<healed.nbChildren).compactMap { healed.child(at: $0) }
-    ///   let unclosed = bodies.filter { $0.shapeType == .shell }
-    ///   ```
+    ///   let unclosed = bodies.filter { $0.shapeType == .shell }.
+    ///   ```.
     ///
-    ///   When a single body came back, the result is that body rather than a compound, so
-    ///   `healed.shapeType == .shell` answers it directly, or check ``Shape/isValidSolid``
-    ///   directly, which does the same `shapeType == .solid` test itself before its own
-    ///   `BRepCheck_Analyzer` pass, so it reads `false` on a demoted shell where plain
-    ///   ``Shape/isValid`` reads `true` (#702: a demoted shell has no closure requirement of its
-    ///   own, so it is genuinely, unmisleadingly valid, just not a solid any more). A body that
+    ///   When a single body came back, the result is that body rather than a compound, so.
+    ///   `healed.shapeType == .shell` answers it directly, or check ``Shape/isValidSolid``.
+    ///   directly, which does the same `shapeType == .solid` test itself before its own.
+    ///
+    ///   BRepCheck_Analyzer pass, so it reads false on a demoted shell where plain.
+    ///   ``Shape/isValid`` reads true (#702: a demoted shell has no closure requirement of its
+    ///   own, so it is genuinely, unmisleadingly valid, just not a solid any more). A body that.
     ///   came back *unhealed* is still a solid: use ``Shape/isValid`` for that, or
     ///   ``Shape/isValidSolid`` for both checks in one.
     ///
-    /// ```swift
+    /// ```swift.
     /// let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
     /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
-    /// let part = Shape.compound([a, b])!
+    /// let part = Shape.compound([a, b])!.
     ///
-    /// let healed = part.fixSolid()!
-    /// print(healed.solids.count)   // 2 — both bodies, not just the first
-    /// print(healed.volume!)        // 2000.0
-    /// ```
+    /// let healed = part.fixSolid()!.
+    /// print(healed.solids.count)   // 2 (both bodies, not just the first).
+    /// print(healed.volume!)        // 2000.0.
+    /// ```.
     ///
     /// - Returns: The repaired body, or a compound of one result per input body for
-    ///   multi-body input, or `nil` if the receiver holds no solid.
+    ///   multi-body input, or nil if the receiver holds no solid.
     public func fixSolid() -> Shape? {
         guard let ref = OCCTShapeFixSolid(handle) else { return nil }
         return Shape(handle: ref)
     }
 
-    /// Create a solid from a shell shape using `ShapeFix_Solid`, orienting it to enclose
+    /// Create a solid from a shell shape using ShapeFix_Solid, orienting it to enclose.
     /// a finite volume.
     ///
     /// One solid is built per *body-bounding* shell, not just the first shell found: every
-    /// shell that an **even** number of the other shells in its group enclose, where a group
-    /// is one solid's own shells, or all the shells belonging to no solid (the usual shape
-    /// of sewing output). A single body comes back as a solid, several as a compound in
+    /// shell that an **even** number of the other shells in its group enclose, where a group.
+    /// is one solid's own shells, or all the shells belonging to no solid (the usual shape.
+    /// of sewing output). A single body comes back as a solid, several as a compound in.
     /// exploration order.
     ///
     /// *Cavity* shells are deliberately skipped: a hole is not a body, and building it as a
-    /// positive solid would yield a compound whose volume double-counts the part. So a
-    /// hollow solid produces one solid bounded by its outer shell, with the cavity filled,
-    /// and so does that same body after sewing has left its two shells free. A body nested
-    /// inside another body's cavity is enclosed twice, so it is still read as a body. To
+    /// positive solid would yield a compound whose volume double-counts the part.
+    ///
+    /// So a.
+    /// hollow solid produces one solid bounded by its outer shell, with the cavity filled,.
+    /// and so does that same body after sewing has left its two shells free. A body nested.
+    /// inside another body's cavity is enclosed twice, so it is still read as a body.
+    ///
+    /// To.
     /// rebuild a solid that keeps its cavities, use ``Shape/solidFromShells(_:)`` with the
     /// outer shell first.
     ///
-    /// ```swift
-    /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies
-    /// let solids = quilt.solidFromShellFixed()!
-    /// print(solids.solids.count)   // 2 — one solid per shell
-    /// ```
+    /// ```swift.
+    /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies.
+    /// let solids = quilt.solidFromShellFixed()!.
+    /// print(solids.solids.count)   // 2 (one solid per shell).
+    /// ```.
     ///
     /// - Important: An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell`
-    ///   builds its solid before classifying anything and never returns a null one, so a
-    ///   shell with gaps comes back as a solid that is not closed rather than as `nil`.
+    ///   builds its solid before classifying anything and never returns a null one, so a.
+    ///   shell with gaps comes back as a solid that is not closed rather than as nil.
+    ///
     ///   Check ``Shape/isValid`` or sew first if the input may be open.
     ///
-    /// - Returns: A solid, a compound of solids for multi-body input, or `nil` only if the
+    /// - Returns: A solid, a compound of solids for multi-body input, or nil only if the
     ///   receiver holds no shell at all.
     public func solidFromShellFixed() -> Shape? {
         guard let ref = OCCTShapeSolidFromShell(handle) else { return nil }
@@ -1491,7 +1585,9 @@ extension Shape {
     /// - Parameters:
     ///   - tolerance: Precision for small-edge detection.
     ///   - dropSmall: If true, remove small edges; if false, merge them with neighbours.
-    ///   - limitAngle: Maximum tangent angle for merging (radians). Pass -1 for no limit.
+    ///   - limitAngle: Maximum tangent angle for merging (radians).
+    ///
+    ///   Pass -1 for no limit.
     /// - Returns: Fixed shape, or nil on failure.
     public func fixSmallEdges(
         tolerance: Double = 1e-7,
@@ -1509,8 +1605,10 @@ extension Shape {
 
     /// Count the number of closed free-boundary wires.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
-    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why.
+    ///
+    ///   See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Number of closed free-boundary wires.
     public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int {
@@ -1519,8 +1617,10 @@ extension Shape {
 
     /// Get the compound of closed free-boundary wires.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
-    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why.
+    ///
+    ///   See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of closed wires, or nil if none.
     public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape? {
@@ -1530,8 +1630,10 @@ extension Shape {
 
     /// Get the compound of open free-boundary wires.
     ///
-    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
-    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
+    /// - Note: Unaffected by OCCT 8.0.1's ConnectEdgesToWires INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why.
+    ///
+    ///   See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of open wires, or nil if none.
     public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape? {
@@ -1568,7 +1670,9 @@ extension Shape {
 }
 
 extension Shape {
-    /// Add missing 3D curve to an edge. Returns true if fixed.
+    /// Add missing 3D curve to an edge.
+    ///
+    /// Returns true if fixed.
     public static func fixEdgeAddCurve3d(_ edge: Shape) -> Bool {
         OCCTShapeFixEdgeAddCurve3d(edge.handle)
     }

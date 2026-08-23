@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Wrapper for XCAFView_Object — standalone view definition.
+/// Wrapper for XCAFView_Object (standalone view definition).
 public final class ViewObject: @unchecked Sendable {
     private let handle: OCCTViewObjectRef
 

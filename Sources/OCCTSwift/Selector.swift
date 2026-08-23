@@ -4,16 +4,17 @@ import simd
 
 /// BVH-accelerated hit testing for interactive picking without OpenGL.
 ///
-/// Manages a set of shapes identified by integer IDs and performs
+/// Manages a set of shapes identified by integer IDs and performs.
 /// point or rectangle picking against them using a camera's projection.
-/// Supports sub-shape selection modes for picking individual faces,
+///
+/// Supports sub-shape selection modes for picking individual faces,.
 /// edges, or vertices within a shape.
 public final class Selector: @unchecked Sendable {
     internal let handle: OCCTSelectorRef
 
     /// Selection modes controlling what level of sub-shape is selectable.
     ///
-    /// Maps to OCCT's `TopAbs_ShapeEnum` decomposition in `StdSelect_BRepSelectionTool`.
+    /// Maps to OCCT's TopAbs_ShapeEnum decomposition in StdSelect_BRepSelectionTool.
     public enum SelectionMode: Int32, Sendable {
         /// Select the entire shape as one entity.
         case shape = 0
@@ -29,12 +30,14 @@ public final class Selector: @unchecked Sendable {
 
     /// The type of sub-shape that was picked.
     ///
-    /// Maps to OCCT's `TopAbs_ShapeEnum` values. Cases 0...7 mirror ``ShapeType``'s ordinals and
-    /// casing exactly (`compSolid`, matching `ShapeType.compSolid`, renamed from `compsolid` for
-    /// #844, which found the two had drifted); `.shape` (`TopAbs_SHAPE` = 8, "the whole shape
-    /// selected") has no `ShapeType` counterpart, since `ShapeType` only ever names a concrete
-    /// sub-shape kind a shape's own root topology can be, so this stays its own type rather than
-    /// becoming a `ShapeType` typealias.
+    /// Maps to OCCT's TopAbs_ShapeEnum values.
+    ///
+    /// Cases 0...7 mirror `ShapeType`'s ordinals and.
+    /// casing exactly (compSolid, matching `ShapeType.compSolid`, renamed from compsolid for.
+    /// #844, which found the two had drifted); `.shape` (TopAbs_SHAPE = 8, "the whole shape.
+    /// selected") has no ShapeType counterpart, since ShapeType only ever names a concrete.
+    /// sub-shape kind a shape's own root topology can be, so this stays its own type rather than.
+    /// becoming a ShapeType typealias.
     public enum SubShapeType: Int32, Sendable {
         case compound = 0
         case compSolid = 1
@@ -61,11 +64,13 @@ public final class Selector: @unchecked Sendable {
         /// The type of sub-shape that was hit.
         public let subShapeType: SubShapeType
 
-        /// 0-based index of the sub-shape within its parent shape, addressable with
+        /// 0-based index of the sub-shape within its parent shape, addressable with.
         /// ``Shape/face(at:)`` or ``Shape/subShape(type:index:)``.
         ///
-        /// `-1` when the whole shape was selected (mode 0). It used to be 1-based with `0` as
-        /// that sentinel, so a picked sub-shape's index named the one before it and the sentinel
+        /// `-1` when the whole shape was selected (mode 0).
+        ///
+        /// It used to be 1-based with 0 as.
+        /// that sentinel, so a picked sub-shape's index named the one before it and the sentinel.
         /// was indistinguishable from a hit on sub-shape 0 (#541).
         public let subShapeIndex: Int32
     }
@@ -83,17 +88,18 @@ public final class Selector: @unchecked Sendable {
     /// Add a shape to the selector with a unique integer ID.
     ///
     /// The shape is registered with mode 0 (whole shape) active by default.
+    ///
     /// Use ``activateMode(_:for:)`` to enable sub-shape selection.
     ///
     /// If a shape with the same ID already exists, it is replaced.
-    /// - Returns: `true` if the shape was added successfully.
+    /// - Returns: true if the shape was added successfully.
     @discardableResult
     public func add(shape: Shape, id: Int32) -> Bool {
         OCCTSelectorAddShape(handle, shape.handle, id)
     }
 
     /// Remove a shape by its ID.
-    /// - Returns: `true` if the shape was found and removed.
+    /// - Returns: true if the shape was found and removed.
     @discardableResult
     public func remove(id: Int32) -> Bool {
         OCCTSelectorRemoveShape(handle, id)
@@ -108,7 +114,9 @@ public final class Selector: @unchecked Sendable {
 
     /// Activate a selection mode for a shape.
     ///
-    /// Multiple modes can be active simultaneously. For example, activating
+    /// Multiple modes can be active simultaneously.
+    ///
+    /// For example, activating.
     /// both `.face` and `.edge` allows picking either faces or edges.
     ///
     /// - Parameters:
@@ -137,6 +145,7 @@ public final class Selector: @unchecked Sendable {
     /// Pixel tolerance for picking near edges and vertices.
     ///
     /// Higher values make it easier to pick thin geometry like edges.
+    ///
     /// Default is 2 pixels.
     public var pixelTolerance: Int32 {
         get { OCCTSelectorGetPixelTolerance(handle) }
@@ -200,7 +209,9 @@ public final class Selector: @unchecked Sendable {
 
     /// Pick shapes within a closed polygon (lasso selection).
     ///
-    /// The polygon must have at least 3 points. The polygon is automatically
+    /// The polygon must have at least 3 points.
+    ///
+    /// The polygon is automatically.
     /// closed (last point connects to first).
     ///
     /// - Parameters:
@@ -233,30 +244,30 @@ public final class Selector: @unchecked Sendable {
         return Self.pickResults(from: buffer, count: count)
     }
 
-    /// Allocates a zeroed `OCCTPickResult` output buffer for a `pick` call.
+    /// Allocates a zeroed OCCTPickResult output buffer for a pick call.
     ///
-    /// Shared by all three `pick` overloads alongside ``pickResults(from:count:)`` so buffer
+    /// Shared by all three pick overloads alongside ``pickResults(from:count:)`` so buffer
     /// sizing/initialization is defined once, not triplicated (#890 review follow-up).
     private static func makeBuffer(count: Int) -> [OCCTPickResult] {
         [OCCTPickResult](repeating: OCCTPickResult(), count: count)
     }
 
-    /// Maps a raw `OCCTPickResult` buffer's first `count` entries to `PickResult`s.
+    /// Maps a raw OCCTPickResult buffer's first count entries to PickResults.
     ///
-    /// Shared by all three `pick` overloads so a field change or addition (e.g. reinterpreting
-    /// the `-1` `subShapeIndex` sentinel, see ``PickResult/subShapeIndex``) is made once (#890).
+    /// Shared by all three pick overloads so a field change or addition (e.g. reinterpreting.
+    /// the `-1` subShapeIndex sentinel, see ``PickResult/subShapeIndex``) is made once (#890).
     ///
-    /// `count` is asserted, not clamped, against `buffer.count`: `OCCTSelectorCollectResults`
-    /// (`OCCTBridge_Visualization.mm`, the shared helper behind all three `OCCTSelectorPick*`
-    /// bridge calls) writes `out[count]` inside a loop gated `count < maxResults` and starts
-    /// `count` at 0, so it is provably always in `[0, maxResults]` on every path, including the
-    /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0`, this was
-    /// measured against the bridge source, not assumed. `0..<Int(count)` unconditionally
-    /// consolidated three copies of that range into one place without adding a guard consolidation
-    /// makes free; an unconditional `assert` here documents and enforces the invariant (a debug
-    /// build traps immediately on the contract being violated by a future bridge change, rather
-    /// than silently reading past `buffer.count` or trapping deeper inside the `map`) while
-    /// costing nothing in a release build, in this picking-hot-path called from UI event handlers
+    /// count is asserted, not clamped, against `buffer.count`: OCCTSelectorCollectResults
+    /// (`OCCTBridge_Visualization.mm`, the shared helper behind all three `OCCTSelectorPick*`.
+    /// bridge calls) writes `out[count]` inside a loop gated `count < maxResults` and starts.
+    /// count at 0, so it is provably always in `[0, maxResults]` on every path, including the.
+    /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0`, this was.
+    /// measured against the bridge source, not assumed. `0..<Int(count)` unconditionally.
+    /// consolidated three copies of that range into one place without adding a guard consolidation.
+    /// makes free; an unconditional assert here documents and enforces the invariant (a debug.
+    /// build traps immediately on the contract being violated by a future bridge change, rather.
+    /// than silently reading past `buffer.count` or trapping deeper inside the map) while.
+    /// costing nothing in a release build, in this picking-hot-path called from UI event handlers.
     /// (#914 review, second round).
     private static func pickResults(from buffer: [OCCTPickResult], count: Int32) -> [PickResult] {
         assert(

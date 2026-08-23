@@ -80,11 +80,13 @@ public struct BillOfMaterials: Sendable, Hashable, Codable {
 
     /// Render the BOM as a table onto the writer.
     ///
-    /// `origin` is the **bottom-right** corner of the table; the table grows up and
-    /// to the left. This matches the idiomatic placement directly above a title
+    /// origin is the **bottom-right** corner of the table; the table grows up and.
+    /// to the left.
+    ///
+    /// This matches the idiomatic placement directly above a title.
     /// block.
     ///
-    /// Returns the top-right corner of the rendered table, so callers can
+    /// Returns the top-right corner of the rendered table, so callers can.
     /// chain subsequent annotations above the BOM.
     @discardableResult
     public func render(
@@ -169,7 +171,7 @@ public struct BillOfMaterials: Sendable, Hashable, Codable {
 extension Sheet {
     /// Draw a BOM in the top-right of the sheet above the title block.
     ///
-    /// When `origin` is nil, the BOM is placed just below the inner frame's top
+    /// When origin is nil, the BOM is placed just below the inner frame's top.
     /// edge, right-aligned to the inner frame.
     @discardableResult
     public func renderBOM(

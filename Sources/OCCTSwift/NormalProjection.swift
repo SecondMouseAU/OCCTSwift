@@ -21,7 +21,9 @@ public final class NormalProjection: @unchecked Sendable {
         OCCTNormalProjectionAdd(ref, shape.handle)
     }
 
-    /// Build the projection. Returns true on success.
+    /// Build the projection.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func build() -> Bool {
         OCCTNormalProjectionBuild(ref)

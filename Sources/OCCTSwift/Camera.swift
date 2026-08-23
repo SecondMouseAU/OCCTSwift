@@ -4,7 +4,7 @@ import simd
 
 /// A 3D camera backed by OpenCASCADE Graphic3d_Camera.
 ///
-/// Provides projection/view matrices in Metal-compatible format (column-major,
+/// Provides projection/view matrices in Metal-compatible format (column-major,.
 /// zero-to-one depth range) and project/unproject utilities for coordinate conversion.
 public final class Camera: @unchecked Sendable {
     internal let handle: OCCTCameraRef

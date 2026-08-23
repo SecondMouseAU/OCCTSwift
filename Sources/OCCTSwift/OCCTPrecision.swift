@@ -4,9 +4,9 @@ import simd
 
 /// OCCT precision constants.
 public enum OCCTPrecision {
-    /// Confusion tolerance (1e-7) — general distance tolerance.
+    /// Confusion tolerance (1e-7) (general distance tolerance).
     public static var confusion: Double { OCCTPrecisionConfusion() }
-    /// Angular tolerance (1e-12) — for direction comparisons.
+    /// Angular tolerance (1e-12) (for direction comparisons).
     public static var angular: Double { OCCTPrecisionAngular() }
     /// Intersection tolerance.
     public static var intersection: Double { OCCTPrecisionIntersection() }

@@ -4,19 +4,19 @@ import simd
 
 /// STEP representation type for controlling how shapes are written.
 public enum StepModelType: Int32, Sendable {
-    /// Write shape as-is (automatic selection)
+    /// Write shape as-is (automatic selection).
     case asIs = 0
-    /// Write as manifold solid B-rep
+    /// Write as manifold solid B-rep.
     case manifoldSolidBrep = 1
-    /// Write as B-rep with voids
+    /// Write as B-rep with voids.
     case brepWithVoids = 2
-    /// Write as faceted B-rep
+    /// Write as faceted B-rep.
     case facetedBrep = 3
-    /// Write as faceted B-rep and B-rep with voids
+    /// Write as faceted B-rep and B-rep with voids.
     case facetedBrepAndBrepWithVoids = 4
-    /// Write as shell-based surface model
+    /// Write as shell-based surface model.
     case shellBasedSurfaceModel = 5
-    /// Write as geometric curve set
+    /// Write as geometric curve set.
     case geometricCurveSet = 6
 }
 
