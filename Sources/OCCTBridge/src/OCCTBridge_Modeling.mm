@@ -16472,7 +16472,12 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
-    // With timeout: check if breaker tripped FIRST
+    // Check for faults FIRST - a completed analysis that found a fault is conclusive
+    // regardless of whether the deadline passed during execution
+    if (aa.HasFaulty())
+      return 1; // self-intersects (conclusive)
+
+    // With timeout: check if breaker tripped
     // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers
     // nothing)
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
@@ -16481,20 +16486,17 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
     if (breakerTripped)
       return -1; // timed out, breaker was tripped (analysis was running)
 
-    // Timeout set, deadline passed, but breaker not tripped: analysis made no progress
-    // (completed but took longer than timeout without breaker being polled)
+    // Timeout set, deadline passed, but breaker not tripped AND no fault found:
+    // analysis made no progress (completed but took longer than timeout without breaker being
+    // polled)
     if (timeoutSeconds > 0.0 && deadlinePassed && !breakerTripped)
       return -2; // timed out, breaker NOT tripped (analysis made no progress)
-
-    // No timeout or completed before timeout: now safe to check results
-    if (aa.HasFaulty())
-      return 1; // conclusive
 
     // No timeout - completed successfully
     if (timeoutSeconds <= 0.0)
       return 0;
 
-    // Completed before timeout
+    // Completed before timeout with no faults
     return 0;
   }
   catch (...)
