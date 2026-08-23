@@ -732,13 +732,17 @@ extension Shape {
         public let totalFacePairs: Int
         /// Actual time spent in seconds.
         public let timeSpent: Double
+        /// Number of face pairs checked before completion/timeout.
+        /// NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter; this is always 0.
+        public let facesChecked: Int
 
-        init(code: Int32, totalFacePairs: Int, timeSpent: Double) {
+        init(code: Int32, facesChecked: Int, totalFacePairs: Int, timeSpent: Double) {
+            self.facesChecked = facesChecked
             self.totalFacePairs = totalFacePairs
             self.timeSpent = timeSpent
             switch code {
-            case 1: self.status = .intersects
-            case 0: self.status = .clean
+            case 1:  self.status = .intersects
+            case 0:  self.status = .clean
             case -1: self.status = .indeterminateBreakerTripped
             case -2: self.status = .indeterminateBreakerNotTripped
             default: self.status = .error
