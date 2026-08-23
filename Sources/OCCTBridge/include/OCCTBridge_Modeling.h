@@ -236,6 +236,7 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //   1  = self-intersects (conclusive)
 //   0  = clean (conclusive)
 //  -1  = indeterminate (timed out, breaker was tripped - analysis was running)
+//  -2  = indeterminate (timed out, breaker NOT tripped - analysis made no progress)
 //  -3  = error (exception occurred)
 // Output parameters (optional, can pass nullptr):
 //   - outTotalFacePairs: estimated total face pairs to check (if available)

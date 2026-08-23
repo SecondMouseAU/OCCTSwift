@@ -4456,6 +4456,30 @@ struct Curve2DCircleInvoluteTests {
             #expect(edges.count == 1)
         }
     }
+
+    @Test func createCircleInvoluteRejectsZeroLengthDirection() {
+        let curve = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(0, 0), radius: 2.0)
+        #expect(curve == nil)
+    }
+
+    @Test func createCircleInvoluteRejectsNearZeroLengthDirection() {
+        let curve = Curve2D.circleInvolute(
+            origin: .zero, direction: SIMD2(1e-15, 1e-15), radius: 2.0)
+        #expect(curve == nil)
+    }
+
+    @Test func circleInvoluteD0WithPlacementRejectsZeroLengthDirection() {
+        let p = Geom2dEval.circleInvoluteD0(
+            origin: .zero, direction: SIMD2(0, 0), radius: 2.0, u: 1.0)
+        #expect(p.x == 0.0 && p.y == 0.0)
+    }
+
+    @Test func circleInvoluteD1WithPlacementRejectsZeroLengthDirection() {
+        let r = Geom2dEval.circleInvoluteD1(
+            origin: .zero, direction: SIMD2(0, 0), radius: 2.0, u: 1.0)
+        #expect(r.point.x == 0.0 && r.point.y == 0.0)
+        #expect(r.d1.x == 0.0 && r.d1.y == 0.0)
+    }
 }
 
 @Suite("Geom2dEval — 2D Sine Wave")

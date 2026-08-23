@@ -724,6 +724,9 @@ extension Shape {
             /// The check timed out and the OCCT progress breaker was tripped (analysis was running).
             /// A longer timeout may yield a conclusive result.
             case indeterminateBreakerTripped
+            /// The check timed out but the breaker was not tripped (analysis completed but exceeded timeout).
+            /// This indicates the analysis made no meaningful progress within the time limit.
+            case indeterminateBreakerNotTripped
             /// An error occurred during analysis.
             case error
         }
@@ -742,6 +745,7 @@ extension Shape {
             case 1: self.status = .intersects
             case 0: self.status = .clean
             case -1: self.status = .indeterminateBreakerTripped
+            case -2: self.status = .indeterminateBreakerNotTripped
             default: self.status = .error
             }
         }

@@ -2534,6 +2534,8 @@ public final class Shape: @unchecked Sendable {
     /// that distinguishes the reason for an indeterminate result:
     /// - ``SelfIntersectionDetailedResult/indeterminateBreakerTripped``: the analysis was running but didn't
     ///   complete before the timeout (the breaker was tripped). A longer timeout may yield a conclusive result.
+    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerNotTripped``: the analysis completed but exceeded
+    ///   the timeout without the breaker being tripped. This indicates no meaningful progress was made.
     /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis.
     ///
     /// - Parameter timeout: Maximum time in seconds to wait for the check to complete.
@@ -2546,6 +2548,8 @@ public final class Shape: @unchecked Sendable {
     /// case .clean:                       print("Clean - safe to use")
     /// case .indeterminateBreakerTripped:
     ///     print("Breaker tripped - try longer timeout")
+    /// case .indeterminateBreakerNotTripped:
+    ///     print("Timeout exceeded without breaker trip - no progress made")
     /// case .error:                       print("Analysis error - treat as unknown")
     /// }
     /// ```

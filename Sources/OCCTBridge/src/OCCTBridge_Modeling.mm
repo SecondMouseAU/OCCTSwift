@@ -16476,9 +16476,15 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
     // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers
     // nothing)
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
+    bool deadlinePassed = (!breaker.IsNull() && breaker->deadlinePassed());
 
     if (breakerTripped)
       return -1; // timed out, breaker was tripped (analysis was running)
+
+    // Timeout set, deadline passed, but breaker not tripped: analysis made no progress
+    // (completed but took longer than timeout without breaker being polled)
+    if (timeoutSeconds > 0.0 && deadlinePassed && !breakerTripped)
+      return -2; // timed out, breaker NOT tripped (analysis made no progress)
 
     // No timeout or completed before timeout: now safe to check results
     if (aa.HasFaulty())
