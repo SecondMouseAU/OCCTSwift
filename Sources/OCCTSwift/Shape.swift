@@ -717,7 +717,6 @@ public final class Shape: @unchecked Sendable {
         }
     }
 
-
     /// Union (add) two shapes together.
     ///
     /// - Parameters:
@@ -2392,6 +2391,8 @@ public final class Shape: @unchecked Sendable {
     ///   - axisDirection: Direction of the rotation axis
     ///   - count: Number of tool copies (including the original `tool`)
     ///   - angle: Total angle to span in radians (0 for a full circle)
+    ///   - timeout: Wall-clock bound in seconds (default ``defaultBooleanTimeout``, 120s). Returns
+    ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
     /// - Returns: This body with all `count` features cut out, or nil on failure
     ///
     /// ## Example
@@ -2623,7 +2624,8 @@ public final class Shape: @unchecked Sendable {
         var totalPairs: Int32 = 0
         var totalFacePairs: Int32 = 0
         var timeSpent: Double = 0.0
-        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &totalPairs, &totalFacePairs, &timeSpent)
+        let code = OCCTShapeSelfIntersectsDetailed(
+            handle, timeout, &totalPairs, &totalFacePairs, &timeSpent)
         return SelfIntersectionDetailedResult(
             code: code,
             totalFacePairs: Int(totalFacePairs),

@@ -730,11 +730,14 @@ extension Shape {
         public let status: Status
         /// Estimated total face pairs to check.
         public let totalFacePairs: Int
+        /// Number of faces actually checked during the analysis.
+        public let facesChecked: Int
         /// Actual time spent in seconds.
         public let timeSpent: Double
 
-        init(code: Int32, totalFacePairs: Int, timeSpent: Double) {
+        init(code: Int32, totalFacePairs: Int, facesChecked: Int, timeSpent: Double) {
             self.totalFacePairs = totalFacePairs
+            self.facesChecked = facesChecked
             self.timeSpent = timeSpent
             switch code {
             case 1: self.status = .intersects
