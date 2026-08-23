@@ -1,18 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
-
 
 // MARK: - Geometry Construction Tests (v0.11.0)
 
@@ -173,9 +171,10 @@ struct NonUniformScaleTests {
 struct ArcOfHyperbolaTests {
     @Test("Arc of hyperbola between parameters")
     func arcOfHyperbola() throws {
-        let arc = try #require(Curve3D.arcOfHyperbola(
-            majorRadius: 5.0, minorRadius: 3.0,
-            alpha1: -1.0, alpha2: 1.0))
+        let arc = try #require(
+            Curve3D.arcOfHyperbola(
+                majorRadius: 5.0, minorRadius: 3.0,
+                alpha1: -1.0, alpha2: 1.0))
         let dom = arc.domain
         let start = arc.point(at: dom.lowerBound)
         let end = arc.point(at: dom.upperBound)
@@ -192,9 +191,10 @@ struct ArcOfHyperbolaTests {
 struct ArcOfParabolaTests {
     @Test("Arc of parabola between parameters")
     func arcOfParabola() throws {
-        let arc = try #require(Curve3D.arcOfParabola(
-            focalDistance: 2.0,
-            alpha1: -3.0, alpha2: 3.0))
+        let arc = try #require(
+            Curve3D.arcOfParabola(
+                focalDistance: 2.0,
+                alpha1: -3.0, alpha2: 3.0))
         let mid = arc.point(at: 0.0)
         #expect(simd_length(mid) < 0.01)
     }
@@ -210,9 +210,10 @@ struct ConicalSurfaceTests {
 
     @Test("Conical surface from points and radii")
     func fromPointsRadii() throws {
-        let surf = try #require(Surface.conicalSurface(
-            point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
-            r1: 5.0, r2: 2.0))
+        let surf = try #require(
+            Surface.conicalSurface(
+                point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
+                r1: 5.0, r2: 2.0))
         #expect(surf.handle != nil)
     }
 }
@@ -227,8 +228,9 @@ struct CylindricalSurfaceTests {
 
     @Test("Cylindrical surface from 3 points")
     func fromPoints() throws {
-        let surf = try #require(Surface.cylindricalSurface(
-            point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10), point3: SIMD3(5, 0, 5)))
+        let surf = try #require(
+            Surface.cylindricalSurface(
+                point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10), point3: SIMD3(5, 0, 5)))
         #expect(surf.handle != nil)
     }
 }
@@ -237,15 +239,17 @@ struct CylindricalSurfaceTests {
 struct PlaneConstructionTests {
     @Test("Plane from 3 points")
     func fromPoints() throws {
-        let surf = try #require(Surface.planeFromPoints(
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(0, 10, 0)))
+        let surf = try #require(
+            Surface.planeFromPoints(
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(0, 10, 0)))
         #expect(surf.handle != nil)
     }
 
     @Test("Plane from point and normal")
     func fromPointNormal() throws {
-        let surf = try #require(Surface.planeFromPointNormal(
-            point: SIMD3(5, 5, 5), normal: SIMD3(1, 1, 1)))
+        let surf = try #require(
+            Surface.planeFromPointNormal(
+                point: SIMD3(5, 5, 5), normal: SIMD3(1, 1, 1)))
         #expect(surf.handle != nil)
     }
 }
@@ -254,9 +258,10 @@ struct PlaneConstructionTests {
 struct TrimmedConeTests {
     @Test("Trimmed cone from endpoints and radii")
     func trimmedCone() throws {
-        let surf = try #require(Surface.trimmedCone(
-            point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
-            r1: 5.0, r2: 2.0))
+        let surf = try #require(
+            Surface.trimmedCone(
+                point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
+                r1: 5.0, r2: 2.0))
         #expect(surf.handle != nil)
     }
 }
@@ -436,7 +441,7 @@ struct IntrvIntervalTests {
     func position() {
         let a = Interval(start: 1, end: 3)
         let b = Interval(start: 5, end: 8)
-        #expect(a.position(relativeTo: b) == 0) // Before
+        #expect(a.position(relativeTo: b) == 0)  // Before
     }
 
     @Test("set and modify bounds")
@@ -688,7 +693,8 @@ struct Axis1PlacementTests {
 struct Axis2PlacementTests {
     @Test("create and read directions")
     func createAndRead() {
-        let ax = Axis2Placement(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let ax = Axis2Placement(
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         #expect(abs(ax.xDirection.x - 1) < 1e-10)
         #expect(abs(ax.yDirection.y - 1) < 1e-10)
         #expect(abs(ax.mainDirection.z - 1) < 1e-10)
@@ -696,20 +702,23 @@ struct Axis2PlacementTests {
 
     @Test("location")
     func location() {
-        let ax = Axis2Placement(origin: SIMD3(5, 5, 5), normal: SIMD3(0, 1, 0), xDirection: SIMD3(1, 0, 0))
+        let ax = Axis2Placement(
+            origin: SIMD3(5, 5, 5), normal: SIMD3(0, 1, 0), xDirection: SIMD3(1, 0, 0))
         #expect(abs(ax.location.x - 5) < 1e-10)
     }
 
     @Test("setDirection")
     func setDirection() {
-        let ax = Axis2Placement(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let ax = Axis2Placement(
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         ax.setDirection(SIMD3(0, 1, 0))
         #expect(abs(ax.mainDirection.y - 1) < 1e-10)
     }
 
     @Test("setXDirection")
     func setXDirection() {
-        let ax = Axis2Placement(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let ax = Axis2Placement(
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         ax.setXDirection(SIMD3(0, 1, 0))
         #expect(abs(ax.xDirection.y - 1) < 1e-10)
     }
@@ -779,7 +788,10 @@ struct GeomLibIsPlanarSurfaceTests {
 struct GeomLibCheckBSplineTests {
     @Test("check 3D BSpline tangents")
     func check3D() {
-        if let bsp = Curve3D.bspline(poles: [SIMD3(0,0,0), SIMD3(1,2,0), SIMD3(3,1,0), SIMD3(4,0,0)], knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve3D.bspline(
+            poles: [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(4, 0, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let result = bsp.checkBSplineTangents()
             // May be nil for simple Bezier-like BSplines, just verify no crash
             let _ = result
@@ -788,7 +800,10 @@ struct GeomLibCheckBSplineTests {
 
     @Test("fix 3D BSpline tangents")
     func fix3D() {
-        if let bsp = Curve3D.bspline(poles: [SIMD3(0,0,0), SIMD3(1,2,0), SIMD3(3,1,0), SIMD3(4,0,0)], knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve3D.bspline(
+            poles: [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(4, 0, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let fixed = bsp.fixBSplineTangents(fixFirst: false, fixLast: false)
             let _ = fixed
         }
@@ -796,8 +811,10 @@ struct GeomLibCheckBSplineTests {
 
     @Test("check 2D BSpline tangents")
     func check2D() {
-        if let bsp = Curve2D.bspline(poles: [SIMD2(0,0), SIMD2(1,2), SIMD2(3,1), SIMD2(4,0)],
-                                      knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve2D.bspline(
+            poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 1), SIMD2(4, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let result = bsp.checkBSplineTangents()
             let _ = result
         }
@@ -805,8 +822,10 @@ struct GeomLibCheckBSplineTests {
 
     @Test("fix 2D BSpline tangents")
     func fix2D() {
-        if let bsp = Curve2D.bspline(poles: [SIMD2(0,0), SIMD2(1,2), SIMD2(3,1), SIMD2(4,0)],
-                                      knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3) {
+        if let bsp = Curve2D.bspline(
+            poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(3, 1), SIMD2(4, 0)],
+            knots: [0.0, 1.0], multiplicities: [4, 4], degree: 3)
+        {
             let fixed = bsp.fixBSplineTangents(fixFirst: false, fixLast: false)
             let _ = fixed
         }
@@ -817,7 +836,9 @@ struct GeomLibCheckBSplineTests {
 struct GeomLibInterpolateTests {
     @Test("polynomial interpolation")
     func interpolate() {
-        let points: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,1,0), SIMD3(2,0,0), SIMD3(3,-1,0), SIMD3(4,0,0)]
+        let points: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0), SIMD3(3, -1, 0), SIMD3(4, 0, 0),
+        ]
         let params = [0.0, 0.25, 0.5, 0.75, 1.0]
         let curve = Curve3D.polynomialInterpolation(degree: 3, points: points, parameters: params)
         #expect(curve != nil)
@@ -825,9 +846,11 @@ struct GeomLibInterpolateTests {
 
     @Test("interpolated curve endpoints")
     func endpoints() {
-        let points: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(2,2,0), SIMD3(4,0,0)]
+        let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(2, 2, 0), SIMD3(4, 0, 0)]
         let params = [0.0, 0.5, 1.0]
-        if let curve = Curve3D.polynomialInterpolation(degree: 3, points: points, parameters: params) {
+        if let curve = Curve3D.polynomialInterpolation(
+            degree: 3, points: points, parameters: params)
+        {
             let dom = curve.domain
             let start = curve.point(at: dom.lowerBound)
             let end = curve.point(at: dom.upperBound)
@@ -845,10 +868,12 @@ struct TrsfModificationTests {
     func applyTranslation() {
         if let box = Shape.box(width: 10, height: 20, depth: 30) {
             // Identity rotation + translation (100, 200, 300)
-            if let result = Shape.trsfModification(box,
-                                                     a11: 1, a12: 0, a13: 0, a14: 100,
-                                                     a21: 0, a22: 1, a23: 0, a24: 200,
-                                                     a31: 0, a32: 0, a33: 1, a34: 300) {
+            if let result = Shape.trsfModification(
+                box,
+                a11: 1, a12: 0, a13: 0, a14: 100,
+                a21: 0, a22: 1, a23: 0, a24: 200,
+                a31: 0, a32: 0, a33: 1, a34: 300)
+            {
                 #expect(result.isValid)
                 if let v = result.volume {
                     #expect(abs(v - 6000) < 1.0)
@@ -861,10 +886,12 @@ struct TrsfModificationTests {
     func applyRotation() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // 90° rotation around Z: (cos90, -sin90, 0) = (0, -1, 0), (sin90, cos90, 0) = (1, 0, 0)
-            if let result = Shape.trsfModification(box,
-                                                     a11: 0, a12: -1, a13: 0, a14: 0,
-                                                     a21: 1, a22: 0, a23: 0, a24: 0,
-                                                     a31: 0, a32: 0, a33: 1, a34: 0) {
+            if let result = Shape.trsfModification(
+                box,
+                a11: 0, a12: -1, a13: 0, a14: 0,
+                a21: 1, a22: 0, a23: 0, a24: 0,
+                a31: 0, a32: 0, a33: 1, a34: 0)
+            {
                 #expect(result.isValid)
             }
         }
@@ -879,10 +906,12 @@ struct GTrsfModificationTests {
             // First convert to NURBS for non-uniform scaling
             if let nurbs = box.convertedToNURBS() {
                 // Scale X by 2
-                if let result = Shape.gtrsfModification(nurbs,
-                                                          a11: 2, a12: 0, a13: 0, a14: 0,
-                                                          a21: 0, a22: 1, a23: 0, a24: 0,
-                                                          a31: 0, a32: 0, a33: 1, a34: 0) {
+                if let result = Shape.gtrsfModification(
+                    nurbs,
+                    a11: 2, a12: 0, a13: 0, a14: 0,
+                    a21: 0, a22: 1, a23: 0, a24: 0,
+                    a31: 0, a32: 0, a33: 1, a34: 0)
+                {
                     #expect(result.isValid)
                 }
             }
@@ -893,15 +922,18 @@ struct GTrsfModificationTests {
 @Suite("gce_MakeCirc Tests")
 struct GceMakeCircTests {
     @Test func circleThrough3Points() {
-        if let circ = Curve3D.circleThrough3Points(SIMD3(5,0,0), SIMD3(0,5,0), SIMD3(-5,0,0)) {
+        if let circ = Curve3D.circleThrough3Points(SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
+        {
             let domain = circ.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
     }
 
     @Test func circleFromCenterNormal() {
-        if let circ = Curve3D.circleFromCenterNormal(center: SIMD3(1,2,3),
-                                                      normal: SIMD3(0,0,1), radius: 7.0) {
+        if let circ = Curve3D.circleFromCenterNormal(
+            center: SIMD3(1, 2, 3),
+            normal: SIMD3(0, 0, 1), radius: 7.0)
+        {
             let domain = circ.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
@@ -911,9 +943,10 @@ struct GceMakeCircTests {
 @Suite("gce_MakeCone Tests")
 struct GceMakeConeTests {
     @Test func coneFrom2PointsRadii() throws {
-        let cone = try #require(Surface.coneFrom2PointsRadii(
-            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
-            radius1: 5.0, radius2: 2.0))
+        let cone = try #require(
+            Surface.coneFrom2PointsRadii(
+                p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
+                radius1: 5.0, radius2: 2.0))
         #expect(cone.handle != nil)
     }
 
@@ -926,23 +959,30 @@ struct GceMakeConeTests {
         let radius1 = 5.0
         let radius2 = 2.0
 
-        let viaGce = try #require(Surface.coneFrom2PointsRadii(
-            p1: p1, p2: p2, radius1: radius1, radius2: radius2))
-        let viaGC = try #require(Surface.conicalSurface(
-            point1: p1, point2: p2, r1: radius1, r2: radius2))
+        let viaGce = try #require(
+            Surface.coneFrom2PointsRadii(
+                p1: p1, p2: p2, radius1: radius1, radius2: radius2))
+        let viaGC = try #require(
+            Surface.conicalSurface(
+                point1: p1, point2: p2, r1: radius1, r2: radius2))
 
         #expect(abs(viaGce.coneProperties.semiAngle - viaGC.coneProperties.semiAngle) < 1e-9)
         #expect(abs(viaGce.coneProperties.refRadius - viaGC.coneProperties.refRadius) < 1e-9)
-        #expect(simd_length(viaGce.coneProperties.axis.position - viaGC.coneProperties.axis.position) < 1e-9)
-        #expect(simd_length(viaGce.coneProperties.axis.direction - viaGC.coneProperties.axis.direction) < 1e-9)
+        #expect(
+            simd_length(viaGce.coneProperties.axis.position - viaGC.coneProperties.axis.position)
+                < 1e-9)
+        #expect(
+            simd_length(viaGce.coneProperties.axis.direction - viaGC.coneProperties.axis.direction)
+                < 1e-9)
     }
 }
 
 @Suite("gce_MakeCylinder Tests")
 struct GceMakeCylinderTests {
     @Test func cylinderFrom3Points() throws {
-        let cyl = try #require(Surface.cylinderFrom3Points(
-            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(3, 0, 0)))
+        let cyl = try #require(
+            Surface.cylinderFrom3Points(
+                p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(3, 0, 0)))
         #expect(cyl.handle != nil)
     }
 
@@ -958,15 +998,21 @@ struct GceMakeCylinderTests {
         let viaGC = try #require(Surface.cylindricalSurface(point1: p1, point2: p2, point3: p3))
 
         #expect(abs(viaGce.cylinderProperties.radius - viaGC.cylinderProperties.radius) < 1e-9)
-        #expect(simd_length(viaGce.cylinderProperties.axis.position - viaGC.cylinderProperties.axis.position) < 1e-9)
-        #expect(simd_length(viaGce.cylinderProperties.axis.direction - viaGC.cylinderProperties.axis.direction) < 1e-9)
+        #expect(
+            simd_length(
+                viaGce.cylinderProperties.axis.position - viaGC.cylinderProperties.axis.position)
+                < 1e-9)
+        #expect(
+            simd_length(
+                viaGce.cylinderProperties.axis.direction - viaGC.cylinderProperties.axis.direction)
+                < 1e-9)
     }
 }
 
 @Suite("gce_MakeLin Tests")
 struct GceMakeLinTests {
     @Test func lineFrom2Points() {
-        if let line = Curve3D.lineFrom2Points(SIMD3(0,0,0), SIMD3(1,2,3)) {
+        if let line = Curve3D.lineFrom2Points(SIMD3(0, 0, 0), SIMD3(1, 2, 3)) {
             let domain = line.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
@@ -982,8 +1028,10 @@ struct GceMakePlnTests {
     }
 
     @Test func planeFrom3Points() {
-        if let plane = Surface.planeFrom3Points(p1: SIMD3(0,0,0), p2: SIMD3(1,0,0),
-                                                 p3: SIMD3(0,1,0)) {
+        if let plane = Surface.planeFrom3Points(
+            p1: SIMD3(0, 0, 0), p2: SIMD3(1, 0, 0),
+            p3: SIMD3(0, 1, 0))
+        {
             #expect(Bool(true))
         }
     }
@@ -992,7 +1040,7 @@ struct GceMakePlnTests {
 @Suite("gce_MakeDir Tests")
 struct GceMakeDirTests {
     @Test func directionFrom2Points() {
-        if let dir = Curve3D.directionFrom2Points(SIMD3(0,0,0), SIMD3(3,0,0)) {
+        if let dir = Curve3D.directionFrom2Points(SIMD3(0, 0, 0), SIMD3(3, 0, 0)) {
             #expect(abs(dir.x - 1.0) < 1e-10)
             #expect(abs(dir.y) < 1e-10)
             #expect(abs(dir.z) < 1e-10)
@@ -1003,8 +1051,10 @@ struct GceMakeDirTests {
 @Suite("gce_MakeElips Tests")
 struct GceMakeElipsTests {
     @Test func ellipseFromCenterNormal() {
-        if let elips = Curve3D.ellipseFromCenterNormal(center: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-                                                        majorRadius: 10, minorRadius: 5) {
+        if let elips = Curve3D.ellipseFromCenterNormal(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 5)
+        {
             let domain = elips.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
@@ -1014,8 +1064,10 @@ struct GceMakeElipsTests {
 @Suite("gce_MakeHypr Tests")
 struct GceMakeHyprTests {
     @Test func hyperbolaFromCenterNormal() {
-        if let hypr = Curve3D.hyperbolaFromCenterNormal(center: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-                                                         majorRadius: 8, minorRadius: 3) {
+        if let hypr = Curve3D.hyperbolaFromCenterNormal(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            majorRadius: 8, minorRadius: 3)
+        {
             let domain = hypr.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
@@ -1025,8 +1077,10 @@ struct GceMakeHyprTests {
 @Suite("gce_MakeParab Tests")
 struct GceMakeParabTests {
     @Test func parabolaFromCenterNormal() {
-        if let parab = Curve3D.parabolaFromCenterNormal(center: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-                                                         focal: 4.0) {
+        if let parab = Curve3D.parabolaFromCenterNormal(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            focal: 4.0)
+        {
             let domain = parab.domain
             #expect(domain.upperBound > domain.lowerBound)
         }
@@ -1127,17 +1181,19 @@ struct CoordinateSystemTests {
     }
 
     @Test func convertWithScaling() {
-        let result = convertCoordinateSystem(x: 1000, y: 0, z: 500,
-                                              from: .zUp, inputUnit: 0.001,
-                                              to: .zUp, outputUnit: 1.0)
+        let result = convertCoordinateSystem(
+            x: 1000, y: 0, z: 500,
+            from: .zUp, inputUnit: 0.001,
+            to: .zUp, outputUnit: 1.0)
         #expect(abs(result.x - 1.0) < 1e-6)
         #expect(abs(result.z - 0.5) < 1e-6)
     }
 
     @Test func convertZupToYup() {
-        let result = convertCoordinateSystem(x: 1, y: 2, z: 3,
-                                              from: .zUp, inputUnit: 1.0,
-                                              to: .yUp, outputUnit: 1.0)
+        let result = convertCoordinateSystem(
+            x: 1, y: 2, z: 3,
+            from: .zUp, inputUnit: 1.0,
+            to: .yUp, outputUnit: 1.0)
         // Z-up (X,Y,Z) → Y-up (X,Z,-Y)
         #expect(abs(result.x - 1.0) < 1e-6)
         #expect(abs(result.y - 3.0) < 1e-6)
@@ -1166,9 +1222,10 @@ struct GeomTransformationTests {
 
     @Test func rotation() {
         if let t = GeomTransformation() {
-            t.setRotation(originX: 0, originY: 0, originZ: 0,
-                         dirX: 0, dirY: 0, dirZ: 1,
-                         angle: .pi / 2)
+            t.setRotation(
+                originX: 0, originY: 0, originZ: 0,
+                dirX: 0, dirY: 0, dirZ: 1,
+                angle: .pi / 2)
             let p = t.apply(x: 1, y: 0, z: 0)
             #expect(abs(p.x) < 1e-10)
             #expect(abs(p.y - 1) < 1e-10)
@@ -1234,31 +1291,36 @@ struct ElCLibTests {
     }
 
     @Test func valueOnCircle() {
-        let p = ElCLib.valueOnCircle(u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
+        let p = ElCLib.valueOnCircle(
+            u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
         #expect(abs(p.x - 10.0) < 1e-10)
         #expect(abs(p.y) < 1e-10)
     }
 
     @Test func valueOnCircleAtPiOver2() {
-        let p = ElCLib.valueOnCircle(u: .pi / 2, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
+        let p = ElCLib.valueOnCircle(
+            u: .pi / 2, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
         #expect(abs(p.x) < 1e-10)
         #expect(abs(p.y - 10.0) < 1e-10)
     }
 
     @Test func valueOnEllipse() {
-        let p = ElCLib.valueOnEllipse(u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
-                                       majorRadius: 20.0, minorRadius: 10.0)
+        let p = ElCLib.valueOnEllipse(
+            u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            majorRadius: 20.0, minorRadius: 10.0)
         #expect(abs(p.x - 20.0) < 1e-10)
     }
 
     @Test func d1OnCircle() {
-        let result = ElCLib.d1OnCircle(u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
+        let result = ElCLib.d1OnCircle(
+            u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
         #expect(abs(result.point.x - 10.0) < 1e-10)
         #expect(abs(result.tangent.y - 10.0) < 1e-10)
     }
 
     @Test func parameterOnLine() {
-        let u = ElCLib.parameterOnLine(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0), point: SIMD3(7, 0, 0))
+        let u = ElCLib.parameterOnLine(
+            origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0), point: SIMD3(7, 0, 0))
         #expect(abs(u - 7.0) < 1e-10)
     }
 
@@ -1279,25 +1341,29 @@ struct ElSLibTests {
     }
 
     @Test func valueOnSphere() {
-        let p = ElSLib.valueOnSphere(u: 0, v: 0, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10.0)
+        let p = ElSLib.valueOnSphere(
+            u: 0, v: 0, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10.0)
         #expect(abs(p.x - 10.0) < 1e-10)
     }
 
     @Test func valueOnCylinder() {
-        let p = ElSLib.valueOnCylinder(u: 0, v: 10, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5.0)
+        let p = ElSLib.valueOnCylinder(
+            u: 0, v: 10, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5.0)
         #expect(abs(p.x - 5.0) < 1e-10)
         #expect(abs(p.z - 10.0) < 1e-10)
     }
 
     @Test func valueOnTorus() {
-        let p = ElSLib.valueOnTorus(u: 0, v: 0, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
-                                     majorRadius: 20.0, minorRadius: 5.0)
+        let p = ElSLib.valueOnTorus(
+            u: 0, v: 0, origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+            majorRadius: 20.0, minorRadius: 5.0)
         #expect(abs(p.x - 25.0) < 1e-10)
     }
 
     @Test func parametersOnSphere() {
-        let uv = ElSLib.parametersOnSphere(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10.0,
-                                            point: SIMD3(10, 0, 0))
+        let uv = ElSLib.parametersOnSphere(
+            origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10.0,
+            point: SIMD3(10, 0, 0))
         #expect(abs(uv.u) < 1e-10)
         #expect(abs(uv.v) < 1e-10)
     }
@@ -1365,7 +1431,7 @@ struct QuaternionTests {
         let q = Quaternion(x: 1, y: 2, z: 3, w: 4)
         q.normalize()
         let c = q.components
-        let norm = sqrt(c.x*c.x + c.y*c.y + c.z*c.z + c.w*c.w)
+        let norm = sqrt(c.x * c.x + c.y * c.y + c.z * c.z + c.w * c.w)
         #expect(abs(norm - 1.0) < 1e-10)
     }
 }
@@ -1389,15 +1455,19 @@ struct MathMatrixTests {
 
     @Test func determinant() {
         let m = MathMatrix(rows: 2, cols: 2)
-        m.setValue(row: 1, col: 1, value: 1); m.setValue(row: 1, col: 2, value: 2)
-        m.setValue(row: 2, col: 1, value: 3); m.setValue(row: 2, col: 2, value: 4)
+        m.setValue(row: 1, col: 1, value: 1)
+        m.setValue(row: 1, col: 2, value: 2)
+        m.setValue(row: 2, col: 1, value: 3)
+        m.setValue(row: 2, col: 2, value: 4)
         #expect(abs(m.determinant - (-2.0)) < 1e-10)
     }
 
     @Test func invert() {
         let m = MathMatrix(rows: 2, cols: 2)
-        m.setValue(row: 1, col: 1, value: 1); m.setValue(row: 1, col: 2, value: 2)
-        m.setValue(row: 2, col: 1, value: 3); m.setValue(row: 2, col: 2, value: 4)
+        m.setValue(row: 1, col: 1, value: 1)
+        m.setValue(row: 1, col: 2, value: 2)
+        m.setValue(row: 2, col: 1, value: 3)
+        m.setValue(row: 2, col: 2, value: 4)
         #expect(m.invert())
     }
 }
@@ -1558,14 +1628,14 @@ struct TransformFactory3DTests {
     }
 
     @Test func planeMirror() {
-        let t = TransformFactory3D.mirrorPlane(point: SIMD3(0,0,0), normal: SIMD3(0,0,1))
+        let t = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
         let p = t.apply(to: SIMD3(1, 2, 3))
         #expect(abs(p.x - 1) < 1e-6)
         #expect(abs(p.z + 3) < 1e-6)
     }
 
     @Test func rotation90() {
-        let t = TransformFactory3D.rotation(point: .zero, direction: SIMD3(0,0,1), angle: .pi/2)
+        let t = TransformFactory3D.rotation(point: .zero, direction: SIMD3(0, 0, 1), angle: .pi / 2)
         let p = t.apply(to: SIMD3(1, 0, 0))
         #expect(abs(p.x) < 1e-6)
         #expect(abs(p.y - 1) < 1e-6)
@@ -1593,7 +1663,7 @@ struct TransformFactory3DTests {
     }
 
     @Test func axisMirror() {
-        let t = TransformFactory3D.mirrorAxis(point: .zero, direction: SIMD3(0,0,1))
+        let t = TransformFactory3D.mirrorAxis(point: .zero, direction: SIMD3(0, 0, 1))
         let p = t.apply(to: SIMD3(1, 2, 3))
         #expect(abs(p.x + 1) < 1e-6)
         #expect(abs(p.y + 2) < 1e-6)
@@ -1623,7 +1693,8 @@ struct GCMakeCircleTests {
     }
 
     @Test func circleCenterNormal() {
-        let c = Curve3D.gcCircleCenterNormal(center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 10)
+        let c = Curve3D.gcCircleCenterNormal(
+            center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 10)
         #expect(c != nil)
         if let c = c {
             #expect(c.isClosed)
@@ -1631,8 +1702,9 @@ struct GCMakeCircleTests {
     }
 
     @Test func circleParallel() {
-        let c = Curve3D.gcCircleParallel(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
-                                          radius: 5, distance: 3)
+        let c = Curve3D.gcCircleParallel(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            radius: 5, distance: 3)
         #expect(c != nil)
         if let c = c {
             #expect(c.isClosed)
@@ -1644,8 +1716,9 @@ struct GCMakeCircleTests {
 struct GCMakeEllipseTests {
 
     @Test func ellipseFromAxisAndRadii() {
-        let e = Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
-                                   majorRadius: 10, minorRadius: 5)
+        let e = Curve3D.gcEllipse(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 5)
         #expect(e != nil)
         if let e = e {
             #expect(e.isClosed)
@@ -1653,9 +1726,10 @@ struct GCMakeEllipseTests {
     }
 
     @Test func ellipseFromFullAx2() {
-        let e = Curve3D.gcEllipse(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
-                                   xDirection: SIMD3(1, 0, 0),
-                                   majorRadius: 10, minorRadius: 5)
+        let e = Curve3D.gcEllipse(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            xDirection: SIMD3(1, 0, 0),
+            majorRadius: 10, minorRadius: 5)
         #expect(e != nil)
         if let e = e {
             #expect(e.isClosed)
@@ -1667,8 +1741,9 @@ struct GCMakeEllipseTests {
 struct GCMakeHyperbolaTests {
 
     @Test func hyperbolaFromAxisAndRadii() {
-        let h = Curve3D.gcHyperbola(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
-                                     majorRadius: 10, minorRadius: 5)
+        let h = Curve3D.gcHyperbola(
+            center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 5)
         #expect(h != nil)
     }
 }
@@ -1681,7 +1756,7 @@ struct LogSampleTests {
         #expect(params.count == 5)
         // Should be monotonically increasing
         for i in 1..<params.count {
-            #expect(params[i] > params[i-1])
+            #expect(params[i] > params[i - 1])
         }
     }
 
@@ -1697,15 +1772,19 @@ struct LogSampleTests {
 struct GCMakeConicalSurfaceTests {
 
     @Test func conicalFromAxisAngleRadius() {
-        if let s = Surface.gcConicalSurface(center: .zero, normal: SIMD3(0, 0, 1),
-                                             semiAngle: .pi / 6, radius: 5) {
+        if let s = Surface.gcConicalSurface(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            semiAngle: .pi / 6, radius: 5)
+        {
             #expect(s.continuity >= 0)
         }
     }
 
     @Test func conicalFrom2PtsRadii() {
-        if let s = Surface.gcConicalSurface2Pts(p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
-                                                  r1: 5, r2: 2) {
+        if let s = Surface.gcConicalSurface2Pts(
+            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
+            r1: 5, r2: 2)
+        {
             #expect(s.continuity >= 0)
         }
     }
@@ -1737,22 +1816,28 @@ struct GCMakeCylindricalSurfaceTests {
     }
 
     @Test func cylindricalFromCircle() {
-        if let s = Surface.gcCylindricalSurfaceFromCircle(center: .zero, normal: SIMD3(0, 0, 1),
-                                                            radius: 5) {
+        if let s = Surface.gcCylindricalSurfaceFromCircle(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 5)
+        {
             #expect(s.continuity >= 0)
         }
     }
 
     @Test func cylindricalParallel() {
-        if let s = Surface.gcCylindricalSurfaceParallel(center: .zero, normal: SIMD3(0, 0, 1),
-                                                          radius: 5, distance: 2) {
+        if let s = Surface.gcCylindricalSurfaceParallel(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 5, distance: 2)
+        {
             #expect(s.continuity >= 0)
         }
     }
 
     @Test func cylindricalFromAxis() {
-        if let s = Surface.gcCylindricalSurfaceAxis(point: .zero, direction: SIMD3(0, 0, 1),
-                                                      radius: 5) {
+        if let s = Surface.gcCylindricalSurfaceAxis(
+            point: .zero, direction: SIMD3(0, 0, 1),
+            radius: 5)
+        {
             #expect(s.continuity >= 0)
         }
     }
@@ -1762,8 +1847,10 @@ struct GCMakeCylindricalSurfaceTests {
 struct GCMakeTrimmedConeTests {
 
     @Test func trimmedCone2Pts() {
-        if let s = Surface.gcTrimmedCone2Pts(p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
-                                               r1: 5, r2: 2) {
+        if let s = Surface.gcTrimmedCone2Pts(
+            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
+            r1: 5, r2: 2)
+        {
             #expect(s.continuity >= 0)
         }
     }
@@ -1780,22 +1867,27 @@ struct GCMakeTrimmedConeTests {
 struct GCMakeTrimmedCylinderTests {
 
     @Test func trimmedCylinderCircle() {
-        if let s = Surface.gcTrimmedCylinderCircle(center: .zero, normal: SIMD3(0, 0, 1),
-                                                     radius: 5, height: 10) {
+        if let s = Surface.gcTrimmedCylinderCircle(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 5, height: 10)
+        {
             #expect(s.continuity >= 0)
         }
     }
 
     @Test func trimmedCylinderAxis() {
-        if let s = Surface.gcTrimmedCylinderAxis(point: .zero, direction: SIMD3(0, 0, 1),
-                                                   radius: 5, height: 10) {
+        if let s = Surface.gcTrimmedCylinderAxis(
+            point: .zero, direction: SIMD3(0, 0, 1),
+            radius: 5, height: 10)
+        {
             #expect(s.continuity >= 0)
         }
     }
 
     @Test func trimmedCylinder3Pts() {
         if let s = Surface.gcTrimmedCylinder3Pts(
-            p1: SIMD3(5, 0, 0), p2: SIMD3(5, 0, 10), p3: SIMD3(0, 5, 0)) {
+            p1: SIMD3(5, 0, 0), p2: SIMD3(5, 0, 10), p3: SIMD3(0, 5, 0))
+        {
             #expect(s.continuity >= 0)
         }
     }
@@ -1941,7 +2033,8 @@ struct MathSolverBFGSTests {
             tolerance: 1e-10,
             maxIterations: 1000,
             function: { x in
-                let val = (1 - x[0]) * (1 - x[0]) + 100 * (x[1] - x[0] * x[0]) * (x[1] - x[0] * x[0])
+                let val =
+                    (1 - x[0]) * (1 - x[0]) + 100 * (x[1] - x[0] * x[0]) * (x[1] - x[0] * x[0])
                 let gx = -2 * (1 - x[0]) - 400 * x[0] * (x[1] - x[0] * x[0])
                 let gy = 200 * (x[1] - x[0] * x[0])
                 return (value: val, gradient: [gx, gy])
@@ -2185,9 +2278,9 @@ struct NewtonMinimumTests {
     @Test func minimizeQuadratic() {
         // f(x,y) = (x-3)^2 + (y-4)^2, min at (3,4)
         let result = MathSolver.minimizeNewton(variables: 2, startPoint: [0, 0]) { x in
-            let fx = (x[0]-3)*(x[0]-3) + (x[1]-4)*(x[1]-4)
-            let gx = [2*(x[0]-3), 2*(x[1]-4)]
-            let hx = [2.0, 0.0, 0.0, 2.0] // identity Hessian
+            let fx = (x[0] - 3) * (x[0] - 3) + (x[1] - 4) * (x[1] - 4)
+            let gx = [2 * (x[0] - 3), 2 * (x[1] - 4)]
+            let hx = [2.0, 0.0, 0.0, 2.0]  // identity Hessian
             return (fx, gx, hx)
         }
         #expect(result != nil)
@@ -2200,13 +2293,15 @@ struct NewtonMinimumTests {
 
     @Test func minimizeRosenbrock() {
         // f(x,y) = (1-x)^2 + 100*(y-x^2)^2, min at (1,1)
-        let result = MathSolver.minimizeNewton(variables: 2, startPoint: [0, 0], maxIterations: 100) { x in
-            let fx = (1-x[0])*(1-x[0]) + 100*(x[1]-x[0]*x[0])*(x[1]-x[0]*x[0])
-            let gx0 = -2*(1-x[0]) + 100*2*(x[1]-x[0]*x[0])*(-2*x[0])
-            let gx1 = 100*2*(x[1]-x[0]*x[0])
-            let h00 = 2 + 100*(12*x[0]*x[0] - 4*x[1])
-            let h01 = -400*x[0]
-            let h10 = -400*x[0]
+        let result = MathSolver.minimizeNewton(
+            variables: 2, startPoint: [0, 0], maxIterations: 100
+        ) { x in
+            let fx = (1 - x[0]) * (1 - x[0]) + 100 * (x[1] - x[0] * x[0]) * (x[1] - x[0] * x[0])
+            let gx0 = -2 * (1 - x[0]) + 100 * 2 * (x[1] - x[0] * x[0]) * (-2 * x[0])
+            let gx1 = 100 * 2 * (x[1] - x[0] * x[0])
+            let h00 = 2 + 100 * (12 * x[0] * x[0] - 4 * x[1])
+            let h01 = -400 * x[0]
+            let h10 = -400 * x[0]
             let h11 = 200.0
             return (fx, [gx0, gx1], [h00, h01, h10, h11])
         }
@@ -2228,7 +2323,7 @@ struct TransformExpansionTests {
                 1, 0, 0,  // row 0 of rotation
                 0, 1, 0,  // row 1
                 0, 0, 1,  // row 2
-                5, 0, 0   // translation
+                5, 0, 0,  // translation
             ])!
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
@@ -2244,7 +2339,7 @@ struct TransformExpansionTests {
             let matrix = TransformMatrix3D([
                 2, 0, 0, 0,  // row 0: scaleX=2, no translate
                 0, 1, 0, 0,  // row 1: scaleY=1
-                0, 0, 0.5, 0 // row 2: scaleZ=0.5
+                0, 0, 0.5, 0,  // row 2: scaleZ=0.5
             ])!
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
@@ -2267,7 +2362,7 @@ struct TransformExpansionTests {
                 1, 0, 0,
                 0, 1, 0,
                 0, 0, 1,
-                5, 0, 0
+                5, 0, 0,
             ])!
             let result = box.transformed(matrix: matrix)
             #expect(result != nil)
@@ -2293,9 +2388,9 @@ struct TransformExpansionTests {
         if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 20, depth: 30) {
             // Scale by (2, 1, 0.5), no translation. INTERLEAVED: each row's own tx/ty/tz.
             let matrix = TransformMatrix3D([
-                2, 0, 0,   0,
-                0, 1, 0,   0,
-                0, 0, 0.5, 0
+                2, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 0.5, 0,
             ])!
             let result = box.gTransformed(matrix: matrix)
             #expect(result != nil)
@@ -2325,7 +2420,7 @@ struct TransformExpansionTests {
             1, 0, 0,
             0, 1, 0,
             0, 0, 1,
-            5, 10, 15
+            5, 10, 15,
         ])!
         guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
             Issue.record("box construction failed")
@@ -2432,7 +2527,8 @@ struct TransformExpansionTests {
 @Suite("CoordinateSystem3D")
 struct CoordinateSystem3DTests {
     @Test func defaultXYZ() {
-        let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let cs = CoordinateSystem3D(
+            origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         #expect(cs.isDirect)
         #expect(abs(cs.yDirection.y - 1.0) < 1e-10)
     }
@@ -2455,20 +2551,23 @@ struct CoordinateSystem3DTests {
     }
 
     @Test func mirrorPoint() {
-        let cs = CoordinateSystem3D(origin: SIMD3(1, 0, 0), direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let cs = CoordinateSystem3D(
+            origin: SIMD3(1, 0, 0), direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         let mirrored = cs.mirrored(about: .zero)
         #expect(abs(mirrored.origin.x + 1.0) < 1e-10)
     }
 
     @Test func rotate() {
-        let cs = CoordinateSystem3D(origin: SIMD3(1, 0, 0), direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let cs = CoordinateSystem3D(
+            origin: SIMD3(1, 0, 0), direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         let rotated = cs.rotated(about: .zero, axisDirection: SIMD3(0, 0, 1), angle: .pi / 2)
         #expect(abs(rotated.origin.x) < 1e-10)
         #expect(abs(rotated.origin.y - 1.0) < 1e-10)
     }
 
     @Test func translate() {
-        let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+        let cs = CoordinateSystem3D(
+            origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
         let translated = cs.translated(by: SIMD3(1, 2, 3))
         #expect(abs(translated.origin.x - 1.0) < 1e-10)
         #expect(abs(translated.origin.z - 3.0) < 1e-10)
@@ -2478,10 +2577,10 @@ struct CoordinateSystem3DTests {
 @Suite("Quaternion Interpolation")
 struct QuaternionInterpolationTests {
     @Test func slerpMidpoint() {
-        let q1 = SIMD4<Double>(0, 0, 0, 1) // identity
-        let q2 = SIMD4<Double>(0, 0, sin(.pi / 4), cos(.pi / 4)) // 90 deg about Z
+        let q1 = SIMD4<Double>(0, 0, 0, 1)  // identity
+        let q2 = SIMD4<Double>(0, 0, sin(.pi / 4), cos(.pi / 4))  // 90 deg about Z
         let mid = MathSolver.quaternionSlerp(from: q1, to: q2, t: 0.5)
-        #expect(abs(mid.w) > 0.9) // close to 45 deg
+        #expect(abs(mid.w) > 0.9)  // close to 45 deg
     }
 
     @Test func nlerpEndpoints() {
@@ -2536,7 +2635,9 @@ struct Vector3DMathTests {
     }
 
     @Test func dotCross() {
-        #expect(abs(Vector3DMath.dotCross(SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1)) - 1.0) < 1e-10)
+        #expect(
+            abs(Vector3DMath.dotCross(SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1)) - 1.0) < 1e-10
+        )
     }
 
     @Test func normalize() {
@@ -2596,14 +2697,14 @@ struct FunctionAllRootsTests {
         let roots = MathSolver.findAllRoots(in: 0.1...10.0) { x in
             (value: sin(x), derivative: cos(x))
         }
-        #expect(roots.count >= 3) // pi, 2pi, 3pi
+        #expect(roots.count >= 3)  // pi, 2pi, 3pi
     }
 }
 
 @Suite("GaussLeastSquare")
 struct GaussLeastSquareTests {
     @Test func overdetermined() {
-        let A: [Double] = [1, 0, 0, 1, 1, 1] // 3x2
+        let A: [Double] = [1, 0, 0, 1, 1, 1]  // 3x2
         let b: [Double] = [1, 2, 3]
         let x = MathSolver.leastSquares(matrix: A, rows: 3, cols: 2, rhs: b)
         #expect(x != nil)
@@ -2625,10 +2726,11 @@ struct NewtonRootTests {
 @Suite("Uzawa")
 struct UzawaTests {
     @Test func constrainedOptimization() {
-        let cont: [Double] = [1, 1] // x + y = 1
+        let cont: [Double] = [1, 1]  // x + y = 1
         let sec: [Double] = [1]
-        let result = MathSolver.uzawa(constraintMatrix: cont, nConstraints: 1, nVars: 2,
-                                      constraintRHS: sec, startPoint: [0, 0])
+        let result = MathSolver.uzawa(
+            constraintMatrix: cont, nConstraints: 1, nVars: 2,
+            constraintRHS: sec, startPoint: [0, 0])
         #expect(result != nil)
         if let r = result {
             #expect(abs(r.result[0] - 0.5) < 0.1)
@@ -2737,7 +2839,9 @@ struct MathIntegRc4Tests {
     }
 
     @Test func gaussAdaptive() {
-        let result = MathSolver.integGaussAdaptive(over: 0...Double.pi, tolerance: 1e-10) { sin($0) }
+        let result = MathSolver.integGaussAdaptive(over: 0...Double.pi, tolerance: 1e-10) {
+            sin($0)
+        }
         #expect(result != nil)
         if let r = result { #expect(abs(r.value - 2.0) < 1e-8) }
     }
@@ -2749,7 +2853,9 @@ struct MathIntegRc4Tests {
     }
 
     @Test func kronrodAdaptive() {
-        let result = MathSolver.integKronrodAdaptive(over: 0...Double.pi, tolerance: 1e-10) { sin($0) }
+        let result = MathSolver.integKronrodAdaptive(over: 0...Double.pi, tolerance: 1e-10) {
+            sin($0)
+        }
         #expect(result != nil)
         if let r = result { #expect(abs(r.value - 2.0) < 1e-8) }
     }
@@ -2809,11 +2915,12 @@ struct TrsfExtrasTests {
         // Translation by (5, 10, 15)
         let box = Shape.box(width: 1, height: 1, depth: 1)
         if let b = box {
-            let result = b.transformed(byMatrix: TransformMatrix3D([
-                1, 0, 0, 5,
-                0, 1, 0, 10,
-                0, 0, 1, 15
-            ])!)
+            let result = b.transformed(
+                byMatrix: TransformMatrix3D([
+                    1, 0, 0, 5,
+                    0, 1, 0, 10,
+                    0, 0, 1, 15,
+                ])!)
             #expect(result != nil)
             if let r = result {
                 let bb = r.boundingBox
@@ -2841,11 +2948,12 @@ struct TrsfExtrasTests {
         let box = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
         if let b = box {
             // Mirror through YZ plane: X -> -X
-            let mirrored = b.transformed(byMatrix: TransformMatrix3D([
-                -1, 0, 0, 0,
-                 0, 1, 0, 0,
-                 0, 0, 1, 0
-            ])!)
+            let mirrored = b.transformed(
+                byMatrix: TransformMatrix3D([
+                    -1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 0,
+                ])!)
             #expect(mirrored != nil)
             if let m = mirrored {
                 let bb = m.boundingBox
@@ -2899,7 +3007,7 @@ struct TrsfExtrasTests {
             let matrix = TransformMatrix3D([
                 1, 0, 0, 5,
                 0, 1, 0, 10,
-                0, 0, 1, 15
+                0, 0, 1, 15,
             ])!
             let result = box.transformed(byMatrix: matrix)
             #expect(result != nil)
@@ -3095,7 +3203,9 @@ struct IntegrationPrecisionExtremesTests {
 
     @Test func mixedScaleLargeBoxSmallHole() {
         if let big = Shape.box(width: 1000, height: 1000, depth: 1000) {
-            if let drilled = big.drilled(at: SIMD3(0.0, 0.0, 500.0), direction: SIMD3(0, 0, -1), radius: 0.01, depth: 0) {
+            if let drilled = big.drilled(
+                at: SIMD3(0.0, 0.0, 500.0), direction: SIMD3(0, 0, -1), radius: 0.01, depth: 0)
+            {
                 #expect(drilled.isValid)
             }
         }
@@ -3108,7 +3218,7 @@ struct Curve3DTransformTests {
     @Test("Translate BSpline curve")
     func translateCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0),
         ])
         if let c = curve {
             let p0 = c.point(at: 0)
@@ -3122,12 +3232,13 @@ struct Curve3DTransformTests {
     @Test("Rotate curve")
     func rotateCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0)
+            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0),
         ])
         if let c = curve {
-            let ok = c.rotate(axisOrigin: SIMD3(0, 0, 0),
-                               axisDirection: SIMD3(0, 0, 1),
-                               angle: .pi / 2)
+            let ok = c.rotate(
+                axisOrigin: SIMD3(0, 0, 0),
+                axisDirection: SIMD3(0, 0, 1),
+                angle: .pi / 2)
             #expect(ok)
             let p = c.point(at: 0)
             // After 90 degree rotation around Z, (1,0,0) -> (0,1,0)
@@ -3139,7 +3250,7 @@ struct Curve3DTransformTests {
     @Test("Scale curve")
     func scaleCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0)
+            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0),
         ])
         if let c = curve {
             let ok = c.scale(center: SIMD3(0, 0, 0), factor: 2)
@@ -3152,39 +3263,39 @@ struct Curve3DTransformTests {
     @Test("Mirror curve through point")
     func mirrorPointCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0)
+            SIMD3(1, 0, 0), SIMD3(2, 0, 0), SIMD3(3, 0, 0),
         ])
         if let c = curve {
             let ok = c.mirrorPoint(SIMD3(0, 0, 0))
             #expect(ok)
             let p = c.point(at: 0)
-            #expect(abs(p.x + 1) < 0.1) // (1,0,0) -> (-1,0,0)
+            #expect(abs(p.x + 1) < 0.1)  // (1,0,0) -> (-1,0,0)
         }
     }
 
     @Test("Mirror curve through axis")
     func mirrorAxisCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 1, 0)
+            SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 1, 0),
         ])
         if let c = curve {
             let ok = c.mirrorAxis(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
             #expect(ok)
             let p = c.point(at: 0)
-            #expect(abs(p.y + 1) < 0.1) // y=1 -> y=-1
+            #expect(abs(p.y + 1) < 0.1)  // y=1 -> y=-1
         }
     }
 
     @Test("Mirror curve through plane")
     func mirrorPlaneCurve() {
         let curve = Curve3D.interpolate(points: [
-            SIMD3(1, 0, 5), SIMD3(2, 0, 5), SIMD3(3, 0, 5)
+            SIMD3(1, 0, 5), SIMD3(2, 0, 5), SIMD3(3, 0, 5),
         ])
         if let c = curve {
             let ok = c.mirrorPlane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
             #expect(ok)
             let p = c.point(at: 0)
-            #expect(abs(p.z + 5) < 0.1) // z=5 -> z=-5
+            #expect(abs(p.z + 5) < 0.1)  // z=5 -> z=-5
         }
     }
 }
@@ -3205,9 +3316,10 @@ struct SurfaceTransformTests {
     func rotateSurface() {
         let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
         if let s = surf {
-            let ok = s.rotate(axisOrigin: SIMD3(0, 0, 0),
-                               axisDirection: SIMD3(1, 0, 0),
-                               angle: .pi / 4)
+            let ok = s.rotate(
+                axisOrigin: SIMD3(0, 0, 0),
+                axisDirection: SIMD3(1, 0, 0),
+                angle: .pi / 4)
             #expect(ok)
         }
     }
@@ -3254,8 +3366,9 @@ struct SurfaceTransformTests {
         // the boundaries must be real Bezier curves. This test used to pass Curve3D.line, got nil
         // back, and skipped its whole body via `if let` without ever calling translate (#488).
         guard let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
-              let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]),
-              let s = Surface.bezierFill(c1, c2) else {
+            let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]),
+            let s = Surface.bezierFill(c1, c2)
+        else {
             Issue.record("bezierFill setup nil")
             return
         }
@@ -3272,7 +3385,8 @@ struct SurfaceTransformTests {
 struct TransformedCurveTests {
 
     @Test func translateCircle() {
-        guard let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0) else { return }
+        guard let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
+        else { return }
         guard let translated = circ.translated(tx: 10, ty: 0, tz: 0) else { return }
         let domain = translated.domain
         // Evaluate at start, circle starts at (5,0,0), translated to (15,0,0)
@@ -3288,8 +3402,10 @@ struct DrawingCompositionTests {
     @Test("Drawing.bounds returns finite box for a projected box")
     func drawingBounds() {
         guard let box = Shape.box(width: 100, height: 50, depth: 25),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let bounds = front.bounds()
         #expect(bounds != nil)
@@ -3302,8 +3418,10 @@ struct DrawingCompositionTests {
     @Test("transformed(translate:scale:) returns non-nil wrapper")
     func transformedSmoke() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let top = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let transformed = top.transformed(translate: SIMD2(50, 30), scale: 0.5)
         #expect(transformed.translate == SIMD2(50, 30))
@@ -3313,8 +3431,10 @@ struct DrawingCompositionTests {
     @Test("DXFWriter.collectFromDrawing accepts TransformedDrawing")
     func dxfFromTransformed() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let top = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let t = top.transformed(translate: SIMD2(100, 100), scale: 2.0)
         let writer = DXFWriter()
@@ -3366,28 +3486,37 @@ struct PlaneFactoryParityTests {
 
     @Test("Well-separated points: both entry points agree")
     func threePointControlMatches() {
-        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(10, 0, 0), p3 = SIMD3<Double>(0, 10, 0)
-        expectSamePlane(Surface.planeFromPoints(p1, p2, p3),
-                        Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3))
+        let p1 = SIMD3<Double>(0, 0, 0)
+        let p2 = SIMD3<Double>(10, 0, 0)
+        let p3 = SIMD3<Double>(0, 10, 0)
+        expectSamePlane(
+            Surface.planeFromPoints(p1, p2, p3),
+            Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3))
     }
 
     @Test("Collinear-but-distinct points: both entry points return nil")
     func threePointCollinearRejectedByBoth() {
-        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(1, 0, 0), p3 = SIMD3<Double>(2, 0, 0)
+        let p1 = SIMD3<Double>(0, 0, 0)
+        let p2 = SIMD3<Double>(1, 0, 0)
+        let p3 = SIMD3<Double>(2, 0, 0)
         #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
         #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
     }
 
     @Test("Collinear, unevenly spaced points: both entry points return nil")
     func threePointCollinearUnevenRejectedByBoth() {
-        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(0.3, 0, 0), p3 = SIMD3<Double>(5, 0, 0)
+        let p1 = SIMD3<Double>(0, 0, 0)
+        let p2 = SIMD3<Double>(0.3, 0, 0)
+        let p3 = SIMD3<Double>(5, 0, 0)
         #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
         #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
     }
 
     @Test("Two coincident points: both entry points return nil")
     func threePointTwoCoincidentRejectedByBoth() {
-        let p1 = SIMD3<Double>(1, 1, 1), p2 = SIMD3<Double>(1, 1, 1), p3 = SIMD3<Double>(0, 1, 0)
+        let p1 = SIMD3<Double>(1, 1, 1)
+        let p2 = SIMD3<Double>(1, 1, 1)
+        let p3 = SIMD3<Double>(0, 1, 0)
         #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
         #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
     }
@@ -3403,21 +3532,25 @@ struct PlaneFactoryParityTests {
 
     @Test("Valid normal: both entry points agree")
     func pointNormalControlMatches() {
-        let origin = SIMD3<Double>(5, 5, 5), normal = SIMD3<Double>(1, 1, 1)
-        expectSamePlane(Surface.planeFromPointNormal(point: origin, normal: normal),
-                        Surface.plane(origin: origin, normal: normal))
+        let origin = SIMD3<Double>(5, 5, 5)
+        let normal = SIMD3<Double>(1, 1, 1)
+        expectSamePlane(
+            Surface.planeFromPointNormal(point: origin, normal: normal),
+            Surface.plane(origin: origin, normal: normal))
     }
 
     @Test("Zero-length normal: both entry points return nil")
     func pointNormalZeroLengthRejectedByBoth() {
-        let origin = SIMD3<Double>(0, 0, 0), zero = SIMD3<Double>(0, 0, 0)
+        let origin = SIMD3<Double>(0, 0, 0)
+        let zero = SIMD3<Double>(0, 0, 0)
         #expect(Surface.planeFromPointNormal(point: origin, normal: zero) == nil)
         #expect(Surface.plane(origin: origin, normal: zero) == nil)
     }
 
     @Test("Near-zero-length normal: both entry points return nil")
     func pointNormalNearZeroLengthRejectedByBoth() {
-        let origin = SIMD3<Double>(0, 0, 0), tiny = SIMD3<Double>(1e-300, 0, 0)
+        let origin = SIMD3<Double>(0, 0, 0)
+        let tiny = SIMD3<Double>(1e-300, 0, 0)
         #expect(Surface.planeFromPointNormal(point: origin, normal: tiny) == nil)
         #expect(Surface.plane(origin: origin, normal: tiny) == nil)
     }
