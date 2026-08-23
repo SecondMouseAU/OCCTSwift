@@ -10,7 +10,7 @@ import simd
 //
 // Usage pattern:
 //
-//   let sheet = Sheet(size: .A3, orientation: .landscape,
+//   let sheet = Sheet(size: .a3, orientation: .landscape,
 //                     projection: .first,
 //                     title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
 //   let writer = DXFWriter()
@@ -24,16 +24,16 @@ import simd
 // MARK: - ISO 5457 paper sizes
 
 public enum PaperSize: String, Sendable, Hashable, CaseIterable {
-    case A0, A1, A2, A3, A4
+    case a0, a1, a2, a3, a4
 
     /// ISO 5457 trimmed-sheet dimensions in mm, landscape orientation.
     public var dimensions: SIMD2<Double> {
         switch self {
-        case .A0: return SIMD2(1189, 841)
-        case .A1: return SIMD2(841, 594)
-        case .A2: return SIMD2(594, 420)
-        case .A3: return SIMD2(420, 297)
-        case .A4: return SIMD2(297, 210)
+        case .a0: return SIMD2(1189, 841)
+        case .a1: return SIMD2(841, 594)
+        case .a2: return SIMD2(594, 420)
+        case .a3: return SIMD2(420, 297)
+        case .a4: return SIMD2(297, 210)
         }
     }
 
@@ -138,9 +138,9 @@ public struct Sheet: Sendable, Hashable {
     /// three edges for A0-A3; 7 mm / 7 mm / 7 mm / 10 mm for A4.
     public var inset: (left: Double, right: Double, top: Double, bottom: Double) {
         switch size {
-        case .A0, .A1, .A2, .A3:
+        case .a0, .a1, .a2, .a3:
             return (left: 20, right: 10, top: 10, bottom: 10)
-        case .A4:
+        case .a4:
             return (left: 20, right: 10, top: 10, bottom: 10)
         }
     }
