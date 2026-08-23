@@ -241,11 +241,12 @@
 //
 // --- BRepTools ---
 // BRepTools_Modifier                  → OCCTBRepToolsModifierNurbsConvert,
-// OCCTBRepOffsetSimpleOffset, OCCTShapeCopyModification, OCCTShapeTrsfModification,
-// OCCTShapeGTrsfModification, OCCTShapeDraftModification BRepTools_ReShape                   →
-// OCCTShapeReplaceSubShape* BRepTools_Substitution              → OCCTBRepToolsSubstitute,
-// OCCTShapeSubstitute, OCCTSubstitutionIsCopied BRepTools_WireExplorer              →
-// OCCTWireExplorer*
+//                                       OCCTBRepOffsetSimpleOffset, OCCTShapeCopyModification, OCCTShapeTrsfModification,
+//                                       OCCTShapeGTrsfModification, OCCTShapeDraftModification
+// BRepTools_ReShape                   → OCCTShapeReplaceSubShape*
+// BRepTools_Substitution              → OCCTBRepToolsSubstitute,
+//                                       OCCTShapeSubstitute, OCCTSubstitutionIsCopied
+// BRepTools_WireExplorer              → OCCTWireExplorer*
 //
 // --- ChFi2d ---
 // ChFi2d_AnaFilletAlgo                → OCCTChFi2dAnaFillet
@@ -331,14 +332,18 @@
 // Geom_Ellipse                        → OCCTCurve3DEllipse*
 // Geom_Hyperbola                      → OCCTCurve3DHyperbola*
 // Geom_Line                           → OCCTCurve3DLine*, OCCTCurve3DCreateLine,
-// OCCTGceMakeLinFrom2Points Geom_OffsetSurface                  → OCCTSurfaceOffset,
-// OCCTSurfaceOffsetValue, OCCTSurfaceSetOffsetValue, OCCTSurfaceOffsetBasis (v0.99.0) Geom_Parabola
-// → OCCTCurve3DParabola* Geom_Plane                          → OCCTSurfacePlane*
+//                                       OCCTGceMakeLinFrom2Points
+// Geom_OffsetSurface                  → OCCTSurfaceOffset,
+//                                       OCCTSurfaceOffsetValue, OCCTSurfaceSetOffsetValue, OCCTSurfaceOffsetBasis (v0.99.0)
+// Geom_Parabola                       → OCCTCurve3DParabola*
+// Geom_Plane                          → OCCTSurfacePlane*
 // Geom_SphericalSurface               → OCCTSurfaceSphere*, OCCTSurfaceCreateSphere
 // Geom_SurfaceOfLinearExtrusion       → OCCTSurfaceCreateExtrusion, OCCTFaceGetPrimaryAxis
 // Geom_SurfaceOfRevolution            → OCCTSurfaceRevolution*, OCCTSurfaceCreateRevolution,
-// OCCTShapeRevolutionAxes Geom_ToroidalSurface                → OCCTSurfaceTorus*,
-// OCCTSurfaceCreateTorus Geom_TrimmedCurve                   → OCCTCurve3DTrim
+//                                       OCCTShapeRevolutionAxes
+// Geom_ToroidalSurface                → OCCTSurfaceTorus*,
+//                                       OCCTSurfaceCreateTorus
+// Geom_TrimmedCurve                   → OCCTCurve3DTrim
 //
 // --- Geom2d ---
 // Geom2d_AxisPlacement                → OCCTAxisPlacement2D*
@@ -438,7 +443,8 @@
 // Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
 //                                       OCCTCurve2DJoinToBSpline
 // Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments,
-// OCCTCurve2DToArcsAndSegments Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+//                                       OCCTCurve2DToArcsAndSegments
+// Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
 // Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
 //                                       since #562 deleted the second family that wrapped it)
 // Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers
@@ -450,7 +456,8 @@
 //
 // --- GeomFill ---
 // GeomFill_BSplineCurves              → OCCTSurfaceFillBSpline2Curves,
-// OCCTSurfaceFillBSpline4Curves GeomFill_BezierCurves               → OCCTSurfaceBezierFill*
+//                                       OCCTSurfaceFillBSpline4Curves
+// GeomFill_BezierCurves               → OCCTSurfaceBezierFill*
 // GeomFill_ConstrainedFilling         → OCCTGeomFillConstrained
 // GeomFill_Coons                      → OCCTGeomFillCoonsPoles
 // GeomFill_CoonsAlgPatch              → OCCTGeomFillCoonsAlgPatchEval
@@ -491,9 +498,10 @@
 //
 // --- GeomPlate ---
 // GeomPlate_BuildPlateSurface         → OCCTShapePlate*, OCCTGeomPlateSurface,
-// OCCTSurfacePlateThrough GeomPlate_BuildAveragePlane         → OCCTGeomPlateBuildAveragePlane
-// (v0.69.0) GeomPlate_MakeApprox                → OCCTShapePlate*, OCCTGeomPlateSurface,
-// OCCTSurfacePlateThrough
+//                                       OCCTSurfacePlateThrough
+// GeomPlate_BuildAveragePlane         → OCCTGeomPlateBuildAveragePlane (v0.69.0)
+// GeomPlate_MakeApprox                → OCCTShapePlate*, OCCTGeomPlateSurface,
+//                                       OCCTSurfacePlateThrough
 //
 // --- IntAna2d ---
 // IntAna2d_AnaIntersection            → OCCTIntAna2d*
@@ -512,9 +520,11 @@
 // --- Law ---
 // Law_BSpFunc                         → OCCTLawCreateBSpline, OCCTLawInterpolate
 // Law_BSpline                         → OCCTLawCreateBSpline, OCCTLawInterpolate,
-// OCCTLawBSplineKnotSplit* Law_Constant                        → OCCTLawCreateConstant Law_Interpol
-// → OCCTLawCreateInterpolate Law_Interpolate                     → OCCTLawInterpolate (a different
-// class from Law_Interpol,
+//                                       OCCTLawBSplineKnotSplit*
+// Law_Constant                        → OCCTLawCreateConstant
+// Law_Interpol                        → OCCTLawCreateInterpolate
+// Law_Interpolate                     → OCCTLawInterpolate (a different
+//                                       class from Law_Interpol,
 //                                       one letter apart, driven by a different bridge function)
 // Law_Linear                          → OCCTLawCreateLinear
 // Law_S                               → OCCTLawCreateS
@@ -601,9 +611,9 @@
 // --- ShapeCustom ---
 // ShapeCustom_BSplineRestriction      → OCCTShapeBSplineRestriction*
 // ShapeCustom_Curve2d                 → OCCTCurve2DIsLinear, OCCTCurve2DConvertToLine,
-// OCCTCurve2DSimplifyBSpline ShapeCustom_DirectModification      →
-// OCCTShapeCustomDirectModification ShapeCustom_Surface                 →
-// OCCTSurfaceConvertToAnalytical, OCCTSurfaceConvertToPeriodic, OCCTSurfaceConversionGap
+//                                       OCCTCurve2DSimplifyBSpline
+// ShapeCustom_DirectModification      → OCCTShapeCustomDirectModification
+// ShapeCustom_Surface                 → OCCTSurfaceConvertToAnalytical, OCCTSurfaceConvertToPeriodic, OCCTSurfaceConversionGap
 // ShapeCustom_SweptToElementary       → OCCTShapeSweptToElementary
 // ShapeCustom_TrsfModification        → OCCTShapeCustomTrsfModificationScale
 //
