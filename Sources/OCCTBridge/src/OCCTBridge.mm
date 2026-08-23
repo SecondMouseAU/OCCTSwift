@@ -10,23 +10,35 @@
 
 // MARK: - Global Serial Lock for Thread Safety
 #include <mutex>
+
 // Non-static (declared in OCCTBridge_Internal.h) so per-area TUs share the
 // same underlying mutex via the linker.
-std::recursive_mutex& occtGlobalMutex() {
-    static std::recursive_mutex mutex;
-    return mutex;
+std::recursive_mutex& occtGlobalMutex()
+{
+  static std::recursive_mutex mutex;
+  return mutex;
 }
-void OCCTSerialLockAcquire(void) { occtGlobalMutex().lock(); }
-void OCCTSerialLockRelease(void) { occtGlobalMutex().unlock(); }
+
+void OCCTSerialLockAcquire(void)
+{
+  occtGlobalMutex().lock();
+}
+
+void OCCTSerialLockRelease(void)
+{
+  occtGlobalMutex().unlock();
+}
 
 // Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
 // SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so that
 // signals raised inside OCCT become catchable via OCC_CATCH_SIGNALS instead of aborting
 // the host process. Idempotent + thread-safe via std::once_flag.
 #include <OSD.hxx>
-void occtEnsureSignals() {
-    static std::once_flag once;
-    std::call_once(once, []{ OSD::SetSignal(Standard_False); });
+
+void occtEnsureSignals()
+{
+  static std::once_flag once;
+  std::call_once(once, [] { OSD::SetSignal(Standard_False); });
 }
 
 // Suppress OCCT 8.0.0 header deprecation warnings (typedef aliases still work).
@@ -392,9 +404,14 @@ void occtEnsureSignals() {
 
 #include <BRepBuilderAPI_Sewing.hxx>
 
-struct OCCTSewing {
-    BRepBuilderAPI_Sewing sewing;
-    OCCTSewing(double tol) : sewing(tol) {}
+struct OCCTSewing
+{
+  BRepBuilderAPI_Sewing sewing;
+
+  OCCTSewing(double tol)
+      : sewing(tol)
+  {
+  }
 };
 
 // OCCTShape, OCCTWire, OCCTMesh, OCCTFace, OCCTEdge, OCCTDocument, OCCTDrawing
@@ -412,22 +429,31 @@ struct OCCTSewing {
 // upstream in OCCT, but OCC_CATCH_SIGNALS is inert in this build, so the only safe defence
 // is to PREVENT the crashing prism: detect the bad wire and refuse the op. Such a profile
 // can never form a valid extruded solid, so returning nil loses nothing.
-bool occtHasSelfIntersectingWire(const TopoDS_Shape& s) {
-    if (s.IsNull()) return false;
-    try {
-        BRepCheck_Analyzer analyzer(s);
-        if (analyzer.IsValid()) return false;   // fast path: a valid shape can't carry the flag
-        for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next()) {
-            Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
-            if (res.IsNull()) continue;
-            for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next()) {
-                if (it.Value() == BRepCheck_SelfIntersectingWire) return true;
-            }
-        }
-    } catch (...) {
-        // A BRepCheck that itself throws on the input is a strong "do not proceed" signal.
-        return true;
-    }
+bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
+{
+  if (s.IsNull())
     return false;
+  try
+  {
+    BRepCheck_Analyzer analyzer(s);
+    if (analyzer.IsValid())
+      return false; // fast path: a valid shape can't carry the flag
+    for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next())
+    {
+      Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
+      if (res.IsNull())
+        continue;
+      for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+      {
+        if (it.Value() == BRepCheck_SelfIntersectingWire)
+          return true;
+      }
+    }
+  }
+  catch (...)
+  {
+    // A BRepCheck that itself throws on the input is a strong "do not proceed" signal.
+    return true;
+  }
+  return false;
 }
-
