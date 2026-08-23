@@ -4,11 +4,3 @@
 # full clang-format compliance (Sources/OCCTBridge/.clang-format); touching a
 # listed file without removing it fails Scripts/check-style-manifest.py. See
 # okf/policies/code-style.md.
-Sources/OCCTBridge/include/OCCTBridge_AIS.h
-Sources/OCCTBridge/include/OCCTBridge_IO.h
-Sources/OCCTBridge/include/OCCTBridge_Mesh.h
-Sources/OCCTBridge/include/OCCTBridge_Spatial.h
-Sources/OCCTBridge/include/OCCTBridge_Surface.h
-Sources/OCCTBridge/include/OCCTBridge_Visualization.h
-Sources/OCCTBridge/src/OCCTBridge_Visualization.mm
-Sources/OCCTBridge/src/OCCTBridge.mm
