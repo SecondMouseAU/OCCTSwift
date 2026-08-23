@@ -241,10 +241,10 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 // Output parameters (optional, can pass nullptr):
 //   - outTotalFacePairs: estimated total face pairs to check (if available)
 //   - outTimeSpent: actual time spent in seconds
-int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
-                                        double       timeoutSeconds,
-                                        int32_t* _Nullable outTotalFacePairs,
-                                        double* _Nullable outTimeSpent);
+int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
+                                         int32_t* _Nullable outNumFacesChecked,
+                                         int32_t* _Nullable outTotalFacePairs,
+                                         double* _Nullable outTimeSpent);
 
 // Quick pre-screen for self-intersection check complexity.
 // Returns an estimate of the computational cost based on face count and surface types.
