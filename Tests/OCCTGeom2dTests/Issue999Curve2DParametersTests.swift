@@ -18,8 +18,8 @@ struct Issue999Curve2DParametersTests {
             Issue.record("circle fixture failed")
             return
         }
-        func shape(_ p: OCCTParameterisationType) -> (Int, Int)? {
-            guard let b = circle.toBSpline(parameterisation: p), let d = b.degree, let n = b.poleCount else {
+        func shape(_ p: Curve2D.Parameterisation) -> (Int, Int)? {
+            guard let b = circle.toBSpline(p), let d = b.degree, let n = b.poleCount else {
                 return nil
             }
             return (d, n)
@@ -27,11 +27,11 @@ struct Issue999Curve2DParametersTests {
         // Measured against the pinned 8.0.1 kernel, and not merely "they differ": these are the
         // exact degree and pole counts the kernel produces, so a change of kernel behaviour shows
         // up here rather than being absorbed by an inequality.
-        #expect(shape(OCCTParameterisationType(rawValue: 0)).map { $0 == (2, 6) } == true)
-        #expect(shape(OCCTParameterisationType(rawValue: 4)).map { $0 == (2, 8) } == true)
-        #expect(shape(OCCTParameterisationType(rawValue: 5)).map { $0 == (6, 6) } == true)
-        #expect(shape(OCCTParameterisationType(rawValue: 6)).map { $0 == (4, 12) } == true)
-        #expect(shape(OCCTParameterisationType(rawValue: 7)).map { $0 == (7, 7) } == true)
+        #expect(shape(.tangentHalfAngle).map { $0 == (2, 6) } == true)
+        #expect(shape(.tangentHalfAngle4).map { $0 == (2, 8) } == true)
+        #expect(shape(.quasiAngular).map { $0 == (6, 6) } == true)
+        #expect(shape(.rationalC1).map { $0 == (4, 12) } == true)
+        #expect(shape(.polynomial).map { $0 == (7, 7) } == true)
     }
 
     @Test("Every parameterisation but polynomial reproduces the circle exactly")
@@ -41,8 +41,8 @@ struct Issue999Curve2DParametersTests {
             Issue.record("circle fixture failed")
             return
         }
-        func worstRadialError(_ p: OCCTParameterisationType) -> Double? {
-            guard let b = circle.toBSpline(parameterisation: p) else { return nil }
+        func worstRadialError(_ p: Curve2D.Parameterisation) -> Double? {
+            guard let b = circle.toBSpline(p) else { return nil }
             let d = b.domain
             var worst = 0.0
             for k in 0...200 {
@@ -52,11 +52,11 @@ struct Issue999Curve2DParametersTests {
             }
             return worst
         }
-        let exactCases: [OCCTParameterisationType] = [
-            OCCTParameterisationType(rawValue: 0), // tangentHalfAngle (TgtThetaOver2)
-            OCCTParameterisationType(rawValue: 4), // tangentHalfAngle4 (TgtThetaOver2_4)
-            OCCTParameterisationType(rawValue: 5), // quasiAngular
-            OCCTParameterisationType(rawValue: 6), // rationalC1
+        let exactCases: [Curve2D.Parameterisation] = [
+            .tangentHalfAngle,
+            .tangentHalfAngle4,
+            .quasiAngular,
+            .rationalC1,
         ]
         for exact in exactCases {
             if let e = worstRadialError(exact) {
@@ -66,7 +66,7 @@ struct Issue999Curve2DParametersTests {
             }
         }
         // Polynomial is the one OCCT documents as approximate, and it measurably is.
-        if let e = worstRadialError(OCCTParameterisationType(rawValue: 7)) {
+        if let e = worstRadialError(.polynomial) {
             #expect(e > 1e-9, "polynomial was exact, so it is no longer distinguishable")
             #expect(e < 1e-3, "polynomial deviated by \(e), far more than expected")
         } else {
@@ -81,8 +81,8 @@ struct Issue999Curve2DParametersTests {
             return
         }
         // A full circle spans 2 pi, past the 0.9999 pi and 1.9999 pi limits these two document.
-        #expect(circle.toBSpline(parameterisation: OCCTParameterisationType(rawValue: 1)) == nil)
-        #expect(circle.toBSpline(parameterisation: OCCTParameterisationType(rawValue: 2)) == nil)
+        #expect(circle.toBSpline(.tangentHalfAngle1) == nil)
+        #expect(circle.toBSpline(.tangentHalfAngle2) == nil)
     }
 
     // MARK: - bisector(withPoint:...) took an origin Bisector_BisecPC::Perform does not have
