@@ -16476,18 +16476,16 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
-    if (!breaker.IsNull())
-    {
-      if (breaker->tripped())
-        return -1; // timed out but breaker was tripped (analysis was running)
-      else
-        return -2; // timed out, breaker was NOT tripped (analysis made no progress)
-    }
-
     if (aa.HasFaulty())
       return 1; // conclusive
 
-    return 0; // completed clean
+    bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
+    if (breakerTripped)
+      return -1; // timed out but breaker was tripped (analysis was running)
+    else if (timeoutSeconds > 0.0)
+      return -2; // timed out but breaker was NOT tripped (made no progress)
+
+    return 0; // no self-intersection found
   }
   catch (...)
   {
