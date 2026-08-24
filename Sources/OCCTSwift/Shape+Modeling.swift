@@ -2664,7 +2664,7 @@ extension Shape {
     /// let blind = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
     ///                                   radius: 5, extent: .blind(depth: 6))
     /// ```
-    public enum CylindricalHoleExtent: Sendable, Equatable {
+    public enum CylindricalHoleExtent: Sendable, Equatable, Hashable {
         /// `Perform(R)`, an **infinite** cylinder, extending both ways along the axis.
         ///
         /// The axis origin anchors the axis; it is not where the hole starts. Drilling "down" from
