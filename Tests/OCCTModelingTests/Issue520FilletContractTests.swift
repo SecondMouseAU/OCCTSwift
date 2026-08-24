@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #520: the five `BRepFilletAPI_MakeFillet` edge-list entry points now agree on what an edge index
@@ -40,8 +41,9 @@ struct Issue520FilletContractTests {
         #expect(constantSmall != nil)
         #expect(constantLarge != nil)
         guard let taperedVolume = tapered?.volume,
-              let smallVolume = constantSmall?.volume,
-              let largeVolume = constantLarge?.volume else {
+            let smallVolume = constantSmall?.volume,
+            let largeVolume = constantLarge?.volume
+        else {
             Issue.record("a fillet produced no volume")
             return
         }
@@ -60,8 +62,9 @@ struct Issue520FilletContractTests {
             return
         }
 
-        let bulged = box.filletedVariable(edgeIndex: 0,
-                                          radiusProfile: [(0.0, 1.0), (0.5, 4.0), (1.0, 1.0)])
+        let bulged = box.filletedVariable(
+            edgeIndex: 0,
+            radiusProfile: [(0.0, 1.0), (0.5, 4.0), (1.0, 1.0)])
         let constantSmall = box.filleted(edges: [edge], radius: 1.0)
 
         #expect(bulged != nil)
@@ -82,8 +85,9 @@ struct Issue520FilletContractTests {
             return
         }
 
-        let viaVariable = box.filletedVariable(edgeIndex: 0,
-                                               radiusProfile: [(0.0, 1.0), (1.0, 3.0)])
+        let viaVariable = box.filletedVariable(
+            edgeIndex: 0,
+            radiusProfile: [(0.0, 1.0), (1.0, 3.0)])
         let viaEvolving = box.filletEvolving([
             EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
         ])
@@ -129,9 +133,10 @@ struct Issue520FilletContractTests {
             return
         }
         #expect(edge.index == 0)
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 2.0)])
-        ]) != nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 2.0)])
+            ]) != nil)
     }
 
     // MARK: - An unresolvable index rejects the call (item 2)
@@ -149,21 +154,25 @@ struct Issue520FilletContractTests {
     @Test("Uniform fillet rejects an edge that is not this shape's")
     func uniformFilletRejectsForeignEdge() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let cut = box.subtracting(Shape.box(width: 20, height: 20, depth: 20)!
-            .translated(by: SIMD3(10, 10, 10))!)
+        let cut = box.subtracting(
+            Shape.box(width: 20, height: 20, depth: 20)!
+                .translated(by: SIMD3(10, 10, 10))!)
         guard let cut, cut.edges().count > box.edges().count else {
             Issue.record("cut did not produce more edges than the box")
             return
         }
         guard let ownEdge = box.edge(at: 0),
-              let foreignEdge = cut.edge(at: cut.edges().count - 1) else {
+            let foreignEdge = cut.edge(at: cut.edges().count - 1)
+        else {
             Issue.record("could not select edges")
             return
         }
         #expect(foreignEdge.index >= box.edges().count)
         #expect(box.filleted(edges: [ownEdge, foreignEdge], radius: 1.0) == nil)
-        #expect(box.filleted(edges: [ownEdge, foreignEdge],
-                             startRadius: 1.0, endRadius: 2.0) == nil)
+        #expect(
+            box.filleted(
+                edges: [ownEdge, foreignEdge],
+                startRadius: 1.0, endRadius: 2.0) == nil)
     }
 
     @Test("History fillet rejects an out-of-range index")
@@ -179,10 +188,14 @@ struct Issue520FilletContractTests {
             Issue.record("no edge 0")
             return
         }
-        #expect(box.filletedVariable(edgeIndex: 99_999,
-                                     radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: -1,
-                                     radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 99_999,
+                radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: -1,
+                radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil)
 
         var outOfRange = EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 2.0)])
         outOfRange.edgeIndex = 99_999
@@ -195,9 +208,12 @@ struct Issue520FilletContractTests {
     func variableRejectsNonPositiveRadius() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
         #expect(box.filletedVariable(edgeIndex: 0, radiusProfile: [(0.0, 1.0), (1.0, 0.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: 0, radiusProfile: [(0.0, 1.0), (1.0, -3.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(0.0, Double.nan), (1.0, 2.0)]) == nil)
+        #expect(
+            box.filletedVariable(edgeIndex: 0, radiusProfile: [(0.0, 1.0), (1.0, -3.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(0.0, Double.nan), (1.0, 2.0)]) == nil)
     }
 
     /// The measurement that makes this more than hygiene: through the profile overload a negative
@@ -210,15 +226,18 @@ struct Issue520FilletContractTests {
             Issue.record("no edge 0")
             return
         }
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, -3.0)])
-        ]) == nil)
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 0.0)])
-        ]) == nil)
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, Double.nan), (1.0, 2.0)])
-        ]) == nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, -3.0)])
+            ]) == nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, 1.0), (1.0, 0.0)])
+            ]) == nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(0.0, Double.nan), (1.0, 2.0)])
+            ]) == nil)
     }
 
     // MARK: - Parameter validation on the radius-law entry points (item 3)
@@ -230,15 +249,22 @@ struct Issue520FilletContractTests {
             Issue.record("no edge 0")
             return
         }
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(-5.0, 1.0), (1.0, 3.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(0.0, 1.0), (7.0, 3.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(Double.nan, 1.0), (1.0, 3.0)]) == nil)
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(-5.0, 1.0), (0.0, 4.0), (7.0, 1.0)])
-        ]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(-5.0, 1.0), (1.0, 3.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(0.0, 1.0), (7.0, 3.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(Double.nan, 1.0), (1.0, 3.0)]) == nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(-5.0, 1.0), (0.0, 4.0), (7.0, 1.0)])
+            ]) == nil)
     }
 
     /// OCCT renormalises a 3+ point profile with `(U - Uf) / (Ul - Uf)`, which divides by zero when
@@ -251,13 +277,18 @@ struct Issue520FilletContractTests {
             Issue.record("no edge 0")
             return
         }
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(0.5, 1.0), (0.5, 4.0), (0.5, 1.0)]) == nil)
-        #expect(box.filletedVariable(edgeIndex: 0,
-                                     radiusProfile: [(1.0, 1.0), (0.5, 4.0), (0.0, 2.0)]) == nil)
-        #expect(box.filletEvolving([
-            EvolvingFilletEdge(edge: edge, radiusPoints: [(1.0, 1.0), (0.0, 3.0)])
-        ]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(0.5, 1.0), (0.5, 4.0), (0.5, 1.0)]) == nil)
+        #expect(
+            box.filletedVariable(
+                edgeIndex: 0,
+                radiusProfile: [(1.0, 1.0), (0.5, 4.0), (0.0, 2.0)]) == nil)
+        #expect(
+            box.filletEvolving([
+                EvolvingFilletEdge(edge: edge, radiusPoints: [(1.0, 1.0), (0.0, 3.0)])
+            ]) == nil)
     }
 
     // MARK: - Contours that never receive a radius (the SIGSEGV paths)
@@ -296,8 +327,10 @@ struct Issue520FilletContractTests {
             checked += 1
             // Whatever OCCT makes of this edge, the call must return rather than SIGSEGV, and any
             // shape it hands back must be a real one.
-            if let filleted = cut.filletedVariable(edgeIndex: edge.index,
-                                                   radiusProfile: [(0.0, 0.5), (1.0, 1.0)]) {
+            if let filleted = cut.filletedVariable(
+                edgeIndex: edge.index,
+                radiusProfile: [(0.0, 0.5), (1.0, 1.0)])
+            {
                 #expect(filleted.isValid)
             }
         }

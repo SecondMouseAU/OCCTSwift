@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #208: a watchdog-bounded self-intersection check. isValidSolid (topology) misses global
@@ -11,17 +12,27 @@ struct Issue208SelfIntersection {
 
     @Test("a clean solid reports not self-intersecting")
     func cleanSolidIsClean() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { #expect(Bool(false)); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            #expect(Bool(false))
+            return
+        }
         #expect(box.isSelfIntersecting() == false)
-        guard let sph = Shape.sphere(radius: 5) else { #expect(Bool(false)); return }
+        guard let sph = Shape.sphere(radius: 5) else {
+            #expect(Bool(false))
+            return
+        }
         #expect(sph.isSelfIntersecting() == false)
     }
 
     @Test("two overlapping solids in one compound are detected as self-intersecting")
     func overlappingCompoundIsSelfIntersecting() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([a, b])
+        else {
+            #expect(Bool(false))
+            return
+        }
         // The two boxes' faces interfere → self-interference within the single argument.
         #expect(compound.isSelfIntersecting() == true)
     }
@@ -29,8 +40,12 @@ struct Issue208SelfIntersection {
     @Test("indeterminate when the check cannot finish in time")
     func tinyTimeoutIsIndeterminateOrConclusive() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([a, b])
+        else {
+            #expect(Bool(false))
+            return
+        }
         // A near-zero deadline must not hang: either it found a fault first (true) or it
         // gave up (nil). It must never block, and must not falsely claim "clean".
         let r = compound.isSelfIntersecting(timeout: 1e-7)
@@ -46,23 +61,36 @@ struct Issue319HardBoundedSelfIntersection {
 
     @Test("a clean solid reports not self-intersecting")
     func cleanSolidIsClean() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { #expect(Bool(false)); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            #expect(Bool(false))
+            return
+        }
         #expect(box.isSelfIntersecting(hardTimeout: 30) == false)
     }
 
     @Test("two overlapping solids in one compound are detected as self-intersecting")
     func overlappingCompoundIsSelfIntersecting() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([a, b])
+        else {
+            #expect(Bool(false))
+            return
+        }
         #expect(compound.isSelfIntersecting(hardTimeout: 30) == true)
     }
 
-    @Test("a near-zero deadline returns near that deadline, not after the full check, the property timeout: cannot offer")
+    @Test(
+        "a near-zero deadline returns near that deadline, not after the full check, the property timeout: cannot offer"
+    )
     func deadlineIsActuallyHard() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([a, b])
+        else {
+            #expect(Bool(false))
+            return
+        }
         let start = Date()
         let r = compound.isSelfIntersecting(hardTimeout: 0.001)
         let elapsed = Date().timeIntervalSince(start)
@@ -70,6 +98,8 @@ struct Issue319HardBoundedSelfIntersection {
         // both are acceptable outcomes. What matters is the CALLER'S wall-clock time, which
         // must track the deadline rather than the check's full (potentially unbounded) duration.
         #expect(r == nil || r == true)
-        #expect(elapsed < 2.0, "hard deadline should bound the caller's wall-clock time, got \(elapsed)s")
+        #expect(
+            elapsed < 2.0,
+            "hard deadline should bound the caller's wall-clock time, got \(elapsed)s")
     }
 }

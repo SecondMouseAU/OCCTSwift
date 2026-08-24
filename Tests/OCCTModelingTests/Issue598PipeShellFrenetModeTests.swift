@@ -8,9 +8,10 @@
 // wrong (a separate code path from the enum-driven bridge function this issue fixes), so a match
 // against it is real cross-checking, not two copies of the same mistake agreeing with each other.
 
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 @Suite("PipeSweepMode Frenet/correctedFrenet were swapped (#598)")
@@ -22,10 +23,11 @@ struct Issue598PipeShellFrenetModeTests {
     /// enum this issue's fix touches. An independent path to the same OCCT trihedron law.
     static func groundTruth(spine: Wire, profile: Wire, frenet: Bool) -> Shape? {
         guard let spineShape = Shape.fromWire(spine), let profileShape = Shape.fromWire(profile),
-              let builder = PipeShellBuilder(spine: spineShape) else { return nil }
+            let builder = PipeShellBuilder(spine: spineShape)
+        else { return nil }
         builder.setFrenet(frenet)
         builder.add(profile: profileShape)
-        builder.setTransition(.modified) // BRepBuilderAPI_Transformed, pipeShell's own default
+        builder.setTransition(.modified)  // BRepBuilderAPI_Transformed, pipeShell's own default
         guard builder.build() else { return nil }
         builder.makeSolid()
         return builder.shape
@@ -36,61 +38,83 @@ struct Issue598PipeShellFrenetModeTests {
     /// sampling `curvature(at:)` every 0.5% of the domain finds the minimum is exactly 0.0 at
     /// the midpoint (u=0.5), a genuine curvature-zero crossing, not just a low point.
     static func inflectionSpine() -> Wire? {
-        Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 10, 0), SIMD3(20, 0, 0),
-                      SIMD3(30, -10, 0), SIMD3(40, 0, 0)])
+        Wire.bspline([
+            SIMD3(0, 0, 0), SIMD3(10, 10, 0), SIMD3(20, 0, 0),
+            SIMD3(30, -10, 0), SIMD3(40, 0, 0),
+        ])
     }
 
     @Test(".frenet matches BRepFill_PipeShell::Set(true), the actual Frenet trihedron")
     func frenetMatchesTrueFrenet() {
-        guard let spine = Issue503PipeShellTests.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3),
-              let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
-              let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
-              let viaEnum = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet),
-              let vEnum = viaEnum.volume, let vFrenet = trueFrenet.volume,
-              let vCorrected = trueCorrected.volume else {
-            Issue.record("Could not build the fixtures"); return
+        guard let spine = Issue503PipeShellTests.curvedSpine(),
+            let profile = Wire.rectangle(width: 5, height: 3),
+            let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
+            let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
+            let viaEnum = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet),
+            let vEnum = viaEnum.volume, let vFrenet = trueFrenet.volume,
+            let vCorrected = trueCorrected.volume
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
 
         // The oracle values themselves must actually disagree on this spine, or a match against
         // either one would be meaningless.
-        #expect(!vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
-                "oracle Frenet and corrected Frenet must differ")
+        #expect(
+            !vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
+            "oracle Frenet and corrected Frenet must differ")
 
-        #expect(vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
-                ".frenet (\(vEnum)) should match the true Frenet sweep (\(vFrenet))")
-        #expect(!vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
-                ".frenet (\(vEnum)) must not match the corrected-Frenet sweep (\(vCorrected))")
+        #expect(
+            vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
+            ".frenet (\(vEnum)) should match the true Frenet sweep (\(vFrenet))")
+        #expect(
+            !vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
+            ".frenet (\(vEnum)) must not match the corrected-Frenet sweep (\(vCorrected))")
         #expect(vEnum.isApproximatelyEqual(to: 177.347557, tolerance: 1e-5))
     }
 
-    @Test(".correctedFrenet matches BRepFill_PipeShell::Set(false), the actual corrected Frenet trihedron")
+    @Test(
+        ".correctedFrenet matches BRepFill_PipeShell::Set(false), the actual corrected Frenet trihedron"
+    )
     func correctedFrenetMatchesTrueCorrectedFrenet() {
-        guard let spine = Issue503PipeShellTests.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3),
-              let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
-              let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
-              let viaEnum = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet),
-              let vEnum = viaEnum.volume, let vFrenet = trueFrenet.volume,
-              let vCorrected = trueCorrected.volume else {
-            Issue.record("Could not build the fixtures"); return
+        guard let spine = Issue503PipeShellTests.curvedSpine(),
+            let profile = Wire.rectangle(width: 5, height: 3),
+            let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
+            let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
+            let viaEnum = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet),
+            let vEnum = viaEnum.volume, let vFrenet = trueFrenet.volume,
+            let vCorrected = trueCorrected.volume
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
 
-        #expect(vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
-                ".correctedFrenet (\(vEnum)) should match the true corrected-Frenet sweep (\(vCorrected))")
-        #expect(!vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
-                ".correctedFrenet (\(vEnum)) must not match the plain Frenet sweep (\(vFrenet))")
+        #expect(
+            vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
+            ".correctedFrenet (\(vEnum)) should match the true corrected-Frenet sweep (\(vCorrected))"
+        )
+        #expect(
+            !vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
+            ".correctedFrenet (\(vEnum)) must not match the plain Frenet sweep (\(vFrenet))")
         #expect(vEnum.isApproximatelyEqual(to: 180.286724, tolerance: 1e-5))
     }
 
     @Test("the multi-section spelling honours the same, now-corrected mapping")
     func multiSectionSpellingAlsoFixed() {
-        guard let spine = Issue503PipeShellTests.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3),
-              let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
-              let viaMulti = Shape.pipeShellMultiSection(spine: spine, profiles: [profile], mode: .frenet),
-              let vMulti = viaMulti.volume, let vFrenet = trueFrenet.volume else {
-            Issue.record("Could not build the fixtures"); return
+        guard let spine = Issue503PipeShellTests.curvedSpine(),
+            let profile = Wire.rectangle(width: 5, height: 3),
+            let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
+            let viaMulti = Shape.pipeShellMultiSection(
+                spine: spine, profiles: [profile], mode: .frenet),
+            let vMulti = viaMulti.volume, let vFrenet = trueFrenet.volume
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
-        #expect(vMulti.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
-                "pipeShellMultiSection(mode: .frenet) (\(vMulti)) should match true Frenet (\(vFrenet))")
+        #expect(
+            vMulti.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6),
+            "pipeShellMultiSection(mode: .frenet) (\(vMulti)) should match true Frenet (\(vFrenet))"
+        )
     }
 
     /// The blast radius this issue measured: a spine with no torsion cannot distinguish the two
@@ -99,14 +123,18 @@ struct Issue598PipeShellFrenetModeTests {
     @Test("the two modes agree on a spine with no torsion, so the swap was silent there")
     func theTwoModesAgreeOnASpineWithNoTorsion() {
         guard let straight = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
-              let profile = Wire.circle(radius: 2),
-              let frenet = Shape.pipeShell(spine: straight, profile: profile, mode: .frenet),
-              let corrected = Shape.pipeShell(spine: straight, profile: profile, mode: .correctedFrenet),
-              let vFrenet = frenet.volume, let vCorrected = corrected.volume else {
-            Issue.record("Could not build the fixtures"); return
+            let profile = Wire.circle(radius: 2),
+            let frenet = Shape.pipeShell(spine: straight, profile: profile, mode: .frenet),
+            let corrected = Shape.pipeShell(
+                spine: straight, profile: profile, mode: .correctedFrenet),
+            let vFrenet = frenet.volume, let vCorrected = corrected.volume
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
-        #expect(vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
-                "a straight spine has no torsion to disagree about: \(vFrenet) vs \(vCorrected)")
+        #expect(
+            vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6),
+            "a straight spine has no torsion to disagree about: \(vFrenet) vs \(vCorrected)")
     }
 
     /// Review of #715 (this fix's own PR): the tests above only measured a spine with ordinary
@@ -121,11 +149,15 @@ struct Issue598PipeShellFrenetModeTests {
     /// never named a mode and happens to sweep a spine through an inflection now gets an invalid
     /// solid where the pre-#598 (wrongly-wired) default happened to build the safer sweep instead.
     /// See `docs/CHANGELOG.md`'s #598 entry for the disclosed migration note.
-    @Test("plain .frenet self-intersects at a genuine curvature inflection; .correctedFrenet does not")
+    @Test(
+        "plain .frenet self-intersects at a genuine curvature inflection; .correctedFrenet does not"
+    )
     func frenetSelfIntersectsAtCurvatureInflection() {
         guard let spine = Self.inflectionSpine(),
-              let curve = spine.edges().first?.curve3D else {
-            Issue.record("Could not build the fixture"); return
+            let curve = spine.edges().first?.curve3D
+        else {
+            Issue.record("Could not build the fixture")
+            return
         }
 
         // Confirm the fixture actually has a genuine curvature-zero crossing, not an assumption:
@@ -136,18 +168,23 @@ struct Issue598PipeShellFrenetModeTests {
             let u = domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(i) / 200
             if let k = curve.curvature(at: u) { minCurvature = Swift.min(minCurvature, k) }
         }
-        #expect(minCurvature < 1e-9,
-                "fixture must have a genuine curvature-zero crossing, measured minimum \(minCurvature)")
+        #expect(
+            minCurvature < 1e-9,
+            "fixture must have a genuine curvature-zero crossing, measured minimum \(minCurvature)")
 
         // A profile plane perpendicular to the spine's start tangent (diagonal in the spine's own
         // XY plane), not coplanar with it: a flat rectangle/circle sharing the spine's own plane
         // collapses the whole sweep to a degenerate sliver regardless of trihedron law, which
         // would test the wrong thing entirely.
         let (_, startTangent) = curve.d1(at: domain.lowerBound)
-        guard let profile = Wire.circle(origin: .zero, normal: simd_normalize(startTangent), radius: 2),
-              let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet),
-              let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet) else {
-            Issue.record("Could not build the fixtures"); return
+        guard
+            let profile = Wire.circle(
+                origin: .zero, normal: simd_normalize(startTangent), radius: 2),
+            let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet),
+            let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
 
         // hardTimeout:, not timeout:, since #1054. A cooperative timeout: bound can no longer
@@ -158,10 +195,12 @@ struct Issue598PipeShellFrenetModeTests {
         // matter turns these red rather than hanging the job. The whole test measures 0.175s here
         // (0.196s on a second machine), so 30s is 171x that here and 153x there. An earlier
         // draft called it three orders of magnitude, which overstates it by about an order.
-        #expect(frenet.isSelfIntersecting(hardTimeout: 30) == true,
-                ".frenet is expected to self-intersect at this spine's curvature inflection")
-        #expect(corrected.isSelfIntersecting(hardTimeout: 30) == false,
-                ".correctedFrenet must stay valid at the same inflection")
+        #expect(
+            frenet.isSelfIntersecting(hardTimeout: 30) == true,
+            ".frenet is expected to self-intersect at this spine's curvature inflection")
+        #expect(
+            corrected.isSelfIntersecting(hardTimeout: 30) == false,
+            ".correctedFrenet must stay valid at the same inflection")
     }
 
     /// Review of #715: the CHANGELOG claimed a circular profile makes `.frenet` and
@@ -188,24 +227,35 @@ struct Issue598PipeShellFrenetModeTests {
     /// agree with each other and with the textbook volume to 1e-6 relative; see
     /// `Issue721CorrectedFrenetPlacementTests` for the full sweep across pitch and turn count that
     /// established this. There is no `.correctedFrenet` defect on this fixture family.
-    @Test("the cookbook spring recipe, correctly placed: .frenet and .correctedFrenet both match the textbook tube volume")
+    @Test(
+        "the cookbook spring recipe, correctly placed: .frenet and .correctedFrenet both match the textbook tube volume"
+    )
     func cookbookSpringRecipeVolumeInvariant() {
-        let r = 10.0, pitch = 4.0, turns = 5.0, wireRadius = 1.5
+        let r = 10.0
+        let pitch = 4.0
+        let turns = 5.0
+        let wireRadius = 1.5
         guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns),
-              let firstEdge = spine.edges().first, let curve = firstEdge.curve3D else {
-            Issue.record("Could not build the spine"); return
+            let firstEdge = spine.edges().first, let curve = firstEdge.curve3D
+        else {
+            Issue.record("Could not build the spine")
+            return
         }
         // The profile belongs at the spine's own measured start point and tangent, not at a
         // point/tangent merely consistent with *some* congruent helix (#721).
         let (p0, t0) = curve.d1(at: curve.domain.lowerBound)
         guard let profile = Wire.circle(origin: p0, normal: simd_normalize(t0), radius: wireRadius),
-              let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, solid: true),
-              let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
-              let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
-              let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
-              let vFrenet = frenet.volume, let vCorrected = corrected.volume,
-              let vTrueFrenet = trueFrenet.volume, let vTrueCorrected = trueCorrected.volume else {
-            Issue.record("Could not build the fixtures"); return
+            let frenet = Shape.pipeShell(
+                spine: spine, profile: profile, mode: .frenet, solid: true),
+            let corrected = Shape.pipeShell(
+                spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
+            let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
+            let trueCorrected = Self.groundTruth(spine: spine, profile: profile, frenet: false),
+            let vFrenet = frenet.volume, let vCorrected = corrected.volume,
+            let vTrueFrenet = trueFrenet.volume, let vTrueCorrected = trueCorrected.volume
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
 
         // Cross-check against the independent oracle before drawing any conclusion from the
@@ -215,12 +265,17 @@ struct Issue598PipeShellFrenetModeTests {
 
         let coilLength = turns * sqrt(pow(2 * .pi * r, 2) + pow(pitch, 2))
         let textbookVolume = Double.pi * wireRadius * wireRadius * coilLength
-        #expect(vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
-                ".frenet (\(vFrenet)) should match the textbook tube volume (\(textbookVolume))")
-        #expect(vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
-                ".correctedFrenet (\(vCorrected)) should also match the textbook tube volume (\(textbookVolume)) once the profile is correctly placed (#721)")
-        #expect(vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-4),
-                ".frenet (\(vFrenet)) and .correctedFrenet (\(vCorrected)) must agree: a circular profile is symmetric under rotation about the tangent, the only axis the two laws differ on")
+        #expect(
+            vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
+            ".frenet (\(vFrenet)) should match the textbook tube volume (\(textbookVolume))")
+        #expect(
+            vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
+            ".correctedFrenet (\(vCorrected)) should also match the textbook tube volume (\(textbookVolume)) once the profile is correctly placed (#721)"
+        )
+        #expect(
+            vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-4),
+            ".frenet (\(vFrenet)) and .correctedFrenet (\(vCorrected)) must agree: a circular profile is symmetric under rotation about the tangent, the only axis the two laws differ on"
+        )
     }
 
     /// #721: the measurement that made the old version of the test above (and the old cookbook
@@ -235,37 +290,54 @@ struct Issue598PipeShellFrenetModeTests {
     /// replacing the mis-signed tangent below with the correctly-measured one from the test above
     /// collapses `corrRatio` to 1.0 and fails the `!isApproximatelyEqual` assertion, confirmed
     /// by hand while writing this test, not left as an assumption.
-    @Test("a profile placed at the mirror point with a mirror tangent reproduces #721's reported divergence")
+    @Test(
+        "a profile placed at the mirror point with a mirror tangent reproduces #721's reported divergence"
+    )
     func misplacedProfileReproducesIssue721Divergence() {
-        let r = 10.0, wireRadius = 1.5
-        for (pitch, turns, expectedRatio) in [(1.0, 3.0, 1.005), (4.0, 3.0, 1.075),
-                                              (12.0, 3.0, 1.276), (30.0, 3.0, 0.801)] {
+        let r = 10.0
+        let wireRadius = 1.5
+        for (pitch, turns, expectedRatio) in [
+            (1.0, 3.0, 1.005), (4.0, 3.0, 1.075),
+            (12.0, 3.0, 1.276), (30.0, 3.0, 0.801),
+        ] {
             guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else {
-                Issue.record("Could not build spine at pitch \(pitch)"); continue
+                Issue.record("Could not build spine at pitch \(pitch)")
+                continue
             }
             // The ORIGINAL (wrong) recipe: origin at (r, 0, 0), the antipode of the wire's real
             // start (-r, 0, 0), with a tangent sign that matches an ascending helix, not the
             // descending one `clockwise: false` actually builds.
             let mismatchedTangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
-            guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: mismatchedTangent, radius: wireRadius),
-                  let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, solid: true),
-                  let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
-                  let vFrenet = frenet.volume, let vCorrected = corrected.volume else {
-                Issue.record("Could not build the sweeps at pitch \(pitch)"); continue
+            guard
+                let profile = Wire.circle(
+                    origin: SIMD3(r, 0, 0), normal: mismatchedTangent, radius: wireRadius),
+                let frenet = Shape.pipeShell(
+                    spine: spine, profile: profile, mode: .frenet, solid: true),
+                let corrected = Shape.pipeShell(
+                    spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
+                let vFrenet = frenet.volume, let vCorrected = corrected.volume
+            else {
+                Issue.record("Could not build the sweeps at pitch \(pitch)")
+                continue
             }
             let coilLength = turns * sqrt(pow(2 * .pi * r, 2) + pow(pitch, 2))
             let textbookVolume = Double.pi * wireRadius * wireRadius * coilLength
             let corrRatio = vCorrected / textbookVolume
 
-            #expect(vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
-                    "pitch \(pitch): .frenet stays correct even with this mis-placed profile")
+            #expect(
+                vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
+                "pitch \(pitch): .frenet stays correct even with this mis-placed profile")
             // Smallest reported divergence is pitch=1 at 0.51%; 2e-3 stays well below that while
             // sitting far above the ~1e-6 relative noise floor a genuine match shows elsewhere in
             // this file, so it can't accidentally pass on numerical noise.
-            #expect(!vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 2e-3),
-                    "pitch \(pitch): .correctedFrenet should reproduce the reported divergence, got ratio \(corrRatio)")
-            #expect(corrRatio.isApproximatelyEqual(to: expectedRatio, tolerance: 5e-3),
-                    "pitch \(pitch): expected ratio close to the issue's own \(expectedRatio), got \(corrRatio)")
+            #expect(
+                !vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 2e-3),
+                "pitch \(pitch): .correctedFrenet should reproduce the reported divergence, got ratio \(corrRatio)"
+            )
+            #expect(
+                corrRatio.isApproximatelyEqual(to: expectedRatio, tolerance: 5e-3),
+                "pitch \(pitch): expected ratio close to the issue's own \(expectedRatio), got \(corrRatio)"
+            )
         }
     }
 }

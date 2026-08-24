@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #772: `ShapeAnalysisResult.selfIntersectionCount` was always 0 and never computed (#763),
@@ -75,7 +76,8 @@ struct Issue772SelfIntersectionAnalysis {
     @Test("a non-nil selfIntersectionTimeout on a self-intersecting shape populates true")
     func nonNilTimeoutOnSelfIntersectingShapePopulatesTrue() throws {
         let overlapping = overlappingCompound()
-        let analysis = try #require(overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
+        let analysis = try #require(
+            overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
         #expect(analysis.hasSelfIntersection == true)
     }
 
@@ -84,7 +86,8 @@ struct Issue772SelfIntersectionAnalysis {
         let overlapping = overlappingCompound()
 
         let unchecked = try #require(overlapping.analyze(tolerance: 0.001))
-        let checked = try #require(overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
+        let checked = try #require(
+            overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
 
         // Same shape, same tolerance: the two analyses can only differ by the self-intersection
         // contribution, since `selfIntersectionTimeout` is the only input that changed.

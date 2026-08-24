@@ -6,8 +6,9 @@
 // a single-profile sweep is the multi-section sweep with one section, and a mode the caller
 // asked for is either honoured or refused, never quietly swapped.
 
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 @Suite("Pipe shell unification (#503)")
@@ -38,11 +39,13 @@ struct Issue503PipeShellTests {
     @Test("a one-profile multi-section sweep is the single-profile sweep, in every mode")
     func oneProfileMatchesTheMultiSectionForm() {
         guard let curved = Self.curvedSpine(),
-              let straight = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
-              let aux = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 8, 20)),
-              let rect = Wire.rectangle(width: 5, height: 3),
-              let circle = Wire.circle(radius: 2) else {
-            Issue.record("Could not build the fixtures"); return
+            let straight = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
+            let aux = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 8, 20)),
+            let rect = Wire.rectangle(width: 5, height: 3),
+            let circle = Wire.circle(radius: 2)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
 
         let cases: [(String, Wire, Wire, PipeSweepMode)] = [
@@ -60,8 +63,9 @@ struct Issue503PipeShellTests {
             #expect(single != nil, "single-profile \(name) sweep failed")
             #expect(multi != nil, "one-section \(name) sweep failed")
             if let single, let multi {
-                #expect(single.volume.isApproximatelyEqual(to: multi.volume, tolerance: 1e-9),
-                        "\(name): \(single.volume) vs \(multi.volume)")
+                #expect(
+                    single.volume.isApproximatelyEqual(to: multi.volume, tolerance: 1e-9),
+                    "\(name): \(single.volume) vs \(multi.volume)")
                 #expect(single.faces == multi.faces, "\(name) face count")
             }
         }
@@ -71,10 +75,13 @@ struct Issue503PipeShellTests {
 
     @Test("a fixed binormal builds a different solid from Frenet on a curved spine")
     func fixedBinormalDiffersFromFrenet() {
-        guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3) else {
-            Issue.record("Could not build the fixtures"); return
+        guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
-        let frenet = Self.fingerprint(Shape.pipeShell(spine: spine, profile: profile, mode: .frenet))
+        let frenet = Self.fingerprint(
+            Shape.pipeShell(spine: spine, profile: profile, mode: .frenet))
         let fixed = Self.fingerprint(
             Shape.pipeShell(spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1))))
 
@@ -96,24 +103,30 @@ struct Issue503PipeShellTests {
     /// so `.fixed(binormal:)` came back as a Frenet sweep: same call, wrong solid, no nil.
     @Test("asking for a corner transition does not downgrade the sweep mode")
     func transitionModeKeepsTheRequestedSweepMode() {
-        guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3) else {
-            Issue.record("Could not build the fixtures"); return
+        guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
         let plain = Self.fingerprint(
-            Shape.pipeShell(spine: spine, profile: profile,
-                            mode: .fixed(binormal: SIMD3(0, 0, 1))))
+            Shape.pipeShell(
+                spine: spine, profile: profile,
+                mode: .fixed(binormal: SIMD3(0, 0, 1))))
         let withTransition = Self.fingerprint(
-            Shape.pipeShell(spine: spine, profile: profile,
-                            mode: .fixed(binormal: SIMD3(0, 0, 1)), transition: .transformed))
+            Shape.pipeShell(
+                spine: spine, profile: profile,
+                mode: .fixed(binormal: SIMD3(0, 0, 1)), transition: .transformed))
         let frenet = Self.fingerprint(
-            Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, transition: .transformed))
+            Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, transition: .transformed)
+        )
 
         if let plain, let withTransition, let frenet {
             // Transformed is OCCT's own default, so naming it changes nothing.
             #expect(withTransition.volume.isApproximatelyEqual(to: plain.volume, tolerance: 1e-9))
             // And the binormal is still in force, rather than having been dropped for Frenet.
-            #expect(!withTransition.volume.isApproximatelyEqual(to: frenet.volume, tolerance: 1e-6),
-                    "fixed-binormal sweep collapsed back to Frenet (\(withTransition.volume))")
+            #expect(
+                !withTransition.volume.isApproximatelyEqual(to: frenet.volume, tolerance: 1e-6),
+                "fixed-binormal sweep collapsed back to Frenet (\(withTransition.volume))")
         } else {
             Issue.record("All three sweeps must build")
         }
@@ -122,17 +135,23 @@ struct Issue503PipeShellTests {
     @Test("a mode whose own argument is unusable returns nil instead of another mode's solid")
     func unusableModeArgumentFails() {
         guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3),
-              let straight = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
-              let circle = Wire.circle(radius: 2) else {
-            Issue.record("Could not build the fixtures"); return
+            let straight = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
+            let circle = Wire.circle(radius: 2)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
         // A zero-length binormal is not a direction, and is not silently Frenet either.
-        #expect(Shape.pipeShell(spine: spine, profile: profile,
-                                mode: .fixed(binormal: .zero)) == nil)
+        #expect(
+            Shape.pipeShell(
+                spine: spine, profile: profile,
+                mode: .fixed(binormal: .zero)) == nil)
         // An auxiliary spine OCCT cannot use fails the sweep rather than being ignored.
         if let sameAsSpine = Wire.line(from: .zero, to: SIMD3(0, 0, 20)) {
-            #expect(Shape.pipeShell(spine: straight, profile: circle,
-                                    mode: .auxiliary(spine: sameAsSpine)) == nil)
+            #expect(
+                Shape.pipeShell(
+                    spine: straight, profile: circle,
+                    mode: .auxiliary(spine: sameAsSpine)) == nil)
         }
     }
 
@@ -141,9 +160,11 @@ struct Issue503PipeShellTests {
     @Test("an auxiliary spine steers a single-profile sweep")
     func auxiliarySpineSteersOneProfile() {
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
-              let aux = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 8, 20)),
-              let profile = Wire.circle(radius: 2) else {
-            Issue.record("Could not build the fixtures"); return
+            let aux = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 8, 20)),
+            let profile = Wire.circle(radius: 2)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
         let steered = Self.fingerprint(
             Shape.pipeShell(spine: spine, profile: profile, mode: .auxiliary(spine: aux)))
@@ -153,17 +174,20 @@ struct Issue503PipeShellTests {
         #expect(steered != nil, "the single-profile auxiliary path must build")
         if let steered, let plain {
             #expect(steered.volume.isApproximatelyEqual(to: 251.327629, tolerance: 1e-5))
-            #expect(!steered.volume.isApproximatelyEqual(to: plain.volume, tolerance: 1e-9),
-                    "the auxiliary spine had no effect")
+            #expect(
+                !steered.volume.isApproximatelyEqual(to: plain.volume, tolerance: 1e-9),
+                "the auxiliary spine had no effect")
         }
     }
 
     @Test("corner transitions reach a multi-section sweep")
     func multiSectionHonoursCornerTransitions() {
         guard let spine = Self.corneredSpine(),
-              let start = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 2),
-              let end = Wire.circle(origin: SIMD3(15, 0, 20), normal: SIMD3(1, 0, 0), radius: 1) else {
-            Issue.record("Could not build the fixtures"); return
+            let start = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 2),
+            let end = Wire.circle(origin: SIMD3(15, 0, 20), normal: SIMD3(1, 0, 0), radius: 1)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
         let profiles = [start, end]
         let transformed = Self.fingerprint(
@@ -177,10 +201,12 @@ struct Issue503PipeShellTests {
         #expect(rightCorner != nil)
         #expect(roundCorner != nil)
         if let transformed, let rightCorner, let roundCorner {
-            #expect(!transformed.volume.isApproximatelyEqual(to: rightCorner.volume, tolerance: 1e-6),
-                    "rightCorner did not reach the multi-section sweep")
-            #expect(!rightCorner.volume.isApproximatelyEqual(to: roundCorner.volume, tolerance: 1e-6),
-                    "roundCorner did not reach the multi-section sweep")
+            #expect(
+                !transformed.volume.isApproximatelyEqual(to: rightCorner.volume, tolerance: 1e-6),
+                "rightCorner did not reach the multi-section sweep")
+            #expect(
+                !rightCorner.volume.isApproximatelyEqual(to: roundCorner.volume, tolerance: 1e-6),
+                "roundCorner did not reach the multi-section sweep")
             // A rounded corner carries the extra face that rounds it.
             #expect(roundCorner.faces > rightCorner.faces)
         }
@@ -190,8 +216,10 @@ struct Issue503PipeShellTests {
     func singleProfileHonoursContactAndCorrection() {
         // A profile parked off the spine and tilted away from it, so both flags have work.
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
-              let profile = Wire.circle(origin: SIMD3(6, 0, 0), normal: SIMD3(1, 1, 2), radius: 2) else {
-            Issue.record("Could not build the fixtures"); return
+            let profile = Wire.circle(origin: SIMD3(6, 0, 0), normal: SIMD3(1, 1, 2), radius: 2)
+        else {
+            Issue.record("Could not build the fixtures")
+            return
         }
         let plain = Self.fingerprint(Shape.pipeShell(spine: spine, profile: profile))
         let corrected = Self.fingerprint(
@@ -203,15 +231,19 @@ struct Issue503PipeShellTests {
             // Rotating the tilted section orthogonal to the spine sweeps a true cylinder:
             // pi * 2^2 * 20. The tilted sweep is thinner.
             #expect(corrected.volume.isApproximatelyEqual(to: 251.327412, tolerance: 1e-5))
-            #expect(!plain.volume.isApproximatelyEqual(to: corrected.volume, tolerance: 1e-6),
-                    "withCorrection had no effect")
+            #expect(
+                !plain.volume.isApproximatelyEqual(to: corrected.volume, tolerance: 1e-6),
+                "withCorrection had no effect")
             // Contact translates the section onto the spine, which preserves the volume but
             // not the solid, so compare where it lands rather than how big it is.
             if let plainShape = Shape.pipeShell(spine: spine, profile: profile),
-               let contactedShape = Shape.pipeShell(spine: spine, profile: profile, withContact: true) {
-                #expect(!plainShape.bounds!.min.x.isApproximatelyEqual(
-                            to: contactedShape.bounds!.min.x, tolerance: 1e-6),
-                        "withContact had no effect")
+                let contactedShape = Shape.pipeShell(
+                    spine: spine, profile: profile, withContact: true)
+            {
+                #expect(
+                    !plainShape.bounds!.min.x.isApproximatelyEqual(
+                        to: contactedShape.bounds!.min.x, tolerance: 1e-6),
+                    "withContact had no effect")
             }
             #expect(contacted.volume > 0)
         } else {

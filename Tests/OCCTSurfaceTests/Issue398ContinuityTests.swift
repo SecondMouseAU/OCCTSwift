@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #398: the continuity vocabularies collapsed from nine enums to two shared ones plus two
@@ -35,9 +36,12 @@ struct Issue398ContinuityTests {
         // constraint order must never be passable where a C0...C3 continuity floor is wanted,
         // or vice versa. That cannot be asserted directly, but collapsing one into a typealias
         // of the other is the realistic way it would be lost, and this catches exactly that.
-        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ParametricContinuity.self))
+        #expect(
+            ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ParametricContinuity.self))
         #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ContinuityClass.self))
-        #expect(ObjectIdentifier(ParametricContinuity.self) != ObjectIdentifier(Shape.ContinuityLevel.self))
+        #expect(
+            ObjectIdentifier(ParametricContinuity.self)
+                != ObjectIdentifier(Shape.ContinuityLevel.self))
 
         // They agree on 0/1/2 numerically, which is precisely why the type distinction is
         // load-bearing: a raw-value mix-up would be silent.
@@ -76,18 +80,21 @@ struct Issue398ContinuityTests {
         // .g2 here is always nil however good the point set is.
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
-            SIMD3(0, 10, 1), SIMD3(5, 5, 3)
+            SIMD3(0, 10, 1), SIMD3(5, 5, 3),
         ]
-        let curvature = Shape.plateSurface(through: points,
-                                           orders: Array(repeating: .g2, count: points.count))
+        let curvature = Shape.plateSurface(
+            through: points,
+            orders: Array(repeating: .g2, count: points.count))
         #expect(curvature == nil)
 
         // The orders that do work, for contrast.
-        let positional = Shape.plateSurface(through: points,
-                                            orders: Array(repeating: .g0, count: points.count))
+        let positional = Shape.plateSurface(
+            through: points,
+            orders: Array(repeating: .g0, count: points.count))
         #expect(positional != nil)
-        let tangent = Shape.plateSurface(through: points,
-                                         orders: Array(repeating: .g1, count: points.count))
+        let tangent = Shape.plateSurface(
+            through: points,
+            orders: Array(repeating: .g1, count: points.count))
         #expect(tangent != nil)
     }
 
@@ -95,7 +102,7 @@ struct Issue398ContinuityTests {
     func plateThroughPointsRejectsMixedCurvatureOrder() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
-            SIMD3(0, 10, 1), SIMD3(5, 5, 3)
+            SIMD3(0, 10, 1), SIMD3(5, 5, 3),
         ]
         var orders: [SurfaceContinuity] = Array(repeating: .g0, count: points.count)
         orders[2] = .g2

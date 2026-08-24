@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #553: the 2D solver entry points that take a circle as a centre and a radius.
@@ -24,17 +25,27 @@ struct Issue553GccZeroRadiusTests {
     /// radii 0, two of the three solutions are hyperbolas of major radius 0, which is exactly the
     /// degenerate conic `occtValidHyperbolaRadii` refuses to construct.
     @Test func circleBisectorRejectsZeroRadius() {
-        #expect(GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 0,
-                                         center2: SIMD2(10, 0), radius2: 2).isEmpty)
-        #expect(GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 3,
-                                         center2: SIMD2(10, 0), radius2: 0).isEmpty)
-        #expect(GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 0,
-                                         center2: SIMD2(10, 0), radius2: 0).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircles(
+                center1: SIMD2(0, 0), radius1: 0,
+                center2: SIMD2(10, 0), radius2: 2
+            ).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircles(
+                center1: SIMD2(0, 0), radius1: 3,
+                center2: SIMD2(10, 0), radius2: 0
+            ).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircles(
+                center1: SIMD2(0, 0), radius1: 0,
+                center2: SIMD2(10, 0), radius2: 0
+            ).isEmpty)
     }
 
     @Test func circleBisectorAcceptsValidRadii() {
-        let solutions = GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 3,
-                                                 center2: SIMD2(10, 0), radius2: 2)
+        let solutions = GccAnaBisector.ofCircles(
+            center1: SIMD2(0, 0), radius1: 3,
+            center2: SIMD2(10, 0), radius2: 2)
         #expect(solutions.count == 4)
     }
 
@@ -42,8 +53,11 @@ struct Issue553GccZeroRadiusTests {
     /// zero-radius circle does not: measured, `ofCircleAndPoint` with radius 0 returns two
     /// hyperbolas of major radius 0, while the perpendicular bisector is a line at x = 3.
     @Test func pointBisectorAnswersWhatZeroRadiusCannot() {
-        #expect(GccAnaBisector.ofCircleAndPoint(center: SIMD2(0, 0), radius: 0,
-                                                point: SIMD2(6, 0)).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircleAndPoint(
+                center: SIMD2(0, 0), radius: 0,
+                point: SIMD2(6, 0)
+            ).isEmpty)
         if let line = GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(6, 0)) {
             #expect(abs(line.point.x - 3) < 1e-9)
             #expect(abs(line.direction.x) < 1e-9)
@@ -53,70 +67,109 @@ struct Issue553GccZeroRadiusTests {
     }
 
     @Test func circlePointBisectorAcceptsValidRadius() {
-        #expect(GccAnaBisector.ofCircleAndPoint(center: SIMD2(0, 0), radius: 2,
-                                                point: SIMD2(6, 0)).count == 2)
+        #expect(
+            GccAnaBisector.ofCircleAndPoint(
+                center: SIMD2(0, 0), radius: 2,
+                point: SIMD2(6, 0)
+            ).count == 2)
     }
 
     /// Measured: the point overload's single parabola, returned twice.
     @Test func circleLineBisectorRejectsZeroRadius() {
-        #expect(GccAnaBisector.ofCircleAndLine(center: SIMD2(0, 5), radius: 0,
-                                               linePoint: SIMD2(0, 0),
-                                               lineDir: SIMD2(1, 0)).isEmpty)
-        #expect(GccAnaBisector.ofCircleAndLine(center: SIMD2(0, 5), radius: 2,
-                                               linePoint: SIMD2(0, 0),
-                                               lineDir: SIMD2(1, 0)).count == 2)
+        #expect(
+            GccAnaBisector.ofCircleAndLine(
+                center: SIMD2(0, 5), radius: 0,
+                linePoint: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircleAndLine(
+                center: SIMD2(0, 5), radius: 2,
+                linePoint: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).count == 2)
     }
 
     // MARK: - GccAna tangent lines
 
     /// Measured: the point overload's single line, returned twice.
     @Test func tangentParallelLinesRejectZeroRadius() {
-        #expect(Curve2DGcc.linesTangentParallel(circleCenter: SIMD2(0, 0), circleRadius: 0,
-                                                parallelTo: SIMD2(0, 0),
-                                                lineDir: SIMD2(1, 0)).isEmpty)
-        #expect(Curve2DGcc.linesTangentParallel(circleCenter: SIMD2(0, 0), circleRadius: 4,
-                                                parallelTo: SIMD2(0, 0),
-                                                lineDir: SIMD2(1, 0)).count == 2)
+        #expect(
+            Curve2DGcc.linesTangentParallel(
+                circleCenter: SIMD2(0, 0), circleRadius: 0,
+                parallelTo: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).isEmpty)
+        #expect(
+            Curve2DGcc.linesTangentParallel(
+                circleCenter: SIMD2(0, 0), circleRadius: 4,
+                parallelTo: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).count == 2)
     }
 
     @Test func tangentPerpendicularLinesRejectZeroRadius() {
-        #expect(Curve2DGcc.linesTangentPerpendicular(circleCenter: SIMD2(0, 0), circleRadius: 0,
-                                                     perpendicularTo: SIMD2(0, 0),
-                                                     lineDir: SIMD2(1, 0)).isEmpty)
-        #expect(Curve2DGcc.linesTangentPerpendicular(circleCenter: SIMD2(0, 0), circleRadius: 4,
-                                                     perpendicularTo: SIMD2(0, 0),
-                                                     lineDir: SIMD2(1, 0)).count == 2)
+        #expect(
+            Curve2DGcc.linesTangentPerpendicular(
+                circleCenter: SIMD2(0, 0), circleRadius: 0,
+                perpendicularTo: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).isEmpty)
+        #expect(
+            Curve2DGcc.linesTangentPerpendicular(
+                circleCenter: SIMD2(0, 0), circleRadius: 4,
+                perpendicularTo: SIMD2(0, 0),
+                lineDir: SIMD2(1, 0)
+            ).count == 2)
     }
 
     /// Measured: the line through the centre, returned twice, where `linesTangentToPoint`'s own
     /// entry point returns it once.
     @Test func tangentLineThroughPointRejectsZeroRadius() {
-        #expect(linesTangentToCircleThroughPoint(circleCenter: SIMD2(0, 0), circleRadius: 0,
-                                                 point: SIMD2(10, 0)).isEmpty)
-        #expect(linesTangentToCircleThroughPoint(circleCenter: SIMD2(0, 0), circleRadius: 3,
-                                                 point: SIMD2(10, 0)).count == 2)
+        #expect(
+            linesTangentToCircleThroughPoint(
+                circleCenter: SIMD2(0, 0), circleRadius: 0,
+                point: SIMD2(10, 0)
+            ).isEmpty)
+        #expect(
+            linesTangentToCircleThroughPoint(
+                circleCenter: SIMD2(0, 0), circleRadius: 3,
+                point: SIMD2(10, 0)
+            ).count == 2)
     }
 
     // MARK: - GccAna_Circ2d3Tan
 
     /// Measured: 8 solutions where the point overload gives 4, each one duplicated.
     @Test func circleTangentToThreeCirclesRejectsZeroRadius() {
-        #expect(Shape.circleTangent3Circles(c1Center: SIMD2(0, 0), c1Radius: 0,
-                                            c2Center: SIMD2(10, 0), c2Radius: 2,
-                                            c3Center: SIMD2(5, 8), c3Radius: 2).isEmpty)
-        #expect(Shape.circleTangent3Circles(c1Center: SIMD2(0, 0), c1Radius: 2,
-                                            c2Center: SIMD2(10, 0), c2Radius: 2,
-                                            c3Center: SIMD2(5, 8), c3Radius: 2).count == 8)
+        #expect(
+            Shape.circleTangent3Circles(
+                c1Center: SIMD2(0, 0), c1Radius: 0,
+                c2Center: SIMD2(10, 0), c2Radius: 2,
+                c3Center: SIMD2(5, 8), c3Radius: 2
+            ).isEmpty)
+        #expect(
+            Shape.circleTangent3Circles(
+                c1Center: SIMD2(0, 0), c1Radius: 2,
+                c2Center: SIMD2(10, 0), c2Radius: 2,
+                c3Center: SIMD2(5, 8), c3Radius: 2
+            ).count == 8)
     }
 
     /// Measured: 4 solutions holding only 2 distinct circles, one of them repeated three times.
     @Test func circleTangentToTwoCirclesAndPointRejectsZeroRadius() {
-        #expect(Shape.circleTangent2CirclesPoint(c1Center: SIMD2(0, 0), c1Radius: 0,
-                                                 c2Center: SIMD2(10, 0), c2Radius: 2,
-                                                 point: SIMD2(5, 8)).isEmpty)
-        #expect(!Shape.circleTangent2CirclesPoint(c1Center: SIMD2(0, 0), c1Radius: 2,
-                                                  c2Center: SIMD2(10, 0), c2Radius: 2,
-                                                  point: SIMD2(5, 8)).isEmpty)
+        #expect(
+            Shape.circleTangent2CirclesPoint(
+                c1Center: SIMD2(0, 0), c1Radius: 0,
+                c2Center: SIMD2(10, 0), c2Radius: 2,
+                point: SIMD2(5, 8)
+            ).isEmpty)
+        #expect(
+            !Shape.circleTangent2CirclesPoint(
+                c1Center: SIMD2(0, 0), c1Radius: 2,
+                c2Center: SIMD2(10, 0), c2Radius: 2,
+                point: SIMD2(5, 8)
+            ).isEmpty)
     }
 
     /// The sharpest case measured: with a zero-radius circle the solver finds nothing at all,
@@ -130,10 +183,16 @@ struct Issue553GccZeroRadiusTests {
     /// and this one does not. It is kept because it pins the contract, not because it catches a
     /// regression in it.
     @Test func circleTangentToCircleAndTwoPointsRejectsZeroRadius() {
-        #expect(Shape.circleTangentCircle2Points(circleCenter: SIMD2(0, 0), circleRadius: 0,
-                                                 p1: SIMD2(10, 0), p2: SIMD2(5, 8)).isEmpty)
-        #expect(!Shape.circleTangentCircle2Points(circleCenter: SIMD2(0, 0), circleRadius: 2,
-                                                  p1: SIMD2(10, 0), p2: SIMD2(5, 8)).isEmpty)
+        #expect(
+            Shape.circleTangentCircle2Points(
+                circleCenter: SIMD2(0, 0), circleRadius: 0,
+                p1: SIMD2(10, 0), p2: SIMD2(5, 8)
+            ).isEmpty)
+        #expect(
+            !Shape.circleTangentCircle2Points(
+                circleCenter: SIMD2(0, 0), circleRadius: 2,
+                p1: SIMD2(10, 0), p2: SIMD2(5, 8)
+            ).isEmpty)
     }
 
     // MARK: - IntAna2d
@@ -141,33 +200,49 @@ struct Issue553GccZeroRadiusTests {
     /// Measured: the intersection point is right, but `ParamOnSecond()` on a zero-radius circle is
     /// NaN and the bridge writes it straight into `param2`.
     @Test func lineCircleIntersectionRejectsZeroRadius() {
-        #expect(IntAna2d.intersectLineCircle(linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-                                             circleCenter: SIMD2(0, 0), circleRadius: 0).isEmpty)
-        let valid = IntAna2d.intersectLineCircle(linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-                                                 circleCenter: SIMD2(0, 0), circleRadius: 3)
+        #expect(
+            IntAna2d.intersectLineCircle(
+                linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+                circleCenter: SIMD2(0, 0), circleRadius: 0
+            ).isEmpty)
+        let valid = IntAna2d.intersectLineCircle(
+            linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+            circleCenter: SIMD2(0, 0), circleRadius: 3)
         #expect(valid.count == 2)
         #expect(valid.allSatisfy { !$0.param2.isNaN })
     }
 
     @Test func circleCircleIntersectionRejectsZeroRadius() {
-        #expect(IntAna2d.intersectCircles(center1: SIMD2(0, 0), radius1: 0,
-                                          center2: SIMD2(3, 0), radius2: 3).isEmpty)
-        #expect(IntAna2d.intersectCircles(center1: SIMD2(0, 0), radius1: 3,
-                                          center2: SIMD2(4, 0), radius2: 3).count == 2)
+        #expect(
+            IntAna2d.intersectCircles(
+                center1: SIMD2(0, 0), radius1: 0,
+                center2: SIMD2(3, 0), radius2: 3
+            ).isEmpty)
+        #expect(
+            IntAna2d.intersectCircles(
+                center1: SIMD2(0, 0), radius1: 3,
+                center2: SIMD2(4, 0), radius2: 3
+            ).count == 2)
     }
 
     // MARK: - Extrema 2D
 
     /// Measured: the right distance, returned twice.
     @Test func lineCircleExtremaRejectZeroRadius() {
-        #expect(Extrema2d.distanceBetweenLineAndCircle(linePoint: SIMD2(0, 10),
-                                                       lineDir: SIMD2(1, 0),
-                                                       circleCenter: SIMD2(0, 0),
-                                                       circleRadius: 0).isEmpty)
-        #expect(Extrema2d.distanceBetweenLineAndCircle(linePoint: SIMD2(0, 10),
-                                                       lineDir: SIMD2(1, 0),
-                                                       circleCenter: SIMD2(0, 0),
-                                                       circleRadius: 3).count == 2)
+        #expect(
+            Extrema2d.distanceBetweenLineAndCircle(
+                linePoint: SIMD2(0, 10),
+                lineDir: SIMD2(1, 0),
+                circleCenter: SIMD2(0, 0),
+                circleRadius: 0
+            ).isEmpty)
+        #expect(
+            Extrema2d.distanceBetweenLineAndCircle(
+                linePoint: SIMD2(0, 10),
+                lineDir: SIMD2(1, 0),
+                circleCenter: SIMD2(0, 0),
+                circleRadius: 3
+            ).count == 2)
     }
 
     /// Measured: no extremum at all, so the distance the point reading asks for is lost outright.
@@ -175,12 +250,18 @@ struct Issue553GccZeroRadiusTests {
     /// ``circleTangentToCircleAndTwoPointsRejectsZeroRadius()``: OCCT already returns nothing here,
     /// so only the valid-radius half of this test can fail.
     @Test func pointCircleExtremaRejectZeroRadius() {
-        #expect(Extrema2d.distanceFromPointToCircle(point: SIMD2(0, 10),
-                                                    circleCenter: SIMD2(0, 0),
-                                                    circleRadius: 0).isEmpty)
-        #expect(Extrema2d.distanceFromPointToCircle(point: SIMD2(0, 10),
-                                                    circleCenter: SIMD2(0, 0),
-                                                    circleRadius: 3).count == 2)
+        #expect(
+            Extrema2d.distanceFromPointToCircle(
+                point: SIMD2(0, 10),
+                circleCenter: SIMD2(0, 0),
+                circleRadius: 0
+            ).isEmpty)
+        #expect(
+            Extrema2d.distanceFromPointToCircle(
+                point: SIMD2(0, 10),
+                circleCenter: SIMD2(0, 0),
+                circleRadius: 3
+            ).count == 2)
     }
 
     // MARK: - The requested solution radius
@@ -190,31 +271,45 @@ struct Issue553GccZeroRadiusTests {
     /// back solution circles of radius 0. Three sibling entry points already rejected it inline;
     /// these four were the ones that did not.
     @Test func requestedRadiusOfZeroIsRejected() {
-        #expect(circlesTangentToLines(SIMD2(0, 0), SIMD2(1, 0),
-                                      SIMD2(0, 0), SIMD2(0, 1), radius: 0).isEmpty)
+        #expect(
+            circlesTangentToLines(
+                SIMD2(0, 0), SIMD2(1, 0),
+                SIMD2(0, 0), SIMD2(0, 1), radius: 0
+            ).isEmpty)
         #expect(circlesThroughPointsWithRadius(SIMD2(0, 0), SIMD2(4, 0), radius: 0).isEmpty)
-        #expect(Curve2DGcc.circlesTangentToLineOnLineWithRadius(
-            linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-            centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 0).isEmpty)
+        #expect(
+            Curve2DGcc.circlesTangentToLineOnLineWithRadius(
+                linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+                centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 0
+            ).isEmpty)
     }
 
     @Test func requestedRadiusOfZeroIsRejectedOnCurves() {
         guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
-              let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)) else {
+            let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1))
+        else {
             Issue.record("could not build the two 2D lines")
             return
         }
-        #expect(Curve2DGcc.circlesTangentOnCurveWithRadius(line, centerOn: centerOn,
-                                                           radius: 0).isEmpty)
+        #expect(
+            Curve2DGcc.circlesTangentOnCurveWithRadius(
+                line, centerOn: centerOn,
+                radius: 0
+            ).isEmpty)
     }
 
     @Test func requestedRadiusAcceptsValidValues() {
-        #expect(circlesTangentToLines(SIMD2(0, 0), SIMD2(1, 0),
-                                      SIMD2(0, 0), SIMD2(0, 1), radius: 2).count == 4)
+        #expect(
+            circlesTangentToLines(
+                SIMD2(0, 0), SIMD2(1, 0),
+                SIMD2(0, 0), SIMD2(0, 1), radius: 2
+            ).count == 4)
         #expect(!circlesThroughPointsWithRadius(SIMD2(0, 0), SIMD2(4, 0), radius: 3).isEmpty)
-        #expect(!Curve2DGcc.circlesTangentToLineOnLineWithRadius(
-            linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-            centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 2).isEmpty)
+        #expect(
+            !Curve2DGcc.circlesTangentToLineOnLineWithRadius(
+                linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+                centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 2
+            ).isEmpty)
     }
 
     // MARK: - The producers #514 did not reach
@@ -223,20 +318,28 @@ struct Issue553GccZeroRadiusTests {
     /// back a zero-length edge with both vertices at the centre, the same shape of answer #514
     /// refused for `OCCTMakeEdge2dFullCircle`.
     @Test func circleEdgeRejectsZeroRadius() {
-        #expect(Shape.edge2dFromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       radius: 0, p1: 0, p2: .pi) == nil)
-        #expect(Shape.edge2dFromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       radius: 3, p1: 0, p2: .pi) != nil)
+        #expect(
+            Shape.edge2dFromCircle(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 0, p1: 0, p2: .pi) == nil)
+        #expect(
+            Shape.edge2dFromCircle(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 3, p1: 0, p2: .pi) != nil)
     }
 
     /// `GC_MakeCircle2d` rejects a negative radius through `gce_NegativeRadius` but accepts 0.
     @Test func gceCircleFactoriesRejectZeroRadius() {
         #expect(Curve2D.gceCircle(center: SIMD2(0, 0), radius: 0) == nil)
         #expect(Curve2D.gceCircle(center: SIMD2(0, 0), radius: 3) != nil)
-        #expect(Curve2D.gceCircle(axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0),
-                                  radius: 0) == nil)
-        #expect(Curve2D.gceCircle(axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0),
-                                  radius: 3) != nil)
+        #expect(
+            Curve2D.gceCircle(
+                axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0),
+                radius: 0) == nil)
+        #expect(
+            Curve2D.gceCircle(
+                axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0),
+                radius: 3) != nil)
     }
 
     /// The parallel factory needs the offset checked as well as the radius. Measured, radius 5
@@ -244,14 +347,22 @@ struct Issue553GccZeroRadiusTests {
     /// value rather than refusing an offset that reaches or passes the centre, so a caller asking
     /// for a circle 6 units inside a radius-5 one silently gets a radius-1 circle.
     @Test func parallelCircleRejectsCollapsingOffset() {
-        #expect(Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                          radius: 0, distance: 3) == nil)
-        #expect(Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                          radius: 5, distance: -5) == nil)
-        #expect(Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                          radius: 5, distance: -6) == nil)
-        if let c = Curve2D.gceCircleParallel(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                             radius: 5, distance: -2) {
+        #expect(
+            Curve2D.gceCircleParallel(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 0, distance: 3) == nil)
+        #expect(
+            Curve2D.gceCircleParallel(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 5, distance: -5) == nil)
+        #expect(
+            Curve2D.gceCircleParallel(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 5, distance: -6) == nil)
+        if let c = Curve2D.gceCircleParallel(
+            center: SIMD2(0, 0), direction: SIMD2(1, 0),
+            radius: 5, distance: -2)
+        {
             #expect(abs(c.circleProperties.radius - 3) < 1e-9)
         } else {
             Issue.record("an offset that stays inside the base circle should still build")
@@ -265,15 +376,26 @@ struct Issue553GccZeroRadiusTests {
     /// catch already turned a negative radius into an empty result. These pin that the new guards
     /// did not change what a negative radius does, only what zero does.
     @Test func negativeRadiusWasAlreadyRejected() {
-        #expect(GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: -1,
-                                         center2: SIMD2(10, 0), radius2: 2).isEmpty)
-        #expect(IntAna2d.intersectCircles(center1: SIMD2(0, 0), radius1: -1,
-                                          center2: SIMD2(3, 0), radius2: 3).isEmpty)
-        #expect(Extrema2d.distanceFromPointToCircle(point: SIMD2(0, 10),
-                                                    circleCenter: SIMD2(0, 0),
-                                                    circleRadius: -1).isEmpty)
+        #expect(
+            GccAnaBisector.ofCircles(
+                center1: SIMD2(0, 0), radius1: -1,
+                center2: SIMD2(10, 0), radius2: 2
+            ).isEmpty)
+        #expect(
+            IntAna2d.intersectCircles(
+                center1: SIMD2(0, 0), radius1: -1,
+                center2: SIMD2(3, 0), radius2: 3
+            ).isEmpty)
+        #expect(
+            Extrema2d.distanceFromPointToCircle(
+                point: SIMD2(0, 10),
+                circleCenter: SIMD2(0, 0),
+                circleRadius: -1
+            ).isEmpty)
         #expect(Curve2D.gceCircle(center: SIMD2(0, 0), radius: -1) == nil)
-        #expect(Shape.edge2dFromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       radius: -1, p1: 0, p2: .pi) == nil)
+        #expect(
+            Shape.edge2dFromCircle(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: -1, p1: 0, p2: .pi) == nil)
     }
 }

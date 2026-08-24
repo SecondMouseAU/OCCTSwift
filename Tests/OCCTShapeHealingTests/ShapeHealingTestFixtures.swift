@@ -2,10 +2,10 @@
 // Shared fixtures for OCCTShapeHealingTests.
 // No @Suite or @Test: only factory functions.
 
-import Testing
 import Foundation
-import simd
 import OCCTSwift
+import Testing
+import simd
 
 /// Drops one face from `box` and sews the remaining five: the smallest recipe that reaches an
 /// open shell with exactly 4 free edges ringing the missing face, whatever the box's own size or
@@ -20,7 +20,7 @@ import OCCTSwift
 func sewnBoxMissingOneFace(_ box: Shape, tolerance: Double = 1e-6) -> Shape? {
     let faces = box.subShapes(ofType: .face)
     guard faces.count == 6,
-          let compound = Shape.compound(Array(faces.dropFirst()))
+        let compound = Shape.compound(Array(faces.dropFirst()))
     else { return nil }
     return compound.sewn(tolerance: tolerance)
 }

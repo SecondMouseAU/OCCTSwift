@@ -3,8 +3,8 @@
 // No @Suite or @Test, only factory functions and assertion helpers.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Shape Fixtures
 
@@ -42,7 +42,8 @@ func filletedBox() -> Shape {
 /// 50×50×5 plate with r=3 through-hole at center.
 func drilledPlate() -> Shape {
     let plate = Shape.box(width: 50, height: 50, depth: 5)!
-    return plate.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) ?? plate
+    return plate.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        ?? plate
 }
 
 /// Compound of box + offset cylinder.
@@ -75,7 +76,7 @@ func standardCurve2D() -> Curve2D {
 func standardBSplineCurve() -> Curve3D {
     Curve3D.interpolate(points: [
         SIMD3(0, 0, 0), SIMD3(3, 4, 0), SIMD3(8, 3, 0),
-        SIMD3(12, 6, 0), SIMD3(15, 0, 0)
+        SIMD3(12, 6, 0), SIMD3(15, 0, 0),
     ])!
 }
 
@@ -92,7 +93,7 @@ func standardBezierSurface() -> Surface {
         [SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0), SIMD3(15, 0, 0)],
         [SIMD3(0, 5, 0), SIMD3(5, 5, 2), SIMD3(10, 5, 2), SIMD3(15, 5, 0)],
         [SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 2), SIMD3(15, 10, 0)],
-        [SIMD3(0, 15, 0), SIMD3(5, 15, 0), SIMD3(10, 15, 0), SIMD3(15, 15, 0)]
+        [SIMD3(0, 15, 0), SIMD3(5, 15, 0), SIMD3(10, 15, 0), SIMD3(15, 15, 0)],
     ]
     return Surface.bezier(poles: poles)!
 }
@@ -140,8 +141,9 @@ func allStandardShapes() -> [(String, Shape)] {
     }
     // Lofted solid
     if let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-       let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-       let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) {
+        let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+        let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+    {
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)

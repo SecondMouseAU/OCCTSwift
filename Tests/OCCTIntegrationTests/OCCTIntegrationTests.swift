@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("KronrodIntegration")
 struct KronrodIntegrationTests {
@@ -22,7 +21,9 @@ struct KronrodIntegrationTests {
     }
 
     @Test func adaptive() {
-        let result = MathSolver.kronrodIntegrateAdaptive(over: 0...Double.pi, tolerance: 1e-10) { sin($0) }
+        let result = MathSolver.kronrodIntegrateAdaptive(over: 0...Double.pi, tolerance: 1e-10) {
+            sin($0)
+        }
         #expect(result != nil)
         if let r = result { #expect(abs(r.value - 2.0) < 1e-8) }
     }
@@ -61,9 +62,10 @@ struct GaussSetIntegrationTests {
         }
 
         // The old, invalid two-variable shape is now rejected rather than silently wrong.
-        #expect(MathSolver.gaussSetIntegration(
-            nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
-        ) { x in [x[0] + x[1]] } == nil)
+        #expect(
+            MathSolver.gaussSetIntegration(
+                nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
+            ) { x in [x[0] + x[1]] } == nil)
     }
 }
 
@@ -82,7 +84,10 @@ struct IntegrationMountingBracketTests {
         if let v0 = basePlate.volume { #expect(v0 > 0) }
 
         // Step 2: Create wall positioned on top of base plate (non-overlapping union)
-        guard let wallRaw = Shape.box(origin: SIMD3(-40.0, -2.5, 2.5), width: 80, height: 5, depth: 30) else {
+        guard
+            let wallRaw = Shape.box(
+                origin: SIMD3(-40.0, -2.5, 2.5), width: 80, height: 5, depth: 30)
+        else {
             #expect(Bool(false), "Failed to create wall")
             return
         }
@@ -108,10 +113,12 @@ struct IntegrationMountingBracketTests {
             SIMD3(-30.0, -12.0, 5.0),
             SIMD3(30.0, -12.0, 5.0),
             SIMD3(-30.0, 12.0, 5.0),
-            SIMD3(30.0, 12.0, 5.0)
+            SIMD3(30.0, 12.0, 5.0),
         ]
         for pos in holePositions {
-            if let drilled = current.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 3, depth: 0) {
+            if let drilled = current.drilled(
+                at: pos, direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+            {
                 current = drilled
             }
         }
@@ -154,7 +161,10 @@ struct IntegrationFluentCompositionChainTests {
         let v2 = filleted.volume ?? 0
 
         // Stage 3: Drill
-        guard let drilled = filleted.drilled(at: SIMD3(0.0, 0.0, 5.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) else {
+        guard
+            let drilled = filleted.drilled(
+                at: SIMD3(0.0, 0.0, 5.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        else {
             #expect(Bool(false), "Failed to drill filleted box")
             return
         }
@@ -194,10 +204,11 @@ struct IntegrationZLevelSlicingTests {
         let holePositions: [SIMD3<Double>] = [
             SIMD3(10.0, 0.0, 55.0),
             SIMD3(-10.0, 0.0, 55.0),
-            SIMD3(0.0, 10.0, 55.0)
+            SIMD3(0.0, 10.0, 55.0),
         ]
         for pos in holePositions {
-            if let drilled = shape.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 3, depth: 0) {
+            if let drilled = shape.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+            {
                 shape = drilled
             }
         }
@@ -242,10 +253,11 @@ struct IntegrationHoleDetectionTests {
             SIMD3(-25.0, -25.0, 10.0),
             SIMD3(25.0, -25.0, 10.0),
             SIMD3(-25.0, 25.0, 10.0),
-            SIMD3(25.0, 25.0, 10.0)
+            SIMD3(25.0, 25.0, 10.0),
         ]
         for pos in holePositions {
-            if let drilled = plate.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 5, depth: 0) {
+            if let drilled = plate.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
+            {
                 plate = drilled
             }
         }
@@ -273,7 +285,9 @@ struct IntegrationDegenerateResilienceTests {
     @Test func zeroDepthDrill() {
         if let box = Shape.box(width: 20, height: 20, depth: 20) {
             // depth: 0 means through-hole
-            if let drilled = box.drilled(at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) {
+            if let drilled = box.drilled(
+                at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+            {
                 #expect(drilled.isValid)
                 if let vol = drilled.volume, let origVol = box.volume {
                     #expect(vol < origVol)
@@ -299,7 +313,8 @@ struct IntegrationOBBTightnessTests {
 
     @Test func obbTighterThanAABBForRotatedShape() {
         guard let box = Shape.box(width: 40, height: 10, depth: 10),
-              let rotated = box.rotated(axis: SIMD3(0.0, 0.0, 1.0), angle: .pi / 4) else {
+            let rotated = box.rotated(axis: SIMD3(0.0, 0.0, 1.0), angle: .pi / 4)
+        else {
             #expect(Bool(false), "Failed to create rotated box")
             return
         }
@@ -354,7 +369,10 @@ struct IntegrationPocketClearingTests {
         // Create inner box 60x60x20, centered in XY, sitting on top face area
         // outerBox is centered at origin, so Z range is -15..+15
         // Inner pocket: smaller box positioned to cut a pocket from the top
-        guard let innerBox = Shape.box(origin: SIMD3(-30.0, -30.0, -5.0), width: 60, height: 60, depth: 20) else {
+        guard
+            let innerBox = Shape.box(
+                origin: SIMD3(-30.0, -30.0, -5.0), width: 60, height: 60, depth: 20)
+        else {
             #expect(Bool(false), "Failed to create inner box")
             return
         }
@@ -407,7 +425,7 @@ struct IntegrationScallopAnalysisTests {
 
         // Evaluate curvature at several parameter points
         let params: [(Double, Double)] = [
-            (0.5, 0.5), (1.0, 0.8), (1.5, 1.2), (2.0, 0.3), (0.3, 1.5)
+            (0.5, 0.5), (1.0, 0.8), (1.5, 1.2), (2.0, 0.3), (0.3, 1.5),
         ]
 
         var curvatures: [Double] = []
@@ -419,7 +437,8 @@ struct IntegrationScallopAnalysisTests {
                 continue
             }
             #expect(gauss.isFinite, "Curvature should be finite")
-            #expect(abs(gauss - expectedGaussian) < 0.001, "Sphere curvature should be constant 1/R^2")
+            #expect(
+                abs(gauss - expectedGaussian) < 0.001, "Sphere curvature should be constant 1/R^2")
             curvatures.append(gauss)
         }
 
@@ -436,7 +455,7 @@ struct IntegrationScallopAnalysisTests {
             [SIMD3(0, 0, 0), SIMD3(10, 0, 2), SIMD3(20, 0, 1), SIMD3(30, 0, 0)],
             [SIMD3(0, 10, 1), SIMD3(10, 10, 5), SIMD3(20, 10, 3), SIMD3(30, 10, 1)],
             [SIMD3(0, 20, 0), SIMD3(10, 20, 3), SIMD3(20, 20, 8), SIMD3(30, 20, 2)],
-            [SIMD3(0, 30, 0), SIMD3(10, 30, 1), SIMD3(20, 30, 2), SIMD3(30, 30, 0)]
+            [SIMD3(0, 30, 0), SIMD3(10, 30, 1), SIMD3(20, 30, 2), SIMD3(30, 30, 0)],
         ]
         if let bezSurf = Surface.bezier(poles: poles) {
             let dom = bezSurf.domain
@@ -514,7 +533,7 @@ struct IntegrationCrossSectionRegressionTests {
         }
         #expect(cyl.isValid)
 
-        let expectedCircumference = 2.0 * .pi * radius // ~157.08
+        let expectedCircumference = 2.0 * .pi * radius  // ~157.08
         let nLevels = 20
         var lengths: [Double] = []
 
@@ -531,15 +550,17 @@ struct IntegrationCrossSectionRegressionTests {
 
         // All section lengths should be approximately the same
         for len in lengths {
-            #expect(abs(len - expectedCircumference) < 1.0,
-                    "Section circumference \(len) should be ~\(expectedCircumference)")
+            #expect(
+                abs(len - expectedCircumference) < 1.0,
+                "Section circumference \(len) should be ~\(expectedCircumference)")
         }
 
         // Check consistency across slices
         if let first = lengths.first {
             for len in lengths {
-                #expect(abs(len - first) < 0.01,
-                        "All sections should have same length, got \(len) vs \(first)")
+                #expect(
+                    abs(len - first) < 0.01,
+                    "All sections should have same length, got \(len) vs \(first)")
             }
         }
     }
@@ -551,7 +572,8 @@ struct IntegrationToleranceCascadeTests {
     @Test func booleanWithSharedEdgeAndGap() {
         // Two boxes sharing an edge exactly (adjacent, no overlap)
         guard let box1 = Shape.box(origin: SIMD3(0.0, 0.0, 0.0), width: 10, height: 10, depth: 10),
-              let box2 = Shape.box(origin: SIMD3(10.0, 0.0, 0.0), width: 10, height: 10, depth: 10) else {
+            let box2 = Shape.box(origin: SIMD3(10.0, 0.0, 0.0), width: 10, height: 10, depth: 10)
+        else {
             #expect(Bool(false), "Failed to create boxes")
             return
         }
@@ -564,14 +586,17 @@ struct IntegrationToleranceCascadeTests {
         if let combined = box1.union(box2) {
             #expect(combined.isValid)
             if let combinedVol = combined.volume {
-                #expect(abs(combinedVol - (vol1 + vol2)) < 1.0,
-                        "Combined volume \(combinedVol) should equal sum \(vol1 + vol2)")
+                #expect(
+                    abs(combinedVol - (vol1 + vol2)) < 1.0,
+                    "Combined volume \(combinedVol) should equal sum \(vol1 + vol2)")
             }
         }
 
         // Two boxes with tiny gap (1e-6)
         guard let box3 = Shape.box(origin: SIMD3(0.0, 0.0, 0.0), width: 10, height: 10, depth: 10),
-              let box4 = Shape.box(origin: SIMD3(10.000001, 0.0, 0.0), width: 10, height: 10, depth: 10) else {
+            let box4 = Shape.box(
+                origin: SIMD3(10.000001, 0.0, 0.0), width: 10, height: 10, depth: 10)
+        else {
             #expect(Bool(false), "Failed to create gapped boxes")
             return
         }
@@ -583,8 +608,9 @@ struct IntegrationToleranceCascadeTests {
             #expect(gappedUnion.isValid)
             if let gVol = gappedUnion.volume {
                 // Volume should be approximately sum (gap is negligible)
-                #expect(abs(gVol - (vol3 + vol4)) < 1.0,
-                        "Gapped union volume \(gVol) should be ~sum \(vol3 + vol4)")
+                #expect(
+                    abs(gVol - (vol3 + vol4)) < 1.0,
+                    "Gapped union volume \(gVol) should be ~sum \(vol3 + vol4)")
             }
         }
     }
@@ -600,7 +626,9 @@ struct IntegrationFormatFidelityBREPTests {
             return
         }
         if let f = shape.filleted(radius: 2.0) { shape = f }
-        if let d = shape.drilled(at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) {
+        if let d = shape.drilled(
+            at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        {
             shape = d
         }
         #expect(shape.isValid)
@@ -627,16 +655,20 @@ struct IntegrationFormatFidelityBREPTests {
 
         // Compare. BREP is exact, so results should match within floating point
         if let rVol = reconstructed.volume {
-            #expect(abs(rVol - origVolume) < 1e-6,
-                    "Volume mismatch: \(rVol) vs \(origVolume)")
+            #expect(
+                abs(rVol - origVolume) < 1e-6,
+                "Volume mismatch: \(rVol) vs \(origVolume)")
         }
         if let rArea = reconstructed.surfaceArea {
-            #expect(abs(rArea - origArea) < 1e-6,
-                    "Area mismatch: \(rArea) vs \(origArea)")
+            #expect(
+                abs(rArea - origArea) < 1e-6,
+                "Area mismatch: \(rArea) vs \(origArea)")
         }
-        #expect(reconstructed.subShapeCount(ofType: .face) == origFaces,
-                "Face count mismatch")
-        #expect(reconstructed.subShapeCount(ofType: .edge) == origEdges,
-                "Edge count mismatch")
+        #expect(
+            reconstructed.subShapeCount(ofType: .face) == origFaces,
+            "Face count mismatch")
+        #expect(
+            reconstructed.subShapeCount(ofType: .edge) == origEdges,
+            "Edge count mismatch")
     }
 }

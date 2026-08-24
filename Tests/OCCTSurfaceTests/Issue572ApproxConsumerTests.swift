@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #572: `Surface.toBSpline()` reaches `GeomConvert::SurfaceToBSplineSurface`, which
@@ -26,10 +27,11 @@ struct Issue572ApproxConsumerTests {
             }
             poles.append(row)
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 2, 4],
-                               knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 2, 4],
+            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     /// Largest distance from a grid of points on `source` to the nearest point on `fit`.
@@ -49,12 +51,22 @@ struct Issue572ApproxConsumerTests {
 
     @Test("A trimmed offset surface converts to within its own tolerance")
     func trimmedOffsetConvertsCloseToItsSource() {
-        guard let base = Self.c1InUSurface() else { Issue.record("bspline"); return }
-        guard let offset = base.offset(distance: 0.6) else { Issue.record("offset"); return }
-        guard let trimmed = offset.trimmed(u1: 0.1, u2: 0.9, v1: 0.1, v2: 0.9) else {
-            Issue.record("trimmed"); return
+        guard let base = Self.c1InUSurface() else {
+            Issue.record("bspline")
+            return
         }
-        guard let fit = trimmed.toBSpline() else { Issue.record("toBSpline"); return }
+        guard let offset = base.offset(distance: 0.6) else {
+            Issue.record("offset")
+            return
+        }
+        guard let trimmed = offset.trimmed(u1: 0.1, u2: 0.9, v1: 0.1, v2: 0.9) else {
+            Issue.record("trimmed")
+            return
+        }
+        guard let fit = trimmed.toBSpline() else {
+            Issue.record("toBSpline")
+            return
+        }
 
         // GeomConvert_1.cxx:786 asks this conversion for 1e-4. It does not reach that on either
         // kernel (the request caps out at degree 14 and 24 segments), but on the pre-0019 kernel
@@ -75,9 +87,18 @@ struct Issue572ApproxConsumerTests {
     /// which consumers move.
     @Test("The untrimmed offset takes the C0 branch without collapsing")
     func untrimmedOffsetDoesNotCollapse() {
-        guard let base = Self.c1InUSurface() else { Issue.record("bspline"); return }
-        guard let offset = base.offset(distance: 0.6) else { Issue.record("offset"); return }
-        guard let fit = offset.toBSpline() else { Issue.record("toBSpline"); return }
+        guard let base = Self.c1InUSurface() else {
+            Issue.record("bspline")
+            return
+        }
+        guard let offset = base.offset(distance: 0.6) else {
+            Issue.record("offset")
+            return
+        }
+        guard let fit = offset.toBSpline() else {
+            Issue.record("toBSpline")
+            return
+        }
 
         #expect(fit.uDegree == 13)
         #expect(fit.vDegree == 14)
@@ -90,8 +111,14 @@ struct Issue572ApproxConsumerTests {
     /// here rather than only in the two cases above.
     @Test("Analytic surfaces convert exactly, before and after")
     func analyticSurfacesAreUnaffected() {
-        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { Issue.record("sphere"); return }
-        guard let fit = sphere.toBSpline() else { Issue.record("toBSpline"); return }
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else {
+            Issue.record("sphere")
+            return
+        }
+        guard let fit = sphere.toBSpline() else {
+            Issue.record("toBSpline")
+            return
+        }
         #expect(fit.uDegree == 2)
         #expect(fit.vDegree == 2)
         #expect(Self.deviation(of: fit, from: sphere) < 1e-9)

@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #403: `LawFunction.knotSplitting` only ever returned raw knot-table indices, which the

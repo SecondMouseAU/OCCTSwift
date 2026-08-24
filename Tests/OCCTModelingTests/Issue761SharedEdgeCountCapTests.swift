@@ -1,6 +1,7 @@
-import Testing
 import Foundation
 import OCCTBridge
+import Testing
+
 @testable import OCCTSwift
 
 // #761: investigating whether AAG's hand-rolled pairwise face/edge adjacency (then
@@ -45,8 +46,11 @@ struct Issue761SharedEdgeCountCapTests {
     static func manySharedEdgesFixture() -> Shape? {
         guard var shape = Shape.box(width: 100, height: 100, depth: 100) else { return nil }
         for x0 in stride(from: -45.0, through: 45.0, by: 9.0) {
-            guard let notch = Shape.box(origin: SIMD3(x0 - 3, -52, 48), width: 6, height: 4, depth: 4),
-                  let cut = shape.subtracting(notch) else { return nil }
+            guard
+                let notch = Shape.box(
+                    origin: SIMD3(x0 - 3, -52, 48), width: 6, height: 4, depth: 4),
+                let cut = shape.subtracting(notch)
+            else { return nil }
             shape = cut
         }
         return shape
@@ -55,18 +59,25 @@ struct Issue761SharedEdgeCountCapTests {
     /// Finds the largest occurrence matching a predicate on its `AAGNode`, by area. Used to locate
     /// the top and front faces without depending on their (unpredictable, since the notches add
     /// several small new faces) index position.
-    private static func largestFace(_ aag: AAG, occ: [Face], where predicate: (AAGNode) -> Bool) -> Int? {
-        aag.nodes.indices.filter { predicate(aag.nodes[$0]) }.max { occ[$0].area() < occ[$1].area() }
+    private static func largestFace(_ aag: AAG, occ: [Face], where predicate: (AAGNode) -> Bool)
+        -> Int?
+    {
+        aag.nodes.indices.filter { predicate(aag.nodes[$0]) }.max {
+            occ[$0].area() < occ[$1].area()
+        }
     }
 
     /// The floor/wall pair this suite measures: the box's top face and front face, both still
     /// single connected faces after the notch cuts, sharing 12 edges (11 notches split the shared
     /// boundary into 12 remaining segments).
-    private static func topAndFrontFaces(in shape: Shape) -> (aag: AAG, topIndex: Int, frontIndex: Int)? {
+    private static func topAndFrontFaces(in shape: Shape) -> (
+        aag: AAG, topIndex: Int, frontIndex: Int
+    )? {
         let occ = shape.orientedFaces()
         let aag = shape.buildAAG()
         guard let topIndex = largestFace(aag, occ: occ, where: { $0.isUpward && $0.isHorizontal }),
-              let frontIndex = largestFace(aag, occ: occ, where: { $0.isVertical && ($0.normal?.y ?? 0) < -0.9 })
+            let frontIndex = largestFace(
+                aag, occ: occ, where: { $0.isVertical && ($0.normal?.y ?? 0) < -0.9 })
         else { return nil }
         return (aag, topIndex, frontIndex)
     }
@@ -76,7 +87,8 @@ struct Issue761SharedEdgeCountCapTests {
     @Test("sharedEdgeCount reports the true count, not a value capped at 10")
     func sharedEdgeCountIsNotCappedAtTen() {
         guard let shape = Self.manySharedEdgesFixture(),
-              let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape) else {
+            let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
+        else {
             Issue.record("could not build the many-shared-edges fixture")
             return
         }
@@ -90,7 +102,8 @@ struct Issue761SharedEdgeCountCapTests {
         // 11 notches leave 12 shared boundary segments. Before this fix this was 10 (the old
         // hardcoded cap), not a geometric fact about the fixture.
         #expect(edge.sharedEdgeCount == 12)
-        #expect(edge.sharedEdgeCount > 10, "the whole point of this fixture is to exceed the old cap")
+        #expect(
+            edge.sharedEdgeCount > 10, "the whole point of this fixture is to exceed the old cap")
     }
 
     /// The second, independent construction the measurement policy asks for: `BRepGraph`'s own
@@ -101,7 +114,8 @@ struct Issue761SharedEdgeCountCapTests {
     @Test("agrees with BRepGraph's own uncapped sharedEdges count")
     func agreesWithBRepGraphsUncappedCount() {
         guard let shape = Self.manySharedEdgesFixture(),
-              let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape) else {
+            let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
+        else {
             Issue.record("could not build the many-shared-edges fixture")
             return
         }
@@ -112,10 +126,10 @@ struct Issue761SharedEdgeCountCapTests {
 
         let occ = shape.orientedFaces()
         guard let graph = BRepGraph(shape: shape),
-              let topFaceShape = Shape.fromFace(occ[topIndex]),
-              let frontFaceShape = Shape.fromFace(occ[frontIndex]),
-              let topNode = graph.findNode(for: topFaceShape), topNode.kind == .face,
-              let frontNode = graph.findNode(for: frontFaceShape), frontNode.kind == .face
+            let topFaceShape = Shape.fromFace(occ[topIndex]),
+            let frontFaceShape = Shape.fromFace(occ[frontIndex]),
+            let topNode = graph.findNode(for: topFaceShape), topNode.kind == .face,
+            let frontNode = graph.findNode(for: frontFaceShape), frontNode.kind == .face
         else {
             Issue.record("could not map the top/front faces into BRepGraph")
             return
@@ -134,10 +148,12 @@ struct Issue761SharedEdgeCountCapTests {
     /// one `OCCTFaceGetSharedEdgeSummary` call and sizes no buffer at all, so this particular
     /// disagreement is not observable through it. A deliberately small `maxEdges: 10` on the
     /// same top/front pair that shares 12 edges, the exact shape of the original bug (#811).
-    @Test("OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount agree, differing only by the buffer")
+    @Test(
+        "OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount agree, differing only by the buffer")
     func bridgeFunctionsShareOneComparison() {
         guard let shape = Self.manySharedEdgesFixture(),
-              let (_, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape) else {
+            let (_, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
+        else {
             Issue.record("could not build the many-shared-edges fixture")
             return
         }
@@ -152,7 +168,8 @@ struct Issue761SharedEdgeCountCapTests {
         // its documented contract (a fixed, caller-allocated buffer), not a regression. The point
         // is that it truncates at exactly 10, the buffer's own size, and nothing else.
         var cappedBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: 10)
-        let cappedCount = OCCTFaceGetSharedEdges(shape.handle, topFace.handle, frontFace.handle, &cappedBuffer, 10)
+        let cappedCount = OCCTFaceGetSharedEdges(
+            shape.handle, topFace.handle, frontFace.handle, &cappedBuffer, 10)
         #expect(cappedCount == 10)
         for case let edge? in cappedBuffer {
             OCCTEdgeRelease(edge)
@@ -163,7 +180,8 @@ struct Issue761SharedEdgeCountCapTests {
         // the pair with one OCCTFaceGetSharedEdgeSummary call, so these two functions are now
         // exercised here and nowhere else (#811).
         var exactBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: Int(trueCount))
-        let exactCount = OCCTFaceGetSharedEdges(shape.handle, topFace.handle, frontFace.handle, &exactBuffer, trueCount)
+        let exactCount = OCCTFaceGetSharedEdges(
+            shape.handle, topFace.handle, frontFace.handle, &exactBuffer, trueCount)
         #expect(exactCount == trueCount)
         #expect(exactBuffer.allSatisfy { $0 != nil })
         for case let edge? in exactBuffer {
@@ -198,7 +216,8 @@ struct Issue761SharedEdgeCountCapTests {
     @Test("convexity still resolves for the many-shared-edges pair")
     func convexityStillResolves() {
         guard let shape = Self.manySharedEdgesFixture(),
-              let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape) else {
+            let (aag, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape)
+        else {
             Issue.record("could not build the many-shared-edges fixture")
             return
         }

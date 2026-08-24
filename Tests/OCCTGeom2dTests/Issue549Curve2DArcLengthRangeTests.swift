@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Cover for #549, which removed `OCCTCurve2DLength` and routed `Curve2D.arcLength(from:to:)`
@@ -29,7 +30,7 @@ struct Issue549Curve2DArcLengthRangeTests {
     /// adaptor forms diverge, and the shape a line or a single arc cannot detect. The 3D twin
     /// carries the same points in the z = 0 plane so the two dimensions are comparable.
     private static let planarPoints: [SIMD2<Double>] = [
-        SIMD2(0, 0), SIMD2(10, 40), SIMD2(20, 0), SIMD2(200, 5), SIMD2(210, 60)
+        SIMD2(0, 0), SIMD2(10, 40), SIMD2(20, 0), SIMD2(200, 5), SIMD2(210, 60),
     ]
 
     private func multiSpanCurve() -> Curve2D? {
@@ -42,8 +43,10 @@ struct Issue549Curve2DArcLengthRangeTests {
 
     /// Chord-sum reference, so the clamping assertions compare against the curve's real length
     /// rather than against whatever the implementation happens to return for the whole domain.
-    private func polylineLength(_ c: Curve2D, from u1: Double, to u2: Double,
-                                segments: Int = 20_000) -> Double {
+    private func polylineLength(
+        _ c: Curve2D, from u1: Double, to u2: Double,
+        segments: Int = 20_000
+    ) -> Double {
         var total = 0.0
         var prev = c.point(at: u1)
         for i in 1...segments {
@@ -100,7 +103,8 @@ struct Issue549Curve2DArcLengthRangeTests {
         // against a curve 353.508 long, reported as an ordinary success rather than a failure.
         let overshot = c.arcLength(from: d.lowerBound - span, to: d.upperBound + span)
         #expect(overshot == whole)
-        #expect(abs(overshot - polylineLength(c, from: d.lowerBound, to: d.upperBound)) < 0.01 * whole)
+        #expect(
+            abs(overshot - polylineLength(c, from: d.lowerBound, to: d.upperBound)) < 0.01 * whole)
     }
 
     @Test("A range wholly outside the domain measures zero, not a fragment of the extrapolation")
@@ -154,7 +158,7 @@ struct Issue549Curve2DArcLengthRangeTests {
             ("reversed", d.lowerBound + 0.6 * span, d.lowerBound + 0.1 * span),
             ("overshoot both ends", d.lowerBound - span, d.upperBound + span),
             ("wholly outside", d.upperBound + 1, d.upperBound + 2),
-            ("equal parameters", d.lowerBound + 0.3 * span, d.lowerBound + 0.3 * span)
+            ("equal parameters", d.lowerBound + 0.3 * span, d.lowerBound + 0.3 * span),
         ]
 
         for (label, u1, u2) in cases {
@@ -174,14 +178,15 @@ struct Issue549Curve2DArcLengthRangeTests {
         }
         // The two interpolations run through the same points in the same plane, so their domains
         // and lengths match; before #549 only the answers differed, and only on these ranges.
-        let d2 = c2.domain, d3 = c3.domain
+        let d2 = c2.domain
+        let d3 = c3.domain
         #expect(abs((d2.upperBound - d2.lowerBound) - (d3.upperBound - d3.lowerBound)) < 1e-6)
 
         let span = d2.upperBound - d2.lowerBound
         let fractions: [(String, Double, Double)] = [
             ("reversed", 0.6, 0.1),
             ("overshoot both ends", -1.0, 2.0),
-            ("wholly outside", 1.1, 1.2)
+            ("wholly outside", 1.1, 1.2),
         ]
         for (label, f1, f2) in fractions {
             let a2 = c2.arcLength(from: d2.lowerBound + f1 * span, to: d2.lowerBound + f2 * span)

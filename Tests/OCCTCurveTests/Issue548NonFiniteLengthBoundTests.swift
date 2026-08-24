@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Cover for #548: a non-finite parameter bound used to be answered differently by every ranged
@@ -39,7 +40,7 @@ struct Issue548NonFiniteLengthBoundTests {
             SIMD3(100, 50, 0),
             SIMD3(150, -60, 40),
             SIMD3(250, 30, -20),
-            SIMD3(300, 0, 60)
+            SIMD3(300, 0, 60),
         ])
     }
 
@@ -49,14 +50,14 @@ struct Issue548NonFiniteLengthBoundTests {
             SIMD2(100, 50),
             SIMD2(150, -60),
             SIMD2(250, 30),
-            SIMD2(300, 0)
+            SIMD2(300, 0),
         ])
     }
 
     private let nonFinite: [(String, Double)] = [
         ("nan", Double.nan),
         ("+infinity", Double.infinity),
-        ("-infinity", -Double.infinity)
+        ("-infinity", -Double.infinity),
     ]
 
     // MARK: - Curve3D
@@ -102,7 +103,7 @@ struct Issue548NonFiniteLengthBoundTests {
         let fixtures: [(String, Curve3D?)] = [
             ("segment", Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))),
             ("circle", Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)),
-            ("multi-span bspline", multiSpanCurve())
+            ("multi-span bspline", multiSpanCurve()),
         ]
         for (name, curve) in fixtures {
             guard let c = curve else {
@@ -152,7 +153,7 @@ struct Issue548NonFiniteLengthBoundTests {
         let fixtures: [(String, Curve2D?)] = [
             ("segment", Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))),
             ("circle", Curve2D.circle(center: .zero, radius: 5)),
-            ("multi-span bspline", multiSpanCurve2D())
+            ("multi-span bspline", multiSpanCurve2D()),
         ]
         for (name, curve) in fixtures {
             guard let c = curve, let whole = c.length else {
@@ -177,7 +178,7 @@ struct Issue548NonFiniteLengthBoundTests {
         let fixtures: [(String, Curve2D?)] = [
             ("segment", Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))),
             ("circle", Curve2D.circle(center: .zero, radius: 5)),
-            ("multi-span bspline", multiSpanCurve2D())
+            ("multi-span bspline", multiSpanCurve2D()),
         ]
         for (name, curve) in fixtures {
             guard let c = curve else {
@@ -198,8 +199,9 @@ struct Issue548NonFiniteLengthBoundTests {
     @Test("Shape.edgeArcLength(from:to:) never returns NaN for a NaN bound")
     func edgeArcLengthRejectsNonFiniteBounds() {
         guard let spline = multiSpanCurve(),
-              let splineEdge = Shape.edgeFromCurve(spline),
-              let straightEdge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)) else {
+            let splineEdge = Shape.edgeFromCurve(spline),
+            let straightEdge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
+        else {
             Issue.record("edge fixtures must build")
             return
         }

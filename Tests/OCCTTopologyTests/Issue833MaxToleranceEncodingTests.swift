@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #833: `maxTolerance(type:)`/`minTolerance(type:)`/`avgTolerance(type:)` (backed by
@@ -71,8 +72,8 @@ struct Issue833MaxToleranceEncodingTests {
 
         // At the box's default (fresh construction) tolerances:
         #expect(box.maxTolerance(type: .vertex) == box.maxTolerance(subShapeType: 7))  // TopAbs_VERTEX
-        #expect(box.maxTolerance(type: .edge) == box.maxTolerance(subShapeType: 6))    // TopAbs_EDGE
-        #expect(box.maxTolerance(type: .face) == box.maxTolerance(subShapeType: 4))    // TopAbs_FACE
+        #expect(box.maxTolerance(type: .edge) == box.maxTolerance(subShapeType: 6))  // TopAbs_EDGE
+        #expect(box.maxTolerance(type: .face) == box.maxTolerance(subShapeType: 4))  // TopAbs_FACE
 
         // And again after forcing every sub-shape's tolerance to a distinguishable, non-default
         // value -- ruling out the two agreeing only by coincidence at Precision::Confusion().

@@ -2,8 +2,8 @@
 // Category 4: Micro/macro scale, coincident geometry, degenerate ops, near-degenerate.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Micro Scale
 
@@ -40,7 +40,8 @@ struct StressMicroScaleTests {
 
     @Test func microBoolean() {
         guard let b1 = Shape.box(width: 1e-4, height: 1e-4, depth: 1e-4),
-              let b2 = Shape.box(width: 0.5e-4, height: 0.5e-4, depth: 0.5e-4) else { return }
+            let b2 = Shape.box(width: 0.5e-4, height: 0.5e-4, depth: 0.5e-4)
+        else { return }
         let result = b1.subtracting(b2)
         if let r = result { _ = r.isValid }
     }
@@ -93,7 +94,8 @@ struct StressMacroScaleTests {
 
     @Test func macroBoolean() {
         guard let b1 = Shape.box(width: 1e6, height: 1e6, depth: 1e6),
-              let b2 = Shape.box(width: 0.5e6, height: 0.5e6, depth: 0.5e6) else { return }
+            let b2 = Shape.box(width: 0.5e6, height: 0.5e6, depth: 0.5e6)
+        else { return }
         let result = b1.subtracting(b2)
         if let r = result { #expect(r.isValid) }
     }
@@ -113,7 +115,8 @@ struct StressMixedScaleTests {
 
     @Test func largeBoxTinyHole() {
         if let box = Shape.box(width: 1000, height: 1000, depth: 1000) {
-            let result = box.drilled(at: SIMD3(0, 0, 500), direction: SIMD3(0, 0, -1), radius: 0.01, depth: 0)
+            let result = box.drilled(
+                at: SIMD3(0, 0, 500), direction: SIMD3(0, 0, -1), radius: 0.01, depth: 0)
             if let r = result { #expect(r.isValid) }
         }
     }
@@ -138,7 +141,8 @@ struct StressMixedScaleTests {
 
     @Test func largeBoxSmallSubtract() {
         guard let big = Shape.box(width: 100, height: 100, depth: 100),
-              let small = Shape.box(width: 0.1, height: 0.1, depth: 0.1) else { return }
+            let small = Shape.box(width: 0.1, height: 0.1, depth: 0.1)
+        else { return }
         let result = big.subtracting(small)
         if let r = result { #expect(r.isValid) }
     }
@@ -216,7 +220,7 @@ struct StressCoincidentGeometryTests {
         if let r = result {
             #expect(r.isValid)
             if let vol = r.volume {
-                let expected = (4.0/3.0) * .pi * (1000.0 - 125.0)
+                let expected = (4.0 / 3.0) * .pi * (1000.0 - 125.0)
                 #expect(abs(vol - expected) / expected < 0.01)
             }
         }
@@ -307,14 +311,16 @@ struct StressDegenerateOperationTests {
     @Test func drillRadiusLargerThanBox() {
         let box = standardBox()
         // Drill hole bigger than the box
-        let result = box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 20, depth: 0)
+        let result = box.drilled(
+            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 20, depth: 0)
         // Should fail gracefully or produce degenerate
         if let r = result { _ = r.isValid }
     }
 
     @Test func drillOutsideBox() {
         let box = standardBox()
-        let result = box.drilled(at: SIMD3(100, 100, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 5)
+        let result = box.drilled(
+            at: SIMD3(100, 100, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 5)
         if let r = result {
             // Drill missed entirely, volume should be unchanged
             if let vol = r.volume, let origVol = box.volume {
@@ -372,7 +378,8 @@ struct StressNearDegenerateTests {
 
     @Test func verySmallDrill() {
         let box = standardBox()
-        let result = box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1e-5, depth: 0)
+        let result = box.drilled(
+            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1e-5, depth: 0)
         if let r = result { _ = r.isValid }
     }
 }
@@ -397,7 +404,8 @@ struct StressCurveSurfaceBoundaryTests {
         let p1 = curve.point(at: domain.lowerBound - 0.001)
         let p2 = curve.point(at: domain.upperBound + 0.001)
         // Should return something, not crash
-        _ = p1; _ = p2
+        _ = p1
+        _ = p2
     }
 
     @Test func surfaceEvalAtDomainCorners() {
@@ -462,7 +470,8 @@ struct StressCurveSurfaceBoundaryTests {
         let pStart = circle.point(at: domain.lowerBound)
         let pEnd = circle.point(at: domain.upperBound)
         // For a closed circle, start ≈ end
-        let dist = sqrt(pow(pStart.x - pEnd.x, 2) + pow(pStart.y - pEnd.y, 2) + pow(pStart.z - pEnd.z, 2))
+        let dist = sqrt(
+            pow(pStart.x - pEnd.x, 2) + pow(pStart.y - pEnd.y, 2) + pow(pStart.z - pEnd.z, 2))
         #expect(dist < 0.01)
     }
 }

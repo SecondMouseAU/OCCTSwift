@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #619, the surface half. `Surface.surfaceContinuityOrder` changed from the hand-invented
@@ -18,17 +19,20 @@ struct Issue619SurfaceContinuityEncodingTests {
                 SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2))
             }
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
-                               knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
+            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     @Test("An analytic surface reports CN as ordinal 6, the old encoding's 99 is unreachable")
     func analyticSurfaceReportsCN() {
         var checked = 0
-        for surface in [Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-                        Surface.sphere(center: .zero, radius: 5)].compactMap({ $0 }) {
+        for surface in [
+            Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+            Surface.sphere(center: .zero, radius: 5),
+        ].compactMap({ $0 }) {
             #expect(surface.continuityClass == .cN)
             #expect(surface.continuity == 6)
             #expect(surface.continuity != 99)
@@ -40,7 +44,8 @@ struct Issue619SurfaceContinuityEncodingTests {
     @Test("A C1 surface reports C1 as ordinal 2, not 1")
     func c1SurfaceReportsOrdinalTwo() {
         guard let c1 = Self.bsplineSurface(interiorMultiplicityU: 2),
-              let c2 = Self.bsplineSurface(interiorMultiplicityU: 1) else {
+            let c2 = Self.bsplineSurface(interiorMultiplicityU: 1)
+        else {
             Issue.record("could not build the BSpline surface fixtures")
             return
         }
@@ -72,8 +77,8 @@ struct Issue619SurfaceContinuityEncodingTests {
             Issue.record("could not build the C1 BSpline surface fixture")
             return
         }
-        #expect(c1.continuity >= 2)                       // the trap, still live
-        #expect(!c1.continuityClass.satisfies(.c2))       // the question it meant to ask
+        #expect(c1.continuity >= 2)  // the trap, still live
+        #expect(!c1.continuityClass.satisfies(.c2))  // the question it meant to ask
         #expect(c1.continuityClass.satisfies(.c1))
     }
 }

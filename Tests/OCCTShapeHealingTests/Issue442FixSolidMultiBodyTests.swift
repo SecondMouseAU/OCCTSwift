@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #442, `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed only the FIRST
@@ -20,21 +21,25 @@ struct Issue442FixSolidMultiBody {
 
     /// Volume, asserted rather than optionally-bound: a `nil` here means the solid is
     /// inverted, which must fail the test rather than skip it.
-    private func expectVolume(_ shape: Shape, _ expected: Double,
-                              _ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
+    private func expectVolume(
+        _ shape: Shape, _ expected: Double,
+        _ what: String, sourceLocation: SourceLocation = #_sourceLocation
+    ) {
         guard let volume = shape.volume else {
-            Issue.record("\(what): volume is nil, the solid came back inverted",
-                         sourceLocation: sourceLocation)
+            Issue.record(
+                "\(what): volume is nil, the solid came back inverted",
+                sourceLocation: sourceLocation)
             return
         }
-        #expect(abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
-                sourceLocation: sourceLocation)
+        #expect(
+            abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
+            sourceLocation: sourceLocation)
     }
 
     /// Two disjoint 10mm boxes, 2000mm³ total, the issue's own reproducer.
     private func twoBoxes() -> Shape? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
         else { return nil }
         return Shape.compound([a, b])
     }
@@ -42,7 +47,7 @@ struct Issue442FixSolidMultiBody {
     /// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
     private func hollowBox() -> Shape? {
         guard let outer = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-              let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+            let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
         else { return nil }
         return outer.subtracting(cavity)
     }
@@ -52,8 +57,8 @@ struct Issue442FixSolidMultiBody {
     /// most likely to regress unnoticed.
     private func multiconnexSolid() -> Shape? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let shellA = a.shells.first, let shellB = b.shells.first
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let shellA = a.shells.first, let shellB = b.shells.first
         else { return nil }
         return Shape.solidFromShells([shellA, shellB])
     }
@@ -106,7 +111,7 @@ struct Issue442FixSolidMultiBody {
             return
         }
         #expect(healed.solids.count == 1)
-        expectVolume(healed, 7000.0, "fixSolid(hollow solid)")   // 8000 outer − 1000 cavity
+        expectVolume(healed, 7000.0, "fixSolid(hollow solid)")  // 8000 outer − 1000 cavity
     }
 
     /// One solid, two disjoint shells: `ShapeFix_Solid::Shape()` splits it into a compound
@@ -193,7 +198,7 @@ struct Issue442FixSolidMultiBody {
         }
         #expect(solid.shapeType == .solid)
         #expect(solid.solids.count == 1)
-        expectVolume(solid, 8000.0, "solidFromShellFixed(hollow solid)")   // outer shell, cavity filled
+        expectVolume(solid, 8000.0, "solidFromShellFixed(hollow solid)")  // outer shell, cavity filled
     }
 
     /// The case the "outer shell per solid" rule would silently drop a body on.
@@ -222,9 +227,9 @@ struct Issue442FixSolidMultiBody {
     @Test("solidFromShellFixed skips a cavity even when another body is wider")
     func solidFromShellCavityWithWiderSibling() {
         guard let outerA = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-              let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
-              let hollowA = outerA.subtracting(cavityA),
-              let boxB = Shape.box(origin: SIMD3(50, 0, 0), width: 30, height: 30, depth: 30)
+            let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
+            let hollowA = outerA.subtracting(cavityA),
+            let boxB = Shape.box(origin: SIMD3(50, 0, 0), width: 30, height: 30, depth: 30)
         else {
             Issue.record("could not build the hollow body plus wider sibling")
             return
@@ -250,9 +255,9 @@ struct Issue442FixSolidMultiBody {
     @Test("solidFromShellFixed builds one solid per free shell")
     func solidFromShellFreeShells() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let shellA = a.shells.first, let shellB = b.shells.first,
-              let quilt = Shape.compound([shellA, shellB])
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let shellA = a.shells.first, let shellB = b.shells.first,
+            let quilt = Shape.compound([shellA, shellB])
         else {
             Issue.record("could not build the two free shells")
             return
@@ -272,8 +277,8 @@ struct Issue442FixSolidMultiBody {
     @Test("solidFromShellFixed does not duplicate a repeated free shell")
     func solidFromShellDeduplicates() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let shell = a.shells.first,
-              let duped = Shape.compound([shell, shell])
+            let shell = a.shells.first,
+            let duped = Shape.compound([shell, shell])
         else {
             Issue.record("could not build the duplicated-shell compound")
             return
@@ -331,12 +336,13 @@ struct Issue442FixSolidMultiBody {
 
         // Single-body input returns the body itself, so shapeType answers it directly.
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let single = box.fixSolid() else {
+            let single = box.fixSolid()
+        else {
             Issue.record("could not heal a single box")
             return
         }
         #expect(single.shapeType == .solid)
-        #expect(single.subShapeCount(ofType: .shell) == 1)   // not a failure signal
+        #expect(single.subShapeCount(ofType: .shell) == 1)  // not a failure signal
     }
 
     /// An open shell reaching the parity pass must not perturb the other shells' verdicts.
@@ -346,9 +352,9 @@ struct Issue442FixSolidMultiBody {
     @Test("an open shell does not flip other shells' verdicts")
     func openShellDoesNotPerturbParity() {
         guard let outerA = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-              let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
-              let hollowA = outerA.subtracting(cavityA),
-              let bigBox = Shape.box(origin: SIMD3(-10, -10, -10), width: 40, height: 40, depth: 40)
+            let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
+            let hollowA = outerA.subtracting(cavityA),
+            let bigBox = Shape.box(origin: SIMD3(-10, -10, -10), width: 40, height: 40, depth: 40)
         else {
             Issue.record("could not build the hollow body or the wrapping box")
             return
@@ -357,7 +363,7 @@ struct Issue442FixSolidMultiBody {
         // (`sewnBoxMissingOneFace`, `ShapeHealingTestFixtures.swift`, shared with
         // Issue702SolidDemotionTests, #717 review, the duplicated open-shell fixture.)
         guard let openQuilt = sewnBoxMissingOneFace(bigBox),
-              let openShell = openQuilt.shells.first
+            let openShell = openQuilt.shells.first
         else {
             Issue.record("could not sew the open shell")
             return
@@ -376,10 +382,12 @@ struct Issue442FixSolidMultiBody {
         // Without the guard the outer shell is dropped and the cavity comes back instead,
         // which shows up as the 8000 mm³ body going missing.
         let volumes = bodies.solids.compactMap(\.volume)
-        #expect(volumes.contains { abs($0 - 8000.0) < 1e-6 },
-                "the hollow body's outer shell was dropped; volumes: \(volumes)")
-        #expect(!volumes.contains { abs($0 - 1000.0) < 1e-6 },
-                "the cavity was emitted as a positive body; volumes: \(volumes)")
+        #expect(
+            volumes.contains { abs($0 - 8000.0) < 1e-6 },
+            "the hollow body's outer shell was dropped; volumes: \(volumes)")
+        #expect(
+            !volumes.contains { abs($0 - 1000.0) < 1e-6 },
+            "the cavity was emitted as a positive body; volumes: \(volumes)")
     }
 
     // MARK: - The issue's measured table
@@ -400,8 +408,10 @@ struct Issue442FixSolidMultiBody {
             Issue.record("solidFromShellFixed returned nil")
             return
         }
-        for (label, shape) in [("input", compound), ("fixSolid", healed),
-                               ("solidFromShellFixed", fromShells)] {
+        for (label, shape) in [
+            ("input", compound), ("fixSolid", healed),
+            ("solidFromShellFixed", fromShells),
+        ] {
             #expect(shape.solids.count == 2, "\(label): solids")
             #expect(shape.subShapeCount(ofType: .face) == 12, "\(label): faces")
             expectVolume(shape, 2000.0, label)

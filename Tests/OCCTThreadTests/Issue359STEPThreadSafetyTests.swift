@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // Issue #359: #181-B (fixed by PR #184) serialized STEP/IGES *writers* on a shared
@@ -68,6 +69,8 @@ struct Issue359STEPThreadSafetyTests {
 
         #expect(agg.writeFailed == 0, "concurrent STEP writes failed (expected 0 of 120)")
         #expect(agg.readFailed == 0, "concurrent STEP reads failed (expected 0 of 120)")
-        #expect(agg.emptyShape == 0, "concurrent STEP reads produced an empty shape (expected 0 of 120)")
+        #expect(
+            agg.emptyShape == 0, "concurrent STEP reads produced an empty shape (expected 0 of 120)"
+        )
     }
 }

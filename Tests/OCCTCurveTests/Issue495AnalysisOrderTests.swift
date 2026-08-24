@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #495: what LocalAnalysis_CurveContinuity actually measures, and what it only appears to.
@@ -20,7 +21,7 @@ struct Issue495CurveAnalysisOrderTests {
     /// Two arcs meeting at (5,0,0) at a sharp angle. Only C0 holds.
     private func sharpCorner() -> (Curve3D, Curve3D)? {
         guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-              let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
+            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
         else { return nil }
         return (c1, c2)
     }
@@ -28,15 +29,18 @@ struct Issue495CurveAnalysisOrderTests {
     /// Two arcs meeting smoothly at (5,0,0).
     private func smoothJunction() -> (Curve3D, Curve3D)? {
         guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0)]),
-              let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)])
+            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)])
         else { return nil }
         return (c1, c2)
     }
 
-    private func analyse(_ pair: (Curve3D, Curve3D),
-                         _ order: ContinuityClass) -> Curve3D.ContinuityAnalysis? {
-        pair.0.continuityWith(pair.1, u1: pair.0.domain.upperBound,
-                              u2: pair.1.domain.lowerBound, order: order)
+    private func analyse(
+        _ pair: (Curve3D, Curve3D),
+        _ order: ContinuityClass
+    ) -> Curve3D.ContinuityAnalysis? {
+        pair.0.continuityWith(
+            pair.1, u1: pair.0.domain.upperBound,
+            u2: pair.1.domain.lowerBound, order: order)
     }
 
     @Test("each order measures exactly its own branch, and no order measures all five")
@@ -85,8 +89,9 @@ struct Issue495CurveAnalysisOrderTests {
         let pair = try #require(smoothJunction())
         let atDefault = try #require(analyse(pair, .c2))
         #expect(atDefault.measured == [.c0, .c1, .c2])
-        #expect(atDefault.holds(.g1) == nil,
-                "the .c2 default computes C0/C1/C2 only. G1 has to be asked for")
+        #expect(
+            atDefault.holds(.g1) == nil,
+            "the .c2 default computes C0/C1/C2 only. G1 has to be asked for")
 
         // Ask for it and the same junction answers properly.
         let atG1 = try #require(analyse(pair, .g1))
@@ -120,8 +125,9 @@ struct Issue495CurveAnalysisOrderTests {
             guard let a = analyse(pair, order) else { continue }
             var measuredMask = 0
             for c in a.measured { measuredMask |= c.analysisFlagBit }
-            #expect(a.flags & ~measuredMask == 0,
-                    "order \(order) set flags \(a.flags) outside measured \(a.measured)")
+            #expect(
+                a.flags & ~measuredMask == 0,
+                "order \(order) set flags \(a.flags) outside measured \(a.measured)")
         }
     }
 

@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #562: `GeomConvert_BSplineSurfaceKnotSplitting` was wrapped twice, by `Surface.knotSplitting`
@@ -24,10 +25,12 @@ struct Issue562SurfaceKnotSplitDuplicateTests {
             let result = surface.knotSplitting(uContinuity: continuity, vContinuity: continuity)
             #expect(result.uSplitIndices.count == result.uSplitCount, "u count at \(continuity)")
             #expect(result.vSplitIndices.count == result.vSplitCount, "v count at \(continuity)")
-            #expect(result.uSplitIndices.map { surface.bsplineUKnot(index: $0) } == result.uSplitParams,
-                    "u indices at \(continuity)")
-            #expect(result.vSplitIndices.map { surface.bsplineVKnot(index: $0) } == result.vSplitParams,
-                    "v indices at \(continuity)")
+            #expect(
+                result.uSplitIndices.map { surface.bsplineUKnot(index: $0) } == result.uSplitParams,
+                "u indices at \(continuity)")
+            #expect(
+                result.vSplitIndices.map { surface.bsplineVKnot(index: $0) } == result.vSplitParams,
+                "v indices at \(continuity)")
         }
     }
 

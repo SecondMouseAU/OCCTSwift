@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #615: the two point-to-curve spellings #539/#580 left disagreeing
@@ -51,7 +52,7 @@ struct Issue615NearestParameterRangeTests {
     func halfCircleFromBelowAnswersTheNearEnd() throws {
         let arc = try #require(Self.halfCircle())
         let query = SIMD3<Double>(0, -6, 0)
-        let truth = 61.0.squareRoot()   // hypot(5, 6) = 7.810249675906654
+        let truth = 61.0.squareRoot()  // hypot(5, 6) = 7.810249675906654
 
         let parameter = try #require(arc.nearestParameter(to: query))
         #expect(abs(parameter - 0) < 1e-9)
@@ -113,11 +114,13 @@ struct Issue615NearestParameterRangeTests {
 
             // Same point, so same distance. Compared by distance rather than by parameter because a
             // tie (a closed curve queried from its centre) is free to name either of two parameters.
-            #expect(abs(Self.distance(curve.point(at: parameter), query) - projected.distance) < 1e-9,
-                    "\(label): nearestParameter \(parameter) vs projectPoint \(projected.parameter)")
+            #expect(
+                abs(Self.distance(curve.point(at: parameter), query) - projected.distance) < 1e-9,
+                "\(label): nearestParameter \(parameter) vs projectPoint \(projected.parameter)")
 
             // And it is a real answer over the curve's own domain, not over its basis curve.
-            #expect(curve.domain.contains(parameter), "\(label): \(parameter) outside \(curve.domain)")
+            #expect(
+                curve.domain.contains(parameter), "\(label): \(parameter) outside \(curve.domain)")
         }
     }
 
@@ -142,8 +145,9 @@ struct Issue615NearestParameterRangeTests {
         // back. Before #615 the fallback found none either and the whole call returned nil.
         let segment = try #require(Self.trimmedSegment())
         for guess in [3.0, 5.5, 8.0] {
-            let located = try #require(segment.locateNearestPoint(SIMD3(100, 0, 0), initParam: guess),
-                                       "guess \(guess)")
+            let located = try #require(
+                segment.locateNearestPoint(SIMD3(100, 0, 0), initParam: guess),
+                "guess \(guess)")
             #expect(located.parameter == 8, "guess \(guess)")
             #expect(located.distance == 92, "guess \(guess)")
         }

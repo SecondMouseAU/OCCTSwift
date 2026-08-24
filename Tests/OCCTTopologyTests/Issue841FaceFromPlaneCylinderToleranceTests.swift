@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #841: `Shape.faceFromPlane`/`faceFromCylinder` were duplicated as two unrelated static-factory
@@ -30,7 +31,8 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
         let viaBounds = try #require(
             Shape.faceFromPlane(origin: origin, normal: normal, uBounds: uBounds, vBounds: vBounds))
         let viaRange = try #require(
-            Shape.faceFromPlane(origin: origin, normal: normal, uRange: uBounds, vRange: vBounds, tolerance: 1e-7))
+            Shape.faceFromPlane(
+                origin: origin, normal: normal, uRange: uBounds, vRange: vBounds, tolerance: 1e-7))
 
         let boundsBox = viaBounds.boundingBox
         let rangeBox = viaRange.boundingBox
@@ -41,7 +43,8 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
         }
     }
 
-    @Test("faceFromCylinder's uBounds overload matches the uRange overload at Precision::Confusion()")
+    @Test(
+        "faceFromCylinder's uBounds overload matches the uRange overload at Precision::Confusion()")
     func faceFromCylinderDelegatesWithMatchingDefault() throws {
         let origin = SIMD3<Double>.zero
         let axis = SIMD3<Double>(0, 0, 1)
@@ -50,9 +53,12 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
         let vBounds = 0.0...10.0
 
         let viaBounds = try #require(
-            Shape.faceFromCylinder(origin: origin, axis: axis, radius: radius, uBounds: uBounds, vBounds: vBounds))
+            Shape.faceFromCylinder(
+                origin: origin, axis: axis, radius: radius, uBounds: uBounds, vBounds: vBounds))
         let viaRange = try #require(
-            Shape.faceFromCylinder(origin: origin, axis: axis, radius: radius, uRange: uBounds, vRange: vBounds, tolerance: 1e-7))
+            Shape.faceFromCylinder(
+                origin: origin, axis: axis, radius: radius, uRange: uBounds, vRange: vBounds,
+                tolerance: 1e-7))
 
         let boundsBox = viaBounds.boundingBox
         let rangeBox = viaRange.boundingBox
@@ -69,7 +75,8 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
     func explicitToleranceIsAccepted() throws {
         let plane = Shape.faceFromPlane(uBounds: 0...10, vBounds: 0...10, tolerance: 1e-4)
         #expect(plane != nil)
-        let cylinder = Shape.faceFromCylinder(radius: 5, uBounds: 0...(2 * Double.pi), vBounds: 0...10, tolerance: 1e-4)
+        let cylinder = Shape.faceFromCylinder(
+            radius: 5, uBounds: 0...(2 * Double.pi), vBounds: 0...10, tolerance: 1e-4)
         #expect(cylinder != nil)
     }
 }

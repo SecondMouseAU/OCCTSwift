@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 // MARK: - XDE Tests (v0.6.0)
 
@@ -30,8 +29,8 @@ struct ColorTests {
     @Test("Create color from 255 values")
     func createColorFrom255() {
         let color = Color(red255: 128, green255: 64, blue255: 255)
-        #expect(abs(color.red - 128.0/255.0) < 0.01)
-        #expect(abs(color.green - 64.0/255.0) < 0.01)
+        #expect(abs(color.red - 128.0 / 255.0) < 0.01)
+        #expect(abs(color.green - 64.0 / 255.0) < 0.01)
         #expect(abs(color.blue - 1.0) < 0.01)
         #expect(color.alpha == 1.0)
     }
@@ -95,15 +94,17 @@ struct OCCTSignalHandlingTests {
     func degenerateLoftIsCaught() {
         // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire,
         // the kind of mismatched profile set that ThruSections can crash on.
-        let square = Wire.polygon3D([SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)], closed: true)
-        let collinear = Wire.polygon3D([SIMD3(0,0,5), SIMD3(1,0,5), SIMD3(2,0,5)], closed: true)
+        let square = Wire.polygon3D(
+            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true)
+        let collinear = Wire.polygon3D(
+            [SIMD3(0, 0, 5), SIMD3(1, 0, 5), SIMD3(2, 0, 5)], closed: true)
         if let square, let collinear {
             // Whatever the outcome, the call must return (nil or a shape) without aborting.
             _ = Shape.loft(profiles: [square, collinear], solid: true)
         }
         // Tessellating a possibly-invalid solid must also not crash.
         if let s = Shape.box(width: 1, height: 1, depth: 1) { _ = s.mesh(linearDeflection: 0.01) }
-        #expect(Bool(true))   // reaching here means no crash
+        #expect(Bool(true))  // reaching here means no crash
     }
 }
 
@@ -200,7 +201,8 @@ struct ColorOCCTTests {
     @Test func fromHLSRoundtrip() {
         let original = Color(red: 0.4, green: 0.6, blue: 0.2)
         let hls = original.hls
-        let restored = Color.fromHLS(hue: hls.hue, lightness: hls.lightness, saturation: hls.saturation)
+        let restored = Color.fromHLS(
+            hue: hls.hue, lightness: hls.lightness, saturation: hls.saturation)
         #expect(abs(restored.red - original.red) < 0.01)
         #expect(abs(restored.green - original.green) < 0.01)
     }
@@ -221,13 +223,13 @@ struct ColorOCCTTests {
     @Test func linearToSRGB() {
         let linear = Color(red: 0.5, green: 0.5, blue: 0.5)
         let srgb = linear.sRGB
-        #expect(srgb.red > 0.7) // gamma expansion makes it brighter
+        #expect(srgb.red > 0.7)  // gamma expansion makes it brighter
     }
 
     @Test func sRGBToLinear() {
         let srgb = Color(red: 0.5, green: 0.5, blue: 0.5)
         let linear = srgb.linearRGB
-        #expect(linear.red < 0.3) // gamma compression makes it darker
+        #expect(linear.red < 0.3)  // gamma compression makes it darker
     }
 
     @Test func sRGBRoundtrip() {
@@ -240,7 +242,7 @@ struct ColorOCCTTests {
     @Test func toLab() {
         let gray = Color(red: 0.5, green: 0.5, blue: 0.5)
         let lab = gray.lab
-        #expect(lab.l > 50) // mid-gray has L* > 50
+        #expect(lab.l > 50)  // mid-gray has L* > 50
     }
 
     @Test func namedColorName() {
@@ -371,7 +373,8 @@ struct OCCTDateTests {
 
     @Test func addPeriod() {
         if let d = OCCTDate(month: 1, day: 1, year: 2000),
-           let oneDay = Period(days: 1) {
+            let oneDay = Period(days: 1)
+        {
             let d2 = d.adding(oneDay)
             #expect(d2.day == 2)
         }
@@ -379,7 +382,8 @@ struct OCCTDateTests {
 
     @Test func subtractPeriod() {
         if let d = OCCTDate(month: 1, day: 15, year: 2000, hour: 12),
-           let sixHours = Period(hours: 6) {
+            let sixHours = Period(hours: 6)
+        {
             if let d2 = d.subtracting(sixHours) {
                 #expect(d2.hour == 6)
             }
@@ -388,7 +392,8 @@ struct OCCTDateTests {
 
     @Test func difference() {
         if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-           let d2 = OCCTDate(month: 1, day: 2, year: 2000) {
+            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
+        {
             let diff = d1.difference(to: d2)
             #expect(diff.totalSeconds == 86400)
         }
@@ -404,7 +409,8 @@ struct OCCTDateTests {
 
     @Test func comparison() {
         if let d1 = OCCTDate(month: 1, day: 1, year: 2000),
-           let d2 = OCCTDate(month: 1, day: 2, year: 2000) {
+            let d2 = OCCTDate(month: 1, day: 2, year: 2000)
+        {
             #expect(d1 < d2)
             #expect(d2 > d1)
         }
@@ -412,7 +418,8 @@ struct OCCTDateTests {
 
     @Test func operatorPlus() {
         if let d = OCCTDate(month: 1, day: 1, year: 2000),
-           let p = Period(hours: 24) {
+            let p = Period(hours: 24)
+        {
             let d2 = d + p
             #expect(d2.day == 2)
         }
@@ -520,8 +527,9 @@ struct PixMapTests {
             img.initTrash(format: .rgb, width: 16, height: 16)
             for y in 0..<16 {
                 for x in 0..<16 {
-                    img.setPixel(at: x, y: y,
-                                 color: Color(red: Double(x)/16.0, green: Double(y)/16.0, blue: 0.5))
+                    img.setPixel(
+                        at: x, y: y,
+                        color: Color(red: Double(x) / 16.0, green: Double(y) / 16.0, blue: 0.5))
                 }
             }
             let saved = img.save(to: "/tmp/occt_pixmap_test.ppm")
@@ -1396,7 +1404,7 @@ struct MessageMsgTests {
         // Key may not exist, but function should not crash
         let msg = MessageSystem.message(forKey: "test.key")
         // Returns something (either key itself or error msg)
-        #expect(msg != nil || msg == nil) // just verify no crash
+        #expect(msg != nil || msg == nil)  // just verify no crash
     }
 
     @Test func hasMessage() {
@@ -1421,7 +1429,7 @@ struct NamedColorCountTests {
 
     @Test func colorCount() {
         let count = Color.namedColorCount
-        #expect(count > 500) // OCCT has ~520 named colors
+        #expect(count > 500)  // OCCT has ~520 named colors
     }
 }
 
@@ -1435,13 +1443,15 @@ struct UnitsConversionTests {
 
     @Test func unitScale() {
         // meter to millimeter = 1000
-        let scale = UnitsConversion.lengthUnitScale(from: OCCTLengthUnit.meter, to: OCCTLengthUnit.millimeter)
+        let scale = UnitsConversion.lengthUnitScale(
+            from: OCCTLengthUnit.meter, to: OCCTLengthUnit.millimeter)
         #expect(abs(scale - 1000.0) < 1e-6)
     }
 
     @Test func unitScaleInverse() {
         // millimeter to meter = 0.001
-        let scale = UnitsConversion.lengthUnitScale(from: OCCTLengthUnit.millimeter, to: OCCTLengthUnit.meter)
+        let scale = UnitsConversion.lengthUnitScale(
+            from: OCCTLengthUnit.millimeter, to: OCCTLengthUnit.meter)
         #expect(abs(scale - 0.001) < 1e-9)
     }
 
@@ -1514,9 +1524,10 @@ struct ThreadSafetyTests {
             group.enter()
             DispatchQueue.global().async {
                 let vol = OCCTSerial.withLock { () -> Double? in
-                    let box = Shape.box(width: Double(i + 1) * 10,
-                                       height: Double(i + 1) * 10,
-                                       depth: Double(i + 1) * 10)
+                    let box = Shape.box(
+                        width: Double(i + 1) * 10,
+                        height: Double(i + 1) * 10,
+                        depth: Double(i + 1) * 10)
                     return box?.volume
                 }
                 resultsLock.lock()
@@ -1540,8 +1551,10 @@ struct SheetStandardLayoutTests {
     func firstAngleTopBelow() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-              let layout = sheet.standardLayout(of: box) else {
-            Issue.record("setup nil"); return
+            let layout = sheet.standardLayout(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         #expect(layout.top.offset.y < layout.front.offset.y)
     }
@@ -1550,8 +1563,10 @@ struct SheetStandardLayoutTests {
     func thirdAngleTopAbove() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .third)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-              let layout = sheet.standardLayout(of: box) else {
-            Issue.record("setup nil"); return
+            let layout = sheet.standardLayout(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         #expect(layout.top.offset.y > layout.front.offset.y)
     }
@@ -1560,8 +1575,10 @@ struct SheetStandardLayoutTests {
     func viewsFitInsideInnerFrame() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-              let layout = sheet.standardLayout(of: box, margin: 20) else {
-            Issue.record("setup nil"); return
+            let layout = sheet.standardLayout(of: box, margin: 20)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let frame = sheet.innerFrame
         for placed in layout.placed {
@@ -1576,8 +1593,10 @@ struct SheetStandardLayoutTests {
     func includeIsoFalseOmits() {
         let sheet = Sheet(size: .a3)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-              let layout = sheet.standardLayout(of: box, includeIso: false) else {
-            Issue.record("setup nil"); return
+            let layout = sheet.standardLayout(of: box, includeIso: false)
+        else {
+            Issue.record("setup nil")
+            return
         }
         #expect(layout.iso == nil)
         #expect(layout.placed.count == 3)
@@ -1587,8 +1606,10 @@ struct SheetStandardLayoutTests {
     func renderEmitsEveryView() {
         let sheet = Sheet(size: .a3)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-              let layout = sheet.standardLayout(of: box) else {
-            Issue.record("setup nil"); return
+            let layout = sheet.standardLayout(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let writer = DXFWriter()
         layout.render(into: writer)
@@ -1617,8 +1638,8 @@ struct BillOfMaterialsTests {
     func threeItemBOM() {
         let bom = BillOfMaterials(items: [
             .init(number: 1, description: "Plate", quantity: 2),
-            .init(number: 2, description: "Bolt",  quantity: 8, material: "Steel"),
-            .init(number: 3, description: "Nut",   quantity: 8, material: "Steel")
+            .init(number: 2, description: "Bolt", quantity: 8, material: "Steel"),
+            .init(number: 3, description: "Nut", quantity: 8, material: "Steel"),
         ])
         let writer = DXFWriter()
         bom.render(into: writer, at: SIMD2(200, 100))
@@ -1630,10 +1651,12 @@ struct BillOfMaterialsTests {
 
     @Test("BillOfMaterials Codable round-trip")
     func codableRoundTrip() throws {
-        let bom = BillOfMaterials(items: [
-            .init(number: 1, partNumber: "P-001", description: "Frame",
-                  quantity: 1, material: "6061-T6", mass: 2.4, notes: "heat-treated")
-        ], title: "Assembly Rev A")
+        let bom = BillOfMaterials(
+            items: [
+                .init(
+                    number: 1, partNumber: "P-001", description: "Frame",
+                    quantity: 1, material: "6061-T6", mass: 2.4, notes: "heat-treated")
+            ], title: "Assembly Rev A")
         let data = try JSONEncoder().encode(bom)
         let back = try JSONDecoder().decode(BillOfMaterials.self, from: data)
         #expect(back == bom)

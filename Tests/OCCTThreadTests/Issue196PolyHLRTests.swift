@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #196: the v1.4.1 smooth analytic thread helicoid is HLR-hostile, projecting its BSpline
@@ -17,13 +18,17 @@ struct Issue196PolyHLRTests {
     private func analyticThread() -> Shape? {
         guard let shank = Shape.cylinder(radius: 5, height: 50) else { return nil }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.0)
-        return shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                                   spec: spec, length: 26, runout: .none)
+        return shank.threadedShaft(
+            axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+            spec: spec, length: 26, runout: .none)
     }
 
     @Test("poly HLR projects the analytic thread to 2D edges")
     func polyHLRProducesEdges() {
-        guard let t = analyticThread() else { Issue.record("no thread"); return }
+        guard let t = analyticThread() else {
+            Issue.record("no thread")
+            return
+        }
         let edges = t.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp)
         #expect(edges != nil)
         if let edges { #expect(edges.subShapes(ofType: .edge).count > 0) }
@@ -35,16 +40,19 @@ struct Issue196PolyHLRTests {
     @Test("deflection is honoured, coarser mesh yields fewer drawing edges")
     func deflectionControlsDetail() {
         guard let tFine = analyticThread(), let tCoarse = analyticThread() else {
-            Issue.record("no thread"); return
+            Issue.record("no thread")
+            return
         }
         let dir = SIMD3<Double>(1, 0, 0)
         let fine = tFine.hlrPolyEdges(direction: dir, category: .visibleSharp, deflection: 0.05)?
             .subShapes(ofType: .edge).count
         let coarse = tCoarse.hlrPolyEdges(direction: dir, category: .visibleSharp, deflection: 0.8)?
             .subShapes(ofType: .edge).count
-        #expect(fine != nil); #expect(coarse != nil)
+        #expect(fine != nil)
+        #expect(coarse != nil)
         if let fine, let coarse {
-            #expect(fine > 0); #expect(coarse > 0)
+            #expect(fine > 0)
+            #expect(coarse > 0)
             // Deflection is honoured (it changes the projected edge set). With the v1.5+ smooth
             // cam-loft thread (#213) the count is NOT strictly monotonic in deflection, a coarse
             // triangulation of the helicoidal flanks can yield MORE silhouette segments, not fewer

@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #485, the surface half plus the shared vocabulary. `Surface.continuity` (raw
@@ -22,10 +23,11 @@ struct Issue485SurfaceContinuityTests {
                 SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2))
             }
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
-                               knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
+            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     // MARK: - The shared result vocabulary
@@ -94,11 +96,11 @@ struct Issue485SurfaceContinuityTests {
     func knotMultiplicityDrivesMeasuredClass() {
         if let c2 = Self.bsplineSurface(interiorMultiplicityU: 1) {
             #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)          // the old encoding said 2
+            #expect(c2.continuity == 4)  // the old encoding said 2
         }
         if let c1 = Self.bsplineSurface(interiorMultiplicityU: 2) {
             #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)          // the old encoding said 1
+            #expect(c1.continuity == 2)  // the old encoding said 1
         }
         if let c0 = Self.bsplineSurface(interiorMultiplicityU: 3) {
             #expect(c0.continuityClass == .c0)
@@ -125,10 +127,12 @@ struct Issue485SurfaceContinuityTests {
     @Test("continuity and continuityClass agree on the same surface, in every class")
     func bothPropertiesAgree() {
         var checked = 0
-        for surface in [Self.bsplineSurface(interiorMultiplicityU: 1),
-                        Self.bsplineSurface(interiorMultiplicityU: 2),
-                        Self.bsplineSurface(interiorMultiplicityU: 3),
-                        Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))].compactMap({ $0 }) {
+        for surface in [
+            Self.bsplineSurface(interiorMultiplicityU: 1),
+            Self.bsplineSurface(interiorMultiplicityU: 2),
+            Self.bsplineSurface(interiorMultiplicityU: 3),
+            Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+        ].compactMap({ $0 }) {
             #expect(surface.continuity == Int(surface.continuityClass.rawValue))
             #expect(surface.continuity != 99)
             #expect(surface.continuity >= 0 && surface.continuity <= 6)
@@ -144,7 +148,8 @@ struct Issue485SurfaceContinuityTests {
         // #398's load-bearing property: a measured class must never silently substitute for a
         // requested order. They agree numerically at 0/1/2, which is why the types matter.
         #expect(ObjectIdentifier(ContinuityClass.self) != ObjectIdentifier(SurfaceContinuity.self))
-        #expect(ObjectIdentifier(ContinuityClass.self) != ObjectIdentifier(ParametricContinuity.self))
+        #expect(
+            ObjectIdentifier(ContinuityClass.self) != ObjectIdentifier(ParametricContinuity.self))
         #expect(ContinuityClass.c1.rawValue != ParametricContinuity.c1.rawValue)
     }
 }

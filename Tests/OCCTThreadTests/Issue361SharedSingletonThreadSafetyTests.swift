@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // Issue #361 (fixed further in #363): two more process-global bridge singletons found
@@ -46,8 +47,9 @@ struct Issue361SharedSingletonThreadSafetyTests {
         docA.namingScopeValid(labelId: labelA)  // repeat marks are idempotent, not cumulative
 
         #expect(docA.namingScopeValidCount == 1)
-        #expect(docB.namingScopeValidCount == 0,
-                "document B's valid count must not reflect document A's marks")
+        #expect(
+            docB.namingScopeValidCount == 0,
+            "document B's valid count must not reflect document A's marks")
         #expect(docA.namingScopeIsValid(labelId: labelA))
         #expect(!docB.namingScopeIsValid(labelId: labelB))
 
@@ -56,8 +58,9 @@ struct Issue361SharedSingletonThreadSafetyTests {
 
         docA.namingScopeClear()
         #expect(docA.namingScopeValidCount == 0)
-        #expect(docB.namingScopeValidCount == 1,
-                "clearing document A must not clear document B's scope")
+        #expect(
+            docB.namingScopeValidCount == 1,
+            "clearing document A must not clear document B's scope")
     }
 
     @Test("Concurrent naming-scope access across independent documents doesn't crash or deadlock")
@@ -71,7 +74,10 @@ struct Issue361SharedSingletonThreadSafetyTests {
                 group.addTask {
                     var o = Outcome()
                     for _ in 0..<20 {
-                        guard let doc = Document.create() else { o.failures += 1; continue }
+                        guard let doc = Document.create() else {
+                            o.failures += 1
+                            continue
+                        }
                         let box = Shape.box(width: 5, height: 5, depth: 5)!
                         let labelId = doc.addShape(box, makeAssembly: false)
 

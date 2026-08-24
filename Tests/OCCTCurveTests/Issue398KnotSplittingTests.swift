@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #398: `Curve3D.ContinuityOrder` stopped at `c2`, which made every order it could express a

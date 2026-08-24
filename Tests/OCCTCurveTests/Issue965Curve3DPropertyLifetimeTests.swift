@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Regression cover for #965: every `*Properties` accessor handed back a value that stored the
@@ -90,7 +91,9 @@ struct Issue965Curve3DPropertyLifetimeTests {
         let result = try #require(takeView { $0.circleProperties })
         var ballast: [Curve3D] = []
         for i in 1...400 {
-            if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: Double(1000 + i)) {
+            if let c = Curve3D.circle(
+                center: .zero, normal: SIMD3(0, 0, 1), radius: Double(1000 + i))
+            {
                 ballast.append(c)
             }
         }

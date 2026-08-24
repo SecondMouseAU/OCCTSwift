@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #844: four independent Swift mirrors of `TopAbs_ShapeEnum` with no shared source of truth --
@@ -37,7 +38,8 @@ struct Issue844ShapeTypeConsolidationTests {
     func shapeFilterTypeIsShapeType() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let solid1 = Shape.box(width: 5, height: 5, depth: 5),
-              let solid2 = Shape.box(width: 5, height: 5, depth: 5)?.translated(by: SIMD3(20, 0, 0)) else {
+            let solid2 = Shape.box(width: 5, height: 5, depth: 5)?.translated(by: SIMD3(20, 0, 0))
+        else {
             Issue.record("failed to build compound fixture")
             return
         }

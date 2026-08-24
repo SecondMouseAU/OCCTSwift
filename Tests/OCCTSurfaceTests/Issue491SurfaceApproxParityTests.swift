@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// `Surface` wraps `GeomConvert_ApproxSurface` twice: ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
@@ -44,51 +45,81 @@ struct Issue491SurfaceApproxParityTests {
         var result: [Request] = []
 
         if let sphere = Surface.sphere(center: .zero, radius: 10) {
-            result.append(Request(label: "sphere r=10, shared defaults", surface: sphere,
-                                  tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
-            result.append(Request(label: "sphere r=10, tol 1e-5", surface: sphere,
-                                  tolerance: 1e-5, continuity: .c2, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "sphere r=10, shared defaults", surface: sphere,
+                    tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "sphere r=10, tol 1e-5", surface: sphere,
+                    tolerance: 1e-5, continuity: .c2, maxSegments: 100, maxDegree: 8))
             // Past what maxDegree 8 can reach: IsDone false, HasResult true.
-            result.append(Request(label: "sphere r=10, tol 1e-9", surface: sphere,
-                                  tolerance: 1e-9, continuity: .c2, maxSegments: 100, maxDegree: 8))
-            result.append(Request(label: "sphere r=10, C0", surface: sphere,
-                                  tolerance: 1e-3, continuity: .c0, maxSegments: 100, maxDegree: 8))
-            result.append(Request(label: "sphere r=10, C1", surface: sphere,
-                                  tolerance: 1e-3, continuity: .c1, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "sphere r=10, tol 1e-9", surface: sphere,
+                    tolerance: 1e-9, continuity: .c2, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "sphere r=10, C0", surface: sphere,
+                    tolerance: 1e-3, continuity: .c0, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "sphere r=10, C1", surface: sphere,
+                    tolerance: 1e-3, continuity: .c1, maxSegments: 100, maxDegree: 8))
             // The offset of a primitive is the case where PrecisCode 0 and 1 chose different
             // knot layouts, so it is the sharpest check that both now run the same fit.
             if let offsetSphere = sphere.offset(distance: 1.5) {
-                result.append(Request(label: "offset sphere +1.5, tol 1e-5", surface: offsetSphere,
-                                      tolerance: 1e-5, continuity: .c2,
-                                      maxSegments: 100, maxDegree: 8))
-                result.append(Request(label: "offset sphere +1.5, shared defaults",
-                                      surface: offsetSphere, tolerance: 1e-3, continuity: .c2,
-                                      maxSegments: 100, maxDegree: 8))
+                result.append(
+                    Request(
+                        label: "offset sphere +1.5, tol 1e-5", surface: offsetSphere,
+                        tolerance: 1e-5, continuity: .c2,
+                        maxSegments: 100, maxDegree: 8))
+                result.append(
+                    Request(
+                        label: "offset sphere +1.5, shared defaults",
+                        surface: offsetSphere, tolerance: 1e-3, continuity: .c2,
+                        maxSegments: 100, maxDegree: 8))
             }
         }
-        if let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
-                                     majorRadius: 20, minorRadius: 5) {
-            result.append(Request(label: "torus 20/5, shared defaults", surface: torus,
-                                  tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
-            result.append(Request(label: "torus 20/5, tol 1e-9", surface: torus,
-                                  tolerance: 1e-9, continuity: .c2, maxSegments: 100, maxDegree: 8))
+        if let torus = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1),
+            majorRadius: 20, minorRadius: 5)
+        {
+            result.append(
+                Request(
+                    label: "torus 20/5, shared defaults", surface: torus,
+                    tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
+            result.append(
+                Request(
+                    label: "torus 20/5, tol 1e-9", surface: torus,
+                    tolerance: 1e-9, continuity: .c2, maxSegments: 100, maxDegree: 8))
         }
-        if let cylinder = Surface.trimmedCylinder(origin: .zero, direction: SIMD3(0, 0, 1),
-                                                  radius: 5, height: 20) {
-            result.append(Request(label: "trimmed cylinder r=5", surface: cylinder,
-                                  tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
+        if let cylinder = Surface.trimmedCylinder(
+            origin: .zero, direction: SIMD3(0, 0, 1),
+            radius: 5, height: 20)
+        {
+            result.append(
+                Request(
+                    label: "trimmed cylinder r=5", surface: cylinder,
+                    tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
         }
-        if let cone = Surface.trimmedCone(point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 12),
-                                          r1: 5, r2: 2) {
-            result.append(Request(label: "trimmed cone", surface: cone,
-                                  tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
+        if let cone = Surface.trimmedCone(
+            point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 12),
+            r1: 5, r2: 2)
+        {
+            result.append(
+                Request(
+                    label: "trimmed cone", surface: cone,
+                    tolerance: 1e-3, continuity: .c2, maxSegments: 100, maxDegree: 8))
             // maxSegments and maxDegree far apart and not interchangeable. The two entry points
             // declare them in opposite orders (`maxSegments:maxDegree:` on .approximated,
             // `maxDegree:maxSegments:` on .approxWithDetails) and the bridge has to re-order them
             // for the shared helper, so a request where the two values are equal, as every other
             // one here is, would not notice a swap.
-            result.append(Request(label: "trimmed cone, degree 4 in 20 segments", surface: cone,
-                                  tolerance: 1e-3, continuity: .c2, maxSegments: 20, maxDegree: 4))
+            result.append(
+                Request(
+                    label: "trimmed cone, degree 4 in 20 segments", surface: cone,
+                    tolerance: 1e-3, continuity: .c2, maxSegments: 20, maxDegree: 4))
         }
         return result
     }
@@ -112,19 +143,25 @@ struct Issue491SurfaceApproxParityTests {
         #expect(!all.isEmpty, "no request could be constructed, the fixtures themselves failed")
 
         for request in all {
-            let plain = request.surface.approximated(tolerance: request.tolerance,
-                                                     continuity: Int(request.continuity.rawValue),
-                                                     maxSegments: request.maxSegments,
-                                                     maxDegree: request.maxDegree)
-            let detailed = request.surface.approxWithDetails(tolerance: request.tolerance,
-                                                            uContinuity: request.continuity,
-                                                            vContinuity: request.continuity,
-                                                            maxDegree: request.maxDegree,
-                                                            maxSegments: request.maxSegments)
-            #expect((plain != nil) == (detailed.surface != nil),
-                    "\(request.label): approximated \(plain == nil ? "nil" : "surface") but approxWithDetails \(detailed.surface == nil ? "nil" : "surface")")
-            #expect((plain != nil) == detailed.hasResult,
-                    "\(request.label): approximated \(plain == nil ? "nil" : "surface") but hasResult = \(detailed.hasResult)")
+            let plain = request.surface.approximated(
+                tolerance: request.tolerance,
+                continuity: Int(request.continuity.rawValue),
+                maxSegments: request.maxSegments,
+                maxDegree: request.maxDegree)
+            let detailed = request.surface.approxWithDetails(
+                tolerance: request.tolerance,
+                uContinuity: request.continuity,
+                vContinuity: request.continuity,
+                maxDegree: request.maxDegree,
+                maxSegments: request.maxSegments)
+            #expect(
+                (plain != nil) == (detailed.surface != nil),
+                "\(request.label): approximated \(plain == nil ? "nil" : "surface") but approxWithDetails \(detailed.surface == nil ? "nil" : "surface")"
+            )
+            #expect(
+                (plain != nil) == detailed.hasResult,
+                "\(request.label): approximated \(plain == nil ? "nil" : "surface") but hasResult = \(detailed.hasResult)"
+            )
         }
     }
 
@@ -133,23 +170,27 @@ struct Issue491SurfaceApproxParityTests {
     @Test("Both entry points return the same fitted surface")
     func geometryMatches() {
         for request in requests() {
-            let plain = request.surface.approximated(tolerance: request.tolerance,
-                                                     continuity: Int(request.continuity.rawValue),
-                                                     maxSegments: request.maxSegments,
-                                                     maxDegree: request.maxDegree)
-            let detailed = request.surface.approxWithDetails(tolerance: request.tolerance,
-                                                            uContinuity: request.continuity,
-                                                            vContinuity: request.continuity,
-                                                            maxDegree: request.maxDegree,
-                                                            maxSegments: request.maxSegments)
+            let plain = request.surface.approximated(
+                tolerance: request.tolerance,
+                continuity: Int(request.continuity.rawValue),
+                maxSegments: request.maxSegments,
+                maxDegree: request.maxDegree)
+            let detailed = request.surface.approxWithDetails(
+                tolerance: request.tolerance,
+                uContinuity: request.continuity,
+                vContinuity: request.continuity,
+                maxDegree: request.maxDegree,
+                maxSegments: request.maxSegments)
             guard let plain = plain, let withDetails = detailed.surface else { continue }
 
             #expect(plain.uDegree == withDetails.uDegree, "\(request.label): uDegree differs")
             #expect(plain.vDegree == withDetails.vDegree, "\(request.label): vDegree differs")
-            #expect(plain.uPoleCount == withDetails.uPoleCount,
-                    "\(request.label): uPoleCount \(plain.uPoleCount) vs \(withDetails.uPoleCount)")
-            #expect(plain.vPoleCount == withDetails.vPoleCount,
-                    "\(request.label): vPoleCount \(plain.vPoleCount) vs \(withDetails.vPoleCount)")
+            #expect(
+                plain.uPoleCount == withDetails.uPoleCount,
+                "\(request.label): uPoleCount \(plain.uPoleCount) vs \(withDetails.uPoleCount)")
+            #expect(
+                plain.vPoleCount == withDetails.vPoleCount,
+                "\(request.label): vPoleCount \(plain.vPoleCount) vs \(withDetails.vPoleCount)")
 
             let a = sampled(plain)
             let b = sampled(withDetails)
@@ -178,10 +219,12 @@ struct Issue491SurfaceApproxParityTests {
 
         #expect(plain.uDegree == withDetails.uDegree)
         #expect(plain.vDegree == withDetails.vDegree)
-        #expect(plain.uPoleCount == withDetails.uPoleCount,
-                "default-continuity call: uPoleCount \(plain.uPoleCount) vs \(withDetails.uPoleCount)")
-        #expect(plain.vPoleCount == withDetails.vPoleCount,
-                "default-continuity call: vPoleCount \(plain.vPoleCount) vs \(withDetails.vPoleCount)")
+        #expect(
+            plain.uPoleCount == withDetails.uPoleCount,
+            "default-continuity call: uPoleCount \(plain.uPoleCount) vs \(withDetails.uPoleCount)")
+        #expect(
+            plain.vPoleCount == withDetails.vPoleCount,
+            "default-continuity call: vPoleCount \(plain.vPoleCount) vs \(withDetails.vPoleCount)")
 
         // And the explicit C2 call, the shared default, must reproduce it exactly.
         let explicit = sphere.approxWithDetails(tolerance: 1e-3, uContinuity: .c2, vContinuity: .c2)
@@ -203,11 +246,12 @@ struct Issue491SurfaceApproxParityTests {
     @Test("maxError describes the surface both entry points return")
     func maxErrorDescribesTheSharedFit() {
         for request in requests() {
-            let detailed = request.surface.approxWithDetails(tolerance: request.tolerance,
-                                                            uContinuity: request.continuity,
-                                                            vContinuity: request.continuity,
-                                                            maxDegree: request.maxDegree,
-                                                            maxSegments: request.maxSegments)
+            let detailed = request.surface.approxWithDetails(
+                tolerance: request.tolerance,
+                uContinuity: request.continuity,
+                vContinuity: request.continuity,
+                maxDegree: request.maxDegree,
+                maxSegments: request.maxSegments)
             guard let fit = detailed.surface else { continue }
 
             // Sample deviation is a lower bound on the true maximum, so it must not exceed the
@@ -218,13 +262,17 @@ struct Issue491SurfaceApproxParityTests {
                 for j in 0...10 {
                     let u = d.uMin + (d.uMax - d.uMin) * Double(i) / 10.0
                     let v = d.vMin + (d.vMax - d.vMin) * Double(j) / 10.0
-                    deviation = max(deviation,
-                                    simd_length(request.surface.point(atU: u, v: v)
-                                                - fit.point(atU: u, v: v)))
+                    deviation = max(
+                        deviation,
+                        simd_length(
+                            request.surface.point(atU: u, v: v)
+                                - fit.point(atU: u, v: v)))
                 }
             }
-            #expect(deviation <= detailed.maxError + 1e-6,
-                    "\(request.label): sampled deviation \(deviation) exceeds reported maxError \(detailed.maxError)")
+            #expect(
+                deviation <= detailed.maxError + 1e-6,
+                "\(request.label): sampled deviation \(deviation) exceeds reported maxError \(detailed.maxError)"
+            )
         }
     }
 
@@ -233,21 +281,27 @@ struct Issue491SurfaceApproxParityTests {
     /// and it is why `approxWithDetails` exists: `isDone` is how a caller finds out.
     @Test("An over-tolerance fit is returned by both, with isDone false")
     func overToleranceFitIsReturnedNotDropped() {
-        guard let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
-                                        majorRadius: 20, minorRadius: 5) else {
+        guard
+            let torus = Surface.torus(
+                origin: .zero, axis: SIMD3(0, 0, 1),
+                majorRadius: 20, minorRadius: 5)
+        else {
             Issue.record("torus fixture failed")
             return
         }
-        let detailed = torus.approxWithDetails(tolerance: 1e-9, uContinuity: .c2, vContinuity: .c2,
-                                               maxDegree: 8, maxSegments: 100)
+        let detailed = torus.approxWithDetails(
+            tolerance: 1e-9, uContinuity: .c2, vContinuity: .c2,
+            maxDegree: 8, maxSegments: 100)
         #expect(detailed.hasResult)
         #expect(!detailed.isDone, "maxDegree 8 cannot fit a torus to 1e-9")
         #expect(detailed.maxError > 1e-9)
         #expect(detailed.surface != nil)
 
-        #expect(torus.approximated(tolerance: 1e-9, continuity: 2,
-                                   maxSegments: 100, maxDegree: 8) != nil,
-                "approximated must return the same fit approxWithDetails reports")
+        #expect(
+            torus.approximated(
+                tolerance: 1e-9, continuity: 2,
+                maxSegments: 100, maxDegree: 8) != nil,
+            "approximated must return the same fit approxWithDetails reports")
     }
 
     /// `maxDegree` and `maxSegments` are two adjacent `int32_t` the bridge has to **re-order**: the
@@ -265,26 +319,34 @@ struct Issue491SurfaceApproxParityTests {
     /// "a reserve coefficient"), through both entry points alike.
     @Test("maxDegree and maxSegments are order-sensitive, and both entry points agree on the order")
     func maxDegreeIsNotSwappedWithMaxSegments() {
-        guard let cone = Surface.trimmedCone(point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 12),
-                                             r1: 5, r2: 2) else {
+        guard
+            let cone = Surface.trimmedCone(
+                point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 12),
+                r1: 5, r2: 2)
+        else {
             Issue.record("cone fixture failed")
             return
         }
         // Exchanging the two must change the result, otherwise the parity check below is vacuous.
-        let asRequested = cone.approximated(tolerance: 1e-3, continuity: 2,
-                                            maxSegments: 20, maxDegree: 4)
-        let swapped = cone.approximated(tolerance: 1e-3, continuity: 2,
-                                        maxSegments: 4, maxDegree: 20)
+        let asRequested = cone.approximated(
+            tolerance: 1e-3, continuity: 2,
+            maxSegments: 20, maxDegree: 4)
+        let swapped = cone.approximated(
+            tolerance: 1e-3, continuity: 2,
+            maxSegments: 4, maxDegree: 20)
         #expect(asRequested != nil)
         #expect(swapped != nil)
         if let a = asRequested, let b = swapped {
-            #expect(a.uDegree != b.uDegree || a.uPoleCount != b.uPoleCount,
-                    "maxSegments/maxDegree are interchangeable on this input, so no test here can detect a swap: \(a.uDegree)/\(a.uPoleCount) vs \(b.uDegree)/\(b.uPoleCount)")
+            #expect(
+                a.uDegree != b.uDegree || a.uPoleCount != b.uPoleCount,
+                "maxSegments/maxDegree are interchangeable on this input, so no test here can detect a swap: \(a.uDegree)/\(a.uPoleCount) vs \(b.uDegree)/\(b.uPoleCount)"
+            )
         }
 
         // Both entry points must land on the unswapped reading.
-        let detailed = cone.approxWithDetails(tolerance: 1e-3, uContinuity: .c2, vContinuity: .c2,
-                                              maxDegree: 4, maxSegments: 20)
+        let detailed = cone.approxWithDetails(
+            tolerance: 1e-3, uContinuity: .c2, vContinuity: .c2,
+            maxDegree: 4, maxSegments: 20)
         if let a = asRequested, let withDetails = detailed.surface {
             #expect(a.uDegree == withDetails.uDegree)
             #expect(a.vDegree == withDetails.vDegree)
@@ -298,11 +360,12 @@ struct Issue491SurfaceApproxParityTests {
     @Test("hasResult and the returned surface agree")
     func hasResultMatchesTheSurface() {
         for request in requests() {
-            let detailed = request.surface.approxWithDetails(tolerance: request.tolerance,
-                                                            uContinuity: request.continuity,
-                                                            vContinuity: request.continuity,
-                                                            maxDegree: request.maxDegree,
-                                                            maxSegments: request.maxSegments)
+            let detailed = request.surface.approxWithDetails(
+                tolerance: request.tolerance,
+                uContinuity: request.continuity,
+                vContinuity: request.continuity,
+                maxDegree: request.maxDegree,
+                maxSegments: request.maxSegments)
             #expect(detailed.hasResult == (detailed.surface != nil), "\(request.label)")
             if detailed.isDone { #expect(detailed.hasResult, "\(request.label)") }
         }

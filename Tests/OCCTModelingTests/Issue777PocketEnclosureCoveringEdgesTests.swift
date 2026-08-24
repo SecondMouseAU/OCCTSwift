@@ -157,7 +157,8 @@ struct Issue777PocketEnclosureCoveringEdgesTests {
     /// than constructed.
     @Test("a floor boundary edge bounded by more than two faces does not fake an enclosure")
     func multiFaceBoundaryEdgeDoesNotFakeAnEnclosure() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
         let tool = try #require(
             Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(tool))

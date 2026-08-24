@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #541: a face index meant three different things.
@@ -31,12 +32,12 @@ struct Issue541FaceIndexContractTests {
     /// than recording an issue so callers can skip cleanly if the kernel stops sharing.
     static func splitBoxCompound() -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-              let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
-              let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
-              let knife = upright.translated(by: SIMD3(10, 0, 0)),
-              let pieces = block.split(by: knife),
-              pieces.count == 2,
-              let compound = Shape.compound(pieces)
+            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+            let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
+            let knife = upright.translated(by: SIMD3(10, 0, 0)),
+            let pieces = block.split(by: knife),
+            pieces.count == 2,
+            let compound = Shape.compound(pieces)
         else { return nil }
         return compound
     }
@@ -44,7 +45,7 @@ struct Issue541FaceIndexContractTests {
     /// #541's stated minimal reproduction: the same face handed to `compound` twice.
     static func doubledFaceCompound() -> Shape? {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let face = box.subShapes(ofType: .face).first
+            let face = box.subShapes(ofType: .face).first
         else { return nil }
         return Shape.compound([face, face])
     }
@@ -61,8 +62,9 @@ struct Issue541FaceIndexContractTests {
         #expect(duped.faces().count == duped.faceCount)
         #expect(duped.faceCount == duped.subShapeCount(ofType: .face))
         for face in duped.faces() {
-            #expect(duped.face(at: face.index) != nil,
-                    "faces() handed out index \(face.index), which face(at:) cannot address")
+            #expect(
+                duped.face(at: face.index) != nil,
+                "faces() handed out index \(face.index), which face(at:) cannot address")
         }
     }
 
@@ -86,8 +88,9 @@ struct Issue541FaceIndexContractTests {
                 Issue.record("could not wrap face \(face.index) as a Shape")
                 continue
             }
-            #expect(a.isSame(as: b),
-                    "faces()[\(face.index)] and face(at: \(face.index)) are different faces")
+            #expect(
+                a.isSame(as: b),
+                "faces()[\(face.index)] and face(at: \(face.index)) are different faces")
         }
     }
 
@@ -102,7 +105,8 @@ struct Issue541FaceIndexContractTests {
         #expect(split.faceCount == split.subShapeCount(ofType: .face))
         for i in 0..<split.faceCount {
             guard let viaFace = split.face(at: i).flatMap(Shape.fromFace),
-                  let viaGeneric = split.subShape(type: .face, index: i) else {
+                let viaGeneric = split.subShape(type: .face, index: i)
+            else {
                 Issue.record("index \(i) unreachable through one of the two spellings")
                 continue
             }
@@ -123,7 +127,8 @@ struct Issue541FaceIndexContractTests {
             #expect(shape.faces().count == shape.faceCount, "\(name) count")
             for face in shape.faces() {
                 guard let indexed = shape.face(at: face.index),
-                      let a = Shape.fromFace(face), let b = Shape.fromFace(indexed) else {
+                    let a = Shape.fromFace(face), let b = Shape.fromFace(indexed)
+                else {
                     Issue.record("\(name): index \(face.index) unreachable")
                     continue
                 }
@@ -193,21 +198,23 @@ struct Issue541FaceIndexContractTests {
     @Test("splitByWireOnFace accepts 0..<faceCount, not 1...faceCount")
     func splitByWireOnFaceIsZeroBased() {
         guard let block = Shape.box(origin: .zero, width: 20, height: 20, depth: 5),
-              let square = Wire.rectangle(width: 6, height: 6),
-              let flat = Shape.fromWire(square),
-              let wireShape = flat.translated(by: SIMD3(10, 10, 5))
+            let square = Wire.rectangle(width: 6, height: 6),
+            let flat = Shape.fromWire(square),
+            let wireShape = flat.translated(by: SIMD3(10, 10, 5))
         else {
             Issue.record("could not build the split fixture")
             return
         }
         // Index 0 is a real face, not the rejected sentinel it used to be.
         #expect(block.face(at: 0) != nil)
-        #expect(block.splitByWireOnFace(wireShape, faceIndex: 0) != nil,
-                "face 0 is unaddressable, so the index is still 1-based")
+        #expect(
+            block.splitByWireOnFace(wireShape, faceIndex: 0) != nil,
+            "face 0 is unaddressable, so the index is still 1-based")
         // One past the end must be rejected, as it is for face(at:).
         #expect(block.face(at: block.faceCount) == nil)
-        #expect(block.splitByWireOnFace(wireShape, faceIndex: Int32(block.faceCount)) == nil,
-                "an index past the last face was accepted")
+        #expect(
+            block.splitByWireOnFace(wireShape, faceIndex: Int32(block.faceCount)) == nil,
+            "an index past the last face was accepted")
         #expect(block.splitByWireOnFace(wireShape, faceIndex: -1) == nil)
     }
 
@@ -230,8 +237,9 @@ struct Issue541FaceIndexContractTests {
         #expect(!faceZero.isEmpty)
         let allEdgeCount = allEdges.reduce(0) { $0 + $1.edgeCount }
         let faceZeroEdgeCount = faceZero.reduce(0) { $0 + $1.edgeCount }
-        #expect(faceZeroEdgeCount < allEdgeCount,
-                "buildWires(0) returned the whole shape's edges, so 0 was still the sentinel")
+        #expect(
+            faceZeroEdgeCount < allEdgeCount,
+            "buildWires(0) returned the whole shape's edges, so 0 was still the sentinel")
     }
 
     // MARK: - The index consumers read the same enumeration
@@ -254,15 +262,17 @@ struct Issue541FaceIndexContractTests {
                 continue
             }
             let own = face.subShapes(ofType: .edge)
-            #expect(split.faceDomainEdgeCount(faceIndex: i) == own.count,
-                    "faceDomainEdgeCount disagrees about face \(i)")
+            #expect(
+                split.faceDomainEdgeCount(faceIndex: i) == own.count,
+                "faceDomainEdgeCount disagrees about face \(i)")
 
             let reported = split.edgesInFace(at: i)
             #expect(reported.count == own.count, "edgesInFace(at: \(i)) has the wrong edge count")
             for edge in reported {
                 guard let asShape = Shape.fromEdge(edge) else { continue }
-                #expect(own.contains { $0.isSame(as: asShape) },
-                        "edgesInFace(at: \(i)) returned an edge that is not on face \(i)")
+                #expect(
+                    own.contains { $0.isSame(as: asShape) },
+                    "edgesInFace(at: \(i)) returned an edge that is not on face \(i)")
             }
         }
     }
@@ -294,16 +304,17 @@ struct Issue541FaceIndexContractTests {
     @Test("contentsExtended's shared counts collapse instances that faceCount keeps")
     func sharedCountsDiscardLocation() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let moved = box.moved(dx: 50, dy: 0, dz: 0),
-              let pair = Shape.compound([box, moved])
+            let moved = box.moved(dx: 50, dy: 0, dz: 0),
+            let pair = Shape.compound([box, moved])
         else {
             Issue.record("could not build the instanced compound")
             return
         }
         #expect(pair.faceCount == 12, "IsSame compares the location, so instances stay distinct")
         #expect(pair.contents.faces == 12)
-        #expect(pair.contentsExtended().nbSharedFaces == 6,
-                "the shared counts strip the location, so the two placements collapse")
+        #expect(
+            pair.contentsExtended().nbSharedFaces == 6,
+            "the shared counts strip the location, so the two placements collapse")
     }
 
     /// Past the end must be nil or empty on every spelling, not the last face or a crash.

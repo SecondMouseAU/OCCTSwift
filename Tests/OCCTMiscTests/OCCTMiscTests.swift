@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 // MARK: - v0.115.0 Tests
 
@@ -20,16 +19,17 @@ struct InterpolationExpansion3DTests {
 
     @Test func interpolateWithEndpointTangents() {
         let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
-        let curve = Curve3D.interpolate(points: points,
-                                         startTangent: SIMD3(1, 1, 0),
-                                         endTangent: SIMD3(1, -1, 0))
+        let curve = Curve3D.interpolate(
+            points: points,
+            startTangent: SIMD3(1, 1, 0),
+            endTangent: SIMD3(1, -1, 0))
         #expect(curve != nil)
     }
 
     @Test func interpolateWithAllTangents() {
         let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
         let tangents = [SIMD3(1.0, 1.0, 0.0), SIMD3(1.0, 0.0, 0.0), SIMD3(1.0, -1.0, 0.0)]
-        let flags: [Bool] = [true, false, true] // only first and last constrained
+        let flags: [Bool] = [true, false, true]  // only first and last constrained
         let curve = Curve3D.interpolate(points: points, tangents: tangents, tangentFlags: flags)
         #expect(curve != nil)
     }
@@ -44,7 +44,7 @@ struct InterpolationExpansion3DTests {
     @Test func interpolatePeriodic() {
         let points = [
             SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0),
-            SIMD3(10.0, 10.0, 0.0), SIMD3(0.0, 10.0, 0.0)
+            SIMD3(10.0, 10.0, 0.0), SIMD3(0.0, 10.0, 0.0),
         ]
         let curve = Curve3D.interpolatePeriodic(points: points)
         #expect(curve != nil)
@@ -78,8 +78,10 @@ struct ConstructionContextTests {
     @Test("Resolve entities against a graph")
     func resolveAgainstGraph() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
         let pID = ctx.add(.absolute(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)))
@@ -93,8 +95,10 @@ struct ConstructionContextTests {
     @Test("allBroken detects unregistered references")
     func allBrokenDetection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
         // Add a plane referencing a face by TopologyRef.createdBy for an op
@@ -153,8 +157,10 @@ struct ConstructionContextTests {
     @Test("Resolve axis and point entities against a graph")
     func resolveAxisAndPointAgainstGraph() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
 
@@ -177,8 +183,10 @@ struct ConstructionContextTests {
     @Test("allBroken detects unregistered axis and point references")
     func allBrokenDetectsAxisAndPoint() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
         let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
@@ -194,7 +202,10 @@ struct ConstructionContextTests {
 
     @Test("Document exposes a lazy construction context")
     func documentIntegration() {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let ctx1 = doc.constructionContext
         let ctx2 = doc.constructionContext
         // Both accesses return the same instance.
@@ -435,9 +446,10 @@ struct ConstructionContextConcurrencyTests {
         readsPerReader: Int
     ) async -> [(planes: Int, axes: Int, points: Int)] {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box)
+            let graph = BRepGraph(shape: box)
         else {
-            Issue.record("setup nil"); return []
+            Issue.record("setup nil")
+            return []
         }
         let ctx = ConstructionContext()
         let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
@@ -517,8 +529,8 @@ struct ConstructionContextConcurrencyTests {
                 for _ in 0..<readerCount {
                     group.addTask {
                         guard let doc = Document.create(),
-                              let box = Shape.box(width: 10, height: 10, depth: 10),
-                              let graph = BRepGraph(shape: box)
+                            let box = Shape.box(width: 10, height: 10, depth: 10),
+                            let graph = BRepGraph(shape: box)
                         else { return nil }
                         let result = ctx.materialize(in: doc, graph: graph)
                         let counts = (
@@ -575,7 +587,9 @@ struct ConstructionContextConcurrencyTests {
 // races per run, 5000 total) produced zero divergent observations.
 @Suite("#914 review, second round: Document.constructionContext lazy-init race")
 struct DocumentConstructionContextRaceTests {
-    @Test("every concurrent first access to a fresh document's constructionContext returns the same instance")
+    @Test(
+        "every concurrent first access to a fresh document's constructionContext returns the same instance"
+    )
     func firstAccessRaceReturnsOneInstance() async {
         let roundCount = 200
         let taskCount = 8
@@ -617,8 +631,10 @@ struct SketchBuildProfileTests {
     @Test("Profile excludes construction elements")
     func excludesConstruction() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
         let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
@@ -627,8 +643,10 @@ struct SketchBuildProfileTests {
         sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(10, 10))))
         sketch.add(SketchElement(curve: .line(from: SIMD2(10, 10), to: SIMD2(0, 10))))
         sketch.add(SketchElement(curve: .line(from: SIMD2(0, 10), to: SIMD2(0, 0))))
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 10)),
-                                 isConstruction: true))
+        sketch.add(
+            SketchElement(
+                curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 10)),
+                isConstruction: true))
         #expect(sketch.elements.count == 5)
         #expect(sketch.profileElementCount == 4)
 
@@ -639,27 +657,34 @@ struct SketchBuildProfileTests {
     @Test("buildProfile returns nil if no profile elements present")
     func emptyProfileNil() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
         let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
         var sketch = Sketch(hostPlane: planeID)
-        sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(1, 1)),
-                                 isConstruction: true))
+        sketch.add(
+            SketchElement(
+                curve: .line(from: SIMD2(0, 0), to: SIMD2(1, 1)),
+                isConstruction: true))
         #expect(sketch.buildProfile(in: ctx, graph: graph) == nil)
     }
 
     @Test("buildProfile returns nil when host plane is unresolvable")
     func brokenHostPlane() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let ctx = ConstructionContext()
-        let planeID = ctx.add(.offsetFromFace(
-            face: .createdBy(operationName: "NeverHappened", kind: .face),
-            distance: 5))
+        let planeID = ctx.add(
+            .offsetFromFace(
+                face: .createdBy(operationName: "NeverHappened", kind: .face),
+                distance: 5))
         var sketch = Sketch(hostPlane: planeID)
         sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
         sketch.add(SketchElement(curve: .line(from: SIMD2(10, 0), to: SIMD2(0, 10))))
@@ -675,7 +700,8 @@ struct AngleHelperTests {
     @Test("Angle between two perpendicular edges ≈ π/2")
     func perpendicularEdges() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let edges = box.edges()
         // A box has 12 edges; find two that are perpendicular (adjacent on a face).
@@ -694,11 +720,12 @@ struct AngleHelperTests {
     @Test("Box face pairs parallel-or-perpendicular")
     func boxFaceAngles() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let faces = box.faces()
         for i in 0..<faces.count {
-            for j in (i+1)..<faces.count {
+            for j in (i + 1)..<faces.count {
                 if let a = faces[i].angle(to: faces[j]) {
                     let near0 = a < 1e-3 || abs(a - .pi) < 1e-3
                     let near90 = abs(a - .pi / 2) < 1e-3
@@ -730,7 +757,9 @@ struct AngleHelperTests {
         }
     }
 
-    @Test("unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)")
+    @Test(
+        "unsignedAngle returns nil for degenerate (near-zero-length) input (PR #897 review, finding 5)"
+    )
     func unsignedAngleDegenerateReturnsNil() {
         let zero = SIMD3<Double>(0, 0, 0)
         let nonzero = SIMD3<Double>(1, 0, 0)
@@ -741,27 +770,35 @@ struct AngleHelperTests {
     @Test("ConstructionAxis angle between resolved axes")
     func constructionAxisAngle() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let xAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(1, 0, 0))
         let yAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 1, 0))
         if let a = xAxis.angle(to: yAxis, in: graph) {
             #expect(abs(a - .pi / 2) < 1e-9)
-        } else { Issue.record("angle nil") }
+        } else {
+            Issue.record("angle nil")
+        }
     }
 
     @Test("ConstructionPlane angle between normals")
     func constructionPlaneAngle() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let xy = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1))
         let xz = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 1, 0))
         if let a = xy.angle(to: xz, in: graph) {
             #expect(abs(a - .pi / 2) < 1e-9)
-        } else { Issue.record("angle nil") }
+        } else {
+            Issue.record("angle nil")
+        }
     }
 }
 
@@ -772,7 +809,8 @@ struct EdgeFractionParameterTests {
     @Test("parameterByLinearFraction(_:) maps 0/0.5/1 to bounds.first/mid/last")
     func parameterAtFractionEndpoints() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
         // or platform, iterate to find a working edge rather than trusting `.first`
@@ -803,7 +841,8 @@ struct EdgeFractionParameterTests {
     @Test("parameterByLinearFraction(_:) clamps out-of-range fractions to [0, 1]")
     func parameterAtFractionClamps() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         for edge in box.edges() {
             guard let bounds = edge.parameterBounds else { continue }
@@ -830,16 +869,20 @@ struct FaceUVMidpointSampleTests {
     @Test("uvMidpointSample matches point/normal at the manual UV midpoint")
     func matchesManualUVMidpoint() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let face = box.faces().first,
-              let bounds = face.uvBounds else {
-            Issue.record("face/bounds nil"); return
+            let face = box.faces().first,
+            let bounds = face.uvBounds
+        else {
+            Issue.record("face/bounds nil")
+            return
         }
         let uMid = (bounds.uMin + bounds.uMax) / 2
         let vMid = (bounds.vMin + bounds.vMax) / 2
         guard let expectedPoint = face.point(atU: uMid, v: vMid),
-              let expectedNormal = face.normal(atU: uMid, v: vMid),
-              let (samplePoint, sampleNormal) = face.uvMidpointSample() else {
-            Issue.record("sample nil"); return
+            let expectedNormal = face.normal(atU: uMid, v: vMid),
+            let (samplePoint, sampleNormal) = face.uvMidpointSample()
+        else {
+            Issue.record("sample nil")
+            return
         }
         #expect(simd_length(samplePoint - expectedPoint) < 1e-9)
         #expect(simd_length(sampleNormal - expectedNormal) < 1e-9)
@@ -848,8 +891,10 @@ struct FaceUVMidpointSampleTests {
     @Test("isCoplanar: a face is coplanar with itself")
     func coplanarWithSelf() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let face = box.faces().first else {
-            Issue.record("face nil"); return
+            let face = box.faces().first
+        else {
+            Issue.record("face nil")
+            return
         }
         #expect(face.isCoplanar(with: face) == true)
     }
@@ -857,7 +902,8 @@ struct FaceUVMidpointSampleTests {
     @Test("isCoplanar: parallel but offset faces are not coplanar")
     func parallelOffsetFacesNotCoplanar() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let faces = box.faces()
         // Find a parallel-but-not-identical pair (a box's opposite faces).
@@ -875,11 +921,14 @@ struct FaceUVMidpointSampleTests {
     @Test("revolutionProperties on a cone matches primaryAxis and has positive radius")
     func revolutionPropertiesOnCone() {
         guard let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10) else {
-            Issue.record("cone nil"); return
+            Issue.record("cone nil")
+            return
         }
         var found = false
         for face in cone.faces() where face.surfaceType == .cone {
-            guard let props = face.revolutionProperties, let axis = face.primaryAxis else { continue }
+            guard let props = face.revolutionProperties, let axis = face.primaryAxis else {
+                continue
+            }
             #expect(props.radius > 0)
             #expect(simd_length(props.axis.direction - axis.direction) < 1e-9)
             found = true
@@ -899,13 +948,15 @@ struct FaceUVMidpointSampleTests {
         // isolates the bug: v in [1.3, 1.5] sits close to the pole at pi/2 =~ 1.5708.
         let radius = 5.0
         guard let surface = Surface.sphere(center: SIMD3(0, 0, 0), radius: radius),
-              let capShape = Shape.face(from: surface, uBounds: 0...(2 * .pi), vBounds: 1.3...1.5),
-              let face = capShape.faces().first
+            let capShape = Shape.face(from: surface, uBounds: 0...(2 * .pi), vBounds: 1.3...1.5),
+            let face = capShape.faces().first
         else {
-            Issue.record("setup"); return
+            Issue.record("setup")
+            return
         }
         guard let props = face.revolutionProperties else {
-            Issue.record("no revolutionProperties"); return
+            Issue.record("no revolutionProperties")
+            return
         }
         #expect(props.axis.kind == .sphere)
         #expect(abs(props.radius - radius) < 1e-6)
@@ -919,8 +970,10 @@ struct MultiLeafCreatedByTests {
     @Test("leafOccurrence picks among split descendants")
     func leafOccurrencePicksNth() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -947,8 +1000,10 @@ struct MultiLeafCreatedByTests {
     @Test("currentForms returns both leaves of a split")
     func currentFormsReturnsAll() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -963,8 +1018,10 @@ struct MultiLeafCreatedByTests {
     @Test("leafOccurrence: nil returns seed without forward-walk")
     func leafOccurrenceNil() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -972,7 +1029,8 @@ struct MultiLeafCreatedByTests {
         let leaf = BRepGraph.NodeRef(kind: .face, index: 11)
         graph.recordHistory(operationName: "Op", original: .sentinel, replacements: [seed])
         graph.recordHistory(operationName: "Mod", original: seed, replacements: [leaf])
-        let result = graph.resolve(.createdBy(operationName: "Op", kind: .face, leafOccurrence: nil))
+        let result = graph.resolve(
+            .createdBy(operationName: "Op", kind: .face, leafOccurrence: nil))
         switch result {
         case .success(let r): #expect(r == seed)
         case .failure: Issue.record("unexpected failure")
@@ -982,8 +1040,10 @@ struct MultiLeafCreatedByTests {
     @Test("leafOccurrence out of range fails with occurrenceOutOfRange")
     func leafOccurrenceOutOfRange() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1011,9 +1071,13 @@ struct MultiLeafCreatedByTests {
 struct ConstructionLayerTests {
     @Test("addConstructionShape tags the shape with the CONSTRUCTION layer")
     func addConstructionShape() {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let id = doc.addConstructionShape(box)
         #expect(id >= 0)
@@ -1024,9 +1088,11 @@ struct ConstructionLayerTests {
     @Test("Materialize all ConstructionContext entities as shapes on the CONSTRUCTION layer")
     func materializeAll() {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("setup nil"); return
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ctx = doc.constructionContext
         ctx.add(.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)), name: "XY")
@@ -1045,9 +1111,11 @@ struct ConstructionLayerTests {
     @Test("materialize reports a resolve failure for each entity kind")
     func materializeReportsResolveFailuresByKind() {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("setup nil"); return
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ctx = doc.constructionContext
         let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
@@ -1085,9 +1153,11 @@ struct ConstructionLayerTests {
     @Test("materialize reports axisShapeFailed for a zero-length axis direction (#880)")
     func materializeReportsAxisShapeFailedForZeroLengthDirection() {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("setup nil"); return
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ctx = doc.constructionContext
         ctx.add(ConstructionAxis.absolute(origin: .zero, direction: .zero), name: "degenerate")
@@ -1098,7 +1168,8 @@ struct ConstructionLayerTests {
         if case .axisShapeFailed = result.failures.first {
             // expected
         } else {
-            Issue.record("expected axisShapeFailed, got \(String(describing: result.failures.first))")
+            Issue.record(
+                "expected axisShapeFailed, got \(String(describing: result.failures.first))")
         }
     }
 
@@ -1110,9 +1181,11 @@ struct ConstructionLayerTests {
     @Test("materialize reports planeShapeFailed when the plane's wire itself can't be built (#880)")
     func materializeReportsPlaneShapeFailedForUnbuildableWire() {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("setup nil"); return
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ctx = doc.constructionContext
         ctx.add(ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1)), name: "tiny")
@@ -1123,7 +1196,8 @@ struct ConstructionLayerTests {
         if case .planeShapeFailed = result.failures.first {
             // expected
         } else {
-            Issue.record("expected planeShapeFailed, got \(String(describing: result.failures.first))")
+            Issue.record(
+                "expected planeShapeFailed, got \(String(describing: result.failures.first))")
         }
     }
 
@@ -1135,12 +1209,16 @@ struct ConstructionLayerTests {
     // "success" that adds non-finite geometry to the document instead of reporting failure,
     // measured directly, not assumed: this is the fixture that would regress if that fallback
     // were ever added. `planeShape` deliberately does not have it.
-    @Test("materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)")
+    @Test(
+        "materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)"
+    )
     func materializeReportsPlaneShapeFailedForNonFinitePlacement() {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("setup nil"); return
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ctx = doc.constructionContext
         ctx.add(ConstructionPlane.absolute(origin: .zero, normal: .zero), name: "degenerate-normal")
@@ -1151,7 +1229,8 @@ struct ConstructionLayerTests {
         if case .planeShapeFailed = result.failures.first {
             // expected
         } else {
-            Issue.record("expected planeShapeFailed, got \(String(describing: result.failures.first))")
+            Issue.record(
+                "expected planeShapeFailed, got \(String(describing: result.failures.first))")
         }
     }
 
@@ -1174,7 +1253,8 @@ struct ConstructionLayerTests {
     @Test("materializeOne reports an add failure instead of a bogus success (PR #898 review)")
     func materializeOneReportsAddFailure() {
         guard let box = Shape.box(width: 1, height: 1, depth: 1) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let ctx = ConstructionContext()
         let id = ConstructionContext.PlaneID()
@@ -1207,7 +1287,8 @@ struct ConstructionLayerTests {
     @Test("materializeOne still reports success for a non-negative label ID")
     func materializeOneReportsSuccessForValidLabel() {
         guard let box = Shape.box(width: 1, height: 1, depth: 1) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let ctx = ConstructionContext()
         let id = ConstructionContext.PlaneID()
@@ -1245,12 +1326,15 @@ struct ConstructionLayerTests {
         for i in 0..<200 {
             autoreleasepool {
                 guard let doc = Document.create() else {
-                    Issue.record("Document.create() returned nil"); return
+                    Issue.record("Document.create() returned nil")
+                    return
                 }
                 let ctx = doc.constructionContext
 
-                #expect(ctx.count == (planes: 0, axes: 0, points: 0),
-                        "iteration \(i): a fresh Document inherited a dead Document's construction context (#277)")
+                #expect(
+                    ctx.count == (planes: 0, axes: 0, points: 0),
+                    "iteration \(i): a fresh Document inherited a dead Document's construction context (#277)"
+                )
 
                 // Populate, then let the document die at scope exit so the next iteration is
                 // very likely to reuse this address.
@@ -1292,26 +1376,28 @@ struct PaperSizeTests {
 struct SheetRenderingTests {
     @Test("Sheet render emits border + inner frame polylines")
     func sheetEmitsBorders() {
-        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first,
-                          title: TitleBlock(title: "Test Drawing",
-                                            drawingNumber: "T-001",
-                                            owner: "ACME Co"))
+        let sheet = Sheet(
+            size: .a3, orientation: .landscape, projection: .first,
+            title: TitleBlock(
+                title: "Test Drawing",
+                drawingNumber: "T-001",
+                owner: "ACME Co"))
         let writer = DXFWriter()
         sheet.render(into: writer)
         // Should have at least 2 polylines (outer border + inner frame) plus some tick lines.
         let counts = writer.entityCounts
         #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)   // centring ticks
-        #expect(counts.texts >= 1)   // title block field labels
+        #expect(counts.lines >= 4)  // centring ticks
+        #expect(counts.texts >= 1)  // title block field labels
     }
 
     @Test("Sheet innerFrame respects ISO 5457 margins")
     func innerFrameInsets() {
         let sheet = Sheet(size: .a3, orientation: .landscape)
         let frame = sheet.innerFrame
-        #expect(frame.min.x == 20)          // 20 mm binding left
+        #expect(frame.min.x == 20)  // 20 mm binding left
         #expect(frame.min.y == 10)
-        #expect(frame.max.x == 420 - 10)    // 10 mm right
+        #expect(frame.max.x == 420 - 10)  // 10 mm right
         #expect(frame.max.y == 297 - 10)
     }
 
@@ -1329,15 +1415,16 @@ struct SheetRenderingTests {
 
     @Test("TitleBlock fields are emitted as text")
     func titleBlockFields() {
-        let tb = TitleBlock(title: "Test Part",
-                            drawingNumber: "ABC-123",
-                            owner: "Widget Corp",
-                            creator: "Jane Engineer",
-                            dateOfIssue: "2026-04-22")
+        let tb = TitleBlock(
+            title: "Test Part",
+            drawingNumber: "ABC-123",
+            owner: "Widget Corp",
+            creator: "Jane Engineer",
+            dateOfIssue: "2026-04-22")
         let sheet = Sheet(size: .a3, title: tb)
         let writer = DXFWriter()
         sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)   // at least label/value pairs
+        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
     }
 }
 
@@ -1411,7 +1498,7 @@ struct SheetMetalTests {
             flanges: [bottom, left, right],
             bends: [
                 SheetMetal.Bend(from: "bottom", to: "left", radius: 1.5),
-                SheetMetal.Bend(from: "bottom", to: "right", radius: 1.5)
+                SheetMetal.Bend(from: "bottom", to: "right", radius: 1.5),
             ])
 
         #expect(shape.isValid)
@@ -1643,7 +1730,7 @@ struct SheetMetalTests {
             flanges: [base, mid, top],
             bends: [
                 SheetMetal.Bend(from: "base", to: "mid", radius: 1.5),
-                SheetMetal.Bend(from: "mid", to: "top", radius: 1.5)
+                SheetMetal.Bend(from: "mid", to: "top", radius: 1.5),
             ])
         #expect(shape.isValid)
         if let v = shape.volume { #expect(v > 0) }
@@ -1683,7 +1770,7 @@ struct SheetMetalTests {
             flanges: [spine, left, right],
             bends: [
                 SheetMetal.Bend(from: "spine", to: "left", radius: 1.5),
-                SheetMetal.Bend(from: "spine", to: "right", radius: 1.5)
+                SheetMetal.Bend(from: "spine", to: "right", radius: 1.5),
             ])
         #expect(shape.isValid)
         if let v = shape.volume { #expect(v > 0) }
@@ -1720,26 +1807,28 @@ struct ConvexBendIssue89 {
     func zBracketRepro() throws {
         let top = SheetMetal.Flange(
             id: "top",
-            profile: [SIMD2(0,0), SIMD2(18,0), SIMD2(18,45), SIMD2(0,45)],
-            origin: SIMD3(0,0,0),
-            normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(18, 0), SIMD2(18, 45), SIMD2(0, 45)],
+            origin: SIMD3(0, 0, 0),
+            normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let web = SheetMetal.Flange(
             id: "web",
-            profile: [SIMD2(0,0), SIMD2(25,0), SIMD2(25,45), SIMD2(0,45)],
-            origin: SIMD3(18,0,0),
-            normal: SIMD3(-1,0,0),
-            uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(25, 0), SIMD2(25, 45), SIMD2(0, 45)],
+            origin: SIMD3(18, 0, 0),
+            normal: SIMD3(-1, 0, 0),
+            uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
         let bottom = SheetMetal.Flange(
             id: "bottom",
-            profile: [SIMD2(0,0), SIMD2(45,0), SIMD2(45,45), SIMD2(0,45)],
-            origin: SIMD3(18,0,25),
-            normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(45, 0), SIMD2(45, 45), SIMD2(0, 45)],
+            origin: SIMD3(18, 0, 25),
+            normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let s = try SheetMetal.Builder(thickness: 3.2).build(
             flanges: [top, web, bottom],
-            bends: [SheetMetal.Bend(from: "top", to: "web", radius: 3.2),
-                    SheetMetal.Bend(from: "web", to: "bottom", radius: 3.2)])
+            bends: [
+                SheetMetal.Bend(from: "top", to: "web", radius: 3.2),
+                SheetMetal.Bend(from: "web", to: "bottom", radius: 3.2),
+            ])
         #expect(s.isValid)
         #expect((s.volume ?? 0) > 0)
         #expect(s.subShapes(ofType: .solid).count == 1, "Z-bracket should be a single solid")
@@ -1751,23 +1840,25 @@ struct ConvexBendIssue89 {
     func symmetricZ() throws {
         let top = SheetMetal.Flange(
             id: "top",
-            profile: [SIMD2(0,0), SIMD2(30,0), SIMD2(30,45), SIMD2(0,45)],
-            origin: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(30, 0), SIMD2(30, 45), SIMD2(0, 45)],
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let web = SheetMetal.Flange(
             id: "web",
-            profile: [SIMD2(0,0), SIMD2(20,0), SIMD2(20,45), SIMD2(0,45)],
-            origin: SIMD3(30,0,0), normal: SIMD3(-1,0,0),
-            uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 45), SIMD2(0, 45)],
+            origin: SIMD3(30, 0, 0), normal: SIMD3(-1, 0, 0),
+            uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
         let bottom = SheetMetal.Flange(
             id: "bottom",
-            profile: [SIMD2(0,0), SIMD2(30,0), SIMD2(30,45), SIMD2(0,45)],
-            origin: SIMD3(30,0,20), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(30, 0), SIMD2(30, 45), SIMD2(0, 45)],
+            origin: SIMD3(30, 0, 20), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let s = try SheetMetal.Builder(thickness: 2).build(
             flanges: [top, web, bottom],
-            bends: [SheetMetal.Bend(from: "top", to: "web", radius: 3),
-                    SheetMetal.Bend(from: "web", to: "bottom", radius: 3)])
+            bends: [
+                SheetMetal.Bend(from: "top", to: "web", radius: 3),
+                SheetMetal.Bend(from: "web", to: "bottom", radius: 3),
+            ])
         #expect(s.isValid)
         #expect(s.subShapes(ofType: .solid).count == 1)
     }
@@ -1778,23 +1869,25 @@ struct ConvexBendIssue89 {
     func offsetLShortWeb() throws {
         let top = SheetMetal.Flange(
             id: "top",
-            profile: [SIMD2(0,0), SIMD2(50,0), SIMD2(50,60), SIMD2(0,60)],
-            origin: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(50, 0), SIMD2(50, 60), SIMD2(0, 60)],
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let web = SheetMetal.Flange(
             id: "web",
-            profile: [SIMD2(0,0), SIMD2(5,0), SIMD2(5,60), SIMD2(0,60)],
-            origin: SIMD3(50,0,0), normal: SIMD3(-1,0,0),
-            uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(5, 0), SIMD2(5, 60), SIMD2(0, 60)],
+            origin: SIMD3(50, 0, 0), normal: SIMD3(-1, 0, 0),
+            uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
         let bottom = SheetMetal.Flange(
             id: "bottom",
-            profile: [SIMD2(0,0), SIMD2(50,0), SIMD2(50,60), SIMD2(0,60)],
-            origin: SIMD3(50,0,5), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(50, 0), SIMD2(50, 60), SIMD2(0, 60)],
+            origin: SIMD3(50, 0, 5), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let s = try SheetMetal.Builder(thickness: 2).build(
             flanges: [top, web, bottom],
-            bends: [SheetMetal.Bend(from: "top", to: "web", radius: 1.5),
-                    SheetMetal.Bend(from: "web", to: "bottom", radius: 1.5)])
+            bends: [
+                SheetMetal.Bend(from: "top", to: "web", radius: 1.5),
+                SheetMetal.Bend(from: "web", to: "bottom", radius: 1.5),
+            ])
         #expect(s.isValid)
     }
 
@@ -1804,24 +1897,24 @@ struct ConvexBendIssue89 {
     func channelWithFlange() throws {
         let spine = SheetMetal.Flange(
             id: "spine",
-            profile: [SIMD2(0,0), SIMD2(100,0), SIMD2(100,40), SIMD2(0,40)],
-            origin: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(100, 0), SIMD2(100, 40), SIMD2(0, 40)],
+            origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let leftWall = SheetMetal.Flange(
             id: "left",
-            profile: [SIMD2(0,0), SIMD2(30,0), SIMD2(30,40), SIMD2(0,40)],
-            origin: SIMD3(0,0,0), normal: SIMD3(1,0,0),
-            uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(30, 0), SIMD2(30, 40), SIMD2(0, 40)],
+            origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0),
+            uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
         let rightWall = SheetMetal.Flange(
             id: "right",
-            profile: [SIMD2(0,0), SIMD2(30,0), SIMD2(30,40), SIMD2(0,40)],
-            origin: SIMD3(100,0,0), normal: SIMD3(-1,0,0),
-            uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(30, 0), SIMD2(30, 40), SIMD2(0, 40)],
+            origin: SIMD3(100, 0, 0), normal: SIMD3(-1, 0, 0),
+            uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
         let tab = SheetMetal.Flange(
             id: "tab",
-            profile: [SIMD2(0,0), SIMD2(20,0), SIMD2(20,40), SIMD2(0,40)],
-            origin: SIMD3(100,0,30), normal: SIMD3(0,0,1),
-            uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+            profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 40), SIMD2(0, 40)],
+            origin: SIMD3(100, 0, 30), normal: SIMD3(0, 0, 1),
+            uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
         let s = try SheetMetal.Builder(thickness: 1.5).build(
             flanges: [spine, leftWall, rightWall, tab],
             bends: [
@@ -1841,17 +1934,17 @@ struct ConvexBendIssue89 {
     func explicitDirectionMatchesAuto() throws {
         let make = { (direction: SheetMetal.BendDirection) throws -> Shape in
             let top = SheetMetal.Flange(
-                id: "top", profile: [SIMD2(0,0), SIMD2(20,0), SIMD2(20,30), SIMD2(0,30)],
-                origin: SIMD3(0,0,0), normal: SIMD3(0,0,1),
-                uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+                id: "top", profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 30), SIMD2(0, 30)],
+                origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1),
+                uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
             let web = SheetMetal.Flange(
-                id: "web", profile: [SIMD2(0,0), SIMD2(20,0), SIMD2(20,30), SIMD2(0,30)],
-                origin: SIMD3(20,0,0), normal: SIMD3(-1,0,0),
-                uAxis: SIMD3(0,0,1), vAxis: SIMD3(0,1,0))
+                id: "web", profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 30), SIMD2(0, 30)],
+                origin: SIMD3(20, 0, 0), normal: SIMD3(-1, 0, 0),
+                uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
             let bottom = SheetMetal.Flange(
-                id: "bottom", profile: [SIMD2(0,0), SIMD2(20,0), SIMD2(20,30), SIMD2(0,30)],
-                origin: SIMD3(20,0,20), normal: SIMD3(0,0,1),
-                uAxis: SIMD3(1,0,0), vAxis: SIMD3(0,1,0))
+                id: "bottom", profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 30), SIMD2(0, 30)],
+                origin: SIMD3(20, 0, 20), normal: SIMD3(0, 0, 1),
+                uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
             return try SheetMetal.Builder(thickness: 2).build(
                 flanges: [top, web, bottom],
                 bends: [
@@ -1866,7 +1959,8 @@ struct ConvexBendIssue89 {
         #expect(auto.isValid && explicit.isValid)
         let vAuto = auto.volume ?? 0
         let vExplicit = explicit.volume ?? 0
-        #expect(abs(vAuto - vExplicit) < 1e-3 * max(vAuto, vExplicit),
-                 "auto vol=\(vAuto), explicit vol=\(vExplicit)")
+        #expect(
+            abs(vAuto - vExplicit) < 1e-3 * max(vAuto, vExplicit),
+            "auto vol=\(vAuto), explicit vol=\(vExplicit)")
     }
 }

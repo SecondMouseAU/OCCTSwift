@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #489: the three `BRepFilletAPI_MakeFillet` edge-list entry points share one skeleton, so they
@@ -155,7 +156,8 @@ struct Issue489FilletRadiusTests {
         #expect(uniform != nil)
         #expect(perEdge != nil)
         if let uniform, let perEdge,
-           let uniformVolume = uniform.volume, let perEdgeVolume = perEdge.volume {
+            let uniformVolume = uniform.volume, let perEdgeVolume = perEdge.volume
+        {
             #expect(abs(uniformVolume - perEdgeVolume) < 1e-6)
             #expect(uniformVolume < 8000.0)  // material actually removed
         }
@@ -178,7 +180,8 @@ struct Issue489FilletRadiusTests {
         #expect(allSmall != nil)
         #expect(mixed != nil)
         if let allSmall, let mixed,
-           let smallVolume = allSmall.volume, let mixedVolume = mixed.volume {
+            let smallVolume = allSmall.volume, let mixedVolume = mixed.volume
+        {
             #expect(mixedVolume < smallVolume)
         }
     }

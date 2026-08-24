@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// `BRepFilletAPI_MakeFillet::Add(radius, edge)` resolves the edge's own slot within its fillet
@@ -53,7 +54,8 @@ struct Issue633BlendedEdgesDuplicateReport {
         // Reporting must not change the built geometry: last-wins, exactly like the non-reporting
         // sibling, and exactly like naming edge 0 with only the winning radius.
         guard let plain = box.blendedEdges([(0, 2.0), (0, 5.0)]),
-              let lastOnly = box.blendedEdges([(0, 5.0)]) else {
+            let lastOnly = box.blendedEdges([(0, 5.0)])
+        else {
             Issue.record("blendedEdges unexpectedly returned nil")
             return
         }
@@ -140,7 +142,8 @@ struct Issue633BlendedEdgesDuplicateReport {
             return
         }
         let edgeCount = shell.edges().count
-        guard let accepted = (0..<edgeCount).first(where: { !Self.declinedIndices.contains($0) }) else {
+        guard let accepted = (0..<edgeCount).first(where: { !Self.declinedIndices.contains($0) })
+        else {
             Issue.record("fixture has no accepted edge")
             return
         }
@@ -169,7 +172,9 @@ struct Issue633BlendedEdgesDuplicateReport {
         #expect(box.blendedEdgesWithReport([(0, 1.0), (1, 0.0)]) == nil)
     }
 
-    @Test("blendedEdgesWithReport reports no declines or overwrites on a closed solid's own edge list")
+    @Test(
+        "blendedEdgesWithReport reports no declines or overwrites on a closed solid's own edge list"
+    )
     func emptyReportsOnAClosedSolid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
             Issue.record("box fixture failed to build")

@@ -1,18 +1,17 @@
-import Testing
 import Foundation
-import simd
 import OCCTBridge
-@testable import OCCTSwift
+import Testing
+import simd
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 /// Basic tests for Shape creation and operations.
 ///
@@ -92,12 +91,13 @@ struct WireTests {
 
     @Test("Create polygon wire")
     func createPolygon() {
-        let polygon = Wire.polygon([
-            SIMD2(0, 0),
-            SIMD2(10, 0),
-            SIMD2(10, 5),
-            SIMD2(0, 5)
-        ], closed: true)
+        let polygon = Wire.polygon(
+            [
+                SIMD2(0, 0),
+                SIMD2(10, 0),
+                SIMD2(10, 5),
+                SIMD2(0, 5),
+            ], closed: true)
         #expect(polygon != nil)
     }
 
@@ -128,7 +128,7 @@ struct WireTests {
             SIMD3<Double>(10, 5, 0),
             SIMD3<Double>(20, 0, 0),
             SIMD3<Double>(30, 5, 0),
-            SIMD3<Double>(40, 0, 0)
+            SIMD3<Double>(40, 0, 0),
         ]
         let curve = Wire.cubicBSpline(poles: poles)
         #expect(curve != nil)
@@ -140,7 +140,7 @@ struct WireTests {
             SIMD3<Double>(0, 0, 0),
             SIMD3<Double>(10, 10, 0),
             SIMD3<Double>(20, 0, 0),
-            SIMD3<Double>(30, 10, 0)
+            SIMD3<Double>(30, 10, 0),
         ]
         let curve = Wire.nurbsUniform(poles: poles, degree: 2)
         #expect(curve != nil)
@@ -152,7 +152,7 @@ struct WireTests {
         let poles = [
             SIMD3<Double>(0, 0, 0),
             SIMD3<Double>(10, 10, 0),
-            SIMD3<Double>(20, 0, 0)
+            SIMD3<Double>(20, 0, 0),
         ]
         let weights = [1.0, 0.707, 1.0]  // sqrt(2)/2 for 90-degree arc
         let curve = Wire.nurbsUniform(poles: poles, weights: weights, degree: 2)
@@ -167,7 +167,7 @@ struct WireTests {
             SIMD3<Double>(5, 10, 0),
             SIMD3<Double>(15, 10, 0),
             SIMD3<Double>(20, 5, 0),
-            SIMD3<Double>(25, 0, 0)
+            SIMD3<Double>(25, 0, 0),
         ]
         // Clamped uniform knots for degree 3 with 5 poles
         // Total knots = poles + degree + 1 = 9
@@ -203,7 +203,7 @@ struct WireTests {
             SIMD3<Double>(20, 0, 0),
             SIMD3<Double>(40, 10, 0),
             SIMD3<Double>(60, 20, 0),
-            SIMD3<Double>(80, 20, 0)
+            SIMD3<Double>(80, 20, 0),
         ]
         guard let path = Wire.cubicBSpline(poles: pathPoles) else {
             Issue.record("Failed to create NURBS path")
@@ -247,7 +247,7 @@ struct ShapeFromWireTests {
         let shape = Shape.fromWire(rect)
         #expect(shape != nil)
         let polylines = shape!.allEdgePolylines(deflection: 0.1)
-        #expect(polylines.count == 4) // rectangle has 4 edges
+        #expect(polylines.count == 4)  // rectangle has 4 edges
     }
 
     @Test("Convert circle wire to shape and extract edges")
@@ -325,8 +325,10 @@ struct EdgeDiscretizationTests {
     func bulkEdgePolylinesMatchPerIndex() {
         // A box (planar edges) and a cylinder (curved edges + the seam) cover both the
         // BRepAdaptor_Curve path and multi-point discretisation.
-        for shape in [Shape.box(width: 10, height: 10, depth: 10)!,
-                      Shape.cylinder(radius: 5, height: 20)!] {
+        for shape in [
+            Shape.box(width: 10, height: 10, depth: 10)!,
+            Shape.cylinder(radius: 5, height: 20)!,
+        ] {
             let bulk = shape.allEdgePolylines(deflection: 0.1)
 
             var perIndex: [[SIMD3<Double>]] = []
@@ -364,8 +366,9 @@ struct EdgeDiscretizationTests {
             var boxes: [Shape] = []
             for i in 0..<gridSide {
                 for j in 0..<gridSide {
-                    boxes.append(Shape.box(width: 1, height: 1, depth: 1)!
-                        .translated(by: SIMD3(Double(i) * 2, Double(j) * 2, 0))!)
+                    boxes.append(
+                        Shape.box(width: 1, height: 1, depth: 1)!
+                            .translated(by: SIMD3(Double(i) * 2, Double(j) * 2, 0))!)
                 }
             }
             let compound = Shape.compound(boxes)!
@@ -379,15 +382,17 @@ struct EdgeDiscretizationTests {
             return (elapsed / Double(edges), edges)
         }
 
-        let small = perEdgeCost(gridSide: 3)    // 9 boxes   → 108 edges
-        let large = perEdgeCost(gridSide: 10)   // 100 boxes → 1200 edges
+        let small = perEdgeCost(gridSide: 3)  // 9 boxes   → 108 edges
+        let large = perEdgeCost(gridSide: 10)  // 100 boxes → 1200 edges
 
         // Sanity: the large case really is ~10x the edges, or the guard proves nothing.
         #expect(large.edges > small.edges * 5)
 
         // Linear → per-edge cost stays roughly constant. Quadratic → it grows ~11x here.
-        #expect(large.cost < small.cost * 8,
-                "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges, allEdgePolylines looks quadratic again (#275)")
+        #expect(
+            large.cost < small.cost * 8,
+            "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges, allEdgePolylines looks quadratic again (#275)"
+        )
     }
 
     /// `allEdgePolylinesIndexed` must carry ORIGINAL edge indices across skips: a sphere
@@ -400,8 +405,9 @@ struct EdgeDiscretizationTests {
         let indexed = sphere.allEdgePolylinesIndexed(deflection: 0.1)
 
         // Something must actually be skipped for this fixture to prove anything.
-        #expect(indexed.count < sphere.edgeCount,
-                "sphere fixture no longer has a skipped (degenerate) edge, pick a new fixture")
+        #expect(
+            indexed.count < sphere.edgeCount,
+            "sphere fixture no longer has a skipped (degenerate) edge, pick a new fixture")
 
         // Every returned pair must match the per-index accessor at that exact index…
         for (edgeIndex, points) in indexed {
@@ -410,7 +416,9 @@ struct EdgeDiscretizationTests {
             #expect(single?.count == points.count)
             if let single {
                 for (a, b) in zip(single, points) {
-                    #expect(a.x == b.x); #expect(a.y == b.y); #expect(a.z == b.z)
+                    #expect(a.x == b.x)
+                    #expect(a.y == b.y)
+                    #expect(a.z == b.z)
                 }
             }
         }
@@ -418,8 +426,9 @@ struct EdgeDiscretizationTests {
         // …and the skipped indices must be exactly those the per-index accessor also rejects.
         let returned = Set(indexed.map(\.edgeIndex))
         for i in 0..<sphere.edgeCount where !returned.contains(i) {
-            #expect(sphere.edgePolyline(at: i, deflection: 0.1, maxPoints: 1000) == nil,
-                    "edge \(i) was skipped by the bulk pass but discretizes fine per-index")
+            #expect(
+                sphere.edgePolyline(at: i, deflection: 0.1, maxPoints: 1000) == nil,
+                "edge \(i) was skipped by the bulk pass but discretizes fine per-index")
         }
 
         // The dense variant is the indexed one minus the indices.
@@ -430,7 +439,6 @@ struct EdgeDiscretizationTests {
         }
     }
 }
-
 
 @Suite("Solid From Shell Tests")
 struct SolidFromShellTests {
@@ -467,7 +475,6 @@ struct SolidFromShellTests {
     }
 }
 
-
 // Issue #171: geometric edge selection for robust filleting.
 @Suite("Geometric Edge Selection")
 struct GeometricEdgeSelectionTests {
@@ -475,14 +482,15 @@ struct GeometricEdgeSelectionTests {
     /// An L-bracket built by extruding an L-shaped profile, used to exercise the
     /// concave/convex classification.
     private func lBracket() -> Shape? {
-        let profile = Wire.polygon([
-            SIMD2(0, 0),
-            SIMD2(30, 0),
-            SIMD2(30, 8),
-            SIMD2(8, 8),
-            SIMD2(8, 30),
-            SIMD2(0, 30)
-        ], closed: true)
+        let profile = Wire.polygon(
+            [
+                SIMD2(0, 0),
+                SIMD2(30, 0),
+                SIMD2(30, 8),
+                SIMD2(8, 8),
+                SIMD2(8, 30),
+                SIMD2(0, 30),
+            ], closed: true)
         guard let profile else { return nil }
         return Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 20)
     }
@@ -768,7 +776,6 @@ struct SelectorSubShapeTests {
     }
 }
 
-
 // MARK: - Shape Proximity Tests (v0.18.0)
 
 @Suite("Shape Proximity Tests")
@@ -783,7 +790,7 @@ struct ShapeProximityTests {
 
         let pairs = box1.proximityFaces(with: box2, tolerance: 1.0)
         // BRepExtrema_ShapeProximity should detect the close face pair
-        #expect(pairs.count >= 1) // Gap of 0.05 within tolerance 1.0 should detect proximity
+        #expect(pairs.count >= 1)  // Gap of 0.05 within tolerance 1.0 should detect proximity
 
         // Verify the gap distance is correct
         let dist = box1.distance(to: box2)
@@ -883,7 +890,8 @@ struct FacePropertyTests {
             return
         }
         guard let asShape = Shape.fromWire(original),
-              let recovered = Wire(asShape) else {
+            let recovered = Wire(asShape)
+        else {
             Issue.record("Wire round-trip via Shape failed")
             return
         }
@@ -1041,7 +1049,7 @@ struct ShapeContentsTests {
         let cyl = Shape.cylinder(radius: 5, height: 10)!
         let c = cyl.contents
         #expect(c.solids == 1)
-        #expect(c.faces == 3) // top, bottom, lateral
+        #expect(c.faces == 3)  // top, bottom, lateral
     }
 }
 
@@ -1506,7 +1514,7 @@ struct GenericSubShapeExtractionTests {
         let filleted = box.filleted(radius: 1.0)!
 
         let faceCount = filleted.subShapeCount(ofType: .face)
-        #expect(faceCount > 6) // Filleted box has more faces
+        #expect(faceCount > 6)  // Filleted box has more faces
 
         // Extract a face and remove it
         let face0 = filleted.subShape(type: .face, index: 0)!
@@ -1608,7 +1616,7 @@ struct EdgeConnectTests {
         #expect(connected != nil)
         if let connected {
             let edgeCount = connected.subShapeCount(ofType: ShapeType.edge)
-            #expect(edgeCount == 12) // Box has 12 edges
+            #expect(edgeCount == 12)  // Box has 12 edges
         }
     }
 
@@ -1631,7 +1639,7 @@ struct EdgeConnectTests {
         #expect(connected != nil)
         if let connected {
             let faceCount = connected.subShapeCount(ofType: ShapeType.face)
-            #expect(faceCount >= 3) // top, bottom, lateral
+            #expect(faceCount >= 3)  // top, bottom, lateral
         }
     }
 }
@@ -1652,7 +1660,7 @@ struct EdgeAdjacencyTests {
         let adj = edge.adjacentFaces(in: box)
         #expect(adj != nil)
         if let adj {
-            #expect(adj.1 != nil) // Both faces should exist for interior edges
+            #expect(adj.1 != nil)  // Both faces should exist for interior edges
         }
     }
 
@@ -1706,10 +1714,10 @@ struct WireOrderTests {
 
         // Add in scrambled order: 3rd, 1st, 4th, 2nd edges
         let edges: [(start: SIMD3<Double>, end: SIMD3<Double>)] = [
-            (start: p3, end: p4),   // edge 3
-            (start: p1, end: p2),   // edge 1
-            (start: p4, end: p1),   // edge 4
-            (start: p2, end: p3),   // edge 2
+            (start: p3, end: p4),  // edge 3
+            (start: p1, end: p2),  // edge 1
+            (start: p4, end: p1),  // edge 4
+            (start: p2, end: p3),  // edge 2
         ]
 
         let result = WireOrder.analyze(edges: edges)
@@ -2088,7 +2096,8 @@ struct BRepToolsSubstitutionTests {
         // We verify the bridge function handles this gracefully (returns nil).
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         if let v1 = Shape.vertex(at: SIMD3(0, 0, 0)),
-           let v2 = Shape.vertex(at: SIMD3(1, 0, 0)) {
+            let v2 = Shape.vertex(at: SIMD3(1, 0, 0))
+        {
             // This returns nil because v1 is not a sub-shape of box
             let result = box.substituted(replacing: v1, with: v2)
             // Just verify it doesn't crash
@@ -2105,7 +2114,7 @@ struct ShapeCSIntersectorTestsV52 {
         let pts = box.intersectLine(
             origin: SIMD3(-10, 0, 0),
             direction: SIMD3(1, 0, 0))
-        #expect(pts.count >= 2) // enters and exits the box
+        #expect(pts.count >= 2)  // enters and exits the box
     }
 }
 
@@ -2178,7 +2187,7 @@ struct ShapeCSIntersectorTestsV52 {
     @Test("anaFillet with Edge parameters")
     func anaFilletWithEdges() {
         let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10),
         ])
         if let wire {
             let edges = wire.edges()
@@ -2193,7 +2202,7 @@ struct ShapeCSIntersectorTestsV52 {
     @Test("anaFillet with Wire parameter")
     func anaFilletWithWire() {
         let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10),
         ])
         if let wire {
             let result = Shape.anaFillet(wire: wire, radius: 1.0)
@@ -2204,7 +2213,7 @@ struct ShapeCSIntersectorTestsV52 {
     @Test("filletAlgo with Edge parameters")
     func filletAlgoWithEdges() {
         let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10),
         ])
         if let wire {
             let edges = wire.edges()
@@ -2219,7 +2228,7 @@ struct ShapeCSIntersectorTestsV52 {
     @Test("filletAlgo with Wire parameter")
     func filletAlgoWithWire() {
         let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10),
         ])
         if let wire {
             let result = Shape.filletAlgo(wire: wire, radius: 1.0)
@@ -2524,7 +2533,8 @@ struct HLRExtendedEdgeCategoryTests {
     func compoundOfEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
-            let edges = b.hlrCompoundOfEdges(direction: SIMD3(1, 1, 1),
+            let edges = b.hlrCompoundOfEdges(
+                direction: SIMD3(1, 1, 1),
                 edgeType: .sharp, visible: true, in3d: true)
             if let e = edges {
                 #expect(e.subShapes(ofType: .edge).count > 0)
@@ -2541,14 +2551,14 @@ struct TopCnxEdgeFaceTransitionTests {
             tangent: SIMD3(1, 0, 0),
             normal: SIMD3(0, 0, 1),
             curvature: 0,
-            orientation: 0, // FORWARD
+            orientation: 0,  // FORWARD
             transition: 0,  // FORWARD
-            boundaryTransition: 0, // FORWARD
+            boundaryTransition: 0,  // FORWARD
             tolerance: 1e-6)
 
         let result = Shape.edgeFaceTransition(
             edgeTangent: SIMD3(1, 0, 0),
-            edgeNormal: SIMD3(0, 0, 0), // linear
+            edgeNormal: SIMD3(0, 0, 0),  // linear
             edgeCurvature: 0,
             faces: [face])
 
@@ -2652,7 +2662,8 @@ struct BinToolsTests {
 
     @Test func writeAndReadBinaryFile() {
         if let box = Shape.box(width: 10, height: 20, depth: 30) {
-            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("test_v85_bin.brep")
+            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(
+                "test_v85_bin.brep")
             let ok = box.writeBinary(to: url)
             #expect(ok)
             if let readShape = Shape.loadBinary(from: url) {
@@ -2736,14 +2747,18 @@ struct BRepClassFClassifierTests {
 
     @Test func classifyPoint2DInside() {
         // Box face UV bounds depend on which face, use a broad test
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         // Point far outside UV bounds should definitely be OUT
         let stateOut = box.classifyPoint2D(faceIndex: 0, u: 1000, v: 1000)
         #expect(stateOut == .outside)
     }
 
     @Test func classifyPoint2DOutside() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         let state = box.classifyPoint2D(faceIndex: 0, u: 100, v: 100)
         #expect(state == .outside)
     }
@@ -2778,15 +2793,16 @@ struct TopExpAdjacencyTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let edges = box.subShapes(ofType: .edge)
             if let edge = edges.first, let verts = edge.edgeVertices() {
-                #expect(verts.first != verts.last || true) // just check it returns
+                #expect(verts.first != verts.last || true)  // just check it returns
             }
         }
     }
 
     @Test func wireVerticesClosedWire() {
         if let wire = Wire.rectangle(width: 10, height: 10),
-           let ws = Shape.fromWire(wire),
-           let verts = ws.wireVertices() {
+            let ws = Shape.fromWire(wire),
+            let verts = ws.wireVertices()
+        {
             // Closed wire: first == last
             let dist = simd_distance(verts.first, verts.last)
             #expect(dist < 1e-6)
@@ -2800,8 +2816,8 @@ struct TopExpAdjacencyTests {
                 // Try pairs until we find adjacent edges
                 var found = false
                 for i in 0..<min(edges.count, 12) {
-                    for j in (i+1)..<min(edges.count, 12) {
-                        if let _ = edges[i].commonVertex(with: edges[j]) {
+                    for j in (i + 1)..<min(edges.count, 12) {
+                        if edges[i].commonVertex(with: edges[j]) != nil {
                             found = true
                             break
                         }
@@ -2866,7 +2882,7 @@ struct WireExplorerExtensionTests {
                 let wires = face.subShapes(ofType: .wire)
                 if let wire = wires.first {
                     let orientations = wire.wireEdgeOrientations(face: face)
-                    #expect(orientations.count == 4) // box face has 4 edges
+                    #expect(orientations.count == 4)  // box face has 4 edges
                 }
             }
         }
@@ -2887,7 +2903,8 @@ struct WireExplorerExtensionTests {
 
     @Test func wireOrientationsWithoutFace() {
         if let wire = Wire.rectangle(width: 10, height: 10),
-           let ws = Shape.fromWire(wire) {
+            let ws = Shape.fromWire(wire)
+        {
             let orientations = ws.wireEdgeOrientations()
             #expect(orientations.count == 4)
         }
@@ -3141,19 +3158,25 @@ struct BRepToolsUtilitiesTests {
 struct MakeFaceExtrasTests {
 
     @Test func faceFromSphere() {
-        if let face = Shape.faceFromSphere(radius: 5.0, uMin: 0, uMax: .pi, vMin: -.pi/4, vMax: .pi/4) {
+        if let face = Shape.faceFromSphere(
+            radius: 5.0, uMin: 0, uMax: .pi, vMin: -.pi / 4, vMax: .pi / 4)
+        {
             #expect(face.isValid)
         }
     }
 
     @Test func faceFromTorus() {
-        if let face = Shape.faceFromTorus(majorRadius: 10, minorRadius: 2, uMin: 0, uMax: .pi, vMin: 0, vMax: .pi) {
+        if let face = Shape.faceFromTorus(
+            majorRadius: 10, minorRadius: 2, uMin: 0, uMax: .pi, vMin: 0, vMax: .pi)
+        {
             #expect(face.isValid)
         }
     }
 
     @Test func faceFromCone() {
-        if let face = Shape.faceFromCone(semiAngle: .pi/6, radius: 5, uMin: 0, uMax: .pi, vMin: 0, vMax: 10) {
+        if let face = Shape.faceFromCone(
+            semiAngle: .pi / 6, radius: 5, uMin: 0, uMax: .pi, vMin: 0, vMax: 10)
+        {
             #expect(face.isValid)
         }
     }
@@ -3367,9 +3390,11 @@ struct ShapeExtrasV112Tests {
     @Test func setAndGetLocation() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // Translation by (1, 2, 3)
-            let m = [1.0, 0, 0, 1.0,
-                     0, 1.0, 0, 2.0,
-                     0, 0, 1.0, 3.0]
+            let m = [
+                1.0, 0, 0, 1.0,
+                0, 1.0, 0, 2.0,
+                0, 0, 1.0, 3.0,
+            ]
             box.setLocation(matrix: m)
             let mOut = box.locationMatrix
             #expect(abs(mOut[3] - 1.0) < 1e-10)
@@ -3380,9 +3405,11 @@ struct ShapeExtrasV112Tests {
 
     @Test func located() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let m = [1.0, 0.0, 0.0, 5.0,
-                     0.0, 1.0, 0.0, 0.0,
-                     0.0, 0.0, 1.0, 0.0]
+            let m = [
+                1.0, 0.0, 0.0, 5.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+            ]
             if let moved = box.located(matrix: m) {
                 let mOut = moved.locationMatrix
                 #expect(abs(mOut[3] - 5.0) < 1e-10)
@@ -3392,7 +3419,7 @@ struct ShapeExtrasV112Tests {
 
     @Test func oriented() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let rev = box.oriented(1) { // REVERSED
+            if let rev = box.oriented(1) {  // REVERSED
                 #expect(rev.isValid)
             }
         }
@@ -3434,7 +3461,7 @@ struct ShapeExtrasV112Tests {
                 let wire = Shape.wireFromEdges(Array(edges.prefix(4)))
                 // Just check it doesn't crash - edges may not form valid wire
                 if let w = wire {
-                    #expect(w.isValid || !w.isValid) // just verify no crash
+                    #expect(w.isValid || !w.isValid)  // just verify no crash
                 }
             }
         }
@@ -3453,7 +3480,8 @@ struct ShapeExtrasV112Tests {
 
     @Test func isCompoundOnCompound() {
         if let box = Shape.box(width: 10, height: 10, depth: 10),
-           let sphere = Shape.sphere(radius: 5) {
+            let sphere = Shape.sphere(radius: 5)
+        {
             if let c = Shape.compound([box, sphere]) {
                 #expect(c.isCompound)
             }
@@ -3469,7 +3497,7 @@ struct BRepCheckExtendedTests {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
                 let status = box.checkFaceStatus(face: faces[0])
-                #expect(status == 0) // NoError
+                #expect(status == 0)  // NoError
             }
         }
     }
@@ -3496,7 +3524,7 @@ struct BRepCheckExtendedTests {
 
     @Test func maxTolerance() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let tol = box.maxTolerance(type: 0) // vertex
+            let tol = box.maxTolerance(type: 0)  // vertex
             #expect(tol > 0)
             #expect(tol < 1.0)
         }
@@ -3512,7 +3540,7 @@ struct BRepCheckExtendedTests {
 
     @Test func avgTolerance() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let avg = box.avgTolerance(type: 1) // edge
+            let avg = box.avgTolerance(type: 1)  // edge
             let minT = box.minTolerance(type: 1)
             let maxT = box.maxTolerance(type: 1)
             #expect(avg >= minT - 1e-15)
@@ -3530,7 +3558,7 @@ struct BRepCheckExtendedTests {
     @Test func limitMaxTolerance() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let ok = box.limitMaxTolerance(0.001)
-            #expect(ok || !ok) // may not need limiting
+            #expect(ok || !ok)  // may not need limiting
         }
     }
 }
@@ -3573,28 +3601,28 @@ struct MakeEdgeCompletionsTests {
     }
 
     @Test func edgeFromCurve() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let edge = Shape.edgeFromCurve(circ)
             #expect(edge != nil)
         }
     }
 
     @Test func edgeFromCurveWithParams() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let edge = Shape.edgeFromCurve(circ, u1: 0, u2: .pi)
             #expect(edge != nil)
         }
     }
 
     @Test func edgeFromCurveWithPoints() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let edge = Shape.edgeFromCurve(circ, from: SIMD3(5, 0, 0), to: SIMD3(0, 5, 0))
             #expect(edge != nil)
         }
     }
 
     @Test func edgeVertices() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             if let edge = Shape.edgeFromCurve(circ, u1: 0, u2: .pi) {
                 let v1 = edge.edgeVertex1()
                 let v2 = edge.edgeVertex2()
@@ -3657,8 +3685,9 @@ struct FaceFixerTests {
 struct MakeFaceCompletionsTests {
 
     @Test func faceFromSurfaceUV() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
-            let face = Shape.face(from: sphere, uBounds: 0...Double.pi, vBounds: (-Double.pi/4)...(Double.pi/4))
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+            let face = Shape.face(
+                from: sphere, uBounds: 0...Double.pi, vBounds: (-Double.pi / 4)...(Double.pi / 4))
             #expect(face != nil)
             if let f = face {
                 #expect(f.isValid)
@@ -3727,7 +3756,8 @@ struct TopoDSBuilderTests {
     @Test func addAndRemove() {
         if let compound = Shape.builderMakeCompound() {
             if let box1 = Shape.box(width: 5, height: 5, depth: 5),
-               let box2 = Shape.box(width: 3, height: 3, depth: 3) {
+                let box2 = Shape.box(width: 3, height: 3, depth: 3)
+            {
                 compound.builderAdd(box1)
                 compound.builderAdd(box2)
                 let c1 = compound.contentsExtended()
@@ -3854,8 +3884,9 @@ struct WireBuilderTests {
     @Test func buildWireFromEdges() {
         // Create edges that form a triangle
         if let e1 = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)),
-           let e2 = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(5, 10, 0)),
-           let e3 = Shape.edgeFromPoints(SIMD3(5, 10, 0), SIMD3(0, 0, 0)) {
+            let e2 = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(5, 10, 0)),
+            let e3 = Shape.edgeFromPoints(SIMD3(5, 10, 0), SIMD3(0, 0, 0))
+        {
             let wb = WireBuilder()
             wb.addEdge(e1)
             wb.addEdge(e2)
@@ -3869,7 +3900,8 @@ struct WireBuilderTests {
 
     @Test func buildWireFromWire() {
         if let rect = Wire.rectangle(width: 10, height: 5),
-           let wireShape = Shape.fromWire(rect) {
+            let wireShape = Shape.fromWire(rect)
+        {
             let wb = WireBuilder()
             wb.addWire(wireShape)
             #expect(wb.isDone)
@@ -3892,10 +3924,11 @@ struct ThickSolidOptionsTests {
         if let box = Shape.box(width: 20, height: 20, depth: 20) {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
-                let result = box.thickSolid(facesToRemove: [faces[0]],
-                                            offset: -2.0,
-                                            tolerance: 1e-3,
-                                            joinType: .arc)
+                let result = box.thickSolid(
+                    facesToRemove: [faces[0]],
+                    offset: -2.0,
+                    tolerance: 1e-3,
+                    joinType: .arc)
                 #expect(result != nil)
                 if let r = result {
                     #expect(r.isValid)
@@ -4091,7 +4124,7 @@ struct BRepAdaptorTests {
             let edges = box.subShapes(ofType: .edge)
             if edges.count > 0 {
                 let curveType = edges[0].edgeAdaptorCurveType
-                #expect(curveType == 0) // Line for box edges
+                #expect(curveType == 0)  // Line for box edges
             }
         }
     }
@@ -4125,7 +4158,7 @@ struct BRepAdaptorTests {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
                 let surfType = faces[0].faceAdaptorSurfaceType
-                #expect(surfType == 0) // Plane for box faces
+                #expect(surfType == 0)  // Plane for box faces
             }
         }
     }
@@ -4215,7 +4248,7 @@ struct TopExpCommonVertexTests {
                 // Try to find a pair with a common vertex
                 var found = false
                 for i in 0..<min(edges.count, 5) {
-                    for j in (i+1)..<min(edges.count, 6) {
+                    for j in (i + 1)..<min(edges.count, 6) {
                         let cv = Shape.commonVertex(edge1: edges[i], edge2: edges[j])
                         if cv != nil {
                             found = true
@@ -4325,8 +4358,9 @@ struct IntegrationConcurrentShapeOperationsTests {
         if let first = volumes.first {
             #expect(first > 0)
             for (i, vol) in volumes.enumerated() {
-                #expect(abs(vol - first) < 1e-10,
-                        "Volume[\(i)] = \(vol) should match first = \(first)")
+                #expect(
+                    abs(vol - first) < 1e-10,
+                    "Volume[\(i)] = \(vol) should match first = \(first)")
             }
         }
     }
@@ -4480,7 +4514,7 @@ struct BRepToolsStaticsTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
             let count = b.map3DEdgeCount
-            #expect(count == 12) // A box has 12 edges
+            #expect(count == 12)  // A box has 12 edges
         }
     }
 
@@ -4508,7 +4542,7 @@ struct BRepToolsStaticsTests {
                 #expect(same)
                 // Different vertices may not be equal
                 let diff = Shape.compareVertices(verts[0], verts[1])
-                #expect(!diff) // Typically different vertices of a box
+                #expect(!diff)  // Typically different vertices of a box
             }
         }
     }
@@ -4534,7 +4568,7 @@ struct BRepToolsStaticsTests {
             if faces.count > 0, edges.count > 0 {
                 // Check some edge/face pair, result depends on geometry
                 let _ = Shape.isReallyClosed(edge: edges[0], face: faces[0])
-                #expect(true) // Just verify no crash
+                #expect(true)  // Just verify no crash
             }
         }
     }
@@ -4582,8 +4616,9 @@ struct BRepLibExtendedTests {
                 // Try to find a shared edge between two faces. Whatever comes back must be a
                 // class the vocabulary actually has, the old `>= -1` was true of every Int
                 // (#495); Issue495FaceContinuityTests pins the values per geometry.
-                let cont = Shape.continuityClassOfFaces(edge: edges[0],
-                                                        face1: faces[0], face2: faces[1])
+                let cont = Shape.continuityClassOfFaces(
+                    edge: edges[0],
+                    face1: faces[0], face2: faces[1])
                 #expect(cont == nil || ContinuityClass.allCases.contains(cont!))
             }
         }
@@ -4828,8 +4863,8 @@ struct BRepToolCompletionsTests {
     func curveOnSurface() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box = box {
-            let faces = box.subShapes(ofType: .face) // faces
-            let edges = box.subShapes(ofType: .edge) // edges
+            let faces = box.subShapes(ofType: .face)  // faces
+            let edges = box.subShapes(ofType: .edge)  // edges
             if faces.count > 0 && edges.count > 0 {
                 // Try each edge-face pair until we find one with a pcurve
                 var found = false
@@ -4970,9 +5005,9 @@ struct BRepToolCompletionsTests {
     func maxTolerance() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box = box {
-            let tol = box.maxTolerance(subShapeType: 6) // edges
+            let tol = box.maxTolerance(subShapeType: 6)  // edges
             #expect(tol >= 0)
-            let tolV = box.maxTolerance(subShapeType: 7) // vertices
+            let tolV = box.maxTolerance(subShapeType: 7)  // vertices
             #expect(tolV >= 0)
         }
     }
@@ -5101,8 +5136,9 @@ struct BRepToolExtrasV128Tests {
         if !faces.isEmpty {
             let faceEdges = faces[0].subShapes(ofType: .edge)
             if !faceEdges.isEmpty {
-                let ok = Shape.setUVPoints(edge: faceEdges[0], face: faces[0],
-                                            first: SIMD2(0, 0), last: SIMD2(1, 1))
+                let ok = Shape.setUVPoints(
+                    edge: faceEdges[0], face: faces[0],
+                    first: SIMD2(0, 0), last: SIMD2(1, 1))
                 #expect(ok)
             }
         }
@@ -5115,7 +5151,10 @@ struct BRepToolExtrasV128Tests {
 struct FacePrimaryAxisTests {
     @Test("Cylinder face has cylinder-kind primary axis along Z")
     func cylinderFacePrimaryAxis() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 10) else { Issue.record("cylinder nil"); return }
+        guard let cyl = Shape.cylinder(radius: 5, height: 10) else {
+            Issue.record("cylinder nil")
+            return
+        }
         var foundCyl = false
         for face in cyl.faces() where face.surfaceType == Face.SurfaceType.cylinder {
             if let axis = face.primaryAxis {
@@ -5129,7 +5168,10 @@ struct FacePrimaryAxisTests {
 
     @Test("Torus face exposes axis")
     func torusFacePrimaryAxis() {
-        guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5) else { Issue.record("torus nil"); return }
+        guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5) else {
+            Issue.record("torus nil")
+            return
+        }
         var found = false
         for face in torus.faces() where face.surfaceType == Face.SurfaceType.torus {
             if let axis = face.primaryAxis {
@@ -5142,7 +5184,10 @@ struct FacePrimaryAxisTests {
 
     @Test("Plane face has no primary axis")
     func planeFaceNoAxis() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { Issue.record("box nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
         for face in box.faces() where face.surfaceType == Face.SurfaceType.plane {
             #expect(face.primaryAxis == nil)
         }
@@ -5153,7 +5198,10 @@ struct FacePrimaryAxisTests {
 struct ShapeSymmetryAxesTests {
     @Test("Cylinder reports one rotational symmetry axis")
     func cylinderSymmetry() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else {
+            Issue.record("cylinder nil")
+            return
+        }
         let axes = cyl.symmetryAxes()
         #expect(axes.count == 1)
         if let a = axes.first {
@@ -5163,14 +5211,20 @@ struct ShapeSymmetryAxesTests {
 
     @Test("Sphere reports three symmetry axes (spherical symmetry)")
     func sphereSymmetry() {
-        guard let sphere = Shape.sphere(radius: 10) else { Issue.record("sphere nil"); return }
+        guard let sphere = Shape.sphere(radius: 10) else {
+            Issue.record("sphere nil")
+            return
+        }
         let axes = sphere.symmetryAxes()
         #expect(axes.count == 3)
     }
 
     @Test("Asymmetric box reports no symmetry axis")
     func asymmetricBoxNoSymmetry() {
-        guard let box = Shape.box(width: 10, height: 7, depth: 3) else { Issue.record("box nil"); return }
+        guard let box = Shape.box(width: 10, height: 7, depth: 3) else {
+            Issue.record("box nil")
+            return
+        }
         #expect(box.symmetryAxes().isEmpty)
     }
 
@@ -5183,7 +5237,10 @@ struct ShapeSymmetryAxesTests {
     // which sign OCCT reports the axis direction in.
     @Test("Cylinder's symmetry axis reports a real, non-nil extent centred on the centroid")
     func cylinderSymmetryAxisHasExtent() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else {
+            Issue.record("cylinder nil")
+            return
+        }
         let axes = cyl.symmetryAxes()
         #expect(axes.count == 1)
         guard let a = axes.first, let extent = a.extent else {

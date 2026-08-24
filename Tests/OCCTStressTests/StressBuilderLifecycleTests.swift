@@ -3,8 +3,8 @@
 // Tests: build empty, normal cycle, reset, destroy without build, invalid input, double build.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - FilletBuilder
 
@@ -72,7 +72,7 @@ struct StressFilletBuilderLifecycleTests {
         guard let builder = FilletBuilder(shape: box), edges.count >= 2 else { return }
         builder.addEdge(edges[0], radius: 1.0)
         builder.addEdge(edges[1], radius: 2.0)
-        if let _ = builder.build() {
+        if builder.build() != nil {
             let n = builder.contourCount
             for c in 1...max(1, n) {
                 _ = builder.radius(contour: c)
@@ -141,7 +141,7 @@ struct StressChamferBuilderLifecycleTests {
         let edges = box.edges()
         guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
         builder.addEdge(edges[0], distance: 2.0)
-        if let _ = builder.build() {
+        if builder.build() != nil {
             let n = builder.contourCount
             for c in 1...max(1, n) {
                 _ = builder.isDistanceAngle(contour: c)
@@ -158,18 +158,22 @@ struct StressChamferBuilderLifecycleTests {
 struct StressPipeShellBuilderLifecycleTests {
 
     private func makeSpine() -> Shape? {
-        guard let wire = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10) else { return nil }
+        guard let wire = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10) else {
+            return nil
+        }
         return Shape.fromWire(wire)
     }
 
     private func makeProfile() -> Shape? {
-        guard let wire = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 2) else { return nil }
+        guard let wire = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 2)
+        else { return nil }
         return Shape.fromWire(wire)
     }
 
     @Test func buildEmpty() {
         guard let spine = makeSpine(),
-              let builder = PipeShellBuilder(spine: spine) else { return }
+            let builder = PipeShellBuilder(spine: spine)
+        else { return }
         // Build without profile
         let ok = builder.build()
         // Expected to fail but not crash
@@ -178,7 +182,8 @@ struct StressPipeShellBuilderLifecycleTests {
 
     @Test func normalCycle() {
         guard let spine = makeSpine(), let profile = makeProfile(),
-              let builder = PipeShellBuilder(spine: spine) else { return }
+            let builder = PipeShellBuilder(spine: spine)
+        else { return }
         builder.setFrenet(true)
         builder.add(profile: profile)
         builder.build()
@@ -191,18 +196,20 @@ struct StressPipeShellBuilderLifecycleTests {
 
     @Test func destroyWithoutBuild() {
         guard let spine = makeSpine(), let profile = makeProfile(),
-              let builder = PipeShellBuilder(spine: spine) else { return }
+            let builder = PipeShellBuilder(spine: spine)
+        else { return }
         builder.add(profile: profile)
         // Let go without build
     }
 
     @Test func simulateBeforeBuild() {
         guard let spine = makeSpine(), let profile = makeProfile(),
-              let builder = PipeShellBuilder(spine: spine) else { return }
+            let builder = PipeShellBuilder(spine: spine)
+        else { return }
         builder.setFrenet(true)
         builder.add(profile: profile)
         let sections = builder.simulate(numberOfSections: 5)
-        #expect(sections.count >= 0) // May produce sections or empty
+        #expect(sections.count >= 0)  // May produce sections or empty
         for sect in sections {
             #expect(sect.isValid)
         }
@@ -210,11 +217,12 @@ struct StressPipeShellBuilderLifecycleTests {
 
     @Test func doubleBuild() {
         guard let spine = makeSpine(), let profile = makeProfile(),
-              let builder = PipeShellBuilder(spine: spine) else { return }
+            let builder = PipeShellBuilder(spine: spine)
+        else { return }
         builder.setFrenet(true)
         builder.add(profile: profile)
         builder.build()
-        builder.build() // Second build, should not crash
+        builder.build()  // Second build, should not crash
     }
 }
 
@@ -366,7 +374,8 @@ struct StressUnifySameDomainBuilderLifecycleTests {
 
     @Test func withTolerances() {
         let box = standardBox()
-        let unifier = UnifySameDomainBuilder(shape: box, unifyEdges: true, unifyFaces: true, concatBSplines: false)
+        let unifier = UnifySameDomainBuilder(
+            shape: box, unifyEdges: true, unifyFaces: true, concatBSplines: false)
         unifier.setLinearTolerance(1e-4)
         unifier.setAngularTolerance(1e-2)
         unifier.allowInternalEdges(false)
@@ -392,8 +401,9 @@ struct StressThruSectionsBuilderLifecycleTests {
 
     @Test func normalCycle() {
         guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        else { return }
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
@@ -405,7 +415,8 @@ struct StressThruSectionsBuilderLifecycleTests {
 
     @Test func singleSection() {
         guard let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let s1 = Shape.fromWire(w1) else { return }
+            let s1 = Shape.fromWire(w1)
+        else { return }
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         // Single section, guard returns false (need >= 2)
@@ -415,15 +426,17 @@ struct StressThruSectionsBuilderLifecycleTests {
 
     @Test func destroyWithoutBuild() {
         guard let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let s1 = Shape.fromWire(w1) else { return }
+            let s1 = Shape.fromWire(w1)
+        else { return }
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
     }
 
     @Test func doubleBuild() {
         guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        else { return }
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         loft.addWire(s2)
@@ -447,8 +460,10 @@ struct StressThruSectionsBuilderLifecycleTests {
     // test at all for the identical reason. This test only runs there, not against the pinned kernel.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
     func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
@@ -458,9 +473,11 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(loft.build())
 
         // A third section with MORE edges (a triangle, 3) than the first two (1 each, circles).
-        let triangle = try #require(Wire.polygon3D([
-            SIMD3(2, 0, 20), SIMD3(-1, 1.7320508, 20), SIMD3(-1, -1.7320508, 20)
-        ], closed: true))
+        let triangle = try #require(
+            Wire.polygon3D(
+                [
+                    SIMD3(2, 0, 20), SIMD3(-1, 1.7320508, 20), SIMD3(-1, -1.7320508, 20),
+                ], closed: true))
         let triangleShape = try #require(Shape.fromWire(triangle))
         loft.addWire(triangleShape)
         #expect(!loft.build())
@@ -475,8 +492,10 @@ struct StressThruSectionsBuilderLifecycleTests {
     // is unmodified pre-existing OCCT behavior, so it isn't gated on OCCTSWIFT_LOCAL.
     @Test func punctualApexWithMatchingSectionsStillSucceedsUnderCreateSmoothed() throws {
         let apex = try #require(Shape.vertex(at: SIMD3(0, 0, 0)))
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 4))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 3))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 4))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 3))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
@@ -504,9 +523,12 @@ struct StressThruSectionsBuilderLifecycleTests {
     // before this PR, it doesn't exercise finding 1's `IsDone()`-staleness mechanism, only the
     // sibling test below does (PR #912 review, finding 5).
     @Test func generatedFaceNilAfterFailedRebuild() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
-        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
@@ -525,8 +547,9 @@ struct StressThruSectionsBuilderLifecycleTests {
         // BRepFill_CompatibleWires' documented "NotSameTopology" rejection, so this rebuild
         // fails for real (not just the sectionCount < 2 guard), and, before the #910 fix,
         // generatedFace(from:) kept answering from the first build's never-cleared myEdgeFace.
-        let openWire = try #require(Wire.polygon3D(
-            [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
+        let openWire = try #require(
+            Wire.polygon3D(
+                [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
         let openShape = try #require(Shape.fromWire(openWire))
         loft.addWire(openShape)
         #expect(!loft.build())
@@ -545,10 +568,14 @@ struct StressThruSectionsBuilderLifecycleTests {
     // Three sections for the successful build, same reasoning as the sibling test above: this
     // exercises CreateSmoothed()'s myEdgeFace binding, not CreateRuled()'s.
     @Test func generatedFaceNilAfterWrongUsageOnReusedBuilder() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
-        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
-        let w4 = try #require(Wire.circle(origin: SIMD3(0, 0, 30), normal: SIMD3(0, 0, 1), radius: 1))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w4 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 30), normal: SIMD3(0, 0, 1), radius: 1))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
@@ -588,9 +615,12 @@ struct StressThruSectionsBuilderLifecycleTests {
     // suite, under a test named "RuledPath". 3 sections + isRuled: true reaches CreateRuled() via
     // the explicit flag instead of the 2-section shortcut.
     @Test func generatedFaceNilAfterFailedRebuildRuledPath() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
-        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
@@ -604,8 +634,9 @@ struct StressThruSectionsBuilderLifecycleTests {
         // closed circles need no BRepFill_CompatibleWires re-splitting, not as a general contract.
         #expect(loft.generatedFace(from: edge) != nil)
 
-        let openWire = try #require(Wire.polygon3D(
-            [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
+        let openWire = try #require(
+            Wire.polygon3D(
+                [SIMD3(-5, 0, 30), SIMD3(5, 0, 30), SIMD3(0, 5, 30)], closed: false))
         let openShape = try #require(Shape.fromWire(openWire))
         loft.addWire(openShape)
         #expect(!loft.build())
@@ -643,9 +674,12 @@ struct StressThruSectionsBuilderLifecycleTests {
     // an invalid result" description of the un-guarded defect. Gated the same way.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
     func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
-        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
@@ -660,8 +694,10 @@ struct StressThruSectionsBuilderLifecycleTests {
         // Build B: a mismatched triangle under checkCompatibility(false) fails cleanly (no
         // reconciliation attempted).
         loft.checkCompatibility(false)
-        let triangle = try #require(Wire.polygon3D(
-            [SIMD3(2, 0, 30), SIMD3(-1, 1.7320508, 30), SIMD3(-1, -1.7320508, 30)], closed: true))
+        let triangle = try #require(
+            Wire.polygon3D(
+                [SIMD3(2, 0, 30), SIMD3(-1, 1.7320508, 30), SIMD3(-1, -1.7320508, 30)], closed: true
+            ))
         let s4 = try #require(Shape.fromWire(triangle))
         loft.addWire(s4)
         #expect(!loft.build())
@@ -686,9 +722,12 @@ struct StressThruSectionsBuilderLifecycleTests {
     // representative of each of the two call sites the fix touches (Set* directly, and
     // CheckCompatibility which is declared separately from the others).
     @Test func shapeNilAfterSettingChangedWithoutRebuild() throws {
-        let w1 = try #require(Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let w2 = try #require(Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
-        let w3 = try #require(Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
+        let w1 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let w2 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3))
+        let w3 = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 2))
         let s1 = try #require(Shape.fromWire(w1))
         let s2 = try #require(Shape.fromWire(w2))
         let s3 = try #require(Shape.fromWire(w3))
@@ -780,19 +819,23 @@ struct StressSectionBuilderLifecycleTests {
     @Test func sectionWithPlane() {
         guard let builder = SectionBuilder() else { return }
         builder.init1(shape: standardBox())
-        builder.init2(plane: 0, 0, 1, 0) // XY plane at Z=0
+        builder.init2(plane: 0, 0, 1, 0)  // XY plane at Z=0
         if let result = builder.build() {
             #expect(result.isValid)
         }
     }
 
     @Test func destroyWithoutBuild() {
-        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else { return }
+        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else {
+            return
+        }
         _ = builder
     }
 
     @Test func doubleBuild() {
-        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else { return }
+        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else {
+            return
+        }
         let r1 = builder.build()
         let r2 = builder.build()
         if let r1 { #expect(r1.isValid) }
@@ -839,7 +882,8 @@ struct StressSectionBuilderLifecycleTests {
             workingEdge = edge
             break
         }
-        let edge = try #require(workingEdge, "fixture must produce at least one ancestor-resolving section edge")
+        let edge = try #require(
+            workingEdge, "fixture must produce at least one ancestor-resolving section edge")
         #expect(builder.ancestorFaceOn1(edge: edge) != nil)
 
         // Reuse the SAME builder: rebind arg1 to a different valid shape WITHOUT calling build()
@@ -864,7 +908,8 @@ struct StressWireAnalyzerLifecycleTests {
         guard let face = faces.first, let wire = wires.first else { return }
         let sectionWires = box.sectionWiresAtZ(0.0)
         guard let sectionWire = sectionWires.first,
-              let analyzer = WireAnalyzer(wire: sectionWire, face: face) else { return }
+            let analyzer = WireAnalyzer(wire: sectionWire, face: face)
+        else { return }
         _ = analyzer.perform()
         _ = analyzer.edgeCount
         _ = analyzer.minDistance3d
@@ -878,7 +923,8 @@ struct StressWireAnalyzerLifecycleTests {
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
         guard let face = faces.first, let wire = sectionWires.first,
-              let analyzer = WireAnalyzer(wire: wire, face: face) else { return }
+            let analyzer = WireAnalyzer(wire: wire, face: face)
+        else { return }
         analyzer.perform()
         _ = analyzer.checkOrder()
         _ = analyzer.checkSelfIntersection()
@@ -906,7 +952,8 @@ struct StressWireFixerLifecycleTests {
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         guard let face = faces.first, let wireShape = wires.first,
-              let fixer = WireFixer(wire: wireShape, face: face) else { return }
+            let fixer = WireFixer(wire: wireShape, face: face)
+        else { return }
         fixer.fixReorder()
         fixer.fixConnected()
         fixer.fixDegenerated()
@@ -925,7 +972,8 @@ struct StressWireFixerLifecycleTests {
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         guard let face = faces.first, let wireShape = wires.first,
-              let fixer = WireFixer(wire: wireShape, face: face) else { return }
+            let fixer = WireFixer(wire: wireShape, face: face)
+        else { return }
         fixer.fixGaps2d()
         fixer.fixShifted()
         fixer.fixNotchedEdges()
@@ -952,7 +1000,8 @@ struct StressFaceFixerLifecycleTests {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         guard let faceShape = faces.first,
-              let fixer = FaceFixer(face: faceShape) else { return }
+            let fixer = FaceFixer(face: faceShape)
+        else { return }
         fixer.fixOrientation()
         fixer.fixMissingSeam()
         fixer.fixSmallAreaWire()

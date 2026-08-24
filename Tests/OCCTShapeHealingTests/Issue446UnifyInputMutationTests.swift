@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #446: `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and
@@ -20,7 +21,8 @@ struct Issue446UnifyInputMutationTests {
     /// Two coaxial cylinders fused end to end: 4 faces, of which two cylindrical ones merge.
     private func stackedCylinders() -> Shape? {
         guard let lower = Shape.cylinder(radius: 5, height: 10),
-              let upper = Shape.cylinder(radius: 5, height: 10)?.translated(by: SIMD3(0, 0, 10)) else {
+            let upper = Shape.cylinder(radius: 5, height: 10)?.translated(by: SIMD3(0, 0, 10))
+        else {
             return nil
         }
         return lower.union(upper)
@@ -35,7 +37,8 @@ struct Issue446UnifyInputMutationTests {
     @Test("Shape.unified() leaves its input byte-identical")
     func unifiedDoesNotMutateInput() {
         guard let body = stackedCylinders(), let before = serialized(body) else {
-            Issue.record("setup"); return
+            Issue.record("setup")
+            return
         }
         let volumeBefore = body.volume
         let merged = body.unified()
@@ -53,8 +56,12 @@ struct Issue446UnifyInputMutationTests {
     /// or attributes across by `isSame(as:)` have to key off geometry instead.
     @Test("The result no longer shares sub-shapes with the input")
     func resultDoesNotShareSubShapesWithInput() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),   // nothing to merge
-              let merged = box.unified() else { Issue.record("setup"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),  // nothing to merge
+            let merged = box.unified()
+        else {
+            Issue.record("setup")
+            return
+        }
         #expect(merged.subShapeCount(ofType: .face) == box.subShapeCount(ofType: .face))
         #expect(merged.isSame(as: box) == false)
         var shared = 0
@@ -71,7 +78,8 @@ struct Issue446UnifyInputMutationTests {
     @Test("UnifySameDomainBuilder leaves its input byte-identical")
     func builderDoesNotMutateInput() {
         guard let body = stackedCylinders(), let before = serialized(body) else {
-            Issue.record("setup"); return
+            Issue.record("setup")
+            return
         }
         let builder = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
         builder.setAngularTolerance(10.0 * .pi / 180)
@@ -90,13 +98,16 @@ struct Issue446UnifyInputMutationTests {
     /// this one pins the contract in the terms the issue was written in.
     @Test("A declined merge leaves the caller's shape usable")
     func declinedMergeLeavesInputIntact() {
-        guard let body = stackedCylinders() else { Issue.record("setup"); return }
+        guard let body = stackedCylinders() else {
+            Issue.record("setup")
+            return
+        }
         let selfIntersectingBefore = body.isSelfIntersecting(hardTimeout: 5)
         let validBefore = body.isValid
         let volumeBefore = body.volume
         let builder = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
         builder.build()
-        _ = builder.shape          // result deliberately discarded
+        _ = builder.shape  // result deliberately discarded
         #expect(body.isSelfIntersecting(hardTimeout: 5) == selfIntersectingBefore)
         #expect(body.isValid == validBefore)
         if let v0 = volumeBefore, let v1 = body.volume { #expect(abs(v1 - v0) < 1e-9) }
@@ -105,7 +116,8 @@ struct Issue446UnifyInputMutationTests {
     @Test("Shape.simplified() leaves its input byte-identical")
     func simplifiedDoesNotMutateInput() {
         guard let body = stackedCylinders(), let before = serialized(body) else {
-            Issue.record("setup"); return
+            Issue.record("setup")
+            return
         }
         let simplified = body.simplified()
         #expect(serialized(body) == before)
@@ -121,7 +133,10 @@ struct Issue446UnifyInputMutationTests {
     /// the merge; keeping a cap circle (z = 0 or z = 20), which the merge never touches, does not.
     @Test("keepShape still blocks a merge through the copy")
     func keepShapeSurvivesTheCopy() {
-        guard let body = stackedCylinders() else { Issue.record("setup"); return }
+        guard let body = stackedCylinders() else {
+            Issue.record("setup")
+            return
+        }
 
         func facesKeeping(_ edge: Shape) -> Int? {
             let builder = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
@@ -130,16 +145,18 @@ struct Issue446UnifyInputMutationTests {
             return builder.shape?.subShapeCount(ofType: .face)
         }
 
-        var junctionTested = false, capTested = false
+        var junctionTested = false
+        var capTested = false
         for i in 0..<body.subShapeCount(ofType: .edge) {
             guard let edge = body.subShape(type: .edge, index: i),
-                  let e = edge.edges(where: { $0.isCircle }).first,
-                  let circle = e.circleProperties else { continue }
+                let e = edge.edges(where: { $0.isCircle }).first,
+                let circle = e.circleProperties
+            else { continue }
             if abs(circle.center.z - 10) < 1e-9 {
-                #expect(facesKeeping(edge) == 4)   // junction seam kept -> the merge is blocked
+                #expect(facesKeeping(edge) == 4)  // junction seam kept -> the merge is blocked
                 junctionTested = true
             } else {
-                #expect(facesKeeping(edge) == 3)   // a cap circle is not what the merge needs
+                #expect(facesKeeping(edge) == 3)  // a cap circle is not what the merge needs
                 capTested = true
             }
         }

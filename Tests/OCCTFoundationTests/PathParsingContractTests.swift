@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// `OSDPath`'s own contract (#499). This used to also pin a shared contract against `PathParser`,

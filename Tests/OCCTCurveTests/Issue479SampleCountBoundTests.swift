@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #479: ArcLengthCurveAdaptor derived its sample count from the caller's spacing with a lower
@@ -21,7 +22,9 @@ struct Issue479SampleCountBound {
 
     // An L-shaped open wire: (0,0,0)→(100,0,0)→(100,100,0). Two edges, total length 200.
     private func lWireCurve() -> WireCurve? {
-        guard let w = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(100, 0, 0), SIMD3(100, 100, 0)], closed: false)
+        guard
+            let w = Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(100, 0, 0), SIMD3(100, 100, 0)], closed: false)
         else { return nil }
         return WireCurve(w)
     }
@@ -34,7 +37,10 @@ struct Issue479SampleCountBound {
 
     @Test("a spacing implying more points than the ceiling returns empty, on both adaptors")
     func absurdSpacingIsEmpty() {
-        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else { #expect(Bool(false)); return }
+        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else {
+            #expect(Bool(false))
+            return
+        }
         // 2e11 points on the wire, 1e10 on the edge: representable as an Int, unallocatable.
         #expect(wc.points(spacing: 1e-9).isEmpty)
         #expect(ec.points(spacing: 1e-9).isEmpty)
@@ -48,8 +54,11 @@ struct Issue479SampleCountBound {
 
     @Test("a non-finite spacing is handled without a conversion")
     func nonFiniteSpacing() {
-        guard let wc = lWireCurve() else { #expect(Bool(false)); return }
-        #expect(wc.points(spacing: Double.nan).isEmpty)          // fails `spacing > 0`
+        guard let wc = lWireCurve() else {
+            #expect(Bool(false))
+            return
+        }
+        #expect(wc.points(spacing: Double.nan).isEmpty)  // fails `spacing > 0`
         #expect(wc.points(spacing: -Double.infinity).isEmpty)
         // An infinite spacing implies the two endpoints and nothing between them.
         #expect(wc.points(spacing: Double.infinity).count == 2)
@@ -57,12 +66,15 @@ struct Issue479SampleCountBound {
 
     @Test("a count past the ceiling returns empty rather than trapping")
     func countPastCeilingIsEmpty() {
-        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else { #expect(Bool(false)); return }
+        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else {
+            #expect(Bool(false))
+            return
+        }
         #expect(wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty)
         #expect(ec.points(count: EdgeCurve.maximumSampleCount + 1).isEmpty)
-        #expect(wc.points(count: Int(Int32.max) + 1).isEmpty)    // overflows the bridge's int32_t
+        #expect(wc.points(count: Int(Int32.max) + 1).isEmpty)  // overflows the bridge's int32_t
         #expect(ec.points(count: Int(Int32.max) + 1).isEmpty)
-        #expect(wc.points(count: Int.max).isEmpty)               // overflows `count * 3`
+        #expect(wc.points(count: Int.max).isEmpty)  // overflows `count * 3`
         #expect(ec.points(count: Int.max).isEmpty)
     }
 
@@ -74,26 +86,32 @@ struct Issue479SampleCountBound {
 
     @Test("counts either side of the ceiling are the only thing the bound changes")
     func ordinaryCountsStillWork() {
-        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else { #expect(Bool(false)); return }
-        #expect(wc.points(count: 2).count == 2)                  // the lower bound itself
+        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else {
+            #expect(Bool(false))
+            return
+        }
+        #expect(wc.points(count: 2).count == 2)  // the lower bound itself
         #expect(wc.points(count: 5).count == 5)
         #expect(ec.points(count: 3).count == 3)
         // Well past any test-suite size, well below the ceiling: still honoured exactly.
         #expect(wc.points(count: 100_000).count == 100_000)
-        #expect(wc.points(count: 1).isEmpty)                     // OCCT's own lower bound (#501)
+        #expect(wc.points(count: 1).isEmpty)  // OCCT's own lower bound (#501)
         #expect(ec.points(count: 0).isEmpty)
     }
 
     @Test("a spacing inside the ceiling is unaffected, endpoints included")
     func ordinarySpacingStillWorks() {
-        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else { #expect(Bool(false)); return }
-        let pts = wc.points(spacing: 10)                         // length 200 -> 21 points
+        guard let wc = lWireCurve(), let ec = boxEdgeCurve() else {
+            #expect(Bool(false))
+            return
+        }
+        let pts = wc.points(spacing: 10)  // length 200 -> 21 points
         #expect(pts.count == 21)
         if let first = pts.first, let last = pts.last {
             #expect(simd_distance(first, SIMD3(0, 0, 0)) < 1e-6)
             #expect(simd_distance(last, SIMD3(100, 100, 0)) < 1e-6)
         }
-        #expect(ec.points(spacing: 5).count == 3)                // length 10 -> 3 points
+        #expect(ec.points(spacing: 5).count == 3)  // length 10 -> 3 points
         // A small-but-plausible spacing is nowhere near the ceiling and must still be served.
         #expect(wc.points(spacing: 1e-3).count == 200_001)
     }

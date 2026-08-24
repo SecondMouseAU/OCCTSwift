@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("Mesh from raw arrays")
 struct MeshFromArraysTests {
@@ -23,18 +22,20 @@ struct MeshFromArraysTests {
         SIMD3(0, 0, 1),
     ]
     static let tetIndices: [UInt32] = [
-        0, 2, 1,   // bottom
-        0, 1, 3,   // front
-        0, 3, 2,   // left
-        1, 2, 3,   // tilted face
+        0, 2, 1,  // bottom
+        0, 1, 3,  // front
+        0, 3, 2,  // left
+        1, 2, 3,  // tilted face
     ]
 
     @Test("Round-trip vertices and indices")
     func roundTrip() {
-        guard let mesh = Mesh(
-            vertices: Self.tetVertices,
-            indices: Self.tetIndices
-        ) else {
+        guard
+            let mesh = Mesh(
+                vertices: Self.tetVertices,
+                indices: Self.tetIndices
+            )
+        else {
             Issue.record("Mesh.init failed on a valid tetrahedron")
             return
         }
@@ -53,10 +54,12 @@ struct MeshFromArraysTests {
 
     @Test("Computed normals when none provided produce unit-length per-vertex normals")
     func computedNormals() {
-        guard let mesh = Mesh(
-            vertices: Self.tetVertices,
-            indices: Self.tetIndices
-        ) else {
+        guard
+            let mesh = Mesh(
+                vertices: Self.tetVertices,
+                indices: Self.tetIndices
+            )
+        else {
             Issue.record("Mesh.init failed")
             return
         }
@@ -78,11 +81,13 @@ struct MeshFromArraysTests {
             SIMD3(0, 0, 1),
             SIMD3(-1, 0, 0),
         ]
-        guard let mesh = Mesh(
-            vertices: Self.tetVertices,
-            normals: custom,
-            indices: Self.tetIndices
-        ) else {
+        guard
+            let mesh = Mesh(
+                vertices: Self.tetVertices,
+                normals: custom,
+                indices: Self.tetIndices
+            )
+        else {
             Issue.record("Mesh.init with normals failed")
             return
         }
@@ -117,11 +122,12 @@ struct MeshFromArraysTests {
     @Test("Mismatched normals length returns nil")
     func rejectsBadNormalsLength() {
         let badNormals: [SIMD3<Float>] = [SIMD3(0, 0, 1), SIMD3(0, 0, 1)]
-        #expect(Mesh(
-            vertices: Self.tetVertices,
-            normals: badNormals,
-            indices: Self.tetIndices
-        ) == nil)
+        #expect(
+            Mesh(
+                vertices: Self.tetVertices,
+                normals: badNormals,
+                indices: Self.tetIndices
+            ) == nil)
     }
 }
 
@@ -217,18 +223,22 @@ struct MeshTests {
         // scale-appropriate tolerance they weld into one, dropping the edge count.
         let gap: Float = 0.5
         let verts: [SIMD3<Float>] = [
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(5, 5, 0),        // triangle 1, base edge at y=0
-            SIMD3(0, gap, 0), SIMD3(10, gap, 0), SIMD3(5, -5, 0),   // triangle 2, base edge at y=gap
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(5, 5, 0),  // triangle 1, base edge at y=0
+            SIMD3(0, gap, 0), SIMD3(10, gap, 0), SIMD3(5, -5, 0),  // triangle 2, base edge at y=gap
         ]
         guard let gappy = Mesh(vertices: verts, indices: [0, 1, 2, 3, 4, 5]) else {
-            #expect(Bool(false), "Failed to build gappy mesh"); return
+            #expect(Bool(false), "Failed to build gappy mesh")
+            return
         }
         if let tight = gappy.toShape(weldTolerance: 1e-6),
-           let welded = gappy.toShape(weldTolerance: 2.0) {
+            let welded = gappy.toShape(weldTolerance: 2.0)
+        {
             let tightEdges = tight.edges(where: { _ in true }).count
             let weldedEdges = welded.edges(where: { _ in true }).count
-            #expect(weldedEdges < tightEdges,
-                    "scale-appropriate weld (\(weldedEdges)) should merge edges vs 1e-6 (\(tightEdges))")
+            #expect(
+                weldedEdges < tightEdges,
+                "scale-appropriate weld (\(weldedEdges)) should merge edges vs 1e-6 (\(tightEdges))"
+            )
         } else {
             #expect(Bool(false), "gappy-mesh toShape returned nil")
         }
@@ -289,7 +299,8 @@ struct PresentationMeshTests {
 
         // All normals should be non-zero
         for normal in mesh!.normals {
-            let len = Float(sqrt(Double(normal.x*normal.x + normal.y*normal.y + normal.z*normal.z)))
+            let len = Float(
+                sqrt(Double(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z)))
             #expect(len > 0.5)
         }
     }
@@ -450,13 +461,13 @@ struct MakeShapeOnMeshTests {
             SIMD3(0, 0, 0),
             SIMD3(10, 0, 0),
             SIMD3(5, 10, 0),
-            SIMD3(5, 5, 10)
+            SIMD3(5, 5, 10),
         ]
         let triangles: [(Int32, Int32, Int32)] = [
-            (1, 3, 2), // bottom
-            (1, 2, 4), // front
-            (2, 3, 4), // right
-            (3, 1, 4)  // left
+            (1, 3, 2),  // bottom
+            (1, 2, 4),  // front
+            (2, 3, 4),  // right
+            (3, 1, 4),  // left
         ]
         let shape = Shape.fromMesh(points: points, triangles: triangles)
         if let shape = shape {
@@ -472,7 +483,7 @@ struct MakeShapeOnMeshTests {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0),
             SIMD3(10, 0, 0),
-            SIMD3(5, 10, 0)
+            SIMD3(5, 10, 0),
         ]
         let triangles: [(Int32, Int32, Int32)] = [(1, 2, 3)]
         let shape = Shape.fromMesh(points: points, triangles: triangles)
@@ -735,7 +746,7 @@ struct CoherentTriangulationTests {
         let _ = ct.setNode(x: 4, y: 5, z: 6)
         let _ = ct.setNode(x: 7, y: 8, z: 9)
         ct.addTriangle(0, 1, 2)
-        if let _ = ct.getResult() {
+        if ct.getResult() != nil {
             if let coords = ct.nodeCoords(at: 1) {
                 #expect(abs(coords.x - 1.5) < 1e-6)
                 #expect(abs(coords.y - 2.5) < 1e-6)
@@ -781,7 +792,7 @@ struct TriangulationQueryTests {
     @Test func faceTriangulation() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // Mesh the box first
-            if let _ = box.mesh(linearDeflection: 1.0) {
+            if box.mesh(linearDeflection: 1.0) != nil {
                 let faces = box.subShapes(ofType: .face)
                 if faces.count > 0 {
                     let face = faces[0]
@@ -796,7 +807,7 @@ struct TriangulationQueryTests {
                     let p = face.triangulationNode(at: 1)
                     // Should be a valid 3D point
                     let mag = sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
-                    #expect(mag >= 0) // can be zero if at origin
+                    #expect(mag >= 0)  // can be zero if at origin
 
                     // Get first triangle
                     let (n1, n2, n3) = face.triangulationTriangle(at: 1)
@@ -810,7 +821,7 @@ struct TriangulationQueryTests {
 
     @Test func triangulationUVNodes() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let _ = box.mesh(linearDeflection: 1.0) {
+            if box.mesh(linearDeflection: 1.0) != nil {
                 let faces = box.subShapes(ofType: .face)
                 if faces.count > 0 {
                     let face = faces[0]
@@ -867,14 +878,16 @@ struct MeshCacheWriteTests {
         ]
         let triangles = [0, 1, 2, 1, 3, 2]
         guard let tri = Triangulation.create(nodes: nodes, triangles: triangles) else {
-            Issue.record("Triangulation.create nil"); return
+            Issue.record("Triangulation.create nil")
+            return
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph {
                 guard let repId = graph.createTriangulationRep(tri) else {
-                    Issue.record("createTriangulationRep nil"); return
+                    Issue.record("createTriangulationRep nil")
+                    return
                 }
                 #expect(repId >= 0)
                 // Bind it to face 0; the call must not crash on a valid id.
@@ -891,14 +904,16 @@ struct MeshCacheWriteTests {
     func createAndBindPolygon3DRep() {
         let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
         guard let poly = Polygon3D.create(points: pts) else {
-            Issue.record("Polygon3D.create nil"); return
+            Issue.record("Polygon3D.create nil")
+            return
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph {
                 guard let repId = graph.createPolygon3DRep(poly) else {
-                    Issue.record("createPolygon3DRep nil"); return
+                    Issue.record("createPolygon3DRep nil")
+                    return
                 }
                 #expect(repId >= 0)
                 graph.setCachedPolygon3D(edgeIndex: 0, polyRepId: repId)
@@ -1015,7 +1030,8 @@ struct PolyCopyMutatorTests {
     func polygonOnTriSetParameters() {
         let indices: [Int32] = [1, 2, 3]
         let params: [Double] = [0.0, 1.0, 2.0]
-        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices, parameters: params) else { return }
+        guard let poly = PolygonOnTriangulation.create(nodeIndices: indices, parameters: params)
+        else { return }
         #expect(poly.hasParameters)
         #expect(poly.setParameters([10.0, 20.0, 30.0]))
         #expect(abs(poly.parameter(at: 1) - 20.0) < 1e-12)

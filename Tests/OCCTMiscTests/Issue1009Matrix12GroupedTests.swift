@@ -26,7 +26,8 @@ struct Issue1009Matrix12Grouped {
     /// A 30-degree rotation about Z with the same translation, so no two of the twelve slots hold
     /// the same number and a permuted read cannot agree by coincidence.
     private static let rotatedAndTranslated: [Double] = {
-        let c = cos(Double.pi / 6), s = sin(Double.pi / 6)
+        let c = cos(Double.pi / 6)
+        let s = sin(Double.pi / 6)
         return [
             c, -s, 0,
             s, c, 0,

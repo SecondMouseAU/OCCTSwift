@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // Issue #298: filleting a boolean result is thread-unsafe in OCCT's TKFillet.
@@ -45,9 +46,13 @@ struct Issue298FilletThreadSafetyTests {
             normal: SIMD3<Double>(1, 0, 0),
             uAxis: SIMD3<Double>(0, 1, 0),
             vAxis: SIMD3<Double>(0, 0, 1))
-        return ([bottom, left, right],
-                [SheetMetal.Bend(from: "bottom", to: "left", radius: 1.5),
-                 SheetMetal.Bend(from: "bottom", to: "right", radius: 1.5)])
+        return (
+            [bottom, left, right],
+            [
+                SheetMetal.Bend(from: "bottom", to: "left", radius: 1.5),
+                SheetMetal.Bend(from: "bottom", to: "right", radius: 1.5),
+            ]
+        )
     }
 
     /// The reference volume from a single, uncontended build. Any concurrent build
@@ -79,7 +84,8 @@ struct Issue298FilletThreadSafetyTests {
                     for _ in 0..<25 {
                         let (flanges, bends) = Self.uChannel()
                         guard let s = try? builder.build(flanges: flanges, bends: bends) else {
-                            o.threw += 1; continue
+                            o.threw += 1
+                            continue
                         }
                         if !s.isValid { o.invalid += 1 }
                         if s.subShapes(ofType: .solid).count != 1 { o.wrongSolidCount += 1 }
@@ -106,11 +112,15 @@ struct Issue298FilletThreadSafetyTests {
         }
 
         #expect(agg.threw == 0, "some concurrent builds threw (expected 0 of 200)")
-        #expect(agg.invalid == 0,
-                "concurrent builds returned BRepCheck-invalid solids (expected 0 of 200)")
-        #expect(agg.wrongSolidCount == 0,
-                "concurrent builds returned != 1 solid (expected 0 of 200)")
-        #expect(agg.wrongVolume == 0,
-                "concurrent builds diverged from reference volume \(reference); sample corrupted volumes \(agg.sampleVolumes), the #298 race")
+        #expect(
+            agg.invalid == 0,
+            "concurrent builds returned BRepCheck-invalid solids (expected 0 of 200)")
+        #expect(
+            agg.wrongSolidCount == 0,
+            "concurrent builds returned != 1 solid (expected 0 of 200)")
+        #expect(
+            agg.wrongVolume == 0,
+            "concurrent builds diverged from reference volume \(reference); sample corrupted volumes \(agg.sampleVolumes), the #298 race"
+        )
     }
 }

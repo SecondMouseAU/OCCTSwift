@@ -2,8 +2,8 @@
 // Category 3: Long boolean chains, feature chains, transform chains, wire construction.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Boolean Chains
 
@@ -18,8 +18,9 @@ struct StressBooleanChainTests {
             let x = 30.0 * cos(angle)
             let y = 30.0 * sin(angle)
             if let sphere = Shape.sphere(radius: 3),
-               let positioned = sphere.translated(by: SIMD3(x, y, 0)),
-               let result = shape.subtracting(positioned) {
+                let positioned = sphere.translated(by: SIMD3(x, y, 0)),
+                let result = shape.subtracting(positioned)
+            {
                 shape = result
             }
         }
@@ -35,8 +36,9 @@ struct StressBooleanChainTests {
             let x = 60.0 * cos(angle)
             let y = 60.0 * sin(angle)
             if let sphere = Shape.sphere(radius: 2),
-               let positioned = sphere.translated(by: SIMD3(x, y, 0)),
-               let result = shape.subtracting(positioned) {
+                let positioned = sphere.translated(by: SIMD3(x, y, 0)),
+                let result = shape.subtracting(positioned)
+            {
                 shape = result
             }
             // Check validity every 25 ops
@@ -48,8 +50,10 @@ struct StressBooleanChainTests {
     @Test func fiftyUnions() {
         guard var shape = Shape.box(width: 5, height: 5, depth: 5) else { return }
         for i in 0..<50 {
-            if let box = Shape.box(origin: SIMD3(Double(i) * 5, 0, 0), width: 5, height: 5, depth: 5),
-               let result = shape.union(box) {
+            if let box = Shape.box(
+                origin: SIMD3(Double(i) * 5, 0, 0), width: 5, height: 5, depth: 5),
+                let result = shape.union(box)
+            {
                 shape = result
             }
         }
@@ -63,7 +67,8 @@ struct StressBooleanChainTests {
         for i in 0..<50 {
             let size = 100.0 - Double(i) * 0.5
             if let box = Shape.box(width: size, height: size, depth: size),
-               let result = shape.intersection(box) {
+                let result = shape.intersection(box)
+            {
                 shape = result
             }
         }
@@ -73,8 +78,9 @@ struct StressBooleanChainTests {
     @Test func mixedBooleans() {
         guard var shape = Shape.box(width: 50, height: 50, depth: 50) else { return }
         for i in 0..<30 {
-            let small = Shape.box(origin: SIMD3(Double(i % 5) * 8, Double(i / 5) * 8, 0),
-                                  width: 6, height: 6, depth: 6)!
+            let small = Shape.box(
+                origin: SIMD3(Double(i % 5) * 8, Double(i / 5) * 8, 0),
+                width: 6, height: 6, depth: 6)!
             switch i % 3 {
             case 0: if let r = shape.union(small) { shape = r }
             case 1: if let r = shape.subtracting(small) { shape = r }
@@ -98,7 +104,7 @@ struct StressFeatureChainTests {
         // Drill 4 holes
         let positions: [SIMD3<Double>] = [
             SIMD3(-10, -10, 10), SIMD3(10, -10, 10),
-            SIMD3(-10, 10, 10), SIMD3(10, 10, 10)
+            SIMD3(-10, 10, 10), SIMD3(10, 10, 10),
         ]
         for pos in positions {
             if let d = shape.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 2, depth: 0) {
@@ -123,7 +129,7 @@ struct StressFeatureChainTests {
                 shape = f
                 #expect(shape.isValid)
             } else {
-                break // Fillet failed, expected for complex shapes
+                break  // Fillet failed, expected for complex shapes
             }
         }
     }
@@ -134,7 +140,9 @@ struct StressFeatureChainTests {
             for col in 0..<2 {
                 let x = -30.0 + Double(row) * 15.0
                 let y = -10.0 + Double(col) * 20.0
-                if let d = shape.drilled(at: SIMD3(x, y, 10), direction: SIMD3(0, 0, -1), radius: 2, depth: 0) {
+                if let d = shape.drilled(
+                    at: SIMD3(x, y, 10), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
+                {
                     shape = d
                 }
             }
@@ -149,11 +157,15 @@ struct StressFeatureChainTests {
         // Fillet → drill → fillet → drill → ... 10 cycles
         for i in 0..<10 {
             if let f = shape.filleted(radius: 0.3) {
-                shape = f; stepCount += 1
+                shape = f
+                stepCount += 1
             }
             let x = -15.0 + Double(i) * 3.0
-            if let d = shape.drilled(at: SIMD3(x, 0, 15), direction: SIMD3(0, 0, -1), radius: 1, depth: 0) {
-                shape = d; stepCount += 1
+            if let d = shape.drilled(
+                at: SIMD3(x, 0, 15), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
+            {
+                shape = d
+                stepCount += 1
             }
         }
         #expect(stepCount > 0)
@@ -260,7 +272,8 @@ struct StressWireConstructionTests {
             let domain = curve.domain
             // Evaluate at 100 points
             for j in 0...100 {
-                let u = domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(j) / 100.0
+                let u =
+                    domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(j) / 100.0
                 let pt = curve.point(at: u)
                 #expect(pt.x.isFinite)
             }

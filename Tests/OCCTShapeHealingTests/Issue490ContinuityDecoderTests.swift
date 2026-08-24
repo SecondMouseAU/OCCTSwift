@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #490: the bridge decoded "continuity" as an integer in nineteen places, and the copies
@@ -25,33 +26,37 @@ struct Issue490ContinuityDecoderTests {
             }
             poles.append(row)
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
-                               knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
+            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     // MARK: - ShapeCustom_BSplineRestriction: two entry points, one operation
 
-    @Test("bsplineRestriction and bsplineRestrictionAdvanced read the same continuity",
-          arguments: [ParametricContinuity.c0, .c1, .c2])
+    @Test(
+        "bsplineRestriction and bsplineRestrictionAdvanced read the same continuity",
+        arguments: [ParametricContinuity.c0, .c1, .c2])
     func restrictionEntryPointsAgree(continuity: ParametricContinuity) throws {
         let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
 
         // ShapeCustom::BSplineRestriction is itself a ShapeCustom_BSplineRestriction driven
         // through BRepTools_Modifier, exactly what the advanced entry point builds by hand, so
         // matching arguments must produce identical geometry.
-        let plain = cyl.bsplineRestriction(tol3d: 0.01, tol2d: 0.01,
-                                           maxDegree: 6, maxSegments: 20,
-                                           continuity3d: continuity, continuity2d: continuity,
-                                           degreePriority: true, rational: true)
-        let advanced = Shape.bsplineRestrictionAdvanced(cyl,
-                                                        tol3d: 0.01, tol2d: 0.01,
-                                                        continuity3d: continuity,
-                                                        continuity2d: continuity,
-                                                        maxDegree: 6, maxSegments: 20,
-                                                        priorityDegree: true,
-                                                        convertRational: true)
+        let plain = cyl.bsplineRestriction(
+            tol3d: 0.01, tol2d: 0.01,
+            maxDegree: 6, maxSegments: 20,
+            continuity3d: continuity, continuity2d: continuity,
+            degreePriority: true, rational: true)
+        let advanced = Shape.bsplineRestrictionAdvanced(
+            cyl,
+            tol3d: 0.01, tol2d: 0.01,
+            continuity3d: continuity,
+            continuity2d: continuity,
+            maxDegree: 6, maxSegments: 20,
+            priorityDegree: true,
+            convertRational: true)
 
         let plainVolume = try #require(plain?.volume)
         let advancedVolume = try #require(advanced?.volume)
@@ -74,14 +79,18 @@ struct Issue490ContinuityDecoderTests {
     @Test("C2 restriction is a different result from C0, so the argument is observable")
     func restrictionContinuityIsObservable() throws {
         let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
-        let atC0 = try #require(cyl.bsplineRestriction(tol3d: 0.01, tol2d: 0.01,
-                                                       maxDegree: 6, maxSegments: 20,
-                                                       continuity3d: .c0, continuity2d: .c0,
-                                                       rational: true)?.volume)
-        let atC2 = try #require(cyl.bsplineRestriction(tol3d: 0.01, tol2d: 0.01,
-                                                       maxDegree: 6, maxSegments: 20,
-                                                       continuity3d: .c2, continuity2d: .c2,
-                                                       rational: true)?.volume)
+        let atC0 = try #require(
+            cyl.bsplineRestriction(
+                tol3d: 0.01, tol2d: 0.01,
+                maxDegree: 6, maxSegments: 20,
+                continuity3d: .c0, continuity2d: .c0,
+                rational: true)?.volume)
+        let atC2 = try #require(
+            cyl.bsplineRestriction(
+                tol3d: 0.01, tol2d: 0.01,
+                maxDegree: 6, maxSegments: 20,
+                continuity3d: .c2, continuity2d: .c2,
+                rational: true)?.volume)
         #expect(abs(atC0 - atC2) > 1e-9)
     }
 
@@ -92,8 +101,10 @@ struct Issue490ContinuityDecoderTests {
         let surface = try #require(c0InUSurface())
 
         let viaSurface = surface.splitByContinuity(criterion: criterion, tolerance: 1e-6)
-        let viaShapeUpgrade = try #require(surface.splitSurfaceByContinuity(criterion: criterion,
-                                                                           tolerance: 1e-6))
+        let viaShapeUpgrade = try #require(
+            surface.splitSurfaceByContinuity(
+                criterion: criterion,
+                tolerance: 1e-6))
 
         // Both wrap ShapeUpgrade_SplitSurfaceContinuity. Before #490, criterion 2 asked one for
         // C2 and the other for C1.
@@ -113,7 +124,8 @@ struct Issue490ContinuityDecoderTests {
         #expect(atC2.uSplitCount == 3)
 
         // Which is the same answer through the other entry point, now that they share a decoder.
-        let upgradeAtC2 = try #require(surface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6))
+        let upgradeAtC2 = try #require(
+            surface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6))
         #expect(upgradeAtC2.uSplitCount == 3)
     }
 

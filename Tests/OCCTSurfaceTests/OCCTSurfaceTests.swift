@@ -1,18 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
-
 
 @Suite("Evolved Surface Tests")
 struct EvolvedSurfaceTests {
@@ -61,12 +59,15 @@ struct SurfaceFillingTests {
 
     @Test("Fill with polygon boundary")
     func fillPolygonBoundary() {
-        guard let boundary = Wire.polygon([
-            SIMD2(0, 0),
-            SIMD2(10, 0),
-            SIMD2(10, 10),
-            SIMD2(0, 10)
-        ], closed: true) else {
+        guard
+            let boundary = Wire.polygon(
+                [
+                    SIMD2(0, 0),
+                    SIMD2(10, 0),
+                    SIMD2(10, 10),
+                    SIMD2(0, 10),
+                ], closed: true)
+        else {
             Issue.record("Failed to create polygon boundary")
             return
         }
@@ -110,8 +111,9 @@ struct FillingSupportFaceTests {
     /// The rim sits at z = 10·sin(50°) ≈ 7.66; a flat cap spans no z at all, a tangent cap
     /// leaves the rim along the sphere and so must.
     private func bowl() -> Shape? {
-        Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 10,
-                     angle1: -.pi / 2, angle2: 50.0 * .pi / 180.0)
+        Shape.sphere(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 10,
+            angle1: -.pi / 2, angle2: 50.0 * .pi / 180.0)
     }
 
     /// The rim is the topmost closed edge of the truncated sphere.
@@ -147,10 +149,12 @@ struct FillingSupportFaceTests {
             return
         }
 
-        let flat = Shape.fill(boundaries: [rim],
-                              parameters: FillingParameters(continuity: .g0))
-        let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
-                                 parameters: FillingParameters(continuity: .g1))
+        let flat = Shape.fill(
+            boundaries: [rim],
+            parameters: FillingParameters(continuity: .g0))
+        let tangent = Shape.fill(
+            boundaries: [rim], supportedBy: bowl,
+            parameters: FillingParameters(continuity: .g1))
 
         if let flat = flat {
             // A positional fill of a planar rim is a flat disc: no z extent.
@@ -201,10 +205,12 @@ struct FillingSupportFaceTests {
         // Guards the continuity mapping: BRepFill_Filling forwards the GeomAbs_Shape value
         // as an integer plate order and rejects anything above 2, so curvature must map to
         // GeomAbs_C1 (ordinal 2). Mapping .g2 to GeomAbs_G2 (ordinal 3) makes this nil.
-        let curvature = Shape.fill(boundaries: [rim], supportedBy: bowl,
-                                   parameters: FillingParameters(continuity: .g2))
-        let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
-                                 parameters: FillingParameters(continuity: .g1))
+        let curvature = Shape.fill(
+            boundaries: [rim], supportedBy: bowl,
+            parameters: FillingParameters(continuity: .g2))
+        let tangent = Shape.fill(
+            boundaries: [rim], supportedBy: bowl,
+            parameters: FillingParameters(continuity: .g1))
 
         guard let curvature = curvature, let tangent = tangent else {
             Issue.record("Both curvature and tangent fills should succeed")
@@ -224,8 +230,9 @@ struct FillingSupportFaceTests {
             return
         }
 
-        let capped = Shape.fill(boundaries: [rim], supportedBy: bowl,
-                                parameters: FillingParameters(continuity: .g1, maxDegree: 3))
+        let capped = Shape.fill(
+            boundaries: [rim], supportedBy: bowl,
+            parameters: FillingParameters(continuity: .g1, maxDegree: 3))
 
         guard let surface = capped?.faceSurfaceGeom() else {
             Issue.record("Tangent fill should produce a face with an extractable surface")
@@ -253,8 +260,9 @@ struct FillingSupportFaceTests {
         // The rim has no ancestor face in `unrelated`, so each edge falls back to its own
         // underlying surface, the documented degradation. It must still fill, and still be
         // tangent, rather than nil the whole operation.
-        let capped = Shape.fill(boundaries: [rim], supportedBy: unrelated,
-                                parameters: FillingParameters(continuity: .g1))
+        let capped = Shape.fill(
+            boundaries: [rim], supportedBy: unrelated,
+            parameters: FillingParameters(continuity: .g1))
 
         if let capped = capped {
             #expect(capped.isValid)
@@ -279,14 +287,15 @@ struct FillingSupportFaceTests {
         // constraint the surface has to pass through it, so the cap can no longer be the flat
         // disc that the boundary alone produces.
         guard let interiorWire = Wire.line(from: SIMD3(-5, 0, 10), to: SIMD3(5, 0, 10)),
-              let interior = interiorWire.edges().first else {
+            let interior = interiorWire.edges().first
+        else {
             Issue.record("Failed to create the interior constraint edge")
             return
         }
 
         let withInterior = Shape.fill(constraints: [
             FillConstraint(edge: rim, continuity: .g0),
-            FillConstraint(edge: interior, continuity: .g0, isBoundary: false)
+            FillConstraint(edge: interior, continuity: .g0, isBoundary: false),
         ])
 
         guard let boundaryOnly = boundaryOnly, let withInterior = withInterior else {
@@ -294,8 +303,8 @@ struct FillingSupportFaceTests {
             return
         }
 
-        #expect(boundaryOnly.size!.z < 1e-6)      // flat disc across the rim
-        #expect(withInterior.size!.z > 0.5)       // pulled up to the interior edge
+        #expect(boundaryOnly.size!.z < 1e-6)  // flat disc across the rim
+        #expect(withInterior.size!.z > 0.5)  // pulled up to the interior edge
     }
 
     @Test("Free-standing boundary has nothing to be tangent to and fails cleanly")
@@ -307,10 +316,12 @@ struct FillingSupportFaceTests {
 
         // No pcurve on any edge, so no continuity reference exists. This must return nil
         // rather than crash, and the positional fill of the same wire must still work.
-        let tangent = Shape.fill(boundaries: [square],
-                                 parameters: FillingParameters(continuity: .g1))
-        let positional = Shape.fill(boundaries: [square],
-                                    parameters: FillingParameters(continuity: .g0))
+        let tangent = Shape.fill(
+            boundaries: [square],
+            parameters: FillingParameters(continuity: .g1))
+        let positional = Shape.fill(
+            boundaries: [square],
+            parameters: FillingParameters(continuity: .g0))
 
         #expect(tangent == nil)
         #expect(positional != nil)
@@ -331,9 +342,12 @@ struct FillingSupportFaceTests {
         // plane on the fly when no pcurve is stored (BRep_Tool.cxx:372), so a planar face CAN
         // serve as a reference and is legitimately honoured. A sphere elsewhere in space
         // cannot, which is the case that used to be papered over.
-        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
-                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
-              let strangerFace = unrelated.faces().first else {
+        guard
+            let unrelated = Shape.sphere(
+                at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+            let strangerFace = unrelated.faces().first
+        else {
             Issue.record("Failed to create the unrelated support face")
             return
         }
@@ -442,9 +456,12 @@ struct FillingSupportFaceTests {
         // Same fixture as Shape.fill's "A nominated support face that cannot serve is a
         // failure, not a substitution" test: a sphere elsewhere in space resolves no pcurve
         // for the rim, so it cannot be the continuity reference.
-        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
-                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
-              let strangerFace = unrelated.faces().first else {
+        guard
+            let unrelated = Shape.sphere(
+                at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+            let strangerFace = unrelated.faces().first
+        else {
             Issue.record("Failed to create the unrelated support face")
             return
         }
@@ -453,7 +470,9 @@ struct FillingSupportFaceTests {
         #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g1))
     }
 
-    @Test("add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)")
+    @Test(
+        "add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)"
+    )
     func fillingSurfaceAddWithSupportDefaultsToG1() {
         guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
@@ -463,9 +482,12 @@ struct FillingSupportFaceTests {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
-        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
-                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
-              let strangerFace = unrelated.faces().first else {
+        guard
+            let unrelated = Shape.sphere(
+                at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+            let strangerFace = unrelated.faces().first
+        else {
             Issue.record("Failed to create the unrelated support face")
             return
         }
@@ -480,7 +502,7 @@ struct FillingSupportFaceTests {
             Issue.record("Default-continuity fill with a real support face should succeed")
             return
         }
-        #expect(face.size!.z > 0.5)   // tangent to the sphere, not a flat disc
+        #expect(face.size!.z > 0.5)  // tangent to the sphere, not a flat disc
 
         // ...and an unrelated support face is rejected with no continuity argument either.
         let rejecting = FillingSurface()
@@ -493,9 +515,12 @@ struct FillingSupportFaceTests {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
-        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
-                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
-              let strangerFace = unrelated.faces().first else {
+        guard
+            let unrelated = Shape.sphere(
+                at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+            let strangerFace = unrelated.faces().first
+        else {
             Issue.record("Failed to create the unrelated support face")
             return
         }
@@ -525,10 +550,11 @@ struct FillingSupportFaceTests {
 
         // The same geometry through the other entry point has always returned nil. That the two
         // now agree is the point of the change.
-        #expect(Shape.fill(constraints: [
-            FillConstraint(edge: rim, continuity: .g0, isBoundary: true),
-            FillConstraint(edge: rim, support: strangerFace, continuity: .g1)
-        ]) == nil)
+        #expect(
+            Shape.fill(constraints: [
+                FillConstraint(edge: rim, continuity: .g0, isBoundary: true),
+                FillConstraint(edge: rim, support: strangerFace, continuity: .g1),
+            ]) == nil)
     }
 
     @Test("Refusals accumulate and stay sticky across later successful adds (#482)")
@@ -541,9 +567,12 @@ struct FillingSupportFaceTests {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
-        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
-                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
-              let strangerFace = unrelated.faces().first else {
+        guard
+            let unrelated = Shape.sphere(
+                at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+            let strangerFace = unrelated.faces().first
+        else {
             Issue.record("Failed to create the unrelated support face")
             return
         }
@@ -579,7 +608,7 @@ struct PlateSurfaceTests {
             SIMD3(10, 5, 0.5),
             SIMD3(0, 10, 0),
             SIMD3(5, 10, 0.5),
-            SIMD3(10, 10, 0)
+            SIMD3(10, 10, 0),
         ]
 
         let surface = Shape.plateSurface(through: points, tolerance: 1.0)
@@ -597,7 +626,7 @@ struct PlateSurfaceTests {
             SIMD3(0, 0, 0),
             SIMD3(10, 0, 0),
             SIMD3(10, 10, 0),
-            SIMD3(0, 10, 0)
+            SIMD3(0, 10, 0),
         ]
 
         let surface = Shape.plateSurface(through: points, tolerance: 1.0)
@@ -612,7 +641,7 @@ struct PlateSurfaceTests {
     func plateTooFewPoints() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0),
-            SIMD3(10, 0, 0)
+            SIMD3(10, 0, 0),
         ]
 
         let surface = Shape.plateSurface(through: points, tolerance: 0.1)
@@ -623,7 +652,8 @@ struct PlateSurfaceTests {
     @Test("Plate surface from curves - API test")
     func plateFromCurvesAPI() {
         guard let curve1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
-              let curve2 = Wire.line(from: SIMD3(0, 10, 0), to: SIMD3(10, 10, 0)) else {
+            let curve2 = Wire.line(from: SIMD3(0, 10, 0), to: SIMD3(10, 10, 0))
+        else {
             Issue.record("Failed to create curves")
             return
         }
@@ -708,15 +738,17 @@ struct SurfaceAnalyticTests {
 
     @Test("Create cone")
     func coneCreation() {
-        let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
-                                radius: 5, semiAngle: .pi / 6)
+        let cone = Surface.cone(
+            origin: .zero, axis: SIMD3(0, 0, 1),
+            radius: 5, semiAngle: .pi / 6)
         #expect(cone != nil)
     }
 
     @Test("Create torus")
     func torusCreation() {
-        let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
-                                  majorRadius: 10, minorRadius: 3)
+        let torus = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 3)
         #expect(torus != nil)
         if let torus = torus {
             #expect(torus.isUPeriodic == true)
@@ -747,7 +779,11 @@ struct SurfaceAnalyticTests {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
         // #595: a plane's Gaussian curvature is 0 and defined, so this asserts a reported 0, not nil.
         let gc = plane.gaussianCurvature(atU: 0, v: 0)
-        if let gc { #expect(abs(gc) < 1e-10) } else { Issue.record("a plane has Gaussian curvature 0") }
+        if let gc {
+            #expect(abs(gc) < 1e-10)
+        } else {
+            Issue.record("a plane has Gaussian curvature 0")
+        }
     }
 
     @Test("Cylinder principal curvatures = (0, 1/r)")
@@ -759,8 +795,8 @@ struct SurfaceAnalyticTests {
         if let pc = pc {
             let minK = min(abs(pc.kMin), abs(pc.kMax))
             let maxK = max(abs(pc.kMin), abs(pc.kMax))
-            #expect(abs(minK) < 1e-10) // 0 along axis
-            #expect(abs(maxK - 1.0/r) < 1e-10) // 1/r around circumference
+            #expect(abs(minK) < 1e-10)  // 0 along axis
+            #expect(abs(maxK - 1.0 / r) < 1e-10)  // 1/r around circumference
         }
     }
 }
@@ -786,9 +822,10 @@ struct SurfaceSweptTests {
     func revolution() {
         // Line at x=5, parallel to Z axis → revolve around Z → cylinder r=5
         let line = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
-        let rev = Surface.revolution(meridian: line,
-                                     axisOrigin: .zero,
-                                     axisDirection: SIMD3(0, 0, 1))
+        let rev = Surface.revolution(
+            meridian: line,
+            axisOrigin: .zero,
+            axisDirection: SIMD3(0, 0, 1))
         #expect(rev != nil)
         if let rev = rev {
             #expect(rev.isUPeriodic == true)
@@ -809,7 +846,7 @@ struct SurfaceFreeformTests {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0)],
             [SIMD3(0, 5, 2), SIMD3(5, 5, 3), SIMD3(10, 5, 2)],
-            [SIMD3(0, 10, 0), SIMD3(5, 10, 0), SIMD3(10, 10, 0)]
+            [SIMD3(0, 10, 0), SIMD3(5, 10, 0), SIMD3(10, 10, 0)],
         ]
         let bez = Surface.bezier(poles: poles)
         #expect(bez != nil)
@@ -835,15 +872,16 @@ struct SurfaceFreeformTests {
     func bsplineSurface() {
         // 4x4 control grid, degree 3x3
         let poles: [[SIMD3<Double>]] = [
-            [SIMD3(0,0,0), SIMD3(3,0,0), SIMD3(7,0,0), SIMD3(10,0,0)],
-            [SIMD3(0,3,1), SIMD3(3,3,2), SIMD3(7,3,2), SIMD3(10,3,1)],
-            [SIMD3(0,7,1), SIMD3(3,7,2), SIMD3(7,7,2), SIMD3(10,7,1)],
-            [SIMD3(0,10,0), SIMD3(3,10,0), SIMD3(7,10,0), SIMD3(10,10,0)]
+            [SIMD3(0, 0, 0), SIMD3(3, 0, 0), SIMD3(7, 0, 0), SIMD3(10, 0, 0)],
+            [SIMD3(0, 3, 1), SIMD3(3, 3, 2), SIMD3(7, 3, 2), SIMD3(10, 3, 1)],
+            [SIMD3(0, 7, 1), SIMD3(3, 7, 2), SIMD3(7, 7, 2), SIMD3(10, 7, 1)],
+            [SIMD3(0, 10, 0), SIMD3(3, 10, 0), SIMD3(7, 10, 0), SIMD3(10, 10, 0)],
         ]
-        let bsp = Surface.bspline(poles: poles,
-                                   knotsU: [0, 1], multiplicitiesU: [4, 4],
-                                   knotsV: [0, 1], multiplicitiesV: [4, 4],
-                                   degreeU: 3, degreeV: 3)
+        let bsp = Surface.bspline(
+            poles: poles,
+            knotsU: [0, 1], multiplicitiesU: [4, 4],
+            knotsV: [0, 1], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
         #expect(bsp != nil)
         if let bsp = bsp {
             #expect(bsp.uDegree == 3)
@@ -858,7 +896,7 @@ struct SurfaceFreeformTests {
     func bezierPolesRoundTrip() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(5, 0, 1)],
-            [SIMD3(0, 5, 1), SIMD3(5, 5, 0)]
+            [SIMD3(0, 5, 1), SIMD3(5, 5, 0)],
         ]
         let bez = Surface.bezier(poles: poles)!
         let retrieved = bez.poles
@@ -881,8 +919,9 @@ struct SurfaceOperationsTests {
         let dom = sphere.domain
         let uMid = (dom.uMin + dom.uMax) / 2
         let vMid = (dom.vMin + dom.vMax) / 2
-        let trimmed = sphere.trimmed(u1: dom.uMin, u2: uMid,
-                                      v1: dom.vMin, v2: vMid)
+        let trimmed = sphere.trimmed(
+            u1: dom.uMin, u2: uMid,
+            v1: dom.vMin, v2: vMid)
         #expect(trimmed != nil)
         if let trimmed = trimmed {
             let tDom = trimmed.domain
@@ -954,8 +993,9 @@ struct SurfaceOperationsTests {
         let axisOrigin = SIMD3<Double>.zero
         let axisDirection = SIMD3<Double>(0, 0, 1)
 
-        let rotated = sphere.rotated(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                                      angle: angle)
+        let rotated = sphere.rotated(
+            axisOrigin: axisOrigin, axisDirection: axisDirection,
+            angle: angle)
         #expect(rotated != nil)
         if let rotated = rotated {
             let pOrig = sphere.point(atU: 0.3, v: 0.2)
@@ -1083,13 +1123,13 @@ struct SurfaceDrawTests {
     func drawGrid() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         let grid = sphere.drawGrid(uLineCount: 5, vLineCount: 5, pointsPerLine: 20)
-        #expect(grid.count == 10) // 5 U-iso + 5 V-iso lines
+        #expect(grid.count == 10)  // 5 U-iso + 5 V-iso lines
         for line in grid {
             #expect(line.count == 20)
             // All points should be on sphere
             for p in line {
                 let dist = simd_length(p)
-                #expect(abs(dist - 5.0) < 0.5) // allow some tolerance for polar regions
+                #expect(abs(dist - 5.0) < 0.5)  // allow some tolerance for polar regions
             }
         }
     }
@@ -1107,7 +1147,8 @@ struct SurfaceDrawTests {
     @Test("Draw mesh on an asymmetric grid indexes .at(u:v:) correctly")
     func drawMeshAsymmetric() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
-        let uCount = 6, vCount = 4
+        let uCount = 6
+        let vCount = 4
         let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)
         #expect(mesh.uCount == uCount)
         #expect(mesh.vCount == vCount)
@@ -1157,7 +1198,6 @@ struct SurfacePipeTests {
     }
 }
 
-
 // MARK: - Curve Projection onto Surfaces Tests (v0.22.0)
 
 @Suite("Surface Curve Projection Tests")
@@ -1183,11 +1223,13 @@ struct SurfaceCurveProjectionTests {
     @Test("Project circle onto cylinder returns 2D curve")
     func projectCircleOntoCylinder() {
         // Cylinder along Z axis
-        let cyl = Surface.cylinder(origin: SIMD3(0, 0, 0),
-                                   axis: SIMD3(0, 0, 1), radius: 5)!
+        let cyl = Surface.cylinder(
+            origin: SIMD3(0, 0, 0),
+            axis: SIMD3(0, 0, 1), radius: 5)!
         // Circle in the XY plane at z=3, radius matching the cylinder
-        let circle = Curve3D.circle(center: SIMD3(0, 0, 3),
-                                    normal: SIMD3(0, 0, 1), radius: 5)!
+        let circle = Curve3D.circle(
+            center: SIMD3(0, 0, 3),
+            normal: SIMD3(0, 0, 1), radius: 5)!
 
         let projected = cyl.projectCurve(circle)
         #expect(projected != nil)
@@ -1232,8 +1274,9 @@ struct SurfaceCurveProjectionTests {
 
     @Test("Project point onto cylinder surface")
     func projectPointOntoCylinder() {
-        let cyl = Surface.cylinder(origin: SIMD3(0, 0, 0),
-                                   axis: SIMD3(0, 0, 1), radius: 3)!
+        let cyl = Surface.cylinder(
+            origin: SIMD3(0, 0, 0),
+            axis: SIMD3(0, 0, 1), radius: 3)!
         let result = cyl.projectPoint(SIMD3(6, 0, 5))
         #expect(result != nil)
         if let r = result {
@@ -1287,7 +1330,7 @@ struct AdvancedPlateSurfaceTests {
     func platePointsAdvancedG0() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
-            SIMD3(0, 10, 1), SIMD3(5, 5, 3)
+            SIMD3(0, 10, 1), SIMD3(5, 5, 3),
         ]
         let orders: [SurfaceContinuity] = [.g0, .g0, .g0, .g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
@@ -1301,7 +1344,7 @@ struct AdvancedPlateSurfaceTests {
     func platePointsMixedOrders() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
-            SIMD3(0, 10, 0), SIMD3(5, 5, 2)
+            SIMD3(0, 10, 0), SIMD3(5, 5, 2),
         ]
         let orders: [SurfaceContinuity] = [.g0, .g1, .g0, .g1, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
@@ -1313,7 +1356,7 @@ struct AdvancedPlateSurfaceTests {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(5, 0, 1), SIMD3(10, 0, 0),
             SIMD3(0, 5, 1), SIMD3(5, 5, 3), SIMD3(10, 5, 1),
-            SIMD3(0, 10, 0), SIMD3(5, 10, 1), SIMD3(10, 10, 0)
+            SIMD3(0, 10, 0), SIMD3(5, 10, 1), SIMD3(10, 10, 0),
         ]
         let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 9)
         let shape = Shape.plateSurface(
@@ -1343,13 +1386,14 @@ struct AdvancedPlateSurfaceTests {
     func plateMixedPointsAndCurves() {
         let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(5, 5, 3), order: .g0),
-            (point: SIMD3(2, 8, 1), order: .g0)
+            (point: SIMD3(2, 8, 1), order: .g0),
         ]
 
         // Create a boundary wire (3D path)
-        let wire = Wire.path([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-        ], closed: true)
+        let wire = Wire.path(
+            [
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+            ], closed: true)
         guard let w = wire else {
             #expect(Bool(false), "Failed to create boundary wire")
             return
@@ -1372,7 +1416,7 @@ struct AdvancedPlateSurfaceTests {
             (point: SIMD3(0, 0, 0), order: .g0),
             (point: SIMD3(10, 0, 1), order: .g0),
             (point: SIMD3(10, 10, 2), order: .g0),
-            (point: SIMD3(0, 10, 1), order: .g0)
+            (point: SIMD3(0, 10, 1), order: .g0),
         ]
         let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = []
 
@@ -1387,7 +1431,7 @@ struct AdvancedPlateSurfaceTests {
     func plateAdvancedArea() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
-            SIMD3(0, 10, 0), SIMD3(5, 5, 5)
+            SIMD3(0, 10, 0), SIMD3(5, 5, 5),
         ]
         let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 5)
         let shape = Shape.plateSurface(through: points, orders: orders)
@@ -1405,7 +1449,7 @@ struct ParametricPlateSurfaceTests {
     func plateThroughPoints() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
-            SIMD3(0, 10, 1), SIMD3(5, 5, 3)
+            SIMD3(0, 10, 1), SIMD3(5, 5, 3),
         ]
         let surface = Surface.plateThrough(points)
         #expect(surface != nil)
@@ -1418,7 +1462,7 @@ struct ParametricPlateSurfaceTests {
     @Test("Plate through points is evaluable")
     func plateThroughEvaluable() {
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
         ]
         let surface = Surface.plateThrough(points)
         #expect(surface != nil)
@@ -1445,7 +1489,7 @@ struct ParametricPlateSurfaceTests {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(5, 0, 2), SIMD3(10, 0, 0),
             SIMD3(0, 5, 2), SIMD3(5, 5, 4), SIMD3(10, 5, 2),
-            SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 0)
+            SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 0),
         ]
         let surface = Surface.plateThrough(points, degree: 4, tolerance: 0.001)
         #expect(surface != nil)
@@ -1488,7 +1532,7 @@ struct NLPlateDeformationTests {
             constraints: [
                 (uv: SIMD2(-5, -5), target: SIMD3(-5, -5, 1)),
                 (uv: SIMD2(5, 5), target: SIMD3(5, 5, 2)),
-                (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5))
+                (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5)),
             ],
             resolutionOrder: 4,
             tolerance: 0.1
@@ -1533,8 +1577,10 @@ struct NLPlateDeformationTests {
         // G0+G1: target position + desired tangent vectors
         let deformed = surface.nlPlateDeformedG1(
             constraints: [
-                (uv: SIMD2(0, 0), target: SIMD3(0, 0, 5),
-                 tangentU: SIMD3(1, 0, 0.5), tangentV: SIMD3(0, 1, 0.5))
+                (
+                    uv: SIMD2(0, 0), target: SIMD3(0, 0, 5),
+                    tangentU: SIMD3(1, 0, 0.5), tangentV: SIMD3(0, 1, 0.5)
+                )
             ],
             resolutionOrder: 4,
             tolerance: 0.1
@@ -1554,10 +1600,14 @@ struct NLPlateDeformationTests {
         // Use closer constraints with more iterations for convergence
         let deformed = surface.nlPlateDeformedG1(
             constraints: [
-                (uv: SIMD2(-2, 0), target: SIMD3(-2, 0, 1),
-                 tangentU: SIMD3(1, 0, 0.2), tangentV: SIMD3(0, 1, 0)),
-                (uv: SIMD2(2, 0), target: SIMD3(2, 0, 1),
-                 tangentU: SIMD3(1, 0, -0.2), tangentV: SIMD3(0, 1, 0))
+                (
+                    uv: SIMD2(-2, 0), target: SIMD3(-2, 0, 1),
+                    tangentU: SIMD3(1, 0, 0.2), tangentV: SIMD3(0, 1, 0)
+                ),
+                (
+                    uv: SIMD2(2, 0), target: SIMD3(2, 0, 1),
+                    tangentU: SIMD3(1, 0, -0.2), tangentV: SIMD3(0, 1, 0)
+                ),
             ],
             resolutionOrder: 8,
             tolerance: 1.0
@@ -1647,7 +1697,8 @@ struct BatchSurfaceTests {
         // data. Now both return SurfaceGrid, sampled here at the same asymmetric (u, v) grid, so
         // they must agree point-for-point under the same .at(u:v:) indexing.
         let sphere = Surface.sphere(center: .zero, radius: 5)!
-        let uCount = 5, vCount = 3
+        let uCount = 5
+        let vCount = 3
         let meshGrid = sphere.drawMesh(uCount: uCount, vCount: vCount)
 
         var (uMin, uMax, vMin, vMax) = sphere.domain
@@ -1687,18 +1738,18 @@ struct BezierSurfaceFillTests {
     @Test("Fill 4 bezier curves into surface")
     func fill4Curves() {
         // Create 4 Bezier curves forming a quadrilateral boundary
-        let c1 = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(5,1,0), SIMD3(10,0,0)])!
-        let c2 = Curve3D.bezier(poles: [SIMD3(10,0,0), SIMD3(11,5,0), SIMD3(10,10,0)])!
-        let c3 = Curve3D.bezier(poles: [SIMD3(10,10,0), SIMD3(5,11,0), SIMD3(0,10,0)])!
-        let c4 = Curve3D.bezier(poles: [SIMD3(0,10,0), SIMD3(-1,5,0), SIMD3(0,0,0)])!
+        let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 1, 0), SIMD3(10, 0, 0)])!
+        let c2 = Curve3D.bezier(poles: [SIMD3(10, 0, 0), SIMD3(11, 5, 0), SIMD3(10, 10, 0)])!
+        let c3 = Curve3D.bezier(poles: [SIMD3(10, 10, 0), SIMD3(5, 11, 0), SIMD3(0, 10, 0)])!
+        let c4 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(-1, 5, 0), SIMD3(0, 0, 0)])!
         let surf = Surface.bezierFill(c1, c2, c3, c4)
         #expect(surf != nil)
     }
 
     @Test("Fill 2 bezier curves into surface")
     func fill2Curves() {
-        let c1 = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(5,2,0), SIMD3(10,0,0)])!
-        let c2 = Curve3D.bezier(poles: [SIMD3(0,10,0), SIMD3(5,8,0), SIMD3(10,10,0)])!
+        let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 2, 0), SIMD3(10, 0, 0)])!
+        let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(5, 8, 0), SIMD3(10, 10, 0)])!
         let surf = Surface.bezierFill(c1, c2)
         #expect(surf != nil)
     }
@@ -1706,8 +1757,8 @@ struct BezierSurfaceFillTests {
     @Test("Fill with different styles")
     func fillStyles() {
         // Use 3-pole bezier curves for better style differentiation
-        let c1 = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(5,2,0), SIMD3(10,0,0)])!
-        let c2 = Curve3D.bezier(poles: [SIMD3(0,10,0), SIMD3(5,8,0), SIMD3(10,10,0)])!
+        let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 2, 0), SIMD3(10, 0, 0)])!
+        let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 0), SIMD3(5, 8, 0), SIMD3(10, 10, 0)])!
         let stretch = Surface.bezierFill(c1, c2, style: .stretch)
         let coons = Surface.bezierFill(c1, c2, style: .coons)
         let curved = Surface.bezierFill(c1, c2, style: .curved)
@@ -1719,8 +1770,8 @@ struct BezierSurfaceFillTests {
 
     @Test("Non-bezier curves return nil")
     func nonBezierFails() {
-        let seg1 = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
-        let seg2 = Curve3D.segment(from: SIMD3(0,10,0), to: SIMD3(10,10,0))!
+        let seg1 = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+        let seg2 = Curve3D.segment(from: SIMD3(0, 10, 0), to: SIMD3(10, 10, 0))!
         let surf = Surface.bezierFill(seg1, seg2)
         // Segments are not Bezier curves, so this should fail
         #expect(surf == nil)
@@ -1859,7 +1910,7 @@ struct PipeShellTransitionTests {
     func pipeRightCorner() {
         // Spine goes along Z first, so default XY-plane circle profile
         // is perpendicular to the spine tangent (required for RightCorner)
-        let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
+        let spine = Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)])!
         let profile = Wire.circle(radius: 2)!
         let result = Shape.pipeShell(
             spine: spine, profile: profile,
@@ -1872,7 +1923,7 @@ struct PipeShellTransitionTests {
     func pipeRoundCorner() {
         // Spine goes along Z first, so default XY-plane circle profile
         // is perpendicular to the spine tangent (required for RoundCorner)
-        let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
+        let spine = Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)])!
         let profile = Wire.circle(radius: 2)!
         let result = Shape.pipeShell(
             spine: spine, profile: profile,
@@ -1901,9 +1952,10 @@ struct FaceFromSurfaceTests {
     func faceFromCylinder() {
         let surface = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5)!
         // U = angle [0, 2π], V = height along axis
-        let face = Shape.face(from: surface,
-                              uRange: 0.0...(Double.pi),
-                              vRange: 0.0...10.0)
+        let face = Shape.face(
+            from: surface,
+            uRange: 0.0...(Double.pi),
+            vRange: 0.0...10.0)
         #expect(face != nil)
         if let f = face {
             // Half-cylinder: area = π*r*h = π*5*10 ≈ 157.08
@@ -2073,10 +2125,10 @@ struct BSplineSurfaceFillTests {
     func twoCurveFill() {
         // Two parallel BSpline curves
         let c1 = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(5, 0, 2), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(5, 0, 2), SIMD3(10, 0, 0),
         ])
         let c2 = Curve3D.interpolate(points: [
-            SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 0)
+            SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 0),
         ])
         #expect(c1 != nil)
         #expect(c2 != nil)
@@ -2090,16 +2142,16 @@ struct BSplineSurfaceFillTests {
     func fourCurveCoonsFill() {
         // Use fit() (GeomAPI_PointsToBSpline) for compatible BSpline parameterization
         let c1 = Curve3D.fit(points: [
-            SIMD3(0, 0, 0), SIMD3(5, 0, 1), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(5, 0, 1), SIMD3(10, 0, 0),
         ])
         let c2 = Curve3D.fit(points: [
-            SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)
+            SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0),
         ])
         let c3 = Curve3D.fit(points: [
-            SIMD3(10, 10, 0), SIMD3(5, 10, 1), SIMD3(0, 10, 0)
+            SIMD3(10, 10, 0), SIMD3(5, 10, 1), SIMD3(0, 10, 0),
         ])
         let c4 = Curve3D.fit(points: [
-            SIMD3(0, 10, 0), SIMD3(0, 5, 1), SIMD3(0, 0, 0)
+            SIMD3(0, 10, 0), SIMD3(0, 5, 1), SIMD3(0, 0, 0),
         ])
         #expect(c1 != nil)
         #expect(c2 != nil)
@@ -2115,10 +2167,10 @@ struct BSplineSurfaceFillTests {
     func stretchFill() {
         // Stretch fill from 2 parallel curves
         let c1 = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0),
         ])
         let c2 = Curve3D.interpolate(points: [
-            SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)
+            SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0),
         ])
         if let c1, let c2 {
             let surface = Surface.bsplineFill(curve1: c1, curve2: c2, style: .stretch)
@@ -2380,14 +2432,16 @@ struct SurfaceKnotSplittingTests {
 struct JoinBezierPatchesTests {
     @Test("Join two Bezier patches into BSpline")
     func joinPatches() throws {
-        let patch1 = try #require(Surface.bezier(poles: [
-            [SIMD3(0, 0, 0), SIMD3(0, 10, 0)],
-            [SIMD3(5, 0, 0), SIMD3(5, 10, 0)]
-        ]))
-        let patch2 = try #require(Surface.bezier(poles: [
-            [SIMD3(5, 0, 0), SIMD3(5, 10, 0)],
-            [SIMD3(10, 0, 0), SIMD3(10, 10, 0)]
-        ]))
+        let patch1 = try #require(
+            Surface.bezier(poles: [
+                [SIMD3(0, 0, 0), SIMD3(0, 10, 0)],
+                [SIMD3(5, 0, 0), SIMD3(5, 10, 0)],
+            ]))
+        let patch2 = try #require(
+            Surface.bezier(poles: [
+                [SIMD3(5, 0, 0), SIMD3(5, 10, 0)],
+                [SIMD3(10, 0, 0), SIMD3(10, 10, 0)],
+            ]))
         let joined = try #require(Surface.joinBezierPatches([patch1, patch2], rows: 2, cols: 1))
         #expect(joined.handle != nil)
     }
@@ -2405,17 +2459,18 @@ struct JoinBezierPatchesTests {
         let invSqrt2 = 1.0 / 2.0.squareRoot()
         let radius = 10.0
         let height = 5.0
-        let patch = try #require(Surface.bezier(
-            poles: [
-                [SIMD3(radius, 0, 0), SIMD3(radius, 0, height)],
-                [SIMD3(radius, radius, 0), SIMD3(radius, radius, height)],
-                [SIMD3(0, radius, 0), SIMD3(0, radius, height)],
-            ],
-            weights: [
-                [1, 1],
-                [invSqrt2, invSqrt2],
-                [1, 1],
-            ]))
+        let patch = try #require(
+            Surface.bezier(
+                poles: [
+                    [SIMD3(radius, 0, 0), SIMD3(radius, 0, height)],
+                    [SIMD3(radius, radius, 0), SIMD3(radius, radius, height)],
+                    [SIMD3(0, radius, 0), SIMD3(0, radius, height)],
+                ],
+                weights: [
+                    [1, 1],
+                    [invSqrt2, invSqrt2],
+                    [1, 1],
+                ]))
         // Sanity check the fixture is genuinely rational. IsURational()/IsVRational() are
         // OCCT's own, and this bridge's `poles[uRow][vCol]` axis does not correspond 1:1 to
         // OCCT's internal U/V (OCCTSurfaceCreateBezier's row/col map onto
@@ -2478,7 +2533,7 @@ struct GeomPlateSurfaceTests {
             SIMD3(0, 0, 0),
             SIMD3(10, 0, 1),
             SIMD3(0, 10, -1),
-            SIMD3(10, 10, 0.5)
+            SIMD3(10, 10, 0.5),
         ]
         let face = Shape.plateSurface(points: points)
         if let face = face {
@@ -2494,7 +2549,7 @@ struct GeomPlateSurfaceTests {
             SIMD3(20, 0, 0),
             SIMD3(0, 10, -1),
             SIMD3(10, 10, 1),
-            SIMD3(20, 10, -0.5)
+            SIMD3(20, 10, -0.5),
         ]
         let face = Shape.plateSurface(points: points, tolerance: 1e-2)
         if let face = face {
@@ -2558,8 +2613,10 @@ struct GeomFillCoonsTests {
     @Test("Coons filling from boundaries")
     func coonsFilling() {
         let n = 5
-        var b1 = [SIMD3<Double>](), b2 = [SIMD3<Double>]()
-        var b3 = [SIMD3<Double>](), b4 = [SIMD3<Double>]()
+        var b1 = [SIMD3<Double>]()
+        var b2 = [SIMD3<Double>]()
+        var b3 = [SIMD3<Double>]()
+        var b4 = [SIMD3<Double>]()
         for i in 0..<n {
             let t = Double(i) / Double(n - 1)
             b1.append(SIMD3(t * 10, 0, 0))
@@ -2582,8 +2639,10 @@ struct GeomFillCurvedTests {
     @Test("Curved filling from boundaries")
     func curvedFilling() {
         let n = 5
-        var b1 = [SIMD3<Double>](), b2 = [SIMD3<Double>]()
-        var b3 = [SIMD3<Double>](), b4 = [SIMD3<Double>]()
+        var b1 = [SIMD3<Double>]()
+        var b2 = [SIMD3<Double>]()
+        var b3 = [SIMD3<Double>]()
+        var b4 = [SIMD3<Double>]()
         for i in 0..<n {
             let t = Double(i) / Double(n - 1)
             b1.append(SIMD3(t * 10, 0, sin(t * .pi)))
@@ -2613,7 +2672,7 @@ struct GeomFillCoonsAlgPatchTests {
         )
         #expect(result != nil)
         if let result = result {
-            #expect(result.count == 25) // 5x5 grid
+            #expect(result.count == 25)  // 5x5 grid
         }
     }
 }
@@ -2653,8 +2712,9 @@ struct GeomFillSweepTests {
         }
         let path = try #require(Curve3D.interpolate(points: points))
         let pathEdge = try #require(Shape.edgeFromCurve(path))
-        let sectionEdge = try #require(Shape.edgeFromCircle(
-            center: .zero, axis: SIMD3(0, 0, 1), radius: 1, p1: 0, p2: 2 * .pi))
+        let sectionEdge = try #require(
+            Shape.edgeFromCircle(
+                center: .zero, axis: SIMD3(0, 0, 1), radius: 1, p1: 0, p2: 2 * .pi))
         #expect(Shape.geomFillSweep(path: pathEdge, section: sectionEdge) == nil)
     }
 }
@@ -2681,7 +2741,8 @@ struct GeomFillEvolvedSectionTests {
 struct LocalAnalysisSurfaceContinuityTests {
     @Test func identicalPlanes() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else { return }
+            let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
+        else { return }
         // Planes have no second derivative, so the `.c2` default is NullSecondDerivative and
         // answers nil, these three suites used to assert nothing at all (#495). `.c1` is the
         // strictest order a plane can be analysed at.
@@ -2696,7 +2757,8 @@ struct LocalAnalysisSurfaceContinuityTests {
 
     @Test func planeVsCylinder() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let s2 = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5.0) else { return }
+            let s2 = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5.0)
+        else { return }
         let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
         #expect(analysis?.order == .c1)
         // The two surfaces are 5 units apart at these parameters, so not even C0 holds.
@@ -2705,7 +2767,8 @@ struct LocalAnalysisSurfaceContinuityTests {
 
     @Test func surfaceContinuityFlags() {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else { return }
+            let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
+        else { return }
         let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
         #expect((analysis?.flags ?? 0) > 0)
     }
@@ -2800,8 +2863,9 @@ struct GeomFillNSectionsTests {
     @Test func surfaceFromCircleSections() {
         // Create circles at different heights
         guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0),
-              let c2 = Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0),
-              let c3 = Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0) else { return }
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0),
+            let c3 = Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0)
+        else { return }
         if let surf = Surface.nSections(curves: [c1, c2, c3], params: [0.0, 0.5, 1.0]) {
             _ = surf
         }
@@ -2809,7 +2873,8 @@ struct GeomFillNSectionsTests {
 
     @Test func sectionInfo() {
         guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0),
-              let c2 = Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0) else { return }
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0)
+        else { return }
         if let info = Surface.nSectionsInfo(curves: [c1, c2], params: [0.0, 1.0]) {
             #expect(info.poleCount > 0)
             #expect(info.knotCount > 0)
@@ -2826,15 +2891,17 @@ struct NLPlateG2G3Tests {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
         if let plane = plane {
             let result = plane.nlPlateDeformedG2(
-                constraints: [(
-                    uv: SIMD2(0.5, 0.5),
-                    target: SIMD3(0.5, 0.5, 1.0),
-                    tangentU: SIMD3(1, 0, 0),
-                    tangentV: SIMD3(0, 1, 0),
-                    curvatureUU: SIMD3(0, 0, 0.1),
-                    curvatureUV: SIMD3(0, 0, 0),
-                    curvatureVV: SIMD3(0, 0, 0.1)
-                )])
+                constraints: [
+                    (
+                        uv: SIMD2(0.5, 0.5),
+                        target: SIMD3(0.5, 0.5, 1.0),
+                        tangentU: SIMD3(1, 0, 0),
+                        tangentV: SIMD3(0, 1, 0),
+                        curvatureUU: SIMD3(0, 0, 0.1),
+                        curvatureUV: SIMD3(0, 0, 0),
+                        curvatureVV: SIMD3(0, 0, 0.1)
+                    )
+                ])
             #expect(result != nil)
         }
     }
@@ -2843,19 +2910,21 @@ struct NLPlateG2G3Tests {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
         if let plane = plane {
             let result = plane.nlPlateDeformedG3(
-                constraints: [(
-                    uv: SIMD2(0.3, 0.3),
-                    target: SIMD3(0.3, 0.3, 0.5),
-                    tangentU: SIMD3(1, 0, 0),
-                    tangentV: SIMD3(0, 1, 0),
-                    curvatureUU: SIMD3(0, 0, 0),
-                    curvatureUV: SIMD3(0, 0, 0),
-                    curvatureVV: SIMD3(0, 0, 0),
-                    d3UUU: SIMD3(0, 0, 0),
-                    d3UUV: SIMD3(0, 0, 0),
-                    d3UVV: SIMD3(0, 0, 0),
-                    d3VVV: SIMD3(0, 0, 0)
-                )])
+                constraints: [
+                    (
+                        uv: SIMD2(0.3, 0.3),
+                        target: SIMD3(0.3, 0.3, 0.5),
+                        tangentU: SIMD3(1, 0, 0),
+                        tangentV: SIMD3(0, 1, 0),
+                        curvatureUU: SIMD3(0, 0, 0),
+                        curvatureUV: SIMD3(0, 0, 0),
+                        curvatureVV: SIMD3(0, 0, 0),
+                        d3UUU: SIMD3(0, 0, 0),
+                        d3UUV: SIMD3(0, 0, 0),
+                        d3UVV: SIMD3(0, 0, 0),
+                        d3VVV: SIMD3(0, 0, 0)
+                    )
+                ])
             #expect(result != nil)
         }
     }
@@ -2924,8 +2993,9 @@ struct PlateSolverTests {
         solver.loadPinpoint(u: 1, v: 0, position: SIMD3(1, 0, 0))
         solver.loadPinpoint(u: 0, v: 1, position: SIMD3(0, 1, 0))
         solver.loadPinpoint(u: 1, v: 1, position: SIMD3(1, 1, 0))
-        solver.loadDerivativeConstraint(u: 0.5, v: 0.5, value: SIMD3(0, 0, 2.0),
-                                         derivativeOrderU: 1, derivativeOrderV: 0)
+        solver.loadDerivativeConstraint(
+            u: 0.5, v: 0.5, value: SIMD3(0, 0, 2.0),
+            derivativeOrderU: 1, derivativeOrderV: 0)
         #expect(solver.solve())
     }
 
@@ -2937,8 +3007,9 @@ struct PlateSolverTests {
         solver.loadPinpoint(u: 0.5, v: 0.5, position: SIMD3(0.5, 0.5, 1.0))
         solver.solve()
 
-        let deriv = solver.evaluateDerivative(u: 0.5, v: 0.5,
-                                               derivativeOrderU: 1, derivativeOrderV: 0)
+        let deriv = solver.evaluateDerivative(
+            u: 0.5, v: 0.5,
+            derivativeOrderU: 1, derivativeOrderV: 0)
         // Just verify it returns something reasonable
         #expect(deriv.x.isFinite)
     }
@@ -2949,9 +3020,10 @@ struct PlateSolverTests {
         solver.loadPinpoint(u: 1, v: 0, position: SIMD3(1, 0, 0))
         solver.loadPinpoint(u: 0, v: 1, position: SIMD3(0, 1, 0))
         solver.loadPinpoint(u: 1, v: 1, position: SIMD3(1, 1, 0))
-        solver.loadGtoC(u: 0.5, v: 0.5,
-                         sourceD1: (tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0)),
-                         targetD1: (tangentU: SIMD3(1, 0, 0.1), tangentV: SIMD3(0, 1, 0.1)))
+        solver.loadGtoC(
+            u: 0.5, v: 0.5,
+            sourceD1: (tangentU: SIMD3(1, 0, 0), tangentV: SIMD3(0, 1, 0)),
+            targetD1: (tangentU: SIMD3(1, 0, 0.1), tangentV: SIMD3(0, 1, 0.1)))
         #expect(solver.solve())
     }
 }
@@ -2960,9 +3032,11 @@ struct PlateSolverTests {
 struct GeomPlateBuildAveragePlaneTests {
     @Test func planarPoints() {
         let result = Surface.averagePlane(
-            points: [SIMD3(0, 0, 0), SIMD3(1, 0, 0.1),
-                     SIMD3(0, 1, 0), SIMD3(1, 1, 0.1),
-                     SIMD3(0.5, 0.5, 0.05)])
+            points: [
+                SIMD3(0, 0, 0), SIMD3(1, 0, 0.1),
+                SIMD3(0, 1, 0), SIMD3(1, 1, 0.1),
+                SIMD3(0.5, 0.5, 0.05),
+            ])
         #expect(result != nil)
         if let r = result {
             #expect(r.isPlane)
@@ -2974,7 +3048,7 @@ struct GeomPlateBuildAveragePlaneTests {
         let result = Surface.averagePlane(
             points: [SIMD3(0, 0, 0), SIMD3(1, 1, 1), SIMD3(2, 2, 2)])
         // May or may not detect as line/plane, just test it doesn't crash
-        #expect(result != nil || result == nil) // always true
+        #expect(result != nil || result == nil)  // always true
     }
 }
 
@@ -3052,8 +3126,9 @@ struct ProjectCurveOnSurfaceTests {
     @Test("project line onto plane")
     func projectLineOnPlane() {
         if let line = Curve3D.line(through: SIMD3(1, 2, 0), direction: SIMD3(1, 0, 0)),
-           let trimmed = line.trimmed(from: 0, to: 10),
-           let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
+            let trimmed = line.trimmed(from: 0, to: 10),
+            let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+        {
             let curve2d = trimmed.projectOnSurface(plane)
             #expect(curve2d != nil)
         }
@@ -3065,7 +3140,8 @@ struct GeomFillProfilerTests {
     @Test("add curves and perform")
     func addCurvesAndPerform() {
         if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
+        {
             let profiler = CurveProfiler.create()
             profiler.addCurve(c1)
             profiler.addCurve(c2)
@@ -3089,7 +3165,8 @@ struct GeomFillProfilerTests {
     @Test("null-handle guard does not block a valid curve (#710 regression)")
     func nullHandleGuardAllowsValidCurve() {
         guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
+        else {
             Issue.record("failed to build probe curves")
             return
         }
@@ -3098,7 +3175,9 @@ struct GeomFillProfilerTests {
         profiler.addCurve(c2)
         profiler.perform()
         guard profiler.degree > 0 else {
-            Issue.record("profiler.degree was 0 after adding two valid curves -- the null-handle guard rejected a valid curve")
+            Issue.record(
+                "profiler.degree was 0 after adding two valid curves -- the null-handle guard rejected a valid curve"
+            )
             return
         }
         #expect(profiler.poleCount > 0)
@@ -3107,7 +3186,8 @@ struct GeomFillProfilerTests {
     @Test("extract poles")
     func extractPoles() {
         if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
+        {
             let profiler = CurveProfiler.create()
             profiler.addCurve(c1)
             profiler.addCurve(c2)
@@ -3120,7 +3200,8 @@ struct GeomFillProfilerTests {
     @Test("knots and multiplicities")
     func knotsAndMults() {
         if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let c2 = Curve3D.circle(center: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1), radius: 4) {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1), radius: 4)
+        {
             let profiler = CurveProfiler.create()
             profiler.addCurve(c1)
             profiler.addCurve(c2)
@@ -3175,7 +3256,8 @@ struct GeomFillLocationDraftTests {
     func setCurveAndEvaluate() {
         let loc = LocationDraft.create(direction: SIMD3(0, 0, 1), angle: .pi / 12)
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let path = line.trimmed(from: 0, to: 10) {
+            let path = line.trimmed(from: 0, to: 10)
+        {
             loc.setCurve(path)
             if let result = loc.evaluate(at: 5.0) {
                 #expect(result.matrix.count == 9)
@@ -3197,10 +3279,12 @@ struct GeomFillGuideTrihedronACTests {
     @Test("create with guide and path")
     func createAndSetPath() {
         if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-           let guideTrimmed = guide.trimmed(from: 0, to: 10) {
+            let guideTrimmed = guide.trimmed(from: 0, to: 10)
+        {
             let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
             if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-               let pathTrimmed = path.trimmed(from: 0, to: 10) {
+                let pathTrimmed = path.trimmed(from: 0, to: 10)
+            {
                 triAC.setCurve(pathTrimmed)
                 #expect(Bool(true))
             }
@@ -3210,10 +3294,12 @@ struct GeomFillGuideTrihedronACTests {
     @Test("D0 evaluation")
     func d0Evaluation() {
         if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-           let guideTrimmed = guide.trimmed(from: 0, to: 10) {
+            let guideTrimmed = guide.trimmed(from: 0, to: 10)
+        {
             let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
             if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-               let pathTrimmed = path.trimmed(from: 0, to: 10) {
+                let pathTrimmed = path.trimmed(from: 0, to: 10)
+            {
                 triAC.setCurve(pathTrimmed)
                 if let frame = triAC.evaluate(at: 5.0) {
                     #expect(abs(frame.tangent.x) > 0.3)
@@ -3239,7 +3325,9 @@ struct GeomFillGuideTrihedronACTests {
         triAC.setCurve(pathTrimmed)
         let frame = try #require(triAC.evaluate(at: 5.0))
 
-        let t = frame.tangent, n = frame.normal, b = frame.binormal
+        let t = frame.tangent
+        let n = frame.normal
+        let b = frame.binormal
         #expect(abs(simd_length(t) - 1) < 1e-6)
         #expect(abs(simd_length(n) - 1) < 1e-6)
         #expect(abs(simd_length(b) - 1) < 1e-6)
@@ -3255,10 +3343,12 @@ struct GeomFillGuideTrihedronPlanTests {
     @Test("create and evaluate")
     func createAndEvaluate() {
         if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-           let guideTrimmed = guide.trimmed(from: 0, to: 10) {
+            let guideTrimmed = guide.trimmed(from: 0, to: 10)
+        {
             let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
             if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-               let pathTrimmed = path.trimmed(from: 0, to: 10) {
+                let pathTrimmed = path.trimmed(from: 0, to: 10)
+            {
                 triPlan.setCurve(pathTrimmed)
                 let frame = triPlan.evaluate(at: 5.0)
                 #expect(frame != nil)
@@ -3279,7 +3369,9 @@ struct GeomFillGuideTrihedronPlanTests {
         triPlan.setCurve(pathTrimmed)
         let frame = try #require(triPlan.evaluate(at: 5.0))
 
-        let t = frame.tangent, n = frame.normal, b = frame.binormal
+        let t = frame.tangent
+        let n = frame.normal
+        let b = frame.binormal
         #expect(abs(simd_length(t) - 1) < 1e-6)
         #expect(abs(simd_length(n) - 1) < 1e-6)
         #expect(abs(simd_length(b) - 1) < 1e-6)
@@ -3295,8 +3387,9 @@ struct GeomFillSectionPlacementTests {
     @Test("place section on path")
     func placeSectionOnPath() {
         if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let pathTrimmed = path.trimmed(from: 0, to: 10),
-           let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2) {
+            let pathTrimmed = path.trimmed(from: 0, to: 10),
+            let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2)
+        {
             let result = pathTrimmed.sectionPlacement(section: section)
             #expect(result.isDone)
             #expect(result.distance >= 0)
@@ -3306,8 +3399,9 @@ struct GeomFillSectionPlacementTests {
     @Test("query placement parameters")
     func queryPlacementParams() {
         if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let pathTrimmed = path.trimmed(from: 0, to: 10),
-           let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2) {
+            let pathTrimmed = path.trimmed(from: 0, to: 10),
+            let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2)
+        {
             let result = pathTrimmed.sectionPlacement(section: section)
             if result.isDone {
                 #expect(result.parameterOnPath >= 0)
@@ -3327,14 +3421,17 @@ struct GeomFillSectionPlacementTests {
     @Test("null-handle guard does not block a valid section (#710 regression)")
     func nullHandleGuardAllowsValidSection() {
         guard let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-              let pathTrimmed = path.trimmed(from: 0, to: 10),
-              let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2) else {
+            let pathTrimmed = path.trimmed(from: 0, to: 10),
+            let section = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 2)
+        else {
             Issue.record("failed to build probe path/section")
             return
         }
         let result = pathTrimmed.sectionPlacement(section: section)
         guard result.isDone else {
-            Issue.record("sectionPlacement did not report isDone for a valid path and section -- the null-handle guard rejected a valid section")
+            Issue.record(
+                "sectionPlacement did not report isDone for a valid path and section -- the null-handle guard rejected a valid section"
+            )
             return
         }
         #expect(result.distance >= 0)
@@ -3346,7 +3443,8 @@ struct GeomFillAppSurfTests {
     @Test("approximate surface from sections")
     func approximateSurface() {
         guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
+        else {
             Issue.record("failed to build probe curves")
             return
         }
@@ -3369,7 +3467,8 @@ struct GeomFillAppSurfTests {
     // under-sized request instead of crashing.
     @Test("rejects a single curve (#644)")
     func rejectsSingleCurve() {
-        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) else {
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5)
+        else {
             Issue.record("failed to build probe curve")
             return
         }
@@ -3388,7 +3487,8 @@ struct GeomFillAppSurfTests {
     @Test("still accepts two curves after the arity guard (#644 regression)")
     func acceptsTwoCurvesRegression() {
         guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3)
+        else {
             Issue.record("failed to build probe curves")
             return
         }
@@ -3404,7 +3504,8 @@ struct GeomFillAppSurfTests {
 struct GeomToolsSurfaceSetTests {
     @Test func serializeDeserializeSurfaces() {
         if let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
-           let cyl = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 3.0) {
+            let cyl = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 3.0)
+        {
             if let data = Surface.serializeSurfaces([plane, cyl]) {
                 #expect(!data.isEmpty)
                 if let surfaces = Surface.deserializeSurfaces(data) {
@@ -3418,20 +3519,27 @@ struct GeomToolsSurfaceSetTests {
 @Suite("Geom_RectangularTrimmedSurface Tests")
 struct RectangularTrimmedSurfaceTests {
     @Test func trimPlane() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
-        let trimmed = Surface.rectangularTrimmed(basis: plane,
-                                                   u1: -5, u2: 5, v1: -3, v2: 3)
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
+        let trimmed = Surface.rectangularTrimmed(
+            basis: plane,
+            u1: -5, u2: 5, v1: -3, v2: 3)
         #expect(trimmed != nil)
     }
 
     @Test func trimInU() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         let trimmed = Surface.trimmedInU(basis: plane, param1: -2, param2: 2)
         #expect(trimmed != nil)
     }
 
     @Test func trimInV() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         let trimmed = Surface.trimmedInV(basis: plane, param1: -3, param2: 3)
         #expect(trimmed != nil)
     }
@@ -3441,21 +3549,24 @@ struct RectangularTrimmedSurfaceTests {
 struct ConvertElementarySurfacesTests {
 
     @Test func cylinderPatch() {
-        let s = Surface.fromCylinder(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1), radius: 5,
-                                      u1: 0, u2: .pi, v1: 0, v2: 10)
+        let s = Surface.fromCylinder(
+            origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5,
+            u1: 0, u2: .pi, v1: 0, v2: 10)
         #expect(s != nil)
     }
 
     @Test func conePatch() {
-        let s = Surface.fromCone(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1),
-                                  semiAngle: .pi/6, refRadius: 5,
-                                  u1: 0, u2: .pi, v1: 0, v2: 10)
+        let s = Surface.fromCone(
+            origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+            semiAngle: .pi / 6, refRadius: 5,
+            u1: 0, u2: .pi, v1: 0, v2: 10)
         #expect(s != nil)
     }
 
     @Test func fullTorus() {
-        let s = Surface.fromTorus(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1),
-                                   majorRadius: 20, minorRadius: 5)
+        let s = Surface.fromTorus(
+            origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+            majorRadius: 20, minorRadius: 5)
         #expect(s != nil)
     }
 }
@@ -3464,32 +3575,42 @@ struct ConvertElementarySurfacesTests {
 struct GeomOffsetSurfaceExtTests {
 
     @Test func offsetValueRoundTrip() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         guard let off = plane.offset(distance: 5.0) else { return }
         #expect(abs(off.offsetValue - 5.0) < 1e-10)
     }
 
     @Test func setOffsetValue() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         guard let off = plane.offset(distance: 3.0) else { return }
         off.setOffsetValue(7.5)
         #expect(abs(off.offsetValue - 7.5) < 1e-10)
     }
 
     @Test func offsetBasisIsNotNil() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         guard let off = plane.offset(distance: 2.0) else { return }
         #expect(off.offsetBasis != nil)
     }
 
     @Test func nonOffsetSurfaceOffsetValueIsZero() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         // A plain plane has offsetValue == 0 (not an offset surface)
         #expect(abs(plane.offsetValue) < 1e-10)
     }
 
     @Test func nonOffsetSurfaceOffsetBasisIsNil() {
-        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else { return }
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) else {
+            return
+        }
         #expect(plane.offsetBasis == nil)
     }
 }
@@ -3545,9 +3666,10 @@ struct PlateConstraintExtTests {
         solver.loadPinpoint(u: 0, v: 0, position: .zero)
         solver.loadPinpoint(u: 1, v: 0, position: SIMD3(1, 0, 0))
         solver.loadPinpoint(u: 0, v: 1, position: SIMD3(0, 1, 0))
-        let ok = solver.loadPlaneConstraint(u: 0.5, v: 0.5,
-                                             planePoint: .zero,
-                                             planeNormal: SIMD3(0, 0, 1))
+        let ok = solver.loadPlaneConstraint(
+            u: 0.5, v: 0.5,
+            planePoint: .zero,
+            planeNormal: SIMD3(0, 0, 1))
         #expect(ok)
     }
 
@@ -3555,9 +3677,10 @@ struct PlateConstraintExtTests {
         let solver = PlateSolver()
         solver.loadPinpoint(u: 0, v: 0, position: .zero)
         solver.loadPinpoint(u: 1, v: 0, position: SIMD3(1, 0, 0))
-        let ok = solver.loadLineConstraint(u: 0.5, v: 0.5,
-                                            linePoint: .zero,
-                                            lineDirection: SIMD3(1, 0, 0))
+        let ok = solver.loadLineConstraint(
+            u: 0.5, v: 0.5,
+            linePoint: .zero,
+            lineDirection: SIMD3(1, 0, 0))
         #expect(ok)
     }
 
@@ -3574,7 +3697,9 @@ struct PipeShellTests {
             let spine = Shape.fromWire(spineWire)
             if let spine = spine {
                 // Profile: small circle
-                if let profile = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 1) {
+                if let profile = Wire.circle(
+                    origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 1)
+                {
                     let profileShape = Shape.fromWire(profile)
                     if let profileShape = profileShape {
                         if let builder = PipeShellBuilder(spine: spine) {
@@ -3626,7 +3751,8 @@ struct PipeShellExtensionTests {
     @Test func pipeShellMaxDegreeAndSegments() {
         // Create a simple spine wire and add a profile so it's ready
         if let spine = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10),
-           let profile = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0), radius: 1) {
+            let profile = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0), radius: 1)
+        {
             if let sw = Shape.fromWire(spine), let pw = Shape.fromWire(profile) {
                 if let psb = PipeShellBuilder(spine: sw) {
                     psb.setMaxDegree(6)
@@ -3643,7 +3769,8 @@ struct PipeShellExtensionTests {
     @Test func pipeShellErrorAndShapes() {
         // Build a simple pipe shell
         if let spine = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10),
-           let profile = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0), radius: 1) {
+            let profile = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0), radius: 1)
+        {
             if let sw = Shape.fromWire(spine), let pw = Shape.fromWire(profile) {
                 if let psb = PipeShellBuilder(spine: sw) {
                     psb.setFrenet()
@@ -3855,7 +3982,7 @@ struct PlateLinearXYZTests {
 struct SurfaceExtrasTests {
     @Test func surfaceBounds() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face) // TopAbs_FACE
+            let faces = box.subShapes(ofType: .face)  // TopAbs_FACE
             if faces.count > 0 {
                 if let surf = faces[0].extractFaceSurface() {
                     let b = surf.parameterBounds
@@ -3920,7 +4047,8 @@ struct SurfaceEvalTests {
                 if let surf = faces[0].extractFaceSurface() {
                     let r = surf.evalD1(u: 0, v: Double.pi / 4)
                     // Point should be on sphere
-                    let dist = sqrt(r.point.x * r.point.x + r.point.y * r.point.y + r.point.z * r.point.z)
+                    let dist = sqrt(
+                        r.point.x * r.point.x + r.point.y * r.point.y + r.point.z * r.point.z)
                     #expect(abs(dist - 5.0) < 1e-3)
                     // D1U and D1V should be non-zero tangent vectors
                     let d1uLen = sqrt(r.d1u.x * r.d1u.x + r.d1u.y * r.d1u.y + r.d1u.z * r.d1u.z)
@@ -3945,7 +4073,6 @@ struct SurfaceEvalTests {
     }
 }
 
-
 /// #486: the batch grid-evaluation family had three generations per type and the two Surface
 /// spellings wrote opposite UV layouts, `OCCTSurfaceEvaluateGrid` v-major and
 /// `OCCTGridEvalSurfaceD0` u-major, both header comments calling their own layout "row-major".
@@ -3965,7 +4092,8 @@ struct Issue486SurfaceGridTests {
     @Test("evaluateGridD1 indexes each (u, v) at its own parameter, not transposed")
     func evaluateGridD1MatchesDirectEvaluation() {
         guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
-        let u = Self.uParams, v = Self.vParams
+        let u = Self.uParams
+        let v = Self.vParams
         let grid = sphere.evaluateGridD1(uParameters: u, vParameters: v)
         #expect(grid.uCount == u.count)
         #expect(grid.vCount == v.count)
@@ -3985,7 +4113,8 @@ struct Issue486SurfaceGridTests {
     @Test("evaluateGrid and evaluateGridD1 agree point-for-point under .at(u:v:)")
     func evaluateGridAndD1Agree() {
         guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
-        let u = Self.uParams, v = Self.vParams
+        let u = Self.uParams
+        let v = Self.vParams
         let d0 = sphere.evaluateGrid(uParameters: u, vParameters: v)
         let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
         #expect(d0.uCount == d1.uCount)
@@ -4002,7 +4131,8 @@ struct Issue486SurfaceGridTests {
     @Test("drawMesh, evaluateGrid and evaluateGridD1 all read U-major")
     func drawMeshSharesTheGridLayout() {
         guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
-        let uCount = 5, vCount = 3
+        let uCount = 5
+        let vCount = 3
         let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)
 
         var (uMin, uMax, vMin, vMax) = sphere.domain
@@ -4036,14 +4166,14 @@ struct Issue486SurfaceGridTests {
 struct SurfaceExtrasV112Tests {
 
     @Test func surfaceTypePlane() {
-        if let surf = Surface.plane(origin: SIMD3(0,0,0), normal: SIMD3(0,0,1)) {
-            #expect(surf.surfaceType == 0) // Plane
+        if let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
+            #expect(surf.surfaceType == 0)  // Plane
         }
     }
 
     @Test func surfaceTypeSphere() {
-        if let surf = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
-            #expect(surf.surfaceType == 3) // Sphere
+        if let surf = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+            #expect(surf.surfaceType == 3)  // Sphere
         }
     }
 }
@@ -4052,20 +4182,20 @@ struct SurfaceExtrasV112Tests {
 struct ProjectionOnSurfaceTests {
 
     @Test func multiResultProjection() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             if let proj = ProjectionOnSurface(surface: sphere, point: SIMD3(10, 0, 0)) {
                 #expect(proj.count >= 1)
                 if proj.count > 0 {
                     let pt = proj.point(at: 0)
                     #expect(abs(pt.x - 5.0) < 0.5)
                     let uv = proj.parameters(at: 0)
-                    #expect(uv.u >= 0 || uv.u < 0) // just check it returns
+                    #expect(uv.u >= 0 || uv.u < 0)  // just check it returns
                     let dist = proj.distance(at: 0)
                     #expect(abs(dist - 5.0) < 0.1)
                 }
                 #expect(abs(proj.lowerDistance - 5.0) < 0.1)
                 let lp = proj.lowerParameters
-                #expect(lp.u >= 0 || lp.u < 0) // just check it returns
+                #expect(lp.u >= 0 || lp.u < 0)  // just check it returns
             }
         }
     }
@@ -4075,7 +4205,7 @@ struct ProjectionOnSurfaceTests {
 struct TypeNameTests {
 
     @Test func lineTypeName() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let name = line.typeName
             #expect(name != nil)
             if let n = name {
@@ -4085,7 +4215,7 @@ struct TypeNameTests {
     }
 
     @Test func bsplineTypeName() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(1.0,1.0,0.0), SIMD3(2.0,0.0,0.0)]
+        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0)]
         if let curve = Curve3D.fit(points: points) {
             let name = curve.typeName
             #expect(name != nil)
@@ -4096,7 +4226,7 @@ struct TypeNameTests {
     }
 
     @Test func line2dTypeName() {
-        if let line = Curve2D.line(through: SIMD2(0,0), direction: SIMD2(1,0)) {
+        if let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)) {
             let name = line.typeName
             #expect(name != nil)
             if let n = name {
@@ -4106,7 +4236,7 @@ struct TypeNameTests {
     }
 
     @Test func sphereTypeName() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             let name = sphere.typeName
             #expect(name != nil)
             if let n = name {
@@ -4116,7 +4246,7 @@ struct TypeNameTests {
     }
 
     @Test func planeTypeName() {
-        if let plane = Surface.plane(origin: SIMD3(0,0,0), normal: SIMD3(0,0,1)) {
+        if let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
             let name = plane.typeName
             #expect(name != nil)
             if let n = name {
@@ -4130,7 +4260,7 @@ struct TypeNameTests {
 struct SurfaceFromGridTests {
 
     @Test func surfaceNormal() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             let n = sphere.normal(u: 0, v: Double.pi / 4)
             let mag = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
             #expect(abs(mag - 1.0) < 0.01)
@@ -4138,7 +4268,7 @@ struct SurfaceFromGridTests {
     }
 
     @Test func surfaceCurvatures() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             if let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4) {
                 // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
                 #expect(abs(gaussian - 0.04) < 0.01)
@@ -4166,24 +4296,27 @@ struct SurfaceFromGridTests {
 struct HelixGeomEvalTests {
     @Test func helixCurveEval() {
         let p = Helix.evaluate(parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0, at: 0.0)
-        #expect(abs(p.x - 10.0) < 1.0) // near radius at t=0
+        #expect(abs(p.x - 10.0) < 1.0)  // near radius at t=0
     }
 
     @Test func helixCurveD1() {
-        let (point, tangent) = Helix.evaluateD1(parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0, at: 0.0)
+        let (point, tangent) = Helix.evaluateD1(
+            parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0, at: 0.0)
         #expect(point.x > 0)
         let mag = sqrt(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z)
         #expect(mag > 0)
     }
 
     @Test func helixCurveD2() {
-        let (_, _, d2) = Helix.evaluateD2(parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0, at: .pi)
+        let (_, _, d2) = Helix.evaluateD2(
+            parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0, at: .pi)
         let mag = sqrt(d2.x * d2.x + d2.y * d2.y + d2.z * d2.z)
         #expect(mag > 0)
     }
 
     @Test func helixApproxToBSpline() {
-        let result = Helix.approximateToBSpline(parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0)
+        let result = Helix.approximateToBSpline(
+            parameterRange: 0...(4 * .pi), pitch: 5.0, radius: 10.0)
         #expect(result != nil)
         if let r = result { #expect(r.maxError < 0.01) }
     }
@@ -4302,7 +4435,8 @@ struct BSplineSurfaceRemoveVKnotTests {
         var points = [SIMD3<Double>]()
         for v in 0..<4 {
             for u in 0..<4 {
-                points.append(SIMD3(Double(u), Double(v), sin(Double(u) * 0.5) * cos(Double(v) * 0.5)))
+                points.append(
+                    SIMD3(Double(u), Double(v), sin(Double(u) * 0.5) * cos(Double(v) * 0.5)))
             }
         }
         return Surface.fromPointGrid(points: points, uCount: 4, vCount: 4)
@@ -4352,8 +4486,9 @@ struct IntegrationUVSurfaceEvaluationTests {
                 let pt = cyl.point(atU: u, v: v)
                 // Distance from Z-axis should equal radius
                 let distFromAxis = sqrt(pt.x * pt.x + pt.y * pt.y)
-                #expect(abs(distFromAxis - radius) < 1e-6,
-                        "Point at u=\(u), v=\(v) should be at radius \(radius), got \(distFromAxis)")
+                #expect(
+                    abs(distFromAxis - radius) < 1e-6,
+                    "Point at u=\(u), v=\(v) should be at radius \(radius), got \(distFromAxis)")
             }
         }
 
@@ -4373,8 +4508,9 @@ struct IntegrationUVSurfaceEvaluationTests {
             prevPt = pt
         }
         let expectedCircumference = 2.0 * .pi * radius
-        #expect(abs(arcLength - expectedCircumference) < 0.1,
-                "Arc length \(arcLength) should approximate circumference \(expectedCircumference)")
+        #expect(
+            abs(arcLength - expectedCircumference) < 0.1,
+            "Arc length \(arcLength) should approximate circumference \(expectedCircumference)")
     }
 }
 
@@ -4388,15 +4524,16 @@ struct BSplineSurfaceCompletionsV121Tests {
     /// Helper: create a simple 4x4 BSpline surface
     private func makeBSplineSurface() -> Surface? {
         let poles: [[SIMD3<Double>]] = [
-            [SIMD3(0,0,0), SIMD3(3,0,0), SIMD3(7,0,0), SIMD3(10,0,0)],
-            [SIMD3(0,3,1), SIMD3(3,3,2), SIMD3(7,3,2), SIMD3(10,3,1)],
-            [SIMD3(0,7,1), SIMD3(3,7,2), SIMD3(7,7,2), SIMD3(10,7,1)],
-            [SIMD3(0,10,0), SIMD3(3,10,0), SIMD3(7,10,0), SIMD3(10,10,0)]
+            [SIMD3(0, 0, 0), SIMD3(3, 0, 0), SIMD3(7, 0, 0), SIMD3(10, 0, 0)],
+            [SIMD3(0, 3, 1), SIMD3(3, 3, 2), SIMD3(7, 3, 2), SIMD3(10, 3, 1)],
+            [SIMD3(0, 7, 1), SIMD3(3, 7, 2), SIMD3(7, 7, 2), SIMD3(10, 7, 1)],
+            [SIMD3(0, 10, 0), SIMD3(3, 10, 0), SIMD3(7, 10, 0), SIMD3(10, 10, 0)],
         ]
-        return Surface.bspline(poles: poles,
-                               knotsU: [0, 1], multiplicitiesU: [4, 4],
-                               knotsV: [0, 1], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0, 1], multiplicitiesU: [4, 4],
+            knotsV: [0, 1], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     @Test("SetUNotPeriodic / SetVNotPeriodic")
@@ -4428,12 +4565,12 @@ struct BSplineSurfaceCompletionsV121Tests {
             let r1 = surf.bsplineInsertUKnots([0.25, 0.75], multiplicities: [1, 1])
             #expect(r1)
             let nuk = surf.bsplineSurface.nbUKnots
-            #expect(nuk == 4) // original 2 + 2 new
+            #expect(nuk == 4)  // original 2 + 2 new
 
             let r2 = surf.bsplineInsertVKnots([0.5], multiplicities: [1])
             #expect(r2)
             let nvk = surf.bsplineSurface.nbVKnots
-            #expect(nvk == 3) // original 2 + 1 new
+            #expect(nvk == 3)  // original 2 + 1 new
         }
     }
 
@@ -4441,8 +4578,9 @@ struct BSplineSurfaceCompletionsV121Tests {
     func movePoint() {
         if let surf = makeBSplineSurface() {
             let target = SIMD3<Double>(5, 5, 10)
-            let r = surf.bsplineMovePoint(u: 0.5, v: 0.5, to: target,
-                                           uPoleRange: 1...4, vPoleRange: 1...4)
+            let r = surf.bsplineMovePoint(
+                u: 0.5, v: 0.5, to: target,
+                uPoleRange: 1...4, vPoleRange: 1...4)
             #expect(r)
             // Evaluate at (0.5, 0.5), should be close to target
             let p = surf.point(atU: 0.5, v: 0.5)
@@ -4456,14 +4594,14 @@ struct BSplineSurfaceCompletionsV121Tests {
         if let surf = makeBSplineSurface() {
             // Set column 1 (vIndex=1) to new values, 4 poles for NbUPoles=4
             let newCol: [SIMD3<Double>] = [
-                SIMD3(0, 0, 5), SIMD3(0, 3, 5), SIMD3(0, 7, 5), SIMD3(0, 10, 5)
+                SIMD3(0, 0, 5), SIMD3(0, 3, 5), SIMD3(0, 7, 5), SIMD3(0, 10, 5),
             ]
             let r1 = surf.bsplineSetPoleCol(vIndex: 1, poles: newCol)
             #expect(r1)
 
             // Set row 1 (uIndex=1) to new values, 4 poles for NbVPoles=4
             let newRow: [SIMD3<Double>] = [
-                SIMD3(0, 0, 3), SIMD3(3, 0, 3), SIMD3(7, 0, 3), SIMD3(10, 0, 3)
+                SIMD3(0, 0, 3), SIMD3(3, 0, 3), SIMD3(7, 0, 3), SIMD3(10, 0, 3),
             ]
             let r2 = surf.bsplineSetPoleRow(uIndex: 1, poles: newRow)
             #expect(r2)
@@ -4487,10 +4625,10 @@ struct PipeShellExtensionsTests {
 
     @Test("GetStatus")
     func getStatus() {
-        let spine = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 10.0)
+        let spine = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10.0)
         if let s = spine, let ss = Shape.fromWire(s) {
             if let ps = PipeShellBuilder(spine: ss) {
-                let profile = Wire.circle(origin: .zero, normal: SIMD3(1,0,0), radius: 2.0)
+                let profile = Wire.circle(origin: .zero, normal: SIMD3(1, 0, 0), radius: 2.0)
                 if let p = profile, let pp = Shape.fromWire(p) {
                     ps.add(profile: pp)
                     let status = ps.status
@@ -4504,9 +4642,11 @@ struct PipeShellExtensionsTests {
     @Test("Simulate sections")
     func simulate() {
         if let spineWire = Wire.rectangle(width: 10, height: 10),
-           let spine = Shape.fromWire(spineWire) {
+            let spine = Shape.fromWire(spineWire)
+        {
             if let ps = PipeShellBuilder(spine: spine) {
-                let profile = Wire.circle(origin: SIMD3(0,0,0), normal: SIMD3(1,0,0), radius: 1.0)
+                let profile = Wire.circle(
+                    origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0), radius: 1.0)
                 if let p = profile, let pp = Shape.fromWire(p) {
                     ps.setFrenet()
                     ps.add(profile: pp)
@@ -4523,7 +4663,7 @@ struct SurfaceQueriesV123Tests {
 
     @Test("Cylinder U period")
     func cylinderUPeriod() {
-        let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0,0,1), radius: 5.0)
+        let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5.0)
         if let s = cyl {
             let uPeriod = s.uPeriod
             if let p = uPeriod {
@@ -4534,7 +4674,7 @@ struct SurfaceQueriesV123Tests {
 
     @Test("Plane has no period")
     func planePeriod() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0,0,1))
+        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
         if let s = plane {
             let uPeriod = s.uPeriod
             let vPeriod = s.vPeriod
@@ -4561,9 +4701,10 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let localPt = bs.bsplineLocalD0(u: uMid, v: vMid,
-                                                 fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                                 fromVK1: vSpan.i1, toVK2: vSpan.i2)
+                let localPt = bs.bsplineLocalD0(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
                 let globalPt = bs.point(atU: uMid, v: vMid)
                 let dist = simd_length(localPt - globalPt)
                 #expect(dist < 1e-10)
@@ -4581,9 +4722,10 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let r = bs.bsplineLocalD1(u: uMid, v: vMid,
-                                           fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                           fromVK1: vSpan.i1, toVK2: vSpan.i2)
+                let r = bs.bsplineLocalD1(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
                 #expect(simd_length(r.d1u) > 0)
                 #expect(simd_length(r.d1v) > 0)
             }
@@ -4600,9 +4742,10 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let r = bs.bsplineLocalD2(u: uMid, v: vMid,
-                                           fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                           fromVK1: vSpan.i1, toVK2: vSpan.i2)
+                let r = bs.bsplineLocalD2(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
                 #expect(simd_length(r.point) > 0)
             }
         }
@@ -4618,9 +4761,10 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let r = bs.bsplineLocalD3(u: uMid, v: vMid,
-                                           fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                           fromVK1: vSpan.i1, toVK2: vSpan.i2)
+                let r = bs.bsplineLocalD3(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
                 #expect(simd_length(r.point) > 0)
             }
         }
@@ -4636,10 +4780,11 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let v = bs.bsplineLocalDN(u: uMid, v: vMid,
-                                           fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                           fromVK1: vSpan.i1, toVK2: vSpan.i2,
-                                           nu: 1, nv: 0)
+                let v = bs.bsplineLocalDN(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2,
+                    nu: 1, nv: 0)
                 #expect(simd_length(v) > 0)
             }
         }
@@ -4655,9 +4800,10 @@ struct BSplineSurfaceLocalEvalTests {
             let uSpan = bs.bsplineLocateU(u: uMid, paramTol: 1e-10)
             let vSpan = bs.bsplineLocateV(v: vMid, paramTol: 1e-10)
             if uSpan.i1 > 0 && uSpan.i2 > 0 && vSpan.i1 > 0 && vSpan.i2 > 0 {
-                let localPt = bs.bsplineLocalValue(u: uMid, v: vMid,
-                                                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
-                                                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
+                let localPt = bs.bsplineLocalValue(
+                    u: uMid, v: vMid,
+                    fromUK1: uSpan.i1, toUK2: uSpan.i2,
+                    fromVK1: vSpan.i1, toVK2: vSpan.i2)
                 let globalPt = bs.point(atU: uMid, v: vMid)
                 let dist = simd_length(localPt - globalPt)
                 #expect(dist < 1e-10)
@@ -4769,7 +4915,7 @@ struct BSplineSurfaceKnotTests {
             let uc = bs.bsplineIsUClosed
             let vc = bs.bsplineIsVClosed
             // Just verify they return without error
-            #expect(uc || !uc) // always true, verifies the call works
+            #expect(uc || !uc)  // always true, verifies the call works
             #expect(vc || !vc)
         }
     }
@@ -4795,7 +4941,7 @@ struct BezierSurfaceCompletionTests {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 2, 0)],
             [SIMD3(1, 0, 1), SIMD3(1, 1, 1), SIMD3(1, 2, 1)],
-            [SIMD3(2, 0, 0), SIMD3(2, 1, 0), SIMD3(2, 2, 0)]
+            [SIMD3(2, 0, 0), SIMD3(2, 1, 0), SIMD3(2, 2, 0)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4810,7 +4956,7 @@ struct BezierSurfaceCompletionTests {
     func closedQueries() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4823,7 +4969,7 @@ struct BezierSurfaceCompletionTests {
     func periodicQueries() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4836,11 +4982,11 @@ struct BezierSurfaceCompletionTests {
     func continuity() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
-            #expect(s.bezierContinuity == 6) // CN = 6 in GeomAbs_Shape
+            #expect(s.bezierContinuity == 6)  // CN = 6 in GeomAbs_Shape
         }
     }
 
@@ -4848,7 +4994,7 @@ struct BezierSurfaceCompletionTests {
     func isCN() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4863,12 +5009,12 @@ struct BezierSurfaceCompletionTests {
     func poles() {
         let inputPoles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: inputPoles)
         if let s = s {
             let p = s.bezierPoles
-            #expect(p.count == 4) // 2x2
+            #expect(p.count == 4)  // 2x2
         }
     }
 
@@ -4876,7 +5022,7 @@ struct BezierSurfaceCompletionTests {
     func weightsNonRational() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4894,7 +5040,7 @@ struct BezierSurfaceCompletionTests {
     func bounds() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 1), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4957,7 +5103,7 @@ struct BezierSurfaceCompletionsTests {
     func insertRemoveCol() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 2, 0)],
-            [SIMD3(1, 0, 0), SIMD3(1, 1, 1), SIMD3(1, 2, 0)]
+            [SIMD3(1, 0, 0), SIMD3(1, 1, 1), SIMD3(1, 2, 0)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -4979,7 +5125,7 @@ struct BezierSurfaceCompletionsTests {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
             [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
-            [SIMD3(2, 0, 0), SIMD3(2, 1, 0)]
+            [SIMD3(2, 0, 0), SIMD3(2, 1, 0)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -5000,7 +5146,7 @@ struct BezierSurfaceCompletionsTests {
     func increaseDegree() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 0), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -5017,7 +5163,7 @@ struct BezierSurfaceCompletionsTests {
     func reverse() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 0), SIMD3(1, 1, 1)]
+            [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
         ]
         let s = Surface.bezier(poles: poles)
         if let s = s {
@@ -5044,7 +5190,9 @@ struct SectionPlaneTests {
     @Test("Section shape with cylindrical surface")
     func sectionWithSurface() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        if let surf = Surface.cylindricalSurface(origin: SIMD3(5, 5, 0), direction: SIMD3(0, 0, 1), radius: 3.0) {
+        if let surf = Surface.cylindricalSurface(
+            origin: SIMD3(5, 5, 0), direction: SIMD3(0, 0, 1), radius: 3.0)
+        {
             if let section = box.sectionWithSurface(surf) {
                 let edges = section.subShapes(ofType: .edge)
                 #expect(edges.count > 0)
@@ -5062,7 +5210,7 @@ struct BezierSurfaceWeightTests {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 5, 0), SIMD3(0, 10, 0)],
             [SIMD3(5, 0, 0), SIMD3(5, 5, 1), SIMD3(5, 10, 0)],
-            [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)]
+            [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)],
         ]
         let weights = [[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [1.0, 1.0, 1.0]]
         if let surf = Surface.bezier(poles: poles, weights: weights) {
@@ -5078,7 +5226,7 @@ struct BezierSurfaceWeightTests {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(0, 5, 0), SIMD3(0, 10, 0)],
             [SIMD3(5, 0, 0), SIMD3(5, 5, 1), SIMD3(5, 10, 0)],
-            [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)]
+            [SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0)],
         ]
         let weights = [[1.0, 1.0, 1.0], [1.0, 2.0, 1.0], [1.0, 1.0, 1.0]]
         if let surf = Surface.bezier(poles: poles, weights: weights) {
@@ -5237,7 +5385,8 @@ struct PipeShellClosedGeometryTests {
             let spineShape = Shape.fromWire(spine)
             if let spineShape = spineShape {
                 if let builder = PipeShellBuilder(spine: spineShape) {
-                    let profile = Wire.circle(origin: SIMD3(15, 0, 0), normal: SIMD3(0, 1, 0), radius: 3)
+                    let profile = Wire.circle(
+                        origin: SIMD3(15, 0, 0), normal: SIMD3(0, 1, 0), radius: 3)
                     if let profile = profile {
                         let profileShape = Shape.fromWire(profile)
                         if let profileShape = profileShape {
@@ -5289,7 +5438,7 @@ struct GeomEvalCircularHelixTests {
     @Test func helixD0AtPi() {
         let p = GeomEval.circularHelixD0(radius: 5.0, pitch: 10.0, u: .pi)
         #expect(abs(p.x - (-5.0)) < 1e-6)
-        #expect(abs(p.z - 5.0) < 1e-6) // half turn = pitch/2
+        #expect(abs(p.z - 5.0) < 1e-6)  // half turn = pitch/2
     }
 
     @Test func helixD1() {
@@ -5337,14 +5486,14 @@ struct GeomEvalSineWaveTests {
         let t = .pi / (2.0 * omega)
         let p = GeomEval.sineWaveD0(amplitude: 2.0, omega: omega, phase: 0.0, u: t)
         #expect(abs(p.x - t) < 1e-10)
-        #expect(abs(p.y - 2.0) < 1e-6) // A*sin(pi/2) = A
+        #expect(abs(p.y - 2.0) < 1e-6)  // A*sin(pi/2) = A
     }
 
     @Test func sineWaveD1() {
         let r = GeomEval.sineWaveD1(amplitude: 2.0, omega: 3.0, phase: 0.0, u: 0.0)
         // d1 at t=0: dx/dt = 1, dy/dt = A*omega*cos(0) = A*omega
         #expect(abs(r.d1.x - 1.0) < 1e-10)
-        #expect(abs(r.d1.y - 6.0) < 1e-6) // 2*3 = 6
+        #expect(abs(r.d1.y - 6.0) < 1e-6)  // 2*3 = 6
     }
 
     @Test func sineWaveCurveCreate() {
@@ -5354,7 +5503,7 @@ struct GeomEvalSineWaveTests {
 
     @Test func sineWaveWithPhase() {
         let p = GeomEval.sineWaveD0(amplitude: 1.0, omega: 1.0, phase: .pi / 2.0, u: 0.0)
-        #expect(abs(p.y - 1.0) < 1e-6) // sin(pi/2) = 1
+        #expect(abs(p.y - 1.0) < 1e-6)  // sin(pi/2) = 1
     }
 }
 
@@ -5363,7 +5512,7 @@ struct GeomEvalEllipsoidTests {
 
     @Test func ellipsoidD0AtZeroZero() {
         let p = GeomEval.ellipsoidD0(a: 3.0, b: 4.0, c: 5.0, u: 0.0, v: 0.0)
-        #expect(abs(p.x - 3.0) < 1e-10) // A*cos(0)*cos(0) = A
+        #expect(abs(p.x - 3.0) < 1e-10)  // A*cos(0)*cos(0) = A
         #expect(abs(p.y) < 1e-10)
         #expect(abs(p.z) < 1e-10)
     }
@@ -5396,7 +5545,7 @@ struct GeomEvalHyperboloidTests {
 
     @Test func hyperboloidTwoSheets() {
         let p = GeomEval.hyperboloidD0(r1: 2.0, r2: 3.0, twoSheets: true, u: 0.0, v: 0.0)
-        #expect(p.z != 0 || p.x != 0) // valid point
+        #expect(p.z != 0 || p.x != 0)  // valid point
     }
 
     @Test func hyperboloidSurfaceCreate() {
@@ -5417,7 +5566,7 @@ struct GeomEvalParaboloidTests {
         // At u=0, v=1: P = (1*cos(0), 1*sin(0), 1/(4*F)) = (1, 0, 0.125) for F=2
         let p = GeomEval.paraboloidD0(focal: 2.0, u: 0.0, v: 1.0)
         #expect(abs(p.x - 1.0) < 1e-10)
-        #expect(abs(p.z - 0.125) < 1e-10) // 1/(4*2) = 0.125
+        #expect(abs(p.z - 0.125) < 1e-10)  // 1/(4*2) = 0.125
     }
 
     @Test func paraboloidSurfaceCreate() {
@@ -5450,7 +5599,7 @@ struct GeomEvalHypParaboloidTests {
         let p = GeomEval.hyperbolicParaboloidD0(a: 2.0, b: 3.0, u: 0.0, v: 0.0)
         #expect(abs(p.x) < 1e-10)
         #expect(abs(p.y) < 1e-10)
-        #expect(abs(p.z) < 1e-10) // saddle point at origin
+        #expect(abs(p.z) < 1e-10)  // saddle point at origin
     }
 
     @Test func hypParaboloidD0AwayFromOrigin() {
@@ -5484,9 +5633,10 @@ struct GeomEvalHypParaboloidTests {
 // correct answer even on the broken kernel.
 
 private func makeQuarterCylinderGordonNetwork(radius: Double = 5, height: Double = 10)
-    -> (profiles: [Curve3D], guides: [Curve3D])? {
+    -> (profiles: [Curve3D], guides: [Curve3D])?
+{
     guard let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
-          let quarter = cylinder.trimmed(u1: 0, u2: .pi / 2, v1: 0, v2: height)
+        let quarter = cylinder.trimmed(u1: 0, u2: .pi / 2, v1: 0, v2: height)
     else { return nil }
     // Profiles: 3 quarter-circle V-isos (rational), one per height.
     let profiles = [0.0, height / 2, height].compactMap { quarter.vIso(at: $0) }
@@ -5499,8 +5649,11 @@ private func makeQuarterCylinderGordonNetwork(radius: Double = 5, height: Double
 /// The exact point on the reference quarter-cylinder (radius 5, height 10) at a Gordon
 /// surface's own normalized parameter fraction (fu, fv) in [0,1]x[0,1]: angle = fu *
 /// pi/2, height = fv * 10.
-private func quarterCylinderReferencePoint(fu: Double, fv: Double, radius: Double = 5, height: Double = 10)
-    -> SIMD3<Double> {
+private func quarterCylinderReferencePoint(
+    fu: Double, fv: Double, radius: Double = 5, height: Double = 10
+)
+    -> SIMD3<Double>
+{
     let angle = fu * Double.pi / 2
     return SIMD3(radius * cos(angle), radius * sin(angle), fv * height)
 }
@@ -5531,14 +5684,21 @@ struct GeomFillGordonTests {
         // gordonRationalQuarterCylinderNetworkMatchesReference below -- this fixture
         // cannot distinguish the p1/8.0.1 kernel difference #645 is actually about,
         // because none of its curves are rational.
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(5,0,0), SIMD3(10,0,0)]),
-              let p2 = Curve3D.interpolate(points: [SIMD3(0,10,0), SIMD3(5,10,0), SIMD3(10,10,0)]),
-              let g1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(0,5,0), SIMD3(0,10,0)]),
-              let g2 = Curve3D.interpolate(points: [SIMD3(10,0,0), SIMD3(10,5,0), SIMD3(10,10,0)])
+        guard
+            let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0)]),
+            let p2 = Curve3D.interpolate(points: [
+                SIMD3(0, 10, 0), SIMD3(5, 10, 0), SIMD3(10, 10, 0),
+            ]),
+            let g1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 5, 0), SIMD3(0, 10, 0)]),
+            let g2 = Curve3D.interpolate(points: [
+                SIMD3(10, 0, 0), SIMD3(10, 5, 0), SIMD3(10, 10, 0),
+            ])
         else { return }
 
-        guard let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3) else {
-            Issue.record("gordon surface nil"); return
+        guard let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
+        else {
+            Issue.record("gordon surface nil")
+            return
         }
         let bounds = surf.parameterBounds
         let corners = [
@@ -5558,9 +5718,11 @@ struct GeomFillGordonTests {
     }
 
     @Test func gordonTooFewCurves() {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(10,0,0)]) else { return }
+        guard let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]) else {
+            return
+        }
         let surf = Surface.gordon(profiles: [p1], guides: [p1])
-        #expect(surf == nil) // need at least 2 each
+        #expect(surf == nil)  // need at least 2 each
     }
 
     @Test func gordonRationalQuarterCylinderNetworkMatchesReference() {
@@ -5568,10 +5730,15 @@ struct GeomFillGordonTests {
         // exact answer, not just non-nil-ness. This is the fixture that would have
         // failed on OCCT 8.0.0p1 (see the module-level comment above).
         guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build"); return
+            Issue.record("quarter-cylinder network fixture failed to build")
+            return
         }
-        guard let surf = Surface.gordon(profiles: network.profiles, guides: network.guides, tolerance: 1e-6) else {
-            Issue.record("gordon surface nil for quarter-cylinder network"); return
+        guard
+            let surf = Surface.gordon(
+                profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
+        else {
+            Issue.record("gordon surface nil for quarter-cylinder network")
+            return
         }
         let bsp = surf.bsplineSurface
         #expect(bsp.isURational)
@@ -5585,7 +5752,7 @@ struct TBezierCurve3DTests {
 
     @Test func createAndEval() {
         let poles: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0),
         ]
         guard let curve = Curve3D.tBezier(poles: poles, alpha: 1.0) else {
             #expect(Bool(false), "Failed to create TBezier curve")
@@ -5604,7 +5771,7 @@ struct TBezierCurve3DTests {
 
     @Test func rationalTBezier() {
         let poles: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0),
         ]
         let weights = [1.0, 2.0, 1.0]
         let curve = Curve3D.tBezierRational(poles: poles, weights: weights, alpha: 1.0)
@@ -5613,7 +5780,7 @@ struct TBezierCurve3DTests {
 
     @Test func rejectsEvenPoleCount() {
         let poles: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0),
         ]
         let curve = Curve3D.tBezier(poles: poles, alpha: 1.0)
         #expect(curve == nil)
@@ -5627,9 +5794,10 @@ struct AHTBezierCurve3DTests {
         // algDeg=0, alpha=1.0, beta=1.0 => 5 poles needed
         let poles: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 1, 0),
-            SIMD3(3, 0, 0), SIMD3(4, 0, 0)
+            SIMD3(3, 0, 0), SIMD3(4, 0, 0),
         ]
-        guard let curve = Curve3D.ahtBezier(poles: poles, algDegree: 0, alpha: 1.0, beta: 1.0) else {
+        guard let curve = Curve3D.ahtBezier(poles: poles, algDegree: 0, alpha: 1.0, beta: 1.0)
+        else {
             #expect(Bool(false), "Failed to create AHTBezier curve")
             return
         }
@@ -5643,11 +5811,12 @@ struct AHTBezierCurve3DTests {
     @Test func rationalAHTBezier() {
         let poles: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 1, 0),
-            SIMD3(3, 0, 0), SIMD3(4, 0, 0)
+            SIMD3(3, 0, 0), SIMD3(4, 0, 0),
         ]
         let weights = [1.0, 1.0, 2.0, 1.0, 1.0]
-        let curve = Curve3D.ahtBezierRational(poles: poles, weights: weights,
-                                                algDegree: 0, alpha: 1.0, beta: 1.0)
+        let curve = Curve3D.ahtBezierRational(
+            poles: poles, weights: weights,
+            algDegree: 0, alpha: 1.0, beta: 1.0)
         #expect(curve != nil)
     }
 }
@@ -5689,10 +5858,11 @@ struct AHTBezierSurfaceTests {
                 poles.append(SIMD3(Double(i), Double(j), 0.3 * sin(Double(i)) * cos(Double(j))))
             }
         }
-        let surf = Surface.ahtBezier(poles: poles, uCount: 5, vCount: 5,
-                                       algDegreeU: 0, algDegreeV: 0,
-                                       alphaU: 1.0, alphaV: 1.0,
-                                       betaU: 1.0, betaV: 1.0)
+        let surf = Surface.ahtBezier(
+            poles: poles, uCount: 5, vCount: 5,
+            algDegreeU: 0, algDegreeV: 0,
+            alphaU: 1.0, alphaV: 1.0,
+            betaU: 1.0, betaV: 1.0)
         #expect(surf != nil)
     }
 }
@@ -5738,7 +5908,10 @@ struct ExtendedRevolutionTests {
 struct ShapeRevolutionAxesTests {
     @Test("Cylinder yields exactly one axis")
     func cylinderOneAxis() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 10) else { Issue.record("cylinder nil"); return }
+        guard let cyl = Shape.cylinder(radius: 5, height: 10) else {
+            Issue.record("cylinder nil")
+            return
+        }
         let axes = cyl.revolutionAxes()
         #expect(axes.count == 1)
         if let a = axes.first {
@@ -5749,13 +5922,19 @@ struct ShapeRevolutionAxesTests {
 
     @Test("Box yields no revolution axes")
     func boxNoAxes() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { Issue.record("box nil"); return }
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box nil")
+            return
+        }
         #expect(box.revolutionAxes().isEmpty)
     }
 
     @Test("Torus yields one deduplicated axis")
     func torusDedupedAxis() {
-        guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5) else { Issue.record("torus nil"); return }
+        guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5) else {
+            Issue.record("torus nil")
+            return
+        }
         let axes = torus.revolutionAxes()
         #expect(axes.count >= 1)
         #expect(axes.contains { $0.kind == .torus })
@@ -5764,8 +5943,12 @@ struct ShapeRevolutionAxesTests {
     @Test("Coaxial cylinder + torus collapse to one axis")
     func coaxialDedup() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let torus = Shape.torus(majorRadius: 10, minorRadius: 2),
-              let combined = cyl.union(torus) else { Issue.record("union nil"); return }
+            let torus = Shape.torus(majorRadius: 10, minorRadius: 2),
+            let combined = cyl.union(torus)
+        else {
+            Issue.record("union nil")
+            return
+        }
         let axes = combined.revolutionAxes()
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)
@@ -5780,7 +5963,10 @@ struct ShapeRevolutionAxesTests {
     // sign-independent and is what's asserted; `Shape.cylinder`'s own height is the ground truth.
     @Test("Cylinder's revolution axis reports a real, non-nil extent matching its height")
     func cylinderRevolutionAxisHasExtent() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else {
+            Issue.record("cylinder nil")
+            return
+        }
         let axes = cyl.revolutionAxes()
         #expect(axes.count == 1)
         guard let a = axes.first, let extent = a.extent else {
@@ -5797,9 +5983,13 @@ struct SurfaceAxisAccessorsTests {
     func torusSurfaceAxis() {
         let origin = SIMD3<Double>(1, 2, 3)
         let normal = SIMD3<Double>(0, 0, 1)
-        guard let surf = Surface.torus(origin: origin, axis: normal,
-                                         majorRadius: 20, minorRadius: 5) else {
-            Issue.record("torus surface nil"); return
+        guard
+            let surf = Surface.torus(
+                origin: origin, axis: normal,
+                majorRadius: 20, minorRadius: 5)
+        else {
+            Issue.record("torus surface nil")
+            return
         }
         if let axis = surf.torusAxis {
             #expect(abs(axis.origin.x - 1) < 1e-6)
@@ -5813,8 +6003,10 @@ struct SurfaceAxisAccessorsTests {
 
     @Test("Cylinder surface returns nil for torusAxis")
     func cylinderSurfaceNoTorusAxis() {
-        guard let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5) else {
-            Issue.record("cylinder surface nil"); return
+        guard let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5)
+        else {
+            Issue.record("cylinder surface nil")
+            return
         }
         #expect(surf.torusAxis == nil)
         #expect(surf.revolutionAxis == nil)
@@ -5828,8 +6020,10 @@ struct SurfaceAxisAccessorsTests {
 struct SurfaceTypePredicatesTests {
     @Test("Cylinder predicates")
     func cylinder() {
-        guard let s = Surface.cylinder(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1), radius: 5) else {
-            Issue.record("cyl nil"); return
+        guard let s = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5)
+        else {
+            Issue.record("cyl nil")
+            return
         }
         #expect(s.isCylinder)
         #expect(!s.isPlane)
@@ -5839,9 +6033,13 @@ struct SurfaceTypePredicatesTests {
 
     @Test("Torus predicates")
     func torus() {
-        guard let s = Surface.torus(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1),
-                                      majorRadius: 20, minorRadius: 5) else {
-            Issue.record("torus nil"); return
+        guard
+            let s = Surface.torus(
+                origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+                majorRadius: 20, minorRadius: 5)
+        else {
+            Issue.record("torus nil")
+            return
         }
         #expect(s.isTorus)
         #expect(!s.isCylinder)
@@ -5849,8 +6047,10 @@ struct SurfaceTypePredicatesTests {
 
     @Test("Analytic surfaces are at least C2 continuous")
     func analyticContinuity() {
-        guard let s = Surface.cylinder(origin: SIMD3(0,0,0), axis: SIMD3(0,0,1), radius: 5) else {
-            Issue.record("cyl nil"); return
+        guard let s = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5)
+        else {
+            Issue.record("cyl nil")
+            return
         }
         let c = s.continuityClass
         #expect(c == .cN || c == .c3 || c == .c2)
@@ -5889,9 +6089,13 @@ struct DrawingSymbolsTests {
             tolerance: "0.1",
             datums: ["A", "B", "C"])
         // 4 box edges + 2 dividers + 2 datum dividers + glyph + tolerance + 3 datum letters = 12
-        let lineCount = anns.filter { if case .centreline = $0 { return true } else { return false } }.count
+        let lineCount = anns.filter {
+            if case .centreline = $0 { return true } else { return false }
+        }.count
         #expect(lineCount >= 6)  // box + internal dividers
-        let textCount = anns.filter { if case .textLabel = $0 { return true } else { return false } }.count
+        let textCount = anns.filter {
+            if case .textLabel = $0 { return true } else { return false }
+        }.count
         #expect(textCount == 5)  // symbol + tolerance + 3 datums
     }
 
@@ -5902,7 +6106,9 @@ struct DrawingSymbolsTests {
             at: SIMD2(10, 10),
             pointingTo: SIMD2(30, 10))
         // 4 box edges + letter + 3 triangle edges + leader = 9
-        let lineCount = anns.filter { if case .centreline = $0 { return true } else { return false } }.count
+        let lineCount = anns.filter {
+            if case .centreline = $0 { return true } else { return false }
+        }.count
         #expect(lineCount == 8)
     }
 
@@ -5923,8 +6129,10 @@ struct DrawingSymbolsTests {
     @Test("Detail view returns a TransformedDrawing with expected scale")
     func detailView() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let detail = drawing.detailView(at: SIMD2(200, 100), scale: 2.0)
         #expect(detail.scale == 2.0)
@@ -5939,19 +6147,24 @@ struct GeomFillGordonReportTests {
 
     @Test func gordonReportDoneForGoodNetwork() {
         guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build"); return
+            Issue.record("quarter-cylinder network fixture failed to build")
+            return
         }
-        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
+        let result = Surface.gordonReport(
+            profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
         #expect(result.status == .done)
         #expect(result.isApproximate == false)
         guard let surface = result.surface else {
-            Issue.record("gordonReport surface nil"); return
+            Issue.record("gordonReport surface nil")
+            return
         }
         assertMatchesQuarterCylinder(surface)
     }
 
     @Test func gordonReportInvalidInput() {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(10,0,0)]) else { return }
+        guard let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]) else {
+            return
+        }
         let result = Surface.gordonReport(profiles: [p1], guides: [p1])
         #expect(result.surface == nil)
         #expect(result.status == .invalidInput)
@@ -5961,14 +6174,17 @@ struct GeomFillGordonReportTests {
         // With fallback enabled a good network still builds exactly (the fallback never
         // has to engage), and the geometry is unaffected by allowing it.
         guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build"); return
+            Issue.record("quarter-cylinder network fixture failed to build")
+            return
         }
-        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides,
-                                          tolerance: 1e-6, allowApproximateFallback: true)
+        let result = Surface.gordonReport(
+            profiles: network.profiles, guides: network.guides,
+            tolerance: 1e-6, allowApproximateFallback: true)
         #expect(result.status == .done)
         #expect(result.isApproximate == false)
         guard let surface = result.surface else {
-            Issue.record("gordonReport surface nil"); return
+            Issue.record("gordonReport surface nil")
+            return
         }
         assertMatchesQuarterCylinder(surface)
     }
@@ -5988,13 +6204,16 @@ struct GeomFillGordonReportTests {
         // `makeCorrectedProfileSkin`'s rational branch combines the already-rational profile
         // and guide skins independently of that weight.
         guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build"); return
+            Issue.record("quarter-cylinder network fixture failed to build")
+            return
         }
-        let (surface, status) = Surface.networkSurface(profiles: network.profiles, guides: network.guides,
-                                                        tolerance: 1e-6)
+        let (surface, status) = Surface.networkSurface(
+            profiles: network.profiles, guides: network.guides,
+            tolerance: 1e-6)
         #expect(status == .done)
         guard let surface else {
-            Issue.record("networkSurface returned nil despite .done"); return
+            Issue.record("networkSurface returned nil despite .done")
+            return
         }
         assertMatchesQuarterCylinder(surface)
     }
@@ -6011,13 +6230,16 @@ struct GeomFillGordonReportTests {
         let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)]))
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)]))
 
-        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        let (surface, status) = Surface.networkSurface(
+            profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
         #expect(status == .done)
         guard let surface else {
-            Issue.record("networkSurface returned nil despite .done"); return
+            Issue.record("networkSurface returned nil despite .done")
+            return
         }
         let bounds = surface.parameterBounds
-        let mid = surface.point(atU: (bounds.uMin + bounds.uMax) / 2, v: (bounds.vMin + bounds.vMax) / 2)
+        let mid = surface.point(
+            atU: (bounds.uMin + bounds.uMax) / 2, v: (bounds.vMin + bounds.vMax) / 2)
         #expect(abs(mid.x - 5) < 1e-9)
         #expect(abs(mid.y - 5) < 1e-9)
         #expect(abs(mid.z - 0) < 1e-9)
@@ -6052,7 +6274,8 @@ struct GeomFillGordonReportTests {
         let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 5, 0), SIMD3(10, 5, 0)]))
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 6, 0), SIMD3(10, 6, 0)]))
 
-        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        let (surface, status) = Surface.networkSurface(
+            profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
         #expect(status == .invalidInput)
         #expect(surface == nil)
     }
@@ -6073,18 +6296,25 @@ struct GeomFillGordonReportTests {
         // scope for this PR's three named fixes. The cookbook section was reworded rather than
         // demonstrating a build whose interior is subtly wrong; this test locks in only the
         // narrower, actually-verified claim (`.done`, not full corner fidelity).
-        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]))
-        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]))
-        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 5, 2), SIMD3(0, 10, 0)]))
-        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 5, 2), SIMD3(10, 10, 0)]))
+        let p1 = try #require(
+            Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]))
+        let p2 = try #require(
+            Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]))
+        let g1 = try #require(
+            Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 5, 2), SIMD3(0, 10, 0)]))
+        let g2 = try #require(
+            Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 5, 2), SIMD3(10, 10, 0)]))
 
-        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
+        let (surface, status) = Surface.networkSurface(
+            profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
         #expect(status == .done)
         #expect(surface != nil)
     }
 
     @Test func networkSurfaceTooFewCurves() {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(10,0,0)]) else { return }
+        guard let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]) else {
+            return
+        }
         let (surface, status) = Surface.networkSurface(profiles: [p1], guides: [p1])
         #expect(surface == nil)
         #expect(status == .invalidInput)
@@ -6112,7 +6342,8 @@ struct GeomFillGordonReportTests {
         let g1 = try #require(Curve3D.interpolate(points: [SIMD3(2, 2, -5), SIMD3(2, 2, 5)]))
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(4, -5, 3), SIMD3(4, 5, 3)]))
 
-        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        let (surface, status) = Surface.networkSurface(
+            profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
         #expect(status == .invalidInput)
         #expect(surface == nil)
     }
@@ -6141,7 +6372,8 @@ struct GeomFillGordonReportTests {
         let g1 = try #require(Curve3D.interpolate(points: [SIMD3(5, 0, 0), SIMD3(5, 10, 0)]))
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(15, 0, 0), SIMD3(15, 10, 0)]))
 
-        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        let (surface, status) = Surface.networkSurface(
+            profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
         #expect(status == .knotAlignmentFailed)
         #expect(surface == nil)
     }
@@ -6201,15 +6433,15 @@ struct SurfaceNormalParityTests {
     @Test("Near-apex: a defined normal is no longer reported as a zero vector")
     func nearApexNormalIsNotSpuriouslyZero() {
         let cone = Self.apexCone()
-        let v = 1e-16                       // |d1u x d1v| ≈ 5e-17, under the old 1e-15 epsilon
+        let v = 1e-16  // |d1u x d1v| ≈ 5e-17, under the old 1e-15 epsilon
 
         let (_, d1u, d1v) = cone.d1(atU: 0, v: v)
-        #expect(simd_length(simd_cross(d1u, d1v)) < 1e-15)   // the window really is entered
+        #expect(simd_length(simd_cross(d1u, d1v)) < 1e-15)  // the window really is entered
 
         let optional = cone.normal(atU: 0, v: v)
         let plain = cone.normal(u: 0, v: v)
-        #expect(optional != nil)                             // OCCT says the normal exists
-        #expect(abs(simd_length(plain) - 1) < 1e-9)          // ... and so does normal(u:v:) now
+        #expect(optional != nil)  // OCCT says the normal exists
+        #expect(abs(simd_length(plain) - 1) < 1e-9)  // ... and so does normal(u:v:) now
         if let n = optional {
             #expect(simd_distance(n, plain) < 1e-12)
         }
@@ -6250,8 +6482,10 @@ struct SurfaceCurvatureParityTests {
         Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
     }
 
-    private func expectAgreement(_ surface: Surface, u: Double, v: Double,
-                                 _ comment: Comment? = nil) {
+    private func expectAgreement(
+        _ surface: Surface, u: Double, v: Double,
+        _ comment: Comment? = nil
+    ) {
         // #595: agreement is now on definedness too, not only on the value -- which is what this
         // suite's own doc comment always claimed and could not assert while all three returned 0.
         let pair = surface.curvatures(u: u, v: v)
@@ -6299,7 +6533,7 @@ struct SurfaceCurvatureParityTests {
     func undefinedPointsAgree() {
         let cone = Self.apexCone()
         // #595: was `== 0` on all four, which a plane also satisfies with the curvature defined.
-        let pair = cone.curvatures(u: 0, v: 0)          // exactly at the apex
+        let pair = cone.curvatures(u: 0, v: 0)  // exactly at the apex
         #expect(pair == nil)
         #expect(cone.gaussianCurvature(atU: 0, v: 0) == nil)
         #expect(cone.meanCurvature(atU: 0, v: 0) == nil)
@@ -6359,21 +6593,28 @@ struct SurfaceApproximateDefaultsParityTests {
         }
     }
 
-    @Test("Tighter shared defaults still succeed on every primitive the old looser defaults handled")
+    @Test(
+        "Tighter shared defaults still succeed on every primitive the old looser defaults handled")
     func tighterDefaultsSucceedOnCommonSurfaces() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         #expect(sphere.approximated() != nil)
 
-        if let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
-                                      majorRadius: 10, minorRadius: 3) {
+        if let torus = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 3)
+        {
             #expect(torus.approximated() != nil)
         }
-        if let cylinder = Surface.trimmedCylinder(origin: .zero, direction: SIMD3(0, 0, 1),
-                                                    radius: 5, height: 20) {
+        if let cylinder = Surface.trimmedCylinder(
+            origin: .zero, direction: SIMD3(0, 0, 1),
+            radius: 5, height: 20)
+        {
             #expect(cylinder.approximated() != nil)
         }
-        if let cone = Surface.trimmedCone(point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
-                                           r1: 5, r2: 2) {
+        if let cone = Surface.trimmedCone(
+            point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
+            r1: 5, r2: 2)
+        {
             #expect(cone.approximated() != nil)
         }
     }
@@ -6402,7 +6643,8 @@ struct SurfaceApproximateDefaultsParityTests {
     @Test("Non-analytic surface (offset of a BSpline base) still approximates at the new default")
     func nonAnalyticOffsetSurfaceApproximates() {
         var gridPoints: [SIMD3<Double>] = []
-        let uCount = 8, vCount = 8
+        let uCount = 8
+        let vCount = 8
         for i in 0..<uCount {
             for j in 0..<vCount {
                 let u = Double(i) / Double(uCount - 1) * 10.0
@@ -6587,15 +6829,17 @@ struct SurfaceTransformFamilyParityTests {
         // bezierFill down-casts its inputs to Geom_BezierCurve and returns nil for anything else,
         // so these have to be real Bezier curves. A Curve3D.line or .segment yields nil.
         func bezier() -> Surface? {
-            guard let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
-                  let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 5), SIMD3(5, 10, 8), SIMD3(10, 10, 5)])
+            guard
+                let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
+                let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 5), SIMD3(5, 10, 8), SIMD3(10, 10, 5)])
             else { return nil }
             return Surface.bezierFill(c1, c2)
         }
 
         guard let translateBase = bezier(), let rotateBase = bezier(),
-              let scaleBase = bezier(), let mirrorPointBase = bezier(),
-              let mirrorAxisBase = bezier(), let mirrorPlaneBase = bezier() else {
+            let scaleBase = bezier(), let mirrorPointBase = bezier(),
+            let mirrorAxisBase = bezier(), let mirrorPlaneBase = bezier()
+        else {
             Issue.record("bezierFill returned nil")
             return
         }
@@ -6604,8 +6848,9 @@ struct SurfaceTransformFamilyParityTests {
         #expect(translateBase.translate(dx: 3, dy: -2, dz: 1.5))
         if let c = translateCopy { assertMatch(translateBase, c) }
 
-        let rotateCopy = rotateBase.rotated(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                                            angle: .pi / 3)
+        let rotateCopy = rotateBase.rotated(
+            axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+            angle: .pi / 3)
         #expect(rotateBase.rotate(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), angle: .pi / 3))
         if let c = rotateCopy { assertMatch(rotateBase, c) }
 
@@ -6621,7 +6866,8 @@ struct SurfaceTransformFamilyParityTests {
         #expect(mirrorAxisBase.mirrorAxis(origin: .zero, direction: SIMD3(1, 0, 0)))
         if let c = mirrorAxisCopy { assertMatch(mirrorAxisBase, c) }
 
-        let mirrorPlaneCopy = mirrorPlaneBase.mirrored(planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+        let mirrorPlaneCopy = mirrorPlaneBase.mirrored(
+            planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
         #expect(mirrorPlaneBase.mirrorPlane(origin: .zero, normal: SIMD3(0, 0, 1)))
         if let c = mirrorPlaneCopy { assertMatch(mirrorPlaneBase, c) }
     }
@@ -6647,11 +6893,15 @@ struct Issue748NetworkSurfaceCornersTests {
 
     private static func cornersMatch(_ s: Surface, _ expected: [SIMD3<Double>]) -> Int {
         let d = s.domain
-        let got = [s.point(atU: d.uMin, v: d.vMin), s.point(atU: d.uMax, v: d.vMin),
-                   s.point(atU: d.uMin, v: d.vMax), s.point(atU: d.uMax, v: d.vMax)]
+        let got = [
+            s.point(atU: d.uMin, v: d.vMin), s.point(atU: d.uMax, v: d.vMin),
+            s.point(atU: d.uMin, v: d.vMax), s.point(atU: d.uMax, v: d.vMax),
+        ]
         var wrong = 0
         for (i, e) in expected.enumerated() {
-            let dx = got[i].x - e.x, dy = got[i].y - e.y, dz = got[i].z - e.z
+            let dx = got[i].x - e.x
+            let dy = got[i].y - e.y
+            let dz = got[i].z - e.z
             if (dx * dx + dy * dy + dz * dz).squareRoot() > 1e-6 { wrong += 1 }
         }
         return wrong
@@ -6669,8 +6919,13 @@ struct Issue748NetworkSurfaceCornersTests {
         let s = try #require(surface)
         // Before the fix these were (0,10,0) and (10,0,0), each exactly where the other belongs,
         // sqrt(200) out, with .done reported.
-        #expect(Self.cornersMatch(s, [SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                                      SIMD3(0, 10, 0), SIMD3(10, 10, 0)]) == 0)
+        #expect(
+            Self.cornersMatch(
+                s,
+                [
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                    SIMD3(0, 10, 0), SIMD3(10, 10, 0),
+                ]) == 0)
     }
 
     @Test("a non-square 2x3 network builds at all, which the swapped grid could not")
@@ -6685,7 +6940,12 @@ struct Issue748NetworkSurfaceCornersTests {
         // Before the fix: .invalidInput and no surface, because the swapped grid is the wrong shape.
         #expect(status == .done)
         let s = try #require(surface)
-        #expect(Self.cornersMatch(s, [SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                                      SIMD3(0, 10, 0), SIMD3(10, 10, 0)]) == 0)
+        #expect(
+            Self.cornersMatch(
+                s,
+                [
+                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                    SIMD3(0, 10, 0), SIMD3(10, 10, 0),
+                ]) == 0)
     }
 }

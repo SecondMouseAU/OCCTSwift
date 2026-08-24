@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #568: the five remaining entry points that resolved a caller's sub-shape indices and silently
@@ -45,16 +46,18 @@ struct Issue568IndexSkipTests {
     func draftRejectsWhollyForeignFaceList() {
         let box = Shape.box(width: 20, height: 20, depth: 30)!
         guard let cut = cutBox(), cut.faces().count > box.faces().count,
-              let foreign = cut.faces().last else {
+            let foreign = cut.faces().last
+        else {
             Issue.record("cut did not produce more faces than the box")
             return
         }
         #expect(foreign.index >= box.faces().count)
 
-        let drafted = box.drafted(faces: [foreign],
-                                  direction: SIMD3(0, 0, 1),
-                                  angle: 3.0 * .pi / 180.0,
-                                  neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
+        let drafted = box.drafted(
+            faces: [foreign],
+            direction: SIMD3(0, 0, 1),
+            angle: 3.0 * .pi / 180.0,
+            neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         #expect(drafted == nil)
     }
 
@@ -62,7 +65,8 @@ struct Issue568IndexSkipTests {
     func draftRejectsPartiallyForeignFaceList() {
         let box = Shape.box(width: 20, height: 20, depth: 30)!
         guard let cut = cutBox(), cut.faces().count > box.faces().count,
-              let foreign = cut.faces().last else {
+            let foreign = cut.faces().last
+        else {
             Issue.record("cut did not produce more faces than the box")
             return
         }
@@ -72,10 +76,11 @@ struct Issue568IndexSkipTests {
             return
         }
 
-        let drafted = box.drafted(faces: [own, foreign],
-                                  direction: SIMD3(0, 0, 1),
-                                  angle: 3.0 * .pi / 180.0,
-                                  neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
+        let drafted = box.drafted(
+            faces: [own, foreign],
+            direction: SIMD3(0, 0, 1),
+            angle: 3.0 * .pi / 180.0,
+            neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         #expect(drafted == nil)
     }
 
@@ -87,10 +92,11 @@ struct Issue568IndexSkipTests {
         let vertical = box.faces().filter { $0.isVertical() }
         #expect(vertical.count == 4)
 
-        let drafted = box.drafted(faces: vertical,
-                                  direction: SIMD3(0, 0, 1),
-                                  angle: 3.0 * .pi / 180.0,
-                                  neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
+        let drafted = box.drafted(
+            faces: vertical,
+            direction: SIMD3(0, 0, 1),
+            angle: 3.0 * .pi / 180.0,
+            neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         #expect(drafted != nil)
         if let drafted, let volume = drafted.volume {
             // A Z=0 neutral plane with a +Z pull flares the four sides outward as they rise, so
@@ -107,7 +113,8 @@ struct Issue568IndexSkipTests {
     func shellRejectsPartiallyForeignFaceList() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
         guard let cut = cutBox(), cut.faces().count > box.faces().count,
-              let foreign = cut.faces().last else {
+            let foreign = cut.faces().last
+        else {
             Issue.record("cut did not produce more faces than the box")
             return
         }
@@ -149,7 +156,8 @@ struct Issue568IndexSkipTests {
     func historyChamferAcceptsResolvableIndices() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
         guard let both = box.chamferedWithFullHistory(distance: 1.0, edges: [0, 1]),
-              let one = box.chamferedWithFullHistory(distance: 1.0, edges: [0]) else {
+            let one = box.chamferedWithFullHistory(distance: 1.0, edges: [0])
+        else {
             Issue.record("chamfer failed on resolvable indices")
             return
         }
@@ -214,7 +222,8 @@ struct Issue568IndexSkipTests {
         let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
         #expect(face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0]) == nil)
         #expect(face.chamfer2D(edgePairs: [(0, 1), (1, 0)], distances: [1.0, 2.0]) == nil)
-        #expect(face.chamfer2D(edgePairs: [(0, 1), (0, 1), (0, 1)], distances: [1.0, 1.0, 1.0]) == nil)
+        #expect(
+            face.chamfer2D(edgePairs: [(0, 1), (0, 1), (0, 1)], distances: [1.0, 1.0, 1.0]) == nil)
     }
 
     /// The duplicate-pair guard has to key on the PAIR, not on either index alone: chamfering

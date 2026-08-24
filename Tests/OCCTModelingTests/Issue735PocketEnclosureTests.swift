@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #735: `PocketFeature.isOpen` was `wallIndices.count < 3`, a wall count, not a test of
@@ -43,8 +44,10 @@ struct Issue735PocketEnclosureTests {
     /// this as open; it is not.
     @Test("a blind cylindrical pocket (one wall) is fully enclosed")
     func cylindricalPocketIsEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 8, height: 25))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 8, height: 25))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -62,7 +65,8 @@ struct Issue735PocketEnclosureTests {
     @Test("a square pocket (four walls) is fully enclosed")
     func squarePocketIsEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let result = try #require(box.subtracting(pocketTool))
 
         let pockets = result.detectPocketsAAG()
@@ -81,10 +85,12 @@ struct Issue735PocketEnclosureTests {
     /// only 3 of them.
     @Test("a three-walled slot that opens through the parent's side is NOT enclosed")
     func openThreeWalledSlotIsNotEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
         // Extends past the box's own x = -10 face (tool starts at x = -15), so the slot
         // opens through that side rather than bottoming out against a fourth wall.
-        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 13, height: 6, depth: 10))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-15, -3, 0), width: 13, height: 6, depth: 10))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -101,12 +107,15 @@ struct Issue735PocketEnclosureTests {
     @Test("a three-walled triangular pocket IS fully enclosed")
     func closedThreeWalledTriangularPocketIsEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let triangle = try #require(Wire.polygon3D([
-            SIMD3(0, 4, 10),
-            SIMD3(-4, -4, 10),
-            SIMD3(4, -4, 10),
-        ], closed: true))
-        let tool = try #require(Shape.extrude(profile: triangle, direction: SIMD3(0, 0, -1), length: 5))
+        let triangle = try #require(
+            Wire.polygon3D(
+                [
+                    SIMD3(0, 4, 10),
+                    SIMD3(-4, -4, 10),
+                    SIMD3(4, -4, 10),
+                ], closed: true))
+        let tool = try #require(
+            Shape.extrude(profile: triangle, direction: SIMD3(0, 0, -1), length: 5))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -124,8 +133,10 @@ struct Issue735PocketEnclosureTests {
     /// got right by coincidence of count, not by measuring enclosure.
     @Test("a two-walled through-slot is not enclosed")
     func twoWalledThroughSlotIsNotEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -168,16 +179,19 @@ struct Issue753PocketBossWireScopeTests {
     /// never checked against the outer wire's edges at all.
     @Test("an open pocket with a floor boss is still NOT enclosed")
     func openPocketWithFloorBossIsNotEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
         // Same slot as Issue735PocketEnclosureTests.openThreeWalledSlotIsNotEnclosed: opens
         // through the box's own x = -10 face, so the floor's fourth boundary edge borders no
         // wall at all.
-        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 13, height: 6, depth: 10))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-15, -3, 0), width: 13, height: 6, depth: 10))
         let cut = try #require(box.subtracting(tool))
 
         // A boss well inside the slot (x = -6, 4 units from the east wall at x = -2 and 4 units
         // from the open west boundary at x = -10), standing on the floor at z = 0.
-        let boss = try #require(Shape.cylinder(at: SIMD3(-6, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
+        let boss = try #require(
+            Shape.cylinder(at: SIMD3(-6, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
         let bossed = try #require(cut.union(boss))
 
         let pockets = bossed.detectPocketsAAG()
@@ -196,10 +210,12 @@ struct Issue753PocketBossWireScopeTests {
     @Test("a fully enclosed pocket with a floor boss is still enclosed")
     func enclosedPocketWithFloorBossIsStillEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let boss = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
+        let boss = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
         let bossed = try #require(cut.union(boss))
 
         let pockets = bossed.detectPocketsAAG()
@@ -283,12 +299,15 @@ struct Issue753OffCenterPocketEnclosureTests {
 // set (several radii, chamfer, partial fillet, and the false-positive guards) this single case
 // is now a subset of; kept here, inverted rather than deleted, because it is literally the
 // fixture #753 finding 3 and #762 both name.
-@Suite("A filleted floor/wall junction IS detected as an enclosed pocket (#753 finding 3 inverted by #762)")
+@Suite(
+    "A filleted floor/wall junction IS detected as an enclosed pocket (#753 finding 3 inverted by #762)"
+)
 struct Issue753FilletedJunctionDetectedTests {
     @Test("a filleted floor/wall junction pocket IS recognized as an enclosed pocket")
     func filletedJunctionPocketIsDetected() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         // Confirm the sharp-cornered version is detected and enclosed before filleting it,
@@ -297,7 +316,9 @@ struct Issue753FilletedJunctionDetectedTests {
         let prePockets = cut.detectPocketsAAG()
         #expect(prePockets.count == 1)
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: {
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+        })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))
 

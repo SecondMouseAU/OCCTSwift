@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// OCCT 8.0.1 (OCCT#1408, the merged form of OCCT#1331) makes
@@ -65,14 +66,17 @@ struct Issue655SectionWiresOrientationTests {
     /// the "prove the test fails" injection for `internalEdgeExcluded()` below -- it changes
     /// nothing about the geometry, only whether the skip applies.
     static func fixture(orientation: Shape.Orientation) -> Shape? {
-        guard let squareWire = Wire.polygon3D(
-            [SIMD3(0, 0, 3), SIMD3(10, 0, 3), SIMD3(10, 10, 3), SIMD3(0, 10, 3)],
-            closed: true
-        ), let square = Shape.fromWire(squareWire) else { return nil }
+        guard
+            let squareWire = Wire.polygon3D(
+                [SIMD3(0, 0, 3), SIMD3(10, 0, 3), SIMD3(10, 10, 3), SIMD3(0, 10, 3)],
+                closed: true
+            ), let square = Shape.fromWire(squareWire)
+        else { return nil }
 
         guard let floatingWire = Wire.line(from: SIMD3(2, 2, 3), to: SIMD3(4, 4, 3)),
-              let floatingEdge = floatingWire.edges().first,
-              let floatingShape = Shape.fromEdge(floatingEdge) else { return nil }
+            let floatingEdge = floatingWire.edges().first,
+            let floatingShape = Shape.fromEdge(floatingEdge)
+        else { return nil }
         floatingShape.setOrientation(orientation)
 
         return Shape.compound([floatingShape, square])
@@ -89,7 +93,8 @@ struct Issue655SectionWiresOrientationTests {
         // 8.0.1's ConnectEdgesToWires (OCCT#1408).
         #expect(wires.count == 1, "expected 1 wire (the square only), got \(wires.count)")
         if let only = wires.first {
-            #expect(only.edges().count == 4, "expected the square's 4 edges, got \(only.edges().count)")
+            #expect(
+                only.edges().count == 4, "expected the square's 4 edges, got \(only.edges().count)")
             #expect(only.curveInfo?.isClosed == true, "expected the surviving wire to be closed")
         }
     }

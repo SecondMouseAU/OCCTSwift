@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Regression coverage for #609: zero-mass `BRepGProp` results were returned as successful answers
@@ -45,8 +46,10 @@ struct ZeroMassResultsTests {
 
         // Name the wrong answer so a regression cannot pass quietly. 4800 is what OCCT returns
         // with OnlyClosed left at its default.
-        #expect(open.volume == nil,
-                "open shell reported a volume of \(String(describing: open.volume)); 4800 means OnlyClosed was dropped")
+        #expect(
+            open.volume == nil,
+            "open shell reported a volume of \(String(describing: open.volume)); 4800 means OnlyClosed was dropped"
+        )
         #expect(open.properties() == nil)
         #expect(open.volumeInertia == nil)
         #expect(open.centroid == nil)
@@ -87,8 +90,9 @@ struct ZeroMassResultsTests {
         #expect(open.volume == nil, "as a measurement there is no answer")
         #expect(open.signedVolume != 0, "as an orientation signal there is")
         let openReversed = try #require(open.reversed)
-        #expect(abs(open.signedVolume + openReversed.signedVolume) < 1e-6,
-                "reversing an open surface must negate the flux, or the signal is not a signal")
+        #expect(
+            abs(open.signedVolume + openReversed.signedVolume) < 1e-6,
+            "reversing an open surface must negate the flux, or the signal is not a signal")
     }
 
     /// The concrete #170 shape, which is what made the distinction above necessary: a pipe sweep
@@ -129,7 +133,8 @@ struct ZeroMassResultsTests {
         #expect(loose.volume == nil, "six unsewn faces are not a closed shell")
 
         let sewn = try #require(Shape.sew(shapes: faces, tolerance: 1e-6))
-        #expect(abs((sewn.volume ?? 0) - 6000.0) < 1e-6, "sewing shares the edges, closing the shell")
+        #expect(
+            abs((sewn.volume ?? 0) - 6000.0) < 1e-6, "sewing shares the edges, closing the shell")
     }
 
     // MARK: - the sentinel
@@ -222,11 +227,14 @@ struct ZeroMassResultsTests {
         #expect(cyl.symmetryAxes().count == 1, "a cylinder has one axis of revolution")
 
         let b = try #require(box())
-        for shape in [try faceShape(), try edgeShape(), try openShell(),
-                      try #require(b.subShapes(ofType: .wire).first),
-                      try #require(b.subShapes(ofType: .vertex).first)] {
-            #expect(shape.symmetryAxes().isEmpty,
-                    "a zero-mass framework claims spherical symmetry; it should claim nothing")
+        for shape in [
+            try faceShape(), try edgeShape(), try openShell(),
+            try #require(b.subShapes(ofType: .wire).first),
+            try #require(b.subShapes(ofType: .vertex).first),
+        ] {
+            #expect(
+                shape.symmetryAxes().isEmpty,
+                "a zero-mass framework claims spherical symmetry; it should claim nothing")
         }
     }
 
@@ -264,7 +272,9 @@ struct ZeroMassResultsTests {
         // The divergence decomposition still sums to the solid's volume, which is why the mass
         // stays non-optional even when a single face contributes nothing.
         let summed = faces.reduce(0.0) { $0 + $1.volumeInertia.volume }
-        #expect(abs(summed - 6000.0) < 1e-3, "per-face contributions should sum to the volume, got \(summed)")
+        #expect(
+            abs(summed - 6000.0) < 1e-3,
+            "per-face contributions should sum to the volume, got \(summed)")
     }
 
     @Test("measure() reports a centroid per face, index-parallel with faces()")
@@ -294,14 +304,18 @@ struct ZeroMassResultsTests {
     @Test("a zero volume contribution keeps its 0 and drops its centroid")
     func perFaceVolumeInertiaRefusesAZeroContribution() throws {
         // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
-        let b = try #require(Shape.box(width: 10, height: 10, depth: 10)?
-            .translated(by: SIMD3(0, 0, 5)))
+        let b = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(0, 0, 5)))
 
-        let coplanar = try #require(b.faces().first { abs($0.volumeInertia.volume) < 1e-9 },
-                                    "one face of this box lies in the z = 0 plane")
+        let coplanar = try #require(
+            b.faces().first { abs($0.volumeInertia.volume) < 1e-9 },
+            "one face of this box lies in the z = 0 plane")
         let vi = coplanar.volumeInertia
-        #expect(vi.volume == 0.0,
-                "the guard is an exact test, so a residual of \(vi.volume) would leave the centroid in place")
+        #expect(
+            vi.volume == 0.0,
+            "the guard is an exact test, so a residual of \(vi.volume) would leave the centroid in place"
+        )
         #expect(vi.centerOfMass == nil, "a zero contribution has no centroid")
 
         // The faces that do contribute keep both.
@@ -333,8 +347,9 @@ struct ZeroMassResultsTests {
     @Test("meshCinertCompute has no centroid below two points")
     func meshCinertBelowTwoPointsHasNoCentroid() {
         #expect(meshCinertCompute(points: []).centerOfMass == nil)
-        #expect(meshCinertCompute(points: [(1, 2, 3)]).centerOfMass == nil,
-                "one point is not a polyline")
+        #expect(
+            meshCinertCompute(points: [(1, 2, 3)]).centerOfMass == nil,
+            "one point is not a polyline")
 
         let real = meshCinertCompute(points: [(0, 0, 0), (10, 0, 0)])
         #expect(abs(real.mass - 10.0) < 1e-9)
@@ -384,7 +399,8 @@ struct ZeroMassResultsTests {
 
         for bad in [[1.0, 0.0], [1.0, -1.0], [0.0, 0.0]] {
             let r = GeometryProperties.weightedCentroid(points: pts, weights: bad)
-            #expect(r.centroid == nil, "weights \(bad) were rejected by OCCT, so there is no centroid")
+            #expect(
+                r.centroid == nil, "weights \(bad) were rejected by OCCT, so there is no centroid")
         }
     }
 
@@ -400,11 +416,14 @@ struct ZeroMassResultsTests {
     func analyticRejectionVersusZeroLength() {
         let p = SIMD3(3.0, 4.0, 5.0)
 
-        #expect(GeometryProperties.lineSegment(from: p, to: p) == nil,
-                "coincident endpoints give no direction, so there is no segment to measure")
-        #expect(GeometryProperties.circularArc(center: .zero, normal: .zero,
-                                               radius: 5, u1: 0, u2: .pi) == nil,
-                "a zero normal gives no plane, so there is no arc to measure")
+        #expect(
+            GeometryProperties.lineSegment(from: p, to: p) == nil,
+            "coincident endpoints give no direction, so there is no segment to measure")
+        #expect(
+            GeometryProperties.circularArc(
+                center: .zero, normal: .zero,
+                radius: 5, u1: 0, u2: .pi) == nil,
+            "a zero normal gives no plane, so there is no arc to measure")
 
         // A real segment still answers.
         let real = GeometryProperties.lineSegment(from: .zero, to: p)
@@ -412,8 +431,10 @@ struct ZeroMassResultsTests {
 
         // A valid circle sampled over an empty range answers with length 0 and a correct centre,
         // computed analytically rather than accumulated, so there is nothing to refuse.
-        if let empty = GeometryProperties.circularArc(center: .zero, normal: SIMD3(0, 0, 1),
-                                                      radius: 5, u1: 0, u2: 0) {
+        if let empty = GeometryProperties.circularArc(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 5, u1: 0, u2: 0)
+        {
             #expect(abs(empty.arcLength) < 1e-9, "an empty parameter range has no arc length")
         } else {
             Issue.record("a valid circle sampled over an empty range is not a rejected input")

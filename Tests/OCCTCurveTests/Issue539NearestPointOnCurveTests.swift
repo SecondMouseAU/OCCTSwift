@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // MARK: - #539: the closest point on the curve you actually have
@@ -72,7 +73,7 @@ struct Issue539NearestPointOnCurveTests {
     func justPastTheEnd() throws {
         let curve = try #require(Self.trimmedSegment())
         let projected = curve.projectPoint(SIMD3(8.001, 0, 0))
-        #expect(abs(projected.distance - 0.001) < 1e-9)   // was 0
+        #expect(abs(projected.distance - 0.001) < 1e-9)  // was 0
         #expect(abs(projected.parameter - 8) < 1e-9)
     }
 
@@ -92,7 +93,7 @@ struct Issue539NearestPointOnCurveTests {
         // Below the arc entirely: the nearest point is an end, 7.81 away. Was: distance 1, the
         // distance to the far half of the circle.
         let below = arc.projectPoint(SIMD3(0, -6, 0))
-        #expect(abs(below.distance - (25.0 + 36.0).squareRoot()) < 1e-6)        // 7.81025
+        #expect(abs(below.distance - (25.0 + 36.0).squareRoot()) < 1e-6)  // 7.81025
     }
 
     // MARK: The in-range maximum, which no clamp would have fixed
@@ -104,18 +105,22 @@ struct Issue539NearestPointOnCurveTests {
     @Test("An in-range extremum that is a maximum does not win")
     func inRangeMaximumDoesNotWin() throws {
         // P(u) = (u^2/8, u, 0) over [0, 2]; from (20, 0, 0) the vertex at u=0 is a local maximum.
-        let parabola = try #require(Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1),
-                                                     focal: 2))
+        let parabola = try #require(
+            Curve3D.parabola(
+                center: .zero, normal: SIMD3(0, 0, 1),
+                focal: 2))
         let arc = try #require(parabola.trimmed(from: 0, to: 2))
         let projected = arc.projectPoint(SIMD3(20, 0, 0))
-        #expect(abs(projected.distance - 19.6023) < 1e-3)   // was 20, the distance to the vertex
+        #expect(abs(projected.distance - 19.6023) < 1e-3)  // was 20, the distance to the vertex
         #expect(abs(projected.parameter - 2) < 1e-6)
 
-        let hyperbola = try #require(Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
-                                                       majorRadius: 3, minorRadius: 2))
+        let hyperbola = try #require(
+            Curve3D.hyperbola(
+                center: .zero, normal: SIMD3(0, 0, 1),
+                majorRadius: 3, minorRadius: 2))
         let branch = try #require(hyperbola.trimmed(from: 0, to: 1))
         let far = branch.projectPoint(SIMD3(30, 0, 0))
-        #expect(abs(far.distance - 25.4794) < 1e-3)         // was 27
+        #expect(abs(far.distance - 25.4794) < 1e-3)  // was 27
     }
 
     // MARK: What deliberately did not change
@@ -171,9 +176,9 @@ struct Issue539NearestPointOnCurveTests {
     @Test("Curve3D.distance inherits the corrected projection")
     func curveDistanceInheritsTheFix() throws {
         let curve = try #require(Self.trimmedSegment())
-        #expect(abs(curve.distance(to: SIMD3(100, 0, 0)) - 92) < 1e-9)   // was 0
-        #expect(abs(curve.distance(to: .zero) - 3) < 1e-9)               // was 0
-        #expect(abs(curve.distance(to: SIMD3(5, 2, 0)) - 2) < 1e-9)      // unchanged
+        #expect(abs(curve.distance(to: SIMD3(100, 0, 0)) - 92) < 1e-9)  // was 0
+        #expect(abs(curve.distance(to: .zero) - 3) < 1e-9)  // was 0
+        #expect(abs(curve.distance(to: SIMD3(5, 2, 0)) - 2) < 1e-9)  // unchanged
     }
 
     // MARK: The Edge half, which had the same promise and the other defect
@@ -213,10 +218,10 @@ struct Issue539NearestPointOnCurveTests {
         let edge = try Self.arcEdge()
 
         let below = try #require(edge.project(point: SIMD3(0, -6, 0)))
-        #expect(abs(below.distance - (25.0 + 36.0).squareRoot()) < 1e-6)   // 7.81025, was 11
+        #expect(abs(below.distance - (25.0 + 36.0).squareRoot()) < 1e-6)  // 7.81025, was 11
 
         let insideBelow = try #require(edge.project(point: SIMD3(0, -1, 0)))
-        #expect(abs(insideBelow.distance - (25.0 + 1.0).squareRoot()) < 1e-6)   // 5.09902, was 6
+        #expect(abs(insideBelow.distance - (25.0 + 1.0).squareRoot()) < 1e-6)  // 5.09902, was 6
 
         // Still right where it was right.
         let above = try #require(edge.project(point: SIMD3(0, 6, 0)))
@@ -230,8 +235,10 @@ struct Issue539NearestPointOnCurveTests {
         let edge = try Self.arcEdge()
         let arc = try #require(Self.halfArc())
 
-        for point in [SIMD3<Double>(0, -6, 0), SIMD3(0, 6, 0), SIMD3(3, -4, 0),
-                      SIMD3(0, -1, 0), SIMD3(6, 0, 0), .zero] {
+        for point in [
+            SIMD3<Double>(0, -6, 0), SIMD3(0, 6, 0), SIMD3(3, -4, 0),
+            SIMD3(0, -1, 0), SIMD3(6, 0, 0), .zero,
+        ] {
             let viaEdge = try #require(edge.project(point: point), "\(point)")
             let viaCurve = arc.projectPoint(point)
             #expect(abs(viaEdge.distance - viaCurve.distance) < 1e-6, "\(point)")

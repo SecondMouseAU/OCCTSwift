@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #747: `detectHoles()` required every neighbor of a candidate face to connect via a concave
@@ -43,8 +44,10 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// "all concave".
     @Test("a blind cylindrical hole reports exactly one hole")
     func blindHoleReportsExactlyOneHole() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         let cut = try #require(box.subtracting(tool))
 
         let holes = cut.buildAAG().detectHoles()
@@ -59,8 +62,10 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// through-hole, by construction, independent of geometry.
     @Test("a through cylindrical hole reports exactly one hole")
     func throughHoleReportsExactlyOneHole() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 4, height: 30))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 4, height: 30))
         let cut = try #require(box.subtracting(tool))
 
         let holes = cut.buildAAG().detectHoles()
@@ -75,13 +80,15 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// The exact fixture `Issue703EdgeConvexityOrderTests.throughHoleHasNoConcaveEdges` pins as
     /// "zero concave edges" -- the fixture whose own ground truth is the reason "all neighbors
     /// concave" can never identify this shape as a hole. One physical hole at every thickness.
-    @Test("a through-hole plate reports one hole at several thicknesses",
-          arguments: [20.0, 40.0, 60.0, 120.0])
+    @Test(
+        "a through-hole plate reports one hole at several thicknesses",
+        arguments: [20.0, 40.0, 60.0, 120.0])
     func throughHolePlateAcrossThicknesses(thickness: Double) throws {
         let plate = try #require(Shape.box(width: 50, height: 50, depth: thickness))
-        let drill = try #require(Shape.cylinder(
-            at: SIMD3(0, 0, -thickness / 2 - 5), direction: SIMD3(0, 0, 1),
-            radius: 10, height: thickness + 10))
+        let drill = try #require(
+            Shape.cylinder(
+                at: SIMD3(0, 0, -thickness / 2 - 5), direction: SIMD3(0, 0, 1),
+                radius: 10, height: thickness + 10))
         let drilled = try #require(plate.subtracting(drill))
 
         let holes = drilled.buildAAG().detectHoles()
@@ -100,8 +107,10 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// the cylinder. Only the material-side (radial normal direction) check tells them apart.
     @Test("a round boss is not reported as a hole")
     func roundBossIsNotAHole() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let boss = try #require(Shape.cylinder(at: SIMD3(0, 0, 10), direction: SIMD3(0, 0, 1), radius: 4, height: 5))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let boss = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 10), direction: SIMD3(0, 0, 1), radius: 4, height: 5))
         let fused = try #require(box.union(boss))
 
         #expect(fused.buildAAG().detectHoles().isEmpty)
@@ -114,7 +123,8 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// check distinguishes a bore (void inside) from a solid peg (material inside).
     @Test("a standalone solid cylinder is not reported as a hole")
     func standaloneCylinderIsNotAHole() throws {
-        let cylinder = try #require(Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let cylinder = try #require(
+            Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         #expect(cylinder.buildAAG().detectHoles().isEmpty)
     }
 
@@ -131,7 +141,8 @@ struct Issue747DetectHolesConvexClassifierTests {
     @Test("a filleted concave interior corner is not reported as a hole")
     func filletedConcaveCornerIsNotAHole() throws {
         let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 5), width: 10, height: 10, depth: 11))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 5), width: 10, height: 10, depth: 11))
         let pocketed = try #require(box.subtracting(pocketTool))
 
         // The pocket tool's footprint is (-5...5, -5...5) at z in [5, 16], so its four vertical
@@ -161,8 +172,10 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// (surface type, closed-in-U, axis) is identical.
     @Test("a pipe's inner bore is a hole, its outer wall is not")
     func pipeInnerBoreIsAHoleOuterWallIsNot() throws {
-        let outer = try #require(Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 10, height: 30))
-        let inner = try #require(Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 6, height: 30))
+        let outer = try #require(
+            Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 10, height: 30))
+        let inner = try #require(
+            Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 6, height: 30))
         let pipe = try #require(outer.subtracting(inner))
 
         let holes = pipe.buildAAG().detectHoles()
@@ -182,8 +195,10 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// regardless of orientation.
     @Test("a through-hole bored on a horizontal (X) axis is detected")
     func horizontalHoleIsDetected() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(-15, 0, 0), direction: SIMD3(1, 0, 0), radius: 4, height: 30))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(-15, 0, 0), direction: SIMD3(1, 0, 0), radius: 4, height: 30))
         let cut = try #require(box.subtracting(tool))
 
         let holes = cut.buildAAG().detectHoles()
@@ -209,7 +224,8 @@ struct Issue747DetectHolesConvexClassifierTests {
     @Test("a square pocket has no holes")
     func squarePocketHasNoHoles() throws {
         let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
-        let pocket = try #require(Shape.box(origin: SIMD3(-5, -5, 5), width: 10, height: 10, depth: 11))
+        let pocket = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 5), width: 10, height: 10, depth: 11))
         let pocketed = try #require(box.subtracting(pocket))
 
         #expect(pocketed.buildAAG().detectHoles().isEmpty)

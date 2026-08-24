@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 // MARK: - Measurement & Analysis Tests (v0.7.0)
 
@@ -293,7 +292,6 @@ struct PointClassificationTests {
     }
 }
 
-
 // MARK: - Face Surface Properties Tests (v0.18.0)
 
 @Suite("Face Surface Properties Tests")
@@ -488,7 +486,6 @@ struct FaceSurfacePropertiesTests {
         #expect(abs(totalArea - expectedTotal) < 1.0)
     }
 }
-
 
 // MARK: - Edge 3D Curve Properties Tests (v0.18.0)
 
@@ -738,7 +735,6 @@ struct EdgeCurvePropertiesTests {
     }
 }
 
-
 // MARK: - Surface Intersection Tests (v0.18.0)
 
 @Suite("Surface Intersection Tests")
@@ -763,7 +759,7 @@ struct SurfaceIntersectionTests {
             for f2 in faces2 {
                 guard let n2 = f2.normal else { continue }
                 let dot = abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z)
-                if dot < 0.01 { // perpendicular
+                if dot < 0.01 {  // perpendicular
                     face1 = f1
                     face2 = f2
                     break
@@ -823,7 +819,6 @@ struct SurfaceIntersectionTests {
     }
 }
 
-
 @Suite("Curve3D Local Properties Tests")
 struct Curve3DLocalPropertiesTests {
 
@@ -832,7 +827,11 @@ struct Curve3DLocalPropertiesTests {
         let radius = 5.0
         let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius)!
         let curv = circle.curvature(at: 0)
-        if let curv { #expect(abs(curv - 1.0 / radius) < 0.01) } else { Issue.record("no curvature") }
+        if let curv {
+            #expect(abs(curv - 1.0 / radius) < 0.01)
+        } else {
+            Issue.record("no curvature")
+        }
     }
 
     @Test("Curvature of line is zero")
@@ -841,7 +840,11 @@ struct Curve3DLocalPropertiesTests {
         let d = seg.domain
         // #595: a straight curve reports 0, an answer -- not the nil a fully degenerate one gives.
         let curv = seg.curvature(at: (d.lowerBound + d.upperBound) / 2)
-        if let curv { #expect(abs(curv) < 1e-10) } else { Issue.record("a segment has curvature 0") }
+        if let curv {
+            #expect(abs(curv) < 1e-10)
+        } else {
+            Issue.record("a segment has curvature 0")
+        }
     }
 
     @Test("Tangent of X-axis segment is (1,0,0)")
@@ -919,7 +922,7 @@ struct SurfaceBoundingBoxTests {
     func bezierBoundingBox() {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(10, 0, 0)],
-            [SIMD3(0, 10, 5), SIMD3(10, 10, 5)]
+            [SIMD3(0, 10, 5), SIMD3(10, 10, 5)],
         ]
         let bez = Surface.bezier(poles: poles)!
         let bb = bez.boundingBox
@@ -932,10 +935,10 @@ struct SurfaceBoundingBoxTests {
     }
 }
 
-
 // MARK: - Medial Axis Tests (v0.24.0)
 
-@Suite("Medial Axis, Rectangle", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
+@Suite(
+    "Medial Axis, Rectangle", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
 struct MedialAxisRectangleTests {
 
     @Test("Rectangle produces non-nil medial axis")
@@ -986,8 +989,9 @@ struct MedialAxisRectangleTests {
 
         for node in nodes {
             // Node positions should be inside the rectangle
-            #expect(node.distance > 0 || node.isOnBoundary,
-                    "Node \(node.index) has invalid distance \(node.distance)")
+            #expect(
+                node.distance > 0 || node.isOnBoundary,
+                "Node \(node.index) has invalid distance \(node.distance)")
         }
     }
 
@@ -1079,8 +1083,9 @@ struct MedialAxisRectangleTests {
     }
 }
 
-
-@Suite("Medial Axis, Various Shapes", .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
+@Suite(
+    "Medial Axis, Various Shapes",
+    .disabled("MedialAxis causes segfault in OCCT, pre-existing issue"))
 struct MedialAxisVariousShapesTests {
 
     @Test("Square medial axis has symmetric structure")
@@ -1101,10 +1106,11 @@ struct MedialAxisVariousShapesTests {
 
     @Test("L-shaped polygon produces medial axis")
     func lShapedMedialAxis() {
-        let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 4),
-            SIMD2(4, 4), SIMD2(4, 8), SIMD2(0, 8)
-        ], closed: true)!
+        let wire = Wire.polygon(
+            [
+                SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 4),
+                SIMD2(4, 4), SIMD2(4, 8), SIMD2(0, 8),
+            ], closed: true)!
         let face = Shape.face(from: wire)!
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for L-shape")
@@ -1143,9 +1149,10 @@ struct MedialAxisVariousShapesTests {
 
     @Test("Triangle produces medial axis")
     func triangleMedialAxis() {
-        let wire = Wire.polygon([
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8)
-        ], closed: true)!
+        let wire = Wire.polygon(
+            [
+                SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8),
+            ], closed: true)!
         let face = Shape.face(from: wire)!
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for triangle")
@@ -1210,10 +1217,12 @@ struct MedialAxisVariousShapesTests {
         }
         // Rectangle is centered at origin: x in [-5, 5], y in [-2, 2]
         for node in ma.nodes {
-            #expect(node.position.x >= -5.1 && node.position.x <= 5.1,
-                    "Node x=\(node.position.x) outside rectangle bounds")
-            #expect(node.position.y >= -2.1 && node.position.y <= 2.1,
-                    "Node y=\(node.position.y) outside rectangle bounds")
+            #expect(
+                node.position.x >= -5.1 && node.position.x <= 5.1,
+                "Node x=\(node.position.x) outside rectangle bounds")
+            #expect(
+                node.position.y >= -2.1 && node.position.y <= 2.1,
+                "Node y=\(node.position.y) outside rectangle bounds")
         }
     }
 }
@@ -1305,13 +1314,13 @@ struct EdgePropertyTests {
 struct KDTreeTests {
 
     let testPoints: [SIMD3<Double>] = [
-        SIMD3(0, 0, 0),   // 0
-        SIMD3(1, 0, 0),   // 1
-        SIMD3(0, 1, 0),   // 2
-        SIMD3(0, 0, 1),   // 3
-        SIMD3(1, 1, 1),   // 4
-        SIMD3(5, 5, 5),   // 5
-        SIMD3(10, 10, 10) // 6
+        SIMD3(0, 0, 0),  // 0
+        SIMD3(1, 0, 0),  // 1
+        SIMD3(0, 1, 0),  // 2
+        SIMD3(0, 0, 1),  // 3
+        SIMD3(1, 1, 1),  // 4
+        SIMD3(5, 5, 5),  // 5
+        SIMD3(10, 10, 10),  // 6
     ]
 
     @Test("Build KD-tree")
@@ -1340,7 +1349,7 @@ struct KDTreeTests {
         let tree = KDTree(points: testPoints)!
         let result = tree.nearest(to: SIMD3(0.9, 0.1, 0.1))
         #expect(result != nil)
-        #expect(result!.index == 1) // Closest to (1,0,0)
+        #expect(result!.index == 1)  // Closest to (1,0,0)
     }
 
     @Test("K-nearest returns correct count")
@@ -1395,8 +1404,8 @@ struct KDTreeTests {
         )
         // Should find: (0,0,0), (1,0,0), (0,1,0), (0,0,1), (1,1,1)
         #expect(results.count == 5)
-        #expect(!results.contains(5)) // (5,5,5) outside
-        #expect(!results.contains(6)) // (10,10,10) outside
+        #expect(!results.contains(5))  // (5,5,5) outside
+        #expect(!results.contains(6))  // (10,10,10) outside
     }
 
     @Test("Box search - entire space")
@@ -1431,7 +1440,7 @@ struct HatchTests {
     @Test("Generate horizontal hatches in rectangle")
     func horizontalHatch() {
         let boundary: [SIMD2<Double>] = [
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
         ]
         let segments = HatchPattern.generate(
             boundary: boundary,
@@ -1444,7 +1453,7 @@ struct HatchTests {
     @Test("Diagonal hatches")
     func diagonalHatch() {
         let boundary: [SIMD2<Double>] = [
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
         ]
         let segments = HatchPattern.generate(
             boundary: boundary,
@@ -1467,7 +1476,7 @@ struct HatchTests {
     @Test("Triangle boundary")
     func triangleBoundary() {
         let boundary: [SIMD2<Double>] = [
-            SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 10)
+            SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 10),
         ]
         let segments = HatchPattern.generate(
             boundary: boundary,
@@ -1603,7 +1612,7 @@ struct AsymmetricChamferTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let result = box.chamferedTwoDistances([
             (edgeIndex: 0, faceIndex: 0, dist1: 0.5, dist2: 1.0),
-            (edgeIndex: 1, faceIndex: 0, dist1: 0.8, dist2: 0.6)
+            (edgeIndex: 1, faceIndex: 0, dist1: 0.8, dist2: 0.6),
         ])
         // Multi-edge chamfer may require careful edge/face selection
         _ = result
@@ -1747,14 +1756,16 @@ struct OrientedBoundingBoxTests {
     @Test("OBB of rotated box is tighter than AABB")
     func obbTighterThanAABB() {
         // Rotate a box 45 degrees around Z. AABB will be larger, OBB should stay tight
-        let box = Shape.box(width: 10, height: 2, depth: 2)!.rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4)!
+        let box = Shape.box(width: 10, height: 2, depth: 2)!.rotated(
+            axis: SIMD3(0, 0, 1), angle: .pi / 4)!
         let obb = box.orientedBoundingBox()
         #expect(obb != nil)
         // OBB volume should be close to original volume (10 * 2 * 2 = 40)
-        #expect(obb!.volume < 60.0) // Some tolerance
+        #expect(obb!.volume < 60.0)  // Some tolerance
         // AABB would be much larger for a 45° rotated shape
         let aabb = box.bounds!
-        let aabbVolume = (aabb.max.x - aabb.min.x) * (aabb.max.y - aabb.min.y) * (aabb.max.z - aabb.min.z)
+        let aabbVolume =
+            (aabb.max.x - aabb.min.x) * (aabb.max.y - aabb.min.y) * (aabb.max.z - aabb.min.z)
         #expect(obb!.volume < aabbVolume)
     }
 
@@ -1798,15 +1809,15 @@ struct InertiaPropertiesTests {
         #expect(props != nil)
         if let props {
             #expect(abs(props.mass - 6000) < 1)
-            #expect(abs(props.centerOfMass.x - 0) < 0.1) // Centered box
+            #expect(abs(props.centerOfMass.x - 0) < 0.1)  // Centered box
             #expect(abs(props.centerOfMass.y - 0) < 0.1)
             #expect(abs(props.centerOfMass.z - 0) < 0.1)
             // Inertia matrix should be 3x3 = 9 values
             #expect(props.inertiaMatrix.count == 9)
             // Diagonal elements should be positive
-            #expect(props.inertiaMatrix[0] > 0) // Ixx
-            #expect(props.inertiaMatrix[4] > 0) // Iyy
-            #expect(props.inertiaMatrix[8] > 0) // Izz
+            #expect(props.inertiaMatrix[0] > 0)  // Ixx
+            #expect(props.inertiaMatrix[4] > 0)  // Iyy
+            #expect(props.inertiaMatrix[8] > 0)  // Izz
             // Principal moments should be positive
             #expect(props.principalMoments.x > 0)
             #expect(props.principalMoments.y > 0)
@@ -1821,7 +1832,7 @@ struct InertiaPropertiesTests {
         #expect(props != nil)
         if let props {
             // Sphere volume = 4/3 * pi * r^3
-            let expectedVol = 4.0/3.0 * Double.pi * 1000.0
+            let expectedVol = 4.0 / 3.0 * Double.pi * 1000.0
             #expect(abs(props.mass - expectedVol) / expectedVol < 0.01)
             // Center at origin
             #expect(abs(props.centerOfMass.x) < 0.1)
@@ -1942,10 +1953,11 @@ struct PlaneDetectionTests {
 struct Fast3DPolygonTests {
     @Test("Closed square polygon")
     func closedSquare() {
-        let wire = Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-            SIMD3(10, 10, 0), SIMD3(0, 10, 0)
-        ], closed: true)
+        let wire = Wire.polygon3D(
+            [
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+            ], closed: true)
         #expect(wire != nil)
         if let wire {
             #expect(wire.orderedEdgeCount == 4)
@@ -1954,9 +1966,10 @@ struct Fast3DPolygonTests {
 
     @Test("Open triangle polygon")
     func openTriangle() {
-        let wire = Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 5, 6)
-        ], closed: false)
+        let wire = Wire.polygon3D(
+            [
+                SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 5, 6),
+            ], closed: false)
         #expect(wire != nil)
         if let wire {
             #expect(wire.orderedEdgeCount == 2)
@@ -1965,10 +1978,11 @@ struct Fast3DPolygonTests {
 
     @Test("3D polygon wire (non-planar)")
     func nonPlanarPolygon() {
-        let wire = Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-            SIMD3(10, 10, 5), SIMD3(0, 10, 10)
-        ], closed: true)
+        let wire = Wire.polygon3D(
+            [
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                SIMD3(10, 10, 5), SIMD3(0, 10, 10),
+            ], closed: true)
         #expect(wire != nil)
         if let wire {
             #expect(wire.orderedEdgeCount == 4)
@@ -1977,9 +1991,10 @@ struct Fast3DPolygonTests {
 
     @Test("Minimum points (2) makes a single edge")
     func twoPointPolygon() {
-        let wire = Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0)
-        ], closed: false)
+        let wire = Wire.polygon3D(
+            [
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+            ], closed: false)
         #expect(wire != nil)
         if let wire {
             #expect(wire.orderedEdgeCount == 1)
@@ -2000,7 +2015,7 @@ struct PointCloudAnalysisTests {
     @Test("Coincident points detected as point")
     func coincidentPoints() {
         let result = Shape.analyzePointCloud([
-            SIMD3(5, 5, 5), SIMD3(5, 5, 5), SIMD3(5, 5, 5)
+            SIMD3(5, 5, 5), SIMD3(5, 5, 5), SIMD3(5, 5, 5),
         ])
         #expect(result != nil)
         if case .point(let pt) = result {
@@ -2015,7 +2030,7 @@ struct PointCloudAnalysisTests {
     @Test("Collinear points detected as linear")
     func collinearPoints() {
         let result = Shape.analyzePointCloud([
-            SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0),
         ])
         #expect(result != nil)
         if case .linear(let origin, let dir) = result {
@@ -2023,7 +2038,7 @@ struct PointCloudAnalysisTests {
             #expect(abs(abs(dir.x) - 1.0) < 0.01)
             #expect(abs(dir.y) < 0.01)
             #expect(abs(dir.z) < 0.01)
-            _ = origin // used
+            _ = origin  // used
         } else {
             #expect(Bool(false), "Expected .linear")
         }
@@ -2033,7 +2048,7 @@ struct PointCloudAnalysisTests {
     func coplanarPoints() {
         let result = Shape.analyzePointCloud([
             SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-            SIMD3(10, 10, 0), SIMD3(0, 10, 0)
+            SIMD3(10, 10, 0), SIMD3(0, 10, 0),
         ])
         #expect(result != nil)
         if case .planar(_, let normal) = result {
@@ -2048,7 +2063,7 @@ struct PointCloudAnalysisTests {
     func spacePoints() {
         let result = Shape.analyzePointCloud([
             SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-            SIMD3(0, 10, 0), SIMD3(0, 0, 10)
+            SIMD3(0, 10, 0), SIMD3(0, 0, 10),
         ])
         #expect(result != nil)
         if case .space = result {
@@ -2094,8 +2109,8 @@ struct SurfaceExtremaTests {
         if let sphere1, let sphere2 {
             let result = sphere1.extrema(
                 to: sphere2,
-                uvBounds1: (uMin: 0, uMax: 2 * .pi, vMin: -.pi/2, vMax: .pi/2),
-                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi/2, vMax: .pi/2)
+                uvBounds1: (uMin: 0, uMax: 2 * .pi, vMin: -.pi / 2, vMax: .pi / 2),
+                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi / 2, vMax: .pi / 2)
             )
             #expect(result != nil)
             if let result {
@@ -2119,8 +2134,8 @@ struct SurfaceExtremaTests {
         if let sphere1, let sphere2 {
             let result = sphere1.extrema(
                 to: sphere2,
-                uvBounds1: (uMin: 0, uMax: 2 * .pi, vMin: -.pi/2, vMax: .pi/2),
-                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi/2, vMax: .pi/2)
+                uvBounds1: (uMin: 0, uMax: 2 * .pi, vMin: -.pi / 2, vMax: .pi / 2),
+                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi / 2, vMax: .pi / 2)
             )
             #expect(result != nil)
             if let result {
@@ -2145,7 +2160,7 @@ struct SurfaceExtremaTests {
             let result = cyl.extrema(
                 to: sphere,
                 uvBounds1: (uMin: 0, uMax: 2 * .pi, vMin: 0, vMax: 10),
-                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi/2, vMax: .pi/2)
+                uvBounds2: (uMin: 0, uMax: 2 * .pi, vMin: -.pi / 2, vMax: .pi / 2)
             )
             #expect(result != nil)
             if let result {
@@ -3031,8 +3046,10 @@ struct IntToolsFaceFaceTests {
 struct IntToolsBeanFaceIntersectorTests {
     @Test("edge crossing face")
     func edgeCrossingFace() {
-        let face = Shape.face(from: Surface.plane(origin: SIMD3(0, 0, 0),
-            normal: SIMD3(0, 0, 1))!,
+        let face = Shape.face(
+            from: Surface.plane(
+                origin: SIMD3(0, 0, 0),
+                normal: SIMD3(0, 0, 1))!,
             uRange: -10...10, vRange: -10...10)
         let edge = Shape.edgeFromPoints(SIMD3(0, 0, -5), SIMD3(0, 0, 5))
         if let f = face, let e = edge {
@@ -3045,8 +3062,10 @@ struct IntToolsBeanFaceIntersectorTests {
 
     @Test("edge lying on face - coincident ranges")
     func edgeOnFace() {
-        let face = Shape.face(from: Surface.plane(origin: SIMD3(0, 0, 0),
-            normal: SIMD3(0, 0, 1))!,
+        let face = Shape.face(
+            from: Surface.plane(
+                origin: SIMD3(0, 0, 0),
+                normal: SIMD3(0, 0, 1))!,
             uRange: -10...10, vRange: -10...10)
         let edge = Shape.edgeFromPoints(SIMD3(-3, 0, 0), SIMD3(3, 0, 0))
         if let f = face, let e = edge {
@@ -3068,8 +3087,10 @@ struct ShapeRayIntersectionTests {
     @Test("line intersection with box")
     func lineBoxIntersection() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
-        if let inter = ShapeRayIntersection(shape: box, originX: 5, originY: 5, originZ: -10,
-                                             dirX: 0, dirY: 0, dirZ: 1) {
+        if let inter = ShapeRayIntersection(
+            shape: box, originX: 5, originY: 5, originZ: -10,
+            dirX: 0, dirY: 0, dirZ: 1)
+        {
             let hits = inter.allHits()
             #expect(hits.count >= 2)
         }
@@ -3089,8 +3110,10 @@ struct ShapeRayIntersectionTests {
     @Test("hit face access")
     func hitFaceAccess() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
-        if let inter = ShapeRayIntersection(shape: box, originX: 5, originY: 5, originZ: -10,
-                                             dirX: 0, dirY: 0, dirZ: 1) {
+        if let inter = ShapeRayIntersection(
+            shape: box, originX: 5, originY: 5, originZ: -10,
+            dirX: 0, dirY: 0, dirZ: 1)
+        {
             if inter.hasMore {
                 let hit = inter.currentHit
                 #expect(hit.z >= -6 && hit.z <= 6)
@@ -3171,7 +3194,8 @@ struct BRepExtremaDistanceSSTests {
     func vertexDistance() {
         // Get vertices from two boxes at different positions
         if let box1 = Shape.box(width: 1, height: 1, depth: 1),
-           let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 1, height: 1, depth: 1) {
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 1, height: 1, depth: 1)
+        {
             let verts1 = box1.subShapes(ofType: .vertex)
             let verts2 = box2.subShapes(ofType: .vertex)
             if let v1 = verts1.first, let v2 = verts2.first {
@@ -3191,7 +3215,8 @@ struct BRepExtremaDistanceSSTests {
         // wrapper (Shape.distance(to:)) which handles all subshape pair
         // combinations including endpoint cases.
         if let box1 = Shape.box(width: 1, height: 1, depth: 1),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 1, height: 1, depth: 1) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 1, height: 1, depth: 1)
+        {
             let edges1 = box1.subShapes(ofType: .edge)
             let verts2 = box2.subShapes(ofType: .vertex)
             if let e = edges1.first, let v = verts2.first {
@@ -3248,13 +3273,17 @@ struct BRepGPropVinertGKTests {
         let face = try #require(Shape.fromFace(firstFace))
 
         let r = face.vinertGK(tolerance: 1e-3)
-        #expect(r.errorReached > 0,
-                "a curved face's Gauss-Kronrod integration should report a nonzero error, not the exact-answer sentinel 0.0")
+        #expect(
+            r.errorReached > 0,
+            "a curved face's Gauss-Kronrod integration should report a nonzero error, not the exact-answer sentinel 0.0"
+        )
 
         let trueVolume = GeometryProperties.sphereVolume(radius: radius)
         let relativeDeviation = abs(r.mass - trueVolume) / trueVolume
-        #expect(relativeDeviation <= r.errorReached,
-                "the reported relative error should bound the sphere's actual relative deviation from its analytic volume")
+        #expect(
+            relativeDeviation <= r.errorReached,
+            "the reported relative error should bound the sphere's actual relative deviation from its analytic volume"
+        )
     }
 
     /// PR #738 review, finding 2: the doc comment on `errorReached` promised a *relative* error,
@@ -3278,9 +3307,12 @@ struct BRepGPropVinertGKTests {
     /// the root follows by linear interpolation.
     @Test("vinertGK's errorReached grows, and stays finite, as mass is driven toward zero")
     func errorReachedGrowsAsMassApproachesZero() throws {
-        let radius = 5.0, height = 10.0
-        let face = try #require(Shape.faceFromCylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius,
-                                                         uBounds: 0...Double.pi, vBounds: 0...height))
+        let radius = 5.0
+        let height = 10.0
+        let face = try #require(
+            Shape.faceFromCylinder(
+                origin: .zero, axis: SIMD3(0, 0, 1), radius: radius,
+                uBounds: 0...Double.pi, vBounds: 0...height))
 
         let farLocation = SIMD3(0.0, 0.0, 0.0)
         let probeLocation = SIMD3(0.0, radius * 2, 0.0)
@@ -3288,17 +3320,25 @@ struct BRepGPropVinertGKTests {
         let rProbe = face.vinertGK(location: probeLocation, tolerance: 1e-3, computeCG: false)
 
         let slope = (rProbe.mass - rFar.mass) / (probeLocation.y - farLocation.y)
-        try #require(abs(slope) > 1, "fixture must be location-sensitive (an open, non-periodic face), or this proves nothing")
+        try #require(
+            abs(slope) > 1,
+            "fixture must be location-sensitive (an open, non-periodic face), or this proves nothing"
+        )
         let rootY = farLocation.y - rFar.mass / slope
 
-        let rNearZero = face.vinertGK(location: SIMD3(0, rootY, 0), tolerance: 1e-3, computeCG: false)
-        #expect(abs(rNearZero.mass) < 1e-9,
-                "the derived root should drive mass to (near) zero; got \(rNearZero.mass)")
-        #expect(rNearZero.errorReached.isFinite,
-                "errorReached must stay a real number as mass collapses toward zero, not NaN/Inf")
+        let rNearZero = face.vinertGK(
+            location: SIMD3(0, rootY, 0), tolerance: 1e-3, computeCG: false)
+        #expect(
+            abs(rNearZero.mass) < 1e-9,
+            "the derived root should drive mass to (near) zero; got \(rNearZero.mass)")
+        #expect(
+            rNearZero.errorReached.isFinite,
+            "errorReached must stay a real number as mass collapses toward zero, not NaN/Inf")
         #expect(rNearZero.errorReached >= 0, "an integration error is never negative")
-        #expect(rNearZero.errorReached > rFar.errorReached,
-                "as mass shrinks toward zero the reported error should grow, not stay small: a caller must not be told a near-zero-mass answer is MORE certain than a well-conditioned one")
+        #expect(
+            rNearZero.errorReached > rFar.errorReached,
+            "as mass shrinks toward zero the reported error should grow, not stay small: a caller must not be told a near-zero-mass answer is MORE certain than a well-conditioned one"
+        )
     }
 }
 
@@ -3308,13 +3348,15 @@ struct BRepGPropVinertGKTests {
 struct ExtremaExtCCTests {
     @Test func curveCurveDistance() {
         // Two perpendicular lines at distance 5
-        if let line1 = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)),
-           let line2 = Curve3D.line(through: SIMD3(0,5,0), direction: SIMD3(0,0,1)) {
+        if let line1 = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
+            let line2 = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(0, 0, 1))
+        {
             let result = line1.extremaCC(range1: -10...10, other: line2, range2: -10...10)
             #expect(result.isDone)
             #expect(result.count >= 1)
             if result.count >= 1 {
-                let pp = line1.extremaCCPoint(range1: -10...10, other: line2, range2: -10...10, index: 1)
+                let pp = line1.extremaCCPoint(
+                    range1: -10...10, other: line2, range2: -10...10, index: 1)
                 let dist = pp.squareDistance.squareRoot()
                 #expect(abs(dist - 5.0) < 1e-3)
             }
@@ -3322,8 +3364,9 @@ struct ExtremaExtCCTests {
     }
 
     @Test func parallelCurves() {
-        if let line1 = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)),
-           let line2 = Curve3D.line(through: SIMD3(0,3,0), direction: SIMD3(1,0,0)) {
+        if let line1 = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
+            let line2 = Curve3D.line(through: SIMD3(0, 3, 0), direction: SIMD3(1, 0, 0))
+        {
             let result = line1.extremaCC(range1: -10...10, other: line2, range2: -10...10)
             #expect(result.isDone)
             #expect(result.isParallel)
@@ -3335,8 +3378,9 @@ struct ExtremaExtCCTests {
 struct ExtremaExtCSTests {
     @Test func curveSurfaceParallel() {
         // Line parallel to plane
-        if let line = Curve3D.line(through: SIMD3(0,0,10), direction: SIMD3(1,0,0)),
-           let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 10), direction: SIMD3(1, 0, 0)),
+            let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+        {
             let result = line.extremaCS(range: -10...10, surface: plane)
             #expect(result.isDone)
             #expect(result.isParallel)
@@ -3345,14 +3389,15 @@ struct ExtremaExtCSTests {
 
     @Test func curveSurfaceDistance() {
         // Line near a sphere
-        if let line = Curve3D.line(through: SIMD3(10,0,0), direction: SIMD3(0,0,1)),
-           let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5.0) {
+        if let line = Curve3D.line(through: SIMD3(10, 0, 0), direction: SIMD3(0, 0, 1)),
+            let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5.0)
+        {
             let result = line.extremaCS(range: -5...5, surface: sphere)
             #expect(result.isDone)
             if !result.isParallel && result.count >= 1 {
                 let pp = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
                 let dist = pp.squareDistance.squareRoot()
-                #expect(dist > 4.0) // At least 5 away from surface
+                #expect(dist > 4.0)  // At least 5 away from surface
             }
         }
     }
@@ -3385,8 +3430,10 @@ struct ExtremaExtPSTests {
             if result.isDone && result.count >= 1 {
                 let ps = sphere.extremaPSPoint(point: SIMD3(0, 0, 10), index: 1)
                 // Point should be on the sphere surface
-                let px = ps.point.x, py = ps.point.y, pz = ps.point.z
-                let r = (px*px + py*py + pz*pz).squareRoot()
+                let px = ps.point.x
+                let py = ps.point.y
+                let pz = ps.point.z
+                let r = (px * px + py * py + pz * pz).squareRoot()
                 #expect(abs(r - 5.0) < 0.1)
             }
         }
@@ -3397,7 +3444,8 @@ struct ExtremaExtPSTests {
 struct ExtremaExtSSTests {
     @Test func parallelPlanes() {
         if let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
-           let p2 = Surface.plane(origin: SIMD3(0, 0, 7), normal: SIMD3(0, 0, 1)) {
+            let p2 = Surface.plane(origin: SIMD3(0, 0, 7), normal: SIMD3(0, 0, 1))
+        {
             let result = p1.extremaSS(other: p2)
             #expect(result.isDone)
             #expect(result.isParallel)
@@ -3406,14 +3454,15 @@ struct ExtremaExtSSTests {
 
     @Test func sphereDistance() {
         if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3.0),
-           let s2 = Surface.sphere(center: SIMD3(10, 0, 0), radius: 2.0) {
+            let s2 = Surface.sphere(center: SIMD3(10, 0, 0), radius: 2.0)
+        {
             let result = s1.extremaSS(other: s2)
             #expect(result.isDone)
             // Two spheres, non-parallel
             if !result.isParallel && result.count >= 1 {
                 let pp = s1.extremaSSPoint(other: s2, index: 1)
                 let dist = pp.squareDistance.squareRoot()
-                #expect(abs(dist - 5.0) < 0.5) // 10 - 3 - 2 = 5
+                #expect(abs(dist - 5.0) < 0.5)  // 10 - 3 - 2 = 5
             }
         }
     }
@@ -3422,10 +3471,12 @@ struct ExtremaExtSSTests {
 @Suite("Extrema_LocateExtCC Tests")
 struct ExtremaLocateExtCCTests {
     @Test func localExtremum() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0),
-           let line = Curve3D.line(through: SIMD3(10,0,3), direction: SIMD3(0,1,0)) {
-            let result = circ.locateExtremaCC(range1: 0...(.pi * 2), other: line,
-                                              range2: -10...10, seedU: 0, seedV: 0)
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0),
+            let line = Curve3D.line(through: SIMD3(10, 0, 3), direction: SIMD3(0, 1, 0))
+        {
+            let result = circ.locateExtremaCC(
+                range1: 0...(.pi * 2), other: line,
+                range2: -10...10, seedU: 0, seedV: 0)
             #expect(result.isDone)
             if result.isDone {
                 let dist = result.squareDistance.squareRoot()
@@ -3485,13 +3536,15 @@ struct IntToolsTests {
 
     @Test func computeVV() {
         guard let v1 = Shape.vertex(at: SIMD3(0, 0, 0)),
-              let v2 = Shape.vertex(at: SIMD3(0, 0, 0)) else { return }
+            let v2 = Shape.vertex(at: SIMD3(0, 0, 0))
+        else { return }
         #expect(IntTools.computeVV(v1, v2) == 0)
     }
 
     @Test func computeVVDistant() {
         guard let v1 = Shape.vertex(at: SIMD3(0, 0, 0)),
-              let v2 = Shape.vertex(at: SIMD3(100, 100, 100)) else { return }
+            let v2 = Shape.vertex(at: SIMD3(100, 100, 100))
+        else { return }
         #expect(IntTools.computeVV(v1, v2) != 0)
     }
 
@@ -3517,25 +3570,33 @@ struct IntToolsTests {
 struct BndOBBTests {
 
     @Test func createAndQuery() {
-        let obb = OBB(center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0), zDir: SIMD3(0, 0, 1),
-                      hx: 5, hy: 3, hz: 2)
+        let obb = OBB(
+            center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0),
+            zDir: SIMD3(0, 0, 1),
+            hx: 5, hy: 3, hz: 2)
         #expect(!obb.isVoid)
         #expect(abs(obb.center.x) < 1e-10)
         #expect(abs(obb.halfSizes.x - 5.0) < 1e-10)
     }
 
     @Test func pointInOut() {
-        let obb = OBB(center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0), zDir: SIMD3(0, 0, 1),
-                      hx: 5, hy: 5, hz: 5)
+        let obb = OBB(
+            center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0),
+            zDir: SIMD3(0, 0, 1),
+            hx: 5, hy: 5, hz: 5)
         #expect(!obb.isOut(point: SIMD3(1, 1, 1)))
         #expect(obb.isOut(point: SIMD3(10, 10, 10)))
     }
 
     @Test func obbOverlap() {
-        let obb1 = OBB(center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0), zDir: SIMD3(0, 0, 1),
-                       hx: 5, hy: 5, hz: 5)
-        let obb2 = OBB(center: SIMD3(4, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0), zDir: SIMD3(0, 0, 1),
-                       hx: 3, hy: 3, hz: 3)
+        let obb1 = OBB(
+            center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0),
+            zDir: SIMD3(0, 0, 1),
+            hx: 5, hy: 5, hz: 5)
+        let obb2 = OBB(
+            center: SIMD3(4, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0),
+            zDir: SIMD3(0, 0, 1),
+            hx: 3, hy: 3, hz: 3)
         #expect(!obb1.isOut(obb2))
     }
 
@@ -3550,8 +3611,10 @@ struct BndOBBTests {
     }
 
     @Test func enlarge() {
-        let obb = OBB(center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0), zDir: SIMD3(0, 0, 1),
-                      hx: 1, hy: 1, hz: 1)
+        let obb = OBB(
+            center: SIMD3(0, 0, 0), xDir: SIMD3(1, 0, 0), yDir: SIMD3(0, 1, 0),
+            zDir: SIMD3(0, 0, 1),
+            hx: 1, hy: 1, hz: 1)
         obb.enlarge(by: 2.0)
         #expect(abs(obb.halfSizes.x - 3.0) < 1e-10)
     }
@@ -3617,11 +3680,11 @@ struct BndBoundSortBoxTests {
         let boxes = [
             [0.0, 0.0, 0.0, 10.0, 10.0, 10.0],
             [50.0, 50.0, 50.0, 60.0, 60.0, 60.0],
-            [5.0, 5.0, 5.0, 15.0, 15.0, 15.0]
+            [5.0, 5.0, 5.0, 15.0, 15.0, 15.0],
         ]
         let sorter = BoundSortBox(boxes: boxes)
         let hits = sorter.compare(xmin: 8, ymin: 8, zmin: 8, xmax: 12, ymax: 12, zmax: 12)
-        #expect(hits.count >= 2) // overlaps boxes 0 and 2
+        #expect(hits.count >= 2)  // overlaps boxes 0 and 2
     }
 
     @Test func compareNonOverlapping() {
@@ -3640,7 +3703,7 @@ struct BRepGPropDomainTests {
     @Test func faceEdgeCount() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         let count = box.faceDomainEdgeCount(faceIndex: 0)
-        #expect(count >= 3) // rectangular face has 4 edges
+        #expect(count >= 3)  // rectangular face has 4 edges
     }
 }
 
@@ -3650,8 +3713,9 @@ struct BRepGPropDomainTests {
 struct IntAnaLinePlaneTests {
 
     @Test func linePlaneIntersection() {
-        let r = IntAna.linePlane(lineOrigin: SIMD3(0, 0, -5), lineDir: SIMD3(0, 0, 1),
-                                  planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
+        let r = IntAna.linePlane(
+            lineOrigin: SIMD3(0, 0, -5), lineDir: SIMD3(0, 0, 1),
+            planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
         #expect(r.points.count == 1)
         if r.points.count == 1 {
             #expect(abs(r.points[0].z) < 1e-10)
@@ -3659,8 +3723,9 @@ struct IntAnaLinePlaneTests {
     }
 
     @Test func parallelLineAndPlane() {
-        let r = IntAna.linePlane(lineOrigin: SIMD3(0, 0, 5), lineDir: SIMD3(1, 0, 0),
-                                  planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
+        let r = IntAna.linePlane(
+            lineOrigin: SIMD3(0, 0, 5), lineDir: SIMD3(1, 0, 0),
+            planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
         #expect(r.isParallel)
     }
 }
@@ -3669,14 +3734,16 @@ struct IntAnaLinePlaneTests {
 struct IntAnaLineSphereTests {
 
     @Test func lineThroughSphere() {
-        let r = IntAna.lineSphere(lineOrigin: SIMD3(-10, 0, 0), lineDir: SIMD3(1, 0, 0),
-                                   sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1), radius: 5)
+        let r = IntAna.lineSphere(
+            lineOrigin: SIMD3(-10, 0, 0), lineDir: SIMD3(1, 0, 0),
+            sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1), radius: 5)
         #expect(r.points.count == 2)
     }
 
     @Test func lineMissesSphere() {
-        let r = IntAna.lineSphere(lineOrigin: SIMD3(0, 100, 0), lineDir: SIMD3(1, 0, 0),
-                                   sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1), radius: 5)
+        let r = IntAna.lineSphere(
+            lineOrigin: SIMD3(0, 100, 0), lineDir: SIMD3(1, 0, 0),
+            sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1), radius: 5)
         #expect(r.points.count == 0)
     }
 }
@@ -3685,9 +3752,10 @@ struct IntAnaLineSphereTests {
 struct IntAnaThreePlanesTests {
 
     @Test func threePlanesAtOrigin() {
-        let pt = IntAna.threePlanes(p1Origin: SIMD3(0,0,0), p1Normal: SIMD3(1,0,0),
-                                     p2Origin: SIMD3(0,0,0), p2Normal: SIMD3(0,1,0),
-                                     p3Origin: SIMD3(0,0,0), p3Normal: SIMD3(0,0,1))
+        let pt = IntAna.threePlanes(
+            p1Origin: SIMD3(0, 0, 0), p1Normal: SIMD3(1, 0, 0),
+            p2Origin: SIMD3(0, 0, 0), p2Normal: SIMD3(0, 1, 0),
+            p3Origin: SIMD3(0, 0, 0), p3Normal: SIMD3(0, 0, 1))
         #expect(pt != nil)
         if let pt {
             #expect(abs(pt.x) < 1e-10 && abs(pt.y) < 1e-10 && abs(pt.z) < 1e-10)
@@ -3695,9 +3763,10 @@ struct IntAnaThreePlanesTests {
     }
 
     @Test func offsetPlanes() {
-        let pt = IntAna.threePlanes(p1Origin: SIMD3(1,0,0), p1Normal: SIMD3(1,0,0),
-                                     p2Origin: SIMD3(0,2,0), p2Normal: SIMD3(0,1,0),
-                                     p3Origin: SIMD3(0,0,3), p3Normal: SIMD3(0,0,1))
+        let pt = IntAna.threePlanes(
+            p1Origin: SIMD3(1, 0, 0), p1Normal: SIMD3(1, 0, 0),
+            p2Origin: SIMD3(0, 2, 0), p2Normal: SIMD3(0, 1, 0),
+            p3Origin: SIMD3(0, 0, 3), p3Normal: SIMD3(0, 0, 1))
         #expect(pt != nil)
         if let pt {
             #expect(abs(pt.x - 1) < 1e-10 && abs(pt.y - 2) < 1e-10 && abs(pt.z - 3) < 1e-10)
@@ -3709,9 +3778,10 @@ struct IntAnaThreePlanesTests {
 struct IntAnaLineTorusTests {
 
     @Test func lineThroughTorus() {
-        let pts = IntAna.lineTorus(lineOrigin: SIMD3(0, 0, 0), lineDir: SIMD3(1, 0, 0),
-                                    torusCenter: SIMD3(0, 0, 0), torusAxis: SIMD3(0, 0, 1),
-                                    majorRadius: 20, minorRadius: 5)
+        let pts = IntAna.lineTorus(
+            lineOrigin: SIMD3(0, 0, 0), lineDir: SIMD3(1, 0, 0),
+            torusCenter: SIMD3(0, 0, 0), torusAxis: SIMD3(0, 0, 1),
+            majorRadius: 20, minorRadius: 5)
         #expect(pts.count >= 2)
     }
 }
@@ -3720,17 +3790,19 @@ struct IntAnaLineTorusTests {
 struct IntAnaPlanePlaneTests {
 
     @Test func planePlaneIntersection() {
-        let r = IntAna.planePlane(p1Origin: SIMD3(0,0,0), p1Normal: SIMD3(0,0,1),
-                                   p2Origin: SIMD3(0,0,0), p2Normal: SIMD3(0,1,0))
+        let r = IntAna.planePlane(
+            p1Origin: SIMD3(0, 0, 0), p1Normal: SIMD3(0, 0, 1),
+            p2Origin: SIMD3(0, 0, 0), p2Normal: SIMD3(0, 1, 0))
         #expect(r.count >= 1)
     }
 
     @Test func planePlaneLine() {
-        let r = IntAna.planePlane(p1Origin: SIMD3(0,0,0), p1Normal: SIMD3(0,0,1),
-                                   p2Origin: SIMD3(0,0,0), p2Normal: SIMD3(0,1,0))
+        let r = IntAna.planePlane(
+            p1Origin: SIMD3(0, 0, 0), p1Normal: SIMD3(0, 0, 1),
+            p2Origin: SIMD3(0, 0, 0), p2Normal: SIMD3(0, 1, 0))
         if r.count >= 1 {
             let dir = r.lines[0].direction
-            let len = sqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z)
+            let len = sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z)
             #expect(abs(len - 1.0) < 1e-6)
         }
     }
@@ -3740,9 +3812,10 @@ struct IntAnaPlanePlaneTests {
 struct IntAnaPlaneSphereTests {
 
     @Test func planeSphereIntersection() {
-        let r = IntAna.planeSphere(planeOrigin: SIMD3(0,0,0), planeNormal: SIMD3(0,0,1),
-                                    sphereCenter: SIMD3(0,0,0), sphereAxis: SIMD3(0,0,1),
-                                    radius: 5.0)
+        let r = IntAna.planeSphere(
+            planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1),
+            sphereCenter: SIMD3(0, 0, 0), sphereAxis: SIMD3(0, 0, 1),
+            radius: 5.0)
         #expect(r.count >= 1)
     }
 }
@@ -3761,7 +3834,7 @@ struct SelfIntersectionPairTests {
         guard let sphere = Shape.sphere(radius: 5) else { return }
         let pairs = sphere.selfIntersectionPairs(tolerance: 0.0, maxPairs: 50)
         // Sphere should have no self-intersections
-        #expect(pairs.count >= 0) // just check it doesn't crash
+        #expect(pairs.count >= 0)  // just check it doesn't crash
     }
 }
 
@@ -3769,19 +3842,22 @@ struct SelfIntersectionPairTests {
 struct GPropElementTests {
 
     @Test func lineSegmentLength() {
-        let result = GeometryProperties.lineSegment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))
+        let result = GeometryProperties.lineSegment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
         #expect(abs((result?.length ?? 0) - 10.0) < 1e-4)
         #expect(abs((result?.center.x ?? 0) - 5.0) < 1e-4)
     }
 
     @Test func circularArcLength() {
-        let result = GeometryProperties.circularArc(center: .zero, normal: SIMD3(0,0,1),
-                                                     radius: 1.0, u1: 0, u2: .pi)
+        let result = GeometryProperties.circularArc(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 1.0, u1: 0, u2: .pi)
         #expect(abs((result?.arcLength ?? 0) - Double.pi) < 1e-4)
     }
 
     @Test func pointSetCentroid() {
-        let points: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)]
+        let points: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
+        ]
         let result = GeometryProperties.pointSetCentroid(points)
         #expect(abs(result.count - 4.0) < 1e-4)
         if let c = result.centroid {
@@ -3800,7 +3876,7 @@ struct GPropElementTests {
 
     @Test func sphereVolume() {
         let vol = GeometryProperties.sphereVolume(radius: 5.0)
-        let expected = (4.0/3.0) * Double.pi * 125.0
+        let expected = (4.0 / 3.0) * Double.pi * 125.0
         #expect(abs(vol - expected) < 0.5)
     }
 }
@@ -3847,13 +3923,13 @@ struct BndSphereTests {
 struct BndLibTests {
 
     @Test func lineSegmentBounds() {
-        let b = BndLib.line(origin: .zero, direction: SIMD3(1,0,0), p1: 0, p2: 10)
+        let b = BndLib.line(origin: .zero, direction: SIMD3(1, 0, 0), p1: 0, p2: 10)
         #expect(abs(b.min.x) < 1e-6)
         #expect(abs(b.max.x - 10) < 1e-6)
     }
 
     @Test func circleBounds() {
-        let b = BndLib.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)
+        let b = BndLib.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)
         #expect(abs(b.min.x + 5) < 1e-6)
         #expect(abs(b.max.x - 5) < 1e-6)
     }
@@ -3865,13 +3941,13 @@ struct BndLibTests {
     }
 
     @Test func cylinderBounds() {
-        let b = BndLib.cylinder(center: .zero, axis: SIMD3(0,0,1), radius: 2, vmin: 0, vmax: 10)
+        let b = BndLib.cylinder(center: .zero, axis: SIMD3(0, 0, 1), radius: 2, vmin: 0, vmax: 10)
         #expect(abs(b.min.z) < 1e-6)
         #expect(abs(b.max.z - 10) < 1e-6)
     }
 
     @Test func torusBounds() {
-        let b = BndLib.torus(center: .zero, axis: SIMD3(0,0,1), majorRadius: 10, minorRadius: 2)
+        let b = BndLib.torus(center: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)
         #expect(abs(b.max.x - 12) < 1e-6)
         #expect(abs(b.max.z - 2) < 1e-6)
     }
@@ -3914,12 +3990,12 @@ struct GPropCylConeTests {
     }
 
     @Test func coneSurfaceArea() {
-        let area = GeometryProperties.coneSurfaceArea(semiAngle: .pi/6, refRadius: 5, height: 10)
+        let area = GeometryProperties.coneSurfaceArea(semiAngle: .pi / 6, refRadius: 5, height: 10)
         #expect(area > 0)
     }
 
     @Test func coneVolume() {
-        let vol = GeometryProperties.coneVolume(semiAngle: .pi/6, refRadius: 5, height: 10)
+        let vol = GeometryProperties.coneVolume(semiAngle: .pi / 6, refRadius: 5, height: 10)
         #expect(vol > 0)
     }
 }
@@ -3928,15 +4004,17 @@ struct GPropCylConeTests {
 struct IntAnaQuadQuadTests {
 
     @Test func cylinderSphereIntersection() {
-        let count = QuadricIntersection.cylinderSphere(cylinderRadius: 3,
-                                                        sphereCenter: .zero, sphereRadius: 5)
+        let count = QuadricIntersection.cylinderSphere(
+            cylinderRadius: 3,
+            sphereCenter: .zero, sphereRadius: 5)
         #expect(count != nil)
         if let c = count { #expect(c == 2) }
     }
 
     @Test func cylinderSphereNotIdentical() {
-        let identical = QuadricIntersection.cylinderSphereIdentical(cylinderRadius: 3,
-                                                                      sphereCenter: .zero, sphereRadius: 5)
+        let identical = QuadricIntersection.cylinderSphereIdentical(
+            cylinderRadius: 3,
+            sphereCenter: .zero, sphereRadius: 5)
         #expect(!identical)
     }
 }
@@ -3946,7 +4024,7 @@ struct GPropTorusTests {
 
     @Test func torusSurfaceArea() {
         let R = 10.0  // major
-        let r = 3.0   // minor
+        let r = 3.0  // minor
         let area = GeometryProperties.torusSurfaceArea(majorRadius: R, minorRadius: r)
         let expected = 4 * Double.pi * Double.pi * R * r
         #expect(abs(area - expected) < 1.0)
@@ -3965,8 +4043,9 @@ struct GPropTorusTests {
 struct BndLibExtraTests {
 
     @Test func ellipseBounds() {
-        let b = BndLib.ellipse(center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
-                                majorRadius: 10, minorRadius: 5)
+        let b = BndLib.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+            majorRadius: 10, minorRadius: 5)
         #expect(abs(b.min.x + 10) < 0.1)
         #expect(abs(b.max.x - 10) < 0.1)
         #expect(abs(b.min.y + 5) < 0.1)
@@ -3974,33 +4053,38 @@ struct BndLibExtraTests {
     }
 
     @Test func coneBounds() {
-        let b = BndLib.cone(center: .zero, axis: SIMD3(0, 0, 1),
-                             semiAngle: .pi / 6, refRadius: 5, vmin: 0, vmax: 10)
+        let b = BndLib.cone(
+            center: .zero, axis: SIMD3(0, 0, 1),
+            semiAngle: .pi / 6, refRadius: 5, vmin: 0, vmax: 10)
         #expect(b.max.z >= b.min.z)
     }
 
     @Test func circleArcBounds() {
-        let b = BndLib.circleArc(center: .zero, normal: SIMD3(0, 0, 1),
-                                  radius: 5, u1: 0, u2: .pi / 2)
+        let b = BndLib.circleArc(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            radius: 5, u1: 0, u2: .pi / 2)
         #expect(b.max.x >= b.min.x)
         #expect(b.max.y >= b.min.y)
     }
 
     @Test func ellipseArcBounds() {
-        let b = BndLib.ellipseArc(center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
-                                   majorRadius: 10, minorRadius: 5, u1: 0, u2: .pi / 2)
+        let b = BndLib.ellipseArc(
+            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+            majorRadius: 10, minorRadius: 5, u1: 0, u2: .pi / 2)
         #expect(b.max.x >= b.min.x)
     }
 
     @Test func parabolaArcBounds() {
-        let b = BndLib.parabolaArc(center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
-                                    focalDistance: 2, u1: -1, u2: 1)
+        let b = BndLib.parabolaArc(
+            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+            focalDistance: 2, u1: -1, u2: 1)
         #expect(b.max.x >= b.min.x)
     }
 
     @Test func hyperbolaArcBounds() {
-        let b = BndLib.hyperbolaArc(center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
-                                     majorRadius: 5, minorRadius: 3, u1: -1, u2: 1)
+        let b = BndLib.hyperbolaArc(
+            center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
+            majorRadius: 5, minorRadius: 3, u1: -1, u2: 1)
         #expect(b.max.x >= b.min.x)
     }
 }
@@ -4009,8 +4093,9 @@ struct BndLibExtraTests {
 struct IntAnaConeSphereTests {
 
     @Test func coneSphereIntersection() {
-        let count = QuadricIntersection.coneSphere(semiAngle: .pi / 4, refRadius: 0,
-                                                     sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3)
+        let count = QuadricIntersection.coneSphere(
+            semiAngle: .pi / 4, refRadius: 0,
+            sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3)
         #expect(count != nil)
         if let c = count {
             #expect(c >= 0)
@@ -4018,12 +4103,14 @@ struct IntAnaConeSphereTests {
     }
 
     @Test func coneSphereSamplePoints() {
-        let count = QuadricIntersection.coneSphere(semiAngle: .pi / 4, refRadius: 0,
-                                                     sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3)
+        let count = QuadricIntersection.coneSphere(
+            semiAngle: .pi / 4, refRadius: 0,
+            sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3)
         if let c = count, c > 0 {
-            let pts = QuadricIntersection.coneSpherePoints(semiAngle: .pi / 4, refRadius: 0,
-                                                            sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3,
-                                                            curveIndex: 1, sampleCount: 10)
+            let pts = QuadricIntersection.coneSpherePoints(
+                semiAngle: .pi / 4, refRadius: 0,
+                sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3,
+                curveIndex: 1, sampleCount: 10)
             #expect(pts.count >= 0)
         }
     }
@@ -4047,8 +4134,8 @@ struct GPropWeightedTests {
     @Test func barycentre() {
         let pts = [SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0), SIMD3(0.0, 10.0, 0.0)]
         if let c = GeometryProperties.barycentre(pts) {
-            #expect(abs(c.x - 10.0/3.0) < 0.1)
-            #expect(abs(c.y - 10.0/3.0) < 0.1)
+            #expect(abs(c.x - 10.0 / 3.0) < 0.1)
+            #expect(abs(c.y - 10.0 / 3.0) < 0.1)
         } else {
             Issue.record("a three-point set has a barycentre")
         }
@@ -4155,14 +4242,18 @@ struct GeomCircle3DTests {
 @Suite("Geom_Ellipse Properties")
 struct GeomEllipse3DTests {
     @Test func ellipseRadii() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             #expect(abs(e.ellipseProperties.majorRadius - 10) < 1e-6)
             #expect(abs(e.ellipseProperties.minorRadius - 5) < 1e-6)
         }
     }
 
     @Test func ellipseSetRadii() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             #expect(e.ellipseProperties.setMajorRadius(20))
             #expect(abs(e.ellipseProperties.majorRadius - 20) < 1e-6)
             #expect(e.ellipseProperties.setMinorRadius(8))
@@ -4171,20 +4262,26 @@ struct GeomEllipse3DTests {
     }
 
     @Test func ellipseEccentricity() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             let ecc = e.ellipseProperties.eccentricity
             #expect(ecc > 0 && ecc < 1)
         }
     }
 
     @Test func ellipseFocal() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             #expect(e.ellipseProperties.focal > 0)
         }
     }
 
     @Test func ellipseFoci() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             let f1 = e.ellipseProperties.focus1
             let f2 = e.ellipseProperties.focus2
             // Foci should be symmetric about center
@@ -4193,13 +4290,17 @@ struct GeomEllipse3DTests {
     }
 
     @Test func ellipseParameter() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             #expect(e.ellipseProperties.parameter > 0)
         }
     }
 
     @Test func ellipseDirectrix1() {
-        if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5) {
+        if let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5)
+        {
             let d = e.ellipseProperties.directrix1
             // Directrix1 is the line normal to the XAxis, at distance majorRadius/eccentricity
             // from the center, on the positive side of the XAxis; its own direction is the
@@ -4218,14 +4319,18 @@ struct GeomEllipse3DTests {
 @Suite("Geom_Hyperbola Properties")
 struct GeomHyperbola3DTests {
     @Test func hyperbolaRadii() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             #expect(abs(h.hyperbolaProperties.majorRadius - 5) < 1e-6)
             #expect(abs(h.hyperbolaProperties.minorRadius - 3) < 1e-6)
         }
     }
 
     @Test func hyperbolaSetRadii() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             #expect(h.hyperbolaProperties.setMajorRadius(8))
             #expect(abs(h.hyperbolaProperties.majorRadius - 8) < 1e-6)
             #expect(h.hyperbolaProperties.setMinorRadius(4))
@@ -4234,26 +4339,34 @@ struct GeomHyperbola3DTests {
     }
 
     @Test func hyperbolaEccentricity() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             #expect(h.hyperbolaProperties.eccentricity > 1)
         }
     }
 
     @Test func hyperbolaFocal() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             #expect(h.hyperbolaProperties.focal > 0)
         }
     }
 
     @Test func hyperbolaFocus1() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             let f = h.hyperbolaProperties.focus1
             #expect(f.x > 0)  // Focus is along positive X
         }
     }
 
     @Test func hyperbolaAsymptote1() {
-        if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3) {
+        if let h = Curve3D.hyperbola(
+            center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 5, minorRadius: 3)
+        {
             let a = h.hyperbolaProperties.asymptote1
             // The asymptote passes through the hyperbola's own center, with direction
             // normalize(majorRadius, minorRadius, 0) in the local frame (Y = (B/A)*X).
@@ -4470,14 +4583,18 @@ struct GeomSphere3DTests {
 @Suite("Geom_ToroidalSurface Properties")
 struct GeomTorus3DTests {
     @Test func torusRadii() {
-        if let t = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
+        if let t = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)
+        {
             #expect(abs(t.torusProperties.majorRadius - 10) < 1e-6)
             #expect(abs(t.torusProperties.minorRadius - 2) < 1e-6)
         }
     }
 
     @Test func torusSetRadii() {
-        if let t = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
+        if let t = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)
+        {
             #expect(t.torusProperties.setMajorRadius(15))
             #expect(abs(t.torusProperties.majorRadius - 15) < 1e-6)
             #expect(t.torusProperties.setMinorRadius(3))
@@ -4486,14 +4603,18 @@ struct GeomTorus3DTests {
     }
 
     @Test func torusArea() {
-        if let t = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
+        if let t = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)
+        {
             let area = t.torusProperties.area
             #expect(abs(area - 4 * Double.pi * Double.pi * 10 * 2) < 1.0)
         }
     }
 
     @Test func torusVolume() {
-        if let t = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
+        if let t = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)
+        {
             let vol = t.torusProperties.volume
             #expect(abs(vol - 2 * Double.pi * Double.pi * 10 * 4) < 1.0)
         }
@@ -4551,7 +4672,9 @@ struct GeomCone3DTests {
     }
 
     @Test func coneApex() {
-        if let c = Surface.cone(origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
+        if let c = Surface.cone(
+            origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3)
+        {
             let a = c.coneProperties.apex
             // The apex sits back along the axis, refRadius/tan(semiAngle) behind the origin.
             let expectedZ = 3 - 5.0 / tan(0.3)
@@ -4562,7 +4685,9 @@ struct GeomCone3DTests {
     }
 
     @Test func coneAxis() {
-        if let c = Surface.cone(origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3) {
+        if let c = Surface.cone(
+            origin: SIMD3(1, 2, 3), axis: SIMD3(0, 0, 1), radius: 5, semiAngle: 0.3)
+        {
             let ax = c.coneProperties.axis
             #expect(abs(ax.position.x - 1) < 1e-6)
             #expect(abs(ax.position.y - 2) < 1e-6)
@@ -4721,7 +4846,7 @@ struct ExtremaElCSLinCylTests {
             linePoint: SIMD3(20, 0, 0), lineDir: SIMD3(0, 0, 1),
             cylCenter: SIMD3(0, 0, 0), cylAxis: SIMD3(0, 0, 1), cylRadius: 5
         )
-        #expect(results.count >= 0) // may be 0 if parallel to axis
+        #expect(results.count >= 0)  // may be 0 if parallel to axis
     }
 }
 
@@ -4755,7 +4880,7 @@ struct ExtremaElSSPlaneSphereTests {
             planePoint: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1),
             sphereCenter: SIMD3(0, 0, 20), sphereRadius: 5
         )
-        #expect(results.count >= 0) // 0 is valid when not implemented
+        #expect(results.count >= 0)  // 0 is valid when not implemented
     }
 }
 
@@ -4767,7 +4892,7 @@ struct ExtremaElSSSphereSphereTests {
             center1: SIMD3(0, 0, 0), radius1: 5,
             center2: SIMD3(20, 0, 0), radius2: 5
         )
-        #expect(results.count >= 0) // 0 is valid when not implemented
+        #expect(results.count >= 0)  // 0 is valid when not implemented
     }
 }
 
@@ -4917,8 +5042,9 @@ struct Conic2DTests {
     }
 
     @Test func fromEllipse() {
-        let c = Conic2D.ellipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                majorRadius: 5, minorRadius: 3)
+        let c = Conic2D.ellipse(
+            center: SIMD2(0, 0), direction: SIMD2(1, 0),
+            majorRadius: 5, minorRadius: 3)
         #expect(c != nil)
         if let c { #expect(c.a > 0 || c.b > 0) }
     }
@@ -4973,7 +5099,11 @@ struct BRepLPropEdgeTests {
             let edges = box.subShapes(ofType: .edge)
             if edges.count > 0 {
                 let k = edges[0].edgeCurvatureLP(at: 0.5)
-                if let k { #expect(abs(k) < 1e-4) } else { Issue.record("a box edge has curvature 0") }
+                if let k {
+                    #expect(abs(k) < 1e-4)
+                } else {
+                    Issue.record("a box edge has curvature 0")
+                }
             }
         }
     }
@@ -5026,7 +5156,8 @@ struct BRepLPropFaceTests {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
                 guard let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5),
-                      let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5) else {
+                    let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5)
+                else {
                     Issue.record("principal curvatures undefined away from the sphere's poles")
                     return
                 }
@@ -5042,7 +5173,8 @@ struct BRepLPropFaceTests {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
                 guard let mean = faces[0].faceLPropMeanCurvature(u: 0.5, v: 0.5),
-                      let gauss = faces[0].faceLPropGaussianCurvature(u: 0.5, v: 0.5) else {
+                    let gauss = faces[0].faceLPropGaussianCurvature(u: 0.5, v: 0.5)
+                else {
                     Issue.record("mean/Gaussian curvature undefined away from the sphere's poles")
                     return
                 }
@@ -5059,7 +5191,8 @@ struct BRepLPropFaceTests {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
                 guard let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5),
-                      let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5) else {
+                    let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5)
+                else {
                     Issue.record("principal curvatures undefined away from the sphere's poles")
                     return
                 }
@@ -5130,7 +5263,7 @@ struct IntfToolTests {
             lineDirection: SIMD3(0, 1, 0),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        #expect(nSeg >= 0) // should not crash
+        #expect(nSeg >= 0)  // should not crash
     }
 
     @Test func lineThroughCenter() {
@@ -5153,7 +5286,7 @@ struct IntfToolTests {
 struct ExtremaExtrasV112Tests {
 
     @Test func locateOnCurve() {
-        if let circle = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let result = circle.locateNearestPoint(SIMD3(6, 0, 0), initParam: 0)
             #expect(result != nil)
             if let r = result {
@@ -5163,7 +5296,7 @@ struct ExtremaExtrasV112Tests {
     }
 
     @Test func projectPointOnCurve() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let results = line.projectPointAll(SIMD3(5, 3, 0))
             #expect(results.count >= 1)
             if results.count > 0 {
@@ -5174,7 +5307,7 @@ struct ExtremaExtrasV112Tests {
     }
 
     @Test func locateOnSurface() {
-        if let surf = Surface.plane(origin: SIMD3(0,0,0), normal: SIMD3(0,0,1)) {
+        if let surf = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
             let result = surf.locateNearestPoint(SIMD3(5, 3, 10), initU: 0, initV: 0)
             if let r = result {
                 #expect(abs(r.distance - 10.0) < 0.1)
@@ -5183,7 +5316,7 @@ struct ExtremaExtrasV112Tests {
     }
 
     @Test func projectPointOnSurface() {
-        if let surf = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let surf = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             let results = surf.projectPointAll(SIMD3(10, 0, 0))
             #expect(results.count >= 1)
             if results.count > 0 {
@@ -5229,7 +5362,8 @@ struct IntCSResultsTests {
 
     @Test func lineSphereIntersection() {
         if let line = Curve3D.line(through: SIMD3(-20, 0, 0), direction: SIMD3(1, 0, 0)),
-           let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+            let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)
+        {
             if let intcs = IntCSResult(curve: line, surface: sphere) {
                 #expect(intcs.pointCount >= 2)
                 if intcs.pointCount >= 2 {
@@ -5300,12 +5434,14 @@ struct FreeBoundsPropsTests {
 
     // Two stacked rectangles: two disjoint closed free bounds, no open ones.
     private func twoRects(_ w: Double, _ h: Double) -> Shape {
-        let lower = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(w, 0, 0), SIMD3(w, h, 0), SIMD3(0, h, 0)
-        ])!)!
-        let upper = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 5), SIMD3(w, 0, 5), SIMD3(w, h, 5), SIMD3(0, h, 5)
-        ])!)!
+        let lower = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 0), SIMD3(w, 0, 0), SIMD3(w, h, 0), SIMD3(0, h, 0),
+            ])!)!
+        let upper = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 5), SIMD3(w, 0, 5), SIMD3(w, h, 5), SIMD3(0, h, 5),
+            ])!)!
         return Shape.compound([lower, upper])!
     }
 
@@ -5330,7 +5466,7 @@ struct FreeBoundsPropsTests {
     // read as "this shape has no free bounds". They run the analysis on demand now.
     @Test func accessorsRunTheAnalysisOnDemand() throws {
         let props = try #require(FreeBoundsProperties(shape: twoRects(10, 10), tolerance: 0.01))
-        #expect(props.closedCount == 2)          // no perform() call at all
+        #expect(props.closedCount == 2)  // no perform() call at all
         #expect(props.info(.closed, at: 0) != nil)
         #expect(props.wire(.closed, at: 0) != nil)
     }
@@ -5391,19 +5527,23 @@ struct FreeBoundsPropsTests {
     // #504: notchCount was only reachable through Shape's family, which is gone; it is part of
     // info(_:at:) now. A narrow V cut into the contour is what OCCT counts as a notch.
     @Test func notchesAreCounted() throws {
-        let notched = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
-            SIMD3(5.05, 10, 0), SIMD3(5.0, 1, 0), SIMD3(4.95, 10, 0),
-            SIMD3(0, 10, 0)
-        ])!)!
-        let plain = Shape.face(from: Wire.polygon3D([
-            SIMD3(0, 0, 5), SIMD3(10, 0, 5), SIMD3(10, 10, 5), SIMD3(0, 10, 5)
-        ])!)!
-        let props = try #require(FreeBoundsProperties(shape: Shape.compound([notched, plain])!,
-                                                      tolerance: 0.01))
+        let notched = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
+                SIMD3(5.05, 10, 0), SIMD3(5.0, 1, 0), SIMD3(4.95, 10, 0),
+                SIMD3(0, 10, 0),
+            ])!)!
+        let plain = Shape.face(
+            from: Wire.polygon3D([
+                SIMD3(0, 0, 5), SIMD3(10, 0, 5), SIMD3(10, 10, 5), SIMD3(0, 10, 5),
+            ])!)!
+        let props = try #require(
+            FreeBoundsProperties(
+                shape: Shape.compound([notched, plain])!,
+                tolerance: 0.01))
         let counts = (0..<props.closedCount).compactMap { props.info(.closed, at: $0)?.notchCount }
-        #expect(counts.contains(1))   // the slit
-        #expect(counts.contains(0))   // the plain square
+        #expect(counts.contains(1))  // the slit
+        #expect(counts.contains(0))  // the plain square
     }
 }
 
@@ -5412,9 +5552,10 @@ struct MassPropertiesTests {
 
     @Test func linearProperties() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let wireShape = Shape.fromWire(rect) {
+            let wireShape = Shape.fromWire(rect)
+        {
             let lp = wireShape.linearProperties()
-            #expect(abs((lp?.length ?? 0) - 40.0) < 0.1) // perimeter of 10x10 rect
+            #expect(abs((lp?.length ?? 0) - 40.0) < 0.1)  // perimeter of 10x10 rect
         }
     }
 
@@ -5431,7 +5572,8 @@ struct MassPropertiesTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             if let pa = box.principalAxes() {
                 // Principal axes should be unit vectors (or near unit)
-                let len1 = sqrt(pa.axis1.x * pa.axis1.x + pa.axis1.y * pa.axis1.y + pa.axis1.z * pa.axis1.z)
+                let len1 = sqrt(
+                    pa.axis1.x * pa.axis1.x + pa.axis1.y * pa.axis1.y + pa.axis1.z * pa.axis1.z)
                 #expect(abs(len1 - 1.0) < 0.01)
             } else {
                 Issue.record("a box has principal axes")
@@ -5516,7 +5658,7 @@ struct LProp3dSurfaceTests {
             let curvs = s.localCurvatures(u: 0.0, v: 0.0)
             #expect(curvs != nil)
             if let c = curvs {
-                #expect(abs(c.gaussian) < 1e-6) // Gaussian = 0 for cylinder
+                #expect(abs(c.gaussian) < 1e-6)  // Gaussian = 0 for cylinder
             }
         }
     }
@@ -5559,14 +5701,18 @@ struct LocalPropsParityTests {
     /// A cubic Bezier whose first two poles sit `spacing` apart, so `|D1(0)| = 3 * spacing`.
     /// At `spacing == 0` the point is a cusp: the first significant derivative has order 2.
     private static func cuspBezier(spacing: Double) -> Curve3D {
-        Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
-                               SIMD3(1, 1, 0), SIMD3(2, 0, 0)])!
+        Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
+            SIMD3(1, 1, 0), SIMD3(2, 0, 0),
+        ])!
     }
 
     // MARK: Surface
 
-    private func expectSurfaceAgreement(_ surface: Surface, u: Double, v: Double,
-                                        _ label: Comment) {
+    private func expectSurfaceAgreement(
+        _ surface: Surface, u: Double, v: Double,
+        _ label: Comment
+    ) {
         let local = surface.localCurvatures(u: u, v: v)
         let principal = surface.principalCurvatures(atU: u, v: v)
 
@@ -5712,8 +5858,9 @@ struct LocalPropsParityTests {
     @Test("Inside the old 1e-10 window the two Curve3D families agree")
     func curveToleranceWindowAgrees() {
         for spacing in [1e-12, 1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-3] {
-            expectCurveAgreement(Self.cuspBezier(spacing: spacing), at: 0,
-                                 "cusp bezier spacing=\(spacing)")
+            expectCurveAgreement(
+                Self.cuspBezier(spacing: spacing), at: 0,
+                "cusp bezier spacing=\(spacing)")
         }
     }
 
@@ -5752,7 +5899,8 @@ struct LocalPropsParityTests {
                 // The aggregate and per-scalar entry points must agree on definedness, which is
                 // what the 1e-6/1e-7 split used to break.
                 #expect((props.normal != nil) == (edge.normal(at: param) != nil), label)
-                #expect((props.centerOfCurvature != nil)
+                #expect(
+                    (props.centerOfCurvature != nil)
                         == (edge.centerOfCurvature(at: param) != nil), label)
                 if let n = props.normal { #expect(edge.normal(at: param) == n, label) }
                 if let c = props.centerOfCurvature {
@@ -5777,7 +5925,8 @@ struct LocalPropsParityTests {
 
             #expect(props.curvature == (edge.curvature(at: 0) ?? 0), label)
             #expect((props.normal != nil) == (edge.normal(at: 0) != nil), label)
-            #expect((props.centerOfCurvature != nil)
+            #expect(
+                (props.centerOfCurvature != nil)
                     == (edge.centerOfCurvature(at: 0) != nil), label)
 
             // Where the curvature is OCCT's infinite sentinel there is no centre to report. Not
@@ -5808,8 +5957,9 @@ struct LocalPropsParityTests {
                 let label: Comment = "face \(i) u=\(u) v=\(v)"
 
                 #expect((props.normal != nil) == (face.normal(atU: u, v: v) != nil), label)
-                #expect(props.gaussianCurvature == (face.gaussianCurvature(atU: u, v: v) ?? 0),
-                        label)
+                #expect(
+                    props.gaussianCurvature == (face.gaussianCurvature(atU: u, v: v) ?? 0),
+                    label)
                 #expect(props.meanCurvature == (face.meanCurvature(atU: u, v: v) ?? 0), label)
                 if let principal = face.principalCurvatures(atU: u, v: v) {
                     #expect(props.minCurvature == principal.kMin, label)
@@ -5831,11 +5981,13 @@ struct LocalPropsParityTests {
             for v in [1e-8, 1e-7, 5e-7, 1e-6, 1e-5, 1e-3, 1.0] {
                 let props = faceShape.surfaceLocalProps(u: 0, v: v)
                 let label: Comment = "cone face v=\(v)"
-                #expect(props.gaussianCurvature == (face.gaussianCurvature(atU: 0, v: v) ?? 0),
-                        label)
+                #expect(
+                    props.gaussianCurvature == (face.gaussianCurvature(atU: 0, v: v) ?? 0),
+                    label)
                 #expect(props.meanCurvature == (face.meanCurvature(atU: 0, v: v) ?? 0), label)
-                #expect((face.principalCurvatures(atU: 0, v: v) != nil) == props.curvatureDefined,
-                        label)
+                #expect(
+                    (face.principalCurvatures(atU: 0, v: v) != nil) == props.curvatureDefined,
+                    label)
             }
         }
     }
@@ -5880,9 +6032,11 @@ struct LocalPropsParityTests {
                 // reported NaN or infinity. localCurvature is gone from the list because it is now
                 // the same call as curvature(at:).
                 if let k = curve.curvature(at: u) { #expect(k.isFinite, label) }
-                for p in [curve.centerOfCurvature(at: u), curve.localCentreOfCurvature(at: u),
-                          curve.normal(at: u), curve.localNormal(at: u),
-                          curve.tangentDirection(at: u), curve.localTangent(at: u)] {
+                for p in [
+                    curve.centerOfCurvature(at: u), curve.localCentreOfCurvature(at: u),
+                    curve.normal(at: u), curve.localNormal(at: u),
+                    curve.tangentDirection(at: u), curve.localTangent(at: u),
+                ] {
                     if let p { #expect(p.x.isFinite && p.y.isFinite && p.z.isFinite, label) }
                 }
             }
@@ -6041,8 +6195,12 @@ struct BRepBndLibTests {
         let ordinary = origin.boundingBox
         #expect(ordinary != nil)
         if let ordinary {
-            #expect(abs(ordinary.min.x) < 1e-6 && abs(ordinary.min.y) < 1e-6 && abs(ordinary.min.z) < 1e-6)
-            #expect(abs(ordinary.max.x) < 1e-6 && abs(ordinary.max.y) < 1e-6 && abs(ordinary.max.z) < 1e-6)
+            #expect(
+                abs(ordinary.min.x) < 1e-6 && abs(ordinary.min.y) < 1e-6
+                    && abs(ordinary.min.z) < 1e-6)
+            #expect(
+                abs(ordinary.max.x) < 1e-6 && abs(ordinary.max.y) < 1e-6
+                    && abs(ordinary.max.z) < 1e-6)
         }
     }
 }
@@ -6053,7 +6211,7 @@ struct BezierSurfaceTests {
         Surface.bezier(poles: [
             [SIMD3(0, 0, 0), SIMD3(0, 5, 1), SIMD3(0, 10, 0)],
             [SIMD3(5, 0, 1), SIMD3(5, 5, 2), SIMD3(5, 10, 1)],
-            [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)]
+            [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)],
         ])
     }
 
@@ -6117,8 +6275,9 @@ struct IntegrationAssemblyInterferenceTests {
     @Test func shaftHousingClearanceAndInterference() {
         // Step 1-3: Create shaft, housing, bore
         guard let shaft = Shape.cylinder(radius: 10, height: 100),
-              let housing = Shape.cylinder(radius: 15, height: 20),
-              let bore = Shape.cylinder(radius: 10.05, height: 20) else {
+            let housing = Shape.cylinder(radius: 15, height: 20),
+            let bore = Shape.cylinder(radius: 10.05, height: 20)
+        else {
             #expect(Bool(false), "Failed to create primitives")
             return
         }
@@ -6161,17 +6320,18 @@ struct IntegrationSurfaceCurvatureAnalysisTests {
             #expect(Bool(false), "Failed to create sphere surface")
             return
         }
-        let expectedGaussian = 1.0 / (radius * radius) // 0.01
-        let expectedMean = 1.0 / radius                 // 0.1
+        let expectedGaussian = 1.0 / (radius * radius)  // 0.01
+        let expectedMean = 1.0 / radius  // 0.1
 
         // Evaluate at multiple parameter points
         let params: [(Double, Double)] = [
-            (0.0, 0.5), (1.0, 0.5), (0.5, 1.0), (1.5, 0.3), (2.0, 1.0)
+            (0.0, 0.5), (1.0, 0.5), (0.5, 1.0), (1.5, 0.3), (2.0, 1.0),
         ]
 
         for (u, v) in params {
             guard let gauss = sphere.gaussianCurvature(atU: u, v: v),
-                  let mean = sphere.meanCurvature(atU: u, v: v) else {
+                let mean = sphere.meanCurvature(atU: u, v: v)
+            else {
                 Issue.record("sphere curvature undefined at (\(u), \(v))")
                 continue
             }
@@ -6231,7 +6391,8 @@ struct IntegrationProfileContouringTests {
 struct ExtremaPCTests {
 
     @Test func pointToCircle() {
-        guard let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0) else { return }
+        guard let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
+        else { return }
         let results = circ.extrema(from: SIMD3(10, 0, 0))
         #expect(!results.isEmpty)
         if let closest = results.min(by: { $0.distance < $1.distance }) {
@@ -6240,7 +6401,9 @@ struct ExtremaPCTests {
     }
 
     @Test func pointToLine() {
-        guard let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) else { return }
+        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
+            return
+        }
         let results = line.extrema(from: SIMD3(5, 3, 0), uMin: 0, uMax: 100)
         #expect(!results.isEmpty)
         if let closest = results.min(by: { $0.distance < $1.distance }) {
@@ -6250,7 +6413,8 @@ struct ExtremaPCTests {
     }
 
     @Test func minimumDistanceConvenience() {
-        guard let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0) else { return }
+        guard let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
+        else { return }
         if let d = circ.minimumDistance(from: SIMD3(10, 0, 0)) {
             #expect(abs(d - 5.0) < 1e-6)
         }
@@ -6310,7 +6474,8 @@ struct PointToEdgeDistanceTests {
     @Test("Curve3D.distance one-liner")
     func curve3DDistance() {
         guard let c = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else {
-            Issue.record("segment nil"); return
+            Issue.record("segment nil")
+            return
         }
         // Distance from (5, 3, 0) to the X axis segment = 3.
         let d = c.distance(to: SIMD3(5, 3, 0))
@@ -6320,10 +6485,14 @@ struct PointToEdgeDistanceTests {
     @Test("Edge.distance one-liner")
     func edgeDistance() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let edges = box.edges()
-        guard let first = edges.first else { Issue.record("no edges"); return }
+        guard let first = edges.first else {
+            Issue.record("no edges")
+            return
+        }
         let d = first.distance(to: SIMD3(0, 0, 0))
         #expect(d != nil)
     }
@@ -6340,8 +6509,9 @@ struct ShapeMeasurementsTests {
         let m = box.measure()
         // Box has 6 faces. Total surface area = 2*(2*3 + 3*5 + 2*5) = 2*31 = 62.
         #expect(m.faceAreas.count == 6)
-        #expect(abs(m.totalFaceArea - 62.0) < 1e-6,
-                "expected 62.0, got \(m.totalFaceArea)")
+        #expect(
+            abs(m.totalFaceArea - 62.0) < 1e-6,
+            "expected 62.0, got \(m.totalFaceArea)")
         // Areas should occur in 3 pairs (front/back, top/bottom, left/right).
         let sorted = m.faceAreas.sorted()
         #expect(abs(sorted[0] - sorted[1]) < 1e-6)
@@ -6358,8 +6528,9 @@ struct ShapeMeasurementsTests {
         // Box has 12 edges: 4 of length 2, 4 of length 3, 4 of length 5.
         // Total = 4*(2+3+5) = 40.
         #expect(m.edgeLengths.count == 12)
-        #expect(abs(m.totalEdgeLength - 40.0) < 1e-6,
-                "expected 40.0, got \(m.totalEdgeLength)")
+        #expect(
+            abs(m.totalEdgeLength - 40.0) < 1e-6,
+            "expected 40.0, got \(m.totalEdgeLength)")
     }
 
     @Test func cylinderTotalsAreFinite() {
@@ -6381,8 +6552,9 @@ struct ShapeMeasurementsTests {
             return
         }
         let m = box.measure()
-        #expect(m.faceCentroids.count == 6,
-                "one centroid per face, parallel to faceAreas")
+        #expect(
+            m.faceCentroids.count == 6,
+            "one centroid per face, parallel to faceAreas")
         let faceList = box.faces()
         for (i, maybeC) in m.faceCentroids.enumerated() {
             guard let c = maybeC else {
@@ -6390,12 +6562,15 @@ struct ShapeMeasurementsTests {
                 continue
             }
             let b = faceList[i].bounds!
-            #expect(c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
-                    "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")
-            #expect(c.y >= b.min.y - 1e-6 && c.y <= b.max.y + 1e-6,
-                    "face \(i) centroid Y=\(c.y) outside [\(b.min.y), \(b.max.y)]")
-            #expect(c.z >= b.min.z - 1e-6 && c.z <= b.max.z + 1e-6,
-                    "face \(i) centroid Z=\(c.z) outside [\(b.min.z), \(b.max.z)]")
+            #expect(
+                c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
+                "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")
+            #expect(
+                c.y >= b.min.y - 1e-6 && c.y <= b.max.y + 1e-6,
+                "face \(i) centroid Y=\(c.y) outside [\(b.min.y), \(b.max.y)]")
+            #expect(
+                c.z >= b.min.z - 1e-6 && c.z <= b.max.z + 1e-6,
+                "face \(i) centroid Z=\(c.z) outside [\(b.min.z), \(b.max.z)]")
         }
     }
 
@@ -6408,10 +6583,12 @@ struct ShapeMeasurementsTests {
         #expect(m.facePerimeters.count == 6)
         // 2x3 face perimeter 10 (×2), 3x5 perimeter 16 (×2), 2x5 perimeter 14 (×2).
         // Total = 20 + 32 + 28 = 80.
-        #expect(abs(m.totalFacePerimeter - 80.0) < 1e-6,
-                "expected 80.0 total face perimeter, got \(m.totalFacePerimeter)")
-        #expect(m.facePerimeters.allSatisfy { $0 != nil },
-                "all box faces have a closed outer wire")
+        #expect(
+            abs(m.totalFacePerimeter - 80.0) < 1e-6,
+            "expected 80.0 total face perimeter, got \(m.totalFacePerimeter)")
+        #expect(
+            m.facePerimeters.allSatisfy { $0 != nil },
+            "all box faces have a closed outer wire")
     }
 
     @Test func cylinderTopBottomCentroidsAreOnAxis() {
@@ -6463,19 +6640,26 @@ struct AdaptorLocalPropsParityTests {
     /// so sweeping `v` walks smoothly through both resolutions' thresholds. The face keeps the apex
     /// out of its own `v` range so the sampled points are all interior.
     private static func apexConeFace() -> (Shape, Face)? {
-        guard let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
-                                      radius: 0, semiAngle: .pi / 6),
-              let shape = Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0),
-              let face = Face(shape) else { return nil }
+        guard
+            let cone = Surface.cone(
+                origin: .zero, axis: SIMD3(0, 0, 1),
+                radius: 0, semiAngle: .pi / 6),
+            let shape = Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0),
+            let face = Face(shape)
+        else { return nil }
         return (shape, face)
     }
 
     /// A cubic Bezier edge whose first two poles sit `spacing` apart, so `|D1(0)| = 3 * spacing`.
     private static func cuspBezierEdge(spacing: Double) -> (Shape, Edge)? {
-        guard let bez = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
-                                               SIMD3(1, 1, 0), SIMD3(2, 0, 0)]),
-              let shape = Shape.edgeFromCurve(bez),
-              let edge = Edge(shape) else { return nil }
+        guard
+            let bez = Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
+                SIMD3(1, 1, 0), SIMD3(2, 0, 0),
+            ]),
+            let shape = Shape.edgeFromCurve(bez),
+            let edge = Edge(shape)
+        else { return nil }
         return (shape, edge)
     }
 
@@ -6512,8 +6696,10 @@ struct AdaptorLocalPropsParityTests {
         for v in [3e-7, 5e-7, 1e-6, 1.5e-6, 3e-6, 1e-5, 1e-2, 1.0] {
             let label: Comment = "cone v=\(v)"
             guard let mean = face.meanCurvature(atU: 0, v: v),
-                  let gaussian = face.gaussianCurvature(atU: 0, v: v) else {
-                Issue.record("Face.meanCurvature undefined at v=\(v), which the probe reports as defined")
+                let gaussian = face.gaussianCurvature(atU: 0, v: v)
+            else {
+                Issue.record(
+                    "Face.meanCurvature undefined at v=\(v), which the probe reports as defined")
                 continue
             }
             #expect(mean != 0, label)
@@ -6555,10 +6741,12 @@ struct AdaptorLocalPropsParityTests {
                 guard let face = Face(faceShape) else { continue }
                 for (u, v) in [(0.3, 0.2), (1.1, -0.4), (2.0, 0.9)] {
                     let label: Comment = "\(name) u=\(u) v=\(v)"
-                    expectAgree(faceShape.faceLPropMeanCurvature(u: u, v: v),
-                                face.meanCurvature(atU: u, v: v), label)
-                    expectAgree(faceShape.faceLPropGaussianCurvature(u: u, v: v),
-                                face.gaussianCurvature(atU: u, v: v), label)
+                    expectAgree(
+                        faceShape.faceLPropMeanCurvature(u: u, v: v),
+                        face.meanCurvature(atU: u, v: v), label)
+                    expectAgree(
+                        faceShape.faceLPropGaussianCurvature(u: u, v: v),
+                        face.gaussianCurvature(atU: u, v: v), label)
                     // The normal is reported by both, but only the Geom_ spelling applies the
                     // face's orientation, so they agree up to sign, a contract difference, not
                     // drift, and worth pinning so it is not mistaken for one later.
@@ -6653,8 +6841,10 @@ struct AdaptorLocalPropsParityTests {
     /// A circle is the case where the centre of curvature has one obvious right answer.
     @Test("A circular edge's centre of curvature is its centre")
     func circleCentreOfCurvature() {
-        guard let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 4),
-              let edge = Shape.edgeFromCurve(circle) else {
+        guard
+            let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 4),
+            let edge = Shape.edgeFromCurve(circle)
+        else {
             Issue.record("could not build the circular edge")
             return
         }
@@ -6694,8 +6884,11 @@ struct AdaptorCurvatureDefinednessTests {
     /// The cone from the parity suite above: apex radius 0, so `v` sweeps smoothly out of the
     /// curvature's domain of definition.
     private static func apexConeFace() -> Shape? {
-        guard let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
-                                      radius: 0, semiAngle: .pi / 6) else { return nil }
+        guard
+            let cone = Surface.cone(
+                origin: .zero, axis: SIMD3(0, 0, 1),
+                radius: 0, semiAngle: .pi / 6)
+        else { return nil }
         return Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0)
     }
 
@@ -6712,7 +6905,9 @@ struct AdaptorCurvatureDefinednessTests {
         for faceShape in cylinder.subShapes(ofType: .face) {
             // The two planar caps have zero curvature in every direction; the lateral face is the
             // one with a non-zero minimum, and it is the one worth pinning.
-            guard let kMin = faceShape.faceLPropMinCurvature(u: 1.1, v: 6), kMin != 0 else { continue }
+            guard let kMin = faceShape.faceLPropMinCurvature(u: 1.1, v: 6), kMin != 0 else {
+                continue
+            }
             lateralFaces += 1
             #expect(abs(kMin + 1.0 / 3) < 1e-9)
             #expect(faceShape.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)
@@ -6729,7 +6924,8 @@ struct AdaptorCurvatureDefinednessTests {
     @Test("A planar face reports four zeros and a point, all of them defined")
     func planarFaceZerosAreDefined() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let face = Shape.face(from: plane, uRange: (-10.0)...10.0, vRange: (-10.0)...10.0) else {
+            let face = Shape.face(from: plane, uRange: (-10.0)...10.0, vRange: (-10.0)...10.0)
+        else {
             Issue.record("could not build the planar face")
             return
         }
@@ -6830,8 +7026,9 @@ struct AdaptorNormalDecisionTests {
                 continue
             }
             let faces = solid.faces()
-            #expect(faces.allSatisfy { $0.normal != nil || !$0.isPlanar },
-                    "\(name): a planar face with no normal")
+            #expect(
+                faces.allSatisfy { $0.normal != nil || !$0.isPlanar },
+                "\(name): a planar face with no normal")
             #expect(solid.horizontalFaces().count == horizontal, "\(name) horizontal")
             #expect(solid.upwardFaces().count == upward, "\(name) upward")
         }
@@ -6847,10 +7044,13 @@ struct AdaptorNormalDecisionTests {
             return
         }
         let skew = 5e-7
-        guard let surface = Surface.extrusion(profile: line,
-                                              direction: SIMD3(cos(skew), sin(skew), 0)),
-              let shape = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
-              let face = Face(shape) else {
+        guard
+            let surface = Surface.extrusion(
+                profile: line,
+                direction: SIMD3(cos(skew), sin(skew), 0)),
+            let shape = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
+            let face = Face(shape)
+        else {
             Issue.record("could not build the skewed extrusion face")
             return
         }
@@ -6873,17 +7073,19 @@ struct AdaptorNormalDecisionTests {
             return
         }
         for tolerance in [0.001, 0.1, 1.0, 2.0, 5.0] {
-            let hits = sphere.raycast(origin: SIMD3(-20, 0, 0),
-                                      direction: SIMD3(1, 0, 0),
-                                      tolerance: tolerance)
+            let hits = sphere.raycast(
+                origin: SIMD3(-20, 0, 0),
+                direction: SIMD3(1, 0, 0),
+                tolerance: tolerance)
             let label: Comment = "tolerance=\(tolerance)"
             #expect(hits.count == 2, label)
             for hit in hits {
                 #expect(hit.normalDefined, label)
                 // A sphere's normal is radial: parallel to the hit point itself.
                 let radial = simd_normalize(hit.point)
-                #expect(abs(abs(simd_dot(radial, hit.normal)) - 1.0) < 1e-6,
-                        "\(label) hit \(hit.point) normal \(hit.normal)")
+                #expect(
+                    abs(abs(simd_dot(radial, hit.normal)) - 1.0) < 1e-6,
+                    "\(label) hit \(hit.point) normal \(hit.normal)")
             }
         }
     }
@@ -6895,9 +7097,10 @@ struct AdaptorNormalDecisionTests {
             return
         }
         for tolerance in [0.001, 1.0, 5.0] {
-            let hits = box.raycast(origin: SIMD3(0, 0, 40),
-                                   direction: SIMD3(0, 0, -1),
-                                   tolerance: tolerance)
+            let hits = box.raycast(
+                origin: SIMD3(0, 0, 40),
+                direction: SIMD3(0, 0, -1),
+                tolerance: tolerance)
             let label: Comment = "tolerance=\(tolerance)"
             #expect(hits.count == 2, label)
             guard hits.count == 2 else { continue }
@@ -7021,14 +7224,17 @@ struct Issue595CurvatureDefinednessTests {
         #expect(plane.gaussianCurvature(atU: 3, v: 4) == 0)
         #expect(plane.meanCurvature(atU: 3, v: 4) == 0)
 
-        let cylinder = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3))
+        let cylinder = try #require(
+            Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3))
         let cylK = try #require(cylinder.gaussianCurvature(atU: 1.1, v: 6))
         #expect(cylK == 0)
         let cylH = try #require(cylinder.meanCurvature(atU: 1.1, v: 6))
         #expect(abs(cylH + 1.0 / 6) < 1e-12)
 
-        let cone = try #require(Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
-                                             radius: 0, semiAngle: .pi / 6))
+        let cone = try #require(
+            Surface.cone(
+                origin: .zero, axis: SIMD3(0, 0, 1),
+                radius: 0, semiAngle: .pi / 6))
         let coneK = try #require(cone.gaussianCurvature(atU: 0, v: 1.0))
         #expect(coneK == 0, "a cone is developable away from its apex")
         #expect(cone.gaussianCurvature(atU: 0, v: 0) == nil, "and has no curvature at the apex")
@@ -7044,8 +7250,10 @@ struct Issue595CurvatureDefinednessTests {
     /// which it could not express while it returned a bare `(0, 0)`.
     @Test("The pair form agrees with the singles on definedness, not just on value")
     func surfaceCurvaturesPairAgreesOnDefinedness() throws {
-        let cone = try #require(Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
-                                             radius: 0, semiAngle: .pi / 6))
+        let cone = try #require(
+            Surface.cone(
+                origin: .zero, axis: SIMD3(0, 0, 1),
+                radius: 0, semiAngle: .pi / 6))
         let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         for (surface, u, v) in [(cone, 0.0, 0.0), (cone, 0.0, 1.0), (plane, 3.0, 4.0)] {
             let pair = surface.curvatures(u: u, v: v)
@@ -7069,10 +7277,12 @@ struct Issue595CurvatureDefinednessTests {
         #expect(line.torsion(at: 5) == nil)
 
         // A non-planar curve, so the test cannot pass by always answering 0.
-        let helix = try #require(Curve3D.bezier(poles: (0..<5).map { i -> SIMD3<Double> in
-            let t = Double(i) * 0.6
-            return SIMD3(cos(t), sin(t), 0.4 * t)
-        }))
+        let helix = try #require(
+            Curve3D.bezier(
+                poles: (0..<5).map { i -> SIMD3<Double> in
+                    let t = Double(i) * 0.6
+                    return SIMD3(cos(t), sin(t), 0.4 * t)
+                }))
         let tau = try #require(helix.torsion(at: 0.5))
         #expect(abs(tau) > 0.1)
     }
@@ -7095,7 +7305,8 @@ struct Issue595CurvatureDefinednessTests {
         let cuspShape = try #require(Shape.edgeFromCurve(cusp))
         let cuspEdge = try #require(Edge(cuspShape))
         let cuspWire = try #require(Wire.wireFromEdges([cuspEdge]))
-        #expect(cuspWire.curvature(at: 0) == nil,
-                "the first derivative is null at the cusp, and the formula divides by it")
+        #expect(
+            cuspWire.curvature(at: 0) == nil,
+            "the first derivative is null at the cusp, and the formula divides by it")
     }
 }

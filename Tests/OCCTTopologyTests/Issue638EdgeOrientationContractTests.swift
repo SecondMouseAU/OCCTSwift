@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #638: `Shape.edges()` has the identical `TopExp::MapShapes`/`IsSame` collapse #614 fixed for
@@ -83,9 +84,9 @@ struct Issue638EdgeOrientationContractTests {
     func edgeAccessorsAreOrientationIndependent() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let forwardShape = box.subShapes(ofType: .edge).first,
-              let reversedShape = forwardShape.reversed,
-              let forwardEdge = Edge(forwardShape),
-              let reversedEdge = Edge(reversedShape)
+            let reversedShape = forwardShape.reversed,
+            let forwardEdge = Edge(forwardShape),
+            let reversedEdge = Edge(reversedShape)
         else {
             Issue.record("could not build a forward/reversed edge pair")
             return
@@ -128,7 +129,10 @@ struct Issue638EdgeOrientationContractTests {
 
                 let fc = forwardEdge.curvature(at: param)
                 let rc = reversedEdge.curvature(at: param)
-                #expect(fc == rc, "curvature(at: \(param)) diverged: \(String(describing: fc)) vs \(String(describing: rc))")
+                #expect(
+                    fc == rc,
+                    "curvature(at: \(param)) diverged: \(String(describing: fc)) vs \(String(describing: rc))"
+                )
             }
         }
 
@@ -144,16 +148,18 @@ struct Issue638EdgeOrientationContractTests {
     @Test("Edge's accessors are orientation-independent on a circular edge too")
     func edgeAccessorsAreOrientationIndependentOnACircle() {
         let cyl = Shape.cylinder(radius: 5, height: 10)!
-        guard let circleShape = cyl.subShapes(ofType: .edge).first(where: { shape in
-            guard let e = Edge(shape) else { return false }
-            return e.isCircle
-        }) else {
+        guard
+            let circleShape = cyl.subShapes(ofType: .edge).first(where: { shape in
+                guard let e = Edge(shape) else { return false }
+                return e.isCircle
+            })
+        else {
             Issue.record("no circular edge found on the cylinder")
             return
         }
         guard let reversedShape = circleShape.reversed,
-              let forwardEdge = Edge(circleShape),
-              let reversedEdge = Edge(reversedShape)
+            let forwardEdge = Edge(circleShape),
+            let reversedEdge = Edge(reversedShape)
         else {
             Issue.record("could not build a forward/reversed circular edge pair")
             return
@@ -180,16 +186,16 @@ struct Issue638EdgeOrientationContractTests {
     func adjacentFacesIsOrientationIndependent() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let forwardShape = box.subShapes(ofType: .edge).first,
-              let reversedShape = forwardShape.reversed,
-              let forwardEdge = Edge(forwardShape),
-              let reversedEdge = Edge(reversedShape)
+            let reversedShape = forwardShape.reversed,
+            let forwardEdge = Edge(forwardShape),
+            let reversedEdge = Edge(reversedShape)
         else {
             Issue.record("could not build a forward/reversed edge pair")
             return
         }
 
         guard let (f1, f2) = forwardEdge.adjacentFaces(in: box),
-              let (r1, r2) = reversedEdge.adjacentFaces(in: box)
+            let (r1, r2) = reversedEdge.adjacentFaces(in: box)
         else {
             Issue.record("edge reported no adjacent faces")
             return
@@ -205,16 +211,18 @@ struct Issue638EdgeOrientationContractTests {
         func fingerprint(_ face: Face?) -> String? {
             guard let face else { return nil }
             let b = face.bounds!
-            return String(format: "%.6f,%.6f,%.6f/%.6f,%.6f,%.6f",
-                          b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
+            return String(
+                format: "%.6f,%.6f,%.6f/%.6f,%.6f,%.6f",
+                b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
         }
         let forwardFaces = Set([f1, f2].compactMap(fingerprint))
         let reversedFaces = Set([r1, r2].compactMap(fingerprint))
 
         // Without this the comparison could pass on two empty sets, which is the same vacuity in
         // a different coat.
-        #expect(forwardFaces.count == 2,
-                "expected two adjacent faces on a box edge, got \(forwardFaces.count)")
+        #expect(
+            forwardFaces.count == 2,
+            "expected two adjacent faces on a box edge, got \(forwardFaces.count)")
         #expect(forwardFaces == reversedFaces)
     }
 }

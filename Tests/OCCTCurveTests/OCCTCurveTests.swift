@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("Edge Polyline Consistency Tests")
 struct EdgePolylineConsistencyTests {
@@ -20,7 +19,8 @@ struct EdgePolylineConsistencyTests {
     func loftedShapeEdgePolylines() {
         // Two circles at different Z heights
         guard let circle1 = Wire.circle(radius: 10),
-              let circle2 = Wire.circle(radius: 5) else {
+            let circle2 = Wire.circle(radius: 5)
+        else {
             Issue.record("Failed to create circle wires")
             return
         }
@@ -32,11 +32,15 @@ struct EdgePolylineConsistencyTests {
         #expect(edgeCount > 0)
 
         let polylines = lofted.allEdgePolylines(deflection: 0.1)
-        #expect(polylines.count == edgeCount, "polylines.count (\(polylines.count)) should match edgeCount (\(edgeCount))")
+        #expect(
+            polylines.count == edgeCount,
+            "polylines.count (\(polylines.count)) should match edgeCount (\(edgeCount))")
 
         // Every edge should produce at least 2 points
         for (i, polyline) in polylines.enumerated() {
-            #expect(polyline.count >= 2, "Edge \(i) should have at least 2 points, got \(polyline.count)")
+            #expect(
+                polyline.count >= 2,
+                "Edge \(i) should have at least 2 points, got \(polyline.count)")
         }
     }
 
@@ -54,7 +58,8 @@ struct EdgePolylineConsistencyTests {
         #expect(edgeCount == 12, "Extruded rectangle should have 12 edges, got \(edgeCount)")
 
         let polylines = solid.allEdgePolylines(deflection: 0.1)
-        #expect(polylines.count == 12, "Should recover all 12 edge polylines, got \(polylines.count)")
+        #expect(
+            polylines.count == 12, "Should recover all 12 edge polylines, got \(polylines.count)")
     }
 
     @Test("Extruded circle seam edges handled")
@@ -70,10 +75,14 @@ struct EdgePolylineConsistencyTests {
         #expect(edgeCount > 0)
 
         let polylines = solid.allEdgePolylines(deflection: 0.1)
-        #expect(polylines.count == edgeCount, "polylines.count (\(polylines.count)) should match edgeCount (\(edgeCount))")
+        #expect(
+            polylines.count == edgeCount,
+            "polylines.count (\(polylines.count)) should match edgeCount (\(edgeCount))")
 
         for (i, polyline) in polylines.enumerated() {
-            #expect(polyline.count >= 2, "Edge \(i) should have at least 2 points, got \(polyline.count)")
+            #expect(
+                polyline.count >= 2,
+                "Edge \(i) should have at least 2 points, got \(polyline.count)")
         }
     }
 
@@ -87,7 +96,9 @@ struct EdgePolylineConsistencyTests {
         for (name, shape) in shapes {
             let edgeCount = shape.edgeCount
             let polylines = shape.allEdgePolylines(deflection: 0.1)
-            #expect(polylines.count == edgeCount, "\(name): polylines.count (\(polylines.count)) != edgeCount (\(edgeCount))")
+            #expect(
+                polylines.count == edgeCount,
+                "\(name): polylines.count (\(polylines.count)) != edgeCount (\(edgeCount))")
         }
 
         // Sphere has degenerate edges (poles) that are correctly skipped
@@ -98,7 +109,6 @@ struct EdgePolylineConsistencyTests {
     }
 }
 
-
 @Suite("Curve Interpolation Tests")
 struct CurveInterpolationTests {
 
@@ -106,7 +116,7 @@ struct CurveInterpolationTests {
     func interpolateTwoPoints() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0),
-            SIMD3(10, 10, 0)
+            SIMD3(10, 10, 0),
         ]
 
         let wire = Wire.interpolate(through: points)
@@ -125,7 +135,7 @@ struct CurveInterpolationTests {
             SIMD3(10, 5, 0),
             SIMD3(20, 0, 0),
             SIMD3(30, 5, 0),
-            SIMD3(40, 0, 0)
+            SIMD3(40, 0, 0),
         ]
 
         let wire = Wire.interpolate(through: points)
@@ -145,7 +155,7 @@ struct CurveInterpolationTests {
             SIMD3(10, 0, 0),
             SIMD3(0, 10, 0),
             SIMD3(-10, 0, 0),
-            SIMD3(0, -10, 0)
+            SIMD3(0, -10, 0),
         ]
 
         let wire = Wire.interpolate(through: points, closed: true)
@@ -161,14 +171,14 @@ struct CurveInterpolationTests {
     func interpolateWithTangents() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0),
-            SIMD3(10, 0, 0)
+            SIMD3(10, 0, 0),
         ]
 
         // Start going up, end going up (creates an arc)
         let wire = Wire.interpolate(
             through: points,
-            startTangent: SIMD3(1, 1, 0),   // 45 degrees up
-            endTangent: SIMD3(1, -1, 0)      // 45 degrees down
+            startTangent: SIMD3(1, 1, 0),  // 45 degrees up
+            endTangent: SIMD3(1, -1, 0)  // 45 degrees down
         )
 
         #expect(wire != nil)
@@ -189,7 +199,7 @@ struct CurveInterpolationTests {
             SIMD3(10, 0, 5),
             SIMD3(20, 0, 10),
             SIMD3(30, 0, 5),
-            SIMD3(40, 0, 0)
+            SIMD3(40, 0, 0),
         ]
 
         let wire = Wire.interpolate(through: points)
@@ -313,7 +323,6 @@ struct PolylinePickTests {
     }
 }
 
-
 // MARK: - Curve3D Tests (v0.19.0)
 
 @Suite("Curve3D Primitive Tests")
@@ -371,9 +380,10 @@ struct Curve3DPrimitiveTests {
 
     @Test("Arc through three points")
     func arcThreePoints() {
-        let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0),
-                                       interior: SIMD3(0, 5, 0),
-                                       end: SIMD3(-5, 0, 0))
+        let arc = Curve3D.arcOfCircle(
+            start: SIMD3(5, 0, 0),
+            interior: SIMD3(0, 5, 0),
+            end: SIMD3(-5, 0, 0))
         #expect(arc != nil)
         if let arc = arc {
             #expect(!arc.isClosed)
@@ -384,8 +394,9 @@ struct Curve3DPrimitiveTests {
 
     @Test("Create ellipse")
     func createEllipse() {
-        let ellipse = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
-                                       majorRadius: 10, minorRadius: 5)
+        let ellipse = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 5)
         #expect(ellipse != nil)
         if let e = ellipse {
             #expect(e.isClosed)
@@ -396,8 +407,9 @@ struct Curve3DPrimitiveTests {
     @Test("Invalid ellipse returns nil")
     func invalidEllipse() {
         // Minor > major is invalid
-        let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
-                                 majorRadius: 5, minorRadius: 10)
+        let e = Curve3D.ellipse(
+            center: .zero, normal: SIMD3(0, 0, 1),
+            majorRadius: 5, minorRadius: 10)
         #expect(e == nil)
     }
 
@@ -431,13 +443,12 @@ struct Curve3DPrimitiveTests {
     }
 }
 
-
 @Suite("Curve3D BSpline Tests")
 struct Curve3DBSplineTests {
 
     @Test("Create quadratic Bezier")
     func quadraticBezier() {
-        let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(5,10,0), SIMD3(10,0,0)])
+        let bez = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 10, 0), SIMD3(10, 0, 0)])
         #expect(bez != nil)
         if let bez = bez {
             #expect(bez.degree == 2)
@@ -447,7 +458,7 @@ struct Curve3DBSplineTests {
 
     @Test("Poles roundtrip")
     func polesRoundtrip() {
-        let original: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(5,10,5), SIMD3(10,0,0)]
+        let original: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 10, 5), SIMD3(10, 0, 0)]
         let bez = Curve3D.bezier(poles: original)!
         let retrieved = bez.poles!
         #expect(retrieved.count == 3)
@@ -460,7 +471,9 @@ struct Curve3DBSplineTests {
 
     @Test("Interpolate through points")
     func interpolate() {
-        let pts: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(3,5,1), SIMD3(7,2,3), SIMD3(10,0,0)]
+        let pts: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 1), SIMD3(7, 2, 3), SIMD3(10, 0, 0),
+        ]
         let curve = Curve3D.interpolate(points: pts)
         #expect(curve != nil)
         if let c = curve {
@@ -473,10 +486,11 @@ struct Curve3DBSplineTests {
 
     @Test("Interpolate with tangents")
     func interpolateWithTangents() {
-        let pts: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(5,5,5), SIMD3(10,0,0)]
-        let curve = Curve3D.interpolate(points: pts,
-                                         startTangent: SIMD3(1, 1, 1),
-                                         endTangent: SIMD3(1, -1, -1))
+        let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 5, 5), SIMD3(10, 0, 0)]
+        let curve = Curve3D.interpolate(
+            points: pts,
+            startTangent: SIMD3(1, 1, 1),
+            endTangent: SIMD3(1, -1, -1))
         #expect(curve != nil)
     }
 
@@ -496,7 +510,9 @@ struct Curve3DBSplineTests {
 
     @Test("Create BSpline with explicit knots")
     func createBSpline() {
-        let poles: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(3,5,1), SIMD3(7,3,2), SIMD3(10,0,0)]
+        let poles: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 1), SIMD3(7, 3, 2), SIMD3(10, 0, 0),
+        ]
         let knots: [Double] = [0, 1]
         let mults: [Int32] = [4, 4]
         let bsp = Curve3D.bspline(poles: poles, knots: knots, multiplicities: mults, degree: 3)
@@ -507,7 +523,6 @@ struct Curve3DBSplineTests {
         }
     }
 }
-
 
 @Suite("Curve3D Operations Tests")
 struct Curve3DOperationsTests {
@@ -748,7 +763,6 @@ struct Curve3DTransformFamilyParityTests {
     }
 }
 
-
 @Suite("Curve3D Conversion Tests")
 struct Curve3DConversionTests {
 
@@ -795,7 +809,6 @@ struct Curve3DConversionTests {
         #expect(approx != nil)
     }
 }
-
 
 @Suite("Curve3D Draw Tests")
 struct Curve3DDrawTests {
@@ -876,7 +889,7 @@ struct LawFunctionTests {
     @Test("Interpolated law passes through points")
     func interpolatedLaw() {
         let points: [(parameter: Double, value: Double)] = [
-            (0, 0), (0.25, 1), (0.5, 0), (0.75, -1), (1, 0)
+            (0, 0), (0.25, 1), (0.5, 0), (0.75, -1), (1, 0),
         ]
         let law = LawFunction.interpolate(points: points)!
         // Should pass through or be close to interpolation points
@@ -898,8 +911,9 @@ struct LawFunctionTests {
         let poles = [1.0, 3.0]
         let knots = [0.0, 1.0]
         let mults: [Int32] = [2, 2]
-        let law = LawFunction.bspline(poles: poles, knots: knots,
-                                       multiplicities: mults, degree: 1)
+        let law = LawFunction.bspline(
+            poles: poles, knots: knots,
+            multiplicities: mults, degree: 1)
         #expect(law != nil)
         if let law = law {
             #expect(abs(law.value(at: 0) - 1.0) < 1e-6)
@@ -916,7 +930,6 @@ struct LawFunctionTests {
         #expect(abs(law.value(at: 0.5) - 5) < 1e-6)
     }
 }
-
 
 @Suite("Curve3D Plane Projection Tests")
 struct Curve3DPlaneProjectionTests {
@@ -948,8 +961,9 @@ struct Curve3DPlaneProjectionTests {
     @Test("Project circle onto XY plane preserves shape")
     func projectCircleOntoXYPlane() {
         // Circle at z=10 in XY plane
-        let circle = Curve3D.circle(center: SIMD3(0, 0, 10),
-                                    normal: SIMD3(0, 0, 1), radius: 5)!
+        let circle = Curve3D.circle(
+            center: SIMD3(0, 0, 10),
+            normal: SIMD3(0, 0, 1), radius: 5)!
 
         let projected = circle.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -994,7 +1008,7 @@ struct Curve3DPlaneProjectionTests {
             SIMD3(0, 0, 1),
             SIMD3(3, 5, 2),
             SIMD3(7, 2, 4),
-            SIMD3(10, 8, 3)
+            SIMD3(10, 8, 3),
         ])!
 
         let projected = spline.projectedOnPlane(
@@ -1211,13 +1225,13 @@ struct QuasiUniformAbscissaTests {
         #expect(params.count == 5)
         // Parameters should be monotonically increasing
         for i in 1..<params.count {
-            #expect(params[i] > params[i-1])
+            #expect(params[i] > params[i - 1])
         }
     }
 
     @Test("Sample circle parameters")
     func sampleCircle() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)!
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
         let params = circle.quasiUniformParameters(count: 10)
         #expect(params.count == 10)
     }
@@ -1299,9 +1313,11 @@ struct GCPntsSamplerBoundsTests {
     @Test("Sample counts below two are rejected, not passed to OCCT")
     func countsBelowTwoRejected() {
         guard let ellipse = overshootingEllipse(),
-              let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let bezier = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(1, 4, 0),
-                                                 SIMD3(4, -3, 1), SIMD3(6, 1, 0)])
+            let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+            let bezier = Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(1, 4, 0),
+                SIMD3(4, -3, 1), SIMD3(6, 1, 0),
+            ])
         else {
             Issue.record("could not build the degenerate-count fixtures")
             return
@@ -1317,7 +1333,7 @@ struct GCPntsSamplerBoundsTests {
     @Test("Edge uniform abscissa rejects counts below two")
     func edgeUniformAbscissaRejectsCountsBelowTwo() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let edge = box.subShapes(ofType: .edge).first
+            let edge = box.subShapes(ofType: .edge).first
         else {
             Issue.record("could not build a box edge")
             return
@@ -1333,7 +1349,7 @@ struct GCPntsSamplerBoundsTests {
 struct QuasiUniformDeflectionTests {
     @Test("Sample circle with deflection")
     func sampleCircle() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 10)!
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
         let points = circle.quasiUniformDeflectionPoints(deflection: 0.1)
         #expect(points.count > 4)
         // All points should be approximately at radius 10
@@ -1345,7 +1361,7 @@ struct QuasiUniformDeflectionTests {
 
     @Test("Tighter deflection yields more points")
     func tighterDeflection() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 10)!
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
         let coarse = circle.quasiUniformDeflectionPoints(deflection: 1.0)
         let fine = circle.quasiUniformDeflectionPoints(deflection: 0.01)
         #expect(fine.count > coarse.count)
@@ -1426,7 +1442,7 @@ struct BSplineKnotSplittingTests {
                 let c0Breaks = bspline.continuityBreaks(minContinuity: ParametricContinuity.c0)
                 #expect(c0Breaks != nil)
                 if let c0Breaks {
-                    #expect(c0Breaks.count >= 2) // At minimum first/last knot
+                    #expect(c0Breaks.count >= 2)  // At minimum first/last knot
                 }
             }
         }
@@ -1791,7 +1807,8 @@ struct CPntsUniformDeflectionTests {
         for edgeShape in edgeShapes {
             let full = edgeShape.uniformDeflection(0.1)
             if let full = full, full.points.count > 4 {
-                let ranged = edgeShape.uniformDeflection(0.1, range: full.parameters[0]...full.parameters[full.parameters.count/2])
+                let ranged = edgeShape.uniformDeflection(
+                    0.1, range: full.parameters[0]...full.parameters[full.parameters.count / 2])
                 if let ranged = ranged {
                     #expect(ranged.points.count > 0)
                     #expect(ranged.points.count < full.points.count)
@@ -1967,30 +1984,41 @@ struct FairCurveMinimalVariationTests {
 struct LocalAnalysisCurveContinuityTests {
     @Test func smoothJunction() {
         // Two BSpline curves meeting smoothly at (5,0,0)
-        guard let c1 = Curve3D.fit(points: [
-            SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0)
-        ]) else { return }
-        guard let c2 = Curve3D.fit(points: [
-            SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
-        ]) else { return }
-        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
+        guard
+            let c1 = Curve3D.fit(points: [
+                SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0),
+            ])
+        else { return }
+        guard
+            let c2 = Curve3D.fit(points: [
+                SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0),
+            ])
+        else { return }
+        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound)
+        {
             #expect(analysis.isC0 == true)
             #expect(analysis.c0Value < 1e-6)
         }
     }
 
     @Test func smoothJunctionIsG1() {
-        guard let c1 = Curve3D.fit(points: [
-            SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0)
-        ]) else { return }
-        guard let c2 = Curve3D.fit(points: [
-            SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
-        ]) else { return }
+        guard
+            let c1 = Curve3D.fit(points: [
+                SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0),
+            ])
+        else { return }
+        guard
+            let c2 = Curve3D.fit(points: [
+                SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0),
+            ])
+        else { return }
         // G1 has to be requested: the `.c2` default computes C0/C1/C2 and never looks at
         // tangency, so this assertion used to pass off an uninitialised member rather than a
         // measurement (#495).
-        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                            u2: c2.domain.lowerBound, order: .g1) {
+        if let analysis = c1.continuityWith(
+            c2, u1: c1.domain.upperBound,
+            u2: c2.domain.lowerBound, order: .g1)
+        {
             #expect(analysis.isG1 == true)
             #expect(analysis.g1Angle >= 0)
         }
@@ -1998,24 +2026,33 @@ struct LocalAnalysisCurveContinuityTests {
 
     @Test func sharpCorner() {
         // Two curves meeting at sharp angle
-        guard let c1 = Curve3D.fit(points: [
-            SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)
-        ]) else { return }
-        guard let c2 = Curve3D.fit(points: [
-            SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)
-        ]) else { return }
-        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
+        guard
+            let c1 = Curve3D.fit(points: [
+                SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0),
+            ])
+        else { return }
+        guard
+            let c2 = Curve3D.fit(points: [
+                SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0),
+            ])
+        else { return }
+        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound)
+        {
             #expect(analysis.isC0 == true)
         }
     }
 
     @Test func continuityMetrics() {
-        guard let c1 = Curve3D.fit(points: [
-            SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0)
-        ]) else { return }
-        guard let c2 = Curve3D.fit(points: [
-            SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
-        ]) else { return }
+        guard
+            let c1 = Curve3D.fit(points: [
+                SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0),
+            ])
+        else { return }
+        guard
+            let c2 = Curve3D.fit(points: [
+                SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0),
+            ])
+        else { return }
         if let a = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
             // `order` is the request echoed back, so pinning it to the default is all it can
             // tell us; the measurement is `c1Ratio`, which the default order does compute.
@@ -2054,7 +2091,8 @@ struct TopTransCurveTransitionTests {
 struct LawCompositeTests {
     @Test func compositeLaw() {
         guard let l1 = LawFunction.linear(from: 1.0, to: 3.0, parameterRange: 0...0.5),
-              let l2 = LawFunction.linear(from: 3.0, to: 1.0, parameterRange: 0.5...1.0) else { return }
+            let l2 = LawFunction.linear(from: 3.0, to: 1.0, parameterRange: 0.5...1.0)
+        else { return }
         if let comp = LawFunction.composite(laws: [l1, l2]) {
             #expect(abs(comp.value(at: 0.0) - 1.0) < 0.1)
             #expect(abs(comp.value(at: 0.5) - 3.0) < 0.1)
@@ -2063,11 +2101,13 @@ struct LawCompositeTests {
     }
 
     @Test func bsplineKnotSplitting() {
-        guard let law = LawFunction.bspline(
-            poles: [1.0, 3.0, 2.0, 5.0, 4.0, 6.0],
-            knots: [0.0, 0.5, 1.0],
-            multiplicities: [4, 2, 4],
-            degree: 3) else { return }
+        guard
+            let law = LawFunction.bspline(
+                poles: [1.0, 3.0, 2.0, 5.0, 4.0, 6.0],
+                knots: [0.0, 0.5, 1.0],
+                multiplicities: [4, 2, 4],
+                degree: 3)
+        else { return }
         let splits = law.knotSplitting(continuityOrder: .c2)
         #expect(splits.count >= 2)
     }
@@ -2110,7 +2150,7 @@ struct GCPntsQuasiUniformTests {
             #expect(params.count == 10)
             // Parameters should be monotonically increasing
             for i in 1..<params.count {
-                #expect(params[i] > params[i-1])
+                #expect(params[i] > params[i - 1])
             }
         }
     }
@@ -2123,7 +2163,8 @@ struct GCPntsTangentialDeflectionTests {
         let sphere = Shape.sphere(radius: 10)!
         let edges = sphere.edges()
         if let edge = edges.first {
-            let pts = edge.tangentialDeflectionPoints(angularDeflection: 0.1, curvatureDeflection: 0.1)
+            let pts = edge.tangentialDeflectionPoints(
+                angularDeflection: 0.1, curvatureDeflection: 0.1)
             #expect(pts.count >= 2)
         }
     }
@@ -2133,8 +2174,10 @@ struct GCPntsTangentialDeflectionTests {
         let sphere = Shape.sphere(radius: 10)!
         let edges = sphere.edges()
         if let edge = edges.first {
-            let coarse = edge.tangentialDeflectionPoints(angularDeflection: 0.5, curvatureDeflection: 1.0)
-            let fine = edge.tangentialDeflectionPoints(angularDeflection: 0.05, curvatureDeflection: 0.01)
+            let coarse = edge.tangentialDeflectionPoints(
+                angularDeflection: 0.5, curvatureDeflection: 1.0)
+            let fine = edge.tangentialDeflectionPoints(
+                angularDeflection: 0.05, curvatureDeflection: 0.01)
             #expect(fine.count >= coarse.count)
         }
     }
@@ -2145,8 +2188,9 @@ struct ApproxSameParameterTests {
     @Test("same parameter on line/plane")
     func sameParamLinePlane() {
         if let line3d = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let line2d = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
-           let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)) {
+            let line2d = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
+            let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+        {
             let result = line3d.checkSameParameter(curve2D: line2d, surface: plane)
             if let r = result {
                 #expect(r.isSameParameter)
@@ -2160,12 +2204,15 @@ struct CurveToAnaCurveTests {
     @Test("recognize line from BSpline")
     func recognizeLine() {
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let trimmed = line.trimmed(from: 0, to: 10),
-           let bsp = trimmed.toBSpline() {
+            let trimmed = line.trimmed(from: 0, to: 10),
+            let bsp = trimmed.toBSpline()
+        {
             let domain = bsp.domain
-            if let result = bsp.toAnalytical(tolerance: 1e-4,
-                                               first: domain.lowerBound,
-                                               last: domain.upperBound) {
+            if let result = bsp.toAnalytical(
+                tolerance: 1e-4,
+                first: domain.lowerBound,
+                last: domain.upperBound)
+            {
                 #expect(result.gap < 1e-3)
             }
         }
@@ -2174,12 +2221,15 @@ struct CurveToAnaCurveTests {
     @Test("recognize circle from BSpline")
     func recognizeCircle() {
         if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let trimmed = circ.trimmed(from: 0, to: .pi),
-           let bsp = trimmed.toBSpline() {
+            let trimmed = circ.trimmed(from: 0, to: .pi),
+            let bsp = trimmed.toBSpline()
+        {
             let domain = bsp.domain
-            if let result = bsp.toAnalytical(tolerance: 1e-4,
-                                               first: domain.lowerBound,
-                                               last: domain.upperBound) {
+            if let result = bsp.toAnalytical(
+                tolerance: 1e-4,
+                first: domain.lowerBound,
+                last: domain.upperBound)
+            {
                 #expect(result.gap < 1e-3)
             }
         }
@@ -2199,8 +2249,9 @@ struct SurfToAnaSurfTests {
     @Test("recognize plane from BSpline")
     func recognizePlane() {
         if let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
-           let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
-           let bsp = trimmed.toBSpline() {
+            let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+            let bsp = trimmed.toBSpline()
+        {
             if let result = bsp.toAnalyticalWithGap(tolerance: 1e-4) {
                 #expect(result.gap < 1e-3)
             }
@@ -2213,8 +2264,9 @@ struct SurfToAnaSurfTests {
             #expect(plane.isCanonical)
         }
         if let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
-           let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
-           let bsp = trimmed.toBSpline() {
+            let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+            let bsp = trimmed.toBSpline()
+        {
             #expect(!bsp.isCanonical)
         }
     }
@@ -2223,8 +2275,9 @@ struct SurfToAnaSurfTests {
 @Suite("GeomTools_CurveSet Tests")
 struct GeomToolsCurveSetTests {
     @Test func serializeDeserialize3D() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)),
-           let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5.0) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
+            let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
+        {
             if let data = Curve3D.serializeCurves([line, circ]) {
                 #expect(!data.isEmpty)
                 if let curves = Curve3D.deserializeCurves(data) {
@@ -2235,9 +2288,10 @@ struct GeomToolsCurveSetTests {
     }
 
     @Test func roundtripPreservesGeometry() {
-        if let circ = Curve3D.circle(center: SIMD3(1,2,3), normal: SIMD3(0,0,1), radius: 7.0) {
+        if let circ = Curve3D.circle(center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 7.0) {
             if let data = Curve3D.serializeCurves([circ]),
-               let curves = Curve3D.deserializeCurves(data) {
+                let curves = Curve3D.deserializeCurves(data)
+            {
                 #expect(curves.count == 1)
             }
         }
@@ -2247,14 +2301,18 @@ struct GeomToolsCurveSetTests {
 @Suite("Geom_OffsetCurve Tests")
 struct GeomOffsetCurveTests {
     @Test func createFromLine() {
-        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else { return }
+        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
+            return
+        }
         if let offset = Curve3D.offset(basis: line, offset: 5.0, dirX: 0, dirY: 0, dirZ: 1) {
             #expect(abs(offset.offsetValue - 5.0) < 1e-10)
         }
     }
 
     @Test func offsetDirection() {
-        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else { return }
+        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
+            return
+        }
         if let offset = Curve3D.offset(basis: line, offset: 5.0, dirX: 0, dirY: 0, dirZ: 1) {
             if let dir = offset.offsetDirection {
                 #expect(abs(dir.z - 1.0) < 1e-10)
@@ -2278,12 +2336,14 @@ struct ConvertCircleTests {
 struct ConvertConicCurvesTests {
 
     @Test func ellipseArc() {
-        let curve = Curve2D.fromEllipseArc(centerX: 0, centerY: 0, majorRadius: 20, minorRadius: 10, u1: 0, u2: .pi)
+        let curve = Curve2D.fromEllipseArc(
+            centerX: 0, centerY: 0, majorRadius: 20, minorRadius: 10, u1: 0, u2: .pi)
         #expect(curve != nil)
     }
 
     @Test func hyperbolaArc() {
-        let curve = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0, majorRadius: 10, minorRadius: 5, u1: -1, u2: 1)
+        let curve = Curve2D.fromHyperbolaArc(
+            centerX: 0, centerY: 0, majorRadius: 10, minorRadius: 5, u1: -1, u2: 1)
         #expect(curve != nil)
     }
 
@@ -2301,7 +2361,7 @@ struct CompBezierToBSplineTests {
     @Test func singleCubicSegment3D() {
         // One cubic Bezier segment: 4 control points
         let seg: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 2, 0), SIMD3(3, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 2, 0), SIMD3(3, 0, 0),
         ]
         if let result = CompBezierConverter.toBSpline(segments: [seg]) {
             #expect(result.degree == 3)
@@ -2318,10 +2378,10 @@ struct CompBezierToBSplineTests {
     @Test func twoCubicSegments3D() {
         // Two C0-connected cubic Bezier segments (second starts where first ends)
         let seg1: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 0, 0),
         ]
         let seg2: [SIMD3<Double>] = [
-            SIMD3(3, 0, 0), SIMD3(4, -1, 0), SIMD3(5, -1, 0), SIMD3(6, 0, 0)
+            SIMD3(3, 0, 0), SIMD3(4, -1, 0), SIMD3(5, -1, 0), SIMD3(6, 0, 0),
         ]
         if let result = CompBezierConverter.toBSpline(segments: [seg1, seg2]) {
             #expect(result.degree == 3)
@@ -2348,9 +2408,14 @@ struct CompBezierToBSplineTests {
 struct OffsetCurveBasisTests {
 
     @Test func getBasisCurve() {
-        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else { return }
-        guard let offset = Curve3D.offset(basis: line, offset: 2.0,
-                                           dirX: 0, dirY: 0, dirZ: 1) else { return }
+        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
+            return
+        }
+        guard
+            let offset = Curve3D.offset(
+                basis: line, offset: 2.0,
+                dirX: 0, dirY: 0, dirZ: 1)
+        else { return }
         if let basis = offset.offsetBasisCurve {
             // The basis curve should have same domain characteristics as the original line
             _ = basis
@@ -2358,7 +2423,9 @@ struct OffsetCurveBasisTests {
     }
 
     @Test func nonOffsetCurveReturnsNil() {
-        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else { return }
+        guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
+            return
+        }
         #expect(line.offsetBasisCurve == nil)
     }
 }
@@ -2370,7 +2437,8 @@ struct GeomTrimmedCurveTests {
 
     @Test func trimLineCreatesSubset() {
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let trimmed = line.trimmed(u1: 2.0, u2: 8.0) {
+            let trimmed = line.trimmed(u1: 2.0, u2: 8.0)
+        {
             let sp = trimmed.startPoint
             let ep = trimmed.endPoint
             #expect(abs(sp.x - 2.0) < 1e-6)
@@ -2380,7 +2448,8 @@ struct GeomTrimmedCurveTests {
 
     @Test func trimmedBasisReturnsOriginal() {
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let trimmed = line.trimmed(u1: 0, u2: 10) {
+            let trimmed = line.trimmed(u1: 0, u2: 10)
+        {
             let basis = trimmed.trimmedBasis
             #expect(basis != nil)
         }
@@ -2394,7 +2463,8 @@ struct GeomTrimmedCurveTests {
 
     @Test func setTrimUpdatesRange() {
         if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-           let trimmed = line.trimmed(u1: 0, u2: 10) {
+            let trimmed = line.trimmed(u1: 0, u2: 10)
+        {
             let ok = trimmed.setTrim(u1: 3.0, u2: 7.0)
             #expect(ok)
             let sp = trimmed.startPoint
@@ -2412,8 +2482,9 @@ struct LawInterpolateTests {
     }
 
     @Test func interpolateWithParams() {
-        let law = LawFunction.interpolated(values: [0, 1, 4, 1, 0],
-                                            parameters: [0, 0.25, 0.5, 0.75, 1.0])
+        let law = LawFunction.interpolated(
+            values: [0, 1, 4, 1, 0],
+            parameters: [0, 0.25, 0.5, 0.75, 1.0])
         #expect(law != nil)
     }
 
@@ -2505,8 +2576,10 @@ struct Curve3DContinuityTests {
     }
 
     @Test func bsplineContinuity() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(1, 1, 0),
-                                                   SIMD3(2, 0, 0), SIMD3(3, 1, 0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0),
+            SIMD3(2, 0, 0), SIMD3(3, 1, 0),
+        ]) {
             let c = bsp.continuity
             #expect(c >= 0)
         }
@@ -2519,35 +2592,45 @@ struct Curve3DContinuityTests {
 struct BSplineCurve3DManipulationTests {
 
     @Test func knotCount() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let nk = bsp.bspline.knotCount
             #expect(nk > 0)
         }
     }
 
     @Test func poleCount() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let np = bsp.bspline.poleCount
             #expect(np >= 5)
         }
     }
 
     @Test func degree() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let deg = bsp.bspline.degree
             #expect(deg >= 1)
         }
     }
 
     @Test func isRational() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             // Interpolated BSplines are typically non-rational
             let _ = bsp.bspline.isRational
         }
     }
 
     @Test func knotsArray() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let knots = bsp.bspline.knots
             #expect(knots.count > 0)
             if knots.count >= 2 {
@@ -2557,7 +2640,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func multiplicities() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let mults = bsp.bspline.multiplicities
             #expect(mults.count > 0)
             if let first = mults.first {
@@ -2567,7 +2652,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func getPole() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let p = bsp.bspline.pole(at: 1)
             // First pole should be near origin
             #expect(abs(p.x) < 1.0)
@@ -2575,7 +2662,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func setPole() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bsp.bspline.setPole(at: 3, to: SIMD3(5, 7, 0))
             #expect(ok)
             let p = bsp.bspline.pole(at: 3)
@@ -2584,14 +2673,18 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func getAndSetWeight() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let w = bsp.bspline.weight(at: 1)
             #expect(abs(w - 1.0) < 1e-6)
         }
     }
 
     @Test func insertKnot() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let knots = bsp.bspline.knots
             if knots.count >= 2 {
                 let mid = (knots.first! + knots.last!) / 2.0
@@ -2604,7 +2697,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func segment() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let d = bsp.domain
             let u1 = d.lowerBound + (d.upperBound - d.lowerBound) * 0.25
             let u2 = d.lowerBound + (d.upperBound - d.lowerBound) * 0.75
@@ -2614,7 +2709,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func increaseDegree() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let oldDeg = bsp.bspline.degree
             let ok = bsp.bspline.increaseDegree(to: oldDeg + 1)
             #expect(ok)
@@ -2623,14 +2720,18 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func resolution() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             let res = bsp.bspline.resolution(tolerance3d: 0.001)
             #expect(res > 0)
         }
     }
 
     @Test func setPeriodic() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             // Setting non-periodic on an already non-periodic curve should succeed
             let ok = bsp.bspline.setPeriodic(false)
             #expect(ok)
@@ -2638,7 +2739,9 @@ struct BSplineCurve3DManipulationTests {
     }
 
     @Test func removeKnot() {
-        if let bsp = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(2,3,0), SIMD3(5,5,0), SIMD3(8,3,0), SIMD3(10,0,0)]) {
+        if let bsp = Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
+        ]) {
             // Insert a knot first, then try to remove it
             let knots = bsp.bspline.knots
             if knots.count >= 2 {
@@ -2655,7 +2758,9 @@ struct BSplineCurve3DManipulationTests {
 struct BezierCurveManipulationTests {
 
     @Test func degreeAndPoleCount() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let deg = bez.bezier.degree
             #expect(deg == 3)
             let pc = bez.bezier.poleCount
@@ -2664,13 +2769,17 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func isRational() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             #expect(!bez.bezier.isRational)
         }
     }
 
     @Test func getPole() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let p = bez.bezier.pole(at: 1)
             #expect(abs(p.x) < 1e-6)
             #expect(abs(p.y) < 1e-6)
@@ -2678,7 +2787,9 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func setPole() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.setPole(at: 2, to: SIMD3(3, 8, 0))
             #expect(ok)
             let p = bez.bezier.pole(at: 2)
@@ -2687,14 +2798,18 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func segment() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.segment(u1: 0.25, u2: 0.75)
             #expect(ok)
         }
     }
 
     @Test func increaseDegree() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.increaseDegree(to: 5)
             #expect(ok)
             #expect(bez.bezier.degree == 5)
@@ -2702,7 +2817,9 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func insertPoleAfter() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.insertPoleAfter(index: 2, point: SIMD3(5, 6, 0))
             #expect(ok)
             #expect(bez.bezier.poleCount == 5)
@@ -2710,7 +2827,9 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func removePole() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(5,6,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(5, 6, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.removePole(at: 3)
             #expect(ok)
             #expect(bez.bezier.poleCount == 4)
@@ -2718,7 +2837,9 @@ struct BezierCurveManipulationTests {
     }
 
     @Test func setWeight() {
-        if let bez = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(3,5,0), SIMD3(7,5,0), SIMD3(10,0,0)]) {
+        if let bez = Curve3D.bezier(poles: [
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
+        ]) {
             let ok = bez.bezier.setWeight(at: 2, to: 2.0)
             #expect(ok)
             #expect(bez.bezier.isRational)
@@ -2766,7 +2887,7 @@ struct Curve3DEvalTests {
     @Test func evalD0BSpline() {
         // Create a BSpline through known points
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
         ]) {
             let p = curve.evalD0(at: curve.domain.lowerBound)
             #expect(abs(p.x) < 1e-3)
@@ -2777,7 +2898,7 @@ struct Curve3DEvalTests {
 
     @Test func evalD1BSpline() {
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
         ]) {
             let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
             let r = curve.evalD1(at: mid)
@@ -2796,23 +2917,23 @@ struct Curve3DEvalTests {
 
     @Test func evalD2BSpline() {
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
         ]) {
             let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
             let r = curve.evalD2(at: mid)
             // Second derivative exists for a cubic BSpline
-            _ = r.d2 // just confirm it doesn't crash
+            _ = r.d2  // just confirm it doesn't crash
             #expect(true)
         }
     }
 
     @Test func evalD3BSpline() {
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0),
         ]) {
             let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
             let r = curve.evalD3(at: mid)
-            _ = r.d3 // confirm no crash
+            _ = r.d3  // confirm no crash
             #expect(true)
         }
     }
@@ -2835,7 +2956,7 @@ struct Issue486Curve3DBatchTests {
 
     private func bspline() -> Curve3D? {
         Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(2, 3, 0.5), SIMD3(5, 5, 1.5), SIMD3(8, 3, 0), SIMD3(10, 0, 2)
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0.5), SIMD3(5, 5, 1.5), SIMD3(8, 3, 0), SIMD3(10, 0, 2),
         ])
     }
 
@@ -2909,16 +3030,16 @@ struct BiTgteCurveOnEdgeTests {
 struct Curve3DExtrasV112Tests {
 
     @Test func curveType() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
-            #expect(line.curveType == 0) // Line
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
+            #expect(line.curveType == 0)  // Line
         }
-        if let circle = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
-            #expect(circle.curveType == 1) // Circle
+        if let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
+            #expect(circle.curveType == 1)  // Circle
         }
     }
 
     @Test func nearestParameterOnLine() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let param = line.nearestParameter(to: SIMD3(5, 0, 0))
             #expect(param != nil)
             if let param { #expect(abs(param - 5.0) < 0.1) }
@@ -2930,7 +3051,7 @@ struct Curve3DExtrasV112Tests {
 struct ProjectionOnCurveTests {
 
     @Test func multiResultProjection() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             if let proj = ProjectionOnCurve(curve: circ, point: SIMD3(10, 0, 0)) {
                 #expect(proj.count >= 1)
                 if proj.count > 0 {
@@ -2945,7 +3066,7 @@ struct ProjectionOnCurveTests {
     }
 
     @Test func parameterAccess() {
-        if let circ = Curve3D.circle(center: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5) {
+        if let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             if let proj = ProjectionOnCurve(curve: circ, point: SIMD3(10, 0, 0)) {
                 if proj.count > 0 {
                     let param = proj.parameter(at: 0)
@@ -2964,7 +3085,9 @@ struct BSplineMutationsTests {
 
     @Test func curveKnotSequenceAndWeights() {
         // Create a BSpline curve via interpolation
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(1.0,1.0,0.0), SIMD3(2.0,0.0,0.0), SIMD3(3.0,1.0,0.0)]
+        let points = [
+            SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0), SIMD3(3.0, 1.0, 0.0),
+        ]
         if let curve = Curve3D.fit(points: points) {
             let seq = curve.bsplineKnotSequence()
             #expect(seq.count > 0)
@@ -2979,11 +3102,13 @@ struct BSplineMutationsTests {
 
     @Test func curveMaxDegree() {
         let maxDeg = Curve3D.bsplineMaxDegree
-        #expect(maxDeg >= 10) // OCCT supports at least degree 25
+        #expect(maxDeg >= 10)  // OCCT supports at least degree 25
     }
 
     @Test func curveLocateU() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(1.0,1.0,0.0), SIMD3(2.0,0.0,0.0), SIMD3(3.0,1.0,0.0)]
+        let points = [
+            SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0), SIMD3(3.0, 1.0, 0.0),
+        ]
         if let curve = Curve3D.fit(points: points) {
             let span = curve.bsplineLocateU(0.5)
             #expect(span >= 1)
@@ -2992,8 +3117,9 @@ struct BSplineMutationsTests {
 
     @Test func surfaceUVKnots() {
         // Create a BSpline surface by converting a sphere
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5),
-           let bspline = sphere.toBSpline() {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5),
+            let bspline = sphere.toBSpline()
+        {
             let uKnots = bspline.bsplineUKnots()
             let vKnots = bspline.bsplineVKnots()
             #expect(uKnots.count > 0)
@@ -3010,26 +3136,26 @@ struct BSplineMutationsTests {
 struct CurveIsBoundedTests {
 
     @Test func lineIsNotBounded() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             #expect(!line.isBounded)
         }
     }
 
     @Test func bsplineIsBounded() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(1.0,1.0,0.0), SIMD3(2.0,0.0,0.0)]
+        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0)]
         if let curve = Curve3D.fit(points: points) {
             #expect(curve.isBounded)
         }
     }
 
     @Test func line2dIsNotBounded() {
-        if let line = Curve2D.line(through: SIMD2(0,0), direction: SIMD2(1,0)) {
+        if let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)) {
             #expect(!line.isBounded)
         }
     }
 
     @Test func bspline2dIsBounded() {
-        let points = [SIMD2(0.0,0.0), SIMD2(1.0,1.0), SIMD2(2.0,0.0)]
+        let points = [SIMD2(0.0, 0.0), SIMD2(1.0, 1.0), SIMD2(2.0, 0.0)]
         if let curve = Curve2D.fit(through: points) {
             #expect(curve.isBounded)
         }
@@ -3040,7 +3166,7 @@ struct CurveIsBoundedTests {
 struct CurveDNTests {
 
     @Test func curve3dFirstDerivative() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let d1 = line.dn(at: 0, order: 1)
             // First derivative of a line is its direction
             #expect(abs(d1.x) > 0.5)
@@ -3048,7 +3174,7 @@ struct CurveDNTests {
     }
 
     @Test func curve3dSecondDerivative() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let d2 = line.dn(at: 0, order: 2)
             // Second derivative of a line is zero
             #expect(abs(d2.x) < 1e-10)
@@ -3058,7 +3184,7 @@ struct CurveDNTests {
     }
 
     @Test func curve2dFirstDerivative() {
-        if let line = Curve2D.line(through: SIMD2(0,0), direction: SIMD2(1,1)) {
+        if let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)) {
             let d1 = line.dn(at: 0, order: 1)
             #expect(abs(d1.x) > 0.1)
             #expect(abs(d1.y) > 0.1)
@@ -3066,7 +3192,7 @@ struct CurveDNTests {
     }
 
     @Test func surfaceDN() {
-        if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
+        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
             // du at (0, pi/4)
             let du = sphere.dn(u: 0, v: Double.pi / 4.0, nu: 1, nv: 0)
             // Should be non-zero (tangent in U direction)
@@ -3080,28 +3206,32 @@ struct CurveDNTests {
 struct PointsToBSplineExpansionTests {
 
     @Test func approximate3DWithParams() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(2.0,3.0,0.0), SIMD3(5.0,1.0,0.0),
-                      SIMD3(8.0,4.0,0.0), SIMD3(10.0,0.0,0.0)]
-        let curve = Curve3D.approximate(points: points, degMin: 3, degMax: 8, continuity: 2, tolerance: 1e-3)
+        let points = [
+            SIMD3(0.0, 0.0, 0.0), SIMD3(2.0, 3.0, 0.0), SIMD3(5.0, 1.0, 0.0),
+            SIMD3(8.0, 4.0, 0.0), SIMD3(10.0, 0.0, 0.0),
+        ]
+        let curve = Curve3D.approximate(
+            points: points, degMin: 3, degMax: 8, continuity: 2, tolerance: 1e-3)
         #expect(curve != nil)
     }
 
     @Test func approximate3DWithExplicitParams() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(3.0,5.0,0.0), SIMD3(10.0,0.0,0.0)]
+        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(3.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
         let params = [0.0, 0.3, 1.0]
         let curve = Curve3D.approximate(points: points, parameters: params, degMin: 2, degMax: 6)
         #expect(curve != nil)
     }
 
     @Test func approximate2DWithParams() {
-        let points = [SIMD2(0.0,0.0), SIMD2(2.0,3.0), SIMD2(5.0,1.0), SIMD2(10.0,0.0)]
+        let points = [SIMD2(0.0, 0.0), SIMD2(2.0, 3.0), SIMD2(5.0, 1.0), SIMD2(10.0, 0.0)]
         let curve = Curve2D.approximate(points: points, degMin: 2, degMax: 6)
         #expect(curve != nil)
     }
 
     @Test func surfaceFromPointGrid() {
         var points = [SIMD3<Double>]()
-        let uCount = 4, vCount = 4
+        let uCount = 4
+        let vCount = 4
         for v in 0..<vCount {
             for u in 0..<uCount {
                 let x = Double(u) * 3.0
@@ -3133,8 +3263,9 @@ struct GCPntsExpansionTests {
             let edges = box.subShapes(ofType: .edge)
             if edges.count > 0 {
                 let domain = edges[0].edgeAdaptorDomain
-                let halfLen = edges[0].edgeArcLength(from: domain.lowerBound,
-                                                      to: (domain.lowerBound + domain.upperBound) / 2.0)
+                let halfLen = edges[0].edgeArcLength(
+                    from: domain.lowerBound,
+                    to: (domain.lowerBound + domain.upperBound) / 2.0)
                 #expect(halfLen > 0)
             }
         }
@@ -3158,7 +3289,8 @@ struct GCPntsExpansionTests {
             if edges.count > 0 {
                 let domain = edges[0].edgeAdaptorDomain
                 let totalLen = edges[0].edgeArcLength
-                let param = edges[0].edgeParameterAtArcLength(totalLen * 0.5, from: domain.lowerBound)
+                let param = edges[0].edgeParameterAtArcLength(
+                    totalLen * 0.5, from: domain.lowerBound)
                 #expect(param >= domain.lowerBound)
             }
         }
@@ -3169,10 +3301,12 @@ struct GCPntsExpansionTests {
 struct CurveLengthTests {
 
     @Test func curve3DArcLength() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(10.0,0.0,0.0)]
-        if let curve = Curve3D.interpolate(points: points,
-                                            startTangent: SIMD3(1,0,0),
-                                            endTangent: SIMD3(1,0,0)) {
+        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
+        if let curve = Curve3D.interpolate(
+            points: points,
+            startTangent: SIMD3(1, 0, 0),
+            endTangent: SIMD3(1, 0, 0))
+        {
             let domain = curve.domain
             let len = curve.arcLength(from: domain.lowerBound, to: domain.upperBound)
             #expect(len > 0)
@@ -3180,7 +3314,7 @@ struct CurveLengthTests {
     }
 
     @Test func curve3DClosestParameter() {
-        if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
+        if let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             let param = line.nearestParameter(to: SIMD3(5, 3, 0))
             // For a line along X, closest to (5,3,0) should be near param=5
             #expect(param != nil)
@@ -3190,9 +3324,11 @@ struct CurveLengthTests {
 
     @Test func curve2DArcLength() {
         let points = [SIMD2(0.0, 0.0), SIMD2(5.0, 5.0), SIMD2(10.0, 0.0)]
-        if let curve = Curve2D.interpolate(points: points,
-                                            startTangent: SIMD2(1, 1),
-                                            endTangent: SIMD2(1, -1)) {
+        if let curve = Curve2D.interpolate(
+            points: points,
+            startTangent: SIMD2(1, 1),
+            endTangent: SIMD2(1, -1))
+        {
             let domain = curve.domain
             let len = curve.arcLength(from: domain.lowerBound, to: domain.upperBound)
             #expect(len > 0)
@@ -3204,7 +3340,7 @@ struct CurveLengthTests {
 struct CurveSplitConcatTests {
 
     @Test func splitAtContinuity3D() {
-        let points = [SIMD3(0.0,0.0,0.0), SIMD3(5.0,5.0,0.0), SIMD3(10.0,0.0,0.0)]
+        let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
         if let curve = Curve3D.fit(points: points) {
             let segs = curve.splitAtContinuity()
             #expect(segs.count >= 1)
@@ -3212,17 +3348,18 @@ struct CurveSplitConcatTests {
     }
 
     @Test func concatenateCurvesG1() {
-        let pts1 = [SIMD3(0.0,0.0,0.0), SIMD3(5.0,5.0,0.0), SIMD3(10.0,0.0,0.0)]
-        let pts2 = [SIMD3(10.0,0.0,0.0), SIMD3(15.0,-5.0,0.0), SIMD3(20.0,0.0,0.0)]
+        let pts1 = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
+        let pts2 = [SIMD3(10.0, 0.0, 0.0), SIMD3(15.0, -5.0, 0.0), SIMD3(20.0, 0.0, 0.0)]
         if let c1 = Curve3D.fit(points: pts1),
-           let c2 = Curve3D.fit(points: pts2) {
+            let c2 = Curve3D.fit(points: pts2)
+        {
             let joined = Curve3D.concatenateG1(curves: [c1, c2])
             #expect(joined != nil)
         }
     }
 
     @Test func splitCurve2DAtContinuity() {
-        let points = [SIMD2(0.0,0.0), SIMD2(5.0,5.0), SIMD2(10.0,0.0)]
+        let points = [SIMD2(0.0, 0.0), SIMD2(5.0, 5.0), SIMD2(10.0, 0.0)]
         if let curve = Curve2D.fit(through: points) {
             let segs = curve.splitAtContinuity()
             #expect(segs.count >= 1)
@@ -3234,7 +3371,7 @@ struct CurveSplitConcatTests {
 struct GeomConvertUtilTests {
 
     @Test func curveSplitAndJoin() {
-        let pts = [SIMD3(0.0,0.0,0.0), SIMD3(5.0,5.0,0.0), SIMD3(10.0,0.0,0.0)]
+        let pts = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
         if let curve = Curve3D.fit(points: pts) {
             let segs = curve.splitAtContinuity()
             if segs.count >= 1 {
@@ -3256,13 +3393,15 @@ struct HelixGeomBuildTests {
     }
 
     @Test func taperedHelix() {
-        let result = Helix.build(parameterRange: 0...(6 * .pi), pitch: 5.0, radius: 10.0,
-                                 taperAngle: 5.0 * .pi / 180.0, isClockwise: true)
+        let result = Helix.build(
+            parameterRange: 0...(6 * .pi), pitch: 5.0, radius: 10.0,
+            taperAngle: 5.0 * .pi / 180.0, isClockwise: true)
         #expect(result != nil)
     }
 
     @Test func helixWithCustomPosition() {
-        let result = Helix.build(origin: SIMD3(1, 2, 3), parameterRange: 0...10, pitch: 4.0, radius: 8.0)
+        let result = Helix.build(
+            origin: SIMD3(1, 2, 3), parameterRange: 0...10, pitch: 4.0, radius: 8.0)
         #expect(result != nil)
     }
 
@@ -3306,7 +3445,7 @@ struct Curve3DContinuityQueriesTests {
     @Test func parametricTransformation() {
         if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
             // Identity rotation, no translation
-            let rotation = [1.0, 0.0, 0.0,  0.0, 1.0, 0.0,  0.0, 0.0, 1.0]
+            let rotation = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
             let trans = SIMD3<Double>(0, 0, 0)
             let scale = c.parametricTransformation(rotation: rotation, translation: trans)
             #expect(abs(scale - 1.0) < 1e-10)
@@ -3351,11 +3490,13 @@ struct IntegrationInvoluteGearApproximationTests {
         // Create 6 radial slots as boxes and subtract them
         var current = hub
         for i in 0..<6 {
-            let angle = Double(i) * (.pi / 3.0) // 60 degree spacing
+            let angle = Double(i) * (.pi / 3.0)  // 60 degree spacing
             let cx = 15.0 * cos(angle)
             let cy = 15.0 * sin(angle)
             // Create a small box for each slot, then rotate it
-            if let slot = Shape.box(origin: SIMD3(cx - 3.0, cy - 1.0, 0.0), width: 6, height: 2, depth: 10) {
+            if let slot = Shape.box(
+                origin: SIMD3(cx - 3.0, cy - 1.0, 0.0), width: 6, height: 2, depth: 10)
+            {
                 if let cut = current.subtracting(slot) {
                     current = cut
                 }
@@ -3363,7 +3504,9 @@ struct IntegrationInvoluteGearApproximationTests {
         }
 
         // Drill center bore
-        if let bored = current.drilled(at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 5, depth: 0) {
+        if let bored = current.drilled(
+            at: SIMD3(0.0, 0.0, 10.0), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
+        {
             current = bored
         }
 
@@ -3395,9 +3538,8 @@ struct IntegrationGeodesicPathApproximationTests {
         let startPt = sphere.point(atU: u1, v: v1)
         let endPt = sphere.point(atU: u2, v: v2)
         let straightDist = sqrt(
-            (endPt.x - startPt.x) * (endPt.x - startPt.x) +
-            (endPt.y - startPt.y) * (endPt.y - startPt.y) +
-            (endPt.z - startPt.z) * (endPt.z - startPt.z)
+            (endPt.x - startPt.x) * (endPt.x - startPt.x) + (endPt.y - startPt.y)
+                * (endPt.y - startPt.y) + (endPt.z - startPt.z) * (endPt.z - startPt.z)
         )
 
         // Subdivide UV path into N segments and compute polyline length on surface
@@ -3418,10 +3560,12 @@ struct IntegrationGeodesicPathApproximationTests {
 
         #expect(polyLength.isFinite, "Polyline length should be finite")
         // UV-straight path on sphere is longer than chord but less than pi*R (half great circle)
-        #expect(polyLength >= straightDist - 1e-6,
-                "Surface path (\(polyLength)) should be >= straight distance (\(straightDist))")
-        #expect(polyLength < .pi * radius,
-                "Surface path (\(polyLength)) should be < pi*R (\(.pi * radius))")
+        #expect(
+            polyLength >= straightDist - 1e-6,
+            "Surface path (\(polyLength)) should be >= straight distance (\(straightDist))")
+        #expect(
+            polyLength < .pi * radius,
+            "Surface path (\(polyLength)) should be < pi*R (\(.pi * radius))")
     }
 }
 
@@ -3431,7 +3575,9 @@ struct IntegrationGeodesicPathApproximationTests {
 struct IntegrationGoldenShapeBaselineTests {
 
     @Test func boxKnownMeasurements() {
-        let w = 10.0, h = 20.0, d = 30.0
+        let w = 10.0
+        let h = 20.0
+        let d = 30.0
         guard let box = Shape.box(width: w, height: h, depth: d) else {
             #expect(Bool(false), "Failed to create box")
             return
@@ -3465,7 +3611,7 @@ struct BSplineCurve3DCompletionsV121Tests {
     /// Helper: create a simple BSpline curve
     private func makeBSplineCurve() -> Curve3D? {
         let poles: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),
         ]
         return Curve3D.bspline(poles: poles, knots: [0, 1], multiplicities: [4, 4], degree: 3)
     }
@@ -3539,8 +3685,9 @@ struct BSplineCurve3DCompletionsV121Tests {
         if let curve = makeBSplineCurve() {
             let target = SIMD3<Double>(5, 10, 0)
             let tangent = SIMD3<Double>(1, 0, 0)
-            let r = curve.bsplineMovePointAndTangent(u: 0.5, point: target, tangent: tangent,
-                                                      tolerance: 1e-6, poleRange: 1...4)
+            let r = curve.bsplineMovePointAndTangent(
+                u: 0.5, point: target, tangent: tangent,
+                tolerance: 1e-6, poleRange: 1...4)
             // MovePointAndTangent may fail if constraints are incompatible, just check it doesn't crash
             _ = r
         }
@@ -3552,7 +3699,7 @@ struct Curve3DQueriesV123Tests {
 
     @Test("Period of circle")
     func circlePeriod() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5.0)
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
         if let c = circle {
             let period = c.period
             if let p = period {
@@ -3563,7 +3710,7 @@ struct Curve3DQueriesV123Tests {
 
     @Test("FirstParameter and LastParameter")
     func firstLastParameter() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5.0)
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
         if let c = circle {
             #expect(abs(c.firstParameter) < 1e-10)
             #expect(abs(c.lastParameter - 2.0 * .pi) < 1e-10)
@@ -3572,7 +3719,7 @@ struct Curve3DQueriesV123Tests {
 
     @Test("Line first/last parameters")
     func lineParameters() {
-        let line = Curve3D.line(through: .zero, direction: SIMD3(1,0,0))
+        let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))
         if let l = line {
             // Line extends to infinity in both directions
             #expect(l.firstParameter < -1e10)
@@ -3653,7 +3800,9 @@ struct BezierCurve3DCompletionTests {
 
     @Test("IsClosed for closed curve")
     func isClosedTrue() {
-        let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 0, 0)]
+        let poles: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 0, 0),
+        ]
         let c = Curve3D.bezier(poles: poles)
         if let c = c {
             #expect(c.bezierIsClosed)
@@ -3675,7 +3824,7 @@ struct BezierCurve3DCompletionTests {
         let c = Curve3D.bezier(poles: poles)
         if let c = c {
             let cont = c.bezierContinuity
-            #expect(cont == 6) // CN = 6 in GeomAbs_Shape
+            #expect(cont == 6)  // CN = 6 in GeomAbs_Shape
         }
     }
 
@@ -3720,8 +3869,9 @@ struct Curve3DBezierCompletionsTests {
 
     @Test("SetPoleWithWeight on rational Bezier")
     func setPoleWithWeight() {
-        let c = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0)],
-                               weights: [1, 1, 1])
+        let c = Curve3D.bezier(
+            poles: [SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0)],
+            weights: [1, 1, 1])
         if let c = c {
             let ok = c.bezierSetPoleWithWeight(index: 2, point: SIMD3(5, 10, 0), weight: 2.0)
             #expect(ok)
@@ -3736,7 +3886,7 @@ struct BSplineCurveCompletionsTests {
     func periodicNormalization() {
         // Create a periodic BSpline via interpolation of closed points
         if let curve = Curve3D.interpolatePeriodic(points: [
-            SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0)
+            SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),
         ]) {
             if let normalized = curve.bsplinePeriodicNormalization(100.0) {
                 let domain = curve.domain
@@ -3749,7 +3899,7 @@ struct BSplineCurveCompletionsTests {
     @Test("BSpline periodic normalization returns nil for non-periodic")
     func periodicNormalizationNonPeriodic() {
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0),
         ]) {
             let result = curve.bsplinePeriodicNormalization(0.5)
             #expect(result == nil)
@@ -3759,7 +3909,7 @@ struct BSplineCurveCompletionsTests {
     @Test("BSpline IsG1 returns true for smooth curve")
     func bsplineIsG1() {
         if let curve = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 0, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 1, 0), SIMD3(3, 0, 0),
         ]) {
             let domain = curve.domain
             let result = curve.bsplineIsG1(tFirst: domain.lowerBound, tLast: domain.upperBound)
@@ -3777,7 +3927,7 @@ struct BSplineCurve3DLocalDTests {
     func localD0() {
         // Create a BSpline curve via interpolation
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0),
         ]
         if let curve = Curve3D.interpolate(points: points) {
             let k = curve.bsplineLocateU(0.5)
@@ -3792,20 +3942,21 @@ struct BSplineCurve3DLocalDTests {
     @Test("LocalD1 returns point + tangent")
     func localD1() {
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0),
         ]
         if let curve = Curve3D.interpolate(points: points) {
             let k = curve.bsplineLocateU(0.5)
             let result = curve.bsplineLocalD1(u: 0.5, fromKnot: k, toKnot: k + 1)
-            let mag = sqrt(result.d1.x * result.d1.x + result.d1.y * result.d1.y + result.d1.z * result.d1.z)
-            #expect(mag > 0.01) // tangent should be non-zero
+            let mag = sqrt(
+                result.d1.x * result.d1.x + result.d1.y * result.d1.y + result.d1.z * result.d1.z)
+            #expect(mag > 0.01)  // tangent should be non-zero
         }
     }
 
     @Test("LocalD2 returns curvature information")
     func localD2() {
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0),
         ]
         if let curve = Curve3D.interpolate(points: points) {
             let k = curve.bsplineLocateU(0.5)
@@ -3820,7 +3971,7 @@ struct BSplineCurve3DLocalDTests {
     @Test("LocalD3 returns all derivatives")
     func localD3() {
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0),
         ]
         if let curve = Curve3D.interpolate(points: points) {
             let k = curve.bsplineLocateU(0.5)
@@ -3837,7 +3988,7 @@ struct BSplineCurve3DLocalDTests {
     @Test("LocalDN matches D1 for n=1")
     func localDN() {
         let points: [SIMD3<Double>] = [
-            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0)
+            SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 0), SIMD3(5, 3, 0),
         ]
         if let curve = Curve3D.interpolate(points: points) {
             let k = curve.bsplineLocateU(0.5)
@@ -3954,7 +4105,8 @@ struct BSplineApproxInterpContractTests {
     func fitToleranceIsObservable() {
         let pts = Self.helix()
         guard let loose = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let tight = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+            let tight = BSplineApproxInterp(points: pts, nbControlPoints: 10)
+        else { return }
         loose.setConvergenceTolerance(1e-1)
         tight.setConvergenceTolerance(1e-8)
         loose.perform()
@@ -3964,12 +4116,15 @@ struct BSplineApproxInterpContractTests {
         }
     }
 
-    @Test("setParametrizationAlpha / setMinPivot / setClosedTolerance / setKnotInsertionTolerance are no-ops")
+    @Test(
+        "setParametrizationAlpha / setMinPivot / setClosedTolerance / setKnotInsertionTolerance are no-ops"
+    )
     func tuningSettersAreNoOps() {
         let pts = Self.helix()
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let tuned = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
-        tuned.setParametrizationAlpha(1.0)      // chord-length, vs the 0.5 centripetal default
+            let tuned = BSplineApproxInterp(points: pts, nbControlPoints: 10)
+        else { return }
+        tuned.setParametrizationAlpha(1.0)  // chord-length, vs the 0.5 centripetal default
         tuned.setMinPivot(1e-3)
         tuned.setClosedTolerance(1.0)
         tuned.setKnotInsertionTolerance(1.0)
@@ -3984,7 +4139,8 @@ struct BSplineApproxInterpContractTests {
     func interpolatePointIsANoOp() {
         let pts = Self.helix()
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let constrained = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+            let constrained = BSplineApproxInterp(points: pts, nbControlPoints: 10)
+        else { return }
         constrained.interpolatePoint(0)
         constrained.interpolatePoint(pts.count - 1)
         constrained.interpolatePoint(pts.count / 2, withKink: true)
@@ -3999,8 +4155,9 @@ struct BSplineApproxInterpContractTests {
     func performOptimalMatchesPerform() {
         let pts = Self.helix()
         guard let plain = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let fewIter = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let manyIter = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+            let fewIter = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+            let manyIter = BSplineApproxInterp(points: pts, nbControlPoints: 10)
+        else { return }
         plain.perform()
         fewIter.performOptimal(maxIterations: 1)
         manyIter.performOptimal(maxIterations: 10_000)
@@ -4016,8 +4173,10 @@ struct BSplineApproxInterpContractTests {
     func poleCountRequestIsAdvisory() {
         let pts = Self.helix()
         guard let few = BSplineApproxInterp(points: pts, nbControlPoints: 4),
-              let many = BSplineApproxInterp(points: pts, nbControlPoints: 40,
-                                             continuousIfClosed: true) else { return }
+            let many = BSplineApproxInterp(
+                points: pts, nbControlPoints: 40,
+                continuousIfClosed: true)
+        else { return }
         few.perform()
         many.perform()
         if let a = Self.fitSignature(few), let b = Self.fitSignature(many) {
@@ -4035,8 +4194,9 @@ struct BSplineApproxInterpContractTests {
         // Projection tolerance only ever tightens, so a looser value after a tight convergence
         // tolerance is inert, and a tight one after a loose convergence tolerance wins outright.
         guard let convergenceOnly = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let thenLoosened = BSplineApproxInterp(points: pts, nbControlPoints: 10),
-              let tightenedByProjection = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
+            let thenLoosened = BSplineApproxInterp(points: pts, nbControlPoints: 10),
+            let tightenedByProjection = BSplineApproxInterp(points: pts, nbControlPoints: 10)
+        else { return }
         convergenceOnly.setConvergenceTolerance(1e-8)
         thenLoosened.setConvergenceTolerance(1e-8)
         thenLoosened.setProjectionTolerance(1e-1)
@@ -4048,7 +4208,9 @@ struct BSplineApproxInterpContractTests {
         if let a = Self.fitSignature(convergenceOnly), let b = Self.fitSignature(thenLoosened) {
             #expect(Self.maxDeviation(a, b) == 0.0)
         }
-        if let a = Self.fitSignature(convergenceOnly), let b = Self.fitSignature(tightenedByProjection) {
+        if let a = Self.fitSignature(convergenceOnly),
+            let b = Self.fitSignature(tightenedByProjection)
+        {
             #expect(Self.maxDeviation(a, b) == 0.0)
         }
     }
@@ -4057,7 +4219,7 @@ struct BSplineApproxInterpContractTests {
     func maxErrorIsBackProjectionDistance() {
         let pts = Self.helix()
         guard let solver = BSplineApproxInterp(points: pts, nbControlPoints: 10) else { return }
-        #expect(solver.maxError == -1.0)        // not run yet
+        #expect(solver.maxError == -1.0)  // not run yet
         solver.setConvergenceTolerance(1e-6)
         solver.perform()
         guard solver.isDone, let curve = solver.curve else { return }
@@ -4069,7 +4231,8 @@ struct BSplineApproxInterpContractTests {
         let samples = (0...n).map { i in
             curve.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / Double(n))
         }
-        let halfChord = zip(samples, samples.dropFirst())
+        let halfChord =
+            zip(samples, samples.dropFirst())
             .reduce(0.0) { max($0, simd_distance($1.0, $1.1)) } / 2.0
         let worst = pts.reduce(0.0) { acc, p in
             max(acc, samples.reduce(Double.infinity) { min($0, simd_distance($1, p)) })
@@ -4082,7 +4245,9 @@ struct BSplineApproxInterpContractTests {
 
 @Suite("v0.162 EditorView geometric, location, PCurve setters")
 struct EditorViewV162Tests {
-    @Test("CoEdge UV box setter and per-(edge, face1, face2) regularity setter operate on existing entities")
+    @Test(
+        "CoEdge UV box setter and per-(edge, face1, face2) regularity setter operate on existing entities"
+    )
     func coedgeGeometricSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
@@ -4124,17 +4289,19 @@ struct EditorViewV162Tests {
 
     @Test("Face triangulation rep binding")
     func faceTriangulationRepBinding() {
-        let nodes: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,0,0), SIMD3(0,1,0)]
+        let nodes: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
         let triangles = [0, 1, 2]
         guard let tri = Triangulation.create(nodes: nodes, triangles: triangles) else {
-            Issue.record("Triangulation.create nil"); return
+            Issue.record("Triangulation.create nil")
+            return
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0 {
                 guard let triRepId = graph.createTriangulationRep(tri) else {
-                    Issue.record("createTriangulationRep nil"); return
+                    Issue.record("createTriangulationRep nil")
+                    return
                 }
                 graph.setFaceTriangulationRep(0, triRepId: triRepId)
                 // After binding, MeshView should report the rep as the active triangulation.
@@ -4197,7 +4364,8 @@ struct CirclePropertyTests {
     @Test("Cylindrical face exposes revolutionProperties with correct radius")
     func cylinderRevolutionRadius() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10) else {
-            Issue.record("cyl nil"); return
+            Issue.record("cyl nil")
+            return
         }
         for face in cyl.faces() where face.surfaceType == .cylinder {
             if let rp = face.revolutionProperties {
@@ -4215,7 +4383,8 @@ struct CirclePropertyTests {
         let p2 = SIMD3<Double>(0, 1, 0)
         let p3 = SIMD3<Double>(-1, 0, 0)
         guard let circle = circleThroughThreePoints(p1, p2, p3) else {
-            Issue.record("collinear"); return
+            Issue.record("collinear")
+            return
         }
         #expect(abs(simd_length(circle.center - SIMD3<Double>(0, 0, 0))) < 1e-9)
         #expect(abs(circle.radius - 1.0) < 1e-9)
@@ -4232,7 +4401,8 @@ struct CirclePropertyTests {
     @Test("Edge.circleProperties recovers a full-circle cap edge (#378)")
     func edgeCirclePropertiesFullCircle() {
         guard let cyl = Shape.cylinder(radius: 3, height: 8) else {
-            Issue.record("cyl nil"); return
+            Issue.record("cyl nil")
+            return
         }
         var foundCircle = false
         for edge in cyl.edges() where edge.isCircle {
@@ -4258,7 +4428,7 @@ struct SketchArcCircleTests {
     func circleTessellation() {
         let circle = SketchElement.CurveKind.circle(center: SIMD2(0, 0), radius: 5)
         let pts = circle.tessellate2D(segmentsPerRadian: 8)
-        #expect(pts.count > 50)   // 8 * 2π ≈ 50
+        #expect(pts.count > 50)  // 8 * 2π ≈ 50
         // All points lie on radius 5.
         for p in pts {
             let r = sqrt(p.x * p.x + p.y * p.y)
@@ -4268,8 +4438,9 @@ struct SketchArcCircleTests {
 
     @Test("Arc tessellation stays within bounds")
     func arcTessellation() {
-        let arc = SketchElement.CurveKind.arc(center: SIMD2(0, 0), radius: 2,
-                                               startAngle: 0, endAngle: .pi / 2)
+        let arc = SketchElement.CurveKind.arc(
+            center: SIMD2(0, 0), radius: 2,
+            startAngle: 0, endAngle: .pi / 2)
         let pts = arc.tessellate2D(segmentsPerRadian: 16)
         // Start at (2, 0), end at (0, 2).
         #expect(abs(pts.first!.x - 2) < 1e-9)
@@ -4279,14 +4450,21 @@ struct SketchArcCircleTests {
     @Test("buildProfile with arc yields a wire")
     func buildProfileWithArc() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else { Issue.record("graph nil"); return }
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
+        }
         let ctx = ConstructionContext()
         let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
         var sketch = Sketch(hostPlane: planeID)
         // A closed D-shape: straight line + semicircle arc
         sketch.add(SketchElement(curve: .line(from: SIMD2(0, 0), to: SIMD2(10, 0))))
-        sketch.add(SketchElement(curve: .arc(center: SIMD2(5, 0), radius: 5,
-                                             startAngle: 0, endAngle: .pi)))
+        sketch.add(
+            SketchElement(
+                curve: .arc(
+                    center: SIMD2(5, 0), radius: 5,
+                    startAngle: 0, endAngle: .pi)))
         let wire = sketch.buildProfile(in: ctx, graph: graph)
         #expect(wire != nil)
     }
@@ -4299,7 +4477,8 @@ struct EdgeCurve3DTests {
     @Test("Linear edge returns a Curve3D")
     func linearEdgeCurve3D() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let edges = box.edges()
         #expect(edges.count > 0)
@@ -4313,7 +4492,8 @@ struct EdgeCurve3DTests {
     @Test("Cylindrical face's circular edge yields circleProperties")
     func circularEdgeCircleProps() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10) else {
-            Issue.record("cyl nil"); return
+            Issue.record("cyl nil")
+            return
         }
         var foundCircle = false
         for edge in cyl.edges() where edge.curveType == .circle {
@@ -4334,8 +4514,10 @@ struct CuttingPlaneLineTests {
     @Test("addCuttingPlaneLine stores a cutting-plane annotation")
     func addStoresAnnotation() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ann = front.addCuttingPlaneLine(
             label: "A",
@@ -4352,13 +4534,15 @@ struct CuttingPlaneLineTests {
     @Test("Cutting plane parallel to view plane returns nil")
     func parallelToViewReturnsNil() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let top = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let ann = top.addCuttingPlaneLine(
             label: "A",
             cuttingPlaneOrigin: .zero,
-            cuttingPlaneNormal: SIMD3(0, 0, 1),   // parallel to top-view direction
+            cuttingPlaneNormal: SIMD3(0, 0, 1),  // parallel to top-view direction
             sectionViewDirection: SIMD3(0, 0, -1),
             viewDirection: SIMD3(0, 0, 1))
         #expect(ann == nil)
@@ -4367,8 +4551,10 @@ struct CuttingPlaneLineTests {
     @Test("DXFWriter emits cutting plane line geometry")
     func dxfEmitsGeometry() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         front.addCuttingPlaneLine(
             label: "A",
@@ -4380,7 +4566,7 @@ struct CuttingPlaneLineTests {
         writer.collectFromDrawing(front)
         // Expect at least: 3 chain segments + 2 arrows (3 lines each) + 2 text labels
         let counts = writer.entityCounts
-        #expect(counts.lines >= 9)   // 3 chain + 6 arrow
+        #expect(counts.lines >= 9)  // 3 chain + 6 arrow
         #expect(counts.texts >= 2)
     }
 }
@@ -4403,8 +4589,10 @@ struct Curve3DConicFactoryParityTests {
     func circleDegenerateRadiusParity() {
         for radius in [0.0, -1.0] {
             #expect(Curve3D.circle(center: Self.center, normal: Self.normal, radius: radius) == nil)
-            #expect(Curve3D.circleFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                   radius: radius) == nil)
+            #expect(
+                Curve3D.circleFromCenterNormal(
+                    center: Self.center, normal: Self.normal,
+                    radius: radius) == nil)
         }
     }
 
@@ -4412,10 +4600,14 @@ struct Curve3DConicFactoryParityTests {
     func ellipseDegenerateRadiiParity() {
         let rejected: [(Double, Double)] = [(10, 0), (0, 0), (5, 10), (10, -1)]
         for (major, minor) in rejected {
-            #expect(Curve3D.ellipse(center: Self.center, normal: Self.normal,
-                                    majorRadius: major, minorRadius: minor) == nil)
-            #expect(Curve3D.ellipseFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                    majorRadius: major, minorRadius: minor) == nil)
+            #expect(
+                Curve3D.ellipse(
+                    center: Self.center, normal: Self.normal,
+                    majorRadius: major, minorRadius: minor) == nil)
+            #expect(
+                Curve3D.ellipseFromCenterNormal(
+                    center: Self.center, normal: Self.normal,
+                    majorRadius: major, minorRadius: minor) == nil)
         }
     }
 
@@ -4423,11 +4615,15 @@ struct Curve3DConicFactoryParityTests {
     func hyperbolaDegenerateRadiiParity() {
         let rejected: [(Double, Double)] = [(0, 3), (8, 0), (0, 0), (-8, 3)]
         for (major, minor) in rejected {
-            #expect(Curve3D.hyperbola(center: Self.center, normal: Self.normal,
-                                      majorRadius: major, minorRadius: minor) == nil)
-            #expect(Curve3D.hyperbolaFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                      majorRadius: major,
-                                                      minorRadius: minor) == nil)
+            #expect(
+                Curve3D.hyperbola(
+                    center: Self.center, normal: Self.normal,
+                    majorRadius: major, minorRadius: minor) == nil)
+            #expect(
+                Curve3D.hyperbolaFromCenterNormal(
+                    center: Self.center, normal: Self.normal,
+                    majorRadius: major,
+                    minorRadius: minor) == nil)
         }
     }
 
@@ -4435,8 +4631,10 @@ struct Curve3DConicFactoryParityTests {
     func parabolaDegenerateFocalParity() {
         for focal in [0.0, -1.0] {
             #expect(Curve3D.parabola(center: Self.center, normal: Self.normal, focal: focal) == nil)
-            #expect(Curve3D.parabolaFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                     focal: focal) == nil)
+            #expect(
+                Curve3D.parabolaFromCenterNormal(
+                    center: Self.center, normal: Self.normal,
+                    focal: focal) == nil)
         }
     }
 
@@ -4449,16 +4647,19 @@ struct Curve3DConicFactoryParityTests {
         #expect(c2 != nil)
         if let a = c1, let b = c2 {
             for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
-                let pa = a.point(at: t), pb = b.point(at: t)
+                let pa = a.point(at: t)
+                let pb = b.point(at: t)
                 #expect(simd_distance(pa, pb) < 1e-9)
             }
         }
 
         // Ellipse
-        let e1 = Curve3D.ellipse(center: Self.center, normal: Self.normal,
-                                 majorRadius: 10, minorRadius: 5)
-        let e2 = Curve3D.ellipseFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                 majorRadius: 10, minorRadius: 5)
+        let e1 = Curve3D.ellipse(
+            center: Self.center, normal: Self.normal,
+            majorRadius: 10, minorRadius: 5)
+        let e2 = Curve3D.ellipseFromCenterNormal(
+            center: Self.center, normal: Self.normal,
+            majorRadius: 10, minorRadius: 5)
         #expect(e1 != nil)
         #expect(e2 != nil)
         if let a = e1, let b = e2 {
@@ -4468,10 +4669,12 @@ struct Curve3DConicFactoryParityTests {
         }
 
         // Hyperbola
-        let h1 = Curve3D.hyperbola(center: Self.center, normal: Self.normal,
-                                   majorRadius: 8, minorRadius: 3)
-        let h2 = Curve3D.hyperbolaFromCenterNormal(center: Self.center, normal: Self.normal,
-                                                   majorRadius: 8, minorRadius: 3)
+        let h1 = Curve3D.hyperbola(
+            center: Self.center, normal: Self.normal,
+            majorRadius: 8, minorRadius: 3)
+        let h2 = Curve3D.hyperbolaFromCenterNormal(
+            center: Self.center, normal: Self.normal,
+            majorRadius: 8, minorRadius: 3)
         #expect(h1 != nil)
         #expect(h2 != nil)
         if let a = h1, let b = h2 {
@@ -4482,7 +4685,8 @@ struct Curve3DConicFactoryParityTests {
 
         // Parabola
         let p1 = Curve3D.parabola(center: Self.center, normal: Self.normal, focal: 4)
-        let p2 = Curve3D.parabolaFromCenterNormal(center: Self.center, normal: Self.normal, focal: 4)
+        let p2 = Curve3D.parabolaFromCenterNormal(
+            center: Self.center, normal: Self.normal, focal: 4)
         #expect(p1 != nil)
         #expect(p2 != nil)
         if let a = p1, let b = p2 {
@@ -4509,20 +4713,24 @@ struct Curve3DInterpolateTangentToleranceParityTests {
 
     @Test("Bare 3-arg call matches an explicit default-tolerance call exactly")
     func bareCallMatchesExplicitDefaultTolerance() {
-        let bare = Curve3D.interpolate(points: Self.points,
-                                       startTangent: Self.startTangent,
-                                       endTangent: Self.endTangent)
-        let explicitDefault = Curve3D.interpolate(points: Self.points,
-                                                   startTangent: Self.startTangent,
-                                                   endTangent: Self.endTangent,
-                                                   tolerance: 1e-6)
+        let bare = Curve3D.interpolate(
+            points: Self.points,
+            startTangent: Self.startTangent,
+            endTangent: Self.endTangent)
+        let explicitDefault = Curve3D.interpolate(
+            points: Self.points,
+            startTangent: Self.startTangent,
+            endTangent: Self.endTangent,
+            tolerance: 1e-6)
         #expect(bare != nil)
         #expect(explicitDefault != nil)
         if let a = bare, let b = explicitDefault {
             #expect(a.domain.lowerBound == b.domain.lowerBound)
             #expect(a.domain.upperBound == b.domain.upperBound)
-            for t in stride(from: a.domain.lowerBound, through: a.domain.upperBound,
-                            by: (a.domain.upperBound - a.domain.lowerBound) / 8) {
+            for t in stride(
+                from: a.domain.lowerBound, through: a.domain.upperBound,
+                by: (a.domain.upperBound - a.domain.lowerBound) / 8)
+            {
                 #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-12)
             }
         }
@@ -4536,12 +4744,14 @@ struct Curve3DInterpolateTangentToleranceParityTests {
 
         // Default tolerance (bare call): the two near-coincident points are too close, so
         // GeomAPI_Interpolate's construction rejects them.
-        let bareDefault = Curve3D.interpolate(points: closePoints, startTangent: tan, endTangent: tan)
+        let bareDefault = Curve3D.interpolate(
+            points: closePoints, startTangent: tan, endTangent: tan)
         #expect(bareDefault == nil)
 
         // A tighter explicit tolerance accepts the exact same points.
-        let tighter = Curve3D.interpolate(points: closePoints, startTangent: tan, endTangent: tan,
-                                          tolerance: 1e-9)
+        let tighter = Curve3D.interpolate(
+            points: closePoints, startTangent: tan, endTangent: tan,
+            tolerance: 1e-9)
         #expect(tighter != nil)
     }
 }
@@ -4642,7 +4852,8 @@ struct Curve3DArcAliasParityTests {
     @Test("arc(through:_:_:) and arcOfCircle(start:interior:end:) produce identical geometry")
     func parityWithArcOfCircle() {
         let viaArc = Curve3D.arc(through: Self.start, Self.interior, Self.end)
-        let viaArcOfCircle = Curve3D.arcOfCircle(start: Self.start, interior: Self.interior, end: Self.end)
+        let viaArcOfCircle = Curve3D.arcOfCircle(
+            start: Self.start, interior: Self.interior, end: Self.end)
         #expect(viaArc != nil)
         #expect(viaArcOfCircle != nil)
         guard let a = viaArc, let b = viaArcOfCircle else { return }
@@ -4653,7 +4864,8 @@ struct Curve3DArcAliasParityTests {
         for t in stride(from: 0.0, through: 1.0, by: 0.1) {
             let ua = a.domain.lowerBound + t * (a.domain.upperBound - a.domain.lowerBound)
             let ub = b.domain.lowerBound + t * (b.domain.upperBound - b.domain.lowerBound)
-            let pa = a.point(at: ua), pb = b.point(at: ub)
+            let pa = a.point(at: ua)
+            let pb = b.point(at: ub)
             #expect(abs(pa.x - pb.x) < 1e-9)
             #expect(abs(pa.y - pb.y) < 1e-9)
             #expect(abs(pa.z - pb.z) < 1e-9)
@@ -4663,7 +4875,8 @@ struct Curve3DArcAliasParityTests {
     @Test("Both entry points reject collinear points")
     func collinearRejectedByBoth() {
         let a = Curve3D.arc(through: SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0))
-        let b = Curve3D.arcOfCircle(start: SIMD3(0, 0, 0), interior: SIMD3(1, 0, 0), end: SIMD3(2, 0, 0))
+        let b = Curve3D.arcOfCircle(
+            start: SIMD3(0, 0, 0), interior: SIMD3(1, 0, 0), end: SIMD3(2, 0, 0))
         #expect(a == nil)
         #expect(b == nil)
     }
@@ -4705,15 +4918,17 @@ struct AnalyticalConversionContractTests {
         for i in 0..<4 {
             var row: [SIMD3<Double>] = []
             for j in 0..<4 {
-                let x = Double(i) * 2, y = Double(j) * 2
+                let x = Double(i) * 2
+                let y = Double(j) * 2
                 row.append(SIMD3(x, y, sin(x * 0.7) * cos(y * 1.3) * 4))
             }
             poles.append(row)
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: [0, 1], multiplicitiesU: [4, 4],
-                               knotsV: [0, 1], multiplicitiesV: [4, 4],
-                               degreeU: 3, degreeV: 3)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: [0, 1], multiplicitiesU: [4, 4],
+            knotsV: [0, 1], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
     }
 
     // MARK: Independence of the result
@@ -4721,7 +4936,8 @@ struct AnalyticalConversionContractTests {
     @Test("Curve result does not alias the input curve")
     func curveResultIsIndependent() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let analytical = circle.toAnalytical(tolerance: 1e-4) else {
+            let analytical = circle.toAnalytical(tolerance: 1e-4)
+        else {
             Issue.record("circle did not convert")
             return
         }
@@ -4738,9 +4954,12 @@ struct AnalyticalConversionContractTests {
             return
         }
         let domain = circle.domain
-        guard let result = circle.toAnalytical(tolerance: 1e-4,
-                                               first: domain.lowerBound,
-                                               last: domain.upperBound) else {
+        guard
+            let result = circle.toAnalytical(
+                tolerance: 1e-4,
+                first: domain.lowerBound,
+                last: domain.upperBound)
+        else {
             Issue.record("circle did not convert")
             return
         }
@@ -4753,7 +4972,8 @@ struct AnalyticalConversionContractTests {
     @Test("Surface result does not alias the input surface")
     func surfaceResultIsIndependent() {
         guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
-              let analytical = plane.toAnalytical(tolerance: 1e-4) else {
+            let analytical = plane.toAnalytical(tolerance: 1e-4)
+        else {
             Issue.record("plane did not convert")
             return
         }
@@ -4766,7 +4986,8 @@ struct AnalyticalConversionContractTests {
     @Test("Gap-returning surface result does not alias the input surface")
     func gapSurfaceResultIsIndependent() {
         guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
-              let result = plane.toAnalyticalWithGap(tolerance: 1e-4) else {
+            let result = plane.toAnalyticalWithGap(tolerance: 1e-4)
+        else {
             Issue.record("plane did not convert")
             return
         }
@@ -4781,16 +5002,18 @@ struct AnalyticalConversionContractTests {
     @Test("Both curve spellings agree over the curve's own range")
     func curveSpellingsAgree() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let trimmed = circle.trimmed(from: 0, to: .pi),
-              let bspline = trimmed.toBSpline() else {
+            let trimmed = circle.trimmed(from: 0, to: .pi),
+            let bspline = trimmed.toBSpline()
+        else {
             Issue.record("BSpline circle not built")
             return
         }
         let domain = bspline.domain
         let plain = bspline.toAnalytical(tolerance: 1e-4)
-        let ranged = bspline.toAnalytical(tolerance: 1e-4,
-                                          first: domain.lowerBound,
-                                          last: domain.upperBound)
+        let ranged = bspline.toAnalytical(
+            tolerance: 1e-4,
+            first: domain.lowerBound,
+            last: domain.upperBound)
         #expect((plain == nil) == (ranged == nil))
         if let plain, let ranged {
             for t in stride(from: 0.0, through: 1.0, by: 0.25) {
@@ -4803,18 +5026,20 @@ struct AnalyticalConversionContractTests {
     @Test("Full-range curve spelling agrees with the explicit-range spelling")
     func fullRangeCurveSpellingAgrees() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let trimmed = circle.trimmed(from: 0, to: .pi),
-              let bspline = trimmed.toBSpline(),
-              let freeform = Self.freeformCurve() else {
+            let trimmed = circle.trimmed(from: 0, to: .pi),
+            let bspline = trimmed.toBSpline(),
+            let freeform = Self.freeformCurve()
+        else {
             Issue.record("fixtures not built")
             return
         }
         for curve in [bspline, freeform] {
             let domain = curve.domain
             let full = curve.toAnalyticalWithGap(tolerance: 1e-4)
-            let explicit = curve.toAnalytical(tolerance: 1e-4,
-                                              first: domain.lowerBound,
-                                              last: domain.upperBound)
+            let explicit = curve.toAnalytical(
+                tolerance: 1e-4,
+                first: domain.lowerBound,
+                last: domain.upperBound)
             #expect((full == nil) == (explicit == nil))
             if let full, let explicit {
                 #expect(full.newFirst == explicit.newFirst)
@@ -4827,10 +5052,12 @@ struct AnalyticalConversionContractTests {
     @Test("Both surface spellings agree on success and on geometry")
     func surfaceSpellingsAgree() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
-              let bspline = trimmed.toBSpline(),
-              let alreadyAnalytical = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5),
-              let freeform = Self.freeformSurface() else {
+            let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+            let bspline = trimmed.toBSpline(),
+            let alreadyAnalytical = Surface.cylinder(
+                origin: .zero, axis: SIMD3(0, 0, 1), radius: 5),
+            let freeform = Self.freeformSurface()
+        else {
             Issue.record("fixtures not built")
             return
         }
@@ -4839,8 +5066,10 @@ struct AnalyticalConversionContractTests {
             let withGap = surface.toAnalyticalWithGap(tolerance: 1e-4)
             #expect((plain == nil) == (withGap == nil))
             if let plain, let withGap {
-                #expect(Self.dist(plain.point(atU: 0.3, v: 0.4),
-                                  withGap.surface.point(atU: 0.3, v: 0.4)) < 1e-9)
+                #expect(
+                    Self.dist(
+                        plain.point(atU: 0.3, v: 0.4),
+                        withGap.surface.point(atU: 0.3, v: 0.4)) < 1e-9)
             }
         }
     }
@@ -4850,7 +5079,8 @@ struct AnalyticalConversionContractTests {
     @Test("Already-analytical inputs convert rather than being rejected")
     func alreadyAnalyticalInputsConvert() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) else {
+            let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)
+        else {
             Issue.record("fixtures not built")
             return
         }
@@ -4873,13 +5103,17 @@ struct AnalyticalConversionContractTests {
         }
         let domain = curve.domain
         #expect(curve.toAnalytical(tolerance: 1e-6) == nil)
-        #expect(curve.toAnalytical(tolerance: 1e-6,
-                                   first: domain.lowerBound,
-                                   last: domain.upperBound) == nil)
+        #expect(
+            curve.toAnalytical(
+                tolerance: 1e-6,
+                first: domain.lowerBound,
+                last: domain.upperBound) == nil)
         #expect(surface.toAnalytical(tolerance: 1e-6) == nil)
         #expect(surface.toAnalyticalWithGap(tolerance: 1e-6) == nil)
-        #expect(surface.toAnalyticalWithGap(tolerance: 1e-6,
-                                            uMin: 0, uMax: 1, vMin: 0, vMax: 1) == nil)
+        #expect(
+            surface.toAnalyticalWithGap(
+                tolerance: 1e-6,
+                uMin: 0, uMax: 1, vMin: 0, vMax: 1) == nil)
     }
 
     // MARK: The UV-bounded overload (no coverage at all before #492)
@@ -4887,23 +5121,28 @@ struct AnalyticalConversionContractTests {
     @Test("UV-bounded conversion recognizes a plane over full bounds and over a sub-range")
     func boundedConversionRecognizesPlane() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
-              let bspline = trimmed.toBSpline() else {
+            let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+            let bspline = trimmed.toBSpline()
+        else {
             Issue.record("BSpline plane not built")
             return
         }
         let d = bspline.domain
-        let full = bspline.toAnalyticalWithGap(tolerance: 1e-4,
-                                               uMin: d.uMin, uMax: d.uMax,
-                                               vMin: d.vMin, vMax: d.vMax)
+        let full = bspline.toAnalyticalWithGap(
+            tolerance: 1e-4,
+            uMin: d.uMin, uMax: d.uMax,
+            vMin: d.vMin, vMax: d.vMax)
         #expect(full != nil)
         #expect((full?.gap ?? 1) < 1e-3)
 
-        let uMid = (d.uMin + d.uMax) / 2, uQ = (d.uMax - d.uMin) / 4
-        let vMid = (d.vMin + d.vMax) / 2, vQ = (d.vMax - d.vMin) / 4
-        let sub = bspline.toAnalyticalWithGap(tolerance: 1e-4,
-                                              uMin: uMid - uQ, uMax: uMid + uQ,
-                                              vMin: vMid - vQ, vMax: vMid + vQ)
+        let uMid = (d.uMin + d.uMax) / 2
+        let uQ = (d.uMax - d.uMin) / 4
+        let vMid = (d.vMin + d.vMax) / 2
+        let vQ = (d.vMax - d.vMin) / 4
+        let sub = bspline.toAnalyticalWithGap(
+            tolerance: 1e-4,
+            uMin: uMid - uQ, uMax: uMid + uQ,
+            vMin: vMid - vQ, vMax: vMid + vQ)
         #expect(sub != nil)
         #expect((sub?.gap ?? 1) < 1e-3)
     }
@@ -4911,15 +5150,18 @@ struct AnalyticalConversionContractTests {
     @Test("UV-bounded conversion rejects inverted bounds instead of trapping")
     func boundedConversionRejectsInvertedBounds() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
-              let bspline = trimmed.toBSpline() else {
+            let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+            let bspline = trimmed.toBSpline()
+        else {
             Issue.record("BSpline plane not built")
             return
         }
         let d = bspline.domain
-        #expect(bspline.toAnalyticalWithGap(tolerance: 1e-4,
-                                            uMin: d.uMax, uMax: d.uMin,
-                                            vMin: d.vMax, vMax: d.vMin) == nil)
+        #expect(
+            bspline.toAnalyticalWithGap(
+                tolerance: 1e-4,
+                uMin: d.uMax, uMax: d.uMin,
+                vMin: d.vMax, vMax: d.vMin) == nil)
     }
 
     // MARK: Sub-range curve conversion
@@ -4927,15 +5169,19 @@ struct AnalyticalConversionContractTests {
     @Test("Explicit sub-range reparameterizes the recognized curve")
     func subRangeReparameterizesResult() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let bspline = circle.toBSpline() else {
+            let bspline = circle.toBSpline()
+        else {
             Issue.record("BSpline circle not built")
             return
         }
         let domain = bspline.domain
         let quarter = (domain.upperBound - domain.lowerBound) / 4
-        guard let result = bspline.toAnalytical(tolerance: 1e-4,
-                                                first: domain.lowerBound + quarter,
-                                                last: domain.upperBound - quarter) else {
+        guard
+            let result = bspline.toAnalytical(
+                tolerance: 1e-4,
+                first: domain.lowerBound + quarter,
+                last: domain.upperBound - quarter)
+        else {
             Issue.record("sub-range did not convert")
             return
         }

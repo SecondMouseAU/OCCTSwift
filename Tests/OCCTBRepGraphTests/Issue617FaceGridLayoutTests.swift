@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #617: `BRepGraph.FaceGridSample` handed back flat position / normal / curvature buffers that
@@ -54,8 +55,10 @@ struct Issue617FaceGridLayoutTests {
     /// job is catching a layout regression must not be able to go green by failing to build its
     /// own fixture: with a silent `guard ... else { return }` at each call site, breaking
     /// `asymmetricPatch()` alone turns all 7 tests green while asserting nothing.
-    private func fixture() -> (surface: Surface, graph: BRepGraph,
-                               uMin: Double, uMax: Double, vMin: Double, vMax: Double)? {
+    private func fixture() -> (
+        surface: Surface, graph: BRepGraph,
+        uMin: Double, uMax: Double, vMin: Double, vMax: Double
+    )? {
         guard let surface = asymmetricPatch() else {
             Issue.record("fixture: Surface.bezier returned nil for the asymmetric patch")
             return nil
@@ -77,7 +80,9 @@ struct Issue617FaceGridLayoutTests {
             return nil
         }
         guard graph.faceCount == 1 else {
-            Issue.record("fixture: expected exactly 1 face, got \(graph.faceCount); the grid tests address faceIndex 0 and rely on it being the patch")
+            Issue.record(
+                "fixture: expected exactly 1 face, got \(graph.faceCount); the grid tests address faceIndex 0 and rely on it being the patch"
+            )
             return nil
         }
         return (surface, graph, bounds.uMin, bounds.uMax, bounds.vMin, bounds.vMax)
@@ -85,9 +90,12 @@ struct Issue617FaceGridLayoutTests {
 
     /// `sampleFaceUVGrid` returning nil is a failure too, never a reason to skip quietly.
     private func requireSample(_ graph: BRepGraph, _ uSamples: Int, _ vSamples: Int)
-        -> BRepGraph.FaceGridSample? {
-        guard let sample = graph.sampleFaceUVGrid(
-            faceIndex: 0, uSamples: uSamples, vSamples: vSamples) else {
+        -> BRepGraph.FaceGridSample?
+    {
+        guard
+            let sample = graph.sampleFaceUVGrid(
+                faceIndex: 0, uSamples: uSamples, vSamples: vSamples)
+        else {
             Issue.record("sampleFaceUVGrid returned nil for \(uSamples)x\(vSamples)")
             return nil
         }
@@ -100,7 +108,8 @@ struct Issue617FaceGridLayoutTests {
     /// stride mistake from a correct read.
     private func checkGrid(uSamples: Int, vSamples: Int) {
         guard let f = fixture(),
-              let sample = requireSample(f.graph, uSamples, vSamples) else { return }
+            let sample = requireSample(f.graph, uSamples, vSamples)
+        else { return }
 
         #expect(sample.uSamples == uSamples)
         #expect(sample.vSamples == vSamples)
@@ -119,8 +128,10 @@ struct Issue617FaceGridLayoutTests {
                 let expected = f.surface.point(atU: u, v: v)
                 let got = sample.at(u: iu, v: iv).position
                 let d = simd_distance(got, expected)
-                #expect(d < 1e-9,
-                        "\(uSamples)x\(vSamples) at (u: \(iu), v: \(iv)) gave \(got), expected \(expected) at (\(u), \(v)), off by \(d)")
+                #expect(
+                    d < 1e-9,
+                    "\(uSamples)x\(vSamples) at (u: \(iu), v: \(iv)) gave \(got), expected \(expected) at (\(u), \(v)), off by \(d)"
+                )
             }
         }
     }
@@ -142,22 +153,27 @@ struct Issue617FaceGridLayoutTests {
     @Test("The fixture patch actually distinguishes U from V")
     func transposedReadIsMateriallyDifferent() {
         guard let f = fixture(),
-              let sample = requireSample(f.graph, 3, 10) else { return }
+            let sample = requireSample(f.graph, 3, 10)
+        else { return }
 
         var maxDrift = 0.0
         for iu in 0..<3 {
             for iv in 0..<10 {
-                let vMajor = iv * 3 + iu           // the pre-#617 write order
-                let uMajor = iu * 10 + iv          // the layout #486 declared
+                let vMajor = iv * 3 + iu  // the pre-#617 write order
+                let uMajor = iu * 10 + iv  // the layout #486 declared
                 guard vMajor != uMajor,
-                      vMajor < sample.positions.count else { continue }
-                maxDrift = max(maxDrift,
-                               simd_distance(sample.positions[vMajor], sample.positions[uMajor]))
+                    vMajor < sample.positions.count
+                else { continue }
+                maxDrift = max(
+                    maxDrift,
+                    simd_distance(sample.positions[vMajor], sample.positions[uMajor]))
             }
         }
         // The patch spans 21 in X and 8 in Y; a transposed read is nowhere near a rounding error.
-        #expect(maxDrift > 1.0,
-                "transposed reads differ by at most \(maxDrift); fixture is too symmetric to distinguish U-major from V-major")
+        #expect(
+            maxDrift > 1.0,
+            "transposed reads differ by at most \(maxDrift); fixture is too symmetric to distinguish U-major from V-major"
+        )
     }
 
     /// `.at(u:v:)` is the accessor #486 gave `SurfaceGrid`, so it must agree with the flat arrays
@@ -166,7 +182,8 @@ struct Issue617FaceGridLayoutTests {
     @Test("at(u:v:) reads the documented U-major slot of all four buffers")
     func accessorAgreesWithDocumentedIndex() {
         guard let f = fixture(),
-              let sample = requireSample(f.graph, 10, 3) else { return }
+            let sample = requireSample(f.graph, 10, 3)
+        else { return }
 
         for iu in 0..<10 {
             for iv in 0..<3 {
@@ -187,7 +204,8 @@ struct Issue617FaceGridLayoutTests {
     @Test("Normals land on the same U-major slot as positions")
     func normalsMatchDirectEvaluationPerSlot() {
         guard let f = fixture(),
-              let sample = requireSample(f.graph, 10, 3) else { return }
+            let sample = requireSample(f.graph, 10, 3)
+        else { return }
 
         let uStep = (f.uMax - f.uMin) / 9
         let vStep = (f.vMax - f.vMin) / 2
@@ -203,8 +221,9 @@ struct Issue617FaceGridLayoutTests {
                 let expected = cross / len
                 let got = sample.at(u: iu, v: iv).normal
                 guard simd_length(got) > 0.5 else { continue }  // undefined normal, skip
-                #expect(abs(simd_dot(got, expected)) > 0.999_999,
-                        "normal at (u: \(iu), v: \(iv)) is \(got), expected ±\(expected)")
+                #expect(
+                    abs(simd_dot(got, expected)) > 0.999_999,
+                    "normal at (u: \(iu), v: \(iv)) is \(got), expected ±\(expected)")
             }
         }
     }
@@ -224,16 +243,16 @@ struct Issue617FaceGridLayoutTests {
     func handRolledIndexArithmetic() {
         // 3x10: the wrong-stride read stays inside the buffer, so it is a silent wrong answer.
         let wideCount = 3 * 10
-        let wideWorstWrongStride = (3 - 1) * 3 + (10 - 1)          // u * uSamples + v
+        let wideWorstWrongStride = (3 - 1) * 3 + (10 - 1)  // u * uSamples + v
         #expect(wideWorstWrongStride < wideCount)
-        let wideWorstRightStride = (3 - 1) * 10 + (10 - 1)         // u * vSamples + v
+        let wideWorstRightStride = (3 - 1) * 10 + (10 - 1)  // u * vSamples + v
         #expect(wideWorstRightStride == wideCount - 1)
 
         // 10x3: the same wrong-stride read runs off the end and traps.
         let tallCount = 10 * 3
-        let tallWorstWrongStride = (10 - 1) * 10 + (3 - 1)         // u * uSamples + v
+        let tallWorstWrongStride = (10 - 1) * 10 + (3 - 1)  // u * uSamples + v
         #expect(tallWorstWrongStride >= tallCount)
-        let tallWorstRightStride = (10 - 1) * 3 + (3 - 1)          // u * vSamples + v
+        let tallWorstRightStride = (10 - 1) * 3 + (3 - 1)  // u * vSamples + v
         #expect(tallWorstRightStride == tallCount - 1)
 
         // And `at(u:v:)` is a bijection onto 0..<count at both aspect ratios, so no caller
@@ -267,8 +286,9 @@ struct Issue617FaceGridLayoutTests {
             let vStep = (f.vMax - f.vMin) / 3
             for iu in 0..<4 {
                 for iv in 0..<4 {
-                    let expected = f.surface.point(atU: f.uMin + Double(iu) * uStep,
-                                                   v: f.vMin + Double(iv) * vStep)
+                    let expected = f.surface.point(
+                        atU: f.uMin + Double(iu) * uStep,
+                        v: f.vMin + Double(iv) * vStep)
                     #expect(simd_distance(square.at(u: iu, v: iv).position, expected) < 1e-9)
                 }
             }

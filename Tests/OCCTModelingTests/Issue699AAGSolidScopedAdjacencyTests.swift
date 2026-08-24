@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #699: `AAG.buildGraph()` compared every pair of face occurrences for adjacency and convexity,
@@ -56,8 +57,8 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
     static func verticalSplitBoxCompound(order: Order) -> Shape? {
         guard let block = Shape.box(width: 10, height: 10, depth: 10),
-              let pieces = block.split(atPlane: SIMD3(4, 0, 0), normal: SIMD3(1, 0, 0)),
-              pieces.count == 2
+            let pieces = block.split(atPlane: SIMD3(4, 0, 0), normal: SIMD3(1, 0, 0)),
+            pieces.count == 2
         else { return nil }
         let ordered = order == .asSplit ? pieces : pieces.reversed()
         return Shape.compound(Array(ordered))
@@ -76,7 +77,8 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     @Test("detectPocketsAAG() agrees across compound member order on a vertical cut")
     func detectPocketsAgreesAcrossOrder() {
         guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
-              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            let orderB = Self.verticalSplitBoxCompound(order: .reversed)
+        else {
             Issue.record("could not build the vertical split-box fixture")
             return
         }
@@ -97,7 +99,8 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     @Test("buildAAG().nodes.count is unaffected by the adjacency fix")
     func nodeCountUnaffected() {
         guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
-              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            let orderB = Self.verticalSplitBoxCompound(order: .reversed)
+        else {
             Issue.record("could not build the vertical split-box fixture")
             return
         }
@@ -114,7 +117,8 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     @Test("the graph is exactly two independent 12-edge box graphs, no cross-solid edges")
     func edgeCountIsTwoIndependentBoxGraphs() {
         guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
-              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            let orderB = Self.verticalSplitBoxCompound(order: .reversed)
+        else {
             Issue.record("could not build the vertical split-box fixture")
             return
         }
@@ -128,7 +132,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     /// other (that guard predates #699, see `Issue642AAGNodeIdentityTests`). The #699 part is
     /// that neither is adjacent to the OTHER solid's half of the split top face either, even
     /// though that half shares the wall's own top boundary edge.
-    @Test("the shared wall's two occurrences are not adjacent to the other solid's split top-face half")
+    @Test(
+        "the shared wall's two occurrences are not adjacent to the other solid's split top-face half"
+    )
     func wallOccurrencesDoNotCrossSolidBoundary() {
         guard let compound = Self.verticalSplitBoxCompound(order: .asSplit) else {
             Issue.record("could not build the vertical split-box fixture")
@@ -136,9 +142,12 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         }
 
         let aag = compound.buildAAG()
-        let grouped = Dictionary(grouping: aag.nodes.enumerated().map { ($0.offset, $0.element) },
-                                  by: \.1.distinctFaceIndex)
-        guard let wallSides = grouped.first(where: { $0.value.count > 1 })?.value, wallSides.count == 2 else {
+        let grouped = Dictionary(
+            grouping: aag.nodes.enumerated().map { ($0.offset, $0.element) },
+            by: \.1.distinctFaceIndex)
+        guard let wallSides = grouped.first(where: { $0.value.count > 1 })?.value,
+            wallSides.count == 2
+        else {
             Issue.record("expected exactly one face shared by two nodes (the cut wall)")
             return
         }
@@ -190,10 +199,10 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     @Test("#642's horizontal-cut fixture still agrees across order, at the corrected count")
     func horizontalFixtureStillAgreesAtCorrectedCount() {
         guard let block = Shape.box(width: 10, height: 10, depth: 10),
-              let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              pieces.count == 2,
-              let orderA = Shape.compound(pieces),
-              let orderB = Shape.compound(pieces.reversed())
+            let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            pieces.count == 2,
+            let orderA = Shape.compound(pieces),
+            let orderB = Shape.compound(pieces.reversed())
         else {
             Issue.record("could not build the horizontal split-box fixture")
             return
@@ -235,11 +244,12 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     @Test("A compound mixing solids with a free face falls back instead of mis-partitioning")
     func countMismatchFallsBackToUnrestrictedComparison() {
         guard let a = Shape.box(width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let wire = Wire.polygon3D(
-                  [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true),
-              let freeFace = Shape.face(from: wire),
-              let mixed = Shape.compound([a, b, freeFace])
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let wire = Wire.polygon3D(
+                [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true
+            ),
+            let freeFace = Shape.face(from: wire),
+            let mixed = Shape.compound([a, b, freeFace])
         else {
             Issue.record("could not build the solids-plus-free-face fixture")
             return
@@ -249,8 +259,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         let total = mixed.orientedFaces().count
         let perSolid = mixed.solids.map { $0.orientedFaces().count }
         #expect(mixed.solids.count > 1, "need more than one solid to get past the first guard")
-        #expect(perSolid.reduce(0, +) != total,
-                "fixture must make the counts disagree: perSolid \(perSolid), total \(total)")
+        #expect(
+            perSolid.reduce(0, +) != total,
+            "fixture must make the counts disagree: perSolid \(perSolid), total \(total)")
 
         // Falling back is a complete, non-crashing graph over every occurrence.
         let aag = mixed.buildAAG()

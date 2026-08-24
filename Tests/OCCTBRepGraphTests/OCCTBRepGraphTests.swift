@@ -1,18 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
-
 
 // MARK: - BRepGraph Tests (v0.129.0)
 
@@ -238,7 +236,8 @@ struct BRepGraphExplorerTests {
                 let roots = graph.rootNodes
                 #expect(roots.count > 0)
                 if let root = roots.first {
-                    let faceCount = graph.childCount(rootKind: root.kind, rootIndex: root.index, targetKind: .face)
+                    let faceCount = graph.childCount(
+                        rootKind: root.kind, rootIndex: root.index, targetKind: .face)
                     #expect(faceCount == 6)
                 }
             }
@@ -432,7 +431,7 @@ struct BRepGraphVertexGeometryTests {
             if let graph {
                 let tol = graph.vertexTolerance(0)
                 #expect(tol > 0)
-                #expect(tol < 1.0) // should be a small value
+                #expect(tol < 1.0)  // should be a small value
             }
         }
     }
@@ -604,7 +603,7 @@ struct BRepGraphWireExtendedTests {
             let graph = BRepGraph(shape: box)
             if let graph {
                 let count = graph.wireCoEdgeCount(0)
-                #expect(count == 4) // box face has 4 edges
+                #expect(count == 4)  // box face has 4 edges
             }
         }
     }
@@ -737,7 +736,7 @@ struct BRepGraphSolidQueryTests {
             let graph = BRepGraph(shape: box)
             if let graph {
                 let count = graph.solidCompSolidCount(0)
-                #expect(count == 0) // standalone solid, not in comp-solid
+                #expect(count == 0)  // standalone solid, not in comp-solid
             }
         }
     }
@@ -997,10 +996,10 @@ struct BRepGraphRefCountTests {
                 #expect(graph.faceRefCount >= 6)
                 #expect(graph.wireRefCount >= 6)
                 #expect(graph.coedgeRefCount >= 24)
-                #expect(graph.vertexRefCount >= 16) // edges have start/end vertex refs
+                #expect(graph.vertexRefCount >= 16)  // edges have start/end vertex refs
                 #expect(graph.solidRefCount >= 0)
                 #expect(graph.childRefCount >= 0)
-                #expect(graph.occurrenceRefCount == 0) // no assembly
+                #expect(graph.occurrenceRefCount == 0)  // no assembly
             }
         }
     }
@@ -1319,7 +1318,7 @@ struct BRepGraphCompoundTests {
                     #expect(graph.compoundCount >= 1)
                     if graph.compoundCount > 0 {
                         let childCount = graph.compoundChildCount(0)
-                        #expect(childCount >= 2) // at least 2 solids
+                        #expect(childCount >= 2)  // at least 2 solids
                         let parentCount = graph.compoundParentCount(0)
                         // Root compound has no parents
                         #expect(parentCount == 0)
@@ -1402,7 +1401,8 @@ struct BRepGraphBuilderAddFaceToShellTests {
             if let graph = BRepGraph(shape: box) {
                 // Add a new shell, then link existing face 0 to it
                 if let shellIdx = graph.addShell() {
-                    let refIdx = graph.addFaceToShell(shellIndex: shellIdx, faceIndex: 0, orientation: 0)
+                    let refIdx = graph.addFaceToShell(
+                        shellIndex: shellIdx, faceIndex: 0, orientation: 0)
                     #expect(refIdx != nil)
                 }
             }
@@ -1416,7 +1416,8 @@ struct BRepGraphBuilderAddShellToSolidTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             if let graph = BRepGraph(shape: box) {
                 if let solidIdx = graph.addSolid(), let shellIdx = graph.addShell() {
-                    let refIdx = graph.addShellToSolid(solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0)
+                    let refIdx = graph.addShellToSolid(
+                        solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0)
                     #expect(refIdx != nil)
                 }
             }
@@ -1566,7 +1567,7 @@ struct BRepGraphBuilderRemoveRefTests {
                 if graph.shellRefCount > 0 {
                     let removed = graph.removeRef(refKind: .shell, refIndex: 0)
                     // Should succeed or gracefully fail
-                    #expect(removed || !removed) // either outcome acceptable
+                    #expect(removed || !removed)  // either outcome acceptable
                 }
             }
         }
@@ -1725,9 +1726,10 @@ struct BRepGraphEdgeSamplingTests {
                     if points.count >= 2 {
                         let first = points[0]
                         let last = points[points.count - 1]
-                        let dist = ((first.x - last.x) * (first.x - last.x) +
-                                    (first.y - last.y) * (first.y - last.y) +
-                                    (first.z - last.z) * (first.z - last.z)).squareRoot()
+                        let dist =
+                            ((first.x - last.x) * (first.x - last.x) + (first.y - last.y)
+                            * (first.y - last.y) + (first.z - last.z) * (first.z - last.z))
+                            .squareRoot()
                         #expect(dist > 0.001)
                     }
                 }
@@ -1841,8 +1843,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Recorded 1-to-1 modification survives roundtrip through the API")
     func oneToOneReadback() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1853,7 +1857,8 @@ struct BRepGraphHistoryReadbackTests {
 
         #expect(graph.historyRecordCount == 1)
         guard let rec = graph.historyRecord(at: 0) else {
-            Issue.record("record nil"); return
+            Issue.record("record nil")
+            return
         }
         #expect(rec.operationName == "TestFillet")
         #expect(rec.mapping.count == 1)
@@ -1863,8 +1868,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Split (1-to-N) mapping round-trips")
     func splitMapping() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1882,8 +1889,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Deletion (1-to-0) round-trips")
     func deletionMapping() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1898,8 +1907,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("FindDerived walks forward through chained records")
     func findDerivedWalksForward() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1923,8 +1934,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("hasHistoryRecord: true for nodes named in any record's mapping; false otherwise")
     func hasHistoryRecordDistinguishesNamedFromUntouched() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1934,19 +1947,24 @@ struct BRepGraphHistoryReadbackTests {
         let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
         let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
 
-        graph.recordHistory(operationName: "ModifyFace", original: modified, replacements: [replaced])
+        graph.recordHistory(
+            operationName: "ModifyFace", original: modified, replacements: [replaced])
         graph.recordHistory(operationName: "DeleteFace", original: deleted, replacements: [])
 
         #expect(graph.hasHistoryRecord(for: modified), "modified node should be named in a record")
-        #expect(graph.hasHistoryRecord(for: deleted), "explicitly-deleted node should be named in a record")
+        #expect(
+            graph.hasHistoryRecord(for: deleted),
+            "explicitly-deleted node should be named in a record")
         #expect(!graph.hasHistoryRecord(for: untouched), "untouched node has no record entry")
     }
 
     @Test("findDerivedOrSelf: returns derivatives, [] for deleted, [original] for untouched")
     func findDerivedOrSelfDisambiguates() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1956,13 +1974,15 @@ struct BRepGraphHistoryReadbackTests {
         let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
         let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
 
-        graph.recordHistory(operationName: "ModifyFace", original: modified, replacements: [replaced])
+        graph.recordHistory(
+            operationName: "ModifyFace", original: modified, replacements: [replaced])
         graph.recordHistory(operationName: "DeleteFace", original: deleted, replacements: [])
 
         // Modified → derivatives via the existing forward walk
         let modifiedResult = graph.findDerivedOrSelf(of: modified)
-        #expect(modifiedResult.contains(replaced),
-                "modified node should resolve to its replacement(s)")
+        #expect(
+            modifiedResult.contains(replaced),
+            "modified node should resolve to its replacement(s)")
 
         // Deleted → empty (record is present but mapping is empty)
         let deletedResult = graph.findDerivedOrSelf(of: deleted)
@@ -1970,15 +1990,18 @@ struct BRepGraphHistoryReadbackTests {
 
         // Untouched → [original] (no record names this node)
         let untouchedResult = graph.findDerivedOrSelf(of: untouched)
-        #expect(untouchedResult == [untouched],
-                "untouched node should resolve to itself at the same index")
+        #expect(
+            untouchedResult == [untouched],
+            "untouched node should resolve to itself at the same index")
     }
 
     @Test("findDerivedOrSelf preserves findDerived semantics for chained records")
     func findDerivedOrSelfMatchesFindDerivedWhenNonEmpty() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -1994,15 +2017,18 @@ struct BRepGraphHistoryReadbackTests {
         let derived = Set(graph.findDerived(of: orig))
         let derivedOrSelf = Set(graph.findDerivedOrSelf(of: orig))
         // When findDerived is non-empty, findDerivedOrSelf must return the same set.
-        #expect(derived == derivedOrSelf,
-                "findDerivedOrSelf must equal findDerived when derivatives exist")
+        #expect(
+            derived == derivedOrSelf,
+            "findDerivedOrSelf must equal findDerived when derivatives exist")
     }
 
     @Test("FindOriginal walks backwards")
     func findOriginalWalksBackward() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2019,8 +2045,10 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Unrecorded node findOriginal returns itself")
     func findOriginalPassthrough() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2037,8 +2065,10 @@ struct TopologyRefResolverTests {
     @Test("Literal reference to a valid node resolves to itself")
     func literalValid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let node = BRepGraph.NodeRef(kind: .face, index: 2)
         let result = graph.resolve(.literal(node))
@@ -2051,11 +2081,14 @@ struct TopologyRefResolverTests {
     @Test("Literal reference to an invalid node fails")
     func literalInvalid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let result = graph.resolve(.literal(.sentinel))
-        if case .failure(.invalid) = result {} else {
+        if case .failure(.invalid) = result {
+        } else {
             Issue.record("expected .invalid error")
         }
     }
@@ -2063,15 +2096,18 @@ struct TopologyRefResolverTests {
     @Test("createdBy resolves to the recorded replacement")
     func createdByBasic() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
         let newFace = BRepGraph.NodeRef(kind: .face, index: 100)
-        graph.recordHistory(operationName: "Extrude_1",
-                             original: .sentinel,
-                             replacements: [newFace])
+        graph.recordHistory(
+            operationName: "Extrude_1",
+            original: .sentinel,
+            replacements: [newFace])
         let result = graph.resolve(.createdBy(operationName: "Extrude_1", kind: .face))
         switch result {
         case .success(let r): #expect(r == newFace)
@@ -2082,8 +2118,10 @@ struct TopologyRefResolverTests {
     @Test("createdBy with unknown operation fails with operationNotFound")
     func createdByMissingOp() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2098,8 +2136,10 @@ struct TopologyRefResolverTests {
     @Test("createdBy with occurrence out of range fails cleanly")
     func createdByOutOfRange() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2117,8 +2157,10 @@ struct TopologyRefResolverTests {
     @Test("createdBy walks forward through subsequent history to currentForm")
     func createdByForwardWalk() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2139,8 +2181,10 @@ struct TopologyRefResolverTests {
     @Test("splitOf picks the Nth replacement of a split original")
     func splitOf() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2158,8 +2202,10 @@ struct TopologyRefResolverTests {
     @Test("splitOf with occurrence out of range fails cleanly")
     func splitOfOutOfRange() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
@@ -2179,16 +2225,20 @@ struct TopologyRefResolverTests {
     @Test("Ancestor resolution failure propagates")
     func ancestorMissing() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
         // splitOf references an operation that never happened → should fail.
-        let result = graph.resolve(.splitOf(
-            original: .createdBy(operationName: "Nonexistent", kind: .edge),
-            occurrence: 0))
-        if case .failure(.ancestorMissing) = result {} else {
+        let result = graph.resolve(
+            .splitOf(
+                original: .createdBy(operationName: "Nonexistent", kind: .edge),
+                occurrence: 0))
+        if case .failure(.ancestorMissing) = result {
+        } else {
             Issue.record("expected ancestorMissing")
         }
     }
@@ -2201,8 +2251,10 @@ struct ConstructionPlaneTests {
     @Test("Absolute plane resolves to specified origin+normal")
     func absolutePlane() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1))
         switch graph.resolve(plane) {
@@ -2216,8 +2268,10 @@ struct ConstructionPlaneTests {
     @Test("offsetFromFace produces a parallel plane at the offset")
     func offsetFromFace() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         // Pick any face; the exact normal is produced from the UV midpoint.
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
@@ -2235,8 +2289,10 @@ struct ConstructionPlaneTests {
     @Test("byThreePoints returns a valid plane through three vertices")
     func byThreePoints() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let v0 = TopologyRef.literal(.init(kind: .vertex, index: 0))
         let v1 = TopologyRef.literal(.init(kind: .vertex, index: 1))
@@ -2252,13 +2308,16 @@ struct ConstructionPlaneTests {
     @Test("byThreePoints on collinear points fails with degenerate")
     func collinearPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
         // Three references to the same vertex → collinear (all zero vector).
         let plane = ConstructionPlane.byThreePoints(v, v, v)
-        if case .failure(.degenerate) = graph.resolve(plane) {} else {
+        if case .failure(.degenerate) = graph.resolve(plane) {
+        } else {
             Issue.record("expected degenerate")
         }
     }
@@ -2266,8 +2325,10 @@ struct ConstructionPlaneTests {
     @Test("normalToEdge produces plane perpendicular to edge tangent")
     func normalToEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: 0))
         let plane = ConstructionPlane.normalToEdge(edge: edgeRef, t: 0.5)
@@ -2279,7 +2340,9 @@ struct ConstructionPlaneTests {
         }
     }
 
-    @Test("tangentToFace on a cylinder uses the vertex's own local normal, not the face UV midpoint (#879)")
+    @Test(
+        "tangentToFace on a cylinder uses the vertex's own local normal, not the face UV midpoint (#879)"
+    )
     func tangentToFaceCylinderLocalNormal() {
         // A radius-5 cylinder's lateral face is periodic in U; its seam runs
         // through both circle vertices at u=0 (local +X, radial normal (1,0,0)).
@@ -2288,8 +2351,10 @@ struct ConstructionPlaneTests {
         // returned that antiparallel UV-midpoint normal instead of the normal at
         // the requested vertex.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
@@ -2311,7 +2376,9 @@ struct ConstructionPlaneTests {
         }
     }
 
-    @Test("tangentToFace at a cone apex falls back to the UV-midpoint normal instead of failing (PR #897 review, 3rd pass)")
+    @Test(
+        "tangentToFace at a cone apex falls back to the UV-midpoint normal instead of failing (PR #897 review, 3rd pass)"
+    )
     func tangentToFaceConeApexFallsBackToNormal() {
         // A cone whose apex sits at the BASE (bottomRadius: 0) puts the apex vertex
         // at v=0 exactly on the lateral face's own parametrization -- a genuine
@@ -2326,15 +2393,18 @@ struct ConstructionPlaneTests {
         // higher-derivative resolution keeps the normal defined there --
         // SurfaceNormalParityTests.spherePoleStillHasANormal already pins that.)
         guard let cone = Shape.cone(bottomRadius: 0, topRadius: 5, height: 10),
-              let graph = BRepGraph(shape: cone) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: cone)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
 
         // Sanity: find the apex vertex (at the origin) and confirm the fixture
         // really does hit the singularity this test claims to exercise.
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
-            Issue.record("face0 unavailable"); return
+            Issue.record("face0 unavailable")
+            return
         }
         var apexIndex: Int?
         for i in 0..<graph.vertexCount {
@@ -2345,10 +2415,12 @@ struct ConstructionPlaneTests {
             }
         }
         guard let apexIndex else {
-            Issue.record("no vertex at the cone apex"); return
+            Issue.record("no vertex at the cone apex")
+            return
         }
         guard let projection = face.project(point: SIMD3(0, 0, 0)) else {
-            Issue.record("apex projection failed"); return
+            Issue.record("apex projection failed")
+            return
         }
         #expect(
             face.normal(atU: projection.u, v: projection.v) == nil,
@@ -2360,7 +2432,8 @@ struct ConstructionPlaneTests {
         // which is why this test alone can't distinguish the two fallback branches (#897 review,
         // second xhigh pass, finding 3).
         guard let expectedFallback = face.uvMidpointNormal() else {
-            Issue.record("uvMidpointNormal unavailable"); return
+            Issue.record("uvMidpointNormal unavailable")
+            return
         }
 
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: apexIndex))
@@ -2400,7 +2473,8 @@ struct ConstructionPlaneTests {
             let compound = Shape.compound([sph, centerVertex]),
             let graph = BRepGraph(shape: compound)
         else {
-            Issue.record("setup failed"); return
+            Issue.record("setup failed")
+            return
         }
 
         // Sphere added first -- confirm face 0 of the compound really is the sphere, not
@@ -2408,12 +2482,14 @@ struct ConstructionPlaneTests {
         guard let faceShape = graph.shape(nodeKind: .face, nodeIndex: 0),
             let face = faceShape.faces().first, face.surfaceType == .sphere
         else {
-            Issue.record("face 0 of the compound is not the sphere"); return
+            Issue.record("face 0 of the compound is not the sphere")
+            return
         }
         // Sanity: confirm the fixture really does hit the branch this test claims to exercise.
         #expect(face.project(point: SIMD3(0, 0, 0)) == nil, "fixture should fail to project")
         guard let (expectedFallbackPoint, expectedFallbackNormal) = face.uvMidpointSample() else {
-            Issue.record("uvMidpointSample unavailable"); return
+            Issue.record("uvMidpointSample unavailable")
+            return
         }
 
         // The standalone vertex, wherever BRepGraph placed it -- found by position, not assumed
@@ -2427,7 +2503,8 @@ struct ConstructionPlaneTests {
             }
         }
         guard let centerIndex else {
-            Issue.record("no vertex at the sphere center"); return
+            Issue.record("no vertex at the sphere center")
+            return
         }
 
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
@@ -2450,13 +2527,17 @@ struct ConstructionPlaneTests {
     )
     func tangentToFaceOriginIsOnFaceNotRawPoint() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
-              let (samplePoint, sampleNormal) = face.uvMidpointSample() else {
-            Issue.record("face0 unavailable"); return
+            let (samplePoint, sampleNormal) = face.uvMidpointSample()
+        else {
+            Issue.record("face0 unavailable")
+            return
         }
         let faceNormalUnit = simd_normalize(sampleNormal)
 
@@ -2472,7 +2553,8 @@ struct ConstructionPlaneTests {
             }
         }
         guard let offFaceVertexIndex else {
-            Issue.record("no off-face vertex found"); return
+            Issue.record("no off-face vertex found")
+            return
         }
         let rawTuple = graph.vertexPoint(offFaceVertexIndex)
         let rawPoint = SIMD3(rawTuple.x, rawTuple.y, rawTuple.z)
@@ -2495,8 +2577,10 @@ struct ConstructionAxisTests {
     @Test("alongEdge produces edge start + unit direction")
     func alongEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let edge = TopologyRef.literal(.init(kind: .edge, index: 0))
         switch graph.resolve(ConstructionAxis.alongEdge(edge)) {
@@ -2509,17 +2593,21 @@ struct ConstructionAxisTests {
     @Test("alongEdge on a full-circle cylindrical rim resolves to the true rotation axis (#883)")
     func alongEdgeCylindricalRimUsesRevolutionAxis() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("cylinder/graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("cylinder/graph nil")
+            return
         }
         // A rim is a full circle: start == end, so the old secant-of-endpoints computation
         // was always the zero vector here, this is failure mode 1 from #883.
         guard let rim = cyl.edges().first(where: { $0.curveType == .circle }),
-              let rimBounds = rim.parameterBounds,
-              let rimPoint = rim.point(at: rimBounds.first),
-              let rimShape = Shape.fromEdge(rim),
-              let node = graph.findNode(for: rimShape), node.kind == .edge else {
-            Issue.record("no circular rim edge found"); return
+            let rimBounds = rim.parameterBounds,
+            let rimPoint = rim.point(at: rimBounds.first),
+            let rimShape = Shape.fromEdge(rim),
+            let node = graph.findNode(for: rimShape), node.kind == .edge
+        else {
+            Issue.record("no circular rim edge found")
+            return
         }
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
@@ -2536,21 +2624,27 @@ struct ConstructionAxisTests {
         }
     }
 
-    @Test("alongEdge on a partial cylindrical arc resolves to the axis, not the endpoint chord (#883)")
+    @Test(
+        "alongEdge on a partial cylindrical arc resolves to the axis, not the endpoint chord (#883)"
+    )
     func alongEdgePartialCylinderUsesAxisNotChord() {
         guard let cyl = Shape.cylinder(radius: 5, height: 10, angle: .pi / 2),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("partial cylinder/graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("partial cylinder/graph nil")
+            return
         }
         // A 90-degree arc's own endpoint chord lies in the XY plane (z ~ 0), this is failure
         // mode 2 from #883: a plausible-looking but wrong direction. The true rotation axis is
         // parallel to Z.
         guard let arc = cyl.edges().first(where: { $0.curveType == .circle && !$0.isClosed3D }),
-              let arcBounds = arc.parameterBounds,
-              let arcPoint = arc.point(at: arcBounds.first),
-              let arcShape = Shape.fromEdge(arc),
-              let node = graph.findNode(for: arcShape), node.kind == .edge else {
-            Issue.record("no partial arc edge found"); return
+            let arcBounds = arc.parameterBounds,
+            let arcPoint = arc.point(at: arcBounds.first),
+            let arcShape = Shape.fromEdge(arc),
+            let node = graph.findNode(for: arcShape), node.kind == .edge
+        else {
+            Issue.record("no partial arc edge found")
+            return
         }
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
@@ -2567,25 +2661,32 @@ struct ConstructionAxisTests {
         }
     }
 
-    @Test("alongEdge on a standalone closed circular wire (no adjacent face) fails with degenerate (#887)")
+    @Test(
+        "alongEdge on a standalone closed circular wire (no adjacent face) fails with degenerate (#887)"
+    )
     func alongEdgeStandaloneCircleNoAdjacentFaceDegenerate() {
         // A full circle with no adjacent face at all: revolutionAxis(ofEdgeAt:) finds nothing
         // to redirect to (faces(of:) is empty), so this falls through to the endpoint-secant
         // path, where start == end for a closed curve, the zero-length branch that #887 found
         // had no coverage at all.
         guard let wire = Wire.circle(radius: 5),
-              let wireShape = Shape.fromWire(wire),
-              let graph = BRepGraph(shape: wireShape) else {
-            Issue.record("wire/shape/graph nil"); return
+            let wireShape = Shape.fromWire(wire),
+            let graph = BRepGraph(shape: wireShape)
+        else {
+            Issue.record("wire/shape/graph nil")
+            return
         }
         guard let edge = wireShape.edges().first,
-              let edgeShape = Shape.fromEdge(edge),
-              let node = graph.findNode(for: edgeShape), node.kind == .edge else {
-            Issue.record("no edge found"); return
+            let edgeShape = Shape.fromEdge(edge),
+            let node = graph.findNode(for: edgeShape), node.kind == .edge
+        else {
+            Issue.record("no edge found")
+            return
         }
         #expect(graph.faces(of: node.index).isEmpty)
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
-        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        } else {
             Issue.record("expected degenerate")
         }
     }
@@ -2608,7 +2709,8 @@ struct ConstructionAxisTests {
             let fused = mainCyl.union(branchCyl),
             let graph = BRepGraph(shape: fused)
         else {
-            Issue.record("T-branch fixture build failed"); return
+            Issue.record("T-branch fixture build failed")
+            return
         }
 
         // Find a branch edge: adjacent to >= 2 cylindrical/conical faces whose axes disagree, with
@@ -2661,7 +2763,8 @@ struct ConstructionAxisTests {
             break
         }
         guard let target else {
-            Issue.record("no usable branch edge found in T-branch fixture"); return
+            Issue.record("no usable branch edge found in T-branch fixture")
+            return
         }
 
         // Exercise the real production decision directly, not just its downstream effect: the
@@ -2694,7 +2797,8 @@ struct ConstructionAxisTests {
         guard let cyl = Shape.cylinder(radius: 5, height: 500),
             let graph = BRepGraph(shape: cyl)
         else {
-            Issue.record("tall cylinder/graph nil"); return
+            Issue.record("tall cylinder/graph nil")
+            return
         }
         guard
             let topRim = cyl.edges().first(where: { edge in
@@ -2706,7 +2810,8 @@ struct ConstructionAxisTests {
             let rimShape = Shape.fromEdge(topRim),
             let node = graph.findNode(for: rimShape), node.kind == .edge
         else {
-            Issue.record("no top rim edge found"); return
+            Issue.record("no top rim edge found")
+            return
         }
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
@@ -2761,7 +2866,8 @@ struct ConstructionAxisTests {
             let faceShape = Shape.face(from: surface, boundary: wire),
             let graph = BRepGraph(shape: faceShape)
         else {
-            Issue.record("synthetic straight-seam fixture build failed"); return
+            Issue.record("synthetic straight-seam fixture build failed")
+            return
         }
 
         // Confirm the fixture matches the intended scenario, then find that edge by its (unique)
@@ -2779,7 +2885,8 @@ struct ConstructionAxisTests {
             }
         }
         guard let seamNodeIndex else {
-            Issue.record("no BSpline-curveType edge found in fixture"); return
+            Issue.record("no BSpline-curveType edge found in fixture")
+            return
         }
 
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: seamNodeIndex))
@@ -2822,13 +2929,15 @@ struct ConstructionAxisTests {
             let cut = cyl.intersection(tiltedBox),
             let graph = BRepGraph(shape: cut)
         else {
-            Issue.record("oblique-cut cylinder fixture build failed"); return
+            Issue.record("oblique-cut cylinder fixture build failed")
+            return
         }
         guard let ellipse = cut.edges().first(where: { $0.curveType == .ellipse }),
             let ellipseShape = Shape.fromEdge(ellipse),
             let node = graph.findNode(for: ellipseShape), node.kind == .edge
         else {
-            Issue.record("no elliptical rim edge found in oblique-cut fixture"); return
+            Issue.record("no elliptical rim edge found in oblique-cut fixture")
+            return
         }
         // Confirm the fixture matches finding 1's premise: exactly one adjacent face contributes
         // a cylinder/cone axis candidate (the trimmed wall), same as a genuine circular rim, so
@@ -2836,7 +2945,8 @@ struct ConstructionAxisTests {
         // without the geometric cross-section check this finding adds.
         let cylConeFaceCount = graph.faces(of: node.index).filter { faceIndex in
             guard
-                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let faceShape = graph.shape(
+                    nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
                 let face = faceShape.faces().first, let axis = face.primaryAxis
             else { return false }
             return axis.kind == .cylinder || axis.kind == .cone
@@ -2854,9 +2964,10 @@ struct ConstructionAxisTests {
             #expect(!(onCenterlineDirection && onCenterlineOrigin))
         case .failure(.degenerate):
             ()  // failing cleanly is fine too: a full ellipse's own chord is ~0, same as a full
-            // circle's would be without the (correctly declined) axis redirect.
+        // circle's would be without the (correctly declined) axis redirect.
         case .failure(let e):
-            Issue.record("expected success (chord fallback) or a clean .degenerate failure, got \(e)")
+            Issue.record(
+                "expected success (chord fallback) or a clean .degenerate failure, got \(e)")
         }
     }
 
@@ -2874,7 +2985,8 @@ struct ConstructionAxisTests {
         guard let cyl = Shape.cylinder(radius: 5, height: 10, angle: 1e-10),
             let graph = BRepGraph(shape: cyl)
         else {
-            Issue.record("degenerate-sliver fixture build failed"); return
+            Issue.record("degenerate-sliver fixture build failed")
+            return
         }
 
         // Find a tiny rim arc by measured length rather than assuming an index.
@@ -2890,14 +3002,16 @@ struct ConstructionAxisTests {
             }
         }
         guard let tinyNodeIndex else {
-            Issue.record("no near-zero-length non-line edge found in sliver fixture"); return
+            Issue.record("no near-zero-length non-line edge found in sliver fixture")
+            return
         }
         // Confirm the fixture matches finding 2's premise: exactly one adjacent face contributes
         // a cylinder/cone axis candidate, same as a legitimate rim, `revolutionAxis` has nothing
         // to disagree with and would return it unconditionally without the fix.
         let cylConeFaceCount = graph.faces(of: tinyNodeIndex).filter { faceIndex in
             guard
-                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let faceShape = graph.shape(
+                    nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
                 let face = faceShape.faces().first, let axis = face.primaryAxis
             else { return false }
             return axis.kind == .cylinder || axis.kind == .cone
@@ -2905,7 +3019,8 @@ struct ConstructionAxisTests {
         #expect(cylConeFaceCount == 1)
 
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: tinyNodeIndex))
-        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        } else {
             Issue.record("expected degenerate")
         }
     }
@@ -2963,7 +3078,8 @@ struct ConstructionAxisTests {
             let faceShape = Shape.face(from: surface, boundary: wire),
             let graph = BRepGraph(shape: faceShape)
         else {
-            Issue.record("synthetic cone straight-seam fixture build failed"); return
+            Issue.record("synthetic cone straight-seam fixture build failed")
+            return
         }
 
         var seamNodeIndex: Int?
@@ -2978,13 +3094,15 @@ struct ConstructionAxisTests {
             }
         }
         guard let seamNodeIndex else {
-            Issue.record("no BSpline-curveType edge found in cone fixture"); return
+            Issue.record("no BSpline-curveType edge found in cone fixture")
+            return
         }
         // Confirm the fixture matches the premise: the seam edge is adjacent to a cone-kind face
         // (so `revolutionAxis` has a candidate to redirect to at all).
         let coneFaceCount = graph.faces(of: seamNodeIndex).filter { faceIndex in
             guard
-                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let faceShape = graph.shape(
+                    nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
                 let face = faceShape.faces().first, let axis = face.primaryAxis
             else { return false }
             return axis.kind == .cone
@@ -3082,7 +3200,8 @@ struct ConstructionAxisTests {
             let faceForward = Shape.face(from: surfaceForward, boundary: wireForward),
             let forward = topArcDirection(from: faceForward)
         else {
-            Issue.record("forward-order fixture build/resolve failed"); return
+            Issue.record("forward-order fixture build/resolve failed")
+            return
         }
 
         // Top arc parameterized pB -> pA (bounds.first == pB), the physically identical rim,
@@ -3108,7 +3227,8 @@ struct ConstructionAxisTests {
             let faceReversed = Shape.face(from: surfaceReversed, boundary: wireReversed),
             let reversed = topArcDirection(from: faceReversed)
         else {
-            Issue.record("reversed-order fixture build/resolve failed"); return
+            Issue.record("reversed-order fixture build/resolve failed")
+            return
         }
 
         // Same physical axis either way.
@@ -3145,7 +3265,8 @@ struct ConstructionAxisTests {
             let faceShape = Shape.face(from: surface, boundary: wire),
             let graph = BRepGraph(shape: faceShape)
         else {
-            Issue.record("helical-edge fixture build failed"); return
+            Issue.record("helical-edge fixture build failed")
+            return
         }
 
         var helixNodeIndex: Int?
@@ -3159,14 +3280,16 @@ struct ConstructionAxisTests {
             break
         }
         guard let helixNodeIndex else {
-            Issue.record("no non-line edge found in helical fixture"); return
+            Issue.record("no non-line edge found in helical fixture")
+            return
         }
         // Confirm the fixture matches the premise: adjacent to exactly one cylinder-kind face,
         // same as a genuine rim, `revolutionAxis` has nothing to disagree with, so only
         // `coaxialCrossSection`'s own height check can decline the redirect.
         let cylFaceCount = graph.faces(of: helixNodeIndex).filter { faceIndex in
             guard
-                let faceShape = graph.shape(nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
+                let faceShape = graph.shape(
+                    nodeKind: BRepGraph.NodeKind.face, nodeIndex: faceIndex),
                 let face = faceShape.faces().first, let axis = face.primaryAxis
             else { return false }
             return axis.kind == .cylinder
@@ -3192,11 +3315,14 @@ struct ConstructionAxisTests {
     @Test("throughPoints on coincident vertices fails with degenerate")
     func coincidentPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
-        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.throughPoints(v, v)) {} else {
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.throughPoints(v, v)) {
+        } else {
             Issue.record("expected degenerate")
         }
     }
@@ -3204,24 +3330,30 @@ struct ConstructionAxisTests {
     @Test("intersectionOfPlanes on parallel planes fails with degenerate")
     func parallelIntersectionDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
         let b = ConstructionPlane.absolute(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
-        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)) {} else {
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)) {
+        } else {
             Issue.record("expected degenerate")
         }
     }
 
-    @Test("normalToFace on a cylinder returns the rotation axis, not the local radial normal (#882)")
+    @Test(
+        "normalToFace on a cylinder returns the rotation axis, not the local radial normal (#882)")
     func normalToFaceCylinderPrimaryAxis() {
         // The doc promises the cylinder's own rotation axis (here unit Z). Before
         // #882, normalToFace returned the UV-midpoint radial normal instead,
         // which lies in the XY plane and has zero Z component.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
@@ -3242,8 +3374,10 @@ struct ConstructionAxisTests {
         // axis DIRECTION with a WRONG axis LOCATION, a line parallel to, but offset by the
         // full radius from, the true rotation axis.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 1))
@@ -3274,16 +3408,20 @@ struct ConstructionAxisTests {
         // than `.cylinder` (`.cone`/`.torus`/`.revolution` share the identical code path, but
         // only `.cylinder` had a dedicated origin test before this one).
         guard let torus = Shape.torus(majorRadius: 20, minorRadius: 5),
-              let graph = BRepGraph(shape: torus) else {
-            Issue.record("setup"); return
+            let graph = BRepGraph(shape: torus)
+        else {
+            Issue.record("setup")
+            return
         }
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
-              let axis = face.primaryAxis, axis.kind == .torus
+            let axis = face.primaryAxis, axis.kind == .torus
         else {
-            Issue.record("fixture is not a toroidal face"); return
+            Issue.record("fixture is not a toroidal face")
+            return
         }
         guard graph.vertexCount > 0 else {
-            Issue.record("torus fixture has no vertex"); return
+            Issue.record("torus fixture has no vertex")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -3312,8 +3450,10 @@ struct ConstructionAxisTests {
         // Planes have no primary axis, so normalToFace must fall back to the
         // UV-midpoint surface normal, the pre-#882 behavior, still correct here.
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -3324,7 +3464,9 @@ struct ConstructionAxisTests {
         }
     }
 
-    @Test("normalToFace on an extrusion-surface face falls back to the UV-midpoint normal, not the sweep direction (PR #897 review)")
+    @Test(
+        "normalToFace on an extrusion-surface face falls back to the UV-midpoint normal, not the sweep direction (PR #897 review)"
+    )
     func normalToFaceExtrusionFallsBackToNormal() {
         // Geom_SurfaceOfLinearExtrusion's primaryAxis.direction is the SWEEP direction
         // (tangent to the surface), not a normal, unlike cylinder/cone/sphere/torus/
@@ -3334,10 +3476,12 @@ struct ConstructionAxisTests {
         // direction; before this fix, normalToFace returned the sweep direction
         // (Z) unconditionally whenever primaryAxis was non-nil.
         guard let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
-              let surface = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)),
-              let extrudedFace = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
-              let graph = BRepGraph(shape: extrudedFace) else {
-            Issue.record("setup"); return
+            let surface = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)),
+            let extrudedFace = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
+            let graph = BRepGraph(shape: extrudedFace)
+        else {
+            Issue.record("setup")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         let vertexRef = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -3345,8 +3489,10 @@ struct ConstructionAxisTests {
         // Sanity: this fixture really does have an extrusion-kind primaryAxis along
         // the sweep direction, so the test is exercising the branch it claims to.
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
-              let axis = face.primaryAxis, axis.kind == .extrusion else {
-            Issue.record("fixture is not an extrusion-surface face"); return
+            let axis = face.primaryAxis, axis.kind == .extrusion
+        else {
+            Issue.record("fixture is not an extrusion-surface face")
+            return
         }
         #expect(abs(axis.direction.z) > 0.99, "sweep direction should be along Z")
 
@@ -3360,7 +3506,9 @@ struct ConstructionAxisTests {
         }
     }
 
-    @Test("normalToFace on a spherical face falls back to the UV-midpoint normal, not the arbitrary pole axis (PR #897 review, 3rd pass)")
+    @Test(
+        "normalToFace on a spherical face falls back to the UV-midpoint normal, not the arbitrary pole axis (PR #897 review, 3rd pass)"
+    )
     func normalToFaceSphereFallsBackToNormal() {
         // gp_Sphere::Position().Direction() (what Face.primaryAxis reports for a
         // sphere) is just the arbitrary construction-frame pole -- a sphere is
@@ -3371,16 +3519,20 @@ struct ConstructionAxisTests {
         // local normal at the equator.
         let radius = 5.0
         guard let sph = Shape.sphere(radius: radius),
-              let graph = BRepGraph(shape: sph) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: sph)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
 
         // Sanity: this fixture really does have a sphere-kind primaryAxis, so the
         // test is exercising the branch it claims to.
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first,
-              let axis = face.primaryAxis, axis.kind == .sphere else {
-            Issue.record("fixture is not a spherical face"); return
+            let axis = face.primaryAxis, axis.kind == .sphere
+        else {
+            Issue.record("fixture is not a spherical face")
+            return
         }
         let poleDirection = simd_normalize(axis.direction)
 
@@ -3407,7 +3559,8 @@ struct ConstructionAxisTests {
         // not the raw, off-face pole vertex paired with a normal sampled elsewhere (#897
         // review, third pass, finding 2).
         guard let (expectedFallbackPoint, expectedFallbackNormal) = face.uvMidpointSample() else {
-            Issue.record("uvMidpointSample unavailable"); return
+            Issue.record("uvMidpointSample unavailable")
+            return
         }
 
         // Checked at both poles to show the exclusion holds regardless of which vertex is asked.
@@ -3445,15 +3598,18 @@ struct ConstructionAxisTests {
             [SIMD3(3, 0, 3), SIMD3(3, 3, 0)],
         ]
         guard let surface = Surface.bezier(poles: poles),
-              let face = Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1),
-              let graph = BRepGraph(shape: face) else {
-            Issue.record("setup"); return
+            let face = Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1),
+            let graph = BRepGraph(shape: face)
+        else {
+            Issue.record("setup")
+            return
         }
 
         // Sanity: this fixture really has no primaryAxis, so the test exercises the no-axis
         // fallback branch it claims to.
         guard let occFace = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
-            Issue.record("face0 unavailable"); return
+            Issue.record("face0 unavailable")
+            return
         }
         #expect(occFace.primaryAxis == nil, "fixture should have no primary axis")
 
@@ -3468,7 +3624,8 @@ struct ConstructionAxisTests {
             }
         }
         guard directions.count >= 2 else {
-            Issue.record("need at least 2 resolved vertices"); return
+            Issue.record("need at least 2 resolved vertices")
+            return
         }
         // Before this fix, every vertex answered the SAME fixed UV-midpoint normal regardless
         // of `at`; this saddle's corners have genuinely different local normals.
@@ -3494,7 +3651,8 @@ struct ConstructionAxisTests {
             let compound = Shape.compound([saddleFace, box]),
             let graph = BRepGraph(shape: compound)
         else {
-            Issue.record("setup"); return
+            Issue.record("setup")
+            return
         }
 
         // Saddle added first -- confirm face 0 of the compound really is the saddle, not the
@@ -3502,7 +3660,8 @@ struct ConstructionAxisTests {
         guard let faceShape = graph.shape(nodeKind: .face, nodeIndex: 0),
             let saddle = faceShape.faces().first, saddle.primaryAxis == nil
         else {
-            Issue.record("face 0 of the compound is not the no-axis saddle"); return
+            Issue.record("face 0 of the compound is not the no-axis saddle")
+            return
         }
 
         // A vertex on the BOX, far from the saddle patch -- find one whose projection onto the
@@ -3519,14 +3678,16 @@ struct ConstructionAxisTests {
             }
         }
         guard let offFaceVertexIndex else {
-            Issue.record("no usable off-face vertex found"); return
+            Issue.record("no usable off-face vertex found")
+            return
         }
         let rawTuple = graph.vertexPoint(offFaceVertexIndex)
         let rawPoint = SIMD3(rawTuple.x, rawTuple.y, rawTuple.z)
         guard let expectedProjection = saddle.project(point: rawPoint),
             let expectedNormal = saddle.normal(atU: expectedProjection.u, v: expectedProjection.v)
         else {
-            Issue.record("expected projection/normal unavailable"); return
+            Issue.record("expected projection/normal unavailable")
+            return
         }
 
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
@@ -3539,7 +3700,8 @@ struct ConstructionAxisTests {
             #expect(
                 simd_length(ax.origin - rawPoint) > 1e-3,
                 "origin should differ from the raw off-face point")
-            #expect(simd_length(simd_normalize(ax.direction) - simd_normalize(expectedNormal)) < 1e-6)
+            #expect(
+                simd_length(simd_normalize(ax.direction) - simd_normalize(expectedNormal)) < 1e-6)
         case .failure(let e):
             Issue.record("normalToFace failed: \(e)")
         }
@@ -3603,7 +3765,8 @@ struct ConstructionAxisTests {
             let faceShape = Shape.face(from: surface, boundary: wire),
             let graph = BRepGraph(shape: faceShape)
         else {
-            Issue.record("cusp-top-arc fixture build failed"); return
+            Issue.record("cusp-top-arc fixture build failed")
+            return
         }
 
         // Confirm the fixture matches the intended scenario, the cusp edge really is
@@ -3622,13 +3785,15 @@ struct ConstructionAxisTests {
             break
         }
         guard let cuspNodeIndex else {
-            Issue.record("no BSpline-curveType edge found in cusp fixture"); return
+            Issue.record("no BSpline-curveType edge found in cusp fixture")
+            return
         }
 
         // Pre-fix, this silently kept `Face.primaryAxis`'s unflipped sign and returned `.success`
         // with a plausible-looking but potentially-wrong-signed axis. Fixed: fails loud instead.
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: cuspNodeIndex))
-        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {} else {
+        if case .failure(.degenerate) = graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
+        } else {
             Issue.record("expected .degenerate when the edge's own start tangent is undefined")
         }
     }
@@ -3668,7 +3833,8 @@ struct ConstructionAxisTests {
             let anyShape = Shape.box(width: 1, height: 1, depth: 1),
             let graph = BRepGraph(shape: anyShape)
         else {
-            Issue.record("noisy-rim fixture build failed"); return
+            Issue.record("noisy-rim fixture build failed")
+            return
         }
 
         // The measured height/radius spread of this fixture's 5 samples (~7e-5, by construction)
@@ -3697,8 +3863,10 @@ struct ConstructionPointTests {
     @Test("atVertex returns the vertex's 3D point")
     func atVertex() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
         switch graph.resolve(ConstructionPoint.atVertex(v)) {
@@ -3712,8 +3880,10 @@ struct ConstructionPointTests {
     @Test("midpointOfEdge lies between endpoints")
     func midpointOfEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let edge = TopologyRef.literal(.init(kind: .edge, index: 0))
         switch graph.resolve(ConstructionPoint.midpointOfEdge(edge)) {
@@ -3726,12 +3896,17 @@ struct ConstructionPointTests {
     @Test("intersectionOfAxisAndPlane for axis parallel to plane fails")
     func parallelIntersectionFails() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
         let axis = ConstructionAxis.absolute(origin: SIMD3(0, 0, 5), direction: SIMD3(1, 0, 0))
-        if case .failure(.degenerate) = graph.resolve(ConstructionPoint.intersectionOfAxisAndPlane(axis, plane)) {} else {
+        if case .failure(.degenerate) = graph.resolve(
+            ConstructionPoint.intersectionOfAxisAndPlane(axis, plane))
+        {
+        } else {
             Issue.record("expected degenerate")
         }
     }
@@ -3739,8 +3914,10 @@ struct ConstructionPointTests {
     @Test("intersectionOfAxisAndPlane computes correct intersection")
     func intersectionCorrect() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
         let axis = ConstructionAxis.absolute(origin: SIMD3(3, 4, 0), direction: SIMD3(0, 0, 1))
@@ -3759,8 +3936,10 @@ struct ConstructionPointTests {
         // on the cylinder's own axis (x=y=0, z=5), the UV-midpoint approximation
         // instead sits a full radius off-axis, on the surface itself.
         guard let cyl = Shape.cylinder(radius: 5, height: 10),
-              let graph = BRepGraph(shape: cyl) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: cyl)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
         switch graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
@@ -3772,7 +3951,9 @@ struct ConstructionPointTests {
         }
     }
 
-    @Test("centroidOfFace on a genuinely zero-area face fails with .degenerate, not a fabricated point (PR #897 review)")
+    @Test(
+        "centroidOfFace on a genuinely zero-area face fails with .degenerate, not a fabricated point (PR #897 review)"
+    )
     func centroidOfFaceZeroAreaDegenerate() {
         // A 2-vertex "polygon" wire is a degenerate zero-area loop, the same fixture
         // Issue234DegenerateHoleTests uses for a degenerate hole, here used as the base
@@ -3782,20 +3963,24 @@ struct ConstructionPointTests {
         let p0 = SIMD3<Double>(0, 0, 0)
         let p1 = SIMD3<Double>(10, 0, 0)
         guard let wire = Wire.polygon3D([p0, p1], closed: true),
-              let degenerateFace = Shape.face(from: wire, planar: true),
-              let graph = BRepGraph(shape: degenerateFace) else {
-            Issue.record("setup"); return
+            let degenerateFace = Shape.face(from: wire, planar: true),
+            let graph = BRepGraph(shape: degenerateFace)
+        else {
+            Issue.record("setup")
+            return
         }
         let faceRef = TopologyRef.literal(.init(kind: .face, index: 0))
 
         // Sanity: the fixture really is zero-area, so this exercises the branch it claims to.
         guard let face = graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first else {
-            Issue.record("fixture face unavailable"); return
+            Issue.record("fixture face unavailable")
+            return
         }
         #expect(face.surfaceInertia.centerOfMass == nil, "fixture should be zero-area")
 
         if case .failure(.degenerate(let message)) =
-            graph.resolve(ConstructionPoint.centroidOfFace(faceRef)) {
+            graph.resolve(ConstructionPoint.centroidOfFace(faceRef))
+        {
             #expect(message == "face area is zero, or its inertia could not be computed")
         } else {
             Issue.record(
@@ -3803,11 +3988,15 @@ struct ConstructionPointTests {
         }
     }
 
-    @Test("atEdgeParameter matches Edge.parameterByLinearFraction(_:) + point(at:) for the same edge and t")
+    @Test(
+        "atEdgeParameter matches Edge.parameterByLinearFraction(_:) + point(at:) for the same edge and t"
+    )
     func atEdgeParameterMatchesFraction() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         // Edge enumeration order isn't guaranteed stable across an OCCT kernel rebuild
         // or platform, iterate every edge rather than hardcoding index 0 (CLAUDE.md
@@ -3815,10 +4004,11 @@ struct ConstructionPointTests {
         #expect(graph.edgeCount > 0)
         for edgeIndex in 0..<graph.edgeCount {
             guard let edge = graph.shape(nodeKind: .edge, nodeIndex: edgeIndex)?.edges().first,
-                  let param = edge.parameterByLinearFraction(0.25),
-                  let expected = edge.point(at: param)
+                let param = edge.parameterByLinearFraction(0.25),
+                let expected = edge.point(at: param)
             else {
-                Issue.record("edge \(edgeIndex) unavailable"); continue
+                Issue.record("edge \(edgeIndex) unavailable")
+                continue
             }
             let edgeRef = TopologyRef.literal(.init(kind: .edge, index: edgeIndex))
             switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
@@ -3835,8 +4025,10 @@ struct ContainedInTests {
     @Test("Face contained in a box solid resolves")
     func faceInSolid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let solid = TopologyRef.literal(.init(kind: .solid, index: 0))
         let firstFace = TopologyRef.containedIn(parent: solid, kind: .face, occurrence: 0)
@@ -3850,12 +4042,15 @@ struct ContainedInTests {
     @Test("Occurrence out of range in containedIn")
     func faceInSolidOOB() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         let solid = TopologyRef.literal(.init(kind: .solid, index: 0))
         let faceBogus = TopologyRef.containedIn(parent: solid, kind: .face, occurrence: 999)
-        if case .failure(.occurrenceOutOfRange) = graph.resolve(faceBogus) {} else {
+        if case .failure(.occurrenceOutOfRange) = graph.resolve(faceBogus) {
+        } else {
             Issue.record("expected occurrenceOutOfRange")
         }
     }
@@ -3863,15 +4058,18 @@ struct ContainedInTests {
     @Test("Ancestor resolution failure propagates in containedIn")
     func ancestorMissing() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box) else {
-            Issue.record("graph nil"); return
+            let graph = BRepGraph(shape: box)
+        else {
+            Issue.record("graph nil")
+            return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
         // containedIn references a parent recipe that never resolves → should fail.
         let bogusParent = TopologyRef.createdBy(operationName: "Nonexistent", kind: .solid)
         let result = graph.resolve(.containedIn(parent: bogusParent, kind: .face, occurrence: 0))
-        if case .failure(.ancestorMissing) = result {} else {
+        if case .failure(.ancestorMissing) = result {
+        } else {
             Issue.record("expected ancestorMissing")
         }
     }
@@ -3911,12 +4109,14 @@ struct BRepGraphDurableUIDTests {
     /// graph (counters restart at 1 per graph), so nothing but provenance can reject it.
     @Test func uidFromAnotherGraphDoesNotResolve() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let cyl = Shape.cylinder(radius: 3, height: 7),
-              let boxGraph = BRepGraph(shape: box),
-              let cylGraph = BRepGraph(shape: cyl) else { return }
+            let cyl = Shape.cylinder(radius: 3, height: 7),
+            let boxGraph = BRepGraph(shape: box),
+            let cylGraph = BRepGraph(shape: cyl)
+        else { return }
 
         guard let boxFaceUID = boxGraph.uid(ofNodeKind: faceKind, index: 2) else {
-            Issue.record("box face 2 had no UID"); return
+            Issue.record("box face 2 had no UID")
+            return
         }
         // Precondition for the test to be meaningful: the counter is one the cylinder graph
         // would consider perfectly valid, and did resolve to a cylinder face before the fix.
@@ -3932,8 +4132,9 @@ struct BRepGraphDurableUIDTests {
     /// geometry. This is the case a consumer is most likely to assume works.
     @Test func uidDoesNotCrossIdenticallyBuiltGraphs() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let a = BRepGraph(shape: box),
-              let b = BRepGraph(shape: box) else { return }
+            let a = BRepGraph(shape: box),
+            let b = BRepGraph(shape: box)
+        else { return }
         #expect(a.instanceID != b.instanceID)
         guard let uid = a.uid(ofNodeKind: faceKind, index: 1) else { return }
         #expect(b.node(forUID: uid) == nil)
@@ -3942,10 +4143,13 @@ struct BRepGraphDurableUIDTests {
 
     /// Mean sampled position + normal, a signature that actually distinguishes a box's faces.
     /// (A single grid corner does not: adjacent faces share corners.)
-    private func faceSignature(_ g: BRepGraph, _ i: Int,
-                               shift: SIMD3<Double> = .zero) -> String? {
+    private func faceSignature(
+        _ g: BRepGraph, _ i: Int,
+        shift: SIMD3<Double> = .zero
+    ) -> String? {
         guard let s = g.sampleFaceUVGrid(faceIndex: i, uSamples: 3, vSamples: 3),
-              !s.positions.isEmpty, !s.normals.isEmpty else { return nil }
+            !s.positions.isEmpty, !s.normals.isEmpty
+        else { return nil }
         var c = SIMD3<Double>(0, 0, 0)
         for p in s.positions { c += p }
         c = c / Double(s.positions.count) - shift
@@ -3961,9 +4165,10 @@ struct BRepGraphDurableUIDTests {
     /// the GraphGUID into the target. Guards the #295 provenance check against over-rejecting.
     @Test func uidSurvivesAFullCopyAndNamesTheSameFace() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = BRepGraph(shape: box),
-              let copy = graph.copy() else { return }
-        #expect(copy.instanceID == graph.instanceID)   // a copy is the same identity
+            let graph = BRepGraph(shape: box),
+            let copy = graph.copy()
+        else { return }
+        #expect(copy.instanceID == graph.instanceID)  // a copy is the same identity
         #expect(copy.faceCount == graph.faceCount)
 
         // The signature must actually discriminate, or the assertions below prove nothing.
@@ -3973,7 +4178,8 @@ struct BRepGraphDurableUIDTests {
         for i in 0..<graph.faceCount {
             guard let uid = graph.uid(ofNodeKind: faceKind, index: i) else { continue }
             guard let r = copy.node(forUID: uid) else {
-                Issue.record("face \(i)'s UID stopped resolving through copy()"); continue
+                Issue.record("face \(i)'s UID stopped resolving through copy()")
+                continue
             }
             #expect(faceSignature(graph, i) == faceSignature(copy, r.index))
         }
@@ -3984,13 +4190,15 @@ struct BRepGraphDurableUIDTests {
     @Test func uidSurvivesATranslationAndNamesTheSameFace() {
         let d = SIMD3<Double>(100, 200, 300)
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = BRepGraph(shape: box),
-              let moved = graph.translated(dx: d.x, dy: d.y, dz: d.z) else { return }
+            let graph = BRepGraph(shape: box),
+            let moved = graph.translated(dx: d.x, dy: d.y, dz: d.z)
+        else { return }
         #expect(moved.instanceID == graph.instanceID)
         for i in 0..<graph.faceCount {
             guard let uid = graph.uid(ofNodeKind: faceKind, index: i) else { continue }
             guard let r = moved.node(forUID: uid) else {
-                Issue.record("face \(i)'s UID stopped resolving through translated()"); continue
+                Issue.record("face \(i)'s UID stopped resolving through translated()")
+                continue
             }
             #expect(faceSignature(graph, i) == faceSignature(moved, r.index, shift: d))
         }
@@ -4002,8 +4210,9 @@ struct BRepGraphDurableUIDTests {
     /// face. The extracted graph gets a fresh identity, so it now returns nil.
     @Test func uidDoesNotCrossACopiedOutFace() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = BRepGraph(shape: box),
-              let lifted = graph.copyFace(3) else { return }
+            let graph = BRepGraph(shape: box),
+            let lifted = graph.copyFace(3)
+        else { return }
         #expect(lifted.instanceID != graph.instanceID)
         #expect(lifted.faceCount == 1)
         // The lifted face IS source face 3, sitting at index 0.
@@ -4040,8 +4249,8 @@ struct BRepGraphDurableUIDTests {
         guard let real = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
 
         let unstamped = BRepGraph.GraphUID(kind: real.kind, counter: real.counter, graphID: 0)
-        #expect(unstamped.isValid)              // the counter is a real one...
-        #expect(graph.node(forUID: unstamped) == nil)   // ...but it names no graph
+        #expect(unstamped.isValid)  // the counter is a real one...
+        #expect(graph.node(forUID: unstamped) == nil)  // ...but it names no graph
         #expect(!graph.contains(uid: unstamped))
     }
 
@@ -4049,11 +4258,12 @@ struct BRepGraphDurableUIDTests {
     /// graph that minted it. Guards against the #295 provenance check over-rejecting.
     @Test func uidSurvivesCompactionOfItsOwnGraph() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box),
-              let uid = graph.uid(ofNodeKind: faceKind, index: 3) else { return }
+            let graph = BRepGraph(shape: box),
+            let uid = graph.uid(ofNodeKind: faceKind, index: 3)
+        else { return }
         let idBefore = graph.instanceID
         graph.compact()
-        #expect(graph.instanceID == idBefore)   // compaction mutates in place; same instance
+        #expect(graph.instanceID == idBefore)  // compaction mutates in place; same instance
         #expect(graph.contains(uid: uid))
         #expect(graph.node(forUID: uid) != nil)
     }
@@ -4062,11 +4272,13 @@ struct BRepGraphDurableUIDTests {
     /// as an unstamped UID rather than a decode failure.
     @Test func uidCodableCarriesProvenance() throws {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: box),
-              let uid = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
+            let graph = BRepGraph(shape: box),
+            let uid = graph.uid(ofNodeKind: faceKind, index: 0)
+        else { return }
 
-        let round = try JSONDecoder().decode(BRepGraph.GraphUID.self,
-                                             from: try JSONEncoder().encode(uid))
+        let round = try JSONDecoder().decode(
+            BRepGraph.GraphUID.self,
+            from: try JSONEncoder().encode(uid))
         #expect(round == uid)
         #expect(round.graphID == graph.instanceID)
         #expect(graph.node(forUID: round) != nil)
@@ -4081,9 +4293,10 @@ struct BRepGraphDurableUIDTests {
     /// the same provenance.
     @Test func refAndItemUIDsDoNotCrossGraphs() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let cyl = Shape.cylinder(radius: 3, height: 7),
-              let boxGraph = BRepGraph(shape: box),
-              let cylGraph = BRepGraph(shape: cyl) else { return }
+            let cyl = Shape.cylinder(radius: 3, height: 7),
+            let boxGraph = BRepGraph(shape: box),
+            let cylGraph = BRepGraph(shape: cyl)
+        else { return }
 
         // Ref kind 1 == Face reference entry.
         if let refUID = boxGraph.uid(ofRefKind: 1, index: 0) {
@@ -4107,7 +4320,7 @@ struct BRepGraphDurableUIDTests {
 
         if let item = graph.itemUID(ofNodeKind: faceKind, index: 0) {
             #expect(item.isValid)
-            #expect(item.domain == 1) // 1 == Node domain
+            #expect(item.domain == 1)  // 1 == Node domain
             if let resolved = graph.item(forUID: item) {
                 #expect(resolved.domain == 1)
                 #expect(resolved.kind == faceKind)
@@ -4129,9 +4342,15 @@ struct BRepGraphDurableUIDTests {
 struct BRepGraphSupplementVertexTests {
     @Test func faceDirectVertexAttachCountRemove() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
-        guard let box else { Issue.record("box build failed"); return }
+        guard let box else {
+            Issue.record("box build failed")
+            return
+        }
         let graph = BRepGraph(shape: box)
-        guard let graph else { Issue.record("graph build failed"); return }
+        guard let graph else {
+            Issue.record("graph build failed")
+            return
+        }
 
         // Clean box: no face-direct vertices until we add one.
         #expect(graph.faceVertexRefCount(0) == 0)
@@ -4154,9 +4373,15 @@ struct BRepGraphSupplementVertexTests {
 
     @Test func edgeInternalVertexAttach() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
-        guard let box else { Issue.record("box build failed"); return }
+        guard let box else {
+            Issue.record("box build failed")
+            return
+        }
         let graph = BRepGraph(shape: box)
-        guard let graph else { Issue.record("graph build failed"); return }
+        guard let graph else {
+            Issue.record("graph build failed")
+            return
+        }
 
         // Attaching an edge-internal vertex returns a non-nil layer-local uid.
         let uid = graph.edgeAddInternalVertex(0, vertexIndex: 0)
@@ -4168,9 +4393,15 @@ struct BRepGraphSupplementVertexTests {
     // (it always materializes a bounding wire) so a box face is NOT a natural-restriction face.
     @Test func boxFacesNotNaturalRestriction() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
-        guard let box else { Issue.record("box build failed"); return }
+        guard let box else {
+            Issue.record("box build failed")
+            return
+        }
         let graph = BRepGraph(shape: box)
-        guard let graph else { Issue.record("graph build failed"); return }
+        guard let graph else {
+            Issue.record("graph build failed")
+            return
+        }
         for i in 0..<graph.faceCount {
             #expect(graph.isFaceNaturalRestriction(i) == false)
         }

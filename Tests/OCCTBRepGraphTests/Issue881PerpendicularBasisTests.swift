@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #881: `Placement.init(origin:normal:)` and the `.throughAxis` case body used to derive their
@@ -42,8 +43,9 @@ struct Issue881ConstructionPerpendicularBasisTests {
     @Test(".throughAxis at angle 0 matches the canonical perpendicular basis")
     func throughAxisMatchesCanonicalBasis() {
         guard let wire = Wire.polygon3D([.zero, Self.nearDegenerate * 10], closed: false),
-              let shape = Shape.fromWire(wire),
-              let graph = BRepGraph(shape: shape) else {
+            let shape = Shape.fromWire(wire),
+            let graph = BRepGraph(shape: shape)
+        else {
             Issue.record("setup failed")
             return
         }

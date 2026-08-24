@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #497, the BRepAlgoAPI_Defeaturing family, after the four bridge copies were folded onto one
@@ -18,7 +19,8 @@ struct Issue497DefeaturingTests {
     /// Fillet faces are the ones the box did not have: a box has 6, `filleted` has more.
     private static func filletedBox() -> (shape: Shape, filletFaceIndices: [Int])? {
         guard let box = Shape.box(width: 20, height: 20, depth: 20),
-              let filleted = box.filleted(radius: 2.0) else { return nil }
+            let filleted = box.filleted(radius: 2.0)
+        else { return nil }
         let faceCount = filleted.faces().count
         guard faceCount > 6 else { return nil }
         return (filleted, Array(6..<faceCount))
@@ -29,7 +31,8 @@ struct Issue497DefeaturingTests {
     @Test("withoutFeatures(faces:) and defeature(faces:) remove the same face identically")
     func indexAndShapeAddressingAgree() {
         guard let (filleted, filletIndices) = Self.filletedBox(),
-              let target = filletIndices.first else {
+            let target = filletIndices.first
+        else {
             #expect(Bool(false), "fixture: filleted box with fillet faces")
             return
         }
@@ -53,7 +56,8 @@ struct Issue497DefeaturingTests {
     @Test("defeaturedWithFullHistory(faces:) produces the same shape as the plain call")
     func historyVariantAgrees() {
         guard let (filleted, filletIndices) = Self.filletedBox(),
-              let target = filletIndices.first else {
+            let target = filletIndices.first
+        else {
             #expect(Bool(false), "fixture: filleted box with fillet faces")
             return
         }
@@ -82,8 +86,9 @@ struct Issue497DefeaturingTests {
     @Test("an out-of-range face index fails the call instead of being skipped")
     func outOfRangeIndexFails() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let (filleted, filletIndices) = Self.filletedBox(),
-              let strayIndex = filletIndices.last else {
+            let (filleted, filletIndices) = Self.filletedBox(),
+            let strayIndex = filletIndices.last
+        else {
             #expect(Bool(false), "fixture: box and filleted box")
             return
         }

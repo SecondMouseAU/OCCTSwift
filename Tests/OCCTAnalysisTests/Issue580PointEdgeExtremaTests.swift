@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // MARK: - #580: the nearest point on an edge of a shape
@@ -47,7 +48,7 @@ struct Issue580PointEdgeExtremaTests {
         let arc = try Self.halfArc()
         let result = try #require(arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0))
 
-        #expect(abs(result.distance - (25.0 + 36.0).squareRoot()) < 1e-6)   // 7.81025, was 11
+        #expect(abs(result.distance - (25.0 + 36.0).squareRoot()) < 1e-6)  // 7.81025, was 11
         #expect(abs(result.pointOnEdge.y) < 1e-6)
         #expect(abs(abs(result.pointOnEdge.x) - 5) < 1e-6)
 
@@ -65,7 +66,7 @@ struct Issue580PointEdgeExtremaTests {
         let arc = try Self.halfArc()
         let result = try #require(arc.pointEdgeExtrema(point: SIMD3(3, -4, 0), edgeIndex: 0))
 
-        #expect(abs(result.distance - (4.0 + 16.0).squareRoot()) < 1e-6)    // 4.47214, was 10
+        #expect(abs(result.distance - (4.0 + 16.0).squareRoot()) < 1e-6)  // 4.47214, was 10
         #expect(simd_distance(result.pointOnEdge, SIMD3(5, 0, 0)) < 1e-6)
     }
 
@@ -76,12 +77,12 @@ struct Issue580PointEdgeExtremaTests {
         let segment = try Self.segment()
 
         let beyond = try #require(segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0))
-        #expect(abs(beyond.distance - 92) < 1e-9)                           // was nil
+        #expect(abs(beyond.distance - 92) < 1e-9)  // was nil
         #expect(simd_distance(beyond.pointOnEdge, SIMD3(8, 0, 0)) < 1e-9)
         #expect(beyond.solutionCount == 0)
 
         let before = try #require(segment.pointEdgeExtrema(point: .zero, edgeIndex: 0))
-        #expect(abs(before.distance - 3) < 1e-9)                            // was nil
+        #expect(abs(before.distance - 3) < 1e-9)  // was nil
         #expect(simd_distance(before.pointOnEdge, SIMD3(3, 0, 0)) < 1e-9)
     }
 
@@ -133,8 +134,9 @@ struct Issue580PointEdgeExtremaTests {
         // that naming the wrong edge cannot coincidentally agree.
         let probe = SIMD3<Double>(1, 2, 3)
         for (index, edge) in edges.enumerated() {
-            let viaShape = try #require(box.pointEdgeExtrema(point: probe, edgeIndex: index),
-                                        "edge \(index)")
+            let viaShape = try #require(
+                box.pointEdgeExtrema(point: probe, edgeIndex: index),
+                "edge \(index)")
             let viaEdge = try #require(edge.project(point: probe), "edge \(index)")
             #expect(abs(viaShape.distance - viaEdge.distance) < 1e-9, "edge \(index)")
             #expect(simd_distance(viaShape.pointOnEdge, viaEdge.point) < 1e-9, "edge \(index)")
@@ -149,9 +151,12 @@ struct Issue580PointEdgeExtremaTests {
         let arc = try Self.halfArc()
         let edge = try #require(arc.edges().first)
 
-        for point in [SIMD3<Double>(0, -6, 0), SIMD3(3, -4, 0), SIMD3(0, 6, 0),
-                      SIMD3(0, -1, 0), SIMD3(6, 0, 0), .zero] {
-            let viaShape = try #require(arc.pointEdgeExtrema(point: point, edgeIndex: 0), "\(point)")
+        for point in [
+            SIMD3<Double>(0, -6, 0), SIMD3(3, -4, 0), SIMD3(0, 6, 0),
+            SIMD3(0, -1, 0), SIMD3(6, 0, 0), .zero,
+        ] {
+            let viaShape = try #require(
+                arc.pointEdgeExtrema(point: point, edgeIndex: 0), "\(point)")
             let viaEdge = try #require(edge.project(point: point), "\(point)")
             #expect(abs(viaShape.distance - viaEdge.distance) < 1e-6, "\(point)")
             #expect(simd_distance(viaShape.pointOnEdge, viaEdge.point) < 1e-6, "\(point)")

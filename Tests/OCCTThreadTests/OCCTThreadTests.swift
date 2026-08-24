@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 // MARK: - v0.138: Thread features (#66)
 
@@ -52,10 +51,13 @@ struct ThreadedFeatureTests {
     @Test("threadedHole cuts material from a bored block")
     func threadedHole() throws {
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
-              let drillAxis = Shape.cylinder(at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                                              radius: 5, height: 30),
-              let blockWithHole = block.subtracting(drillAxis) else {
-            Issue.record("setup nil"); return
+            let drillAxis = Shape.cylinder(
+                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
+                radius: 5, height: 30),
+            let blockWithHole = block.subtracting(drillAxis)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let spec = ThreadSpec.parse("M10x1.5")!
         let threaded = blockWithHole.threadedHole(
@@ -73,7 +75,8 @@ struct ThreadedFeatureTests {
     @Test("threadedShaft cuts helical V-grooves into the shaft")
     func threadedShaft() {
         guard let shaft = Shape.cylinder(radius: 5, height: 30) else {
-            Issue.record("shaft nil"); return
+            Issue.record("shaft nil")
+            return
         }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5)
         let threaded = shaft.threadedShaft(
@@ -91,19 +94,24 @@ struct ThreadedFeatureTests {
     @Test("threadedHole respects left-handed helix parameter")
     func leftHanded() {
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
-              let drillAxis = Shape.cylinder(at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                                              radius: 5, height: 30),
-              let bored = block.subtracting(drillAxis) else {
-            Issue.record("setup nil"); return
+            let drillAxis = Shape.cylinder(
+                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
+                radius: 5, height: 30),
+            let bored = block.subtracting(drillAxis)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let rh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: false)
         let lh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: true)
-        let rhResult = bored.threadedHole(axisOrigin: SIMD3(15, 15, 0),
-                                          axisDirection: SIMD3(0, 0, 1),
-                                          spec: rh, depth: 10)
-        let lhResult = bored.threadedHole(axisOrigin: SIMD3(15, 15, 0),
-                                          axisDirection: SIMD3(0, 0, 1),
-                                          spec: lh, depth: 10)
+        let rhResult = bored.threadedHole(
+            axisOrigin: SIMD3(15, 15, 0),
+            axisDirection: SIMD3(0, 0, 1),
+            spec: rh, depth: 10)
+        let lhResult = bored.threadedHole(
+            axisOrigin: SIMD3(15, 15, 0),
+            axisDirection: SIMD3(0, 0, 1),
+            spec: lh, depth: 10)
         // Both should produce valid shapes with equivalent volume, a mirror-image
         // thread has the same volume as the original up to tessellation artefacts.
         // The absolute tolerance is generous (~1% of a typical V-cut volume) to
@@ -111,7 +119,8 @@ struct ThreadedFeatureTests {
         // handedness values produce valid threaded geometry, not that they're
         // bit-identical.
         if let r = rhResult, let l = lhResult,
-           let vr = r.volume, let vl = l.volume {
+            let vr = r.volume, let vl = l.volume
+        {
             let originalVolume = bored.volume ?? 1
             let cutR = originalVolume - vr
             let cutL = originalVolume - vl
@@ -123,20 +132,26 @@ struct ThreadedFeatureTests {
     @Test("Multi-start thread (starts: 2) removes more material than single-start")
     func multiStart() {
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
-              let drillAxis = Shape.cylinder(at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                                              radius: 5, height: 30),
-              let bored = block.subtracting(drillAxis) else {
-            Issue.record("setup nil"); return
+            let drillAxis = Shape.cylinder(
+                at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
+                radius: 5, height: 30),
+            let bored = block.subtracting(drillAxis)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 2.0)
-        let single = bored.threadedHole(axisOrigin: SIMD3(15, 15, 0),
-                                        axisDirection: SIMD3(0, 0, 1),
-                                        spec: spec, depth: 10, starts: 1)
-        let double = bored.threadedHole(axisOrigin: SIMD3(15, 15, 0),
-                                        axisDirection: SIMD3(0, 0, 1),
-                                        spec: spec, depth: 10, starts: 2)
+        let single = bored.threadedHole(
+            axisOrigin: SIMD3(15, 15, 0),
+            axisDirection: SIMD3(0, 0, 1),
+            spec: spec, depth: 10, starts: 1)
+        let double = bored.threadedHole(
+            axisOrigin: SIMD3(15, 15, 0),
+            axisDirection: SIMD3(0, 0, 1),
+            spec: spec, depth: 10, starts: 2)
         if let s = single, let d = double,
-           let vs = s.volume, let vd = d.volume {
+            let vs = s.volume, let vd = d.volume
+        {
             // Two helices remove roughly twice the material (allow for overlap at crossovers).
             let originalBore = bored.volume ?? 0
             let singleCut = originalBore - vs

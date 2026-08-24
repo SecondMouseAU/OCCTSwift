@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #571, the six plate entry points drive `GeomPlate_MakeApprox` directly rather than through
@@ -23,9 +24,11 @@ struct Issue571PlateApproxTests {
         var points: [SIMD3<Double>] = []
         for i in 0..<5 {
             for j in 0..<5 {
-                points.append(SIMD3(Double(i) * 4.0,
-                                    Double(j) * 4.0,
-                                    4.0 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1)))
+                points.append(
+                    SIMD3(
+                        Double(i) * 4.0,
+                        Double(j) * 4.0,
+                        4.0 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1)))
             }
         }
         return points
@@ -51,8 +54,9 @@ struct Issue571PlateApproxTests {
         }
         // Pre-#571 this measured 0.0724, 7.2x the tolerance, reported as a success.
         let deviation = Self.worstDeviation(of: surface, from: points)
-        #expect(deviation <= tolerance,
-                "worst deviation \(deviation) exceeds requested tolerance \(tolerance)")
+        #expect(
+            deviation <= tolerance,
+            "worst deviation \(deviation) exceeds requested tolerance \(tolerance)")
     }
 
     @Test("The approximation is allowed to use more than one Bezier patch")
@@ -63,15 +67,17 @@ struct Issue571PlateApproxTests {
         }
         // One patch of degree d has exactly d+1 poles per direction, so <= 9 at the degree cap of
         // 8 means the fit never subdivided, which is what Nbmax = 1 forced regardless of error.
-        #expect(surface.uPoleCount > 9,
-                "uPoleCount \(surface.uPoleCount) means the fit stayed on a single Bezier patch")
+        #expect(
+            surface.uPoleCount > 9,
+            "uPoleCount \(surface.uPoleCount) means the fit stayed on a single Bezier patch")
     }
 
     @Test("Asking for a tighter tolerance actually produces a tighter fit")
     func toleranceChangesTheResult() {
         let points = Self.wavyPoints
         guard let loose = Surface.plateThrough(points, degree: 3, tolerance: 0.1),
-              let tight = Surface.plateThrough(points, degree: 3, tolerance: 0.0005) else {
+            let tight = Surface.plateThrough(points, degree: 3, tolerance: 0.0005)
+        else {
             Issue.record("plate build failed")
             return
         }
@@ -79,8 +85,9 @@ struct Issue571PlateApproxTests {
         let tightDeviation = Self.worstDeviation(of: tight, from: points)
         // With dmax = tolerance * 10 the criterion threshold scaled with the tolerance instead of
         // being bounded by it, so both requests resolved to the same single-patch surface.
-        #expect(tightDeviation < looseDeviation,
-                "tolerance had no effect: loose \(looseDeviation) vs tight \(tightDeviation)")
+        #expect(
+            tightDeviation < looseDeviation,
+            "tolerance had no effect: loose \(looseDeviation) vs tight \(tightDeviation)")
         #expect(tight.uPoleCount >= loose.uPoleCount)
     }
 
@@ -90,7 +97,8 @@ struct Issue571PlateApproxTests {
         // maxSegments: 1 reads like "use one patch", but it is the value that makes the tolerance
         // unenforceable rather than merely coarse, so the bridge lifts it to the floor of 2.
         guard let one = Shape.plateSurface(points: points, tolerance: 0.01, maxSegments: 1),
-              let many = Shape.plateSurface(points: points, tolerance: 0.01, maxSegments: 20) else {
+            let many = Shape.plateSurface(points: points, tolerance: 0.01, maxSegments: 20)
+        else {
             Issue.record("plate build failed")
             return
         }
@@ -98,8 +106,9 @@ struct Issue571PlateApproxTests {
         let oneArea = one.surfaceArea ?? 0
         let manyArea = many.surfaceArea ?? 0
         #expect(oneArea > 0)
-        #expect(abs(oneArea - manyArea) < 1e-6,
-                "maxSegments 1 gave \(oneArea) but 20 gave \(manyArea)")
+        #expect(
+            abs(oneArea - manyArea) < 1e-6,
+            "maxSegments 1 gave \(oneArea) but 20 gave \(manyArea)")
     }
 
     @Test("Both plate-through-points entry points agree on the same input")
@@ -109,15 +118,17 @@ struct Issue571PlateApproxTests {
         // doing one job, but they reached GeomPlate_MakeApprox with different Nbmax and dmax,
         // 22x apart on accuracy for the same request until #571 gave them one contract.
         guard let through = Shape.plateSurface(through: points, tolerance: 0.01),
-              let named = Shape.plateSurface(points: points, tolerance: 0.01) else {
+            let named = Shape.plateSurface(points: points, tolerance: 0.01)
+        else {
             Issue.record("plate build failed")
             return
         }
         let throughArea = through.surfaceArea ?? 0
         let namedArea = named.surfaceArea ?? 0
         #expect(throughArea > 0)
-        #expect(abs(throughArea - namedArea) < 1e-6,
-                "plateSurface(through:) gave \(throughArea), plateSurface(points:) gave \(namedArea)")
+        #expect(
+            abs(throughArea - namedArea) < 1e-6,
+            "plateSurface(through:) gave \(throughArea), plateSurface(points:) gave \(namedArea)")
     }
 
     @Test("Curve-constrained plates honour their tolerance too")
@@ -131,9 +142,11 @@ struct Issue571PlateApproxTests {
             corners.append(SIMD3(8 * cos(angle), 8 * sin(angle), 3 * sin(Double(i) * 2.1)))
         }
         guard let wire = Wire.polygon3D(corners, closed: true),
-              let shape = Shape.plateSurface(constrainedBy: [wire], continuity: .g0,
-                                             tolerance: 0.01),
-              let face = shape.face(at: 0) else {
+            let shape = Shape.plateSurface(
+                constrainedBy: [wire], continuity: .g0,
+                tolerance: 0.01),
+            let face = shape.face(at: 0)
+        else {
             Issue.record("curve-constrained plate build failed")
             return
         }

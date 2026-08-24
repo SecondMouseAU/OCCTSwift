@@ -27,8 +27,9 @@ struct Issue988ThreadProfileFactoryTests {
         (0, 1), (0.0968, 1), (0.1422, 0), (0.4022, 0), (0.9032, 1), (1, 1),
     ]
 
-    static func check(_ profile: ThreadProfile, against expected: [(Double, Double)], _ name: String)
-    {
+    static func check(
+        _ profile: ThreadProfile, against expected: [(Double, Double)], _ name: String
+    ) {
         #expect(profile.vertices.count == expected.count, "\(name): vertex count")
         guard profile.vertices.count == expected.count else { return }
         for (i, want) in expected.enumerated() {

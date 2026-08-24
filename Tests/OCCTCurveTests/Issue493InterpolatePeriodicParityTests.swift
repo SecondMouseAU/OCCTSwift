@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #493: the two 3D periodic-interpolation entry points
@@ -18,8 +19,10 @@ struct Curve3DInterpolatePeriodicParityTests {
         SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
     ]
 
-    private func expectSameCurve(_ a: Curve3D?, _ b: Curve3D?,
-                                 _ comment: Comment? = nil) {
+    private func expectSameCurve(
+        _ a: Curve3D?, _ b: Curve3D?,
+        _ comment: Comment? = nil
+    ) {
         #expect(a != nil, comment)
         #expect(b != nil, comment)
         guard let a, let b else { return }
@@ -30,7 +33,8 @@ struct Curve3DInterpolatePeriodicParityTests {
         for t in stride(from: 0.0, through: 1.0, by: 0.1) {
             let ua = a.domain.lowerBound + t * (a.domain.upperBound - a.domain.lowerBound)
             let ub = b.domain.lowerBound + t * (b.domain.upperBound - b.domain.lowerBound)
-            let pa = a.point(at: ua), pb = b.point(at: ub)
+            let pa = a.point(at: ua)
+            let pb = b.point(at: ub)
             #expect(abs(pa.x - pb.x) < 1e-9, comment)
             #expect(abs(pa.y - pb.y) < 1e-9, comment)
             #expect(abs(pa.z - pb.z) < 1e-9, comment)
@@ -39,17 +43,20 @@ struct Curve3DInterpolatePeriodicParityTests {
 
     @Test("Default tolerance: the two entry points produce the same curve")
     func defaultToleranceMatches() {
-        expectSameCurve(Curve3D.interpolatePeriodic(points: Self.square),
-                        Curve3D.interpolate(points: Self.square, closed: true))
+        expectSameCurve(
+            Curve3D.interpolatePeriodic(points: Self.square),
+            Curve3D.interpolate(points: Self.square, closed: true))
     }
 
     @Test("A non-default tolerance is now reachable through interpolatePeriodic")
     func customToleranceIsReachable() {
         for tolerance in [1e-3, 1e-4, 1e-8] {
-            expectSameCurve(Curve3D.interpolatePeriodic(points: Self.square, tolerance: tolerance),
-                            Curve3D.interpolate(points: Self.square, closed: true,
-                                                tolerance: tolerance),
-                            "tolerance=\(tolerance)")
+            expectSameCurve(
+                Curve3D.interpolatePeriodic(points: Self.square, tolerance: tolerance),
+                Curve3D.interpolate(
+                    points: Self.square, closed: true,
+                    tolerance: tolerance),
+                "tolerance=\(tolerance)")
         }
     }
 
@@ -97,7 +104,8 @@ struct Curve3DInterpolatePeriodicParityTests {
         let helixish: [SIMD3<Double>] = [
             SIMD3(5, 0, 0), SIMD3(0, 5, 2), SIMD3(-5, 0, 4), SIMD3(0, -5, 2),
         ]
-        expectSameCurve(Curve3D.interpolatePeriodic(points: helixish, tolerance: 1e-5),
-                        Curve3D.interpolate(points: helixish, closed: true, tolerance: 1e-5))
+        expectSameCurve(
+            Curve3D.interpolatePeriodic(points: helixish, tolerance: 1e-5),
+            Curve3D.interpolate(points: helixish, closed: true, tolerance: 1e-5))
     }
 }

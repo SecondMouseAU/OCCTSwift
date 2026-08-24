@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Regression tests for #522: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` used to hand back a
@@ -28,7 +29,8 @@ struct Issue522ApproxC0Collapse {
             for j in 0...steps {
                 let u = d.uMin + (d.uMax - d.uMin) * Double(i) / Double(steps)
                 let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(steps)
-                worst = max(worst, simd_length(surface.point(atU: u, v: v) - fit.point(atU: u, v: v)))
+                worst = max(
+                    worst, simd_length(surface.point(atU: u, v: v) - fit.point(atU: u, v: v)))
             }
         }
         return worst
@@ -55,8 +57,9 @@ struct Issue522ApproxC0Collapse {
 
         let dev = deviation(of: fit, from: sphere)
         #expect(dev < 1e-3, "sampled deviation \(dev) exceeds the requested tolerance")
-        #expect(dev <= detailed.maxError + 1e-9,
-                "sampled deviation \(dev) exceeds reported maxError \(detailed.maxError)")
+        #expect(
+            dev <= detailed.maxError + 1e-9,
+            "sampled deviation \(dev) exceeds reported maxError \(detailed.maxError)")
     }
 
     /// The same request through the other entry point. Before the fix this returned `uDegree == 1`,
@@ -64,7 +67,8 @@ struct Issue522ApproxC0Collapse {
     @Test("The same C0 request through approximated() is not collapsed either")
     func approximatedAtC0IsNotCollapsed() {
         guard let sphere = Surface.sphere(center: .zero, radius: 10),
-              let fit = sphere.approximated(tolerance: 1e-3, continuity: 0) else {
+            let fit = sphere.approximated(tolerance: 1e-3, continuity: 0)
+        else {
             Issue.record("C0 approximation returned no surface")
             return
         }
@@ -76,24 +80,32 @@ struct Issue522ApproxC0Collapse {
     /// C0 in one direction only was enough to trigger it: the sphere at `uCont = C1, vCont = C0`
     /// came back degree 3 in U, 4 poles, deviating by 19.9999. `uCont = C0, vCont = C1` was always
     /// fine, so the trigger is a C0 request meeting a direction whose constraint floor is low.
-    @Test("Mixed continuities with C0 in either direction stay within tolerance",
-          arguments: [(ParametricContinuity.c0, ParametricContinuity.c0),
-                      (.c0, .c1), (.c1, .c0), (.c0, .c2), (.c2, .c0)])
-    func mixedContinuitiesStayWithinTolerance(uCont: ParametricContinuity,
-                                              vCont: ParametricContinuity) {
+    @Test(
+        "Mixed continuities with C0 in either direction stay within tolerance",
+        arguments: [
+            (ParametricContinuity.c0, ParametricContinuity.c0),
+            (.c0, .c1), (.c1, .c0), (.c0, .c2), (.c2, .c0),
+        ])
+    func mixedContinuitiesStayWithinTolerance(
+        uCont: ParametricContinuity,
+        vCont: ParametricContinuity
+    ) {
         guard let sphere = Surface.sphere(center: .zero, radius: 10) else {
             Issue.record("sphere fixture failed")
             return
         }
-        let detailed = sphere.approxWithDetails(tolerance: 1e-3, uContinuity: uCont,
-                                                vContinuity: vCont)
+        let detailed = sphere.approxWithDetails(
+            tolerance: 1e-3, uContinuity: uCont,
+            vContinuity: vCont)
         guard let fit = detailed.surface else {
             Issue.record("u=\(uCont) v=\(vCont) returned no surface")
             return
         }
         let dev = deviation(of: fit, from: sphere)
-        #expect(dev <= detailed.maxError + 1e-9,
-                "u=\(uCont) v=\(vCont): sampled deviation \(dev) exceeds reported maxError \(detailed.maxError)")
+        #expect(
+            dev <= detailed.maxError + 1e-9,
+            "u=\(uCont) v=\(vCont): sampled deviation \(dev) exceeds reported maxError \(detailed.maxError)"
+        )
     }
 
     /// At C0/C0 the requested tolerance used to stop mattering: a bicubic Bezier returned the same
@@ -101,8 +113,9 @@ struct Issue522ApproxC0Collapse {
     /// 1e-7, because the number the tolerance was compared against was always zero. A bicubic is
     /// exactly representable, so the fit should reproduce it at degree 3 and the deviation should be
     /// at rounding level whatever the tolerance.
-    @Test("A bicubic Bezier at C0 is reproduced exactly, at every tolerance",
-          arguments: [1e-1, 1e-3, 1e-5, 1e-7])
+    @Test(
+        "A bicubic Bezier at C0 is reproduced exactly, at every tolerance",
+        arguments: [1e-1, 1e-3, 1e-5, 1e-7])
     func bicubicBezierIsReproducedAtEveryTolerance(tolerance: Double) {
         // The fixture from Scripts/repro/522-approx-c0-collapse: a 4x4 pole grid whose Z varies as
         // (i*j) % 5, which is genuinely cubic in both directions rather than a lower-degree surface
@@ -119,8 +132,9 @@ struct Issue522ApproxC0Collapse {
             Issue.record("bezier fixture failed")
             return
         }
-        let detailed = bezier.approxWithDetails(tolerance: tolerance, uContinuity: .c0,
-                                                vContinuity: .c0)
+        let detailed = bezier.approxWithDetails(
+            tolerance: tolerance, uContinuity: .c0,
+            vContinuity: .c0)
         guard let fit = detailed.surface else {
             Issue.record("tolerance \(tolerance) returned no surface")
             return
@@ -135,13 +149,16 @@ struct Issue522ApproxC0Collapse {
     /// push this one up.
     @Test("A V-linear cylinder still fits at degree 1 in V")
     func linearDirectionStillCollapsesLegitimately() {
-        guard let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)?
-            .trimmed(u1: 0, u2: 2 * .pi, v1: -10, v2: 10) else {
+        guard
+            let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)?
+                .trimmed(u1: 0, u2: 2 * .pi, v1: -10, v2: 10)
+        else {
             Issue.record("cylinder fixture failed")
             return
         }
-        let detailed = cylinder.approxWithDetails(tolerance: 1e-3, uContinuity: .c0,
-                                                  vContinuity: .c0)
+        let detailed = cylinder.approxWithDetails(
+            tolerance: 1e-3, uContinuity: .c0,
+            vContinuity: .c0)
         guard let fit = detailed.surface else {
             Issue.record("cylinder approximation returned no surface")
             return

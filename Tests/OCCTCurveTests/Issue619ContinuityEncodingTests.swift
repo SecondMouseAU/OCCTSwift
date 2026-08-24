@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #619: `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder`
@@ -25,10 +26,11 @@ struct Issue619ContinuityEncodingTests {
         let poles = (1...poleCount).map { i in
             SIMD3<Double>(Double(i), Double(i % 2) * 2.0, 0)
         }
-        return Curve3D.bspline(poles: poles,
-                               knots: [0.0, 0.5, 1.0],
-                               multiplicities: [4, multiplicity, 4],
-                               degree: 3)
+        return Curve3D.bspline(
+            poles: poles,
+            knots: [0.0, 0.5, 1.0],
+            multiplicities: [4, multiplicity, 4],
+            degree: 3)
     }
 
     // MARK: - The encoding, against geometry whose class is known by construction
@@ -38,9 +40,11 @@ struct Issue619ContinuityEncodingTests {
         // The `continuityOrder == 99` fast path was the issue's second failure: not a wrong
         // answer but silently dead code, because nothing can produce 99 any more.
         var checked = 0
-        for curve in [Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
-                      Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)]
-                        .compactMap({ $0 }) {
+        for curve in [
+            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10),
+        ]
+        .compactMap({ $0 }) {
             #expect(curve.continuityClass == .cN)
             #expect(curve.continuity == 6)
             #expect(curve.continuity != 99)
@@ -117,10 +121,10 @@ struct Issue619ContinuityEncodingTests {
         // `continuityOrder >= ParametricContinuity.c2.rawValue` was a natural way to write the
         // check and was always comparing a result ordinal against a request order. They differ
         // for every class above C0, so no constant carried over correctly.
-        #expect(ContinuityClass.c1.rawValue != ParametricContinuity.c1.rawValue)   // 2 vs 1
-        #expect(ContinuityClass.c2.rawValue != ParametricContinuity.c2.rawValue)   // 4 vs 2
-        #expect(ContinuityClass.c3.rawValue != ParametricContinuity.c3.rawValue)   // 5 vs 3
-        #expect(ContinuityClass.c0.rawValue == ParametricContinuity.c0.rawValue)   // 0, the only match
+        #expect(ContinuityClass.c1.rawValue != ParametricContinuity.c1.rawValue)  // 2 vs 1
+        #expect(ContinuityClass.c2.rawValue != ParametricContinuity.c2.rawValue)  // 4 vs 2
+        #expect(ContinuityClass.c3.rawValue != ParametricContinuity.c3.rawValue)  // 5 vs 3
+        #expect(ContinuityClass.c0.rawValue == ParametricContinuity.c0.rawValue)  // 0, the only match
 
         // `satisfies(_:)` is the bridge between them and takes the request vocabulary by type,
         // so the mismatched constant cannot be written at all (#485, #623).
@@ -134,10 +138,12 @@ struct Issue619ContinuityEncodingTests {
         // ordinal were restored to the old scheme, `ContinuityClass(rawValue:)` would fail to
         // decode 99/-2/-3 and fall back to `.c0`, breaking this.
         var checked = 0
-        for curve in [Self.bspline(interiorMultiplicity: 1),
-                      Self.bspline(interiorMultiplicity: 2),
-                      Self.bspline(interiorMultiplicity: 3),
-                      Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))].compactMap({ $0 }) {
+        for curve in [
+            Self.bspline(interiorMultiplicity: 1),
+            Self.bspline(interiorMultiplicity: 2),
+            Self.bspline(interiorMultiplicity: 3),
+            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
+        ].compactMap({ $0 }) {
             #expect(curve.continuity == Int(curve.continuityClass.rawValue))
             #expect(ContinuityClass(rawValue: Int32(curve.continuity)) != nil)
             #expect(curve.continuity >= 0 && curve.continuity <= 6)

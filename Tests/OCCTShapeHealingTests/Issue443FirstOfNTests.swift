@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #443: the first-of-N `TopExp_Explorer` audit. Three call sites took the first shell or
@@ -21,21 +22,25 @@ import simd
 @Suite("Issue 443: solid(from:) and upgraded() cover every body")
 struct Issue443FirstOfN {
 
-    private func expectVolume(_ shape: Shape, _ expected: Double,
-                              _ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
+    private func expectVolume(
+        _ shape: Shape, _ expected: Double,
+        _ what: String, sourceLocation: SourceLocation = #_sourceLocation
+    ) {
         guard let volume = shape.volume else {
-            Issue.record("\(what): volume is nil, the solid came back inverted",
-                         sourceLocation: sourceLocation)
+            Issue.record(
+                "\(what): volume is nil, the solid came back inverted",
+                sourceLocation: sourceLocation)
             return
         }
-        #expect(abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
-                sourceLocation: sourceLocation)
+        #expect(
+            abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
+            sourceLocation: sourceLocation)
     }
 
     /// Two disjoint 10mm boxes, 2000mm³ total: the issue's own reproducer.
     private func twoBoxes() -> Shape? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
         else { return nil }
         return Shape.compound([a, b])
     }
@@ -43,7 +48,7 @@ struct Issue443FirstOfN {
     /// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
     private func hollowBox() -> Shape? {
         guard let outer = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-              let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+            let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
         else { return nil }
         return outer.subtracting(cavity)
     }
@@ -52,8 +57,8 @@ struct Issue443FirstOfN {
     /// (`BRep_Tool::IsClosed` false, `BRepCheck_Analyzer` invalid): 11 faces, 2 bodies.
     private func closedAndOpenShellCompound() -> Shape? {
         guard let closedBox = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let closedShell = closedBox.shells.first,
-              let openBox = Shape.box(origin: SIMD3(30, 0, 0), width: 10, height: 10, depth: 10)
+            let closedShell = closedBox.shells.first,
+            let openBox = Shape.box(origin: SIMD3(30, 0, 0), width: 10, height: 10, depth: 10)
         else { return nil }
         let fiveFaces = Array(openBox.subShapes(ofType: .face).dropFirst())
         guard fiveFaces.count == 5, let openShell = Shape.sew(shapes: fiveFaces, tolerance: 1e-6)
@@ -92,7 +97,7 @@ struct Issue443FirstOfN {
             return
         }
         guard let viaMakeSolid = Shape.solid(from: sewn),
-              let viaShapeFix = sewn.solidFromShellFixed()
+            let viaShapeFix = sewn.solidFromShellFixed()
         else {
             Issue.record("one of the two entry points returned nil")
             return
@@ -106,7 +111,7 @@ struct Issue443FirstOfN {
     @Test("solid(from:) still returns a bare solid for single-shell input")
     func solidFromSingleShell() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let shell = box.shells.first
+            let shell = box.shells.first
         else {
             Issue.record("could not build a box shell")
             return
@@ -161,7 +166,7 @@ struct Issue443FirstOfN {
         }
         #expect(solid.shapeType == .solid)
         #expect(solid.solids.count == 1)
-        expectVolume(solid, 8000.0, "solid(from: hollow solid)")   // outer shell, cavity filled
+        expectVolume(solid, 8000.0, "solid(from: hollow solid)")  // outer shell, cavity filled
     }
 
     /// One solid holding two disjoint closed shells: the case that rules out the naive
@@ -169,9 +174,9 @@ struct Issue443FirstOfN {
     @Test("solid(from:) keeps both shells of a multiconnex solid")
     func solidFromMulticonnex() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let shellA = a.shells.first, let shellB = b.shells.first,
-              let solid = Shape.solidFromShells([shellA, shellB])
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let shellA = a.shells.first, let shellB = b.shells.first,
+            let solid = Shape.solidFromShells([shellA, shellB])
         else {
             Issue.record("could not build the multiconnex solid")
             return
@@ -189,7 +194,7 @@ struct Issue443FirstOfN {
     @Test("solid(from:) returns nil when the shape holds no shell")
     func solidFromNoShell() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let face = box.subShapes(ofType: .face).first
+            let face = box.subShapes(ofType: .face).first
         else {
             Issue.record("could not build a face")
             return
@@ -212,11 +217,13 @@ struct Issue443FirstOfN {
             Issue.record("could not build or sew the hollow box")
             return
         }
-        #expect(sewn.solids.isEmpty)     // sewing dropped the solid
+        #expect(sewn.solids.isEmpty)  // sewing dropped the solid
         #expect(sewn.shells.count == 2)  // outer and cavity, both free now
 
-        for (label, result) in [("solid(from:)", Shape.solid(from: sewn)),
-                                ("solidFromShellFixed()", sewn.solidFromShellFixed())] {
+        for (label, result) in [
+            ("solid(from:)", Shape.solid(from: sewn)),
+            ("solidFromShellFixed()", sewn.solidFromShellFixed()),
+        ] {
             guard let result else {
                 Issue.record("\(label) returned nil for a sewn hollow body")
                 continue
@@ -231,8 +238,8 @@ struct Issue443FirstOfN {
     @Test("a hollow body reads the same whether or not it has been sewn")
     func sewnAndUnsewnHollowAgree() {
         guard let hollow = hollowBox(), let sewn = hollow.sewn(tolerance: 1e-6),
-              let fromSolid = hollow.solidFromShellFixed(),
-              let fromShells = sewn.solidFromShellFixed()
+            let fromSolid = hollow.solidFromShellFixed(),
+            let fromShells = sewn.solidFromShellFixed()
         else {
             Issue.record("could not build both readings of the hollow body")
             return
@@ -259,7 +266,7 @@ struct Issue443FirstOfN {
             Shape.box(origin: SIMD3(Double($0) * 20, 0, 0), width: 10, height: 10, depth: 10)
         }
         guard boxes.count == count, let compound = Shape.compound(boxes),
-              let sewn = compound.sewn(tolerance: 1e-6)
+            let sewn = compound.sewn(tolerance: 1e-6)
         else {
             Issue.record("could not build or sew \(count) boxes")
             return
@@ -280,9 +287,9 @@ struct Issue443FirstOfN {
     @Test("touching bodies are still two bodies")
     func touchingBodiesNotPruned() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
-              let shellA = a.shells.first, let shellB = b.shells.first,
-              let quilt = Shape.compound([shellA, shellB])
+            let b = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
+            let shellA = a.shells.first, let shellB = b.shells.first,
+            let quilt = Shape.compound([shellA, shellB])
         else {
             Issue.record("could not build the two touching shells")
             return
@@ -334,9 +341,9 @@ struct Issue443FirstOfN {
     @Test("solidWithFullHistory(from:) keeps every body's face queryable in the one shared history")
     func solidWithHistoryQueryableForEveryBody() {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let shellA = a.shells.first, let shellB = b.shells.first,
-              let quilt = Shape.compound([shellA, shellB])
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let shellA = a.shells.first, let shellB = b.shells.first,
+            let quilt = Shape.compound([shellA, shellB])
         else {
             Issue.record("could not build the two-shell compound")
             return
@@ -360,7 +367,7 @@ struct Issue443FirstOfN {
     @Test("solidWithFullHistory(from:) still returns a bare solid for single-shell input")
     func solidWithHistorySingleShell() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let shell = box.shells.first
+            let shell = box.shells.first
         else {
             Issue.record("could not build a box shell")
             return
@@ -472,7 +479,7 @@ struct Issue443FirstOfN {
             return
         }
         #expect(upgraded.solids.count == 1)
-        expectVolume(upgraded, 8000.0, "upgraded(hollow solid)")   // outer shell, cavity filled
+        expectVolume(upgraded, 8000.0, "upgraded(hollow solid)")  // outer shell, cavity filled
     }
 
     /// A body sitting inside another body's cavity is enclosed twice, so parity reads it as
@@ -481,10 +488,10 @@ struct Issue443FirstOfN {
     @Test("upgraded() reads a body nested in a cavity as a body")
     func upgradedNestedBody() {
         guard let outer = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-              let cavity = Shape.box(origin: SIMD3(4, 4, 4), width: 12, height: 12, depth: 12),
-              let hollow = outer.subtracting(cavity),
-              let inner = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8),
-              let part = Shape.compound([hollow, inner])
+            let cavity = Shape.box(origin: SIMD3(4, 4, 4), width: 12, height: 12, depth: 12),
+            let hollow = outer.subtracting(cavity),
+            let inner = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8),
+            let part = Shape.compound([hollow, inner])
         else {
             Issue.record("could not build the nested-body part")
             return
@@ -530,7 +537,7 @@ struct Issue443FirstOfN {
     @Test("upgraded() passes shapes with no shell straight through")
     func upgradedNoShell() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let face = box.subShapes(ofType: .face).first
+            let face = box.subShapes(ofType: .face).first
         else {
             Issue.record("could not build a face")
             return

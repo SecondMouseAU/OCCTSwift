@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #636: Curve3D.extrema SIGSEGVs on parallel curves at every capacity
@@ -51,8 +52,11 @@ struct Issue636ExtremaParallelCurvesTests {
     private static let parallelOffset = 5.0
 
     private static func unboundedParallelLines() throws -> (Curve3D, Curve3D) {
-        (try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))),
-         try #require(Curve3D.line(through: SIMD3(0, parallelOffset, 0), direction: SIMD3(1, 0, 0))))
+        (
+            try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))),
+            try #require(
+                Curve3D.line(through: SIMD3(0, parallelOffset, 0), direction: SIMD3(1, 0, 0)))
+        )
     }
 
     /// Bounded, and their projected ranges OVERLAP, which is the condition that makes
@@ -60,8 +64,12 @@ struct Issue636ExtremaParallelCurvesTests {
     /// `IsParallel()` returns false for those and the endpoint solution is real, so they are not a
     /// fixture for this bug. See the suite's own note and PR #730's verification comment.
     private static func overlappingParallelSegments() throws -> (Curve3D, Curve3D) {
-        (try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))),
-         try #require(Curve3D.segment(from: SIMD3(0, parallelOffset, 0), to: SIMD3(10, parallelOffset, 0))))
+        (
+            try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))),
+            try #require(
+                Curve3D.segment(from: SIMD3(0, parallelOffset, 0), to: SIMD3(10, parallelOffset, 0))
+            )
+        )
     }
 
     @Test("Two unbounded parallel lines: extrema is empty, not a crash")
@@ -70,7 +78,7 @@ struct Issue636ExtremaParallelCurvesTests {
 
         #expect(a.extrema(with: b).isEmpty)
         #expect(a.extrema(with: b, maxCount: 1).isEmpty)
-        #expect(a.extrema(with: b, maxCount: 20).isEmpty) // the reported default capacity
+        #expect(a.extrema(with: b, maxCount: 20).isEmpty)  // the reported default capacity
     }
 
     @Test("Two bounded parallel segments with overlapping projected ranges: extrema is empty")
@@ -107,7 +115,7 @@ struct Issue636ExtremaParallelCurvesTests {
 
         #expect(!a.extrema(with: b).isEmpty)
         let d = try #require(a.minDistance(to: b))
-        #expect(abs(d - hypot(10.0, 5.0)) < 1e-6)   // (10,0,0) to (20,5,0)
+        #expect(abs(d - hypot(10.0, 5.0)) < 1e-6)  // (10,0,0) to (20,5,0)
     }
 
     @Test("Non-parallel curves are unaffected: extrema still reports real solutions")

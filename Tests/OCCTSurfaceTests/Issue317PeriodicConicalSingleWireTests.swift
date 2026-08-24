@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #317: `Shape.face(from:boundary:)` SIGSEGV'd healing a face whose sole boundary wire is a
@@ -22,24 +23,32 @@ struct Issue317PeriodicConicalSingleWireTests {
             return SIMD3(0.14 * cos(angle), 4.0 + 0.14 * sin(angle), -9.6)
         }
         guard let curve = Curve3D.interpolate(points: ringPoints, closed: true) else {
-            Issue.record("interpolate"); return
+            Issue.record("interpolate")
+            return
         }
         guard let edgeShape = Shape.edgeFromCurve(curve), let edge = Edge(edgeShape) else {
-            Issue.record("edgeFromCurve"); return
+            Issue.record("edgeFromCurve")
+            return
         }
         guard let wire = Wire.wireFromEdges([edge]) else {
-            Issue.record("wireFromEdges"); return
+            Issue.record("wireFromEdges")
+            return
         }
 
         // A cone positioned so the wire belts the full period with the apex outside its V range,
         // the exact case FixPeriodicDegenerated exists to patch a degenerate apex edge in for.
-        guard let cone = Surface.cone(origin: SIMD3(0, 4.0, -9.1), axis: SIMD3(0, 0.09, -1.0),
-                                      radius: 0, semiAngle: 0.35) else {
-            Issue.record("cone"); return
+        guard
+            let cone = Surface.cone(
+                origin: SIMD3(0, 4.0, -9.1), axis: SIMD3(0, 0.09, -1.0),
+                radius: 0, semiAngle: 0.35)
+        else {
+            Issue.record("cone")
+            return
         }
 
         guard let face = Shape.face(from: cone, boundary: wire) else {
-            Issue.record("face(from:boundary:) returned nil"); return
+            Issue.record("face(from:boundary:) returned nil")
+            return
         }
         #expect(face.isValid)
     }
