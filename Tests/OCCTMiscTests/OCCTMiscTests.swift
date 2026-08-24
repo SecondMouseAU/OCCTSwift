@@ -1267,24 +1267,24 @@ struct ConstructionLayerTests {
 struct PaperSizeTests {
     @Test("A0 landscape dimensions match ISO 5457")
     func a0Landscape() {
-        let d = PaperSize.A0.size(in: .landscape)
+        let d = PaperSize.a0.size(in: .landscape)
         #expect(d == SIMD2(1189, 841))
     }
 
     @Test("A4 portrait is 210 × 297")
     func a4Portrait() {
-        let d = PaperSize.A4.size(in: .portrait)
+        let d = PaperSize.a4.size(in: .portrait)
         #expect(d == SIMD2(210, 297))
     }
 
     @Test("Each paper size has half the area of the next size up")
     func paperSeriesHalving() {
-        let a3 = PaperSize.A3.dimensions
-        let a4 = PaperSize.A4.dimensions
+        let a3 = PaperSize.a3.dimensions
+        let a4 = PaperSize.a4.dimensions
         let a3Area = a3.x * a3.y
         let a4Area = a4.x * a4.y
         // A4 should be (approximately) half of A3.
-        #expect(abs(a3Area / a4Area - 2.0) < 0.01)
+        #expect(Double(abs(a3Area / a4Area - 2.0)) < 0.01)
     }
 }
 
@@ -1292,7 +1292,7 @@ struct PaperSizeTests {
 struct SheetRenderingTests {
     @Test("Sheet render emits border + inner frame polylines")
     func sheetEmitsBorders() {
-        let sheet = Sheet(size: .A3, orientation: .landscape, projection: .first,
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first,
                           title: TitleBlock(title: "Test Drawing",
                                             drawingNumber: "T-001",
                                             owner: "ACME Co"))
@@ -1307,7 +1307,7 @@ struct SheetRenderingTests {
 
     @Test("Sheet innerFrame respects ISO 5457 margins")
     func innerFrameInsets() {
-        let sheet = Sheet(size: .A3, orientation: .landscape)
+        let sheet = Sheet(size: .a3, orientation: .landscape)
         let frame = sheet.innerFrame
         #expect(frame.min.x == 20)          // 20 mm binding left
         #expect(frame.min.y == 10)
@@ -1334,7 +1334,7 @@ struct SheetRenderingTests {
                             owner: "Widget Corp",
                             creator: "Jane Engineer",
                             dateOfIssue: "2026-04-22")
-        let sheet = Sheet(size: .A3, title: tb)
+        let sheet = Sheet(size: .a3, title: tb)
         let writer = DXFWriter()
         sheet.render(into: writer)
         #expect(writer.entityCounts.texts >= 5)   // at least label/value pairs
