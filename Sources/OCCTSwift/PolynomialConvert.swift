@@ -19,6 +19,7 @@ public enum PolynomialConvert {
     ///   - coefficients: Polynomial coefficients (constant, linear, quadratic, ...)
     ///   - polynomialInterval: Parameter interval of the polynomial
     ///   - trueInterval: Target parameter interval for the BSpline
+    /// - Returns: BSpline poles, knots, and degree, or nil on failure
     public static func polynomialToPoles(
         dimension: Int, maxDegree: Int, degree: Int,
         coefficients: [Double],

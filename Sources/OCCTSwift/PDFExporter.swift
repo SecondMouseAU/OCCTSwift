@@ -82,7 +82,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
             position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
             layer: String
         )] = []
-    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
+    ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(pageSize: SIMD2<Double> = SIMD2(841, 595), deflection: Double = 0.1) {

@@ -122,7 +122,7 @@ public final class FillingSurface: @unchecked Sendable {
     /// Free edges are not required to be topologically connected to other edges.
     ///
     /// - Parameters:
-    ///   - freeEdge: Edge to add as a free constraint
+    ///   - edge: Edge to add as a free constraint
     ///   - continuity: Continuity order at this edge (default .g0)
     /// - Returns: true if the edge was added successfully
     @discardableResult

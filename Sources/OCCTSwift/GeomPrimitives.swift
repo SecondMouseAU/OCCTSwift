@@ -69,7 +69,9 @@ public final class GeomDirection: @unchecked Sendable {
         OCCTGeomDirectionSetCoord(handle, x, y, z)
     }
 
-    /// Cross product with another direction. Returns nil if parallel.
+    /// Cross product with another direction.
+    ///
+    /// Returns nil if parallel.
     public func crossed(with other: GeomDirection) -> GeomDirection? {
         guard let ref = OCCTGeomDirectionCrossed(handle, other.handle) else { return nil }
         return GeomDirection(handle: ref)
@@ -120,7 +122,9 @@ public final class GeomVector3D: @unchecked Sendable {
         GeomVector3D(handle: OCCTGeomVector3DMultiplied(handle, scalar))
     }
 
-    /// Returns normalized copy. Nil if magnitude is near zero.
+    /// Returns normalized copy.
+    ///
+    /// Nil if magnitude is near zero.
     public func normalized() -> GeomVector3D? {
         guard let ref = OCCTGeomVector3DNormalized(handle) else { return nil }
         return GeomVector3D(handle: ref)

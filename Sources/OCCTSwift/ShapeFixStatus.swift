@@ -18,7 +18,9 @@
 
 /// A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
 /// subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result
-/// through. `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own
+/// through.
+///
+/// `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own
 /// meaning to the numbered slots, and a slot it does not use is simply never set. See
 /// ``ShapeFixer/status(_:)`` and ``FaceFixer/status(_:)`` for each class's own meaning table.
 ///

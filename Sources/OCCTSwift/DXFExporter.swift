@@ -58,8 +58,9 @@ extension Exporter {
     }
 }
 
-/// Pure-Swift DXF R12 ASCII writer. Public so callers can stage entities manually
-/// (useful for tests and for scripts that compose DXFs from mixed sources).
+/// Pure-Swift DXF R12 ASCII writer.
+///
+/// Public so callers can stage entities manually (useful for tests and for scripts that compose DXFs from mixed sources).
 public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public let deflection: Double
     private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
@@ -75,7 +76,8 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
             position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
             layer: String
         )] = []
-    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
+    ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(deflection: Double = 0.1) {
@@ -115,8 +117,9 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         texts.append((position, text, height, rotationDeg, layer))
     }
 
-    /// Emit a single pre-built dimension as exploded LINE + TEXT entities. Useful for tests
-    /// and for scripts that compose drawings from dimension values without going through a
+    /// Emit a single pre-built dimension as exploded LINE + TEXT entities.
+    ///
+    /// Useful for tests and for scripts that compose drawings from dimension values without going through a
     /// `Drawing`. Routes through the shared `DrawingDispatch.swift` dispatcher
     /// (`emitDimension`), the same as `PDFWriter`/`SVGWriter` -- see #795: this used to be a
     /// completely separate, independently hand-written pipeline (`emitLinear`/`emitRadial`/
@@ -140,9 +143,9 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     // identical logic calling `self.addX` directly instead of through the shared `ops`
     // bundle. #795.
 
-    /// Collect a `Drawing`'s edges, annotations and dimensions onto this writer, optionally
-    /// translated and uniformly scaled -- the shared collection pipeline every 2D exporter
-    /// (PDF, SVG, DXF) uses.
+    /// Collect a Drawing's edges, annotations and dimensions onto this writer.
+    ///
+    /// Translated and uniformly scaled -- the shared collection pipeline every 2D exporter (PDF, SVG, DXF) uses.
     public func collectFromDrawing(
         _ drawing: Drawing,
         translate: SIMD2<Double> = .zero,

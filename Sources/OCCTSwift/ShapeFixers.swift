@@ -135,7 +135,9 @@ public final class FaceFixer: @unchecked Sendable {
     @discardableResult public func fixLoopWire() -> Bool { OCCTFaceFixerFixLoopWire(ref) }
 
     /// The result of the fix — usually a face, but a **shell** when ``fixMissingSeam()`` split the
-    /// face into several. Unlike ``face`` (always a face), this returns the true multi-face result.
+    /// face into several.
+    ///
+    /// Unlike ``face`` (always a face), this returns the true multi-face result.
     public var result: Shape? {
         guard let r = OCCTFaceFixerResult(ref) else { return nil }
         return Shape(handle: r)
@@ -182,12 +184,16 @@ public final class FaceFixer: @unchecked Sendable {
     /// ```
     public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
 
-    /// Clamp the maximum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    /// Clamp the maximum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
     public func setMaxTolerance(_ maxTolerance: Double) {
         OCCTFaceFixerSetMaxTolerance(ref, maxTolerance)
     }
 
-    /// Clamp the minimum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    /// Clamp the minimum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
     public func setMinTolerance(_ minTolerance: Double) {
         OCCTFaceFixerSetMinTolerance(ref, minTolerance)
     }

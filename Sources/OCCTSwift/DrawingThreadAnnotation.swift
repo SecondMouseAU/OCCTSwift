@@ -110,8 +110,9 @@ extension DrawingAnnotation {
 
 extension Drawing {
     /// Convenience: add an ISO 6410 cosmetic thread side-view pattern plus
-    /// optional callout to this drawing. Returns the added annotations for
-    /// further manipulation.
+    /// optional callout to this drawing.
+    ///
+    /// Returns the added annotations for further manipulation.
     @discardableResult
     public func addCosmeticThreadSide(
         axisStart: SIMD2<Double>,

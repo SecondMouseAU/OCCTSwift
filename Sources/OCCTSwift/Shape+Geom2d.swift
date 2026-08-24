@@ -97,11 +97,11 @@ extension Shape {
 
     /// Result of a 2D analytical fillet operation.
     public struct AnaFilletResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
     }
 
@@ -185,13 +185,13 @@ extension Shape {
 
     /// Result of a 2D iterative fillet operation.
     public struct FilletAlgoResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
-        /// Number of fillet solutions found
+        /// Number of fillet solutions found.
         public let resultCount: Int
     }
 
@@ -321,13 +321,13 @@ extension Shape {
 
     // MARK: - ProjLib_ComputeApprox
 
-    /// Project this edge's 3D curve onto a face's surface → edge on surface
+    /// Project this edge's 3D curve onto a face's surface → edge on surface.
     public func projectOntoSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTProjLibComputeApprox(handle, face.handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface
+    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface.
     public func projectOntoPolarSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTProjLibComputeApproxOnPolarSurface(handle, face.handle, tolerance) else {
             return nil
@@ -772,8 +772,11 @@ extension Shape {
 extension Shape {
     /// Create a 2D edge from a full circle.
     ///
-    /// - Parameter radius: circle radius. Must be greater than zero.
-    /// - Returns: the edge, or `nil` if the circle is degenerate.
+    /// - Parameters:
+    ///   - center: Center of the circle.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - radius: Circle radius. Must be greater than zero.
+    /// - Returns: The edge, or `nil` if the circle is degenerate.
     ///
     /// ```swift
     /// if let e = Shape.edge2dFullCircle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
@@ -796,10 +799,12 @@ extension Shape {
     /// Create a 2D edge from an ellipse.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///   - center: Center of the ellipse.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - majorRadius: Semi-major axis. Must be greater than zero.
+    ///   - minorRadius: Semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
+    /// - Returns: The edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
     ///   from a zero-radius ellipse, and a doubled-back segment from a zero minor radius.
     ///
     /// ```swift
@@ -824,10 +829,14 @@ extension Shape {
     /// Create a 2D edge from an ellipse arc.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///   - center: Center of the ellipse.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - majorRadius: Semi-major axis. Must be greater than zero.
+    ///   - minorRadius: Semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate.
+    ///   - u1: Start parameter in radians.
+    ///   - u2: End parameter in radians.
+    /// - Returns: The edge, or `nil` if the ellipse is degenerate.
     ///
     /// ```swift
     /// if let e = Shape.edge2dEllipseArc(center: .zero, direction: SIMD2(1, 0),

@@ -20,7 +20,9 @@ import simd
 
 extension Sheet {
     /// Auto-compose front / top / side / iso views of `shape` onto this sheet
-    /// at the supplied scale. Views are sized to fit the sheet's inner frame
+    /// at the supplied scale.
+    ///
+    /// Views are sized to fit the sheet's inner frame
     /// (less `margin` on each outer edge and `margin/2` between cells).
     ///
     /// If `scale` is smaller than the fit-to-cell scale computed from the
@@ -125,8 +127,9 @@ extension Sheet {
     }
 }
 
-/// Result of `Sheet.standardLayout(of:scale:)`. Each `PlacedView` holds the
-/// original unannotated `Drawing` (so callers can attach additional dimensions
+/// Result of `Sheet.standardLayout(of:scale:)`.
+///
+/// Each `PlacedView` holds the original unannotated `Drawing` (so callers can attach additional dimensions
 /// or centrelines to a specific view) plus the offset and scale that
 /// `render(into:)` will apply when emitting.
 public struct StandardLayout: Sendable {

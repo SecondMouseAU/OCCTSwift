@@ -10,8 +10,9 @@ import simd
 // a DXF writer), not as AIS display objects. XDE-backed round-trip is on the
 // v0.139 roadmap if and when STEP AP242 GD&T preservation becomes a requirement.
 
-/// Standard technical-drawing linetypes. Used when rendering a `DrawingDimension`
-/// or `DrawingAnnotation` to DXF, PDF, or a viewport.
+/// Standard technical-drawing linetypes.
+///
+/// Used when rendering a `DrawingDimension` or `DrawingAnnotation` to DXF, PDF, or a viewport.
 public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
     case solid
     case dashed  // hidden-line pattern
@@ -20,8 +21,9 @@ public enum DrawingLineStyle: String, Sendable, Hashable, Codable {
     case dotted
 }
 
-/// Typed tolerance carried on a `DrawingDimension`. Rendered inline for
-/// symmetric / fit-class cases, or as stacked TEXT (upper + lower) for
+/// Typed tolerance carried on a `DrawingDimension`.
+///
+/// Rendered inline for symmetric / fit-class cases, or as stacked TEXT (upper + lower) for
 /// bilateral / unilateral / explicit-limits cases in DXF/PDF/SVG output.
 ///
 /// The enum is the typed replacement for the old `label: "⌀10 ±0.05"` escape
@@ -46,8 +48,10 @@ public enum DrawingTolerance: Sendable, Hashable, Codable {
     case limits(lower: Double, upper: Double)
 }
 
-/// A dimension attached to a `Drawing`. Each case carries just the geometric
-/// definition needed to render it; there's no OCCT handle inside.
+/// A dimension attached to a `Drawing`.
+///
+/// Each case carries just the geometric definition needed to render it;
+/// there's no OCCT handle inside.
 public enum DrawingDimension: Sendable, Hashable {
     case linear(Linear)
     case radial(Radial)
@@ -181,9 +185,10 @@ public enum DrawingDimension: Sendable, Hashable {
 
     /// ISO 129-1 §9.3 ordinate dimensions: a shared origin plus N features,
     /// each shown as an X-offset (along the bottom of the view) and Y-offset
-    /// (along the side) measured from the origin. Used for CNC-style
-    /// reference-datum dimensioning where chains of linear dimensions would
-    /// clutter the view.
+    /// (along the side) measured from the origin.
+    ///
+    /// Used for CNC-style reference-datum dimensioning where chains of linear
+    /// dimensions would clutter the view.
     public struct Ordinate: Sendable, Hashable, Codable {
         public var origin: SIMD2<Double>
         public var features: [Feature]
@@ -346,6 +351,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
 
     /// ISO 128-50 section-view hatching — a closed outer boundary filled with
     /// parallel lines at `angle` radians, spaced `spacing` drawing-units apart.
+    ///
     /// Optional `islands` are inner boundaries (holes) that are subtracted
     /// from the hatched region.
     public struct Hatch: Sendable, Hashable {
@@ -374,8 +380,9 @@ public enum DrawingAnnotation: Sendable, Hashable {
     }
 
     /// Assembly-drawing balloon callout: a numbered circle placed near a
-    /// part, with an optional leader line to the balloon target. Balloon
-    /// `itemNumber` is expected to match a row in the drawing's
+    /// part, with an optional leader line to the balloon target.
+    ///
+    /// Balloon `itemNumber` is expected to match a row in the drawing's
     /// `BillOfMaterials`.
     public struct Balloon: Sendable, Hashable {
         public var itemNumber: Int
@@ -400,8 +407,10 @@ public enum DrawingAnnotation: Sendable, Hashable {
     }
 }
 
-/// Storage for drawing-level dimensions and annotations. Wrapped inside `Drawing`
-/// so each Drawing carries its own mutable collection without breaking Sendable.
+/// Storage for drawing-level dimensions and annotations.
+///
+/// Wrapped inside `Drawing` so each Drawing carries its own mutable collection
+/// without breaking Sendable.
 internal final class DrawingAnnotationStore: @unchecked Sendable {
     private let lock = NSLock()
     private var _dimensions: [DrawingDimension] = []

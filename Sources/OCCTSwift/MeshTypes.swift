@@ -78,8 +78,10 @@ public final class Triangulation: @unchecked Sendable {
     }
 
     /// Create a triangulation from nodes and triangle vertex indices.
-    /// - Parameter nodes: sequence of node positions.
-    /// - Parameter triangles: triangle vertex indices, 0-based, three per triangle.
+    ///
+    /// - Parameters:
+    ///   - nodes: Sequence of node positions.
+    ///   - triangles: Triangle vertex indices, 0-based, three per triangle.
     /// - Returns: nil if any index is out of range or the inputs are empty.
     public static func create(nodes: [SIMD3<Double>], triangles: [Int]) -> Triangulation? {
         guard !nodes.isEmpty, triangles.count > 0, triangles.count % 3 == 0 else { return nil }
@@ -289,8 +291,9 @@ public final class PolygonOnTriangulation: @unchecked Sendable {
     }
 
     /// Overwrite the node-index array in place (`ChangeNodeArray()`).
+    ///
     /// The supplied array must have the same length as `nodeCount`.
-    /// - Returns: true on success, false on size mismatch.
+    /// - Returns: True on success, false on size mismatch.
     @discardableResult
     public func setNodes(_ nodeIndices: [Int32]) -> Bool {
         nodeIndices.withUnsafeBufferPointer { buf in
@@ -299,8 +302,9 @@ public final class PolygonOnTriangulation: @unchecked Sendable {
     }
 
     /// Overwrite the parameter array in place (`ChangeParameterArray()`).
+    ///
     /// Requires `hasParameters` and an array length equal to `nodeCount`.
-    /// - Returns: true on success, false otherwise.
+    /// - Returns: True on success, false otherwise.
     @discardableResult
     public func setParameters(_ params: [Double]) -> Bool {
         params.withUnsafeBufferPointer { buf in
@@ -380,7 +384,11 @@ public final class CoherentTriangulation: @unchecked Sendable {
     }
 
     /// Create a coherent triangulation from a meshed shape's first face triangulation.
-    /// - Parameter deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    ///
+    /// - Parameters:
+    ///   - shape: A shape that has been triangulated.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    /// - Returns: A CoherentTriangulation, or nil on failure.
     public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1)
         -> CoherentTriangulation?
     {
@@ -390,18 +398,24 @@ public final class CoherentTriangulation: @unchecked Sendable {
         return CoherentTriangulation(handle: ref)
     }
 
-    /// Add a node at (x, y, z). Returns the 0-based node index.
+    /// Add a node at (x, y, z).
+    ///
+    /// Returns the 0-based node index.
     public func setNode(x: Double, y: Double, z: Double) -> Int {
         Int(OCCTCoherentTriangulationSetNode(handle, x, y, z))
     }
 
-    /// Add a triangle from three 0-based node indices. Returns true on success.
+    /// Add a triangle from three 0-based node indices.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func addTriangle(_ n0: Int, _ n1: Int, _ n2: Int) -> Bool {
         OCCTCoherentTriangulationAddTriangle(handle, Int32(n0), Int32(n1), Int32(n2))
     }
 
-    /// Remove a triangle by 0-based index. Returns true on success.
+    /// Remove a triangle by 0-based index.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func removeTriangle(at index: Int) -> Bool {
         OCCTCoherentTriangulationRemoveTriangle(handle, Int32(index))
@@ -412,12 +426,16 @@ public final class CoherentTriangulation: @unchecked Sendable {
         Int(OCCTCoherentTriangulationNTriangles(handle))
     }
 
-    /// Compute edge links between triangles. Returns the number of links.
+    /// Compute edge links between triangles.
+    ///
+    /// Returns the number of links.
     public func computeLinks() -> Int {
         Int(OCCTCoherentTriangulationComputeLinks(handle))
     }
 
-    /// Number of links (edges). Call computeLinks() first.
+    /// Number of links (edges).
+    ///
+    /// Call computeLinks() first.
     public var linkCount: Int {
         Int(OCCTCoherentTriangulationNLinks(handle))
     }
@@ -432,13 +450,17 @@ public final class CoherentTriangulation: @unchecked Sendable {
         OCCTCoherentTriangulationDeflection(handle)
     }
 
-    /// Remove degenerated triangles within tolerance. Returns true if any were removed.
+    /// Remove degenerated triangles within tolerance.
+    ///
+    /// Returns true if any were removed.
     @discardableResult
     public func removeDegenerated(tolerance: Double) -> Bool {
         OCCTCoherentTriangulationRemoveDegenerated(handle, tolerance)
     }
 
-    /// Convert back to standard triangulation data. Returns (nodeCount, triangleCount) or nil.
+    /// Convert back to standard triangulation data.
+    ///
+    /// Returns (nodeCount, triangleCount) or nil.
     public func getResult() -> (nodeCount: Int, triangleCount: Int)? {
         var nbNodes: Int32 = 0
         var nbTris: Int32 = 0

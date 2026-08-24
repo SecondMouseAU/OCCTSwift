@@ -133,8 +133,9 @@ public struct Sheet: Sendable, Hashable {
     /// Overall sheet dimensions in mm.
     public var dimensions: SIMD2<Double> { size.size(in: orientation) }
 
-    /// The drawable area inside the border (the "inner frame"). ISO 5457
-    /// specifies a 20 mm binding margin on the left and 10 mm on the other
+    /// The drawable area inside the border (the "inner frame").
+    ///
+    /// ISO 5457 specifies a 20 mm binding margin on the left and 10 mm on the other
     /// three edges for A0-A3; 7 mm / 7 mm / 7 mm / 10 mm for A4.
     public var inset: (left: Double, right: Double, top: Double, bottom: Double) {
         switch size {
@@ -156,7 +157,9 @@ public struct Sheet: Sendable, Hashable {
     }
 
     /// Render the border + centring marks + title block + projection symbol
-    /// onto the writer. Uses BORDER, TITLE, TEXT, and CENTER layers.
+    /// onto the writer.
+    ///
+    /// Uses BORDER, TITLE, TEXT, and CENTER layers.
     public func render(into writer: DXFWriter) {
         let d = dimensions
         // Outer trimmed sheet edge
@@ -253,6 +256,7 @@ public struct Sheet: Sendable, Hashable {
 
 public enum ProjectionSymbol {
     /// Render a projection-angle symbol at the given 2D origin.
+    ///
     /// First-angle symbol: truncated-cone front view on the left, circle side
     ///                     view on the right.
     /// Third-angle symbol: circle side view on the left, truncated-cone front

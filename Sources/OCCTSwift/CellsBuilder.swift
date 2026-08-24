@@ -15,7 +15,6 @@ public final class CellsBuilder: @unchecked Sendable {
     /// The shapes are partitioned into cells during construction.
     ///
     /// - Parameter shapes: Input shapes to partition
-    /// - Returns: CellsBuilder, or nil on failure
     public init?(shapes: [Shape]) {
         let ptrs = shapes.map { $0.handle as OCCTShapeRef? }
         guard

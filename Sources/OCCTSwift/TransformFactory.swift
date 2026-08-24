@@ -4,6 +4,7 @@ import simd
 
 /// Shared validation for ``TransformMatrix3D`` and ``Matrix12Grouped``, both of which wrap a
 /// fixed 12-element `[Double]` (row-major 3x4) in a distinct, non-interchangeable element order.
+///
 /// Returns `values` unchanged if it has exactly 12 elements, `nil` otherwise. Extracted so the
 /// count check — and its nil-on-mismatch behavior — lives in one place rather than being
 /// duplicated (with only the panic-message text differing) across both initializers (review
@@ -68,9 +69,7 @@ public struct TransformMatrix3D: Sendable {
         let z = values[8] * point.x + values[9] * point.y + values[10] * point.z + values[11]
         return SIMD3(x, y, z)
     }
-
-    /// This matrix converted to ``Matrix12Grouped``'s GROUPED layout, for use with
-    /// ``Shape/transformed(matrix:)``.
+    /// This matrix converted to Matrix12Grouped's GROUPED layout, for use with Shape.transformed(matrix:).
     public var grouped: Matrix12Grouped {
         Matrix12Grouped([
             values[0], values[1], values[2],
@@ -124,8 +123,7 @@ public struct Matrix12Grouped: Sendable {
         self.values = validated
     }
 
-    /// This matrix converted to ``TransformMatrix3D``'s INTERLEAVED layout, for use with
-    /// ``Shape/transformed(byMatrix:)`` or ``Shape/gTransformed(matrix:)``.
+    /// This matrix converted to TransformMatrix3D's INTERLEAVED layout, for use with Shape.transformed(byMatrix:) or Shape.gTransformed(matrix:).
     public var interleaved: TransformMatrix3D {
         TransformMatrix3D([
             values[0], values[1], values[2], values[9],
@@ -257,7 +255,9 @@ public enum TransformFactory2D {
         return TransformMatrix2D(values: m)
     }
 
-    /// Create a 2D direction from coordinates. Returns nil if zero vector.
+    /// Create a 2D direction from coordinates.
+    ///
+    /// Returns nil if zero vector.
     public static func direction(x: Double, y: Double) -> SIMD2<Double>? {
         var ox = 0.0
         var oy = 0.0
@@ -265,7 +265,9 @@ public enum TransformFactory2D {
         return SIMD2(ox, oy)
     }
 
-    /// Create a 2D direction from two points. Returns nil if coincident.
+    /// Create a 2D direction from two points.
+    ///
+    /// Returns nil if coincident.
     public static func direction(from p1: SIMD2<Double>, to p2: SIMD2<Double>) -> SIMD2<Double>? {
         var ox = 0.0
         var oy = 0.0

@@ -40,7 +40,9 @@ public final class CurveProfiler: @unchecked Sendable {
         OCCTGeomFillProfilerAddCurve(handle, curve.handle)
     }
 
-    /// Perform the homogenization. Returns true on success.
+    /// Perform the homogenization.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func perform(tolerance: Double = 1e-6) -> Bool {
         OCCTGeomFillProfilerPerform(handle, tolerance)

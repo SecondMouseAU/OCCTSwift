@@ -3,6 +3,7 @@ import OCCTBridge
 import simd
 
 /// Numerical solver infrastructure using OCCT's math library.
+///
 /// Bridges Swift closures to OCCT's abstract C++ function classes via C callback adapters.
 public enum MathSolver {
 
@@ -528,8 +529,8 @@ public enum MathSolver {
     /// Integrate a function from lower to upper using Gauss quadrature.
     ///
     /// - Parameters:
-    ///   - from: Lower bound of integration
-    ///   - to: Upper bound of integration
+    ///   - lower: Lower bound of integration
+    ///   - upper: Upper bound of integration
     ///   - order: Order of Gauss quadrature (default 10)
     ///   - function: Closure returning f(x) at x
     /// - Returns: The integral value
@@ -642,6 +643,7 @@ public enum MathSolver {
 extension MathSolver {
 
     /// Minimize using Newton's method with Hessian (second derivatives).
+    ///
     /// The closure takes x[n] and returns (value, gradient[n], hessian[n*n] row-major).
     /// This is the most precise minimizer when the Hessian is available.
     ///
@@ -975,6 +977,7 @@ extension MathSolver {
     }
 
     /// Solve constrained optimization via Uzawa method.
+    ///
     /// Minimize ||x||^2 subject to constraintMatrix * x = constraintRHS.
     ///
     /// `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/

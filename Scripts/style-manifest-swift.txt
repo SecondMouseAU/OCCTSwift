@@ -4,10 +4,3 @@
 # swift-format/swiftlint compliance; touching a listed file without removing it
 # fails Scripts/check-style-manifest.py. See okf/policies/code-style.md.
 
-Sources/OCCTSwift/ArcLengthCurveAdaptor.swift
-Sources/OCCTSwift/Continuity.swift
-Sources/OCCTSwift/DisplayDrawer.swift
-Sources/OCCTSwift/FontManager.swift
-Sources/OCCTSwift/ImportProgress.swift
-Sources/OCCTSwift/OCCTSerialQueue.swift
-Sources/OCCTSwift/Sampling.swift

@@ -39,7 +39,9 @@ internal struct DrawingPrimitiveOps {
 }
 
 /// A writer that can stage the five 2D drawing primitives PDF, SVG and DXF all
-/// understand. Conforming gets `primitiveOps()` via the default implementation below —
+/// understand.
+///
+/// Conforming gets `primitiveOps()` via the default implementation below —
 /// each writer keeps its own explicit `public func collectFromDrawing` (so the public
 /// declaration a consumer sees, and `docs/reference/Export-Vector.md` documents, still
 /// lives in `PDFExporter.swift`/`SVGExporter.swift`/`DXFExporter.swift` exactly as before),
@@ -65,8 +67,9 @@ internal protocol DrawingPrimitiveSink: AnyObject {
 
 extension DrawingPrimitiveSink {
     /// Ops closure bundle wrapping this sink's own staging methods, for the shared
-    /// annotation/dimension dispatchers below. Built once per instance and cached rather
-    /// than reallocated on every call (#800 review).
+    /// annotation/dimension dispatchers below.
+    ///
+    /// Built once per instance and cached rather than reallocated on every call (#800 review).
     func primitiveOps() -> DrawingPrimitiveOps {
         if let cached = cachedPrimitiveOps { return cached }
         let built = DrawingPrimitiveOps(
@@ -92,7 +95,9 @@ extension DrawingPrimitiveSink {
 
 /// Stage every edge/annotation/dimension from `drawing` onto `sink`, optionally translated
 /// and uniformly scaled — the shared collection pipeline every 2D exporter (PDF, SVG, DXF)
-/// uses. Each writer's own `public func collectFromDrawing` is a one-line call into this;
+/// uses.
+///
+/// Each writer's own `public func collectFromDrawing` is a one-line call into this;
 /// kept as a free function (not a `DrawingPrimitiveSink` default method) precisely so each
 /// writer keeps an explicit `public` declaration of its own — an `internal` protocol's
 /// extension methods are not reliably part of a conforming `public` type's visible API
@@ -136,11 +141,14 @@ internal func collectDrawing(
     }
 }
 
-/// Tessellate `compound`'s edges (via `allEdgePolylines`) and stage each resulting
-/// polyline as a line (2-point case) or polyline, translated/scaled, on `layer`, calling
+/// Tessellate edges from a compound and stage each resulting polyline as a line (2-point case) or polyline.
+///
+/// Translated/scaled on `layer`, calling
 /// `sink`'s own `addLine`/`addPolyline` directly (no `DrawingPrimitiveOps` closure
 /// indirection: this runs once per tessellated segment, the highest-volume primitive stream
-/// in a drawing, #800 review). Shared by every `collectDrawing` call for the
+/// in a drawing, #800 review).
+///
+/// Shared by every `collectDrawing` call for the
 /// visible/hidden/outline edge passes — previously three (PDF/SVG/DXF) independently
 /// hand-written copies of the identical loop. #795.
 private func collectProjectedEdges(
@@ -165,8 +173,10 @@ private func collectProjectedEdges(
 /// Per-layer stroke weight (mm) per ISO 128-20, shared by PDF and SVG — the two formats
 /// whose stroke widths are specified in the same physical unit their content streams are
 /// scaled to (PDF's CTM maps mm -> pt before any `w` operator; SVG's viewBox is 1:1 with
-/// the staged mm coordinates). DXF has no equivalent concept (colour + linetype per layer,
-/// no per-entity line weight), so it is not part of this table. #795.
+/// the staged mm coordinates).
+///
+/// DXF has no equivalent concept (colour + linetype per layer, no per-entity line weight),
+/// so it is not part of this table. #795.
 internal func strokeWidthMM(for layer: String) -> Double {
     switch layer {
     case "VISIBLE", "OUTLINE", "BORDER", "TITLE": return 0.5
@@ -176,8 +186,10 @@ internal func strokeWidthMM(for layer: String) -> Double {
     }
 }
 
-/// Shared PDF/SVG coordinate/length formatting (4 decimal places). DXF formats numbers
-/// separately (`%.6f`, via its own `pair(_:_:)` helper) so is not part of this. #795.
+/// Shared PDF/SVG coordinate/length formatting (4 decimal places).
+///
+/// DXF formats numbers separately (`%.6f`, via its own `pair(_:_:)` helper) so is not
+/// part of this. #795.
 internal func formatMM(_ v: Double) -> String {
     String(format: "%.4f", v)
 }

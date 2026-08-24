@@ -4,10 +4,10 @@ import simd
 
 /// Material information from a document.
 public struct MaterialInfo: Sendable {
-    /// Material name
+    /// Material name.
     public let name: String
-    /// Material description
+    /// Material description.
     public let description: String
-    /// Material density
+    /// Material density.
     public let density: Double
 }

@@ -35,6 +35,7 @@ public final class Interval: @unchecked Sendable {
     }
 
     /// Position of this interval relative to another.
+    ///
     /// Returns Intrv_Position enum value (0=Before, ..., 12=After).
     public func position(relativeTo other: Interval) -> Int {
         Int(OCCTIntrvIntervalPosition(handle, other.handle))

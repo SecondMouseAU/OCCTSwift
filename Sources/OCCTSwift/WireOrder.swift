@@ -18,7 +18,7 @@ import simd
 /// // result.orderedIndices gives the correct ordering
 /// ```
 public struct WireOrder: Sendable {
-    /// Status of the wire ordering analysis
+    /// Status of the wire ordering analysis.
     public enum Status: Sendable {
         /// Edges form a closed loop
         case closed
@@ -30,17 +30,17 @@ public struct WireOrder: Sendable {
         case failed
     }
 
-    /// An entry in the ordered edge sequence
+    /// An entry in the ordered edge sequence.
     public struct OrderedEdge: Sendable {
-        /// Original edge index (0-based)
+        /// Original edge index (0-based).
         public let originalIndex: Int
-        /// Whether the edge should be reversed in the chain
+        /// Whether the edge should be reversed in the chain.
         public let isReversed: Bool
     }
 
-    /// Status of the ordering analysis
+    /// Status of the ordering analysis.
     public let status: Status
-    /// Ordered sequence of edges
+    /// Ordered sequence of edges.
     public let orderedEdges: [OrderedEdge]
 
     /// Analyze the ordering of edges defined by their start/end 3D points.
@@ -95,7 +95,9 @@ public struct WireOrder: Sendable {
     }
 
     /// Decode a bridge `OCCTWireOrderResult` and its populated `outOrder` entries into a
-    /// `WireOrder`. Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
+    /// `WireOrder`.
+    ///
+    /// Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
     /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in
     /// how the result is interpreted.
     private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry])

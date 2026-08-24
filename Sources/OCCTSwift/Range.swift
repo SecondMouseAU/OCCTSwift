@@ -23,7 +23,9 @@ public final class Range: @unchecked Sendable {
     /// Whether the range is void.
     public var isVoid: Bool { OCCTRangeIsVoid(handle) }
 
-    /// Get bounds as (first, last). Returns nil if void.
+    /// Get bounds as (first, last).
+    ///
+    /// Returns nil if void.
     public var bounds: (first: Double, last: Double)? {
         var first = 0.0
         var last = 0.0

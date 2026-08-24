@@ -18,8 +18,9 @@ import OCCTBridge
 public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     internal let ref: OCCTEdgeCurveRef
 
-    /// Build an arc-length adaptor over `edge`. Returns `nil` if the edge is invalid (e.g.
-    /// has no 3D curve).
+    /// Build an arc-length adaptor over `edge`.
+    ///
+    /// Returns `nil` if the edge is invalid (e.g. has no 3D curve).
     public init?(_ edge: Edge) {
         guard let r = OCCTEdgeCurveCreate(edge.handle) else { return nil }
         ref = r
@@ -74,6 +75,7 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     /// - Parameter count: Sample count, honoured within `2...`
     ///   ``ArcLengthCurveAdaptor/maximumSampleCount``; outside that range the result is empty
     ///   (#479). Buffer allocation and the count contract are shared with ``WireCurve``.
+    /// - Returns: Array of points spaced equally by arc length along the edge, endpoints included.
     ///
     /// ```swift
     /// let ec = EdgeCurve(edge)!

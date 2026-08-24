@@ -69,10 +69,9 @@ struct ShapeContentsCore {
     let freeFaces: Int
 }
 
-/// Builds ``ShapeContentsCore`` from either bridge struct's shared 9 fields — the one mapping
-/// from `nbXxx` (C field) to `xxx` (Swift property), shared by ``Shape/contents`` and
-/// ``Shape/contentsExtended()`` (see ``ShapeContentsCore``'s own doc comment). Generic over
-/// ``ShapeContentsCFields`` rather than a 9-`Int32`-parameter free function, so each call site
+/// Builds ``ShapeContentsCore`` from bridge struct fields.
+///
+/// Generic over ``ShapeContentsCFields`` rather than a 9-`Int32`-parameter free function, so each call site
 /// passes the bridge struct itself — `shapeContentsCore(c)` — instead of re-spelling all 9 field
 /// names, which is what let the 9-argument block drift into 4 duplicated copies (PR #875 review).
 func shapeContentsCore(_ c: some ShapeContentsCFields) -> ShapeContentsCore {

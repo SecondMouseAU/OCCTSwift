@@ -126,6 +126,7 @@ public final class PlateSolver: @unchecked Sendable {
     ///   - v: V parameter
     ///   - derivativeOrderU: U derivative order
     ///   - derivativeOrderV: V derivative order
+    /// - Returns: The derivative vector at the given UV parameters.
     public func evaluateDerivative(
         u: Double, v: Double,
         derivativeOrderU: Int, derivativeOrderV: Int
@@ -190,6 +191,7 @@ extension PlateSolver {
 extension PlateSolver {
 
     /// Load a global translation constraint.
+    ///
     /// All sample points are constrained to translate by the same unknown displacement.
     @discardableResult
     public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool {

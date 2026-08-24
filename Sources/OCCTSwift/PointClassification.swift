@@ -2,7 +2,7 @@ import Foundation
 import OCCTBridge
 import simd
 
-/// Classification of a point relative to a shape
+/// Classification of a point relative to a shape.
 public enum PointClassification: Int32, Sendable {
     /// Point is inside the shape
     case inside = 0  // TopAbs_IN

@@ -26,7 +26,7 @@ public struct PolynomialRoots: Sendable {
 /// let cubic = PolynomialSolver.cubic(a: 1, b: -6, c: 11, d: -6)
 /// ```
 public enum PolynomialSolver {
-    /// Solve a quadratic equation: ax² + bx + c = 0
+    /// Solve a quadratic equation: ax² + bx + c = 0.
     ///
     /// - Returns: 0, 1, or 2 real roots sorted ascending
     public static func quadratic(a: Double, b: Double, c: Double) -> PolynomialRoots {
@@ -38,7 +38,7 @@ public enum PolynomialSolver {
         return PolynomialRoots(roots: roots)
     }
 
-    /// Solve a cubic equation: ax³ + bx² + cx + d = 0
+    /// Solve a cubic equation: ax³ + bx² + cx + d = 0.
     ///
     /// - Returns: 1, 2, or 3 real roots sorted ascending
     public static func cubic(a: Double, b: Double, c: Double, d: Double) -> PolynomialRoots {
@@ -51,7 +51,7 @@ public enum PolynomialSolver {
         return PolynomialRoots(roots: roots)
     }
 
-    /// Solve a quartic equation: ax⁴ + bx³ + cx² + dx + e = 0
+    /// Solve a quartic equation: ax⁴ + bx³ + cx² + dx + e = 0.
     ///
     /// - Returns: 0-4 real roots sorted ascending
     public static func quartic(a: Double, b: Double, c: Double, d: Double, e: Double)

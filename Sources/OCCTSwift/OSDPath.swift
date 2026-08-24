@@ -132,14 +132,18 @@ public enum OSDPath {
     /// ```
     public static func isUnixPath(_ path: String) -> Bool { OCCTOSDPathIsUnixPath(path) }
 
-    /// Check if path is relative. Pure syntax, no filesystem access.
+    /// Check if path is relative.
+    ///
+    /// Pure syntax, no filesystem access.
     ///
     /// ```swift
     /// OSDPath.isRelative("./sub/f.txt")  // true
     /// ```
     public static func isRelative(_ path: String) -> Bool { OCCTOSDPathIsRelative(path) }
 
-    /// Check if path is absolute. Pure syntax, no filesystem access.
+    /// Check if path is absolute.
+    ///
+    /// Pure syntax, no filesystem access.
     ///
     /// Recognises Unix, DOS, UNC and remote-protocol spellings.
     ///

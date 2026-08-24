@@ -15,6 +15,7 @@ public final class OffsetAncestors: @unchecked Sendable {
     }
 
     /// Create offset ancestors from a face with given offset distance.
+    ///
     /// joinType: 0=Arc, 1=Tangent, 2=Intersection
     public static func create(face: Shape, offset: Double, joinType: Int = 0) -> OffsetAncestors? {
         guard let ref = OCCTBRepFillOffsetAncestorsCreate(face.handle, offset, Int32(joinType))

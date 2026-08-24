@@ -53,10 +53,11 @@ public struct MeshParameters: Sendable {
     public var adjustMinSize: Bool
 
     /// Allow replacing an existing **finer** triangulation with a coarser one
-    /// (`IMeshTools_Parameters::AllowQualityDecrease`). When re-meshing an already-tessellated
-    /// shape at a different deflection, OCCT keeps the existing mesh if it's "good enough"
+    /// (`IMeshTools_Parameters::AllowQualityDecrease`).
+    ///
+    /// When re-meshing an already-tessellated shape at a different deflection, OCCT keeps the existing mesh if it's "good enough"
     /// unless this is `true` — set it when you need the new deflection to actually take effect
-    /// (e.g. a deviation re-measure at a finer/coarser resolution). Default `false`. (#211)
+    /// (e.g. a deviation re-measure at a finer/coarser resolution). Default `false`. (#211).
     public var allowQualityDecrease: Bool = false
 
     /// Default mesh parameters suitable for interactive display.
@@ -191,8 +192,6 @@ public final class Mesh: @unchecked Sendable {
     ///     adjacent triangles (smooth shading default).
     ///   - indices: triangle indices; length must be a multiple of 3, and each value
     ///     must be `< vertices.count`.
-    /// - Returns: `nil` if inputs are invalid (empty, mismatched normal count,
-    ///   index count not divisible by 3, or any index out of bounds).
     public convenience init?(
         vertices: [SIMD3<Float>],
         normals: [SIMD3<Float>]? = nil,

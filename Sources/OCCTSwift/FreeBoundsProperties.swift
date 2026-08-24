@@ -47,9 +47,11 @@ public final class FreeBoundsProperties: @unchecked Sendable {
 
     /// Create a free bounds properties analyzer.
     ///
-    /// - Parameter tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
-    ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared
-    ///   topology instead of from a sewing pass.
+    /// - Parameters:
+    ///   - shape: The shape to analyze.
+    ///   - tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
+    ///     selects a different OCCT algorithm, taking free edges from the shape's already-shared
+    ///     topology instead of from a sewing pass.
     public init?(shape: Shape, tolerance: Double = 1e-7) {
         guard let r = OCCTFreeBoundsPropsCreate(shape.handle, tolerance) else { return nil }
         self.ref = r

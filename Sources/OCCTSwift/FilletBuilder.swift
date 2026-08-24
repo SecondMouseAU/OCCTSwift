@@ -179,7 +179,9 @@ extension FilletBuilder {
         Int(OCCTFilletBuilderNbComputedSurfaces(handle, Int32(contour)))
     }
 
-    /// Error status for contour (1-based). Returns ChFiDS_ErrorStatus as Int.
+    /// Error status for contour (1-based).
+    ///
+    /// Returns ChFiDS_ErrorStatus as Int.
     public func stripeStatus(contour: Int) -> Int {
         Int(OCCTFilletBuilderStripeStatus(handle, Int32(contour)))
     }
@@ -335,6 +337,7 @@ extension FilletBuilder {
     }
 
     /// Get shapes generated from an input shape by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape (typically an edge)
     /// - Returns: Array of generated shapes
@@ -354,6 +357,7 @@ extension FilletBuilder {
     }
 
     /// Get shapes modified from an input shape by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape (typically a face)
     /// - Returns: Array of modified shapes
@@ -373,6 +377,7 @@ extension FilletBuilder {
     }
 
     /// Check if a shape was deleted by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape
     /// - Returns: true if the shape was deleted

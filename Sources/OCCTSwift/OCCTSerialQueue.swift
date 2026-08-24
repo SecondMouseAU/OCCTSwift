@@ -52,6 +52,7 @@ public enum OCCTSerial {
     }
 
     /// Acquire the OCCT global lock manually.
+    ///
     /// You MUST call `unlock()` when done. Prefer `withLock {}` instead.
     public static func lock() {
         OCCTSerialLockAcquire()

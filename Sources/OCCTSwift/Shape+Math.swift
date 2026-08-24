@@ -79,6 +79,7 @@ extension Shape {
         return Shape(handle: h)
     }
     /// Apply a transformation matrix via BRepTools_TrsfModification.
+    ///
     /// The 3x4 matrix is specified as row-major (a11..a14, a21..a24, a31..a34).
     public static func trsfModification(
         _ shape: Shape,
@@ -97,6 +98,7 @@ extension Shape {
     }
 
     /// Apply a general transformation matrix via BRepTools_GTrsfModification.
+    ///
     /// Supports non-uniform scaling. Shape should be NURBS-converted first for non-affine transforms.
     public static func gtrsfModification(
         _ shape: Shape,
@@ -114,11 +116,13 @@ extension Shape {
         return Shape(handle: ref)
     }
     /// Apply a rigid transformation (3x3 rotation + translation) described by a
-    /// ``Matrix12Grouped`` matrix (see that type's doc for the GROUPED layout and how it differs
+    /// ``Matrix12Grouped`` matrix.
+    ///
+    /// See that type's doc for the GROUPED layout and how it differs
     /// from ``TransformMatrix3D``'s INTERLEAVED layout — used instead by
     /// ``transformed(byMatrix:)``/``gTransformed(matrix:)`` — the two are not interchangeable,
     /// and passing one where the other is expected is now a compile error, not a silently
-    /// garbled transform. See #835.)
+    /// garbled transform. See #835.
     ///
     /// - Parameter matrix: The transformation, in GROUPED layout.
     /// - Returns: The transformed shape, or `nil` if the operation fails.
@@ -209,11 +213,13 @@ extension Shape {
 
 extension Shape {
     /// Apply a rigid transformation (3x3 rotation + translation) described by a
-    /// ``TransformMatrix3D`` matrix (INTERLEAVED layout — see that type's doc for how it differs
-    /// from ``Matrix12Grouped``'s GROUPED layout, used instead by ``transformed(matrix:)``). Passed
-    /// straight through, positionally, to `gp_Trsf::SetValues(a11, a12, ..., a34)` — no
+    /// ``TransformMatrix3D`` matrix.
+    ///
+    /// INTERLEAVED layout — see that type's doc for how it differs
+    /// from ``Matrix12Grouped``'s GROUPED layout, used instead by ``transformed(matrix:)``).
+    /// Passed straight through, positionally, to `gp_Trsf::SetValues(a11, a12, ..., a34)` — no
     /// re-shuffling. Same layout as ``gTransformed(matrix:)``, but that method additionally
-    /// accepts non-uniform scale/shear; this one is restricted to a rigid `gp_Trsf`.
+    /// accepts non-uniform scale/shear; this one is restricted to a rigid `gp_Trsf`..
     ///
     /// - Parameter matrix: The transformation, in INTERLEAVED layout.
     /// - Returns: Transformed shape, or `nil` if the operation fails.

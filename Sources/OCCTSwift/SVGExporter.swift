@@ -48,8 +48,9 @@ extension Exporter {
 }
 
 public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
-    /// Explicit viewBox override. When nil, the writer computes the viewBox
-    /// from the staged content's bounding box at `write(to:)` time.
+    /// Explicit viewBox override.
+    ///
+    /// When nil, the writer computes the viewBox from the staged content's bounding box at `write(to:)` time.
     public var viewBox: (min: SIMD2<Double>, size: SIMD2<Double>)?
     public let deflection: Double
 
@@ -64,7 +65,8 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
             position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
             layer: String
         )] = []
-    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
+    ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(

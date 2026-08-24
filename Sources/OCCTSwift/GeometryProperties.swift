@@ -94,7 +94,9 @@ public enum GeometryProperties {
         return (length, SIMD3(cx, cy, cz))
     }
 
-    /// Point set centroid. Returns (pointCount, centroid), with a nil centroid for an empty set.
+    /// Point set centroid.
+    ///
+    /// Returns (pointCount, centroid), with a nil centroid for an empty set.
     ///
     /// An empty set has no centroid. This used to report (0,0,0), which no caller could tell apart
     /// from the centroid of a set centred on the origin (#609).
@@ -145,8 +147,9 @@ extension GeometryProperties {
 }
 
 extension GeometryProperties {
-    /// Compute weighted centroid of a point set. Returns (totalMass, centroid), with a nil centroid
-    /// when there is none to report.
+    /// Compute weighted centroid of a point set.
+    ///
+    /// Returns (totalMass, centroid), with a nil centroid when there is none to report.
     ///
     /// **Every weight must be strictly positive.** OCCT's `GProp_PGProps::AddPoint` throws on the
     /// first weight that is not, and one bad weight discards the whole set rather than skipping

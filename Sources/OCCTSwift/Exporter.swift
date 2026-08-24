@@ -32,7 +32,7 @@ public enum Exporter {
 
     // MARK: - STL Export
 
-    /// Export errors
+    /// Export errors.
     public enum ExportError: Error, LocalizedError {
         case exportFailed(String)
         case invalidPath
@@ -327,6 +327,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL
     ///   - unit: Unit string ("MM", "IN", "M", "FT", etc.)
+    /// - Throws: `ExportError` if export fails
     public static func writeIGES(shape: Shape, to url: URL, unit: String) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
@@ -336,6 +337,8 @@ public enum Exporter {
     }
 
     /// Export a shape to IGES in BRep mode (exact geometry, not tessellated faces).
+    ///
+    /// - Throws: `ExportError` if export fails
     public static func writeIGESBRep(shape: Shape, to url: URL) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
@@ -345,6 +348,8 @@ public enum Exporter {
     }
 
     /// Export multiple shapes to a single IGES file.
+    ///
+    /// - Throws: `ExportError` if export fails
     public static func writeIGES(shapes: [Shape], to url: URL) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
@@ -360,6 +365,8 @@ public enum Exporter {
     // MARK: - PLY Export Expansion (v0.59.0)
 
     /// Export a shape to PLY with control over normals, colors, and texture coordinates.
+    ///
+    /// - Throws: `ExportError` if export fails
     public static func writePLY(
         shape: Shape, to url: URL, deflection: Double,
         normals: Bool = true, colors: Bool = false, texCoords: Bool = false
@@ -526,6 +533,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL
     ///   - modelType: STEP representation type
+    /// - Throws: `ExportError` if export fails
     public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType) throws {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
@@ -541,6 +549,7 @@ public enum Exporter {
     ///   - url: Destination file URL
     ///   - modelType: STEP representation type
     ///   - tolerance: Geometric tolerance for the transfer
+    /// - Throws: `ExportError` if export fails
     public static func writeSTEP(
         shape: Shape, to url: URL, modelType: StepModelType, tolerance: Double
     ) throws {
@@ -559,6 +568,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL
     ///   - modelType: STEP representation type (default: .asIs)
+    /// - Throws: `ExportError` if export fails
     public static func writeSTEPCleanDuplicates(
         shape: Shape, to url: URL, modelType: StepModelType = .asIs
     ) throws {
@@ -634,6 +644,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTL(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writeSTL(shape: self, to: url, deflection: deflection)
     }
@@ -645,6 +656,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - name: Optional name for the shape
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTEP(to url: URL, name: String? = nil) throws {
         try Exporter.writeSTEP(shape: self, to: url, name: name)
     }
@@ -652,16 +664,22 @@ extension Shape {
     // MARK: - STEP Export with Model Type (v0.58.0)
 
     /// Export this shape to STEP with a specific model type.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTEP(to url: URL, modelType: StepModelType) throws {
         try Exporter.writeSTEP(shape: self, to: url, modelType: modelType)
     }
 
     /// Export this shape to STEP with a specific model type and tolerance.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTEP(to url: URL, modelType: StepModelType, tolerance: Double) throws {
         try Exporter.writeSTEP(shape: self, to: url, modelType: modelType, tolerance: tolerance)
     }
 
     /// Export this shape to STEP with duplicate entity cleanup.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTEPCleanDuplicates(to url: URL, modelType: StepModelType = .asIs) throws {
         try Exporter.writeSTEPCleanDuplicates(shape: self, to: url, modelType: modelType)
     }
@@ -670,6 +688,7 @@ extension Shape {
     ///
     /// - Parameter deflection: Tessellation quality (default: 0.1)
     /// - Returns: STL file data
+    /// - Throws: `Exporter.ExportError` if export fails
     public func stlData(deflection: Double = 0.1) throws -> Data {
         try Exporter.stlData(shape: self, deflection: deflection)
     }
@@ -678,6 +697,7 @@ extension Shape {
     ///
     /// - Parameter name: Optional name for the shape
     /// - Returns: STEP file data
+    /// - Throws: `Exporter.ExportError` if export fails
     public func stepData(name: String? = nil) throws -> Data {
         try Exporter.stepData(shape: self, name: name)
     }
@@ -687,11 +707,15 @@ extension Shape {
     /// Export this shape to IGES format.
     ///
     /// - Parameter url: Destination file URL
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeIGES(to url: URL) throws {
         try Exporter.writeIGES(shape: self, to: url)
     }
 
     /// Get IGES data for this shape.
+    ///
+    /// - Returns: IGES file data
+    /// - Throws: `Exporter.ExportError` if export fails
     public func igesData() throws -> Data {
         try Exporter.igesData(shape: self)
     }
@@ -699,11 +723,15 @@ extension Shape {
     // MARK: - IGES Export Expansion (v0.59.0)
 
     /// Export this shape to IGES with a specific unit.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeIGES(to url: URL, unit: String) throws {
         try Exporter.writeIGES(shape: self, to: url, unit: unit)
     }
 
     /// Export this shape to IGES in BRep mode.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeIGESBRep(to url: URL) throws {
         try Exporter.writeIGESBRep(shape: self, to: url)
     }
@@ -711,6 +739,8 @@ extension Shape {
     // MARK: - PLY Export Expansion (v0.59.0)
 
     /// Export this shape to PLY with options.
+    ///
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writePLY(
         to url: URL, deflection: Double,
         normals: Bool = true, colors: Bool = false, texCoords: Bool = false
@@ -735,6 +765,7 @@ extension Shape {
     /// let box = Shape.box(width: 10, height: 20, depth: 30)
     /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
     /// ```
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeBREP(
         to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
         allowInvalid: Bool = false
@@ -749,6 +780,8 @@ extension Shape {
     /// - Parameters:
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
+    /// - Returns: BREP file data
+    /// - Throws: `Exporter.ExportError` if export fails
     public func brepData(withTriangles: Bool = true, withNormals: Bool = false) throws -> Data {
         try Exporter.brepData(shape: self, withTriangles: withTriangles, withNormals: withNormals)
     }
@@ -760,6 +793,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writeOBJ(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writeOBJ(shape: self, to: url, deflection: deflection)
     }
@@ -771,6 +805,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    /// - Throws: `Exporter.ExportError` if export fails
     public func writePLY(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writePLY(shape: self, to: url, deflection: deflection)
     }
@@ -783,6 +818,7 @@ extension Exporter {
     ///   - url: Output file URL (.gltf or .glb).
     ///   - binary: If true, writes binary GLB. If false, writes text GLTF.
     ///   - deflection: Mesh deflection tolerance.
+    /// - Throws: `ExportError` if export fails
     public static func writeGLTF(
         shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1
     ) throws {

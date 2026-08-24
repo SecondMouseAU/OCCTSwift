@@ -30,7 +30,9 @@ public final class ShapeFixer: @unchecked Sendable {
         OCCTShapeFixerSetMinTolerance(ref, minTol)
     }
 
-    /// Perform the shape fix. Returns true if something was fixed.
+    /// Perform the shape fix.
+    ///
+    /// Returns true if something was fixed.
     @discardableResult
     public func perform() -> Bool {
         OCCTShapeFixerPerform(ref)

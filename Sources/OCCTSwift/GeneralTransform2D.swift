@@ -4,9 +4,9 @@ import simd
 
 /// A general 2D transformation (supports non-uniform scaling/affinity), wrapping gp_GTrsf2d.
 public struct GeneralTransform2D: Sendable {
-    /// 2x2 matrix (row-major: m11, m12, m21, m22)
+    /// 2x2 matrix (row-major: m11, m12, m21, m22).
     public let matrix: [Double]
-    /// Translation vector
+    /// Translation vector.
     public let translation: SIMD2<Double>
 
     /// Create an affinity transformation about a 2D axis with given ratio.

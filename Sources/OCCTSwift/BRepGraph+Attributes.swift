@@ -16,7 +16,9 @@ import OCCTBridge
 // MARK: - AttrValue
 
 extension BRepGraph {
-    /// A typed, Codable attribute value. Closed set keeps the snapshot round-trip lossless.
+    /// A typed, Codable attribute value.
+    ///
+    /// Closed set keeps the snapshot round-trip lossless.
     public enum AttrValue: Codable, Hashable, Sendable {
         case bool(Bool)
         case int(Int)
@@ -77,7 +79,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
         storage[node, default: [:]][key] = value
     }
 
-    /// Remove one attribute. Drops the node entry entirely once its last attribute is cleared.
+    /// Remove one attribute.
+    ///
+    /// Drops the node entry entirely once its last attribute is cleared.
     public mutating func clear(_ key: String, for node: BRepGraph.NodeRef) {
         guard var attrs = storage[node] else { return }
         attrs[key] = nil
@@ -96,7 +100,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     // with `JSONEncoder.outputFormatting = .sortedKeys` — or `GraphSnapshot.canonicalEncoder()`
     // — for byte-stable, diffable output. JSONEncoder hash-orders object keys otherwise.)
 
-    /// One `key: value` attribute pair. Encoding attributes as a sorted array (rather than a
+    /// One `key: value` attribute pair.
+    ///
+    /// Encoding attributes as a sorted array (rather than a
     /// `[String: AttrValue]` dictionary) avoids JSON's non-deterministic dictionary key order.
     private struct KeyValue: Codable {
         let key: String
@@ -146,7 +152,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
 /// `BRepGraph` from `brep`. Only the source shape (as a BREP string) and the attribute
 /// store travel in the snapshot.
 public struct GraphSnapshot: Codable, Sendable, Equatable {
-    /// Current on-disk format version. Bump on any breaking schema change.
+    /// Current on-disk format version.
+    ///
+    /// Bump on any breaking schema change.
     public static let currentFormatVersion = 1
 
     /// BREP serialization of the source shape (re-derives the graph structure on load).

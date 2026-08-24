@@ -20,7 +20,7 @@ import simd
 /// let interior = FillConstraint(edge: ridgeEdge, continuity: .g0, isBoundary: false)
 /// ```
 public struct FillConstraint {
-    /// Edge the filled surface must satisfy
+    /// Edge the filled surface must satisfy.
     public var edge: Edge
     /// Face to be continuous with, or nil to derive one from the edge itself.
     ///
@@ -29,9 +29,9 @@ public struct FillConstraint {
     /// quietly substituting a different surface. Leave it nil to accept whichever surface the
     /// edge itself resolves.
     public var support: Face?
-    /// Continuity order at this edge
+    /// Continuity order at this edge.
     public var continuity: SurfaceContinuity
-    /// Whether this edge bounds the resulting face (true) or is an internal constraint (false)
+    /// Whether this edge bounds the resulting face (true) or is an internal constraint (false).
     public var isBoundary: Bool
 
     /// Create an edge constraint.
@@ -55,18 +55,18 @@ public struct FillConstraint {
     }
 }
 
-/// Parameters for surface filling operations
+/// Parameters for surface filling operations.
 public struct FillingParameters {
-    /// Surface continuity at boundaries
+    /// Surface continuity at boundaries.
     public var continuity: SurfaceContinuity
-    /// Surface tolerance
+    /// Surface tolerance.
     public var tolerance: Double
-    /// Maximum surface degree
+    /// Maximum surface degree.
     public var maxDegree: Int
-    /// Maximum number of segments
+    /// Maximum number of segments.
     public var maxSegments: Int
 
-    /// Create filling parameters with defaults
+    /// Create filling parameters with defaults.
     public init(
         continuity: SurfaceContinuity = .g1,
         tolerance: Double = 1e-4,

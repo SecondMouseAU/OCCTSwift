@@ -31,7 +31,6 @@ public final class KDTree: @unchecked Sendable {
     /// Build a KD-tree from an array of 3D points.
     ///
     /// - Parameter points: The points to index
-    /// - Returns: A KD-tree, or nil if the input is empty or construction fails
     public init?(points: [SIMD3<Double>]) {
         guard !points.isEmpty else { return nil }
         let coords = points.flatMap { [$0.x, $0.y, $0.z] }

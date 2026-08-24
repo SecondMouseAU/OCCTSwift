@@ -63,6 +63,7 @@ public enum TopologyResolutionError: Error, Sendable, Hashable {
 
 extension BRepGraph.NodeRef {
     /// Sentinel for recording pure creations (no meaningful ancestor).
+    ///
     /// Matches OCCT's default-constructed `BRepGraph_NodeId` — kind .solid, index -1.
     public static let sentinel = BRepGraph.NodeRef(kind: .solid, index: -1)
 }
@@ -101,6 +102,7 @@ extension BRepGraph {
 
     /// The bounds check shared by every recipe resolver below: `occurrence` must be a
     /// valid index into `available`, or resolution fails with `.occurrenceOutOfRange`.
+    ///
     /// Returns the validated element itself on success, so call sites don't need their
     /// own follow-up bounds check or subscript.
     private func element<T>(
@@ -117,8 +119,9 @@ extension BRepGraph {
 
     /// Resolves `ancestor` and collapses any failure into `.ancestorMissing(ancestor)` —
     /// the shared "resolve the ancestor recipe, or fail" step `resolveContainedIn` and
-    /// `resolveSplitOf` each perform before doing their own kind-specific lookup. The
-    /// underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
+    /// `resolveSplitOf` each perform before doing their own kind-specific lookup.
+    ///
+    /// The underlying failure reason (e.g. `.operationNotFound`, a nested `.ancestorMissing`)
     /// is intentionally discarded, same as both call sites did before consolidation.
     private func resolveAncestor(_ ancestor: TopologyRef) -> Result<
         NodeRef, TopologyResolutionError
@@ -225,8 +228,9 @@ extension BRepGraph {
         }
     }
 
-    /// Walk history forward from `node` to its current form. If `node` has
-    /// derived descendants, return the first leaf in deterministic order.
+    /// Walk history forward from `node` to its current form.
+    ///
+    /// If `node` has derived descendants, return the first leaf in deterministic order.
     private func currentForm(of node: NodeRef) -> NodeRef {
         let leaves = currentForms(of: node)
         return leaves.first ?? node

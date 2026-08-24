@@ -22,8 +22,7 @@ public struct BezierToBSpline2dResult {
 public enum CompBezierConverter {
 
     /// Convert a sequence of connected Bezier segments (3D) to a single BSpline curve.
-    /// - Parameters:
-    ///   - segments: Each element is an array of control points for one Bezier segment.
+    /// - Parameter segments: Each element is an array of control points for one Bezier segment.
     ///               All segments must have the same number of control points.
     /// - Returns: BSpline data, or nil on failure.
     public static func toBSpline(segments: [[SIMD3<Double>]]) -> BezierToBSplineResult? {
@@ -79,8 +78,7 @@ public enum CompBezierConverter {
     }
 
     /// Convert a sequence of connected 2D Bezier segments to a single BSpline curve.
-    /// - Parameters:
-    ///   - segments: Each element is an array of 2D control points for one Bezier segment.
+    /// - Parameter segments: Each element is an array of 2D control points for one Bezier segment.
     ///               All segments must have the same number of control points.
     /// - Returns: BSpline 2D data, or nil on failure.
     public static func toBSpline2d(segments: [[SIMD2<Double>]]) -> BezierToBSpline2dResult? {

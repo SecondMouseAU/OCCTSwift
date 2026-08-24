@@ -21,7 +21,9 @@ import OCCTBridge
 public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     internal let ref: OCCTCompCurveRef
 
-    /// Build an arc-length adaptor over `wire`. Returns `nil` if the wire is empty/invalid.
+    /// Build an arc-length adaptor over `wire`.
+    ///
+    /// Returns `nil` if the wire is empty/invalid.
     public init?(_ wire: Wire) {
         guard let r = OCCTCompCurveCreate(wire.handle) else { return nil }
         ref = r
@@ -74,12 +76,14 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     }
 
     /// `count` points spaced **equally by arc length** along the wire, including both
-    /// endpoints (`GCPnts_UniformAbscissa`). One pass, cheaper than calling
-    /// ``point(atAbscissa:)`` in a loop.
+    /// endpoints (`GCPnts_UniformAbscissa`).
+    ///
+    /// One pass, cheaper than calling ``point(atAbscissa:)`` in a loop.
     ///
     /// - Parameter count: Sample count, honoured within `2...`
     ///   ``ArcLengthCurveAdaptor/maximumSampleCount``; outside that range the result is empty
     ///   (#479). Buffer allocation and the count contract are shared with ``EdgeCurve``.
+    /// - Returns: Array of points spaced equally by arc length along the wire, including both endpoints.
     ///
     /// ```swift
     /// let wc = WireCurve(wire)!

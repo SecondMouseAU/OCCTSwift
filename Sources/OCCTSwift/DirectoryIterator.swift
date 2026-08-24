@@ -19,8 +19,12 @@ public enum DirectoryIterator {
 
     /// List directory names matching mask.
     ///
-    /// - Parameter maxCount: Output *capacity* (default 1000), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Parameters:
+    ///   - path: The directory path to list.
+    ///   - mask: File mask pattern (default "*").
+    ///   - maxCount: Output *capacity* (default 1000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: Array of directory names.
     public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String] {
         let maxCount = Sampling.capacity(maxCount)
         guard maxCount > 0 else { return [] }
@@ -54,8 +58,12 @@ public enum FileIterator {
 
     /// List file names matching mask.
     ///
-    /// - Parameter maxCount: Output *capacity* (default 1000), clamped into `0...`
-    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Parameters:
+    ///   - path: The directory path to list.
+    ///   - mask: File mask pattern (default "*").
+    ///   - maxCount: Output *capacity* (default 1000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: Array of file names.
     public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String] {
         let maxCount = Sampling.capacity(maxCount)
         guard maxCount > 0 else { return [] }

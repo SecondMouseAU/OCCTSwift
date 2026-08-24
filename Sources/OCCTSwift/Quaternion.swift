@@ -40,7 +40,9 @@ public final class Quaternion: @unchecked Sendable {
         return (x, y, z, w)
     }
 
-    /// Set Euler angles. Order: 0=Intrinsic_XYZ, etc.
+    /// Set Euler angles.
+    ///
+    /// Order: 0=Intrinsic_XYZ, etc.
     public func setEulerAngles(order: Int32, alpha: Double, beta: Double, gamma: Double) {
         OCCTQuaternionSetEulerAngles(handle, order, alpha, beta, gamma)
     }

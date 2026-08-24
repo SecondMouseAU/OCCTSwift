@@ -22,6 +22,7 @@ public enum Helix {
     ///   - taperAngle: Taper angle in radians (0 for constant radius)
     ///   - isClockwise: Whether the helix winds clockwise
     ///   - tolerance: Approximation tolerance
+    /// - Returns: The built helix curve with tolerance info, or nil on failure
     public static func build(
         origin: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),

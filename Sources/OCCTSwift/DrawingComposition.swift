@@ -42,8 +42,9 @@ extension Drawing {
     }
 
     /// 2D axis-aligned bounding box of the drawing's visible / hidden / outline
-    /// edges, optionally including annotation extents. Returns nil if the
-    /// drawing contains no geometry.
+    /// edges, optionally including annotation extents.
+    ///
+    /// Returns nil if the drawing contains no geometry.
     public func bounds(
         deflection: Double = 0.1,
         includeAnnotations: Bool = true

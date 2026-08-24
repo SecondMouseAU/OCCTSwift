@@ -4,7 +4,9 @@ import simd
 
 /// Analytic quadric-quadric intersection.
 public enum QuadricIntersection {
-    /// Intersect a cylinder (Z-axis, given radius) with a sphere. Returns curve count, or nil on failure.
+    /// Intersect a cylinder (Z-axis, given radius) with a sphere.
+    ///
+    /// Returns curve count, or nil on failure.
     public static func cylinderSphere(
         cylinderRadius: Double,
         sphereCenter: SIMD3<Double>, sphereRadius: Double,
@@ -33,6 +35,7 @@ public enum QuadricIntersection {
 
 extension QuadricIntersection {
     /// Intersect a cone (Z-axis, given semi-angle and ref radius) with a sphere.
+    ///
     /// Returns curve count, or nil on error. Returns -2 encoded as nil for identical.
     public static func coneSphere(
         semiAngle: Double, refRadius: Double,
@@ -49,8 +52,16 @@ extension QuadricIntersection {
 
     /// Sample points along a cone-sphere intersection curve.
     ///
-    /// - Parameter sampleCount: Desired number of samples, honoured within `1...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Parameters:
+    ///   - semiAngle: The semi-angle of the cone.
+    ///   - refRadius: The reference radius of the cone.
+    ///   - sphereCenter: The center of the sphere.
+    ///   - sphereRadius: The radius of the sphere.
+    ///   - tolerance: Intersection tolerance (default 1e-6).
+    ///   - curveIndex: The intersection curve index.
+    ///   - sampleCount: Desired number of samples, honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    /// - Returns: Array of intersection points.
     public static func coneSpherePoints(
         semiAngle: Double, refRadius: Double,
         sphereCenter: SIMD3<Double>, sphereRadius: Double,

@@ -48,9 +48,9 @@
 /// ```
 ///
 /// - Note: Not every API accepts every order. A bare point cannot carry curvature, so
-///   ``Shape/plateSurface(through:orders:degree:pointsOnCurves:iterations:tolerance:)`` and the
-///   point half of ``Shape/plateSurface(pointConstraints:curveConstraints:degree:tolerance:)``
-///   reject ``g2`` up front, before building any constraint (`GeomPlate_PointConstraint` throws
+///   ``Shape/plateSurface(through:orders:...)` and the
+///   point half of ``Shape/plateSurface(pointConstraints:curveConstraints:...)` reject
+///   ``g2`` up front, before building any constraint (`GeomPlate_PointConstraint` throws
 ///   above order 1; see ``SurfaceContinuity/isUnsupportedForPointConstraint``, #437).
 public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     /// Positional continuity (G0). The surface passes through the constraint.
@@ -182,7 +182,7 @@ public enum ContinuityClass: Int32, Sendable, CaseIterable {
 }
 
 extension ContinuityClass: Comparable {
-    /// Ranks two *measured* classes by their place in `GeomAbs_Shape`'s ladder.
+    /// Ranks two *measured* classes by their place in the `GeomAbs_Shape` ladder.
     ///
     /// `GeomAbs_Shape` declares its cases in ascending order of *how much smoothness is being
     /// claimed* (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly and

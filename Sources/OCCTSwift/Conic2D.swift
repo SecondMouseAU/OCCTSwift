@@ -104,8 +104,13 @@ public struct Conic2D: Sendable {
 
     /// Intersect a 2D line with a 2D circle.
     ///
-    /// - Parameter radius: circle radius. Must be greater than zero; a radius of zero is a
-    ///   point-on-line test, not an intersection, and returns an empty array.
+    /// - Parameters:
+    ///   - linePoint: Point on the line.
+    ///   - lineDir: Direction of the line.
+    ///   - circleCenter: Center of the circle.
+    ///   - circleDir: Direction of the circle (axis).
+    ///   - radius: Circle radius. Must be greater than zero; a radius of zero is a
+    ///     point-on-line test, not an intersection, and returns an empty array.
     /// - Returns: 0, 1, or 2 intersection points.
     ///
     /// ```swift

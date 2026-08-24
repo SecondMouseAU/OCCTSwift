@@ -100,7 +100,9 @@ extension Shape {
         return SIMD3(x, y, z)
     }
 
-    /// Get the node indices of a triangle (1-based index). Returns 1-based node indices.
+    /// Get the node indices of a triangle (1-based index).
+    ///
+    /// Returns 1-based node indices.
     public func triangulationTriangle(at index: Int32) -> (Int32, Int32, Int32) {
         var n1: Int32 = 0
         var n2: Int32 = 0
@@ -159,6 +161,7 @@ extension Shape {
 extension Shape {
 
     /// Write this shape's triangulation to a binary STL file.
+    ///
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - filePath: Output file path.
@@ -169,6 +172,7 @@ extension Shape {
     }
 
     /// Write this shape's triangulation to an ASCII STL file.
+    ///
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - filePath: Output file path.
@@ -190,6 +194,7 @@ extension Shape {
 extension Shape {
 
     /// Get adjacent triangles for a triangle in a meshed face.
+    ///
     /// The three triangles adjacent to one triangle of a face's triangulation.
     ///
     /// `faceIndex` is 0-based, like ``Face/index`` and every other face index in this API (#541).

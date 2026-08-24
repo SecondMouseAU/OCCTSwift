@@ -148,6 +148,7 @@ extension PipeShellBuilder {
     }
 
     /// Simulate the pipe shell with a given number of sections.
+    ///
     /// Returns an array of simulated section shapes (wire cross-sections along the spine).
     public func simulate(numberOfSections: Int) -> [Shape] {
         var count: Int32 = 0

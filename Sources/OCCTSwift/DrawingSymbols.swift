@@ -106,8 +106,9 @@ extension DrawingAnnotation {
 
 // MARK: - GD&T symbols (ISO 1101)
 
-/// ISO 1101 geometric characteristic symbol. Matches `Document.GeomToleranceType`
-/// raw values for easy round-trip from XDE into drawings.
+/// ISO 1101 geometric characteristic symbol.
+///
+/// Matches `Document.GeomToleranceType` raw values for easy round-trip from XDE into drawings.
 public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case straightness, flatness, circularity, cylindricity
     case profileOfLine, profileOfSurface
@@ -116,8 +117,10 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case circularRunout, totalRunout
 
     /// Unicode glyph or short textual representation — used when emitting to
-    /// DXF via plain TEXT. (Full Unicode glyphs render in AutoCAD but require
-    /// a TrueType font; the textual form is always safe.)
+    /// DXF via plain TEXT.
+    ///
+    /// (Full Unicode glyphs render in AutoCAD but require a TrueType font;
+    /// the textual form is always safe.)
     public var glyph: String {
         switch self {
         case .straightness: return "STR"
@@ -295,8 +298,9 @@ extension DrawingAnnotation {
 
 extension Drawing {
     /// Compose a detail view of a region from this drawing, scaled up and
-    /// placed at `placement`. Returns a `TransformedDrawing` ready to pass to
-    /// `DXFWriter.collectFromDrawing`.
+    /// placed at `placement`.
+    ///
+    /// Returns a `TransformedDrawing` ready to pass to `DXFWriter.collectFromDrawing`.
     ///
     /// Caller should pair with a `DrawingAnnotation.textLabel` marker on the
     /// parent view indicating the detail bubble + a textLabel on the detail
@@ -307,8 +311,9 @@ extension Drawing {
 }
 
 extension DrawingAnnotation {
-    /// ISO 128-30 break line marking compressed length. Renders as a short
-    /// zigzag at the midpoint of the two endpoints.
+    /// ISO 128-30 break line marking compressed length.
+    ///
+    /// Renders as a short zigzag at the midpoint of the two endpoints.
     public static func breakLine(
         from: SIMD2<Double>, to: SIMD2<Double>,
         amplitude: Double = 2.0
