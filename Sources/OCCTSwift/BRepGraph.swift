@@ -588,10 +588,6 @@ public final class BRepGraph: @unchecked Sendable {
     ///
     /// - Parameter index: 0-based index into the history log.
     /// - Returns: The record, or nil if `index` is out of range.
-    /// Get a single history record by index.
-    ///
-    /// - Parameter index: 0-based index into the history log.
-    /// - Returns: The record, or nil if `index` is out of range.
     public func historyRecord(at index: Int) -> HistoryRecord? {
         guard index >= 0, index < historyRecordCount else { return nil }
         var dummySeq: Int32 = 0
