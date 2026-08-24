@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #213: threadedShaft must cut a real ISO-68 60° V-groove (30° flanks), not a near-square slot.
@@ -15,18 +16,29 @@ struct Issue213VProfile {
 
     @Test("threadedShaft removes a V-groove's worth of material, not a square slot's")
     func vGrooveVolume() {
-        guard let shaft = Shape.cylinder(radius: 5, height: 20) else { #expect(Bool(false)); return }
+        guard let shaft = Shape.cylinder(radius: 5, height: 20) else {
+            #expect(Bool(false))
+            return
+        }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5)
-        guard let threaded = shaft.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                                                 spec: spec, length: 16) else {
-            #expect(Bool(false), "threadedShaft returned nil"); return
+        guard
+            let threaded = shaft.threadedShaft(
+                axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+                spec: spec, length: 16)
+        else {
+            #expect(Bool(false), "threadedShaft returned nil")
+            return
         }
         #expect(threaded.isValid)
-        guard let v0 = shaft.volume, let v1 = threaded.volume else { #expect(Bool(false)); return }
+        guard let v0 = shaft.volume, let v1 = threaded.volume else {
+            #expect(Bool(false))
+            return
+        }
         let removed = (v0 - v1) / v0
         // Correct ISO-68 V here removes ~13%. The pre-#213 square groove removed only ~4%
         // (flanks ~6.6° instead of 30°). The band cleanly separates the two.
-        #expect(removed > 0.08, "removed only \(removed), flanks likely too shallow (square thread)")
+        #expect(
+            removed > 0.08, "removed only \(removed), flanks likely too shallow (square thread)")
         #expect(removed < 0.30, "removed \(removed), implausibly large for an M10×1.5 thread")
     }
 
@@ -38,6 +50,6 @@ struct Issue213VProfile {
         let apexHalf = spec.rootFlat / 2
         let outerHalf = apexHalf + spec.cutDepth * tan(spec.halfFlankAngle)
         let flank = atan((outerHalf - apexHalf) / spec.cutDepth) * 180 / .pi
-        #expect(abs(flank - 30.0) < 0.01)   // 30° from the radial = a 60°-included V
+        #expect(abs(flank - 30.0) < 0.01)  // 30° from the radial = a 60°-included V
     }
 }

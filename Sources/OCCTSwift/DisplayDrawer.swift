@@ -63,7 +63,9 @@ public final class DisplayDrawer: @unchecked Sendable {
         set { OCCTDrawerSetTypeOfDeflection(handle, newValue.rawValue) }
     }
 
-    /// Whether automatic triangulation is enabled. Default is `true`.
+    /// Whether automatic triangulation is enabled.
+    ///
+    /// Default is `true`.
     public var autoTriangulation: Bool {
         get { OCCTDrawerGetAutoTriangulation(handle) }
         set { OCCTDrawerSetAutoTriangulation(handle, newValue) }
@@ -77,7 +79,9 @@ public final class DisplayDrawer: @unchecked Sendable {
         set { OCCTDrawerSetIsoOnTriangulation(handle, newValue) }
     }
 
-    /// Number of discretisation points for curve approximation. Default is 30.
+    /// Number of discretisation points for curve approximation.
+    ///
+    /// Default is 30.
     public var discretisation: Int32 {
         get { OCCTDrawerGetDiscretisation(handle) }
         set { OCCTDrawerSetDiscretisation(handle, newValue) }
@@ -85,7 +89,9 @@ public final class DisplayDrawer: @unchecked Sendable {
 
     // MARK: - Edge Display
 
-    /// Whether face boundary edges are drawn. Default is `false`.
+    /// Whether face boundary edges are drawn.
+    ///
+    /// Default is `false`.
     ///
     /// When enabled, edges at face boundaries (where two faces meet)
     /// are included in wireframe rendering.
@@ -94,7 +100,9 @@ public final class DisplayDrawer: @unchecked Sendable {
         set { OCCTDrawerSetFaceBoundaryDraw(handle, newValue) }
     }
 
-    /// Whether wireframe edges are drawn. Default is `true`.
+    /// Whether wireframe edges are drawn.
+    ///
+    /// Default is `true`.
     public var wireDraw: Bool {
         get { OCCTDrawerGetWireDraw(handle) }
         set { OCCTDrawerSetWireDraw(handle, newValue) }

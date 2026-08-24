@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("Drawing Tests")
 struct DrawingTests {
@@ -61,7 +60,6 @@ struct DrawingTests {
     }
 }
 
-
 // MARK: - Metal Visualization Tests
 
 @Suite("Camera Tests")
@@ -75,8 +73,8 @@ struct CameraTests {
         let up = cam.up
 
         // Default camera should have non-zero eye and up
-        let eyeLen = sqrt(eye.x*eye.x + eye.y*eye.y + eye.z*eye.z)
-        let upLen = sqrt(up.x*up.x + up.y*up.y + up.z*up.z)
+        let eyeLen = sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z)
+        let upLen = sqrt(up.x * up.x + up.y * up.y + up.z * up.z)
         #expect(eyeLen > 0)
         #expect(upLen > 0)
     }
@@ -88,9 +86,9 @@ struct CameraTests {
         let proj = cam.projectionMatrix
 
         // Check it's not identity, at least one off-diagonal or non-1 diagonal
-        let isIdentity = proj.columns.0.x == 1 && proj.columns.1.y == 1 &&
-                         proj.columns.2.z == 1 && proj.columns.3.w == 1 &&
-                         proj.columns.0.y == 0 && proj.columns.0.z == 0
+        let isIdentity =
+            proj.columns.0.x == 1 && proj.columns.1.y == 1 && proj.columns.2.z == 1
+            && proj.columns.3.w == 1 && proj.columns.0.y == 0 && proj.columns.0.z == 0
         #expect(!isIdentity)
 
         // Determinant should be non-zero
@@ -150,8 +148,9 @@ struct CameraTests {
         let orthoProj = cam.projectionMatrix
 
         // The projection matrices must differ
-        let d = abs(perspProj.columns.0.x - orthoProj.columns.0.x) +
-                abs(perspProj.columns.2.w - orthoProj.columns.2.w)
+        let d =
+            abs(perspProj.columns.0.x - orthoProj.columns.0.x)
+            + abs(perspProj.columns.2.w - orthoProj.columns.2.w)
         #expect(d > 1e-6)
     }
 
@@ -458,7 +457,7 @@ struct ClipPlaneTests {
     @Test("Enable and disable")
     func enableDisable() {
         let plane = ClipPlane(equation: SIMD4(0, 0, 1, 0))
-        #expect(plane.isOn == true) // default is on
+        #expect(plane.isOn == true)  // default is on
         plane.isOn = false
         #expect(plane.isOn == false)
         plane.isOn = true
@@ -468,7 +467,7 @@ struct ClipPlaneTests {
     @Test("Capping on/off")
     func capping() {
         let plane = ClipPlane(equation: SIMD4(0, 0, 1, 0))
-        #expect(plane.isCapping == false) // default is off
+        #expect(plane.isCapping == false)  // default is off
         plane.isCapping = true
         #expect(plane.isCapping == true)
     }
@@ -683,7 +682,6 @@ struct ZLayerSettingsTests {
     }
 }
 
-
 // MARK: - Point Projection Tests (v0.18.0)
 
 @Suite("Point Projection Tests")
@@ -781,12 +779,12 @@ struct PointProjectionTests {
             // Project a point near the midpoint of the edge
             let mid = edge.endpoints
             let midPt = (mid.start + mid.end) / 2.0
-            let offset = midPt + SIMD3(1, 1, 1) // offset from midpoint
+            let offset = midPt + SIMD3(1, 1, 1)  // offset from midpoint
             let proj = edge.project(point: offset)
             #expect(proj != nil)
             if let p = proj {
                 #expect(p.distance > 0)
-                #expect(p.distance < 3.0) // should be reasonably close
+                #expect(p.distance < 3.0)  // should be reasonably close
             }
         }
     }
@@ -820,7 +818,8 @@ struct PointProjectionTests {
             // Offset radially outward by 3 units in XY plane
             let radialDir = SIMD3(onCurve.x, onCurve.y, 0.0)
             let radialLen = simd_length(radialDir)
-            let offset = radialLen > 0.01
+            let offset =
+                radialLen > 0.01
                 ? onCurve + (radialDir / radialLen) * 3.0
                 : onCurve + SIMD3(3, 0, 0)
             let proj = edge.project(point: offset)
@@ -831,7 +830,6 @@ struct PointProjectionTests {
         }
     }
 }
-
 
 // MARK: - AIS Annotations & Measurements (v0.26.0)
 
@@ -856,7 +854,7 @@ struct LengthDimensionTests {
     func threeDDistance() {
         let dim = LengthDimension(from: SIMD3(1, 2, 3), to: SIMD3(4, 6, 3))
         #expect(dim != nil)
-        let expected = sqrt(9.0 + 16.0) // 5.0
+        let expected = sqrt(9.0 + 16.0)  // 5.0
         #expect(abs(dim!.value - expected) < 1e-6)
     }
 
@@ -995,8 +993,9 @@ struct AngleDimensionTests {
         let geom = dim.geometry
         #expect(geom != nil)
         if let g = geom {
-            #expect(abs(g.centerPoint.x) < 1e-6 && abs(g.centerPoint.y) < 1e-6,
-                    "Center should be at origin")
+            #expect(
+                abs(g.centerPoint.x) < 1e-6 && abs(g.centerPoint.y) < 1e-6,
+                "Center should be at origin")
         }
     }
 
@@ -1004,7 +1003,7 @@ struct AngleDimensionTests {
     func perpendicularFaces() {
         // Create two perpendicular planar faces
         let wire1 = Wire.rectangle(width: 10, height: 10)!
-        let face1 = Shape.face(from: wire1)! // XY plane
+        let face1 = Shape.face(from: wire1)!  // XY plane
         // Rotate to get a face in the XZ plane
         let wire2 = Wire.rectangle(width: 10, height: 10)!
         let face2 = Shape.face(from: wire2)!.rotated(
@@ -1012,8 +1011,9 @@ struct AngleDimensionTests {
         let dim = AngleDimension(face1: face1, face2: face2)
         if let dim = dim {
             let deg = dim.degrees
-            #expect(abs(deg - 90.0) < 1.0,
-                    "Perpendicular faces should be ~90 degrees")
+            #expect(
+                abs(deg - 90.0) < 1.0,
+                "Perpendicular faces should be ~90 degrees")
         }
     }
 }
@@ -1040,8 +1040,9 @@ struct DiameterDimensionTests {
             #expect(g.circleRadius > 0)
             // First and second points should be diametrically opposite
             let dist = simd_distance(g.firstPoint, g.secondPoint)
-            #expect(abs(dist - 10.0) < 1e-3,
-                    "Diameter endpoints should be 10 apart, got \(dist)")
+            #expect(
+                abs(dist - 10.0) < 1e-3,
+                "Diameter endpoints should be 10 apart, got \(dist)")
         }
     }
 
@@ -1221,15 +1222,17 @@ struct EditorViewV164Tests {
 
     @Test("Cached face mesh state after appendCachedTriangulation")
     func cachedFaceMeshAfterAppend() {
-        let nodes: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,0,0), SIMD3(0,1,0)]
-        guard let tri = Triangulation.create(nodes: nodes, triangles: [0,1,2]) else {
-            Issue.record("Triangulation.create nil"); return
+        let nodes: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
+        guard let tri = Triangulation.create(nodes: nodes, triangles: [0, 1, 2]) else {
+            Issue.record("Triangulation.create nil")
+            return
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
             let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0,
-               let triRepId = graph.createTriangulationRep(tri) {
+                let triRepId = graph.createTriangulationRep(tri)
+            {
                 graph.appendCachedTriangulation(faceIndex: 0, triRepId: triRepId)
                 graph.setCachedActiveIndex(faceIndex: 0, activeIndex: 0)
                 #expect(graph.cachedFaceMeshIsPresent(0) == true)
@@ -1266,16 +1269,20 @@ struct EditorViewProductOpsTests {
             if let graph {
                 // Empty product: an assembly node, no direct topology.
                 guard let parentProduct = graph.createEmptyProduct() else {
-                    Issue.record("createEmptyProduct nil"); return
+                    Issue.record("createEmptyProduct nil")
+                    return
                 }
                 #expect(parentProduct >= 0)
 
                 // Link a topology-rooted product (Solid 0) under the parent.
-                guard let childProduct = graph.linkProductToTopology(
-                    shapeRootKind: 0,        // Solid
-                    shapeRootIndex: 0,
-                    placement: BRepGraph.identityLocationMatrix) else {
-                    Issue.record("linkProductToTopology nil"); return
+                guard
+                    let childProduct = graph.linkProductToTopology(
+                        shapeRootKind: 0,  // Solid
+                        shapeRootIndex: 0,
+                        placement: BRepGraph.identityLocationMatrix)
+                else {
+                    Issue.record("linkProductToTopology nil")
+                    return
                 }
                 #expect(childProduct >= 0)
                 #expect(childProduct != parentProduct)
@@ -1284,7 +1291,8 @@ struct EditorViewProductOpsTests {
                 if let linked = graph.linkProducts(
                     parentProductIndex: parentProduct,
                     referencedProductIndex: childProduct,
-                    placement: BRepGraph.identityLocationMatrix) {
+                    placement: BRepGraph.identityLocationMatrix)
+                {
                     #expect(linked.occurrenceIndex >= 0)
                     #expect(linked.occurrenceRefIndex >= 0)
                 }
@@ -1332,7 +1340,8 @@ struct EditorViewAddRemoveTests {
             let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.edgeRemoveVertex(0, vertexRefIndex: 99999) == false)
-                #expect(graph.edgeReplaceVertex(0, oldVertexRefIndex: 99999, newVertexIndex: 0) == nil)
+                #expect(
+                    graph.edgeReplaceVertex(0, oldVertexRefIndex: 99999, newVertexIndex: 0) == nil)
                 #expect(graph.wireRemoveCoEdge(0, coedgeRefIndex: 99999) == false)
                 #expect(graph.faceRemoveVertex(0, attachmentUID: 99999) == false)
                 #expect(graph.faceRemoveWire(0, wireRefIndex: 99999) == false)
@@ -1353,7 +1362,9 @@ struct EditorViewAddRemoveTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
             let graph = BRepGraph(shape: box)
-            if let graph, graph.edgeCount > 0, graph.faceCount > 0, graph.shellCount > 0, graph.solidCount > 0 {
+            if let graph, graph.edgeCount > 0, graph.faceCount > 0, graph.shellCount > 0,
+                graph.solidCount > 0
+            {
                 graph.setEdgeCurve3DRepId(0, curve3DRepId: 0)
                 graph.setEdgePolygon3DRepId(0, polygon3DRepId: 0)
                 if graph.coedgeCount > 0 {
@@ -1466,22 +1477,28 @@ struct DrawingDimensionsTests {
     @Test("Add linear dimension stores measurable value")
     func linear() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let d = drawing.addLinearDimension(from: SIMD2(0, 0), to: SIMD2(100, 0), offset: 15)
         #expect(drawing.dimensions.count == 1)
         #expect(abs(d.value - 100) < 1e-9)
         if case .linear(let lin) = d {
             #expect(abs(lin.offset - 15) < 1e-9)
-        } else { Issue.record("not a linear case") }
+        } else {
+            Issue.record("not a linear case")
+        }
     }
 
     @Test("Radial / diameter relate correctly")
     func radialDiameter() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let r = drawing.addRadialDimension(centre: SIMD2(50, 50), radius: 10)
         let d = drawing.addDiameterDimension(centre: SIMD2(50, 50), radius: 10)
@@ -1493,20 +1510,25 @@ struct DrawingDimensionsTests {
     @Test("Angular dimension computes angle between rays")
     func angular() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let d = drawing.addAngularDimension(vertex: SIMD2(0, 0),
-                                            ray1: SIMD2(10, 0),
-                                            ray2: SIMD2(0, 10))
+        let d = drawing.addAngularDimension(
+            vertex: SIMD2(0, 0),
+            ray1: SIMD2(10, 0),
+            ray2: SIMD2(0, 10))
         #expect(abs(d.value - .pi / 2) < 1e-9)
     }
 
     @Test("Annotations separate from dimensions")
     func annotations() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         drawing.addCentreLine(from: SIMD2(-10, 0), to: SIMD2(10, 0))
         drawing.addCentermark(centre: SIMD2(0, 0))
@@ -1518,11 +1540,13 @@ struct DrawingDimensionsTests {
     @Test("clearAnnotations empties both collections")
     func clear() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        drawing.addLinearDimension(from: SIMD2(0,0), to: SIMD2(5,0))
-        drawing.addCentreLine(from: SIMD2(0,0), to: SIMD2(5,0))
+        drawing.addLinearDimension(from: SIMD2(0, 0), to: SIMD2(5, 0))
+        drawing.addCentreLine(from: SIMD2(0, 0), to: SIMD2(5, 0))
         drawing.clearAnnotations()
         #expect(drawing.dimensions.isEmpty)
         #expect(drawing.annotations.isEmpty)
@@ -1534,8 +1558,10 @@ struct DrawingAutoCentrelinesTests {
     @Test("Cylinder top view produces no centreline (axis collapses to point)")
     func cylinderTopViewCollapses() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let drawing = Drawing.topView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = drawing.addAutoCentrelines(from: cyl, viewDirection: SIMD3(0, 0, 1))
         // Axis is (0,0,1), top view looks along (0,0,1) → projects to a point → skipped.
@@ -1546,23 +1572,30 @@ struct DrawingAutoCentrelinesTests {
     @Test("Cylinder side view draws one centreline along axis")
     func cylinderSideViewCentreline() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let drawing = Drawing.frontView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let result = drawing.addAutoCentrelines(from: cyl, viewDirection: SIMD3(0, 1, 0),
-                                                 bounds: (min: SIMD2(-50, -50), max: SIMD2(50, 50)))
+        let result = drawing.addAutoCentrelines(
+            from: cyl, viewDirection: SIMD3(0, 1, 0),
+            bounds: (min: SIMD2(-50, -50), max: SIMD2(50, 50)))
         #expect(result.added.count == 1)
         #expect(drawing.annotations.count == 1)
         if case .centreline(let line)? = result.added.first {
             #expect(line.style == .chain)
-        } else { Issue.record("expected centreline") }
+        } else {
+            Issue.record("expected centreline")
+        }
     }
 
     @Test("Box produces no centrelines (no revolution axes)")
     func boxNoCentrelines() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = drawing.addAutoCentrelines(from: box, viewDirection: SIMD3(0, 1, 0))
         #expect(result.added.isEmpty)
@@ -1658,8 +1691,10 @@ struct CosmeticThreadTests {
     @Test("Drawing.addCosmeticThreadSide with callout adds 3 annotations")
     func addSideWithCallout() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let anns = drawing.addCosmeticThreadSide(
             axisStart: SIMD2(0, 0),
@@ -1674,9 +1709,10 @@ struct CosmeticThreadTests {
     @Test("DXFWriter.addCosmeticThreadEndView emits three arcs")
     func dxfWriterEndView() {
         let writer = DXFWriter()
-        writer.addCosmeticThreadEndView(centre: SIMD2(0, 0),
-                                         majorDiameter: 10,
-                                         pitch: 1.5)
+        writer.addCosmeticThreadEndView(
+            centre: SIMD2(0, 0),
+            majorDiameter: 10,
+            pitch: 1.5)
         #expect(writer.entityCounts.arcs == 3)
     }
 }
@@ -1688,8 +1724,10 @@ struct AutoCentermarksTests {
     @Test("Cylinder top view produces one centermark")
     func cylinderTopViewMark() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let top = Drawing.topView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = top.addAutoCentermarks(from: cyl, viewDirection: SIMD3(0, 0, 1))
         // Top view has two circular edges (top + bottom); both face the view,
@@ -1700,8 +1738,10 @@ struct AutoCentermarksTests {
     @Test("Cylinder side view skips edge-on circles")
     func cylinderSideViewSkipped() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let front = Drawing.frontView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = front.addAutoCentermarks(from: cyl, viewDirection: SIMD3(0, 1, 0))
         // Side view: both circular edges are edge-on → both skipped.
@@ -1712,11 +1752,14 @@ struct AutoCentermarksTests {
     @Test("minRadius filters small holes")
     func minRadiusFilter() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let top = Drawing.topView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let result = top.addAutoCentermarks(from: cyl, viewDirection: SIMD3(0, 0, 1),
-                                             minRadius: 100)
+        let result = top.addAutoCentermarks(
+            from: cyl, viewDirection: SIMD3(0, 0, 1),
+            minRadius: 100)
         #expect(result.added.isEmpty)
     }
 }
@@ -1748,9 +1791,12 @@ struct AutoCentermarksTests {
 // computed `(10.0, 5.0)`, while `visibleEdges`'s bounding-box center (real OCCT output, untouched
 // by the revert) stayed at `(5.0, -10.0)`, a live mismatch, exactly the CHANGELOG's #881 entry's
 // worked example. Restored, both agree.
-@Suite("#914 review, third pass: auto-centermark position matches the drawing's own projected frame")
+@Suite(
+    "#914 review, third pass: auto-centermark position matches the drawing's own projected frame")
 struct AutoCentermarkFrameAgreementTests {
-    @Test("centermark for an off-axis cylinder matches the projected circle's own bounding-box center")
+    @Test(
+        "centermark for an off-axis cylinder matches the projected circle's own bounding-box center"
+    )
     func centermarkMatchesProjectedGeometry() {
         // Base circle centred at (0, 10, 5), axis along the view direction (1, 0, 0), so the
         // circular face is viewed face-on, and the circle's world-space offset from the origin
@@ -1791,8 +1837,10 @@ struct DrawingAppendTests {
     @Test("append single annotation")
     func singleAnnotation() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         drawing.append(.centreline(.init(from: SIMD2(0, 0), to: SIMD2(10, 0))))
         #expect(drawing.annotations.count == 1)
@@ -1801,8 +1849,10 @@ struct DrawingAppendTests {
     @Test("append factory output installs every annotation case")
     func factoryOutput() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let anns = DrawingAnnotation.surfaceFinish(
             at: SIMD2(10, 10), leaderTo: SIMD2(20, 5),
@@ -1815,8 +1865,10 @@ struct DrawingAppendTests {
     @Test("append GD&T feature control frame output")
     func gdtFactoryOutput() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let anns = DrawingAnnotation.featureControlFrame(
             at: .zero, symbol: .position, tolerance: "0.1",
@@ -1828,14 +1880,18 @@ struct DrawingAppendTests {
     @Test("append pre-built hatch survives round-trip (no consumer switch)")
     func hatchRoundtrip() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let hatch = DrawingAnnotation.hatch(.init(
-            boundary: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
-            angle: .pi / 4, spacing: 2.0))
+        let hatch = DrawingAnnotation.hatch(
+            .init(
+                boundary: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
+                angle: .pi / 4, spacing: 2.0))
         drawing.append(hatch)
-        if case .hatch = drawing.annotations.first {} else {
+        if case .hatch = drawing.annotations.first {
+        } else {
             Issue.record("expected hatch to be stored")
         }
     }
@@ -1843,15 +1899,19 @@ struct DrawingAppendTests {
     @Test("append pre-built cutting-plane line survives round-trip")
     func cuttingPlaneRoundtrip() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let drawing = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let cpl = DrawingAnnotation.cuttingPlaneLine(.init(
-            label: "A",
-            traceStart: SIMD2(0, 0), traceEnd: SIMD2(100, 0),
-            arrowDirection: SIMD2(0, 1)))
+        let cpl = DrawingAnnotation.cuttingPlaneLine(
+            .init(
+                label: "A",
+                traceStart: SIMD2(0, 0), traceEnd: SIMD2(100, 0),
+                arrowDirection: SIMD2(0, 1)))
         drawing.append(cpl)
-        if case .cuttingPlaneLine = drawing.annotations.first {} else {
+        if case .cuttingPlaneLine = drawing.annotations.first {
+        } else {
             Issue.record("expected cuttingPlaneLine to be stored")
         }
     }
@@ -1859,8 +1919,10 @@ struct DrawingAppendTests {
     @Test("append a pre-built dimension")
     func appendDimension() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         drawing.append(.linear(.init(from: SIMD2(0, 0), to: SIMD2(50, 0))))
         #expect(drawing.dimensions.count == 1)
@@ -1869,13 +1931,15 @@ struct DrawingAppendTests {
     @Test("append dimensions batch")
     func appendDimensionsBatch() {
         guard let box = Shape.box(width: 100, height: 50, depth: 30),
-              let drawing = Drawing.topView(of: box) else {
-            Issue.record("setup nil"); return
+            let drawing = Drawing.topView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let dims: [DrawingDimension] = [
             .linear(.init(from: .zero, to: SIMD2(10, 0))),
             .radial(.init(centre: .zero, radius: 5)),
-            .diameter(.init(centre: .zero, radius: 5))
+            .diameter(.init(centre: .zero, radius: 5)),
         ]
         drawing.append(contentsOf: dims)
         #expect(drawing.dimensions.count == 3)
@@ -1889,8 +1953,11 @@ struct ToleranceTests {
     @Test("Symmetric tolerance rendered inline on the nominal label")
     func symmetricInline() {
         let writer = DXFWriter()
-        writer.addDimension(.linear(.init(from: SIMD2(0, 0), to: SIMD2(10, 0),
-                                           tolerance: .symmetric(0.05))))
+        writer.addDimension(
+            .linear(
+                .init(
+                    from: SIMD2(0, 0), to: SIMD2(10, 0),
+                    tolerance: .symmetric(0.05))))
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("tol_sym.dxf")
         try? writer.write(to: url)
@@ -1906,24 +1973,33 @@ struct ToleranceTests {
         let baselineTexts = baseline.entityCounts.texts
 
         let withTol = DXFWriter()
-        withTol.addDimension(.linear(.init(from: SIMD2(0, 0), to: SIMD2(10, 0),
-                                            tolerance: .bilateral(plus: 0.1, minus: 0.05))))
+        withTol.addDimension(
+            .linear(
+                .init(
+                    from: SIMD2(0, 0), to: SIMD2(10, 0),
+                    tolerance: .bilateral(plus: 0.1, minus: 0.05))))
         #expect(withTol.entityCounts.texts == baselineTexts + 2)
     }
 
     @Test("Unilateral tolerance stacks signed value against a 0")
     func unilateralStacked() {
         let writer = DXFWriter()
-        writer.addDimension(.diameter(.init(centre: .zero, radius: 5,
-                                             tolerance: .unilateral(0.1))))
+        writer.addDimension(
+            .diameter(
+                .init(
+                    centre: .zero, radius: 5,
+                    tolerance: .unilateral(0.1))))
         #expect(writer.entityCounts.texts == 3)
     }
 
     @Test("Fit class appended inline with space")
     func fitClassInline() {
         let writer = DXFWriter()
-        writer.addDimension(.linear(.init(from: SIMD2(0, 0), to: SIMD2(10, 0),
-                                           tolerance: .fitClass("H7"))))
+        writer.addDimension(
+            .linear(
+                .init(
+                    from: SIMD2(0, 0), to: SIMD2(10, 0),
+                    tolerance: .fitClass("H7"))))
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("tol_fit.dxf")
         try? writer.write(to: url)
@@ -1935,8 +2011,11 @@ struct ToleranceTests {
     @Test("Limits tolerance stacks upper over lower")
     func limitsStacked() {
         let writer = DXFWriter()
-        writer.addDimension(.linear(.init(from: SIMD2(0, 0), to: SIMD2(10, 0),
-                                           tolerance: .limits(lower: 9.95, upper: 10.05))))
+        writer.addDimension(
+            .linear(
+                .init(
+                    from: SIMD2(0, 0), to: SIMD2(10, 0),
+                    tolerance: .limits(lower: 9.95, upper: 10.05))))
         #expect(writer.entityCounts.texts == 3)
     }
 
@@ -1948,7 +2027,7 @@ struct ToleranceTests {
             .bilateral(plus: 0.1, minus: 0.05),
             .unilateral(-0.1),
             .fitClass("g6"),
-            .limits(lower: 9.95, upper: 10.05)
+            .limits(lower: 9.95, upper: 10.05),
         ]
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
@@ -1967,12 +2046,16 @@ struct OrdinateDimensionTests {
     @Test("3-feature ordinate emits origin cross + X + Y extensions per feature")
     func threeFeatureEmits() {
         let writer = DXFWriter()
-        writer.addDimension(.ordinate(.init(
-            origin: .zero,
-            features: [.init(position: SIMD2(10, 0)),
-                       .init(position: SIMD2(25, 5)),
-                       .init(position: SIMD2(40, 15), label: "hole 3")]
-        )))
+        writer.addDimension(
+            .ordinate(
+                .init(
+                    origin: .zero,
+                    features: [
+                        .init(position: SIMD2(10, 0)),
+                        .init(position: SIMD2(25, 5)),
+                        .init(position: SIMD2(40, 15), label: "hole 3"),
+                    ]
+                )))
         // Origin cross = 2 lines.
         // Feature 1 (10, 0): dx only -> 2 lines (ext + tick), 1 text
         // Feature 2 (25, 5): dx + dy -> 4 lines, 2 texts
@@ -1993,11 +2076,13 @@ struct OrdinateDimensionTests {
     @Test("Ordinate applies tolerance to every feature label")
     func toleranceFlowsToFeatures() {
         let writer = DXFWriter()
-        writer.addDimension(.ordinate(.init(
-            origin: .zero,
-            features: [.init(position: SIMD2(10, 0))],
-            tolerance: .symmetric(0.02)
-        )))
+        writer.addDimension(
+            .ordinate(
+                .init(
+                    origin: .zero,
+                    features: [.init(position: SIMD2(10, 0))],
+                    tolerance: .symmetric(0.02)
+                )))
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("ord_tol.dxf")
         try? writer.write(to: url)
@@ -2007,10 +2092,11 @@ struct OrdinateDimensionTests {
 
     @Test("Ordinate transforms translate origin and every feature position")
     func transformedCase() {
-        let d = DrawingDimension.ordinate(.init(
-            origin: SIMD2(0, 0),
-            features: [.init(position: SIMD2(10, 5))]
-        ))
+        let d = DrawingDimension.ordinate(
+            .init(
+                origin: SIMD2(0, 0),
+                features: [.init(position: SIMD2(10, 5))]
+            ))
         let t = d.transformed(translate: SIMD2(100, 200), scale: 2)
         if case .ordinate(let ord) = t {
             #expect(ord.origin == SIMD2(100, 200))
@@ -2024,8 +2110,10 @@ struct OrdinateDimensionTests {
     func codableRoundTrip() throws {
         let ord = DrawingDimension.Ordinate(
             origin: SIMD2(1, 2),
-            features: [.init(position: SIMD2(10, 0), label: "x-only"),
-                       .init(position: SIMD2(25, 15), id: "f2")],
+            features: [
+                .init(position: SIMD2(10, 0), label: "x-only"),
+                .init(position: SIMD2(25, 15), id: "f2"),
+            ],
             tolerance: .bilateral(plus: 0.1, minus: 0.05),
             id: "ord-1"
         )
@@ -2042,8 +2130,10 @@ struct AutoDimensionTests {
     @Test("Box front view produces two linear dimensions")
     func boxLinearExtents() {
         guard let box = Shape.box(width: 10, height: 5, depth: 3),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = front.addAutoDimensions(from: box, viewDirection: SIMD3(0, 1, 0))
         let linearCount = result.added.filter {
@@ -2055,8 +2145,10 @@ struct AutoDimensionTests {
     @Test("Cylinder top view produces diameter + linear extents")
     func cylinderTopViewHasDiameters() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let top = Drawing.topView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = top.addAutoDimensions(from: cyl, viewDirection: SIMD3(0, 0, 1))
         let diaCount = result.added.filter {
@@ -2072,8 +2164,10 @@ struct AutoDimensionTests {
     @Test("Cylinder side view skips edge-on circles")
     func cylinderSideViewEdgeOn() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let front = Drawing.frontView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
         let result = front.addAutoDimensions(from: cyl, viewDirection: SIMD3(0, 1, 0))
         let diaCount = result.added.filter {
@@ -2085,12 +2179,15 @@ struct AutoDimensionTests {
     @Test("minRadius filters small circles")
     func minRadiusFilters() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
-              let top = Drawing.topView(of: cyl) else {
-            Issue.record("setup nil"); return
+            let top = Drawing.topView(of: cyl)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        let result = top.addAutoDimensions(from: cyl,
-                                            viewDirection: SIMD3(0, 0, 1),
-                                            minRadius: 100)
+        let result = top.addAutoDimensions(
+            from: cyl,
+            viewDirection: SIMD3(0, 0, 1),
+            minRadius: 100)
         let diaCount = result.added.filter {
             if case .diameter = $0 { return true } else { return false }
         }.count
@@ -2105,54 +2202,67 @@ struct BalloonTests {
     @Test("Balloon with leader emits circle + text + leader line")
     func withLeader() {
         guard let box = Shape.box(width: 1, height: 1, depth: 1),
-              let withBalloon = Drawing.frontView(of: box),
-              let baseline = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let withBalloon = Drawing.frontView(of: box),
+            let baseline = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        withBalloon.append(.balloon(.init(itemNumber: 1,
-                                           centre: SIMD2(50, 50),
-                                           radius: 5,
-                                           leaderTo: SIMD2(30, 30))))
+        withBalloon.append(
+            .balloon(
+                .init(
+                    itemNumber: 1,
+                    centre: SIMD2(50, 50),
+                    radius: 5,
+                    leaderTo: SIMD2(30, 30))))
         let wBalloon = DXFWriter()
         wBalloon.collectFromDrawing(withBalloon)
         let wBase = DXFWriter()
         wBase.collectFromDrawing(baseline)
         // Adds: 1 circle + 1 text + 1 leader line.
         #expect(wBalloon.entityCounts.circles == wBase.entityCounts.circles + 1)
-        #expect(wBalloon.entityCounts.texts   == wBase.entityCounts.texts   + 1)
-        #expect(wBalloon.entityCounts.lines   == wBase.entityCounts.lines   + 1)
+        #expect(wBalloon.entityCounts.texts == wBase.entityCounts.texts + 1)
+        #expect(wBalloon.entityCounts.lines == wBase.entityCounts.lines + 1)
     }
 
     @Test("Balloon without leader emits circle + text only")
     func withoutLeader() {
         guard let box = Shape.box(width: 1, height: 1, depth: 1),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
-        front.append(.balloon(.init(itemNumber: 2,
-                                     centre: SIMD2(10, 10),
-                                     radius: 4)))
+        front.append(
+            .balloon(
+                .init(
+                    itemNumber: 2,
+                    centre: SIMD2(10, 10),
+                    radius: 4)))
         let writerWith = DXFWriter()
         writerWith.collectFromDrawing(front)
 
         // Compare against a baseline drawing without the balloon.
         guard let baseline = Drawing.frontView(of: box) else {
-            Issue.record("baseline nil"); return
+            Issue.record("baseline nil")
+            return
         }
         let writerBase = DXFWriter()
         writerBase.collectFromDrawing(baseline)
 
         // Circle adds 1, text adds 1, lines add 0 (no leader).
         #expect(writerWith.entityCounts.circles == writerBase.entityCounts.circles + 1)
-        #expect(writerWith.entityCounts.texts   == writerBase.entityCounts.texts   + 1)
-        #expect(writerWith.entityCounts.lines   == writerBase.entityCounts.lines)
+        #expect(writerWith.entityCounts.texts == writerBase.entityCounts.texts + 1)
+        #expect(writerWith.entityCounts.lines == writerBase.entityCounts.lines)
     }
 
     @Test("Drawing.addBalloon adds a .balloon annotation")
     func addBalloonConvenience() {
         guard let box = Shape.box(width: 1, height: 1, depth: 1),
-              let front = Drawing.frontView(of: box) else {
-            Issue.record("setup nil"); return
+            let front = Drawing.frontView(of: box)
+        else {
+            Issue.record("setup nil")
+            return
         }
         front.addBalloon(itemNumber: 3, at: SIMD2(5, 5))
         let balloonCount = front.annotations.filter {
@@ -2163,10 +2273,12 @@ struct BalloonTests {
 
     @Test("Balloon transforms translate centre, scale radius, and translate leader")
     func balloonTransformed() {
-        let ann = DrawingAnnotation.balloon(.init(itemNumber: 4,
-                                                   centre: SIMD2(10, 10),
-                                                   radius: 5,
-                                                   leaderTo: SIMD2(20, 20)))
+        let ann = DrawingAnnotation.balloon(
+            .init(
+                itemNumber: 4,
+                centre: SIMD2(10, 10),
+                radius: 5,
+                leaderTo: SIMD2(20, 20)))
         let t = ann.transformed(translate: SIMD2(100, 200), scale: 2)
         if case .balloon(let b) = t {
             #expect(b.centre == SIMD2(120, 220))

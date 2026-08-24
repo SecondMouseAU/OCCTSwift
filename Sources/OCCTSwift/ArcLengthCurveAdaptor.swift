@@ -68,14 +68,17 @@ extension ArcLengthCurveAdaptor {
     /// ```
     public static var maximumSampleCount: Int { Sampling.maximumSampleCount }
 
-    /// Points spaced approximately `spacing` apart along the curve (by arc length). The exact
-    /// step is adjusted so the samples divide the curve evenly end-to-end.
+    /// Points spaced approximately `spacing` apart along the curve (by arc length).
+    ///
+    /// The exact step is adjusted so the samples divide the curve evenly end-to-end.
     ///
     /// - Parameter spacing: Arc-length step, greater than 0. A spacing so small that it implies
     ///   more than ``maximumSampleCount`` points returns an empty array, as do a spacing of 0 or
     ///   less, a NaN spacing, and a curve of zero length (#479). There is no clamping: a request
     ///   the ceiling cannot honour fails visibly rather than coming back silently coarser than
     ///   what was asked for.
+    ///
+    /// - Returns: An array of points, or an empty array if the request cannot be honoured.
     ///
     /// ```swift
     /// let wc = WireCurve(wire)!          // a 200mm-long wire
@@ -99,6 +102,8 @@ extension ArcLengthCurveAdaptor {
     ///     the bridge's `int32_t` (#479).
     ///   - sample: The conforming type's own bridge call, taking the count and the buffer and
     ///     returning how many points it wrote.
+    ///
+    /// - Returns: An array of points, or an empty array if the count is out of bounds.
     internal func sampledPoints(
         count: Int,
         _ sample: (Int32, UnsafeMutablePointer<Double>) -> Int32

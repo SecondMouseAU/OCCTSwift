@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     // MARK: - Surface Creation (v0.9.0)
 
@@ -60,13 +59,15 @@ extension Shape {
         }
 
         return flatPoles.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeCreateBSplineSurface(
-                buffer.baseAddress,
-                Int32(uCount),
-                Int32(vCount),
-                Int32(uDegree),
-                Int32(vDegree)
-            ) else {
+            guard
+                let result = OCCTShapeCreateBSplineSurface(
+                    buffer.baseAddress,
+                    Int32(uCount),
+                    Int32(vCount),
+                    Int32(uDegree),
+                    Int32(vDegree)
+                )
+            else {
                 return nil
             }
             return Shape(handle: result)
@@ -120,9 +121,11 @@ extension Shape {
 
         var handles = boundaries.map { $0.handle as OCCTWireRef? }
 
-        guard let result = handles.withUnsafeMutableBufferPointer({ buffer in
-            OCCTShapeFill(buffer.baseAddress, Int32(boundaries.count), parameters.cParams)
-        }) else {
+        guard
+            let result = handles.withUnsafeMutableBufferPointer({ buffer in
+                OCCTShapeFill(buffer.baseAddress, Int32(boundaries.count), parameters.cParams)
+            })
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -170,10 +173,13 @@ extension Shape {
 
         var handles = boundaries.map { $0.handle as OCCTWireRef? }
 
-        guard let result = handles.withUnsafeMutableBufferPointer({ buffer in
-            OCCTShapeFillWithSupport(buffer.baseAddress, Int32(boundaries.count),
-                                     support.handle, parameters.cParams)
-        }) else {
+        guard
+            let result = handles.withUnsafeMutableBufferPointer({ buffer in
+                OCCTShapeFillWithSupport(
+                    buffer.baseAddress, Int32(boundaries.count),
+                    support.handle, parameters.cParams)
+            })
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -222,8 +228,9 @@ extension Shape {
         // the optimiser not releasing them early.
         let handle = withExtendedLifetime(constraints) {
             cConstraints.withUnsafeMutableBufferPointer { buffer in
-                OCCTShapeFillConstraints(buffer.baseAddress, Int32(constraints.count),
-                                         parameters.cParams)
+                OCCTShapeFillConstraints(
+                    buffer.baseAddress, Int32(constraints.count),
+                    parameters.cParams)
             }
         }
 
@@ -271,11 +278,13 @@ extension Shape {
             flatPoints.append(point.z)
         }
 
-        guard let result = OCCTShapePlatePoints(
-            &flatPoints,
-            Int32(points.count),
-            tolerance
-        ) else {
+        guard
+            let result = OCCTShapePlatePoints(
+                &flatPoints,
+                Int32(points.count),
+                tolerance
+            )
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -314,14 +323,16 @@ extension Shape {
 
         var handles = curves.map { $0.handle as OCCTWireRef? }
 
-        guard let result = handles.withUnsafeMutableBufferPointer({ buffer in
-            OCCTShapePlateCurves(
-                buffer.baseAddress,
-                Int32(curves.count),
-                continuity.rawValue,
-                tolerance
-            )
-        }) else {
+        guard
+            let result = handles.withUnsafeMutableBufferPointer({ buffer in
+                OCCTShapePlateCurves(
+                    buffer.baseAddress,
+                    Int32(curves.count),
+                    continuity.rawValue,
+                    tolerance
+                )
+            })
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -369,20 +380,22 @@ extension Shape {
         }
         var rawOrders = orders.map { Int32($0.rawValue) }
 
-        guard let result = OCCTShapePlatePointsAdvanced(
-            &flatPoints, Int32(points.count),
-            &rawOrders, Int32(degree),
-            Int32(pointsOnCurves), Int32(iterations),
-            tolerance
-        ) else { return nil }
+        guard
+            let result = OCCTShapePlatePointsAdvanced(
+                &flatPoints, Int32(points.count),
+                &rawOrders, Int32(degree),
+                Int32(pointsOnCurves), Int32(iterations),
+                tolerance
+            )
+        else { return nil }
         return Shape(handle: result)
     }
 
     /// Whether any order in a batch of *point* constraints would fail
-    /// `GeomPlate_PointConstraint`'s own domain check (#437), i.e. whether any element is
-    /// ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// Checks if any order fails the point constraint domain check (#437).
     ///
-    /// The one shared implementation behind both plate-point entry points' rejection guard:
+    /// Tests whether any element is ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// Shared implementation for both plate-point entry points' rejection guard:
     /// `plateSurface(through:orders:)` and, via ``plateMixedRejectsPointOrders(_:)``,
     /// `plateSurface(pointConstraints:curveConstraints:)`. Each passes its own `orders` shape
     /// (a flat array here, a `(point, order)` tuple array there), but both defer the actual
@@ -392,10 +405,10 @@ extension Shape {
         orders.contains(where: \.isUnsupportedForPointConstraint)
     }
 
-    /// Whether any point constraint here would fail `GeomPlate_PointConstraint`'s own domain
-    /// check (#437). Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
-    /// `(point, order)` tuple shape.
+    /// Checks if any point constraint fails the point constraint domain check (#437).
     ///
+    /// Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
+    /// `(point, order)` tuple shape.
     /// Deliberately takes only `points`, not `curves`: `GeomPlate_CurveConstraint` has no such
     /// restriction, so curve orders must never be able to influence this decision. That is a
     /// property of this function's own *signature*, not just its body: there is no `curves`
@@ -494,15 +507,19 @@ extension Shape {
     ///   - axisDirection: Direction of the revolution axis
     ///   - angle: Revolution angle in radians (default: full revolution)
     /// - Returns: Revolved shape, or nil on failure
-    public static func revolution(meridian: Curve3D,
-                                  axisOrigin: SIMD3<Double> = .zero,
-                                  axisDirection: SIMD3<Double> = SIMD3<Double>(0, 0, 1),
-                                  angle: Double = 2 * .pi) -> Shape? {
-        guard let h = OCCTShapeCreateRevolutionFromCurve(
-            meridian.handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            angle) else { return nil }
+    public static func revolution(
+        meridian: Curve3D,
+        axisOrigin: SIMD3<Double> = .zero,
+        axisDirection: SIMD3<Double> = SIMD3<Double>(0, 0, 1),
+        angle: Double = 2 * .pi
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeCreateRevolutionFromCurve(
+                meridian.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle)
+        else { return nil }
         return Shape(handle: h)
     }
     /// Add a revolution form (revolved rib or groove) to a shape.
@@ -518,16 +535,20 @@ extension Shape {
     ///   - height2: Height on the other side
     ///   - fuse: true for rib (add material), false for groove (remove material)
     /// - Returns: Shape with revolution form, or nil on failure
-    public func addingRevolutionForm(profile: Wire,
-                                     axisOrigin: SIMD3<Double>,
-                                     axisDirection: SIMD3<Double>,
-                                     height1: Double, height2: Double,
-                                     fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeAddRevolutionForm(
-            handle, profile.handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            height1, height2, fuse) else { return nil }
+    public func addingRevolutionForm(
+        profile: Wire,
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        height1: Double, height2: Double,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeAddRevolutionForm(
+                handle, profile.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                height1, height2, fuse)
+        else { return nil }
         return Shape(handle: h)
     }
     /// Add a revolved feature (boss or pocket) to a shape.
@@ -543,16 +564,21 @@ extension Shape {
     ///   - angle: Revolution angle in degrees
     ///   - fuse: true to add material (boss), false to cut (pocket)
     /// - Returns: Shape with revolved feature, or nil on failure
-    public func addingRevolvedFeature(profile: Wire, sketchFaceIndex: Int,
-                                      axisOrigin: SIMD3<Double>,
-                                      axisDirection: SIMD3<Double>,
-                                      angle: Double = 360,
-                                      fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeRevolFeature(handle, Int32(sketchFaceIndex),
-                                             profile.handle,
-                                             axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                             axisDirection.x, axisDirection.y, axisDirection.z,
-                                             angle, fuse) else { return nil }
+    public func addingRevolvedFeature(
+        profile: Wire, sketchFaceIndex: Int,
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        angle: Double = 360,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeRevolFeature(
+                handle, Int32(sketchFaceIndex),
+                profile.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle, fuse)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -565,15 +591,20 @@ extension Shape {
     ///   - axisDirection: Direction of the revolution axis
     ///   - fuse: true to add material, false to cut
     /// - Returns: Shape with revolved feature, or nil on failure
-    public func addingRevolvedFeatureThruAll(profile: Wire, sketchFaceIndex: Int,
-                                             axisOrigin: SIMD3<Double>,
-                                             axisDirection: SIMD3<Double>,
-                                             fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapeRevolFeatureThruAll(handle, Int32(sketchFaceIndex),
-                                                    profile.handle,
-                                                    axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                                    axisDirection.x, axisDirection.y, axisDirection.z,
-                                                    fuse) else { return nil }
+    public func addingRevolvedFeatureThruAll(
+        profile: Wire, sketchFaceIndex: Int,
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapeRevolFeatureThruAll(
+                handle, Int32(sketchFaceIndex),
+                profile.handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                fuse)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -587,18 +618,22 @@ extension Shape {
     ///   - spine: Wire defining the sweep path
     ///   - fuse: If true, add material; if false, remove material
     /// - Returns: Modified shape, or nil on failure
-    public func pipeFeature(profile: Shape, sketchFaceIndex: Int,
-                            spine: Wire, fuse: Bool = true) -> Shape? {
-        guard let h = OCCTShapePipeFeatureFromProfile(
-            handle, profile.handle, Int32(sketchFaceIndex),
-            spine.handle, fuse ? 1 : 0
-        ) else { return nil }
+    public func pipeFeature(
+        profile: Shape, sketchFaceIndex: Int,
+        spine: Wire, fuse: Bool = true
+    ) -> Shape? {
+        guard
+            let h = OCCTShapePipeFeatureFromProfile(
+                handle, profile.handle, Int32(sketchFaceIndex),
+                spine.handle, fuse ? 1 : 0
+            )
+        else { return nil }
         return Shape(handle: h)
     }
 
     // MARK: - Find Surface (v0.40.0)
 
-    /// Find the underlying geometric surface of a shape (wire or edges)
+    /// Find the underlying geometric surface of a shape (wire or edges).
     ///
     /// Analyzes the edges of a shape to determine if they lie on a common surface.
     /// - Parameters:
@@ -608,7 +643,8 @@ extension Shape {
     public func findSurfaceEx(tolerance: Double = 1e-6, onlyPlane: Bool = false) -> Surface? {
         var found = false
         guard let surfHandle = OCCTShapeFindSurfaceEx(handle, tolerance, onlyPlane, &found),
-              found else { return nil }
+            found
+        else { return nil }
         return Surface(handle: surfHandle)
     }
 
@@ -616,9 +652,9 @@ extension Shape {
 
     /// Result of a curve-on-surface consistency check.
     public struct CurveOnSurfaceCheck {
-        /// Maximum deviation between 3D edge curves and their pcurves on faces
+        /// Maximum deviation between 3D edge curves and their pcurves on faces.
         public let maxDistance: Double
-        /// Curve parameter where the maximum deviation occurs
+        /// Curve parameter where the maximum deviation occurs.
         public let maxParameter: Double
     }
 
@@ -644,13 +680,18 @@ extension Shape {
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
     /// - Returns: Revolved shape, or nil on failure
-    public func localRevolution(axisOrigin: SIMD3<Double>,
-                                 axisDirection: SIMD3<Double>,
-                                 angle: Double) -> Shape? {
-        guard let ref = OCCTLocOpeRevol(handle,
-                                         axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                         axisDirection.x, axisDirection.y, axisDirection.z,
-                                         angle) else {
+    public func localRevolution(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        angle: Double
+    ) -> Shape? {
+        guard
+            let ref = OCCTLocOpeRevol(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle)
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -664,14 +705,19 @@ extension Shape {
     ///   - angle: Rotation angle in radians
     ///   - angularOffset: Angular offset for positioning in radians
     /// - Returns: Revolved shape, or nil on failure
-    public func localRevolution(axisOrigin: SIMD3<Double>,
-                                 axisDirection: SIMD3<Double>,
-                                 angle: Double,
-                                 angularOffset: Double) -> Shape? {
-        guard let ref = OCCTLocOpeRevolWithOffset(handle,
-                                                   axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                                   axisDirection.x, axisDirection.y, axisDirection.z,
-                                                   angle, angularOffset) else {
+    public func localRevolution(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        angle: Double,
+        angularOffset: Double
+    ) -> Shape? {
+        guard
+            let ref = OCCTLocOpeRevolWithOffset(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle, angularOffset)
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -679,11 +725,12 @@ extension Shape {
 
     // MARK: - BRepGProp_Face integration (#266 follow-up)
 
-    /// `BRepGProp_Face` Gauss-integration orders (number of integration points) in U and V — the
-    /// quadrature this face needs for exact surface integrals. Non-trivial only for BSpline faces;
-    /// nil if the shape isn't a single face.
+    /// `BRepGProp_Face` Gauss-integration orders in U and V — the quadrature this face needs for exact surface integrals.
+    ///
+    /// Non-trivial only for BSpline faces; nil if the shape isn't a single face.
     public var faceIntegrationOrders: (u: Int, v: Int)? {
-        var u: Int32 = 0, v: Int32 = 0
+        var u: Int32 = 0
+        var v: Int32 = 0
         guard OCCTBRepGPropFaceIntegrationOrders(handle, &u, &v) else { return nil }
         return (Int(u), Int(v))
     }
@@ -708,9 +755,15 @@ extension Shape {
     /// `BRepGProp_Face` precision-driven surface integration parameters: the Gauss `order` (number of
     /// points) needed for tolerance `precision`, and the number of U / V subintervals. nil if the
     /// shape isn't a single face.
-    public func faceSurfaceIntegration(precision: Double = 1e-6) -> (order: Int, uSubs: Int, vSubs: Int)? {
-        var order: Int32 = 0, u: Int32 = 0, v: Int32 = 0
-        guard OCCTBRepGPropFaceSurfaceIntegration(handle, precision, &order, &u, &v) else { return nil }
+    public func faceSurfaceIntegration(precision: Double = 1e-6) -> (
+        order: Int, uSubs: Int, vSubs: Int
+    )? {
+        var order: Int32 = 0
+        var u: Int32 = 0
+        var v: Int32 = 0
+        guard OCCTBRepGPropFaceSurfaceIntegration(handle, precision, &order, &u, &v) else {
+            return nil
+        }
         return (Int(order), Int(u), Int(v))
     }
 
@@ -718,11 +771,17 @@ extension Shape {
     /// returns its integration `order` (for `precision`), subinterval count, and knot values.
     /// nil if the shape isn't a face or the edge can't be loaded.
     public func faceBoundaryIntegration(edgeIndex: Int, precision: Double = 1e-6)
-        -> (order: Int, subs: Int, knots: [Double])? {
-        var order: Int32 = 0, subs: Int32 = 0, knotCount: Int32 = 0
+        -> (order: Int, subs: Int, knots: [Double])?
+    {
+        var order: Int32 = 0
+        var subs: Int32 = 0
+        var knotCount: Int32 = 0
         var buffer = [Double](repeating: 0, count: 256)
-        guard OCCTBRepGPropFaceBoundaryIntegration(handle, Int32(edgeIndex), precision,
-                                                   &order, &subs, &buffer, 256, &knotCount) else { return nil }
+        guard
+            OCCTBRepGPropFaceBoundaryIntegration(
+                handle, Int32(edgeIndex), precision,
+                &order, &subs, &buffer, 256, &knotCount)
+        else { return nil }
         return (Int(order), Int(subs), Array(buffer.prefix(Int(knotCount))))
     }
     // MARK: - LocOpe_Pipe
@@ -751,13 +810,18 @@ extension Shape {
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
     /// - Returns: The revolved shape, or nil on failure
-    public func localRevolutionForm(axisOrigin: SIMD3<Double>,
-                                     axisDirection: SIMD3<Double>,
-                                     angle: Double) -> Shape? {
-        guard let ref = OCCTLocOpeRevolutionForm(handle,
-                                                  axisOrigin.x, axisOrigin.y, axisOrigin.z,
-                                                  axisDirection.x, axisDirection.y, axisDirection.z,
-                                                  angle) else { return nil }
+    public func localRevolutionForm(
+        axisOrigin: SIMD3<Double>,
+        axisDirection: SIMD3<Double>,
+        angle: Double
+    ) -> Shape? {
+        guard
+            let ref = OCCTLocOpeRevolutionForm(
+                handle,
+                axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                axisDirection.x, axisDirection.y, axisDirection.z,
+                angle)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -774,16 +838,22 @@ extension Shape {
     /// - Note: Used by ``divided(at:tolerance:)`` alone since #438 folded the narrower
     ///   ``dividedByContinuity(criterion:tolerance:)`` (now deprecated) into it.
     public enum ContinuityLevel: Int32, Sendable, CaseIterable {
-        case c0 = 0, c1 = 1, c2 = 2, c3 = 3, cn = 4, g1 = 5, g2 = 6
+        case c0 = 0
+        case c1 = 1
+        case c2 = 2
+        case c3 = 3
+        case cn = 4
+        case g1 = 5
+        case g2 = 6
     }
 
     // MARK: - BRepFill_Pipe
 
     /// Result of a pipe sweep operation.
     public struct PipeSweepResult {
-        /// The swept pipe shape
+        /// The swept pipe shape.
         public let shape: Shape
-        /// Surface approximation error
+        /// Surface approximation error.
         public let errorOnSurface: Double
     }
 
@@ -830,8 +900,10 @@ extension Shape {
     ///   - maxDegree: Maximum BSpline degree (default 8)
     ///   - maxSegments: Maximum BSpline segments (default 20; values below 2 are clamped to 2)
     /// - Returns: Face with plate surface, or nil on failure
-    public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-3,
-                                     maxDegree: Int = 8, maxSegments: Int = 20) -> Shape? {
+    public static func plateSurface(
+        points: [SIMD3<Double>], tolerance: Double = 1e-3,
+        maxDegree: Int = 8, maxSegments: Int = 20
+    ) -> Shape? {
         var flatPoints = [Double]()
         flatPoints.reserveCapacity(points.count * 3)
         for pt in points {
@@ -839,11 +911,13 @@ extension Shape {
             flatPoints.append(pt.y)
             flatPoints.append(pt.z)
         }
-        guard let h = OCCTGeomPlateSurface(flatPoints, Int32(points.count),
-                                            tolerance, Int32(maxDegree), Int32(maxSegments)) else { return nil }
+        guard
+            let h = OCCTGeomPlateSurface(
+                flatPoints, Int32(points.count),
+                tolerance, Int32(maxDegree), Int32(maxSegments))
+        else { return nil }
         return Shape(handle: h)
     }
-
 
     // MARK: - GeomFill Trihedron Laws
 
@@ -852,20 +926,25 @@ extension Shape {
     private static func trihedronFrame(from r: OCCTTrihedronFrame) -> TrihedronFrame? {
         let t = SIMD3(r.tx, r.ty, r.tz)
         guard simd_length(t) > 1e-10 else { return nil }
-        return TrihedronFrame(tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
+        return TrihedronFrame(
+            tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
     }
 
-    /// Evaluate draft trihedron frame on an edge at a parameter
-    public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double) -> TrihedronFrame? {
-        Shape.trihedronFrame(from: OCCTGeomFillDraftTrihedron(handle, param, biNormal.x, biNormal.y, biNormal.z, angle))
+    /// Evaluate draft trihedron frame on an edge at a parameter.
+    public func draftTrihedron(at param: Double, biNormal: SIMD3<Double>, angle: Double)
+        -> TrihedronFrame?
+    {
+        Shape.trihedronFrame(
+            from: OCCTGeomFillDraftTrihedron(
+                handle, param, biNormal.x, biNormal.y, biNormal.z, angle))
     }
 
-    /// Evaluate discrete trihedron frame on an edge at a parameter
+    /// Evaluate discrete trihedron frame on an edge at a parameter.
     public func discreteTrihedron(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillDiscreteTrihedron(handle, param))
     }
 
-    /// Evaluate corrected Frenet frame on an edge at a parameter
+    /// Evaluate corrected Frenet frame on an edge at a parameter.
     public func correctedFrenet(at param: Double) -> TrihedronFrame? {
         Shape.trihedronFrame(from: OCCTGeomFillCorrectedFrenet(handle, param))
     }
@@ -879,43 +958,51 @@ extension Shape {
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>],
         using bridgeCall: (
-            UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>,
-            Int32, UnsafeMutablePointer<Double>, Int32, UnsafeMutablePointer<Int32>, UnsafeMutablePointer<Int32>
+            UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>,
+            UnsafePointer<Double>,
+            Int32, UnsafeMutablePointer<Double>, Int32, UnsafeMutablePointer<Int32>,
+            UnsafeMutablePointer<Int32>
         ) -> Int32
     ) -> FillingPoleGrid? {
         let n = boundary1.count
-        guard n >= 2, boundary2.count == n, boundary3.count == n, boundary4.count == n else { return nil }
+        guard n >= 2, boundary2.count == n, boundary3.count == n, boundary4.count == n else {
+            return nil
+        }
         let b1 = boundary1.flatMap { [$0.x, $0.y, $0.z] }
         let b2 = boundary2.flatMap { [$0.x, $0.y, $0.z] }
         let b3 = boundary3.flatMap { [$0.x, $0.y, $0.z] }
         let b4 = boundary4.flatMap { [$0.x, $0.y, $0.z] }
         let maxPoles = n * n * 4
         var outPoints = [Double](repeating: 0, count: maxPoles * 3)
-        var nbU: Int32 = 0, nbV: Int32 = 0
-        let count = Int(bridgeCall(b1, b2, b3, b4, Int32(n), &outPoints, Int32(maxPoles), &nbU, &nbV))
+        var nbU: Int32 = 0
+        var nbV: Int32 = 0
+        let count = Int(
+            bridgeCall(b1, b2, b3, b4, Int32(n), &outPoints, Int32(maxPoles), &nbU, &nbV))
         guard count > 0 else { return nil }
         let poles = (0..<count).map { i in
-            SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
+            SIMD3(outPoints[i * 3], outPoints[i * 3 + 1], outPoints[i * 3 + 2])
         }
         return FillingPoleGrid(poles: poles, nbU: Int(nbU), nbV: Int(nbV))
     }
 
-    /// Compute Coons filling pole grid from 4 boundary point arrays
+    /// Compute Coons filling pole grid from 4 boundary point arrays.
     public static func coonsFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
     ) -> FillingPoleGrid? {
-        fillPoleGrid(boundary1: boundary1, boundary2: boundary2,
-                     boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCoonsPoles)
+        fillPoleGrid(
+            boundary1: boundary1, boundary2: boundary2,
+            boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCoonsPoles)
     }
 
-    /// Compute curved filling pole grid from 4 boundary point arrays
+    /// Compute curved filling pole grid from 4 boundary point arrays.
     public static func curvedFilling(
         boundary1: [SIMD3<Double>], boundary2: [SIMD3<Double>],
         boundary3: [SIMD3<Double>], boundary4: [SIMD3<Double>]
     ) -> FillingPoleGrid? {
-        fillPoleGrid(boundary1: boundary1, boundary2: boundary2,
-                     boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCurvedPoles)
+        fillPoleGrid(
+            boundary1: boundary1, boundary2: boundary2,
+            boundary3: boundary3, boundary4: boundary4, using: OCCTGeomFillCurvedPoles)
     }
 
     // MARK: - GeomFill_CoonsAlgPatch
@@ -923,6 +1010,10 @@ extension Shape {
     /// Evaluate Coons algorithmic patch from 4 boundary edges.
     ///
     /// - Parameters:
+    ///   - edge1: First boundary edge.
+    ///   - edge2: Second boundary edge.
+    ///   - edge3: Third boundary edge.
+    ///   - edge4: Fourth boundary edge.
     ///   - evalU: Evaluations in U, at least 1.
     ///   - evalV: Evaluations in V, at least 1.
     /// - Returns: The evaluated grid, or nil if the patch is degenerate or the grid cannot be
@@ -945,7 +1036,7 @@ extension Shape {
 
     // MARK: - GeomFill_Sweep
 
-    /// Sweep a section edge along a path edge to create a surface face
+    /// Sweep a section edge along a path edge to create a surface face.
     public static func geomFillSweep(path: Shape, section: Shape) -> Shape? {
         guard let h = OCCTGeomFillSweep(path.handle, section.handle) else { return nil }
         return Shape(handle: h)
@@ -953,7 +1044,7 @@ extension Shape {
 
     // MARK: - GeomFill_EvolvedSection
 
-    /// Get evolved section info for an edge curve
+    /// Get evolved section info for an edge curve.
     public func evolvedSectionInfo() -> EvolvedSectionInfo {
         let r = OCCTGeomFillEvolvedSectionInfo(handle)
         return EvolvedSectionInfo(
@@ -973,9 +1064,9 @@ extension Shape {
 
     /// Result of a surface transition analysis.
     public struct SurfaceTransitionResult: Sendable {
-        /// State before crossing the surface
+        /// State before crossing the surface.
         public let stateBefore: TopologicalState
-        /// State after crossing the surface
+        /// State after crossing the surface.
         public let stateAfter: TopologicalState
     }
 
@@ -997,7 +1088,8 @@ extension Shape {
         surfaceNormal: SIMD3<Double>, tolerance: Double = 1e-6,
         surfaceOrientation: Int = 0, boundaryOrientation: Int = 0
     ) -> SurfaceTransitionResult {
-        var before: Int32 = 3, after: Int32 = 3
+        var before: Int32 = 3
+        var after: Int32 = 3
         OCCTTopTransSurfaceTransition(
             tangent.x, tangent.y, tangent.z,
             normal.x, normal.y, normal.z,
@@ -1041,7 +1133,8 @@ extension Shape {
         tolerance: Double = 1e-6,
         surfaceOrientation: Int = 0, boundaryOrientation: Int = 0
     ) -> SurfaceTransitionResult {
-        var before: Int32 = 3, after: Int32 = 3
+        var before: Int32 = 3
+        var after: Int32 = 3
         OCCTTopTransSurfaceTransitionCurvature(
             tangent.x, tangent.y, tangent.z,
             normal.x, normal.y, normal.z,
@@ -1063,27 +1156,37 @@ extension Shape {
     // MARK: - GeomFill Trihedrons (v0.68.0)
 
     /// Evaluate a Frenet trihedron on an edge at a parameter.
-    public func frenetTrihedron(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
+    public func frenetTrihedron(at param: Double) -> (
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>
+    )? {
         let f = OCCTGeomFillFrenetTrihedron(handle, param)
         if f.tx == 0 && f.ty == 0 && f.tz == 0 { return nil }
         return (SIMD3(f.tx, f.ty, f.tz), SIMD3(f.nx, f.ny, f.nz), SIMD3(f.bx, f.by, f.bz))
     }
 
     /// Evaluate a constant-binormal trihedron on an edge at a parameter.
-    public func constantBiNormalTrihedron(at param: Double, biNormal: SIMD3<Double>) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-        let f = OCCTGeomFillConstantBiNormalTrihedron(handle, param, biNormal.x, biNormal.y, biNormal.z)
+    public func constantBiNormalTrihedron(at param: Double, biNormal: SIMD3<Double>) -> (
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>
+    )? {
+        let f = OCCTGeomFillConstantBiNormalTrihedron(
+            handle, param, biNormal.x, biNormal.y, biNormal.z)
         if f.tx == 0 && f.ty == 0 && f.tz == 0 { return nil }
         return (SIMD3(f.tx, f.ty, f.tz), SIMD3(f.nx, f.ny, f.nz), SIMD3(f.bx, f.by, f.bz))
     }
 
     /// Evaluate a fixed (constant) trihedron at any parameter.
-    public static func fixedTrihedron(tangent: SIMD3<Double>, normal: SIMD3<Double>, at param: Double = 0) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>) {
-        let f = OCCTGeomFillFixedTrihedron(tangent.x, tangent.y, tangent.z, normal.x, normal.y, normal.z, param)
+    public static func fixedTrihedron(
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, at param: Double = 0
+    ) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>) {
+        let f = OCCTGeomFillFixedTrihedron(
+            tangent.x, tangent.y, tangent.z, normal.x, normal.y, normal.z, param)
         return (SIMD3(f.tx, f.ty, f.tz), SIMD3(f.nx, f.ny, f.nz), SIMD3(f.bx, f.by, f.bz))
     }
 
     /// Evaluate a Darboux trihedron on an edge lying on a face.
-    public func darbouxTrihedron(onFace face: Shape, at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
+    public func darbouxTrihedron(onFace face: Shape, at param: Double) -> (
+        tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>
+    )? {
         let f = OCCTGeomFillDarbouxTrihedron(handle, face.handle, param)
         if f.tx == 0 && f.ty == 0 && f.tz == 0 { return nil }
         return (SIMD3(f.tx, f.ty, f.tz), SIMD3(f.nx, f.ny, f.nz), SIMD3(f.bx, f.by, f.bz))
@@ -1095,9 +1198,12 @@ extension Shape {
     ///   - origin: A point on the plane
     /// - Returns: Shape containing section edges, or nil on failure
     public func sectionWithPlane(normal: SIMD3<Double>, origin: SIMD3<Double>) -> Shape? {
-        guard let h = OCCTShapeSectionWithPlane(handle,
-                                                 normal.x, normal.y, normal.z,
-                                                 origin.x, origin.y, origin.z) else { return nil }
+        guard
+            let h = OCCTShapeSectionWithPlane(
+                handle,
+                normal.x, normal.y, normal.z,
+                origin.x, origin.y, origin.z)
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -1132,17 +1238,24 @@ extension Shape {
 
 extension Shape {
 
-    /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.
+    /// Get tangent in U direction on a face at (u, v).
+    ///
+    /// Returns nil if tangent is undefined.
     public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>? {
-        var dx = 0.0, dy = 0.0, dz = 0.0
+        var dx = 0.0
+        var dy = 0.0
+        var dz = 0.0
         let ok = OCCTFaceLPropTangentU(handle, u, v, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane
-    /// (companion to ``faceLPropTangentU(u:v:)``). Returns nil if the V tangent is undefined.
+    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane (companion to ``faceLPropTangentU(u:v:)``).
+    ///
+    /// Returns nil if the V tangent is undefined.
     public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {
-        var dx = 0.0, dy = 0.0, dz = 0.0
+        var dx = 0.0
+        var dy = 0.0
+        var dz = 0.0
         let ok = OCCTFaceLPropTangentV(handle, u, v, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }

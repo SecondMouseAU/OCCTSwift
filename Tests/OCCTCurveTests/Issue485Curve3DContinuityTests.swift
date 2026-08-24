@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #485: `Curve3D.continuity` and `Curve3D.continuityOrder` wrapped the same
@@ -22,10 +23,11 @@ struct Issue485Curve3DContinuityTests {
         let poles = (1...poleCount).map { i in
             SIMD3<Double>(Double(i), Double(i % 2) * 2.0, 0)
         }
-        return Curve3D.bspline(poles: poles,
-                               knots: [0.0, 0.5, 1.0],
-                               multiplicities: [4, multiplicity, 4],
-                               degree: 3)
+        return Curve3D.bspline(
+            poles: poles,
+            knots: [0.0, 0.5, 1.0],
+            multiplicities: [4, multiplicity, 4],
+            degree: 3)
     }
 
     /// A curve that genuinely measures G1, the class the issue noted was untested anywhere.
@@ -41,15 +43,18 @@ struct Issue485Curve3DContinuityTests {
             SIMD3(0, 0, 0),
             SIMD3(1, 1, 0),
             SIMD3(2, 0, 0),
-            SIMD3(3, 0, 0),   // knot pole; poles 3-4-5 collinear along +x ...
-            SIMD3(5, 0, 0),   // ... but unequally spaced, so C1 fails and only G1 holds
+            SIMD3(3, 0, 0),  // knot pole; poles 3-4-5 collinear along +x ...
+            SIMD3(5, 0, 0),  // ... but unequally spaced, so C1 fails and only G1 holds
             SIMD3(6, 1, 0),
-            SIMD3(7, 0, 0)
+            SIMD3(7, 0, 0),
         ]
-        guard let basis = Curve3D.bspline(poles: poles,
-                                          knots: [0.0, 0.5, 1.0],
-                                          multiplicities: [4, 3, 4],
-                                          degree: 3) else { return nil }
+        guard
+            let basis = Curve3D.bspline(
+                poles: poles,
+                knots: [0.0, 0.5, 1.0],
+                multiplicities: [4, 3, 4],
+                degree: 3)
+        else { return nil }
         return Curve3D.offset(basis: basis, offset: 1.0, dirX: 0, dirY: 0, dirZ: 1)
     }
 
@@ -111,11 +116,13 @@ struct Issue485Curve3DContinuityTests {
         // This is the comparison no pre-#485 test made. Before that fix the two spellings of
         // the measured value disagreed for every fixture below except the C0 one.
         var checked = 0
-        for curve in [Self.bspline(interiorMultiplicity: 1),
-                      Self.bspline(interiorMultiplicity: 2),
-                      Self.bspline(interiorMultiplicity: 3),
-                      Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
-                      Self.offsetOfG1Basis()].compactMap({ $0 }) {
+        for curve in [
+            Self.bspline(interiorMultiplicity: 1),
+            Self.bspline(interiorMultiplicity: 2),
+            Self.bspline(interiorMultiplicity: 3),
+            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
+            Self.offsetOfG1Basis(),
+        ].compactMap({ $0 }) {
             #expect(curve.continuity == Int(curve.continuityClass.rawValue))
             checked += 1
         }
@@ -124,13 +131,15 @@ struct Issue485Curve3DContinuityTests {
 
     @Test("The retired encoding's sentinel values never appear")
     func retiredSentinelValuesAreGone() {
-        for curve in [Self.bspline(interiorMultiplicity: 1),
-                      Self.bspline(interiorMultiplicity: 2),
-                      Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
-                      Self.offsetOfG1Basis()].compactMap({ $0 }) {
-            #expect(curve.continuity != 99)     // was CN
-            #expect(curve.continuity != -2)     // was G1
-            #expect(curve.continuity != -3)     // was G2
+        for curve in [
+            Self.bspline(interiorMultiplicity: 1),
+            Self.bspline(interiorMultiplicity: 2),
+            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
+            Self.offsetOfG1Basis(),
+        ].compactMap({ $0 }) {
+            #expect(curve.continuity != 99)  // was CN
+            #expect(curve.continuity != -2)  // was G1
+            #expect(curve.continuity != -3)  // was G2
             #expect(curve.continuity >= 0 && curve.continuity <= 6)
         }
     }

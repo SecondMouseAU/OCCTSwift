@@ -724,8 +724,8 @@ extension Shape {
             /// The check timed out and the OCCT progress breaker was tripped (analysis was running).
             /// A longer timeout may yield a conclusive result.
             case indeterminateBreakerTripped
-            /// The check timed out and the OCCT progress breaker was NOT tripped (analysis made no progress).
-            /// The shape may be too complex for this check to complete in reasonable time.
+            /// The check timed out but the breaker was not tripped (analysis completed but exceeded timeout).
+            /// This indicates the analysis made no meaningful progress within the time limit.
             case indeterminateBreakerNotTripped
             /// An error occurred during analysis.
             case error
@@ -733,21 +733,17 @@ extension Shape {
 
         /// The status of the check.
         public let status: Status
-        /// Number of face pairs checked before completion/timeout.
-        /// NOTE: BOPAlgo_ArgumentAnalyzer does not expose a progress counter; this is always 0.
-        public let facesChecked: Int
         /// Estimated total face pairs to check.
         public let totalFacePairs: Int
         /// Actual time spent in seconds.
         public let timeSpent: Double
 
-        init(code: Int32, facesChecked: Int, totalFacePairs: Int, timeSpent: Double) {
-            self.facesChecked = facesChecked
+        init(code: Int32, totalFacePairs: Int, timeSpent: Double) {
             self.totalFacePairs = totalFacePairs
             self.timeSpent = timeSpent
             switch code {
-            case 1:  self.status = .intersects
-            case 0:  self.status = .clean
+            case 1: self.status = .intersects
+            case 0: self.status = .clean
             case -1: self.status = .indeterminateBreakerTripped
             case -2: self.status = .indeterminateBreakerNotTripped
             default: self.status = .error
@@ -764,6 +760,7 @@ extension Shape {
         /// Number of planar faces (cheapest to check).
         public let numPlaneFaces: Int
         /// Relative cost estimate (higher = more expensive).
+        ///
         /// Cost model: B-spline = 10x, other analytical = 3x, plane = 1x.
         public let estimatedCost: Double
     }

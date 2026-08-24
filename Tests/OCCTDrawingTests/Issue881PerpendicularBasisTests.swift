@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #881: `projectPointToPlane`/`projectAxisToPlane` used to derive their perpendicular-to-
@@ -30,7 +31,8 @@ struct Issue881DrawingPerpendicularBasisTests {
 
     @Test("projectPointToPlane's basis matches OCCT's gp_Ax2 canonical basis")
     func projectPointToPlaneMatchesGpAx2() {
-        let projectedRight = projectPointToPlane(Self.expectedRight, viewDirection: Self.nearDegenerate)
+        let projectedRight = projectPointToPlane(
+            Self.expectedRight, viewDirection: Self.nearDegenerate)
         let projectedUp = projectPointToPlane(Self.expectedUp, viewDirection: Self.nearDegenerate)
         #expect(abs(projectedRight.x - 1.0) < 1e-9)
         #expect(abs(projectedRight.y) < 1e-9)
@@ -43,9 +45,12 @@ struct Issue881DrawingPerpendicularBasisTests {
         // An axis through the origin along `expectedRight`, wide-open bounds so clipping never
         // trims it: it should land exactly on the 2D X axis if the basis matches canonical.
         let bounds = (min: SIMD2<Double>(-100, -100), max: SIMD2<Double>(100, 100))
-        guard let (p1, p2) = projectAxisToPlane(origin: .zero, direction: Self.expectedRight,
-                                                 viewDirection: Self.nearDegenerate,
-                                                 bounds: bounds, overshoot: 0) else {
+        guard
+            let (p1, p2) = projectAxisToPlane(
+                origin: .zero, direction: Self.expectedRight,
+                viewDirection: Self.nearDegenerate,
+                bounds: bounds, overshoot: 0)
+        else {
             Issue.record("axis unexpectedly collapsed to a point")
             return
         }

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Individual fix operations on a wire using ShapeFix_Wire.
 public final class WireFixer: @unchecked Sendable {
@@ -21,13 +21,17 @@ public final class WireFixer: @unchecked Sendable {
     @discardableResult public func fixConnected() -> Bool { OCCTWireFixerFixConnected(ref) }
 
     /// Fix small edges.
-    @discardableResult public func fixSmall(precision: Double = 1e-6) -> Bool { OCCTWireFixerFixSmall(ref, precision) }
+    @discardableResult public func fixSmall(precision: Double = 1e-6) -> Bool {
+        OCCTWireFixerFixSmall(ref, precision)
+    }
 
     /// Fix degenerated edges.
     @discardableResult public func fixDegenerated() -> Bool { OCCTWireFixerFixDegenerated(ref) }
 
     /// Fix self-intersection.
-    @discardableResult public func fixSelfIntersection() -> Bool { OCCTWireFixerFixSelfIntersection(ref) }
+    @discardableResult public func fixSelfIntersection() -> Bool {
+        OCCTWireFixerFixSelfIntersection(ref)
+    }
 
     /// Fix lacking edges.
     @discardableResult public func fixLacking() -> Bool { OCCTWireFixerFixLacking(ref) }
@@ -67,7 +71,9 @@ public final class FaceFixer: @unchecked Sendable {
     @discardableResult public func fixOrientation() -> Bool { OCCTFaceFixerFixOrientation(ref) }
 
     /// Add natural bound if missing.
-    @discardableResult public func fixAddNaturalBound() -> Bool { OCCTFaceFixerFixAddNaturalBound(ref) }
+    @discardableResult public func fixAddNaturalBound() -> Bool {
+        OCCTFaceFixerFixAddNaturalBound(ref)
+    }
 
     /// Fix missing seam edge.
     @discardableResult public func fixMissingSeam() -> Bool { OCCTFaceFixerFixMissingSeam(ref) }
@@ -85,13 +91,18 @@ public final class FaceFixer: @unchecked Sendable {
 
     /// An individual `ShapeFix_Face` healing pass that can be toggled before ``perform()``.
     public enum Pass: Int32, Sendable {
-        case wire = 0, orientation, addNaturalBound, missingSeam, smallAreaWire,
-             removeSmallAreaFace, intersectingWires, loopWires, splitFace,
-             autoCorrectPrecision, periodicDegenerated
+        case wire = 0
+        case orientation, addNaturalBound, missingSeam, smallAreaWire,
+            removeSmallAreaFace, intersectingWires, loopWires, splitFace,
+            autoCorrectPrecision, periodicDegenerated
     }
 
     /// Whether a pass runs: `.auto` (the default heuristic), `.off`, or `.on` (force).
-    public enum Toggle: Int32, Sendable { case auto = -1, off = 0, on = 1 }
+    public enum Toggle: Int32, Sendable {
+        case auto = -1
+        case off = 0
+        case on = 1
+    }
 
     /// Enable / disable an individual healing pass before calling ``perform()``.
     ///
@@ -106,19 +117,27 @@ public final class FaceFixer: @unchecked Sendable {
     }
 
     /// Fix self-intersecting wires on the face.
-    @discardableResult public func fixIntersectingWires() -> Bool { OCCTFaceFixerFixIntersectingWires(ref) }
+    @discardableResult public func fixIntersectingWires() -> Bool {
+        OCCTFaceFixerFixIntersectingWires(ref)
+    }
 
     /// Reconstruct a degenerate edge at a pole on a periodic surface.
-    @discardableResult public func fixPeriodicDegenerated() -> Bool { OCCTFaceFixerFixPeriodicDegenerated(ref) }
+    @discardableResult public func fixPeriodicDegenerated() -> Bool {
+        OCCTFaceFixerFixPeriodicDegenerated(ref)
+    }
 
     /// Remove coincident-edge pairs from the face's wires.
-    @discardableResult public func fixWiresTwoCoincEdges() -> Bool { OCCTFaceFixerFixWiresTwoCoincEdges(ref) }
+    @discardableResult public func fixWiresTwoCoincEdges() -> Bool {
+        OCCTFaceFixerFixWiresTwoCoincEdges(ref)
+    }
 
     /// Split a wire that loops back on itself.
     @discardableResult public func fixLoopWire() -> Bool { OCCTFaceFixerFixLoopWire(ref) }
 
     /// The result of the fix — usually a face, but a **shell** when ``fixMissingSeam()`` split the
-    /// face into several. Unlike ``face`` (always a face), this returns the true multi-face result.
+    /// face into several.
+    ///
+    /// Unlike ``face`` (always a face), this returns the true multi-face result.
     public var result: Shape? {
         guard let r = OCCTFaceFixerResult(ref) else { return nil }
         return Shape(handle: r)
@@ -165,11 +184,19 @@ public final class FaceFixer: @unchecked Sendable {
     /// ```
     public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
 
-    /// Clamp the maximum tolerance the fixer may assign to the healed face. Call before ``perform()``.
-    public func setMaxTolerance(_ maxTolerance: Double) { OCCTFaceFixerSetMaxTolerance(ref, maxTolerance) }
+    /// Clamp the maximum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
+    public func setMaxTolerance(_ maxTolerance: Double) {
+        OCCTFaceFixerSetMaxTolerance(ref, maxTolerance)
+    }
 
-    /// Clamp the minimum tolerance the fixer may assign to the healed face. Call before ``perform()``.
-    public func setMinTolerance(_ minTolerance: Double) { OCCTFaceFixerSetMinTolerance(ref, minTolerance) }
+    /// Clamp the minimum tolerance the fixer may assign to the healed face.
+    ///
+    /// Call before ``perform()``.
+    public func setMinTolerance(_ minTolerance: Double) {
+        OCCTFaceFixerSetMinTolerance(ref, minTolerance)
+    }
 }
 
 extension WireFixer {
@@ -177,7 +204,9 @@ extension WireFixer {
     @discardableResult public func fixGaps2d() -> Bool { OCCTWireFixerFixGaps2d(ref) }
 
     /// Fix seam edge at the given index (1-based).
-    @discardableResult public func fixSeam(edgeIndex: Int) -> Bool { OCCTWireFixerFixSeam(ref, Int32(edgeIndex)) }
+    @discardableResult public func fixSeam(edgeIndex: Int) -> Bool {
+        OCCTWireFixerFixSeam(ref, Int32(edgeIndex))
+    }
 
     /// Fix shifted pcurves.
     @discardableResult public func fixShifted() -> Bool { OCCTWireFixerFixShifted(ref) }

@@ -20,19 +20,24 @@ import simd
 
 extension Sheet {
     /// Auto-compose front / top / side / iso views of `shape` onto this sheet
-    /// at the supplied scale. Views are sized to fit the sheet's inner frame
+    /// at the supplied scale.
+    ///
+    /// Views are sized to fit the sheet's inner frame
     /// (less `margin` on each outer edge and `margin/2` between cells).
     ///
     /// If `scale` is smaller than the fit-to-cell scale computed from the
     /// widest view, the caller's value wins (some views may not fill their
     /// cell). Returns nil if any of the front / top / side projections fail.
-    public func standardLayout(of shape: Shape,
-                                scale: DrawingScale = .one,
-                                margin: Double = 20,
-                                includeIso: Bool = true) -> StandardLayout? {
+    public func standardLayout(
+        of shape: Shape,
+        scale: DrawingScale = .one,
+        margin: Double = 20,
+        includeIso: Bool = true
+    ) -> StandardLayout? {
         guard let front = Drawing.frontView(of: shape),
-              let top = Drawing.topView(of: shape),
-              let side = Drawing.sideView(of: shape) else {
+            let top = Drawing.topView(of: shape),
+            let side = Drawing.sideView(of: shape)
+        else {
             return nil
         }
         let iso = includeIso ? Drawing.isometricView(of: shape) : nil
@@ -52,7 +57,8 @@ extension Sheet {
         guard cellW > 0, cellH > 0 else { return nil }
 
         // --- Uniform scale: fit the widest/tallest projected view into one cell ---
-        var maxViewW = 0.0, maxViewH = 0.0
+        var maxViewW = 0.0
+        var maxViewH = 0.0
         for (_, bounds) in views {
             guard let b = bounds else { continue }
             maxViewW = max(maxViewW, b.max.x - b.min.x)
@@ -84,11 +90,15 @@ extension Sheet {
         let isoSlot: (Int, Int)
         switch projection {
         case .first:
-            frontSlot = (0, 0); sideSlot = (1, 0)
-            topSlot   = (0, 1); isoSlot  = (1, 1)
+            frontSlot = (0, 0)
+            sideSlot = (1, 0)
+            topSlot = (0, 1)
+            isoSlot = (1, 1)
         case .third:
-            topSlot   = (0, 0); isoSlot  = (1, 0)
-            frontSlot = (0, 1); sideSlot = (1, 1)
+            topSlot = (0, 0)
+            isoSlot = (1, 0)
+            frontSlot = (0, 1)
+            sideSlot = (1, 1)
         }
 
         func place(_ drawing: Drawing, at slot: (Int, Int)) -> StandardLayout.PlacedView {
@@ -103,20 +113,23 @@ extension Sheet {
             // TransformedDrawing.apply(p) = scale * p + translate; we want
             // apply(viewCentre) = cellCentre.
             let translate = centre - appliedScale * viewCentre
-            return StandardLayout.PlacedView(drawing: drawing,
-                                              offset: translate,
-                                              scale: appliedScale)
+            return StandardLayout.PlacedView(
+                drawing: drawing,
+                offset: translate,
+                scale: appliedScale)
         }
 
-        return StandardLayout(front: place(front, at: frontSlot),
-                               top:   place(top,   at: topSlot),
-                               side:  place(side,  at: sideSlot),
-                               iso:   iso.map { place($0, at: isoSlot) })
+        return StandardLayout(
+            front: place(front, at: frontSlot),
+            top: place(top, at: topSlot),
+            side: place(side, at: sideSlot),
+            iso: iso.map { place($0, at: isoSlot) })
     }
 }
 
-/// Result of `Sheet.standardLayout(of:scale:)`. Each `PlacedView` holds the
-/// original unannotated `Drawing` (so callers can attach additional dimensions
+/// Result of `Sheet.standardLayout(of:scale:)`.
+///
+/// Each `PlacedView` holds the original unannotated `Drawing` (so callers can attach additional dimensions
 /// or centrelines to a specific view) plus the offset and scale that
 /// `render(into:)` will apply when emitting.
 public struct StandardLayout: Sendable {

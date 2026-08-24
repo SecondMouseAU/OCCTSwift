@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #578, what `defeature(faces:)` accepts as a face to remove, and what it does with one that is
@@ -34,16 +35,19 @@ struct Issue578DefeatureFaceMembershipTests {
     /// removal that restores the plain box, not by its position: which slot it lands in is not a
     /// property worth relying on. This is the probe's fixture.
     private static func filletedBox(size: Double = 20, radius: Double = 2)
-        -> (shape: Shape, filletFace: Shape, filletIndex: Int)? {
+        -> (shape: Shape, filletFace: Shape, filletIndex: Int)?
+    {
         guard let box = Shape.box(width: size, height: size, depth: size),
-              let firstEdge = box.edges().first,
-              let filleted = box.filleted(edges: [firstEdge], radius: radius) else { return nil }
+            let firstEdge = box.edges().first,
+            let filleted = box.filleted(edges: [firstEdge], radius: radius)
+        else { return nil }
         let faces = filleted.subShapes(ofType: .face)
         guard faces.count == 7 else { return nil }
         let plainVolume = size * size * size
         for (i, face) in faces.enumerated() {
             if let removed = filleted.defeature(faces: [face]), let v = removed.volume,
-               abs(v - plainVolume) < 1e-6 {
+                abs(v - plainVolume) < 1e-6
+            {
                 return (filleted, face, i)
             }
         }
@@ -67,7 +71,8 @@ struct Issue578DefeatureFaceMembershipTests {
     @Test("a foreign face in a mixed request fails the call instead of being dropped")
     func foreignFaceInMixedRequestFails() {
         guard let (filleted, filletFace, _) = Self.filletedBox(),
-              let other = Shape.box(width: 11, height: 11, depth: 11) else {
+            let other = Shape.box(width: 11, height: 11, depth: 11)
+        else {
             #expect(Bool(false), "fixture: filleted box and a second shape")
             return
         }
@@ -80,10 +85,12 @@ struct Issue578DefeatureFaceMembershipTests {
         }
         #expect(alone.faces().count == 6)
 
-        #expect(filleted.defeature(faces: [filletFace, foreign]) == nil,
-                "a request naming a face this shape does not have should fail, not half-succeed")
-        #expect(filleted.defeature(faces: [foreign, filletFace]) == nil,
-                "order does not make a foreign face acceptable")
+        #expect(
+            filleted.defeature(faces: [filletFace, foreign]) == nil,
+            "a request naming a face this shape does not have should fail, not half-succeed")
+        #expect(
+            filleted.defeature(faces: [foreign, filletFace]) == nil,
+            "order does not make a foreign face acceptable")
         #expect(filleted.defeature(faces: [foreign]) == nil)
     }
 
@@ -92,7 +99,8 @@ struct Issue578DefeatureFaceMembershipTests {
     @Test("a compound mixing a real face with a foreign one fails too")
     func mixedCarrierFails() {
         guard let (filleted, filletFace, _) = Self.filletedBox(),
-              let other = Shape.box(width: 11, height: 11, depth: 11) else {
+            let other = Shape.box(width: 11, height: 11, depth: 11)
+        else {
             #expect(Bool(false), "fixture: filleted box and a second shape")
             return
         }
@@ -102,17 +110,19 @@ struct Issue578DefeatureFaceMembershipTests {
             #expect(Bool(false), "fixture: a compound of the two faces")
             return
         }
-        #expect(filleted.defeature(faces: [mixedCarrier]) == nil,
-                "a carrier whose faces are not all this shape's should fail the call")
+        #expect(
+            filleted.defeature(faces: [mixedCarrier]) == nil,
+            "a carrier whose faces are not all this shape's should fail the call")
 
         // ... while the same compound without the foreign face is an ordinary request.
         guard let cleanCarrier = Shape.compound([filletFace]) else {
             #expect(Bool(false), "fixture: a compound of one face")
             return
         }
-        expectSameRemoval(filleted.defeature(faces: [cleanCarrier]),
-                          filleted.defeature(faces: [filletFace]),
-                          "a compound holding one belonging face")
+        expectSameRemoval(
+            filleted.defeature(faces: [cleanCarrier]),
+            filleted.defeature(faces: [filletFace]),
+            "a compound holding one belonging face")
     }
 
     /// Membership is identity, not geometry: two separately built but identical shapes share no
@@ -120,15 +130,17 @@ struct Issue578DefeatureFaceMembershipTests {
     /// mixed request too, which is where the kernel used to let it through.
     @Test("an identically built shape's face is foreign, in any request")
     func membershipIsIdentityNotGeometry() {
-        guard let (a, aFillet, _) = Self.filletedBox(), let (b, bFillet, _) = Self.filletedBox() else {
+        guard let (a, aFillet, _) = Self.filletedBox(), let (b, bFillet, _) = Self.filletedBox()
+        else {
             #expect(Bool(false), "fixture: two identically built filleted boxes")
             return
         }
         #expect(a.faces().count == b.faces().count, "the two fixtures should be identical")
 
         #expect(a.defeature(faces: [bFillet]) == nil, "a twin's face is not this shape's face")
-        #expect(a.defeature(faces: [aFillet, bFillet]) == nil,
-                "a twin's face is still foreign when a real face keeps it company")
+        #expect(
+            a.defeature(faces: [aFillet, bFillet]) == nil,
+            "a twin's face is still foreign when a real face keeps it company")
         #expect(a.defeature(faces: [aFillet]) != nil, "this shape's own face still works")
     }
 
@@ -147,8 +159,9 @@ struct Issue578DefeatureFaceMembershipTests {
         #expect(!edges.isEmpty && !vertices.isEmpty)
 
         #expect(filleted.defeature(faces: [edges[0]]) == nil)
-        #expect(filleted.defeature(faces: [filletFace, edges[0]]) == nil,
-                "an edge names no face of this shape, whatever else the request names")
+        #expect(
+            filleted.defeature(faces: [filletFace, edges[0]]) == nil,
+            "an edge names no face of this shape, whatever else the request names")
         #expect(filleted.defeature(faces: [filletFace, vertices[0]]) == nil)
     }
 
@@ -166,9 +179,10 @@ struct Issue578DefeatureFaceMembershipTests {
             #expect(Bool(false), "fixture: a reversed copy of the fillet face")
             return
         }
-        expectSameRemoval(filleted.defeature(faces: [reversed]),
-                          filleted.defeature(faces: [filletFace]),
-                          "the fillet face, reversed")
+        expectSameRemoval(
+            filleted.defeature(faces: [reversed]),
+            filleted.defeature(faces: [filletFace]),
+            "the fillet face, reversed")
     }
 
     /// A shell or the whole solid names every face it contains, all of which belong, so the rule
@@ -190,9 +204,10 @@ struct Issue578DefeatureFaceMembershipTests {
             #expect(Bool(false), "the whole solid names only faces that belong, so it is accepted")
         }
         if let shell = shells.first {
-            expectSameRemoval(filleted.defeature(faces: [shell]),
-                              filleted.defeature(faces: [filleted]),
-                              "the shell and the solid name the same faces")
+            expectSameRemoval(
+                filleted.defeature(faces: [shell]),
+                filleted.defeature(faces: [filleted]),
+                "the shell and the solid name the same faces")
         }
     }
 
@@ -204,8 +219,9 @@ struct Issue578DefeatureFaceMembershipTests {
     @Test("both spellings refuse a face this shape does not have")
     func bothSpellingsRefuseAFaceThatDoesNotBelong() {
         guard let (filleted, filletFace, filletIndex) = Self.filletedBox(),
-              let plain = Shape.box(width: 20, height: 20, depth: 20),
-              let other = Shape.box(width: 11, height: 11, depth: 11) else {
+            let plain = Shape.box(width: 20, height: 20, depth: 20),
+            let other = Shape.box(width: 11, height: 11, depth: 11)
+        else {
             #expect(Bool(false), "fixture: filleted box, a plain box and a second shape")
             return
         }
@@ -216,7 +232,8 @@ struct Issue578DefeatureFaceMembershipTests {
         let plainFaces = plain.faces()
         #expect(plainFaces.count < filleted.faces().count, "the fillet added a face")
         if let ghost = filleted.faces().last {
-            #expect(ghost.index >= plainFaces.count, "fixture: an index the plain box does not have")
+            #expect(
+                ghost.index >= plainFaces.count, "fixture: an index the plain box does not have")
             #expect(plain.withoutFeatures(faces: [plainFaces[0], ghost]) == nil)
         }
 
@@ -224,8 +241,9 @@ struct Issue578DefeatureFaceMembershipTests {
         #expect(filleted.defeature(faces: [filletFace, foreign]) == nil)
 
         // Both still perform the removal they can name properly, and it is the same removal.
-        expectSameRemoval(filleted.defeature(faces: [filletFace]),
-                          filleted.withoutFeatures(faces: [filleted.faces()[filletIndex]]),
-                          "the same removal, addressed both ways")
+        expectSameRemoval(
+            filleted.defeature(faces: [filletFace]),
+            filleted.withoutFeatures(faces: [filleted.faces()[filletIndex]]),
+            "the same removal, addressed both ways")
     }
 }

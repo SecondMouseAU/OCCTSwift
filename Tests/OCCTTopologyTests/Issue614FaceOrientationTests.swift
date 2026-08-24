@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #614: `Shape.faces()` dropped a face's second orientation.
@@ -42,12 +43,12 @@ struct Issue614FaceOrientationTests {
     /// than recording an issue so callers can skip cleanly if the kernel stops sharing.
     static func splitBoxCompound() -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-              let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
-              let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
-              let knife = upright.translated(by: SIMD3(10, 0, 0)),
-              let pieces = block.split(by: knife),
-              pieces.count == 2,
-              let compound = Shape.compound(pieces)
+            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+            let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
+            let knife = upright.translated(by: SIMD3(10, 0, 0)),
+            let pieces = block.split(by: knife),
+            pieces.count == 2,
+            let compound = Shape.compound(pieces)
         else { return nil }
         return compound
     }
@@ -62,7 +63,9 @@ struct Issue614FaceOrientationTests {
         guard let uv = face.uvBounds else { return nil }
         let u = (uv.uMin + uv.uMax) / 2
         let v = (uv.vMin + uv.vMax) / 2
-        guard let p = face.point(atU: u, v: v), let n = face.normal(atU: u, v: v) else { return nil }
+        guard let p = face.point(atU: u, v: v), let n = face.normal(atU: u, v: v) else {
+            return nil
+        }
         return (p, n)
     }
 
@@ -151,8 +154,9 @@ struct Issue614FaceOrientationTests {
                 guard let c = Self.centreAndNormal(face) else { return nil }
                 return Self.dot(c.normal, c.point - inside)
             }
-            #expect(outwardHits.contains { $0 > 0 },
-                    "solid \(i): no occurrence of the shared wall faces outward (dots \(outwardHits))")
+            #expect(
+                outwardHits.contains { $0 > 0 },
+                "solid \(i): no occurrence of the shared wall faces outward (dots \(outwardHits))")
         }
     }
 
@@ -181,9 +185,11 @@ struct Issue614FaceOrientationTests {
         // The wall is the face centre both solids have in common.
         let centresA = solids[0].faces().compactMap { Self.centreAndNormal($0)?.point }
         let centresB = solids[1].faces().compactMap { Self.centreAndNormal($0)?.point }
-        guard let wallCentre = centresA.first(where: { a in
-            centresB.contains { b in Self.dot(a - b, a - b) < 1e-12 }
-        }) else {
+        guard
+            let wallCentre = centresA.first(where: { a in
+                centresB.contains { b in Self.dot(a - b, a - b) < 1e-12 }
+            })
+        else {
             Issue.record("the two solids share no face centre, fixture stopped sharing")
             return
         }
@@ -204,8 +210,9 @@ struct Issue614FaceOrientationTests {
                 guard let c = Self.centreAndNormal(face) else { return nil }
                 return Self.dot(c.normal, c.point - inside)
             }
-            #expect(dots.contains { $0 > 0 },
-                    "solid \(i): no outward-facing copy of the shared wall (dots \(dots))")
+            #expect(
+                dots.contains { $0 > 0 },
+                "solid \(i): no outward-facing copy of the shared wall (dots \(dots))")
         }
     }
 
@@ -226,8 +233,9 @@ struct Issue614FaceOrientationTests {
             }
             for face in solid.orientedFaces() {
                 guard let c = Self.centreAndNormal(face) else { continue }
-                #expect(Self.dot(c.normal, c.point - inside) > 0,
-                        "solid \(i) face \(face.index) points inward")
+                #expect(
+                    Self.dot(c.normal, c.point - inside) > 0,
+                    "solid \(i) face \(face.index) points inward")
                 checked += 1
             }
         }
@@ -260,7 +268,8 @@ struct Issue614FaceOrientationTests {
     @Test("a plain box faces outward under both enumerations")
     func plainBoxFacesOutward() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let inside = Self.interiorPoint(of: box) else {
+            let inside = Self.interiorPoint(of: box)
+        else {
             Issue.record("could not build the box")
             return
         }
@@ -273,8 +282,9 @@ struct Issue614FaceOrientationTests {
         }
         for face in box.orientedFaces() {
             guard let c = Self.centreAndNormal(face) else { continue }
-            #expect(Self.dot(c.normal, c.point - inside) > 0,
-                    "orientedFaces(): face \(face.index) inward")
+            #expect(
+                Self.dot(c.normal, c.point - inside) > 0,
+                "orientedFaces(): face \(face.index) inward")
             checked += 1
         }
         // Without this the loops pass vacuously if every centreAndNormal returns nil.
@@ -292,8 +302,9 @@ struct Issue614FaceOrientationTests {
     @Test("horizontalFaces() keeps both sides of a shared horizontal wall")
     func horizontalFacesKeepsBothSidesOfSharedWall() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              let compound = Shape.compound(halves) else {
+            let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            let compound = Shape.compound(halves)
+        else {
             Issue.record("could not build the z=4 split compound")
             return
         }
@@ -331,8 +342,9 @@ struct Issue614FaceOrientationTests {
     @Test("facesByZLevel() reports the shared level once per owning solid")
     func facesByZLevelCountsBothSides() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              let compound = Shape.compound(halves) else {
+            let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            let compound = Shape.compound(halves)
+        else {
             Issue.record("could not build the z=4 split compound")
             return
         }
@@ -356,8 +368,9 @@ struct Issue614FaceOrientationTests {
     @Test("across a shared wall, only one side faces up")
     func upwardFacesOnSharedWallTakesOneSide() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              let compound = Shape.compound(halves) else {
+            let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            let compound = Shape.compound(halves)
+        else {
             Issue.record("could not build the z=4 split compound")
             return
         }
@@ -380,7 +393,8 @@ struct Issue614FaceOrientationTests {
     @Test("a shape compounded with itself repeats an index in upwardFaces()")
     func upwardFacesRepeatsWhenOrientationsAgree() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let doubled = Shape.compound([box, box]) else {
+            let doubled = Shape.compound([box, box])
+        else {
             Issue.record("could not build the doubled compound")
             return
         }

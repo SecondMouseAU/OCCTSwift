@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #623. `ContinuityClass` offers two ways to ask "is this at least X", and they disagreed.
@@ -112,8 +113,10 @@ struct Issue623ContinuityFloorTests {
             for required in ContinuityClass.allCases {
                 guard let floor = Self.parametricCounterpart[required] else { continue }
                 if measured.satisfies(floor) {
-                    #expect(measured >= required,
-                            "\(measured).satisfies(\(floor)) is true but \(measured) sorts below \(required)")
+                    #expect(
+                        measured >= required,
+                        "\(measured).satisfies(\(floor)) is true but \(measured) sorts below \(required)"
+                    )
                 }
             }
         }
@@ -130,9 +133,11 @@ struct Issue623ContinuityFloorTests {
         // floors (a lookup table, say) and loses downward closure.
         for measured in ContinuityClass.allCases {
             for floor in ParametricContinuity.allCases where measured.satisfies(floor) {
-                for weaker in ParametricContinuity.allCases where weaker.rawValue <= floor.rawValue {
-                    #expect(measured.satisfies(weaker),
-                            "\(measured) satisfies \(floor) but not the weaker \(weaker)")
+                for weaker in ParametricContinuity.allCases where weaker.rawValue <= floor.rawValue
+                {
+                    #expect(
+                        measured.satisfies(weaker),
+                        "\(measured) satisfies \(floor) but not the weaker \(weaker)")
                 }
             }
         }
@@ -145,7 +150,8 @@ struct Issue623ContinuityFloorTests {
         // It cannot be asserted outright, because the documented G2/C1 cell violates it too:
         // `.c1` satisfies `.c1` and the higher-ranked `.g2` does not. So collect the violations
         // and pin the set, exactly as the 7x7 matrix does.
-        var violations: [(weaker: ContinuityClass, stronger: ContinuityClass, floor: ParametricContinuity)] = []
+        var violations:
+            [(weaker: ContinuityClass, stronger: ContinuityClass, floor: ParametricContinuity)] = []
         for weaker in ContinuityClass.allCases {
             for stronger in ContinuityClass.allCases where stronger >= weaker {
                 for floor in ParametricContinuity.allCases
@@ -201,10 +207,12 @@ struct Issue623ContinuityFloorTests {
         let poles: [[SIMD3<Double>]] = (1...7).map { i in
             (1...4).map { j in SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2)) }
         }
-        if let c0 = Surface.bspline(poles: poles,
-                                    knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
-                                    knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-                                    degreeU: 3, degreeV: 3) {
+        if let c0 = Surface.bspline(
+            poles: poles,
+            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, 3, 4],
+            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+            degreeU: 3, degreeV: 3)
+        {
             #expect(c0.continuityClass == .c0)
             #expect(c0.continuityClass.satisfies(.c0))
             #expect(!c0.continuityClass.satisfies(.c1))

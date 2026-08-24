@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #225: building a smooth worm/screw from a custom radial profile.
@@ -15,17 +16,20 @@ struct Issue225ThreadedRodTests {
     static func wormProfile() -> ThreadProfile? {
         ThreadProfile(vertices: [
             .init(axial: 0.00, depth: 1),
-            .init(axial: 0.15, depth: 1),   // root half-flat
-            .init(axial: 0.35, depth: 0),   // flank → crest
-            .init(axial: 0.65, depth: 0),   // crest flat
-            .init(axial: 0.85, depth: 1),   // flank → root
+            .init(axial: 0.15, depth: 1),  // root half-flat
+            .init(axial: 0.35, depth: 0),  // flank → crest
+            .init(axial: 0.65, depth: 0),  // crest flat
+            .init(axial: 0.85, depth: 1),  // flank → root
             .init(axial: 1.00, depth: 1),
         ])
     }
 
     @Test("custom worm profile is smooth-rod-buildable")
     func profilePredicate() {
-        guard let p = Self.wormProfile() else { Issue.record("profile"); return }
+        guard let p = Self.wormProfile() else {
+            Issue.record("profile")
+            return
+        }
         #expect(p.hasCrestFlat)
         #expect(p.supportsSmoothRodBuild)
         #expect(p.segments.filter { $0.kind == .flank }.count == 2)
@@ -33,33 +37,50 @@ struct Issue225ThreadedRodTests {
 
     @Test("threadedRod builds a valid, analytic worm with no boolean")
     func wormIsValidAndAnalytic() {
-        guard let p = Self.wormProfile() else { Issue.record("profile"); return }
-        let majorR = 6.0, pitch = 4.0, cutDepth = 3.0, length = 12.0
-        guard let worm = Shape.threadedRod(customProfile: p, nominalDiameter: 2 * majorR,
-                                           pitch: pitch, cutDepth: cutDepth, length: length) else {
-            Issue.record("threadedRod returned nil"); return
+        guard let p = Self.wormProfile() else {
+            Issue.record("profile")
+            return
         }
-        #expect(worm.isValidSolid)                              // valid (the issue's whole ask)
+        let majorR = 6.0
+        let pitch = 4.0
+        let cutDepth = 3.0
+        let length = 12.0
+        guard
+            let worm = Shape.threadedRod(
+                customProfile: p, nominalDiameter: 2 * majorR,
+                pitch: pitch, cutDepth: cutDepth, length: length)
+        else {
+            Issue.record("threadedRod returned nil")
+            return
+        }
+        #expect(worm.isValidSolid)  // valid (the issue's whole ask)
         if let v = worm.volume {
             let stockVol = Double.pi * majorR * majorR * length
-            #expect(v > 0)                                      // not collapsed
-            #expect(v < stockVol)                               // material removed
-            #expect(v > stockVol * 0.25)                        // but not over-cut
+            #expect(v > 0)  // not collapsed
+            #expect(v < stockVol)  // material removed
+            #expect(v > stockVol * 0.25)  // but not over-cut
         }
-        #expect(worm.faces().count < 60)                        // analytic loft, not 100s of facets
+        #expect(worm.faces().count < 60)  // analytic loft, not 100s of facets
     }
 
     @Test("pointed (no crest flat) custom profile is rejected, not silently bad")
     func pointedProfileRejected() {
         // A triangular ridge like the issue's `rib`: pointed crest, no crest flat.
-        guard let pointed = ThreadProfile(vertices: [
-            .init(axial: 0.0, depth: 1),
-            .init(axial: 0.5, depth: 0),
-            .init(axial: 1.0, depth: 1),
-        ]) else { Issue.record("profile"); return }
+        guard
+            let pointed = ThreadProfile(vertices: [
+                .init(axial: 0.0, depth: 1),
+                .init(axial: 0.5, depth: 0),
+                .init(axial: 1.0, depth: 1),
+            ])
+        else {
+            Issue.record("profile")
+            return
+        }
         #expect(!pointed.supportsSmoothRodBuild)
         // threadedRod returns nil rather than an invalid boolean result.
-        #expect(Shape.threadedRod(customProfile: pointed, nominalDiameter: 12,
-                                  pitch: 4, cutDepth: 3, length: 12) == nil)
+        #expect(
+            Shape.threadedRod(
+                customProfile: pointed, nominalDiameter: 12,
+                pitch: 4, cutDepth: 3, length: 12) == nil)
     }
 }

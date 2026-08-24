@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #613, site 5, the one of the six where converting to the deduplicated enumeration would have
@@ -44,13 +45,13 @@ struct Issue613MeshIndexContractTests {
     /// what we want, since the shared wall IS the fixture.
     static func splitBoxCompound() -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-              let rect = Wire.rectangle(width: 60, height: 60),
-              let plate = Shape.face(from: rect),
-              let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
-              let knife = upright.translated(by: SIMD3(10, 0, 0)),
-              let pieces = block.split(by: knife),
-              pieces.count == 2,
-              let compound = Shape.compound(pieces)
+            let rect = Wire.rectangle(width: 60, height: 60),
+            let plate = Shape.face(from: rect),
+            let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
+            let knife = upright.translated(by: SIMD3(10, 0, 0)),
+            let pieces = block.split(by: knife),
+            pieces.count == 2,
+            let compound = Shape.compound(pieces)
         else { return nil }
         return compound
     }
@@ -62,12 +63,15 @@ struct Issue613MeshIndexContractTests {
     /// The geometric normal of a triangle, from its winding, deliberately recomputed from the
     /// vertex order rather than read from `Triangle.normal`, so the assertion lands on the winding
     /// itself and would survive the normal being computed some other way.
-    static func windingNormal(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ c: SIMD3<Float>) -> SIMD3<Double> {
+    static func windingNormal(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ c: SIMD3<Float>) -> SIMD3<
+        Double
+    > {
         let ab = SIMD3<Double>(Double(b.x - a.x), Double(b.y - a.y), Double(b.z - a.z))
         let ac = SIMD3<Double>(Double(c.x - a.x), Double(c.y - a.y), Double(c.z - a.z))
-        return SIMD3(ab.y * ac.z - ab.z * ac.y,
-                     ab.z * ac.x - ab.x * ac.z,
-                     ab.x * ac.y - ab.y * ac.x)
+        return SIMD3(
+            ab.y * ac.z - ab.z * ac.y,
+            ab.z * ac.x - ab.x * ac.z,
+            ab.x * ac.y - ab.y * ac.x)
     }
 
     // MARK: - The premise
@@ -76,7 +80,8 @@ struct Issue613MeshIndexContractTests {
     func fixtureSharesAWall() throws {
         let compound = try #require(Self.splitBoxCompound())
         #expect(compound.faceCount == 11, "distinct faces: \(compound.faceCount)")
-        #expect(compound.orientedFaces().count == 12, "occurrences: \(compound.orientedFaces().count)")
+        #expect(
+            compound.orientedFaces().count == 12, "occurrences: \(compound.orientedFaces().count)")
 
         // Exactly one index appears twice, once per orientation.
         var byIndex: [Int: [Shape.Orientation]] = [:]
@@ -84,8 +89,9 @@ struct Issue613MeshIndexContractTests {
         let shared = byIndex.filter { $0.value.count > 1 }
         #expect(shared.count == 1, "expected one shared face, got \(shared.count)")
         if let orientations = shared.first?.value {
-            #expect(Set(orientations) == [.forward, .reversed],
-                    "the two occurrences should be opposed, got \(orientations)")
+            #expect(
+                Set(orientations) == [.forward, .reversed],
+                "the two occurrences should be opposed, got \(orientations)")
         }
     }
 
@@ -104,15 +110,17 @@ struct Issue613MeshIndexContractTests {
         let indices = Set(triangles.map { Int($0.faceIndex) })
         #expect(!indices.isEmpty)
         for i in indices {
-            #expect(compound.face(at: i) != nil,
-                    "triangles claim faceIndex \(i), which face(at:) cannot address")
+            #expect(
+                compound.face(at: i) != nil,
+                "triangles claim faceIndex \(i), which face(at:) cannot address")
         }
         // Bound it via #require rather than `indices.max()!` inside #expect: Swift Testing does not
         // short-circuit, so the preceding emptiness check would not stop a force-unwrap from
         // crashing the process on an empty mesh instead of failing the test.
         let highest = try #require(indices.max())
-        #expect(highest < compound.faceCount,
-                "max faceIndex \(highest) vs faceCount \(compound.faceCount)")
+        #expect(
+            highest < compound.faceCount,
+            "max faceIndex \(highest) vs faceCount \(compound.faceCount)")
     }
 
     /// Stronger than "in range": the index must name the face the triangle is actually ON.
@@ -128,14 +136,16 @@ struct Issue613MeshIndexContractTests {
         for t in mesh.trianglesWithFaces() {
             let face = try #require(compound.face(at: Int(t.faceIndex)))
             guard let uv = face.uvBounds,
-                  let origin = face.point(atU: (uv.uMin + uv.uMax) / 2, v: (uv.vMin + uv.vMax) / 2),
-                  let normal = face.normal(atU: (uv.uMin + uv.uMax) / 2, v: (uv.vMin + uv.vMax) / 2)
+                let origin = face.point(atU: (uv.uMin + uv.uMax) / 2, v: (uv.vMin + uv.vMax) / 2),
+                let normal = face.normal(atU: (uv.uMin + uv.uMax) / 2, v: (uv.vMin + uv.vMax) / 2)
             else { continue }
             for vi in [t.v1, t.v2, t.v3] {
                 let p = vertices[Int(vi)]
                 let offset = SIMD3<Double>(Double(p.x), Double(p.y), Double(p.z)) - origin
-                #expect(abs(Self.dot(offset, normal)) < 1e-6,
-                        "triangle stamped faceIndex \(t.faceIndex) sits \(Self.dot(offset, normal)) off that face's plane")
+                #expect(
+                    abs(Self.dot(offset, normal)) < 1e-6,
+                    "triangle stamped faceIndex \(t.faceIndex) sits \(Self.dot(offset, normal)) off that face's plane"
+                )
             }
             checked += 1
         }
@@ -152,19 +162,25 @@ struct Issue613MeshIndexContractTests {
 
         // The wall is the plane x = 10. Collect the mesh face indices of triangles lying in it.
         var wallIndices = Set<Int>()
-        var plusX = 0, minusX = 0
+        var plusX = 0
+        var minusX = 0
         for t in mesh.trianglesWithFaces() {
-            let a = vertices[Int(t.v1)], b = vertices[Int(t.v2)], c = vertices[Int(t.v3)]
+            let a = vertices[Int(t.v1)]
+            let b = vertices[Int(t.v2)]
+            let c = vertices[Int(t.v3)]
             guard abs(a.x - 10) < 1e-4, abs(b.x - 10) < 1e-4, abs(c.x - 10) < 1e-4 else { continue }
             wallIndices.insert(Int(t.faceIndex))
             let n = Self.windingNormal(a, b, c)
             if n.x > 1e-9 { plusX += 1 } else if n.x < -1e-9 { minusX += 1 }
         }
-        #expect(wallIndices.count == 1,
-                "the shared wall's triangles carry \(wallIndices.count) different indices: \(wallIndices.sorted())")
+        #expect(
+            wallIndices.count == 1,
+            "the shared wall's triangles carry \(wallIndices.count) different indices: \(wallIndices.sorted())"
+        )
         // And both sides are still meshed, the map walk would have dropped one.
-        #expect(plusX > 0 && minusX > 0,
-                "expected both sides of the shared wall, got +x=\(plusX) −x=\(minusX)")
+        #expect(
+            plusX > 0 && minusX > 0,
+            "expected both sides of the shared wall, got +x=\(plusX) −x=\(minusX)")
         #expect(plusX == minusX, "the two sides should mesh identically: +x=\(plusX) −x=\(minusX)")
     }
 
@@ -185,24 +201,30 @@ struct Issue613MeshIndexContractTests {
         let lowerInterior = SIMD3<Double>(5, 5, 5)
         let upperInterior = SIMD3<Double>(15, 5, 5)
 
-        var outward = 0, inward = 0
+        var outward = 0
+        var inward = 0
         for t in mesh.trianglesWithFaces() {
-            let a = vertices[Int(t.v1)], b = vertices[Int(t.v2)], c = vertices[Int(t.v3)]
+            let a = vertices[Int(t.v1)]
+            let b = vertices[Int(t.v2)]
+            let c = vertices[Int(t.v3)]
             let n = Self.windingNormal(a, b, c)
             guard (n.x * n.x + n.y * n.y + n.z * n.z) > 1e-12 else { continue }
-            let centre = SIMD3<Double>(Double(a.x + b.x + c.x) / 3,
-                                       Double(a.y + b.y + c.y) / 3,
-                                       Double(a.z + b.z + c.z) / 3)
+            let centre = SIMD3<Double>(
+                Double(a.x + b.x + c.x) / 3,
+                Double(a.y + b.y + c.y) / 3,
+                Double(a.z + b.z + c.z) / 3)
             // Which solid owns this triangle? The one whose interior it is a boundary of.
-            let owner = centre.x <= 10 + 1e-6 && Self.dot(n, centre - lowerInterior) > 0
-                      ? lowerInterior
-                      : (centre.x >= 10 - 1e-6 && Self.dot(n, centre - upperInterior) > 0
-                         ? upperInterior : nil)
+            let owner =
+                centre.x <= 10 + 1e-6 && Self.dot(n, centre - lowerInterior) > 0
+                ? lowerInterior
+                : (centre.x >= 10 - 1e-6 && Self.dot(n, centre - upperInterior) > 0
+                    ? upperInterior : nil)
             if owner != nil { outward += 1 } else { inward += 1 }
         }
         #expect(outward > 0)
-        #expect(inward == 0,
-                "\(inward) of \(outward + inward) triangles are wound inward for both solids")
+        #expect(
+            inward == 0,
+            "\(inward) of \(outward + inward) triangles are wound inward for both solids")
     }
 
     /// A control: on a shape with no shared face the winding was never in question, so this pins
@@ -214,13 +236,17 @@ struct Issue613MeshIndexContractTests {
         let vertices = mesh.vertices
         let centre = SIMD3<Double>(5, 5, 5)
 
-        var outward = 0, inward = 0
+        var outward = 0
+        var inward = 0
         for t in mesh.trianglesWithFaces() {
-            let a = vertices[Int(t.v1)], b = vertices[Int(t.v2)], c = vertices[Int(t.v3)]
+            let a = vertices[Int(t.v1)]
+            let b = vertices[Int(t.v2)]
+            let c = vertices[Int(t.v3)]
             let n = Self.windingNormal(a, b, c)
-            let mid = SIMD3<Double>(Double(a.x + b.x + c.x) / 3,
-                                    Double(a.y + b.y + c.y) / 3,
-                                    Double(a.z + b.z + c.z) / 3)
+            let mid = SIMD3<Double>(
+                Double(a.x + b.x + c.x) / 3,
+                Double(a.y + b.y + c.y) / 3,
+                Double(a.z + b.z + c.z) / 3)
             if Self.dot(n, mid - centre) > 0 { outward += 1 } else { inward += 1 }
         }
         #expect(outward == 12, "a box meshes as 12 triangles, got \(outward) outward")
@@ -240,16 +266,20 @@ struct Issue613MeshIndexContractTests {
         let triangles = mesh.trianglesWithFaces()
         #expect(!triangles.isEmpty)
         for i in Set(triangles.map { Int($0.faceIndex) }) {
-            #expect(compound.face(at: i) != nil,
-                    "triangles claim faceIndex \(i), which face(at:) cannot address")
+            #expect(
+                compound.face(at: i) != nil,
+                "triangles claim faceIndex \(i), which face(at:) cannot address")
         }
 
         // Winding too: both sides of the shared wall, stamped with one index.
         let vertices = mesh.vertices
         var wallIndices = Set<Int>()
-        var plusX = 0, minusX = 0
+        var plusX = 0
+        var minusX = 0
         for t in triangles {
-            let a = vertices[Int(t.v1)], b = vertices[Int(t.v2)], c = vertices[Int(t.v3)]
+            let a = vertices[Int(t.v1)]
+            let b = vertices[Int(t.v2)]
+            let c = vertices[Int(t.v3)]
             guard abs(a.x - 10) < 1e-4, abs(b.x - 10) < 1e-4, abs(c.x - 10) < 1e-4 else { continue }
             wallIndices.insert(Int(t.faceIndex))
             let n = Self.windingNormal(a, b, c)
@@ -270,11 +300,12 @@ struct Issue613MeshIndexContractTests {
     @Test("merged mesh nodes keep both sides of a shared wall, oppositely wound")
     func mergedNodesKeepBothWallSides() throws {
         let compound = try #require(Self.splitBoxCompound())
-        _ = compound.mesh(linearDeflection: 0.5)   // triangulate first
+        _ = compound.mesh(linearDeflection: 0.5)  // triangulate first
         let merged = try #require(mergedMeshNodes(from: compound, smoothAngle: 0.5))
         #expect(merged.triangleCount > 0)
 
-        var plusX = 0, minusX = 0
+        var plusX = 0
+        var minusX = 0
         for t in 0..<merged.triangleCount {
             let a = merged.vertices[Int(merged.indices[t * 3])]
             let b = merged.vertices[Int(merged.indices[t * 3 + 1])]
@@ -296,15 +327,17 @@ struct Issue613MeshIndexContractTests {
         let merged = try #require(mergedMeshNodes(from: box, smoothAngle: 0.5))
         let centre = SIMD3<Double>(5, 5, 5)
 
-        var outward = 0, inward = 0
+        var outward = 0
+        var inward = 0
         for t in 0..<merged.triangleCount {
             let a = merged.vertices[Int(merged.indices[t * 3])]
             let b = merged.vertices[Int(merged.indices[t * 3 + 1])]
             let c = merged.vertices[Int(merged.indices[t * 3 + 2])]
             let n = Self.windingNormal(a, b, c)
-            let mid = SIMD3<Double>(Double(a.x + b.x + c.x) / 3,
-                                    Double(a.y + b.y + c.y) / 3,
-                                    Double(a.z + b.z + c.z) / 3)
+            let mid = SIMD3<Double>(
+                Double(a.x + b.x + c.x) / 3,
+                Double(a.y + b.y + c.y) / 3,
+                Double(a.z + b.z + c.z) / 3)
             if Self.dot(n, mid - centre) > 0 { outward += 1 } else { inward += 1 }
         }
         #expect(outward == 12, "got \(outward) outward of \(outward + inward)")

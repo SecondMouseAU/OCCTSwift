@@ -82,8 +82,9 @@ private final class ImportProgressBox {
 }
 
 /// Run `body` with an `OCCTImportProgress*` pointing to a struct that forwards
-/// to the given Swift `ImportProgress`. The pointer is valid only for the
-/// duration of `body`. Pass nil if `progress` is nil.
+/// to the given Swift `ImportProgress`.
+///
+/// The pointer is valid only for the duration of `body`. Pass nil if `progress` is nil.
 internal func withImportProgress<T>(
     _ progress: ImportProgress?,
     _ body: (UnsafePointer<OCCTImportProgress>?) -> T

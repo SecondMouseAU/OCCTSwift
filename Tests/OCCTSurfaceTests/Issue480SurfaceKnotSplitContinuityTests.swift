@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #480: `Surface.knotSplitting` took a raw `Int` documented as "0=C0, 1=C1, 2=C2", which on
@@ -18,8 +19,10 @@ struct Issue480SurfaceKnotSplitContinuityTests {
 
     /// A BSpline surface of the given degree in both directions, with `interiorKnots` interior
     /// knots at multiplicity 1, except knot `bumpAt` (1-based), which gets `bumpMult`.
-    private func bsplineSurface(degree: Int, interiorKnots: Int,
-                                bumpAt: Int = 0, bumpMult: Int = 1) -> Surface? {
+    private func bsplineSurface(
+        degree: Int, interiorKnots: Int,
+        bumpAt: Int = 0, bumpMult: Int = 1
+    ) -> Surface? {
         var knots: [Double] = [0]
         var mults: [Int32] = [Int32(degree + 1)]
         for i in 1...interiorKnots {
@@ -35,10 +38,11 @@ struct Issue480SurfaceKnotSplitContinuityTests {
                 SIMD3<Double>(Double(u), Double(v), Double((u + v) % 3) * 0.5)
             }
         }
-        return Surface.bspline(poles: poles,
-                               knotsU: knots, multiplicitiesU: mults,
-                               knotsV: knots, multiplicitiesV: mults,
-                               degreeU: degree, degreeV: degree)
+        return Surface.bspline(
+            poles: poles,
+            knotsU: knots, multiplicitiesU: mults,
+            knotsV: knots, multiplicitiesV: mults,
+            degreeU: degree, degreeV: degree)
     }
 
     @Test("A bicubic surface with simple interior knots reports interior splits only at .c3")
@@ -67,7 +71,8 @@ struct Issue480SurfaceKnotSplitContinuityTests {
     @Test("The .c1 default reports a real kink, which is why it stays the default")
     func defaultFindsGenuineKink() throws {
         // Multiplicity 3 on a cubic leaves continuity 3-3 = 0 at that knot: a genuine kink.
-        let surface = try #require(bsplineSurface(degree: 3, interiorKnots: 4, bumpAt: 2, bumpMult: 3))
+        let surface = try #require(
+            bsplineSurface(degree: 3, interiorKnots: 4, bumpAt: 2, bumpMult: 3))
 
         let defaulted = surface.knotSplitting()
         #expect(defaulted.uSplitParams == [0, 2, 5])
@@ -95,8 +100,10 @@ struct Issue480SurfaceKnotSplitContinuityTests {
         // answers "already continuous enough". `toBezierPatches()` is the every-knot split.
         let surface = try #require(bsplineSurface(degree: 5, interiorKnots: 4))
         for continuity in ParametricContinuity.allCases {
-            #expect(surface.knotSplitting(uContinuity: continuity, vContinuity: continuity).uSplitCount == 2,
-                    "u splits at \(continuity)")
+            #expect(
+                surface.knotSplitting(uContinuity: continuity, vContinuity: continuity).uSplitCount
+                    == 2,
+                "u splits at \(continuity)")
         }
         #expect(surface.toBezierPatches().count == 25)
     }

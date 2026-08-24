@@ -48,19 +48,24 @@ public enum Sampling {
     ///   - count: The caller's requested sample count.
     ///   - minimum: The entry point's own documented lower bound, usually OCCT's `>= 2` (which a
     ///     Release kernel compiles its precondition out of, #501) and occasionally `>= 1`.
+    ///
+    /// - Returns: The validated count, or `nil` if out of bounds.
     internal static func requested(_ count: Int, atLeast minimum: Int = 2) -> Int? {
         guard count >= minimum, count <= maximumSampleCount else { return nil }
         return count
     }
 
-    /// The sample count implied by dividing `length` into steps of `spacing`: `round(length /
-    /// spacing) + 1`, floored at 2 (`GCPnts_UniformAbscissa`'s own minimum, #501). `nil` when
-    /// `spacing` or `length` isn't positive, or the implied count exceeds ``maximumSampleCount``.
+    /// The sample count implied by dividing `length` into steps of `spacing`.
+    ///
+    /// `round(length / spacing) + 1`, floored at 2 (`GCPnts_UniformAbscissa`'s own minimum, #501).
+    ///
+    /// Returns `nil` when `spacing` or `length` isn't positive, or the implied count exceeds
+    /// ``maximumSampleCount``.
     ///
     /// One derivation shared by every caller that turns a spacing into a bounded point count —
-    /// `ArcLengthCurveAdaptor.points(spacing:)` established it first (#479); `Shape.uniformAbscissa(distance:)`
-    /// and its `u1:u2:` sibling mirror it (#853) — so a future correction to the formula lands in
-    /// one place instead of three unlinked copies (#862).
+    /// `ArcLengthCurveAdaptor.points(spacing:)` established it first (#479);
+    /// `Shape.uniformAbscissa(distance:)` and its `u1:u2:` sibling mirror it (#853) — so a future
+    /// correction to the formula lands in one place instead of three unlinked copies (#862).
     ///
     /// Stays in `Double` for the derivation: `Int(_:)` on a `Double` past `Int.max` is a trap, not
     /// an error, and both `length` and `spacing` are caller-supplied. Anything the ceiling cannot

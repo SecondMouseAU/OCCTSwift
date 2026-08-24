@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #832: Shape+Modeling's fused/subtracted/intersected(tolerance:/glue:), a pre-#202/#206, v0.114.0
@@ -14,7 +15,8 @@ struct Issue832BooleanDelegation {
 
     private func stackedBoxes() -> (Shape, Shape)? {
         guard let lower = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let upper = Shape.box(origin: SIMD3(0, 0, 10), width: 10, height: 10, depth: 10) else {
+            let upper = Shape.box(origin: SIMD3(0, 0, 10), width: 10, height: 10, depth: 10)
+        else {
             return nil
         }
         return (lower, upper)
@@ -22,13 +24,19 @@ struct Issue832BooleanDelegation {
 
     private func overlappingBoxes() -> (Shape, Shape)? {
         guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10) else { return nil }
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
+        else { return nil }
         return (a, b)
     }
 
-    @Test("fused/subtracted/intersected(tolerance:) match union/subtracting/intersection(fuzzyValue:)")
+    @Test(
+        "fused/subtracted/intersected(tolerance:) match union/subtracting/intersection(fuzzyValue:)"
+    )
     func toleranceDelegatesToFuzzyValue() {
-        guard let (a, b) = overlappingBoxes() else { #expect(Bool(false)); return }
+        guard let (a, b) = overlappingBoxes() else {
+            #expect(Bool(false))
+            return
+        }
         let fused = a.fused(with: b, tolerance: 1e-4)
         let unioned = a.union(b, fuzzyValue: 1e-4)
         #expect(fused != nil && unioned != nil)
@@ -65,7 +73,10 @@ struct Issue832BooleanDelegation {
     // measurement this comment summarizes.
     @Test("negative tolerance behaves the same as tolerance: 0, matching union's contract")
     func negativeToleranceIgnored() {
-        guard let (a, b) = stackedBoxes() else { #expect(Bool(false)); return }
+        guard let (a, b) = stackedBoxes() else {
+            #expect(Bool(false))
+            return
+        }
         if let f = a.fused(with: b, tolerance: -5) {
             #expect(abs((f.volume ?? 0) - 2000.0) < 1.0)
         } else {
@@ -88,16 +99,22 @@ struct Issue832BooleanDelegation {
         #expect(Shape.GlueMode.full.asBooleanGlue == .full)
         #expect(Shape.GlueMode.off.asBooleanGlue == .off)
 
-        guard let (a, b) = stackedBoxes() else { #expect(Bool(false)); return }
-        let cases: [(Shape.GlueMode, Shape.BooleanGlue)] = [(.shift, .shift), (.full, .full), (.off, .off)]
+        guard let (a, b) = stackedBoxes() else {
+            #expect(Bool(false))
+            return
+        }
+        let cases: [(Shape.GlueMode, Shape.BooleanGlue)] = [
+            (.shift, .shift), (.full, .full), (.off, .off),
+        ]
         for (glueMode, booleanGlue) in cases {
             let viaGlueMode = a.fused(with: b, glue: glueMode)
             let viaBooleanGlue = a.union(b, glue: booleanGlue)
             #expect(viaGlueMode != nil, "fused(with:glue: \(glueMode)) returned nil")
             #expect(viaBooleanGlue != nil, "union(_:glue: \(booleanGlue)) returned nil")
             if let g = viaGlueMode, let u = viaBooleanGlue {
-                #expect(abs((g.volume ?? -1) - (u.volume ?? -2)) < 1e-6,
-                        "GlueMode.\(glueMode) should match BooleanGlue.\(booleanGlue) by case name")
+                #expect(
+                    abs((g.volume ?? -1) - (u.volume ?? -2)) < 1e-6,
+                    "GlueMode.\(glueMode) should match BooleanGlue.\(booleanGlue) by case name")
             }
         }
     }
@@ -108,14 +125,26 @@ struct Issue832BooleanDelegation {
     // (now-inherited) default 120s timeout.
     @Test("delegated calls still succeed under the inherited default timeout")
     func delegatedCallsSucceedUnderDefaultTimeout() {
-        guard let (a, b) = overlappingBoxes() else { #expect(Bool(false)); return }
+        guard let (a, b) = overlappingBoxes() else {
+            #expect(Bool(false))
+            return
+        }
         // union 1000 + 1000 - 500(overlap) = 1500; intersection 500; subtract 1000-500 = 500
-        if let f = a.fused(with: b, tolerance: 0) { #expect(abs((f.volume ?? 0) - 1500) < 1) }
-        else { #expect(Bool(false), "fused nil under inherited default timeout") }
-        if let x = a.intersected(with: b, tolerance: 0) { #expect(abs((x.volume ?? 0) - 500) < 1) }
-        else { #expect(Bool(false), "intersected nil under inherited default timeout") }
-        if let s = a.subtracted(b, tolerance: 0) { #expect(abs((s.volume ?? 0) - 500) < 1) }
-        else { #expect(Bool(false), "subtracted nil under inherited default timeout") }
+        if let f = a.fused(with: b, tolerance: 0) {
+            #expect(abs((f.volume ?? 0) - 1500) < 1)
+        } else {
+            #expect(Bool(false), "fused nil under inherited default timeout")
+        }
+        if let x = a.intersected(with: b, tolerance: 0) {
+            #expect(abs((x.volume ?? 0) - 500) < 1)
+        } else {
+            #expect(Bool(false), "intersected nil under inherited default timeout")
+        }
+        if let s = a.subtracted(b, tolerance: 0) {
+            #expect(abs((s.volume ?? 0) - 500) < 1)
+        } else {
+            #expect(Bool(false), "subtracted nil under inherited default timeout")
+        }
     }
 
     // Review finding on PR #867: the six delegating entry points inherited defaultBooleanTimeout
@@ -127,9 +156,14 @@ struct Issue832BooleanDelegation {
     // already in the past interrupts the build at its first progress checkpoint, even for an
     // otherwise-fast valid boolean, proving timeout: is actually threaded through to the
     // underlying union/subtracting/intersection call rather than merely accepted and ignored.
-    @Test("explicit timeout: is threaded through to the underlying call, not ignored (all six entry points)")
+    @Test(
+        "explicit timeout: is threaded through to the underlying call, not ignored (all six entry points)"
+    )
     func explicitTimeoutIsThreadedThrough() {
-        guard let (a, b) = overlappingBoxes() else { #expect(Bool(false)); return }
+        guard let (a, b) = overlappingBoxes() else {
+            #expect(Bool(false))
+            return
+        }
         let tiny = 1e-7
         // tolerance: overload
         #expect(a.fused(with: b, tolerance: 0, timeout: tiny) == nil)
@@ -142,9 +176,15 @@ struct Issue832BooleanDelegation {
 
         // Same operations succeed with a sane explicit timeout, proving the tiny-timeout nils
         // above are the watchdog firing and not some other failure mode.
-        if let f = a.fused(with: b, tolerance: 0, timeout: 60) { #expect(abs((f.volume ?? 0) - 1500) < 1) }
-        else { #expect(Bool(false), "fused nil under a 60s explicit timeout") }
-        if let g = a.fused(with: b, glue: .off, timeout: 60) { #expect(abs((g.volume ?? 0) - 1500) < 1) }
-        else { #expect(Bool(false), "fused(glue:) nil under a 60s explicit timeout") }
+        if let f = a.fused(with: b, tolerance: 0, timeout: 60) {
+            #expect(abs((f.volume ?? 0) - 1500) < 1)
+        } else {
+            #expect(Bool(false), "fused nil under a 60s explicit timeout")
+        }
+        if let g = a.fused(with: b, glue: .off, timeout: 60) {
+            #expect(abs((g.volume ?? 0) - 1500) < 1)
+        } else {
+            #expect(Bool(false), "fused(glue:) nil under a 60s explicit timeout")
+        }
     }
 }

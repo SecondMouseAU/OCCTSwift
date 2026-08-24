@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #791 (the #784 duplication rescan): `OCCTConvertCircleToBSpline2D` reimplemented the
@@ -48,9 +49,13 @@ struct Issue791CircleBSplineHelperTests {
         PoleBaseline(index: 1, point: SIMD2(5.0, 0.0), weight: 1.0),
         PoleBaseline(index: 2, point: SIMD2(5.0, 8.660254037844384), weight: 0.5000000000000001),
         PoleBaseline(index: 3, point: SIMD2(-2.499999999999999, 4.330127018922194), weight: 1.0),
-        PoleBaseline(index: 4, point: SIMD2(-9.999999999999998, 1.224646799147353e-15), weight: 0.5000000000000001),
+        PoleBaseline(
+            index: 4, point: SIMD2(-9.999999999999998, 1.224646799147353e-15),
+            weight: 0.5000000000000001),
         PoleBaseline(index: 5, point: SIMD2(-2.500000000000002, -4.330127018922192), weight: 1.0),
-        PoleBaseline(index: 6, point: SIMD2(4.999999999999992, -8.660254037844389), weight: 0.5000000000000001),
+        PoleBaseline(
+            index: 6, point: SIMD2(4.999999999999992, -8.660254037844389),
+            weight: 0.5000000000000001),
         PoleBaseline(index: 7, point: SIMD2(5.0, -1.2246467991473533e-15), weight: 1.0),
     ]
 
@@ -58,19 +63,25 @@ struct Issue791CircleBSplineHelperTests {
     // OCCTConvertCircleToBSpline2D(center: (3,-2), radius: 7, u1: 0.5, u2: 4.0).
     static let offsetArcPoles: [PoleBaseline] = [
         PoleBaseline(index: 1, point: SIMD2(9.14307793323261, 1.355978770229421), weight: 1.0),
-        PoleBaseline(index: 2, point: SIMD2(5.124556366508612, 8.711833157554384), weight: 0.6409968581633251),
+        PoleBaseline(
+            index: 2, point: SIMD2(5.124556366508612, 8.711833157554384), weight: 0.6409968581633251
+        ),
         PoleBaseline(index: 3, point: SIMD2(-1.3972153590591736, 3.4465123782154485), weight: 1.0),
-        PoleBaseline(index: 4, point: SIMD2(-7.918987084626961, -1.8188084011234853), weight: 0.6409968581633251),
+        PoleBaseline(
+            index: 4, point: SIMD2(-7.918987084626961, -1.8188084011234853),
+            weight: 0.6409968581633251),
         PoleBaseline(index: 5, point: SIMD2(-1.5755053460452837, -7.297617467155498), weight: 1.0),
     ]
 
     @Test func fullCircleOriginMatchesPriorBaseline() throws {
-        let c = try #require(Curve2D.fromCircleArc(centerX: 0, centerY: 0, radius: 5, u1: 0, u2: 2 * .pi))
+        let c = try #require(
+            Curve2D.fromCircleArc(centerX: 0, centerY: 0, radius: 5, u1: 0, u2: 2 * .pi))
         assertMatchesBaseline(c, poles: Self.fullCircleOriginPoles)
     }
 
     @Test func offsetArcMatchesPriorBaseline() throws {
-        let c = try #require(Curve2D.fromCircleArc(centerX: 3, centerY: -2, radius: 7, u1: 0.5, u2: 4.0))
+        let c = try #require(
+            Curve2D.fromCircleArc(centerX: 3, centerY: -2, radius: 7, u1: 0.5, u2: 4.0))
         assertMatchesBaseline(c, poles: Self.offsetArcPoles)
     }
 
@@ -102,9 +113,13 @@ struct Issue791CircleBSplineHelperTests {
             (-6, 11, 2.25, -1.0, 1.0),
         ]
         for c in cases {
-            let curve = try #require(Curve2D.fromCircleArc(centerX: c.cx, centerY: c.cy, radius: c.radius, u1: c.u1, u2: c.u2))
+            let curve = try #require(
+                Curve2D.fromCircleArc(
+                    centerX: c.cx, centerY: c.cy, radius: c.radius, u1: c.u1, u2: c.u2))
             let domain = curve.domain
-            let samples = stride(from: domain.lowerBound, through: domain.upperBound, by: (domain.upperBound - domain.lowerBound) / 16)
+            let samples = stride(
+                from: domain.lowerBound, through: domain.upperBound,
+                by: (domain.upperBound - domain.lowerBound) / 16)
             for u in samples {
                 let p = curve.evalD0(at: u)
                 let dx = p.x - c.cx

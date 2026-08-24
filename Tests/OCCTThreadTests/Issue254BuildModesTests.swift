@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #254: single-start coaxial-cylinder threads build as a smooth, low-face-count helix
@@ -27,13 +28,15 @@ struct Issue254BuildModes {
     @Test("`.auto` and `.direct` both yield the same smooth, low-face helix")
     func autoMatchesDirect() {
         guard let auto = shaft(.auto), let direct = shaft(.direct) else {
-            Issue.record("build failed"); return
+            Issue.record("build failed")
+            return
         }
         let fAuto = auto.subShapes(ofType: .face).count
         let fDirect = direct.subShapes(ofType: .face).count
         // The smooth direct helix is a small handful of faces. The old faceted cut produced ~893;
         // a low ceiling cleanly separates "smooth helix" from "notch scatter".
         #expect(fDirect < 40, "direct build should be a smooth low-face helix, got \(fDirect)")
-        #expect(fAuto == fDirect, "auto must match direct for single-start, got \(fAuto) vs \(fDirect)")
+        #expect(
+            fAuto == fDirect, "auto must match direct for single-start, got \(fAuto) vs \(fDirect)")
     }
 }

@@ -1,19 +1,19 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Result of distance measurement between two shapes
+/// Result of distance measurement between two shapes.
 public struct DistanceResult: Sendable, Equatable {
-    /// Minimum distance between the shapes
+    /// Minimum distance between the shapes.
     public var distance: Double
 
-    /// Closest point on the first shape
+    /// Closest point on the first shape.
     public var pointOnShape1: SIMD3<Double>
 
-    /// Closest point on the second shape
+    /// Closest point on the second shape.
     public var pointOnShape2: SIMD3<Double>
 
-    /// Number of solutions found (may be > 1 for symmetric cases)
+    /// Number of solutions found (may be > 1 for symmetric cases).
     public var solutionCount: Int
 
     public init(

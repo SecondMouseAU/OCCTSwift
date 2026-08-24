@@ -18,8 +18,9 @@ import OCCTBridge
 public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     internal let ref: OCCTEdgeCurveRef
 
-    /// Build an arc-length adaptor over `edge`. Returns `nil` if the edge is invalid (e.g.
-    /// has no 3D curve).
+    /// Build an arc-length adaptor over `edge`.
+    ///
+    /// Returns `nil` if the edge is invalid (e.g. has no 3D curve).
     public init?(_ edge: Edge) {
         guard let r = OCCTEdgeCurveCreate(edge.handle) else { return nil }
         ref = r
@@ -35,21 +36,26 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
 
     /// The native parameter range `[first, last]` (not arc length).
     public var parameterRange: (first: Double, last: Double) {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         OCCTEdgeCurveParamRange(ref, &first, &last)
         return (first, last)
     }
 
     /// Point at a native curve parameter `u`.
     public func point(atParameter u: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         guard OCCTEdgeCurvePointAtParam(ref, u, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
 
     /// Unit tangent at a native parameter `u` (`nil` at a degenerate point).
     public func tangent(atParameter u: Double) -> SIMD3<Double>? {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         guard OCCTEdgeCurveTangentAtParam(ref, u, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -69,6 +75,7 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     /// - Parameter count: Sample count, honoured within `2...`
     ///   ``ArcLengthCurveAdaptor/maximumSampleCount``; outside that range the result is empty
     ///   (#479). Buffer allocation and the count contract are shared with ``WireCurve``.
+    /// - Returns: Array of points spaced equally by arc length along the edge, endpoints included.
     ///
     /// ```swift
     /// let ec = EdgeCurve(edge)!

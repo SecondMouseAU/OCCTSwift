@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #505: FilletBuilder's radius laws are keyed by an Edge, and check that they are
@@ -26,7 +27,9 @@ struct Issue505FilletBuilderEdgeTypeTests {
 
     /// A contour whose radius evolves has a law; a constant one does not (see
     /// ``constantRadiusContourHasNoLaw``), so every case that needs a law starts here.
-    private static func builtEvolvingContour() throws -> (builder: FilletBuilder, edge: Edge, box: Shape) {
+    private static func builtEvolvingContour() throws -> (
+        builder: FilletBuilder, edge: Edge, box: Shape
+    ) {
         let box = try #require(Self.box())
         let builder = try #require(FilletBuilder(shape: box))
         let edge = try #require(box.edges().first)
@@ -49,8 +52,10 @@ struct Issue505FilletBuilderEdgeTypeTests {
         #expect(abs(before.value(at: bounds.first) - 0.5) < 1e-9)
         #expect(abs(before.value(at: bounds.last) - 2.0) < 1e-9)
 
-        let replacement = try #require(LawFunction.linear(from: 4, to: 4,
-                                                          parameterRange: bounds.first...bounds.last))
+        let replacement = try #require(
+            LawFunction.linear(
+                from: 4, to: 4,
+                parameterRange: bounds.first...bounds.last))
         #expect(builder.setLaw(contour: 1, edge: edge, law: replacement))
 
         let after = try #require(builder.getLaw(contour: 1, edge: edge))
@@ -97,11 +102,13 @@ struct Issue505FilletBuilderEdgeTypeTests {
     func setLawWithForeignEdgeChangesNothing() throws {
         let (builder, edge, box) = try Self.builtEvolvingContour()
         let foreign = try #require(box.edges().last)
-        #expect(builder.contour(for: foreign) == 0)   // in no contour at all
+        #expect(builder.contour(for: foreign) == 0)  // in no contour at all
 
         let bounds = try #require(builder.getBounds(contour: 1, edge: edge))
-        let intruder = try #require(LawFunction.linear(from: 4, to: 4,
-                                                       parameterRange: bounds.first...bounds.last))
+        let intruder = try #require(
+            LawFunction.linear(
+                from: 4, to: 4,
+                parameterRange: bounds.first...bounds.last))
         #expect(builder.setLaw(contour: 1, edge: foreign, law: intruder) == false)
 
         // Contour 1 still reports the radii it was added with.
@@ -122,13 +129,17 @@ struct Issue505FilletBuilderEdgeTypeTests {
         #expect(builder.contourCount == 1)
 
         let bounds = try #require(builder.getBounds(contour: 1, edge: edge))
-        let law = try #require(LawFunction.linear(from: 4, to: 4,
-                                                  parameterRange: bounds.first...bounds.last))
+        let law = try #require(
+            LawFunction.linear(
+                from: 4, to: 4,
+                parameterRange: bounds.first...bounds.last))
 
         for contour in [0, -1, 2, 99] {
             #expect(builder.getBounds(contour: contour, edge: edge) == nil, "contour \(contour)")
             #expect(builder.getLaw(contour: contour, edge: edge) == nil, "contour \(contour)")
-            #expect(builder.setLaw(contour: contour, edge: edge, law: law) == false, "contour \(contour)")
+            #expect(
+                builder.setLaw(contour: contour, edge: edge, law: law) == false,
+                "contour \(contour)")
         }
 
         // The law contour 1 holds is still its own.

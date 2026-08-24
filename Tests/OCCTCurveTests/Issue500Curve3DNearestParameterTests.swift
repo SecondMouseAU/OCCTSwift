@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #500: the 3D side of the point-to-curve projection family
@@ -28,8 +29,8 @@ struct Issue500Curve3DNearestParameterTests {
         let curve = try #require(Self.trimmedSegment())
         #expect(curve.domain == 3...8)
         #expect(curve.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
-        #expect(curve.nearestParameter(to: SIMD3(3, 4, 0)) == 3)     // the start point itself
-        #expect(curve.nearestParameter(to: SIMD3(8, -1, 0)) == 8)    // the end point itself
+        #expect(curve.nearestParameter(to: SIMD3(3, 4, 0)) == 3)  // the start point itself
+        #expect(curve.nearestParameter(to: SIMD3(8, -1, 0)) == 8)  // the end point itself
     }
 
     /// A point beyond the ends of a bounded curve has no perpendicular foot, which is not the same
@@ -56,7 +57,7 @@ struct Issue500Curve3DNearestParameterTests {
         let onCurve = circle.point(at: parameter)
         #expect(abs((onCurve.x * onCurve.x + onCurve.y * onCurve.y).squareRoot() - 5) < 1e-9)
         #expect(abs(circle.projectPoint(.zero).distance - 5) < 1e-9)
-        #expect(circle.nearestParameter(to: SIMD3(3, 4, 0)) != nil)   // on the circle: fine
+        #expect(circle.nearestParameter(to: SIMD3(3, 4, 0)) != nil)  // on the circle: fine
     }
 
     /// `projectPoint(_:precision:)` reaches the answer by a different route, `ShapeAnalysis_Curve`

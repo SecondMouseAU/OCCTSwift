@@ -2,8 +2,9 @@ import Foundation
 
 // MARK: - ISO drawing style conventions (#78 G1, v0.144)
 
-/// ISO 128-20 standard line widths (mm). Thin and thick are applied in a 1:2
-/// ratio per line type. Values are the ISO geometric series — each tier ~1.4×
+/// ISO 128-20 standard line widths (mm).
+///
+/// Thin and thick are applied in a 1:2 ratio per line type. Values are the ISO geometric series — each tier ~1.4×
 /// the previous — and are the only widths recognised by ISO-compliant readers.
 public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
     case w013 = 0.13
@@ -23,15 +24,16 @@ public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
 }
 
 extension DrawingLineStyle {
-    /// ISO 128-20 default width for each line style. Consumers can override
-    /// per-entity by setting `width` explicitly on the dimension/annotation.
+    /// ISO 128-20 default width for each line style.
+    ///
+    /// Consumers can override per-entity by setting `width` explicitly on the dimension/annotation.
     public var defaultWidth: DrawingLineWidth {
         switch self {
-        case .solid:   return .thin       // continuous thin (visible edges, extension lines)
-        case .dashed:  return .thin       // hidden edges
-        case .chain:   return .thin       // centerlines, axes, pitch lines
-        case .phantom: return .thin       // alternative / adjacent positions
-        case .dotted:  return .thin       // bend lines, construction
+        case .solid: return .thin  // continuous thin (visible edges, extension lines)
+        case .dashed: return .thin  // hidden edges
+        case .chain: return .thin  // centerlines, axes, pitch lines
+        case .phantom: return .thin  // alternative / adjacent positions
+        case .dotted: return .thin  // bend lines, construction
         }
     }
 
@@ -41,14 +43,15 @@ extension DrawingLineStyle {
     public var boldWidth: DrawingLineWidth { .thick }
 }
 
-/// ISO 3098 text height series in mm. Picking the right height scales dimension
-/// text and title-block text to the sheet size. Each tier is ~1.4× the
+/// ISO 3098 text height series in mm.
+///
+/// Picking the right height scales dimension text and title-block text to the sheet size. Each tier is ~1.4× the
 /// previous.
 public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
-    case h25  = 2.5
-    case h35  = 3.5
-    case h50  = 5.0
-    case h70  = 7.0
+    case h25 = 2.5
+    case h35 = 3.5
+    case h50 = 5.0
+    case h70 = 7.0
     case h100 = 10.0
     case h140 = 14.0
     case h200 = 20.0
@@ -57,9 +60,9 @@ public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
     public static func recommended(forPaper paper: String) -> DrawingTextHeight {
         switch paper.uppercased() {
         case "A0", "A1": return .h50
-        case "A2":       return .h35
+        case "A2": return .h35
         case "A3", "A4": return .h35
-        default:         return .h35
+        default: return .h35
         }
     }
 
@@ -70,51 +73,54 @@ public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
     }
 }
 
-/// ISO 128-21 arrow conventions. Filled closed is the ISO default; open 90°
-/// and open 30° are permitted variants. Arrow length is typically 3× the line
+/// ISO 128-21 arrow conventions.
+///
+/// Filled closed is the ISO default; open 90° and open 30° are permitted variants. Arrow length is typically 3× the line
 /// width, and width is typically 1/3 of the length.
 public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
-    case filledClosed       // solid triangle — ISO default
-    case openClosed90       // stroked triangle with 90° included angle
-    case openClosed30       // stroked triangle with 30° included angle (narrow)
-    case tick               // 45° tick (architectural; not ISO default but common)
+    case filledClosed  // solid triangle — ISO default
+    case openClosed90  // stroked triangle with 90° included angle
+    case openClosed30  // stroked triangle with 30° included angle (narrow)
+    case tick  // 45° tick (architectural; not ISO default but common)
 
     /// Recommended arrow length in mm, given the dimension line's width.
     public func length(forLineWidth width: DrawingLineWidth) -> Double {
-        width.rawValue * 6     // ISO 129 suggests 3-5× thin width; 6× thin gives ~1.5 mm at thin 0.25
+        width.rawValue * 6  // ISO 129 suggests 3-5× thin width; 6× thin gives ~1.5 mm at thin 0.25
     }
 }
 
 // MARK: - ISO 5455 standard scales
 
-/// ISO 5455 preferred drawing scales. The `ratio` is the ratio of drawing-unit
-/// to real-world-unit — `1/ratio` real units drawn as 1 drawing unit.
+/// ISO 5455 preferred drawing scales.
+///
+/// The `ratio` is the ratio of drawing-unit to real-world-unit — `1/ratio` real units drawn as 1 drawing unit.
 ///
 /// Use `.reduction(2)` for 1:2, `.enlargement(5)` for 5:1.
 public enum DrawingScale: Sendable, Hashable {
-    case one                // 1:1
-    case reduction(Int)     // 1:N
-    case enlargement(Int)   // N:1
-    case custom(Double)     // any ratio
+    case one  // 1:1
+    case reduction(Int)  // 1:N
+    case enlargement(Int)  // N:1
+    case custom(Double)  // any ratio
 
-    /// Drawing-to-model scale factor. For 1:2 this is 0.5 (half size);
-    /// for 5:1 this is 5.0 (5× enlargement).
+    /// Drawing-to-model scale factor.
+    ///
+    /// For 1:2 this is 0.5 (half size); for 5:1 this is 5.0 (5× enlargement).
     public var factor: Double {
         switch self {
-        case .one:                return 1.0
-        case .reduction(let n):   return 1.0 / Double(n)
+        case .one: return 1.0
+        case .reduction(let n): return 1.0 / Double(n)
         case .enlargement(let n): return Double(n)
-        case .custom(let f):      return f
+        case .custom(let f): return f
         }
     }
 
     /// Human-readable label like "1:1", "1:2", "5:1".
     public var label: String {
         switch self {
-        case .one:                return "1:1"
-        case .reduction(let n):   return "1:\(n)"
+        case .one: return "1:1"
+        case .reduction(let n): return "1:\(n)"
         case .enlargement(let n): return "\(n):1"
-        case .custom(let f):      return String(format: "%.3g:1", f)
+        case .custom(let f): return String(format: "%.3g:1", f)
         }
     }
 
@@ -127,7 +133,7 @@ public enum DrawingScale: Sendable, Hashable {
             .one,
             .reduction(2), .reduction(5), .reduction(10),
             .reduction(20), .reduction(50), .reduction(100),
-            .reduction(200), .reduction(500), .reduction(1000)
+            .reduction(200), .reduction(500), .reduction(1000),
         ]
     }
 }

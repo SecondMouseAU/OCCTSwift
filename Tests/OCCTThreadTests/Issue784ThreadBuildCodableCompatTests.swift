@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #784 removed `ThreadBuild.boolean`. `ThreadBuild` is `Codable` with no raw type, so Swift's
@@ -50,7 +51,9 @@ struct Issue784ThreadBuildCodableCompatTests {
         for value: ThreadBuild in [.auto, .direct] {
             let data = try Self.encoder.encode(value)
             let text = String(decoding: data, as: UTF8.self)
-            #expect(!text.contains("boolean"), "encode(\(value)) unexpectedly wrote \"boolean\": \(text)")
+            #expect(
+                !text.contains("boolean"),
+                "encode(\(value)) unexpectedly wrote \"boolean\": \(text)")
         }
     }
 

@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #403: `Surface.knotSplitting` used to report only `uSplitCount`/`vSplitCount` even though

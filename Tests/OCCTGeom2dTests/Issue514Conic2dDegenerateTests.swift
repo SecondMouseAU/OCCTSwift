@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #514: the nine 2D conic construction sites that build a conic from caller-supplied
@@ -17,43 +18,63 @@ struct Issue514Conic2dDegenerateTests {
     // MARK: - Convert_*ToBSplineCurve (Curve2D.from*Arc)
 
     @Test func ellipseArcRejectsZeroRadii() {
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 0, minorRadius: 0, u1: 0, u2: .pi) == nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 0, minorRadius: 0, u1: 0, u2: .pi) == nil)
         // Zero minor alone collapses the ellipse onto its own major axis: measured, the
         // conversion succeeded and produced a degree-2 BSpline running 5,0 -> 0,0 -> -5,0.
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 5, minorRadius: 0, u1: 0, u2: .pi) == nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 5, minorRadius: 0, u1: 0, u2: .pi) == nil)
     }
 
     @Test func ellipseArcRejectsNegativeAndInvertedRadii() {
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 5, minorRadius: -3, u1: 0, u2: .pi) == nil)
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 3, minorRadius: 5, u1: 0, u2: .pi) == nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 5, minorRadius: -3, u1: 0, u2: .pi) == nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 3, minorRadius: 5, u1: 0, u2: .pi) == nil)
     }
 
     @Test func ellipseArcAcceptsValidRadii() {
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
         // Equal radii are a circle, which gp_Elips2d documents as valid.
-        #expect(Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
-                                       majorRadius: 4, minorRadius: 4, u1: 0, u2: .pi) != nil)
+        #expect(
+            Curve2D.fromEllipseArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 4, minorRadius: 4, u1: 0, u2: .pi) != nil)
     }
 
     @Test func hyperbolaArcRejectsZeroRadii() {
-        #expect(Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
-                                         majorRadius: 0, minorRadius: 0, u1: 0, u2: 1) == nil)
-        #expect(Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
-                                         majorRadius: 5, minorRadius: 0, u1: 0, u2: 1) == nil)
-        #expect(Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
-                                         majorRadius: 0, minorRadius: 3, u1: 0, u2: 1) == nil)
+        #expect(
+            Curve2D.fromHyperbolaArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 0, minorRadius: 0, u1: 0, u2: 1) == nil)
+        #expect(
+            Curve2D.fromHyperbolaArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 5, minorRadius: 0, u1: 0, u2: 1) == nil)
+        #expect(
+            Curve2D.fromHyperbolaArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 0, minorRadius: 3, u1: 0, u2: 1) == nil)
     }
 
     @Test func hyperbolaArcAcceptsMinorLargerThanMajor() {
         // A hyperbola puts no ordering on its radii: minor > major is an ordinary hyperbola.
         // Copying the ellipse rule here would reject it.
-        #expect(Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
-                                         majorRadius: 3, minorRadius: 5, u1: 0, u2: 1) != nil)
+        #expect(
+            Curve2D.fromHyperbolaArc(
+                centerX: 0, centerY: 0,
+                majorRadius: 3, minorRadius: 5, u1: 0, u2: 1) != nil)
     }
 
     @Test func parabolaArcRejectsZeroFocal() {
@@ -76,31 +97,47 @@ struct Issue514Conic2dDegenerateTests {
     @Test func edge2dEllipseRejectsZeroRadii() {
         // BRepLib_MakeEdge2d reports IsDone() for both of these. Measured: the first builds a
         // zero-length edge with both vertices at the centre, the second a doubled-back segment.
-        #expect(Shape.edge2dEllipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                    majorRadius: 0, minorRadius: 0) == nil)
-        #expect(Shape.edge2dEllipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                    majorRadius: 5, minorRadius: 0) == nil)
+        #expect(
+            Shape.edge2dEllipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 0, minorRadius: 0) == nil)
+        #expect(
+            Shape.edge2dEllipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 0) == nil)
     }
 
     @Test func edge2dEllipseArcRejectsZeroRadii() {
-        #expect(Shape.edge2dEllipseArc(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       majorRadius: 0, minorRadius: 0, u1: 0, u2: .pi) == nil)
-        #expect(Shape.edge2dEllipseArc(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       majorRadius: 5, minorRadius: 0, u1: 0, u2: .pi) == nil)
+        #expect(
+            Shape.edge2dEllipseArc(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 0, minorRadius: 0, u1: 0, u2: .pi) == nil)
+        #expect(
+            Shape.edge2dEllipseArc(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 0, u1: 0, u2: .pi) == nil)
     }
 
     @Test func edge2dFullCircleRejectsZeroRadius() {
-        #expect(Shape.edge2dFullCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       radius: 0) == nil)
+        #expect(
+            Shape.edge2dFullCircle(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 0) == nil)
     }
 
     @Test func edge2dConstructorsAcceptValidDimensions() {
-        #expect(Shape.edge2dEllipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                    majorRadius: 5, minorRadius: 3) != nil)
-        #expect(Shape.edge2dEllipseArc(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
-        #expect(Shape.edge2dFullCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                       radius: 5) != nil)
+        #expect(
+            Shape.edge2dEllipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 3) != nil)
+        #expect(
+            Shape.edge2dEllipseArc(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
+        #expect(
+            Shape.edge2dFullCircle(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                radius: 5) != nil)
     }
 
     // MARK: - IntAna2d_Conic (Conic2D)
@@ -108,10 +145,14 @@ struct Issue514Conic2dDegenerateTests {
     @Test func conicEllipseRejectsZeroRadii() {
         // All six coefficients came back 0, which is the equation 0 = 0: satisfied by every
         // point in the plane, and indistinguishable from the value the catch block writes.
-        #expect(Conic2D.ellipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                majorRadius: 0, minorRadius: 0) == nil)
-        #expect(Conic2D.ellipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                majorRadius: 5, minorRadius: 0) == nil)
+        #expect(
+            Conic2D.ellipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 0, minorRadius: 0) == nil)
+        #expect(
+            Conic2D.ellipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 0) == nil)
     }
 
     @Test func conicCircleRejectsZeroRadius() {
@@ -123,8 +164,10 @@ struct Issue514Conic2dDegenerateTests {
         // struct as a degenerate ellipse did.
         #expect(Conic2D.circle(center: SIMD2(0, 0), direction: SIMD2(0, 0), radius: 5) == nil)
         #expect(Conic2D.line(point: SIMD2(0, 0), direction: SIMD2(0, 0)) == nil)
-        #expect(Conic2D.ellipse(center: SIMD2(0, 0), direction: SIMD2(0, 0),
-                                majorRadius: 5, minorRadius: 3) == nil)
+        #expect(
+            Conic2D.ellipse(
+                center: SIMD2(0, 0), direction: SIMD2(0, 0),
+                majorRadius: 5, minorRadius: 3) == nil)
     }
 
     /// The coefficient order is OCCT's: `A·x² + B·y² + 2C·xy + 2D·x + 2E·y + F = 0`. The Swift
@@ -137,12 +180,15 @@ struct Issue514Conic2dDegenerateTests {
         }
         // x² + y² - 25 = 0
         #expect(abs(c.a - 1) < 1e-9)
-        #expect(abs(c.b - 1) < 1e-9)   // y², not xy
-        #expect(abs(c.c) < 1e-9)       // xy, not y²
+        #expect(abs(c.b - 1) < 1e-9)  // y², not xy
+        #expect(abs(c.c) < 1e-9)  // xy, not y²
         #expect(abs(c.f + 25) < 1e-9)
 
-        guard let e = Conic2D.ellipse(center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                                      majorRadius: 5, minorRadius: 3) else {
+        guard
+            let e = Conic2D.ellipse(
+                center: SIMD2(0, 0), direction: SIMD2(1, 0),
+                majorRadius: 5, minorRadius: 3)
+        else {
             Issue.record("ellipse conic should build")
             return
         }
@@ -163,11 +209,15 @@ struct Issue514Conic2dDegenerateTests {
     }
 
     @Test func lineCircleIntersectionRejectsZeroRadius() {
-        #expect(Conic2D.lineCircleIntersection(
-            linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-            circleCenter: SIMD2(0, 0), circleDir: SIMD2(1, 0), radius: 0).isEmpty)
-        #expect(Conic2D.lineCircleIntersection(
-            linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
-            circleCenter: SIMD2(0, 0), circleDir: SIMD2(1, 0), radius: 5).count == 2)
+        #expect(
+            Conic2D.lineCircleIntersection(
+                linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+                circleCenter: SIMD2(0, 0), circleDir: SIMD2(1, 0), radius: 0
+            ).isEmpty)
+        #expect(
+            Conic2D.lineCircleIntersection(
+                linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+                circleCenter: SIMD2(0, 0), circleDir: SIMD2(1, 0), radius: 5
+            ).count == 2)
     }
 }

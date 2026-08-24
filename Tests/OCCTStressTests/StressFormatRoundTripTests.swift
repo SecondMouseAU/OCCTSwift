@@ -2,8 +2,8 @@
 // Category 5: Shape × Format round-trip matrix with tolerance verification.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - STEP Round-Trip
 
@@ -23,15 +23,20 @@ struct StressRoundTripSTEPTests {
         #expect(reimported.isValid, "STEP round-trip failed for \(name)")
 
         if origVol > 0, let rVol = reimported.volume {
-            #expect(abs(rVol - origVol) / origVol < 0.01, "Volume mismatch for \(name): \(rVol) vs \(origVol)")
+            #expect(
+                abs(rVol - origVol) / origVol < 0.01,
+                "Volume mismatch for \(name): \(rVol) vs \(origVol)")
         }
         if origArea > 0, let rArea = reimported.surfaceArea {
             #expect(abs(rArea - origArea) / origArea < 0.01, "Area mismatch for \(name)")
         }
         // STEP may merge/split edges during serialization, check faces match, edges approximate
-        #expect(reimported.subShapeCount(ofType: .face) == origFaces, "Face count mismatch for \(name)")
+        #expect(
+            reimported.subShapeCount(ofType: .face) == origFaces, "Face count mismatch for \(name)")
         let reimEdges = reimported.subShapeCount(ofType: .edge)
-        #expect(abs(reimEdges - origEdges) <= max(4, origEdges / 5), "Edge count too different for \(name): \(reimEdges) vs \(origEdges)")
+        #expect(
+            abs(reimEdges - origEdges) <= max(4, origEdges / 5),
+            "Edge count too different for \(name): \(reimEdges) vs \(origEdges)")
     }
 
     @Test func box() throws { try roundTrip(standardBox(), name: "box") }
@@ -131,7 +136,8 @@ struct StressRoundTripSTLTests {
         let reimSize = reimBounds.max - reimBounds.min
         // Size should be within 10% (STL mesh approximation)
         if origSize.x > 0.1 {
-            #expect(abs(reimSize.x - origSize.x) / origSize.x < 0.2, "STL X size mismatch for \(name)")
+            #expect(
+                abs(reimSize.x - origSize.x) / origSize.x < 0.2, "STL X size mismatch for \(name)")
         }
     }
 
@@ -155,7 +161,7 @@ struct StressRoundTripOBJTests {
         // OBJ is mesh-based, reimported shape is a triangulation, not B-rep
         // Just verify export + reimport completes without crash
         let reimported = try Shape.loadOBJ(from: url)
-        _ = reimported // may not be "valid" in B-rep sense
+        _ = reimported  // may not be "valid" in B-rep sense
     }
 
     @Test func box() throws { try roundTrip(standardBox(), name: "box") }
@@ -166,8 +172,9 @@ struct StressRoundTripOBJTests {
 
 // MARK: - IGES Round-Trip
 
-@Suite("Stress: Round-Trip IGES",
-       .disabled("IGES export/import segfaults on certain shapes, OCCT kernel bug"))
+@Suite(
+    "Stress: Round-Trip IGES",
+    .disabled("IGES export/import segfaults on certain shapes, OCCT kernel bug"))
 struct StressRoundTripIGESTests {
 
     private func roundTrip(_ shape: Shape, name: String) throws {
@@ -240,7 +247,10 @@ struct StressCrossFormatConsistencyTests {
 
         let stepURL = tempURL("step")
         let brepURL = tempURL("brep")
-        defer { cleanupTemp(stepURL); cleanupTemp(brepURL) }
+        defer {
+            cleanupTemp(stepURL)
+            cleanupTemp(brepURL)
+        }
 
         try Exporter.writeSTEP(shape: cyl, to: stepURL, modelType: .asIs)
         try Exporter.writeBREP(shape: cyl, to: brepURL)

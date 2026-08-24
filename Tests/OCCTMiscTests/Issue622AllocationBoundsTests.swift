@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #622: the tail of #558's bound sweep. The same footgun, a caller-supplied number sizes a Swift
@@ -55,13 +56,15 @@ struct Issue622AllocationBounds {
     @Test("Shape.raycast clamps maxHits instead of allocating ~880 GB and trapping")
     func raycastCapacity() {
         let b = box()
-        let origin = SIMD3(0.0, 0, 20), direction = SIMD3(0.0, 0, -1)
+        let origin = SIMD3(0.0, 0, 20)
+        let direction = SIMD3(0.0, 0, -1)
 
         // A ray through a box crosses two faces however much room it is offered. That is the
         // point of clamping rather than rejecting: the absurd capacity returns the real answer.
         let baseline = b.raycast(origin: origin, direction: direction).count
         #expect(baseline > 0)
-        #expect(b.raycast(origin: origin, direction: direction, maxHits: Self.pastInt32).count
+        #expect(
+            b.raycast(origin: origin, direction: direction, maxHits: Self.pastInt32).count
                 == baseline)
 
         // No capacity is not a small capacity: it returns the documented empty value.
@@ -84,19 +87,22 @@ struct Issue622AllocationBounds {
         // `GeomAPI_ExtremaCurveCurve` path, entirely independent of the count bound this suite is
         // about; a parallel fixture here would test the crash, not the bound.
         let b = Curve3D.segment(from: SIMD3(5, -5, 1), to: SIMD3(5, 5, 1))!
-        #expect(a.extrema(with: b, maxCount: Self.pastInt32).count
+        #expect(
+            a.extrema(with: b, maxCount: Self.pastInt32).count
                 == a.extrema(with: b).count)
         #expect(a.extrema(with: b, maxCount: 0).count == 0)
         #expect(a.extrema(with: b, maxCount: -1).count == 0)
 
         let through = Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20))!
         let p = plane()
-        #expect(through.intersections(with: p, maxHits: Self.pastInt32).count
+        #expect(
+            through.intersections(with: p, maxHits: Self.pastInt32).count
                 == through.intersections(with: p).count)
         #expect(through.intersections(with: p, maxHits: 0).count == 0)
         #expect(through.intersections(with: p, maxHits: -1).count == 0)
 
-        #expect(a.splitAtContinuity(maxSegments: Self.pastInt32).count
+        #expect(
+            a.splitAtContinuity(maxSegments: Self.pastInt32).count
                 == a.splitAtContinuity().count)
         #expect(a.splitAtContinuity(maxSegments: 0).count == 0)
         #expect(a.splitAtContinuity(maxSegments: -1).count == 0)
@@ -105,7 +111,8 @@ struct Issue622AllocationBounds {
     @Test("Curve2D.splitAtContinuity clamps maxSegments rather than trapping")
     func curve2DSplitCapacity() {
         let c = segment2D()
-        #expect(c.splitAtContinuity(maxSegments: Self.pastInt32).count
+        #expect(
+            c.splitAtContinuity(maxSegments: Self.pastInt32).count
                 == c.splitAtContinuity().count)
         #expect(c.splitAtContinuity(maxSegments: 0).count == 0)
         #expect(c.splitAtContinuity(maxSegments: -1).count == 0)
@@ -115,7 +122,8 @@ struct Issue622AllocationBounds {
     func surfaceIntersectionCapacity() {
         let a = plane()
         let b = Surface.plane(origin: .zero, normal: SIMD3(0, 1, 0))!
-        #expect(a.intersections(with: b, maxCurves: Self.pastInt32).count
+        #expect(
+            a.intersections(with: b, maxCurves: Self.pastInt32).count
                 == a.intersections(with: b).count)
         #expect(a.intersections(with: b, maxCurves: 0).count == 0)
         #expect(a.intersections(with: b, maxCurves: -1).count == 0)
@@ -125,14 +133,16 @@ struct Issue622AllocationBounds {
     func projectionCapacities() {
         let c = segment3D()
         let q = SIMD3(5.0, 5, 0)
-        #expect(c.projectPointAll(q, maxResults: Self.pastInt32).count
+        #expect(
+            c.projectPointAll(q, maxResults: Self.pastInt32).count
                 == c.projectPointAll(q).count)
         #expect(c.projectPointAll(q, maxResults: 0).count == 0)
         #expect(c.projectPointAll(q, maxResults: -1).count == 0)
 
         let s = plane()
         let r = SIMD3(1.0, 1, 5)
-        #expect(s.projectPointAll(r, maxResults: Self.pastInt32).count
+        #expect(
+            s.projectPointAll(r, maxResults: Self.pastInt32).count
                 == s.projectPointAll(r).count)
         #expect(s.projectPointAll(r, maxResults: 0).count == 0)
         #expect(s.projectPointAll(r, maxResults: -1).count == 0)
@@ -142,8 +152,10 @@ struct Issue622AllocationBounds {
 
     @Test("Shape.allDistanceSolutions clamps maxSolutions rather than trapping")
     func allDistanceSolutionsCapacity() {
-        let b = box(), s = sphere()
-        #expect(b.allDistanceSolutions(to: s, maxSolutions: Self.pastInt32)?.count
+        let b = box()
+        let s = sphere()
+        #expect(
+            b.allDistanceSolutions(to: s, maxSolutions: Self.pastInt32)?.count
                 == b.allDistanceSolutions(to: s)?.count)
         // Behaviour change, asserted deliberately rather than incidentally: no capacity now yields
         // an empty array, where before #622 the bridge's -1 for `maxSolutions <= 0` came back
@@ -158,7 +170,8 @@ struct Issue622AllocationBounds {
     @Test("Shape.selfIntersectionPairs clamps maxPairs rather than trapping")
     func selfIntersectionPairsCapacity() {
         let b = box()
-        #expect(b.selfIntersectionPairs(maxPairs: Self.pastInt32).count
+        #expect(
+            b.selfIntersectionPairs(maxPairs: Self.pastInt32).count
                 == b.selfIntersectionPairs().count)
         #expect(b.selfIntersectionPairs(maxPairs: 0).count == 0)
         #expect(b.selfIntersectionPairs(maxPairs: -1).count == 0)
@@ -179,7 +192,8 @@ struct Issue622AllocationBounds {
         #expect(t.rangeSearch(center: .zero, radius: 10, maxResults: 0).count == 0)
         #expect(t.rangeSearch(center: .zero, radius: 10, maxResults: -1).count == 0)
 
-        let lo = SIMD3(-9.0, -9, -9), hi = SIMD3(9.0, 9, 9)
+        let lo = SIMD3(-9.0, -9, -9)
+        let hi = SIMD3(9.0, 9, 9)
         let boxBase = t.boxSearch(min: lo, max: hi).count
         #expect(t.boxSearch(min: lo, max: hi, maxResults: Self.pastInt32).count == boxBase)
         #expect(t.boxSearch(min: lo, max: hi, maxResults: 0).count == 0)
@@ -199,22 +213,40 @@ struct Issue622AllocationBounds {
         // The contract under test is that an absurd capacity returns rather than aborting the
         // process; whether this headless selector resolves a hit is not what is being asserted.
         let atBase = selector.pick(at: pixel, camera: camera, viewSize: viewSize).count
-        #expect(selector.pick(at: pixel, camera: camera, viewSize: viewSize,
-                              maxResults: Self.pastInt32).count == atBase)
-        #expect(selector.pick(at: pixel, camera: camera, viewSize: viewSize, maxResults: 0).count == 0)
-        #expect(selector.pick(at: pixel, camera: camera, viewSize: viewSize, maxResults: -1).count == 0)
+        #expect(
+            selector.pick(
+                at: pixel, camera: camera, viewSize: viewSize,
+                maxResults: Self.pastInt32
+            ).count == atBase)
+        #expect(
+            selector.pick(at: pixel, camera: camera, viewSize: viewSize, maxResults: 0).count == 0)
+        #expect(
+            selector.pick(at: pixel, camera: camera, viewSize: viewSize, maxResults: -1).count == 0)
 
         let rectBase = selector.pick(rect: rect, camera: camera, viewSize: viewSize).count
-        #expect(selector.pick(rect: rect, camera: camera, viewSize: viewSize,
-                              maxResults: Self.pastInt32).count == rectBase)
-        #expect(selector.pick(rect: rect, camera: camera, viewSize: viewSize, maxResults: 0).count == 0)
-        #expect(selector.pick(rect: rect, camera: camera, viewSize: viewSize, maxResults: -1).count == 0)
+        #expect(
+            selector.pick(
+                rect: rect, camera: camera, viewSize: viewSize,
+                maxResults: Self.pastInt32
+            ).count == rectBase)
+        #expect(
+            selector.pick(rect: rect, camera: camera, viewSize: viewSize, maxResults: 0).count == 0)
+        #expect(
+            selector.pick(rect: rect, camera: camera, viewSize: viewSize, maxResults: -1).count == 0
+        )
 
         let polyBase = selector.pick(polygon: poly, camera: camera, viewSize: viewSize).count
-        #expect(selector.pick(polygon: poly, camera: camera, viewSize: viewSize,
-                              maxResults: Self.pastInt32).count == polyBase)
-        #expect(selector.pick(polygon: poly, camera: camera, viewSize: viewSize, maxResults: 0).count == 0)
-        #expect(selector.pick(polygon: poly, camera: camera, viewSize: viewSize, maxResults: -1).count == 0)
+        #expect(
+            selector.pick(
+                polygon: poly, camera: camera, viewSize: viewSize,
+                maxResults: Self.pastInt32
+            ).count == polyBase)
+        #expect(
+            selector.pick(polygon: poly, camera: camera, viewSize: viewSize, maxResults: 0).count
+                == 0)
+        #expect(
+            selector.pick(polygon: poly, camera: camera, viewSize: viewSize, maxResults: -1).count
+                == 0)
     }
 
     // MARK: - Drawing / text / filesystem capacities
@@ -225,17 +257,27 @@ struct Issue622AllocationBounds {
         let d = SIMD2(1.0, 0.0)
         let base = HatchPattern.generate(boundary: boundary, direction: d, spacing: 1).count
         #expect(base > 0)
-        #expect(HatchPattern.generate(boundary: boundary, direction: d, spacing: 1,
-                                      maxSegments: Self.pastInt32).count == base)
-        #expect(HatchPattern.generate(boundary: boundary, direction: d, spacing: 1,
-                                      maxSegments: 0).count == 0)
-        #expect(HatchPattern.generate(boundary: boundary, direction: d, spacing: 1,
-                                      maxSegments: -1).count == 0)
+        #expect(
+            HatchPattern.generate(
+                boundary: boundary, direction: d, spacing: 1,
+                maxSegments: Self.pastInt32
+            ).count == base)
+        #expect(
+            HatchPattern.generate(
+                boundary: boundary, direction: d, spacing: 1,
+                maxSegments: 0
+            ).count == 0)
+        #expect(
+            HatchPattern.generate(
+                boundary: boundary, direction: d, spacing: 1,
+                maxSegments: -1
+            ).count == 0)
     }
 
     @Test("UnicodeUtils.convertFromUnicode clamps its output buffer rather than trapping")
     func unicodeCapacity() {
-        #expect(UnicodeUtils.convertFromUnicode("hello", maxSize: Self.pastInt32)
+        #expect(
+            UnicodeUtils.convertFromUnicode("hello", maxSize: Self.pastInt32)
                 == UnicodeUtils.convertFromUnicode("hello"))
         // A zero-byte output buffer cannot hold even the terminator, so it reports failure.
         #expect(UnicodeUtils.convertFromUnicode("hello", maxSize: 0) == nil)
@@ -254,8 +296,9 @@ struct Issue622AllocationBounds {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         for i in 0..<7 {
-            FileManager.default.createFile(atPath: dir.appendingPathComponent("f\(i).txt").path,
-                                           contents: Data("x".utf8))
+            FileManager.default.createFile(
+                atPath: dir.appendingPathComponent("f\(i).txt").path,
+                contents: Data("x".utf8))
         }
         let path = dir.path
 
@@ -264,7 +307,7 @@ struct Issue622AllocationBounds {
         let fileBaseline = FileIterator.list(path: path, maxCount: 1000).count
         #expect(fileBaseline == 7)
         #expect(FileIterator.list(path: path, maxCount: Self.pastInt32).count == fileBaseline)
-        #expect(FileIterator.list(path: path, maxCount: 3).count == 3)      // a real capacity truncates
+        #expect(FileIterator.list(path: path, maxCount: 3).count == 3)  // a real capacity truncates
         #expect(FileIterator.list(path: path, maxCount: 0).count == 0)
         #expect(FileIterator.list(path: path, maxCount: -1).count == 0)
 

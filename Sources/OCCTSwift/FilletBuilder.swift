@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Builder for creating fillets on edges of a shape, wrapping BRepFilletAPI_MakeFillet.
 ///
@@ -133,7 +133,9 @@ extension FilletBuilder {
 
     /// Get edge J in contour I (both 1-based).
     public func edge(contour: Int, index: Int) -> Shape? {
-        guard let ref = OCCTFilletBuilderEdge(handle, Int32(contour), Int32(index)) else { return nil }
+        guard let ref = OCCTFilletBuilderEdge(handle, Int32(contour), Int32(index)) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -177,7 +179,9 @@ extension FilletBuilder {
         Int(OCCTFilletBuilderNbComputedSurfaces(handle, Int32(contour)))
     }
 
-    /// Error status for contour (1-based). Returns ChFiDS_ErrorStatus as Int.
+    /// Error status for contour (1-based).
+    ///
+    /// Returns ChFiDS_ErrorStatus as Int.
     public func stripeStatus(contour: Int) -> Int {
         Int(OCCTFilletBuilderStripeStatus(handle, Int32(contour)))
     }
@@ -196,8 +200,10 @@ extension FilletBuilder {
     // MARK: - FilletBuilder completions (v0.126.0)
 
     /// Set fillet tolerances.
-    public func setParams(tang: Double, tesp: Double, t2d: Double,
-                          tApp3d: Double, tApp2d: Double, fleche: Double) {
+    public func setParams(
+        tang: Double, tesp: Double, t2d: Double,
+        tApp3d: Double, tApp2d: Double, fleche: Double
+    ) {
         OCCTFilletBuilderSetParams(handle, tang, tesp, t2d, tApp3d, tApp2d, fleche)
     }
 
@@ -270,8 +276,11 @@ extension FilletBuilder {
     /// }
     /// ```
     public func getBounds(contour: Int, edge: Edge) -> (first: Double, last: Double)? {
-        var first = 0.0, last = 0.0
-        guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else { return nil }
+        var first = 0.0
+        var last = 0.0
+        guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else {
+            return nil
+        }
         return (first, last)
     }
 
@@ -292,7 +301,9 @@ extension FilletBuilder {
     /// }
     /// ```
     public func getLaw(contour: Int, edge: Edge) -> LawFunction? {
-        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else { return nil }
+        guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else {
+            return nil
+        }
         return LawFunction(handle: ref)
     }
 
@@ -326,6 +337,7 @@ extension FilletBuilder {
     }
 
     /// Get shapes generated from an input shape by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape (typically an edge)
     /// - Returns: Array of generated shapes
@@ -345,6 +357,7 @@ extension FilletBuilder {
     }
 
     /// Get shapes modified from an input shape by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape (typically a face)
     /// - Returns: Array of modified shapes
@@ -364,6 +377,7 @@ extension FilletBuilder {
     }
 
     /// Check if a shape was deleted by the fillet operation.
+    ///
     /// The fillet must be built first.
     /// - Parameter shape: The input shape
     /// - Returns: true if the shape was deleted

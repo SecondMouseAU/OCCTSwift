@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // Issue #341: RWMesh_CafReader::fillDocument() (the shared base of RWObj_CafReader
@@ -76,9 +77,11 @@ struct Issue341MeshCafThreadSafetyTests {
         }
 
         #expect(agg.writeFailed == 0, "concurrent OBJ writes failed (expected 0 of 120)")
-        #expect(agg.readFailed == 0,
-                "concurrent OBJ reads failed (expected 0 of 120), the #341 AutoNaming race")
-        #expect(agg.emptyDocument == 0,
-                "concurrent OBJ reads produced an empty document (expected 0 of 120)")
+        #expect(
+            agg.readFailed == 0,
+            "concurrent OBJ reads failed (expected 0 of 120), the #341 AutoNaming race")
+        #expect(
+            agg.emptyDocument == 0,
+            "concurrent OBJ reads produced an empty document (expected 0 of 120)")
     }
 }

@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #495, surface side. Same defect and same fix as the curve analyser, see
@@ -20,18 +21,22 @@ struct Issue495SurfaceAnalysisOrderTests {
 
     private func identicalSpheres() -> (Surface, Surface)? {
         guard let s1 = Surface.sphere(center: .zero, radius: 5),
-              let s2 = Surface.sphere(center: .zero, radius: 5) else { return nil }
+            let s2 = Surface.sphere(center: .zero, radius: 5)
+        else { return nil }
         return (s1, s2)
     }
 
     private func perpendicularPlanes() -> (Surface, Surface)? {
         guard let s1 = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-              let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 1, 0)) else { return nil }
+            let s2 = Surface.plane(origin: .zero, normal: SIMD3(0, 1, 0))
+        else { return nil }
         return (s1, s2)
     }
 
-    private func analyse(_ pair: (Surface, Surface), _ order: ContinuityClass,
-                         at uv: (Double, Double) = (0.5, 0.5)) -> Surface.ContinuityAnalysis? {
+    private func analyse(
+        _ pair: (Surface, Surface), _ order: ContinuityClass,
+        at uv: (Double, Double) = (0.5, 0.5)
+    ) -> Surface.ContinuityAnalysis? {
         pair.0.continuityWith(pair.1, u1: uv.0, v1: uv.1, u2: uv.0, v2: uv.1, order: order)
     }
 
@@ -100,8 +105,9 @@ struct Issue495SurfaceAnalysisOrderTests {
             guard let a = analyse(pair, order) else { continue }
             var measuredMask = 0
             for c in a.measured { measuredMask |= c.analysisFlagBit }
-            #expect(a.flags & ~measuredMask == 0,
-                    "order \(order) set flags \(a.flags) outside measured \(a.measured)")
+            #expect(
+                a.flags & ~measuredMask == 0,
+                "order \(order) set flags \(a.flags) outside measured \(a.measured)")
         }
     }
 
@@ -116,8 +122,9 @@ struct Issue495SurfaceAnalysisOrderTests {
 
         let cyl = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5))
         let cyl2 = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5))
-        #expect(cyl.continuityWith(cyl2, u1: 0.5, v1: 1, u2: 0.5, v2: 1, order: .c2) == nil,
-                "a cylinder is straight along its axis, so D2V is null")
+        #expect(
+            cyl.continuityWith(cyl2, u1: 0.5, v1: 1, u2: 0.5, v2: 1, order: .c2) == nil,
+            "a cylinder is straight along its axis, so D2V is null")
         #expect(cyl.continuityWith(cyl2, u1: 0.5, v1: 1, u2: 0.5, v2: 1, order: .g2) != nil)
     }
 }

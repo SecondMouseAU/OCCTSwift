@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of converting composite Bezier segments to a BSpline curve (3D).
 public struct BezierToBSplineResult {
@@ -22,14 +22,14 @@ public struct BezierToBSpline2dResult {
 public enum CompBezierConverter {
 
     /// Convert a sequence of connected Bezier segments (3D) to a single BSpline curve.
-    /// - Parameters:
-    ///   - segments: Each element is an array of control points for one Bezier segment.
+    /// - Parameter segments: Each element is an array of control points for one Bezier segment.
     ///               All segments must have the same number of control points.
     /// - Returns: BSpline data, or nil on failure.
     public static func toBSpline(segments: [[SIMD3<Double>]]) -> BezierToBSplineResult? {
         guard !segments.isEmpty,
-              let ptsPerSeg = segments.first?.count, ptsPerSeg > 0,
-              segments.allSatisfy({ $0.count == ptsPerSeg }) else { return nil }
+            let ptsPerSeg = segments.first?.count, ptsPerSeg > 0,
+            segments.allSatisfy({ $0.count == ptsPerSeg })
+        else { return nil }
 
         var flat = [Double]()
         flat.reserveCapacity(segments.count * ptsPerSeg * 3)
@@ -39,8 +39,9 @@ public enum CompBezierConverter {
 
         var raw = OCCTBezierBSplineResult()
         let ok = flat.withUnsafeBufferPointer { buf in
-            OCCTConvertCompBezierToBSpline(buf.baseAddress!, Int32(segments.count),
-                                           Int32(ptsPerSeg), &raw)
+            OCCTConvertCompBezierToBSpline(
+                buf.baseAddress!, Int32(segments.count),
+                Int32(ptsPerSeg), &raw)
         }
         guard ok else { return nil }
 
@@ -71,19 +72,20 @@ public enum CompBezierConverter {
             }
         }
 
-        return BezierToBSplineResult(degree: Int(raw.degree), poles: poles,
-                                     knots: knots, multiplicities: mults)
+        return BezierToBSplineResult(
+            degree: Int(raw.degree), poles: poles,
+            knots: knots, multiplicities: mults)
     }
 
     /// Convert a sequence of connected 2D Bezier segments to a single BSpline curve.
-    /// - Parameters:
-    ///   - segments: Each element is an array of 2D control points for one Bezier segment.
+    /// - Parameter segments: Each element is an array of 2D control points for one Bezier segment.
     ///               All segments must have the same number of control points.
     /// - Returns: BSpline 2D data, or nil on failure.
     public static func toBSpline2d(segments: [[SIMD2<Double>]]) -> BezierToBSpline2dResult? {
         guard !segments.isEmpty,
-              let ptsPerSeg = segments.first?.count, ptsPerSeg > 0,
-              segments.allSatisfy({ $0.count == ptsPerSeg }) else { return nil }
+            let ptsPerSeg = segments.first?.count, ptsPerSeg > 0,
+            segments.allSatisfy({ $0.count == ptsPerSeg })
+        else { return nil }
 
         var flat = [Double]()
         flat.reserveCapacity(segments.count * ptsPerSeg * 2)
@@ -93,8 +95,9 @@ public enum CompBezierConverter {
 
         var raw = OCCTBezierBSpline2dResult()
         let ok = flat.withUnsafeBufferPointer { buf in
-            OCCTConvertCompBezier2dToBSpline2d(buf.baseAddress!, Int32(segments.count),
-                                               Int32(ptsPerSeg), &raw)
+            OCCTConvertCompBezier2dToBSpline2d(
+                buf.baseAddress!, Int32(segments.count),
+                Int32(ptsPerSeg), &raw)
         }
         guard ok else { return nil }
 
@@ -125,7 +128,8 @@ public enum CompBezierConverter {
             }
         }
 
-        return BezierToBSpline2dResult(degree: Int(raw.degree), poles: poles,
-                                       knots: knots, multiplicities: mults)
+        return BezierToBSpline2dResult(
+            degree: Int(raw.degree), poles: poles,
+            knots: knots, multiplicities: mults)
     }
 }

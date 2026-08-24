@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Regression cover for #965 on `Curve2D`, the second of the three parents whose `*Properties`

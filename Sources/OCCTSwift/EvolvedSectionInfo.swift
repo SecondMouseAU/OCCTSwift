@@ -1,8 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Evolved section shape info
+/// Evolved section shape info.
 public struct EvolvedSectionInfo: Sendable {
     public let nbPoles: Int
     public let nbKnots: Int

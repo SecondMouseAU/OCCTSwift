@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #620. Three layers disagreed about `drawMesh`'s minimum count, and the caller paid.
@@ -45,14 +46,16 @@ struct Issue620DrawMeshCountContractTests {
     @Test("uCount 1 returns a single V iso-row, not an empty grid")
     func singleURow() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
         let grid = s.drawMesh(uCount: 1, vCount: 20)
 
         // The defect: this was SurfaceGrid.empty.
         #expect(!grid.isEmpty)
         guard grid.uCount == 1, grid.vCount == 20 else {
-            Issue.record("expected a 1x20 grid, got \(grid.uCount)x\(grid.vCount)"); return
+            Issue.record("expected a 1x20 grid, got \(grid.uCount)x\(grid.vCount)")
+            return
         }
 
         // Every point finite, i.e. the divisor did not go through 0/0.
@@ -64,13 +67,15 @@ struct Issue620DrawMeshCountContractTests {
     @Test("vCount 1 returns a single U iso-row, not an empty grid")
     func singleVRow() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
         let grid = s.drawMesh(uCount: 20, vCount: 1)
 
         #expect(!grid.isEmpty)
         guard grid.uCount == 20, grid.vCount == 1 else {
-            Issue.record("expected a 20x1 grid, got \(grid.uCount)x\(grid.vCount)"); return
+            Issue.record("expected a 20x1 grid, got \(grid.uCount)x\(grid.vCount)")
+            return
         }
 
         for u in 0..<grid.uCount {
@@ -86,7 +91,8 @@ struct Issue620DrawMeshCountContractTests {
     @Test("On a bounded surface the single row sits at domain.uMin")
     func singleRowOnABoundedSurfaceSitsAtDomainMin() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
         let d = s.domain
         // A sphere is bounded, so the clamp cannot have moved either end.
@@ -95,7 +101,8 @@ struct Issue620DrawMeshCountContractTests {
         let vCount = 8
         let grid = s.drawMesh(uCount: 1, vCount: vCount)
         guard grid.uCount == 1, grid.vCount == vCount else {
-            Issue.record("expected a 1x\(vCount) grid, got \(grid.uCount)x\(grid.vCount)"); return
+            Issue.record("expected a 1x\(vCount) grid, got \(grid.uCount)x\(grid.vCount)")
+            return
         }
 
         for j in 0..<vCount {
@@ -114,7 +121,8 @@ struct Issue620DrawMeshCountContractTests {
     @Test("On an unbounded surface the single row sits at the clamp, not at domain.uMin")
     func singleRowOnAnUnboundedSurfaceSitsAtTheClamp() {
         guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) else {
-            Issue.record("plane fixture nil"); return
+            Issue.record("plane fixture nil")
+            return
         }
         let d = plane.domain
         // The premise: this surface really is unbounded, so domain and sampled range differ.
@@ -123,7 +131,8 @@ struct Issue620DrawMeshCountContractTests {
         let vCount = 5
         let grid = plane.drawMesh(uCount: 1, vCount: vCount)
         guard grid.uCount == 1, grid.vCount == vCount else {
-            Issue.record("expected a 1x\(vCount) grid, got \(grid.uCount)x\(grid.vCount)"); return
+            Issue.record("expected a 1x\(vCount) grid, got \(grid.uCount)x\(grid.vCount)")
+            return
         }
 
         // This plane's parametrisation is (u, v) -> (u, v, 0), so the row's x IS its u parameter.
@@ -145,14 +154,17 @@ struct Issue620DrawMeshCountContractTests {
     @Test("A one-row grid equals row 0 of a many-row grid")
     func oneRowEqualsRowZeroOfAManyRowGrid() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
         let vCount = 12
         let one = s.drawMesh(uCount: 1, vCount: vCount)
         let many = s.drawMesh(uCount: 6, vCount: vCount)
         guard one.uCount == 1, one.vCount == vCount,
-              many.uCount == 6, many.vCount == vCount else {
-            Issue.record("grids not served: \(one.uCount)x\(one.vCount), \(many.uCount)x\(many.vCount)")
+            many.uCount == 6, many.vCount == vCount
+        else {
+            Issue.record(
+                "grids not served: \(one.uCount)x\(one.vCount), \(many.uCount)x\(many.vCount)")
             return
         }
 
@@ -164,7 +176,8 @@ struct Issue620DrawMeshCountContractTests {
     @Test("A 1x1 grid is one point, at the sampled-range corner")
     func oneByOneIsASinglePoint() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
         let grid = s.drawMesh(uCount: 1, vCount: 1)
         #expect(!grid.isEmpty)
@@ -173,7 +186,8 @@ struct Issue620DrawMeshCountContractTests {
         // first version of this test did, and the regression it exists to catch killed the target
         // instead of reporting a failure.
         guard grid.uCount == 1, grid.vCount == 1 else {
-            Issue.record("expected a 1x1 grid, got \(grid.uCount)x\(grid.vCount)"); return
+            Issue.record("expected a 1x1 grid, got \(grid.uCount)x\(grid.vCount)")
+            return
         }
 
         let d = s.domain
@@ -188,7 +202,8 @@ struct Issue620DrawMeshCountContractTests {
     @Test("Counts below 1 and products past the ceiling are still rejected")
     func belowOneAndPastTheCeilingStillRejected() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
-            Issue.record("sphere fixture nil"); return
+            Issue.record("sphere fixture nil")
+            return
         }
 
         #expect(s.drawMesh(uCount: 0, vCount: 20).isEmpty)
@@ -225,9 +240,10 @@ struct Issue620DrawMeshCountContractTests {
         // One pole in both: rejected.
         #expect(Surface.bezier(poles: [[SIMD3(0, 0, 0)]]) == nil)
         // The smallest legal patch: accepted.
-        #expect(Surface.bezier(poles: [
-            [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
-            [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
-        ]) != nil)
+        #expect(
+            Surface.bezier(poles: [
+                [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
+                [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
+            ]) != nil)
     }
 }

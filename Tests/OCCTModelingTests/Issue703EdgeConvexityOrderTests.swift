@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #703: `OCCTEdgeGetConvexity` reported a different convexity for the same physical edge
@@ -52,10 +53,10 @@ struct Issue703EdgeConvexityOrderTests {
     @Test("two boxes glued face to face have no concave edges in either compound order")
     func gluedBoxesHaveNoConcaveEdgesEitherOrder() {
         guard let block = Shape.box(width: 10, height: 10, depth: 10),
-              let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              pieces.count == 2,
-              let orderA = Shape.compound(pieces),
-              let orderB = Shape.compound(pieces.reversed())
+            let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            pieces.count == 2,
+            let orderA = Shape.compound(pieces),
+            let orderB = Shape.compound(pieces.reversed())
         else {
             Issue.record("could not build the split-box fixture")
             return
@@ -74,8 +75,8 @@ struct Issue703EdgeConvexityOrderTests {
     @Test("a genuine pocket still reports concave floor/wall edges")
     func genuinePocketStillReportsConcaveEdges() {
         guard let box = Shape.box(width: 20, height: 20, depth: 20),
-              let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
-              let result = box.subtracting(pocket)
+            let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
+            let result = box.subtracting(pocket)
         else {
             Issue.record("could not build the pocketed box")
             return
@@ -87,8 +88,9 @@ struct Issue703EdgeConvexityOrderTests {
             #expect(Bool(false), "volume computation failed; fixture proves nothing")
             return
         }
-        #expect(resultVolume < boxVolume,
-                "pocket tool must actually remove material, or this fixture proves nothing")
+        #expect(
+            resultVolume < boxVolume,
+            "pocket tool must actually remove material, or this fixture proves nothing")
 
         let aag = result.buildAAG()
         #expect(aag.edges.contains { $0.convexity == .concave })
@@ -127,13 +129,15 @@ struct Issue703EdgeConvexityOrderTests {
     /// (the floor/wall junction) on that construction, matching a blind round pocket exactly, not
     /// 0. Fixed here by anchoring the drill's base `thickness/2 + 5` below center, so it clears the
     /// plate by 5mm on both faces at every thickness, same as the original author's evident intent.
-    @Test("a round through-hole has zero concave edges, at several plate thicknesses (#723)",
-          arguments: [20.0, 40.0, 60.0, 120.0])
+    @Test(
+        "a round through-hole has zero concave edges, at several plate thicknesses (#723)",
+        arguments: [20.0, 40.0, 60.0, 120.0])
     func throughHoleHasNoConcaveEdges(thickness: Double) throws {
         let plate = try #require(Shape.box(width: 50, height: 50, depth: thickness))
-        let drill = try #require(Shape.cylinder(
-            at: SIMD3(0, 0, -thickness / 2 - 5), direction: SIMD3(0, 0, 1),
-            radius: 10, height: thickness + 10))
+        let drill = try #require(
+            Shape.cylinder(
+                at: SIMD3(0, 0, -thickness / 2 - 5), direction: SIMD3(0, 0, 1),
+                radius: 10, height: thickness + 10))
         let drilled = try #require(plate.subtracting(drill))
 
         let aag = drilled.buildAAG()
@@ -150,12 +154,14 @@ struct Issue703EdgeConvexityOrderTests {
     /// other edge in the fixture is concave. This is exactly what #723's own measurement recorded
     /// for a square pocket ("concave set exact") at multiple depths, so pinning it here locks in
     /// the one part of that measurement that is not in dispute.
-    @Test("a blind square pocket has exactly eight concave edges, at several depths",
-          arguments: [2.0, 10.0, 25.0])
+    @Test(
+        "a blind square pocket has exactly eight concave edges, at several depths",
+        arguments: [2.0, 10.0, 25.0])
     func squarePocketHasExactlyEightConcaveEdges(depth: Double) throws {
         let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
-        let pocket = try #require(Shape.box(
-            origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
+        let pocket = try #require(
+            Shape.box(
+                origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
         let pocketed = try #require(box.subtracting(pocket))
 
         let aag = pocketed.buildAAG()

@@ -16,22 +16,32 @@ import OCCTBridge
 // MARK: - AttrValue
 
 extension BRepGraph {
-    /// A typed, Codable attribute value. Closed set keeps the snapshot round-trip lossless.
+    /// A typed, Codable attribute value.
+    ///
+    /// Closed set keeps the snapshot round-trip lossless.
     public enum AttrValue: Codable, Hashable, Sendable {
         case bool(Bool)
         case int(Int)
         case double(Double)
         case string(String)
-        case ints([Int])         // e.g. a mesh-region triangle index set
-        case doubles([Double])   // e.g. fitted-surface parameters
+        case ints([Int])  // e.g. a mesh-region triangle index set
+        case doubles([Double])  // e.g. fitted-surface parameters
 
         // Convenience unwrap accessors — return nil on type mismatch.
-        public var boolValue: Bool? { if case let .bool(v) = self { return v } else { return nil } }
-        public var intValue: Int? { if case let .int(v) = self { return v } else { return nil } }
-        public var doubleValue: Double? { if case let .double(v) = self { return v } else { return nil } }
-        public var stringValue: String? { if case let .string(v) = self { return v } else { return nil } }
-        public var intsValue: [Int]? { if case let .ints(v) = self { return v } else { return nil } }
-        public var doublesValue: [Double]? { if case let .doubles(v) = self { return v } else { return nil } }
+        public var boolValue: Bool? { if case .bool(let v) = self { return v } else { return nil } }
+        public var intValue: Int? { if case .int(let v) = self { return v } else { return nil } }
+        public var doubleValue: Double? {
+            if case .double(let v) = self { return v } else { return nil }
+        }
+        public var stringValue: String? {
+            if case .string(let v) = self { return v } else { return nil }
+        }
+        public var intsValue: [Int]? {
+            if case .ints(let v) = self { return v } else { return nil }
+        }
+        public var doublesValue: [Double]? {
+            if case .doubles(let v) = self { return v } else { return nil }
+        }
     }
 }
 
@@ -63,11 +73,15 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     }
 
     /// Set one attribute.
-    public mutating func set(_ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef) {
+    public mutating func set(
+        _ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef
+    ) {
         storage[node, default: [:]][key] = value
     }
 
-    /// Remove one attribute. Drops the node entry entirely once its last attribute is cleared.
+    /// Remove one attribute.
+    ///
+    /// Drops the node entry entirely once its last attribute is cleared.
     public mutating func clear(_ key: String, for node: BRepGraph.NodeRef) {
         guard var attrs = storage[node] else { return }
         attrs[key] = nil
@@ -86,7 +100,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     // with `JSONEncoder.outputFormatting = .sortedKeys` — or `GraphSnapshot.canonicalEncoder()`
     // — for byte-stable, diffable output. JSONEncoder hash-orders object keys otherwise.)
 
-    /// One `key: value` attribute pair. Encoding attributes as a sorted array (rather than a
+    /// One `key: value` attribute pair.
+    ///
+    /// Encoding attributes as a sorted array (rather than a
     /// `[String: AttrValue]` dictionary) avoids JSON's non-deterministic dictionary key order.
     private struct KeyValue: Codable {
         let key: String
@@ -109,11 +125,13 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     }
 
     public func encode(to encoder: Encoder) throws {
-        let entries = storage
+        let entries =
+            storage
             .map { node, attrs in
-                Entry(node: node,
-                      attrs: attrs.map { KeyValue(key: $0.key, value: $0.value) }
-                                  .sorted { $0.key < $1.key })
+                Entry(
+                    node: node,
+                    attrs: attrs.map { KeyValue(key: $0.key, value: $0.value) }
+                        .sorted { $0.key < $1.key })
             }
             .sorted { lhs, rhs in
                 if lhs.node.kind.rawValue != rhs.node.kind.rawValue {
@@ -134,7 +152,9 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
 /// `BRepGraph` from `brep`. Only the source shape (as a BREP string) and the attribute
 /// store travel in the snapshot.
 public struct GraphSnapshot: Codable, Sendable, Equatable {
-    /// Current on-disk format version. Bump on any breaking schema change.
+    /// Current on-disk format version.
+    ///
+    /// Bump on any breaking schema change.
     public static let currentFormatVersion = 1
 
     /// BREP serialization of the source shape (re-derives the graph structure on load).
@@ -144,7 +164,10 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
     /// Format version this snapshot was written with.
     public var formatVersion: Int
 
-    public init(brep: String, attributes: NodeAttributeStore, formatVersion: Int = GraphSnapshot.currentFormatVersion) {
+    public init(
+        brep: String, attributes: NodeAttributeStore,
+        formatVersion: Int = GraphSnapshot.currentFormatVersion
+    ) {
         self.brep = brep
         self.attributes = attributes
         self.formatVersion = formatVersion

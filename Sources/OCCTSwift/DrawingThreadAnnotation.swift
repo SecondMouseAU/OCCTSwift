@@ -19,15 +19,15 @@ import simd
 //         90°-180°, and 180°-315°, with a visible gap in the last quadrant.
 //   - Optional callout text with a leader line (e.g. "M10×1.5")
 
-public extension DrawingAnnotation {
+extension DrawingAnnotation {
     /// ISO 6410 cosmetic thread — side view pattern.
     ///
     /// Produces two parallel lines on the CENTER layer spanning the thread
     /// length inside the shank's side-view silhouette, plus an optional
     /// callout label on the TEXT layer.
-    static func cosmeticThreadSideView(
-        axisStart: SIMD2<Double>,     // thread start projected into the 2D view
-        axisEnd: SIMD2<Double>,        // thread end projected into the 2D view
+    public static func cosmeticThreadSideView(
+        axisStart: SIMD2<Double>,  // thread start projected into the 2D view
+        axisEnd: SIMD2<Double>,  // thread end projected into the 2D view
         majorDiameter: Double,
         pitch: Double,
         callout: String? = nil
@@ -43,22 +43,29 @@ public extension DrawingAnnotation {
         let halfMinor = minorDiameter / 2
 
         let topStart = axisStart + halfMinor * perp
-        let topEnd   = axisEnd   + halfMinor * perp
+        let topEnd = axisEnd + halfMinor * perp
         let botStart = axisStart - halfMinor * perp
-        let botEnd   = axisEnd   - halfMinor * perp
+        let botEnd = axisEnd - halfMinor * perp
 
         var result: [DrawingAnnotation] = [
-            .centreline(.init(from: topStart, to: topEnd, style: .solid,
-                              id: "cosmetic-thread-top")),
-            .centreline(.init(from: botStart, to: botEnd, style: .solid,
-                              id: "cosmetic-thread-bottom"))
+            .centreline(
+                .init(
+                    from: topStart, to: topEnd, style: .solid,
+                    id: "cosmetic-thread-top")),
+            .centreline(
+                .init(
+                    from: botStart, to: botEnd, style: .solid,
+                    id: "cosmetic-thread-bottom")),
         ]
         if let callout = callout {
             // Leader starts at thread midline, goes out and up slightly.
             let mid = (axisStart + axisEnd) / 2
             let leaderTip = mid + (halfMinor + 10) * perp
-            result.append(.textLabel(.init(position: leaderTip, text: callout,
-                                            height: 3.5)))
+            result.append(
+                .textLabel(
+                    .init(
+                        position: leaderTip, text: callout,
+                        height: 3.5)))
         }
         return result
     }
@@ -72,7 +79,7 @@ public extension DrawingAnnotation {
     /// Returns a description the consumer can render onto a drawing. The
     /// broken-arc segments are returned as `(centre, radius, startAngle,
     /// endAngle)` triples ready to pass to DXFWriter.addArc.
-    static func cosmeticThreadEndView(
+    public static func cosmeticThreadEndView(
         centre: SIMD2<Double>,
         majorDiameter: Double,
         pitch: Double
@@ -81,27 +88,31 @@ public extension DrawingAnnotation {
         let r = minorDiameter / 2
         // Three arcs: 0→90, 90→180, 180→315 (with a 45° gap at 315-360)
         return [
-            ArcSegment(centre: centre, radius: r,
-                       startAngle: 0,                endAngle: .pi / 2),
-            ArcSegment(centre: centre, radius: r,
-                       startAngle: .pi / 2,          endAngle: .pi),
-            ArcSegment(centre: centre, radius: r,
-                       startAngle: .pi,              endAngle: 7 * .pi / 4)
+            ArcSegment(
+                centre: centre, radius: r,
+                startAngle: 0, endAngle: .pi / 2),
+            ArcSegment(
+                centre: centre, radius: r,
+                startAngle: .pi / 2, endAngle: .pi),
+            ArcSegment(
+                centre: centre, radius: r,
+                startAngle: .pi, endAngle: 7 * .pi / 4),
         ]
     }
 
-    struct ArcSegment: Sendable, Hashable {
+    public struct ArcSegment: Sendable, Hashable {
         public let centre: SIMD2<Double>
         public let radius: Double
-        public let startAngle: Double    // radians
-        public let endAngle: Double      // radians
+        public let startAngle: Double  // radians
+        public let endAngle: Double  // radians
     }
 }
 
 extension Drawing {
     /// Convenience: add an ISO 6410 cosmetic thread side-view pattern plus
-    /// optional callout to this drawing. Returns the added annotations for
-    /// further manipulation.
+    /// optional callout to this drawing.
+    ///
+    /// Returns the added annotations for further manipulation.
     @discardableResult
     public func addCosmeticThreadSide(
         axisStart: SIMD2<Double>,
@@ -120,16 +131,19 @@ extension Drawing {
 
 extension DXFWriter {
     /// Write an ISO 6410 cosmetic thread end-view 3/4 arc set onto the writer.
-    public func addCosmeticThreadEndView(centre: SIMD2<Double>,
-                                          majorDiameter: Double,
-                                          pitch: Double) {
+    public func addCosmeticThreadEndView(
+        centre: SIMD2<Double>,
+        majorDiameter: Double,
+        pitch: Double
+    ) {
         let arcs = DrawingAnnotation.cosmeticThreadEndView(
             centre: centre, majorDiameter: majorDiameter, pitch: pitch)
         for arc in arcs {
-            addArc(centre: arc.centre, radius: arc.radius,
-                   startAngleDeg: arc.startAngle * 180 / .pi,
-                   endAngleDeg: arc.endAngle * 180 / .pi,
-                   layer: "CENTER")
+            addArc(
+                centre: arc.centre, radius: arc.radius,
+                startAngleDeg: arc.startAngle * 180 / .pi,
+                endAngleDeg: arc.endAngle * 180 / .pi,
+                layer: "CENTER")
         }
     }
 }

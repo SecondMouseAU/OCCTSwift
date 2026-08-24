@@ -22,7 +22,10 @@ struct Issue1055DatumNameLengthTests {
 
     @Test("A 100-character datum name reads back whole")
     func longNameRoundTrips() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let name = Self.longName
         guard let index = doc.createDatum(name: name) else {
             Issue.record("createDatum nil")
@@ -41,7 +44,10 @@ struct Issue1055DatumNameLengthTests {
     /// accessor having stopped working.
     @Test("Names either side of the old 63-byte bound both round-trip", arguments: [63, 64, 65])
     func namesAroundTheOldBoundRoundTrip(length: Int) throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let name = String(repeating: "B", count: length)
         guard let index = doc.createDatum(name: name), let datum = doc.datum(at: index) else {
             Issue.record("createDatum or datum nil")
@@ -55,7 +61,10 @@ struct Issue1055DatumNameLengthTests {
     /// this, which is why the truncation was silent.
     @Test("A short buffer yields a prefix and the length the whole name needs")
     func shortBufferReportsTheFullLength() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let name = Self.longName
         guard let index = doc.createDatum(name: name) else {
             Issue.record("createDatum nil")
@@ -79,7 +88,10 @@ struct Issue1055DatumNameLengthTests {
     /// allocate, ask again.
     @Test("A null buffer asks for the length alone")
     func nullBufferReportsTheLength() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let index = doc.createDatum(name: Self.longName) else {
             Issue.record("createDatum nil")
             return
@@ -92,7 +104,10 @@ struct Issue1055DatumNameLengthTests {
     /// `(nil, 0)` above, which is a request.
     @Test("A negative length, or a null buffer with a positive one, is refused")
     func malformedBufferArgumentsAreRefused() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let index = doc.createDatum(name: "A") else {
             Issue.record("createDatum nil")
             return
@@ -105,7 +120,10 @@ struct Issue1055DatumNameLengthTests {
     /// `datums` walks the same accessor, so the whole enumeration has to carry whole names too.
     @Test("datums reports whole names for every datum it enumerates")
     func datumsEnumerationCarriesWholeNames() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let names = ["A", Self.longName, String(repeating: "C", count: 200)]
         for name in names { #expect(doc.createDatum(name: name) != nil) }
         #expect(doc.datums.map(\.name) == names)

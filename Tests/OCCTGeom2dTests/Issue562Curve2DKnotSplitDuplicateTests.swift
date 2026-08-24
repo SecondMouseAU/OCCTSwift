@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #562: `Geom2dConvert_BSplineCurveKnotSplitting` was wrapped twice, by

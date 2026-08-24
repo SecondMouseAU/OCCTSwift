@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// OCCT precision constants.
 public enum OCCTPrecision {

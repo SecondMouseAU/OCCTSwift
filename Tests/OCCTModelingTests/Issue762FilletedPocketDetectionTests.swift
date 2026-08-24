@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// A fillet or chamfer that silently returned an unchanged shape would leave every assertion in
@@ -20,10 +21,11 @@ private func expectShapeChanged(
 ) {
     let b = before.faces().count
     let a = after.faces().count
-    #expect(a > b, "\(label): face count did not rise (\(b) to \(a)), so the operation added no geometry and this fixture is still the sharp one",
-            sourceLocation: sourceLocation)
+    #expect(
+        a > b,
+        "\(label): face count did not rise (\(b) to \(a)), so the operation added no geometry and this fixture is still the sharp one",
+        sourceLocation: sourceLocation)
 }
-
 
 // #762: a fillet at a pocket's floor/wall junction is tangent to both surfaces
 // (`ChFi3d::DefineConnectType` reports `.smooth` at both new edges, by construction, since a
@@ -55,7 +57,8 @@ struct Issue762FilletedPocketDetectionTests {
     @Test("the sharp pocket (control) is detected and enclosed")
     func sharpPocketIsDetectedAndEnclosed() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         let pockets = cut.detectPocketsAAG()
@@ -67,13 +70,18 @@ struct Issue762FilletedPocketDetectionTests {
 
     /// Filleting all four floor/wall junction edges must NOT make the pocket disappear.
     /// Radii 0.5 through 4, matching the range #753 originally measured as "not detected."
-    @Test("a filleted floor/wall junction pocket IS detected and enclosed", arguments: [0.5, 1.0, 2.0, 4.0])
+    @Test(
+        "a filleted floor/wall junction pocket IS detected and enclosed",
+        arguments: [0.5, 1.0, 2.0, 4.0])
     func filletedJunctionPocketIsDetected(radius: Double) throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: {
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+        })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: radius))
         expectShapeChanged(cut, filleted, "filleted on cut")
@@ -97,7 +105,8 @@ struct Issue762ChamferedPocketDetectionTests {
     @Test("a chamfered floor/wall junction pocket IS detected and enclosed")
     func chamferedJunctionPocketIsDetected() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         let allEdges = cut.edges()
@@ -106,7 +115,9 @@ struct Issue762ChamferedPocketDetectionTests {
         for (i, edge) in allEdges.enumerated() {
             guard abs(edge.bounds!.min.z) < 1e-6, abs(edge.bounds!.max.z) < 1e-6 else { continue }
             guard let (face1, _) = edge.adjacentFaces(in: cut) else { continue }
-            guard let faceIndex = allFaces.firstIndex(where: { abs($0.area() - face1.area()) < 1e-6 }) else { continue }
+            guard
+                let faceIndex = allFaces.firstIndex(where: { abs($0.area() - face1.area()) < 1e-6 })
+            else { continue }
             chamferSpecs.append((edgeIndex: i, faceIndex: faceIndex, dist1: 1.0, dist2: 1.0))
         }
         #expect(chamferSpecs.count == 4)
@@ -129,12 +140,16 @@ struct Issue762PartialFilletDetectionTests {
     @Test("a pocket filleted on only some junctions is still fully detected and enclosed")
     func partiallyFilletedPocketIsDetected() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: {
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+        })
         #expect(junctionEdges.count == 4)
-        let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
+        let filleted = try #require(
+            cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
         expectShapeChanged(cut, filleted, "filleted on cut")
 
         let pockets = filleted.detectPocketsAAG()
@@ -193,7 +208,8 @@ struct Issue762ReflexCornerPartialFilletTests {
     @Test("the sharp L-shaped pocket (control) reports two open, coplanar floor pieces")
     func sharpLShapedPocketReportsTwoOpenFloors() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let toolA = try #require(Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
+        let toolA = try #require(
+            Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
         let toolB = try #require(Shape.box(origin: SIMD3(-6, 0, 0), width: 6, height: 6, depth: 10))
         let toolL = try #require(toolA.union(toolB))
         let cut = try #require(box.subtracting(toolL))
@@ -205,10 +221,12 @@ struct Issue762ReflexCornerPartialFilletTests {
         }
     }
 
-    @Test("an L-shaped pocket with one reflex-corner wall filleted is still measured, and stays open")
+    @Test(
+        "an L-shaped pocket with one reflex-corner wall filleted is still measured, and stays open")
     func filletedReflexCornerPocketIsStillMeasured() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let toolA = try #require(Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
+        let toolA = try #require(
+            Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
         let toolB = try #require(Shape.box(origin: SIMD3(-6, 0, 0), width: 6, height: 6, depth: 10))
         let toolL = try #require(toolA.union(toolB))
         let cut = try #require(box.subtracting(toolL))
@@ -216,9 +234,10 @@ struct Issue762ReflexCornerPartialFilletTests {
         // WallY0: the floor/wall junction edge at y=0, z=0, x in [0,6] (bounds the reflex
         // corner's own material block from below).
         let wallY0Edges = cut.edges(where: { edge in
-            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
-            abs(edge.bounds!.min.y) < 1e-6 && abs(edge.bounds!.max.y) < 1e-6 &&
-            edge.bounds!.min.x > -1e-6 && edge.bounds!.max.x > 5.9 && edge.bounds!.max.x < 6.1
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6
+                && abs(edge.bounds!.min.y) < 1e-6 && abs(edge.bounds!.max.y) < 1e-6
+                && edge.bounds!.min.x > -1e-6 && edge.bounds!.max.x > 5.9
+                && edge.bounds!.max.x < 6.1
         })
         #expect(wallY0Edges.count == 1)
         let filleted = try #require(cut.filleted(edges: wallY0Edges, radius: 1.0))
@@ -236,7 +255,8 @@ struct Issue762ReflexCornerPartialFilletTests {
     }
 }
 
-@Suite("A face rejected as a direct dead end stays reachable through its own junction (#762 review)")
+@Suite(
+    "A face rejected as a direct dead end stays reachable through its own junction (#762 review)")
 struct Issue762DeadEndRevisitableThroughJunctionTests {
 
     /// Review of this fix found `wallsAndJunctions(fromFloor:floorZ:tolerance:)` marked
@@ -263,15 +283,21 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
     /// (`wallFaceIndices.count` 4 to 2, `isOpen` false to true); restoring the fix returns both
     /// walls and the correct enclosed verdict. See the PR body's removal-matrix update for the
     /// full injection record.
-    @Test("a sharp wall that fails the direct Z-check is still found through its own fillet's junction")
+    @Test(
+        "a sharp wall that fails the direct Z-check is still found through its own fillet's junction"
+    )
     func deadEndSharpWallIsStillFoundThroughItsOwnJunction() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
-        let junctionEdges = cut.edges(where: { abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 })
+        let junctionEdges = cut.edges(where: {
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+        })
         #expect(junctionEdges.count == 4)
-        let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
+        let filleted = try #require(
+            cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
         expectShapeChanged(cut, filleted, "filleted on cut")
 
         // Deliberately smaller than the sharp walls' own measured ~1.5e-7 natural offset, so
@@ -338,21 +364,22 @@ struct Issue762VerticalCornerBlendNotAWallTests {
     @Test("the vertical corner-blend cylinder is excluded from walls, not wrongly promoted")
     func verticalCornerBlendCylinderIsExcludedFromWalls() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         let southEdge = cut.edges(where: {
-            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 &&
-            abs($0.bounds!.min.y - (-5)) < 1e-6 && abs($0.bounds!.max.y - (-5)) < 1e-6
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+                && abs($0.bounds!.min.y - (-5)) < 1e-6 && abs($0.bounds!.max.y - (-5)) < 1e-6
         })
         #expect(southEdge.count == 1)
         let filletedSouth = try #require(cut.filleted(edges: southEdge, radius: 3.0))
         expectShapeChanged(cut, filletedSouth, "filleted on cut")
 
         let cornerEdge = filletedSouth.edges(where: {
-            abs($0.bounds!.min.x - (-5)) < 1e-3 && abs($0.bounds!.max.x - (-5)) < 1e-3 &&
-            abs($0.bounds!.min.y - (-5)) < 1e-3 && abs($0.bounds!.max.y - (-5)) < 1e-3 &&
-            ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0
+            abs($0.bounds!.min.x - (-5)) < 1e-3 && abs($0.bounds!.max.x - (-5)) < 1e-3
+                && abs($0.bounds!.min.y - (-5)) < 1e-3 && abs($0.bounds!.max.y - (-5)) < 1e-3
+                && ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0
         })
         #expect(cornerEdge.count == 1)
         let doubleFillet = try #require(filletedSouth.filleted(edges: cornerEdge, radius: 2.0))
@@ -371,7 +398,9 @@ struct Issue762VerticalCornerBlendNotAWallTests {
     }
 }
 
-@Suite("Junction-to-junction chaining around a fully rounded pocket finds only the four genuine walls (#762 review round 4)")
+@Suite(
+    "Junction-to-junction chaining around a fully rounded pocket finds only the four genuine walls (#762 review round 4)"
+)
 struct Issue762FullyRoundedPocketChainingTests {
 
     /// Stresses the same fix on a much richer topology: all four floor/wall junctions
@@ -408,24 +437,23 @@ struct Issue762FullyRoundedPocketChainingTests {
     @Test("all four vertical corner-blend cylinders are excluded, only the four flat walls remain")
     func fullyRoundedPocketFindsExactlyFourWalls() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         let floorEdges = cut.edges(where: {
-            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 &&
-            $0.bounds!.min.x > -5.5 && $0.bounds!.max.x < 5.5 &&
-            $0.bounds!.min.y > -5.5 && $0.bounds!.max.y < 5.5
+            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6 && $0.bounds!.min.x > -5.5
+                && $0.bounds!.max.x < 5.5 && $0.bounds!.min.y > -5.5 && $0.bounds!.max.y < 5.5
         })
         #expect(floorEdges.count == 4)
         let filletedFloor = try #require(cut.filleted(edges: floorEdges, radius: 3.0))
         expectShapeChanged(cut, filletedFloor, "filleted on cut")
 
         let cornerEdges = filletedFloor.edges(where: {
-            ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0 &&
-            ($0.bounds!.max.x - $0.bounds!.min.x) < 0.5 &&
-            ($0.bounds!.max.y - $0.bounds!.min.y) < 0.5 &&
-            abs(abs($0.bounds!.min.x) - 5) < 1e-2 &&
-            abs(abs($0.bounds!.min.y) - 5) < 1e-2
+            ($0.bounds!.max.z - $0.bounds!.min.z) > 1.0
+                && ($0.bounds!.max.x - $0.bounds!.min.x) < 0.5
+                && ($0.bounds!.max.y - $0.bounds!.min.y) < 0.5
+                && abs(abs($0.bounds!.min.x) - 5) < 1e-2 && abs(abs($0.bounds!.min.y) - 5) < 1e-2
         })
         #expect(cornerEdges.count == 4)
         let doubleRing = try #require(filletedFloor.filleted(edges: cornerEdges, radius: 2.0))
@@ -457,8 +485,10 @@ struct Issue762FilletedThroughSlotStaysOpenTests {
     /// .twoWalledThroughSlotIsNotEnclosed`'s own fixture): both ends open, `isOpen == true`.
     @Test("the sharp through-slot (control) is not enclosed")
     func sharpThroughSlotIsNotEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -475,13 +505,15 @@ struct Issue762FilletedThroughSlotStaysOpenTests {
     /// nothing is absorbed on those sides and the enclosure test still sees the gap.
     @Test("a filleted through-slot is still not enclosed")
     func filletedThroughSlotIsNotEnclosed() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-15, -3, 0), width: 25, height: 6, depth: 10))
         let cut = try #require(box.subtracting(tool))
 
         let longEdges = cut.edges(where: { edge in
-            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
-            (edge.bounds!.max.x - edge.bounds!.min.x) > 15.0
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6
+                && (edge.bounds!.max.x - edge.bounds!.min.x) > 15.0
         })
         #expect(longEdges.count == 2)
         let filleted = try #require(cut.filleted(edges: longEdges, radius: 1.0))
@@ -511,7 +543,8 @@ struct Issue762FilletedBossFalsePositiveTests {
     /// (`isOpen == false`) pocket.
     @Test("the sharp boss (control) reports isOpen == true, not zero pockets")
     func sharpBossReportsOpenNotZero() throws {
-        let plate = try #require(Shape.box(origin: SIMD3(-10, -10, -5), width: 20, height: 20, depth: 5))
+        let plate = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -5), width: 20, height: 20, depth: 5))
         let boss = try #require(Shape.box(origin: SIMD3(-3, -3, 0), width: 6, height: 6, depth: 8))
         let fused = try #require(plate.union(boss))
 
@@ -524,16 +557,19 @@ struct Issue762FilletedBossFalsePositiveTests {
     /// The false-positive guard: filleting the boss's base must not turn this into a false
     /// ENCLOSED pocket. It is fine (and consistent with the sharp control) for it to still
     /// appear in the array, as long as it is correctly `isOpen`.
-    @Test("a filleted boss reports isOpen == true, matching its sharp counterpart, never falsely enclosed")
+    @Test(
+        "a filleted boss reports isOpen == true, matching its sharp counterpart, never falsely enclosed"
+    )
     func filletedBossIsNeverFalselyEnclosed() throws {
-        let plate = try #require(Shape.box(origin: SIMD3(-10, -10, -5), width: 20, height: 20, depth: 5))
+        let plate = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -5), width: 20, height: 20, depth: 5))
         let boss = try #require(Shape.box(origin: SIMD3(-3, -3, 0), width: 6, height: 6, depth: 8))
         let fused = try #require(plate.union(boss))
 
         let baseEdges = fused.edges(where: { edge in
-            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6 &&
-            edge.bounds!.min.x > -3.5 && edge.bounds!.max.x < 3.5 &&
-            edge.bounds!.min.y > -3.5 && edge.bounds!.max.y < 3.5
+            abs(edge.bounds!.min.z) < 1e-6 && abs(edge.bounds!.max.z) < 1e-6
+                && edge.bounds!.min.x > -3.5 && edge.bounds!.max.x < 3.5
+                && edge.bounds!.min.y > -3.5 && edge.bounds!.max.y < 3.5
         })
         #expect(baseEdges.count == 4)
         let filletedBoss = try #require(fused.filleted(edges: baseEdges, radius: 1.0))
@@ -567,7 +603,9 @@ struct Issue762FilletedExternalCornerFalsePositiveTests {
     @Test("a box with its own top exterior edges filleted still has no pockets")
     func filletedExteriorEdgeBoxHasNoPockets() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let topEdges = box.edges(where: { abs($0.bounds!.min.z - 10) < 1e-6 && abs($0.bounds!.max.z - 10) < 1e-6 })
+        let topEdges = box.edges(where: {
+            abs($0.bounds!.min.z - 10) < 1e-6 && abs($0.bounds!.max.z - 10) < 1e-6
+        })
         #expect(topEdges.count == 4)
         let filletedTop = try #require(box.filleted(edges: topEdges, radius: 2.0))
         expectShapeChanged(box, filletedTop, "filleted on box")

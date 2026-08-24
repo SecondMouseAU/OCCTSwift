@@ -10,8 +10,8 @@
 // OCCT Bugs entry for what the real (different, now-mitigated) race turned out to be.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Concurrent Read-Only Queries
 
@@ -98,7 +98,8 @@ struct StressConcurrentEvalTests {
         let domain = curve.domain
         await withTaskGroup(of: SIMD3<Double>.self) { group in
             for i in 0..<8 {
-                let t = domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(i) / 7.0
+                let t =
+                    domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(i) / 7.0
                 group.addTask { curve.point(at: t) }
             }
             var points: [SIMD3<Double>] = []
@@ -113,7 +114,8 @@ struct StressConcurrentEvalTests {
         let domain = curve.domain
         await withTaskGroup(of: SIMD2<Double>.self) { group in
             for i in 0..<8 {
-                let t = domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(i) / 7.0
+                let t =
+                    domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double(i) / 7.0
                 group.addTask { curve.point(at: t) }
             }
             var points: [SIMD2<Double>] = []

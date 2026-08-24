@@ -38,7 +38,10 @@ struct Issue1056GDTWriteAnswerTests {
             (Double.nan, Double.nan),
         ])
     func nonStorableToleranceRefusesTheCreate(lower: Double, upper: Double) throws {
-        guard let (doc, labelId) = documentWithBox() else { Issue.record("fixture nil"); return }
+        guard let (doc, labelId) = documentWithBox() else {
+            Issue.record("fixture nil")
+            return
+        }
         let index = doc.createDimension(
             on: labelId, type: .sizeDiameter, value: 20.0,
             lowerTolerance: lower, upperTolerance: upper)
@@ -50,7 +53,10 @@ struct Issue1056GDTWriteAnswerTests {
     /// about `createDimension` having stopped creating anything.
     @Test("A storable tolerance pair still creates the dimension and applies both bounds")
     func storableToleranceStillApplies() throws {
-        guard let (doc, labelId) = documentWithBox() else { Issue.record("fixture nil"); return }
+        guard let (doc, labelId) = documentWithBox() else {
+            Issue.record("fixture nil")
+            return
+        }
         guard
             let index = doc.createDimension(
                 on: labelId, type: .sizeDiameter, value: 20.0,
@@ -72,7 +78,10 @@ struct Issue1056GDTWriteAnswerTests {
     /// touches a tolerance at all, so it stays a `.simple` dimension.
     @Test("Omitting both bounds still creates a simple dimension")
     func noToleranceStillCreatesASimpleDimension() throws {
-        guard let (doc, labelId) = documentWithBox() else { Issue.record("fixture nil"); return }
+        guard let (doc, labelId) = documentWithBox() else {
+            Issue.record("fixture nil")
+            return
+        }
         guard let index = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0) else {
             Issue.record("createDimension nil")
             return
@@ -85,7 +94,10 @@ struct Issue1056GDTWriteAnswerTests {
     /// the two spellings of the operation now agree on the same refusal.
     @Test("The standalone setter refuses the same pair, and leaves the dimension alone")
     func standaloneSetterRefusesTheSamePair() throws {
-        guard let (doc, labelId) = documentWithBox() else { Issue.record("fixture nil"); return }
+        guard let (doc, labelId) = documentWithBox() else {
+            Issue.record("fixture nil")
+            return
+        }
         guard let index = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0) else {
             Issue.record("createDimension nil")
             return
@@ -173,7 +185,10 @@ struct Issue1056GDTWriteAnswerTests {
     /// it does guard is the reported answer, which is what a caller sees.
     @Test("The datum sibling reports nothing for a cleared modifier")
     func datumSiblingReportsNothingForAClearedModifier() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let index = doc.createDatum(name: "A") else {
             Issue.record("createDatum nil")
             return

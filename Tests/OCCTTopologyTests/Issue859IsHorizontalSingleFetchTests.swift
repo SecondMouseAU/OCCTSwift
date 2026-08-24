@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #859 (review of #843): `isHorizontal(tolerance:)` was rewritten as
@@ -43,10 +44,12 @@ struct Issue859IsHorizontalSingleFetchTests {
             }
             for face in solid.faces() {
                 for tolerance in tolerances {
-                    let composed = face.isUpwardFacing(tolerance: tolerance)
+                    let composed =
+                        face.isUpwardFacing(tolerance: tolerance)
                         || face.isDownwardFacing(tolerance: tolerance)
-                    #expect(face.isHorizontal(tolerance: tolerance) == composed,
-                            "\(name) face \(face.index) at tolerance \(tolerance)")
+                    #expect(
+                        face.isHorizontal(tolerance: tolerance) == composed,
+                        "\(name) face \(face.index) at tolerance \(tolerance)")
                     checked += 1
                 }
             }
@@ -69,10 +72,12 @@ struct Issue859IsHorizontalSingleFetchTests {
         var checked = 0
         for face in compound.orientedFaces() {
             for tolerance in tolerances {
-                let composed = face.isUpwardFacing(tolerance: tolerance)
+                let composed =
+                    face.isUpwardFacing(tolerance: tolerance)
                     || face.isDownwardFacing(tolerance: tolerance)
-                #expect(face.isHorizontal(tolerance: tolerance) == composed,
-                        "face \(face.index) (\(face.orientation)) at tolerance \(tolerance)")
+                #expect(
+                    face.isHorizontal(tolerance: tolerance) == composed,
+                    "face \(face.index) (\(face.orientation)) at tolerance \(tolerance)")
                 checked += 1
             }
         }

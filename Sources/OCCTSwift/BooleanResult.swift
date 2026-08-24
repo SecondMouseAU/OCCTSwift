@@ -1,12 +1,12 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Result of a boolean operation with shape tracking.
 public struct BooleanResult: Sendable {
-    /// The result shape
+    /// The result shape.
     public let shape: Shape
-    /// Shapes in the result that are modifications of faces from the first operand
+    /// Shapes in the result that are modifications of faces from the first operand.
     public let modifiedFaces: [Shape]
 }
 
@@ -40,9 +40,11 @@ public struct BooleanResult: Sendable {
 /// ```
 public struct ShapeHistoryRecord: Sendable {
     /// Output sub-shapes that are modifications of the input (1:1 or 1:N).
+    ///
     /// Example: a face split by a boolean cut → multiple modified faces.
     public let modified: [Shape]
     /// Output sub-shapes generated FROM the input but not replacing it.
+    ///
     /// Example: filleting an edge generates new fillet faces from that edge,
     /// while the edge itself is deleted.
     public let generated: [Shape]
@@ -51,8 +53,9 @@ public struct ShapeHistoryRecord: Sendable {
 }
 
 /// Retained handle to a boolean operation's builder, queryable for per-input
-/// history after the operation completes. Used by tools that need to track
-/// selection IDs across boolean / split mutations (e.g. OCCTMCP's
+/// history after the operation completes.
+///
+/// Used by tools that need to track selection IDs across boolean / split mutations (e.g. OCCTMCP's
 /// `remap_selection`, parametric editors that want feature replay).
 public final class ShapeHistoryRef: @unchecked Sendable {
     // internal, not fileprivate: BRepGraph.add(_:absorbing:inputRoots:operationName:)
@@ -81,7 +84,8 @@ public final class ShapeHistoryRef: @unchecked Sendable {
         )
     }
 
-    private func collect(_ fill: (UnsafeMutablePointer<OCCTShapeRef?>?, Int32) -> Int32) -> [Shape] {
+    private func collect(_ fill: (UnsafeMutablePointer<OCCTShapeRef?>?, Int32) -> Int32) -> [Shape]
+    {
         // Probe with a max=0 call to get the count, then size the buffer exactly.
         let count = fill(nil, 0)
         guard count > 0 else { return [] }

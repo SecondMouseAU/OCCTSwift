@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #642: `AAG.buildGraph()` used to build its node set from `shape.faces()`, the deduplicated
@@ -34,8 +35,8 @@ struct Issue642AAGNodeIdentityTests {
 
     static func horizontalSplitBoxCompound(order: Order) -> Shape? {
         guard let block = Shape.box(width: 10, height: 10, depth: 10),
-              let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
-              pieces.count == 2
+            let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+            pieces.count == 2
         else { return nil }
         let ordered = order == .asSplit ? pieces : pieces.reversed()
         return Shape.compound(Array(ordered))
@@ -54,10 +55,10 @@ struct Issue642AAGNodeIdentityTests {
     /// the pocket's own piece is first, so none of its indices shift).
     static func pocketedSplitBoxCompound() -> Shape? {
         guard let box = Shape.box(width: 20, height: 20, depth: 20),
-              let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
-              let pocketed = box.subtracting(pocketTool),
-              let pieces = pocketed.split(atPlane: SIMD3(8, 0, 0), normal: SIMD3(1, 0, 0)),
-              pieces.count == 2
+            let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
+            let pocketed = box.subtracting(pocketTool),
+            let pieces = pocketed.split(atPlane: SIMD3(8, 0, 0), normal: SIMD3(1, 0, 0)),
+            pieces.count == 2
         else { return nil }
         return Shape.compound(pieces.reversed())
     }
@@ -78,7 +79,8 @@ struct Issue642AAGNodeIdentityTests {
     @Test("detectPocketsAAG() agrees across compound member order")
     func detectPocketsAgreesAcrossOrder() {
         guard let orderA = Self.horizontalSplitBoxCompound(order: .asSplit),
-              let orderB = Self.horizontalSplitBoxCompound(order: .reversed) else {
+            let orderB = Self.horizontalSplitBoxCompound(order: .reversed)
+        else {
             Issue.record("could not build the horizontal split-box fixture")
             return
         }
@@ -102,7 +104,8 @@ struct Issue642AAGNodeIdentityTests {
     @Test("AAG upward+horizontal node count agrees across compound member order")
     func upwardHorizontalCountAgreesAcrossOrder() {
         guard let orderA = Self.horizontalSplitBoxCompound(order: .asSplit),
-              let orderB = Self.horizontalSplitBoxCompound(order: .reversed) else {
+            let orderB = Self.horizontalSplitBoxCompound(order: .reversed)
+        else {
             Issue.record("could not build the horizontal split-box fixture")
             return
         }
@@ -173,9 +176,11 @@ struct Issue642AAGNodeIdentityTests {
         }
 
         let aag = compound.buildAAG()
-        let grouped = Dictionary(grouping: aag.nodes.enumerated().map { ($0.offset, $0.element) },
-                                  by: \.1.distinctFaceIndex)
-        guard let sides = grouped.first(where: { $0.value.count > 1 })?.value, sides.count == 2 else {
+        let grouped = Dictionary(
+            grouping: aag.nodes.enumerated().map { ($0.offset, $0.element) },
+            by: \.1.distinctFaceIndex)
+        guard let sides = grouped.first(where: { $0.value.count > 1 })?.value, sides.count == 2
+        else {
             Issue.record("expected exactly one face shared by two nodes")
             return
         }
@@ -214,13 +219,13 @@ struct Issue642AAGNodeIdentityTests {
     @Test("#614's own vertical-cut fixture is unaffected by member order")
     func verticalCutFixtureUpwardHorizontalUnaffected() {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-              let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
-              let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
-              let knife = upright.translated(by: SIMD3(10, 0, 0)),
-              let pieces = block.split(by: knife),
-              pieces.count == 2,
-              let compound = Shape.compound(pieces),
-              let reversedCompound = Shape.compound(pieces.reversed())
+            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+            let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
+            let knife = upright.translated(by: SIMD3(10, 0, 0)),
+            let pieces = block.split(by: knife),
+            pieces.count == 2,
+            let compound = Shape.compound(pieces),
+            let reversedCompound = Shape.compound(pieces.reversed())
         else {
             Issue.record("could not build the vertical split-box fixture")
             return
@@ -253,8 +258,10 @@ struct Issue642AAGNodeIdentityTests {
         }
         let oriented = compound.orientedFaces()
         let distinct = compound.faces()
-        #expect(oriented.count > distinct.count,
-                "fixture must share a face, or this test proves nothing: oriented \(oriented.count), distinct \(distinct.count)")
+        #expect(
+            oriented.count > distinct.count,
+            "fixture must share a face, or this test proves nothing: oriented \(oriented.count), distinct \(distinct.count)"
+        )
 
         let pockets = compound.detectPocketsAAG()
         #expect(!pockets.isEmpty, "fixture must produce at least one pocket")
@@ -262,12 +269,15 @@ struct Issue642AAGNodeIdentityTests {
         var sawIndexBeyondDistinct = false
         for pocket in pockets {
             for index in [pocket.floorFaceIndex] + pocket.wallFaceIndices {
-                #expect(index >= 0 && index < oriented.count,
-                        "index \(index) out of range for orientedFaces() (\(oriented.count))")
+                #expect(
+                    index >= 0 && index < oriented.count,
+                    "index \(index) out of range for orientedFaces() (\(oriented.count))")
                 if index >= distinct.count { sawIndexBeyondDistinct = true }
             }
         }
-        #expect(sawIndexBeyondDistinct,
-                "no pocket index exceeded faces().count, so this fixture cannot tell the two enumerations apart")
+        #expect(
+            sawIndexBeyondDistinct,
+            "no pocket index exceeded faces().count, so this fixture cannot tell the two enumerations apart"
+        )
     }
 }

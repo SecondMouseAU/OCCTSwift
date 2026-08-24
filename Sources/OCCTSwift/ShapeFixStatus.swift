@@ -18,7 +18,9 @@
 
 /// A status flag from OCCT's `ShapeExtend_Status` enum — the flag space every `ShapeFix_Root`
 /// subclass (`ShapeFix_Shape`, `ShapeFix_Face`, `ShapeFix_Wire`, ...) reports its fix result
-/// through. `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own
+/// through.
+///
+/// `DONE1`...`DONE8` and `FAIL1`...`FAIL8` are per-class: each subclass assigns its own
 /// meaning to the numbered slots, and a slot it does not use is simply never set. See
 /// ``ShapeFixer/status(_:)`` and ``FaceFixer/status(_:)`` for each class's own meaning table.
 ///
@@ -38,10 +40,12 @@
 public enum ShapeFixStatus: Int32, Sendable, CaseIterable {
     /// Nothing needed fixing.
     case ok = 0
-    case done1 = 1, done2, done3, done4, done5, done6, done7, done8
+    case done1 = 1
+    case done2, done3, done4, done5, done6, done7, done8
     /// Any `DONE1`...`DONE8` flag is set: something was fixed.
     case done = 9
-    case fail1 = 10, fail2, fail3, fail4, fail5, fail6, fail7, fail8
+    case fail1 = 10
+    case fail2, fail3, fail4, fail5, fail6, fail7, fail8
     /// Any `FAIL1`...`FAIL8` flag is set: some pass failed.
     case fail = 18
 }

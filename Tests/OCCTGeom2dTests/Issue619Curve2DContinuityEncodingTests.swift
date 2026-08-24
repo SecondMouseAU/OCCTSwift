@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #619, the 2D half. `Curve2D.continuityOrder` changed from the hand-invented
@@ -16,10 +17,11 @@ struct Issue619Curve2DContinuityEncodingTests {
         let poles = (1...poleCount).map { i in
             SIMD2<Double>(Double(i), Double(i % 2) * 2.0)
         }
-        return Curve2D.bspline(poles: poles,
-                               knots: [0.0, 0.5, 1.0],
-                               multiplicities: [4, multiplicity, 4],
-                               degree: 3)
+        return Curve2D.bspline(
+            poles: poles,
+            knots: [0.0, 0.5, 1.0],
+            multiplicities: [4, multiplicity, 4],
+            degree: 3)
     }
 
     @Test("An analytic 2D curve reports CN as ordinal 6, the old encoding's 99 is unreachable")
@@ -36,7 +38,8 @@ struct Issue619Curve2DContinuityEncodingTests {
     @Test("A C1 pcurve reports C1 as ordinal 2, not 1")
     func c1SplineReportsOrdinalTwo() {
         guard let c1 = Self.bspline(interiorMultiplicity: 2),
-              let c2 = Self.bspline(interiorMultiplicity: 1) else {
+            let c2 = Self.bspline(interiorMultiplicity: 1)
+        else {
             Issue.record("could not build the BSpline fixtures")
             return
         }
@@ -57,8 +60,8 @@ struct Issue619Curve2DContinuityEncodingTests {
             Issue.record("could not build the C1 BSpline fixture")
             return
         }
-        #expect(c1.continuity >= 2)                       // the trap, still live
-        #expect(!c1.continuityClass.satisfies(.c2))       // the question it meant to ask
+        #expect(c1.continuity >= 2)  // the trap, still live
+        #expect(!c1.continuityClass.satisfies(.c2))  // the question it meant to ask
         #expect(c1.continuityClass.satisfies(.c1))
     }
 }

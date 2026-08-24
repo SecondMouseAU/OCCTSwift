@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     // MARK: - Shape Fixing (v0.13.0)
 
@@ -42,12 +41,17 @@ extension Shape {
     /// // Skip fixing free (standalone) shells/faces/wires; only fix solid orientation.
     /// let fixed = shape.fixed(tolerance: 0.001, fixShell: false, fixFace: false, fixWire: false)
     /// ```
-    public func fixed(tolerance: Double = 1e-6,
-                      fixSolid: Bool = true,
-                      fixShell: Bool = true,
-                      fixFace: Bool = true,
-                      fixWire: Bool = true) -> Shape? {
-        guard let result = OCCTShapeFixDetailed(handle, tolerance, fixSolid, fixShell, fixFace, fixWire) else {
+    public func fixed(
+        tolerance: Double = 1e-6,
+        fixSolid: Bool = true,
+        fixShell: Bool = true,
+        fixFace: Bool = true,
+        fixWire: Bool = true
+    ) -> Shape? {
+        guard
+            let result = OCCTShapeFixDetailed(
+                handle, tolerance, fixSolid, fixShell, fixFace, fixWire)
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -90,10 +94,13 @@ extension Shape {
     /// let clean = result.unified()
     /// print("Faces reduced from \(result.faceCount) to \(clean.faceCount)")
     /// ```
-    public func unified(unifyEdges: Bool = true,
-                        unifyFaces: Bool = true,
-                        concatBSplines: Bool = true) -> Shape? {
-        guard let result = OCCTShapeUnifySameDomain(handle, unifyEdges, unifyFaces, concatBSplines) else {
+    public func unified(
+        unifyEdges: Bool = true,
+        unifyFaces: Bool = true,
+        concatBSplines: Bool = true
+    ) -> Shape? {
+        guard let result = OCCTShapeUnifySameDomain(handle, unifyEdges, unifyFaces, concatBSplines)
+        else {
             return nil
         }
         return Shape(handle: result)
@@ -150,11 +157,13 @@ extension Shape {
     ///     added the parameter.
     /// - Returns: Divided shape, or nil if no divisions were needed or on failure.
     public func divided(at continuity: ContinuityLevel, tolerance: Double = 1e-7) -> Shape? {
-        guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue, tolerance) else { return nil }
+        guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue, tolerance) else {
+            return nil
+        }
         return Shape(handle: handle)
     }
 
-    /// Convert geometry to direct faces (canonical surfaces)
+    /// Convert geometry to direct faces (canonical surfaces).
     ///
     /// - Returns: Shape with canonical surfaces, or nil on failure
     public func directFaces() -> Shape? {
@@ -162,7 +171,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Scale shape geometry by a factor
+    /// Scale shape geometry by a factor.
     ///
     /// Unlike `scaled(by:)` which applies a geometric transform, this modifies the
     /// underlying surface and curve definitions.
@@ -197,16 +206,21 @@ extension Shape {
     ///   - maxDegree: Maximum degree for BSpline restriction (default: 9)
     ///   - maxSegments: Maximum number of segments (default: 10000)
     /// - Returns: Shape with restricted BSplines, or nil on failure
-    public func bsplineRestriction(surfaceTolerance: Double = 0.01,
-                                   curveTolerance: Double = 0.01,
-                                   maxDegree: Int = 9,
-                                   maxSegments: Int = 10000) -> Shape? {
-        guard let handle = OCCTShapeBSplineRestriction(self.handle, surfaceTolerance, curveTolerance,
-                                                        Int32(maxDegree), Int32(maxSegments)) else { return nil }
+    public func bsplineRestriction(
+        surfaceTolerance: Double = 0.01,
+        curveTolerance: Double = 0.01,
+        maxDegree: Int = 9,
+        maxSegments: Int = 10000
+    ) -> Shape? {
+        guard
+            let handle = OCCTShapeBSplineRestriction(
+                self.handle, surfaceTolerance, curveTolerance,
+                Int32(maxDegree), Int32(maxSegments))
+        else { return nil }
         return Shape(handle: handle)
     }
 
-    /// Convert swept surfaces to elementary (canonical) surfaces
+    /// Convert swept surfaces to elementary (canonical) surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func sweptToElementary() -> Shape? {
@@ -214,7 +228,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert surfaces of revolution to elementary surfaces
+    /// Convert surfaces of revolution to elementary surfaces.
     ///
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func revolutionToElementary() -> Shape? {
@@ -222,7 +236,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert all surfaces to BSpline
+    /// Convert all surfaces to BSpline.
     ///
     /// - Returns: Shape with BSpline surfaces, or nil on failure
     public func convertedToBSpline() -> Shape? {
@@ -230,7 +244,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Sew disconnected faces in this shape together
+    /// Sew disconnected faces in this shape together.
     ///
     /// - Parameter tolerance: Sewing tolerance (default: 1e-6)
     /// - Returns: Sewn shape, or nil on failure
@@ -239,7 +253,7 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Upgrade shape: sew + make solid + heal pipeline
+    /// Upgrade shape: sew + make solid + heal pipeline.
     ///
     /// Performs a complete upgrade of the shape by sewing disconnected faces,
     /// attempting to create a solid from shells, and applying shape healing.
@@ -336,7 +350,7 @@ extension Shape {
         guard let h = OCCTShapeSameParameter(handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
-    /// Mark smooth (G1-continuous) edges as "regular."
+    /// Mark smooth (G1-continuous) edges as "regular".
     ///
     /// Downstream algorithms can skip regular edges for better performance.
     /// The angular tolerance controls what is considered "smooth."
@@ -369,13 +383,13 @@ extension Shape {
 
     // MARK: - Free Boundary Analysis (v0.39.0)
 
-    /// Result of free boundary analysis
+    /// Result of free boundary analysis.
     public struct FreeBoundsResult: Sendable {
-        /// Compound shape containing all free boundary wires
+        /// Compound shape containing all free boundary wires.
         public let wires: Shape
-        /// Number of closed free boundary wires
+        /// Number of closed free boundary wires.
         public let closedCount: Int
-        /// Number of open free boundary wires
+        /// Number of open free boundary wires.
         public let openCount: Int
     }
 
@@ -420,11 +434,15 @@ extension Shape {
     public func freeBounds(sewingTolerance: Double = 1e-6) -> FreeBoundsResult? {
         var closedCount: Int32 = 0
         var openCount: Int32 = 0
-        guard let h = OCCTShapeFreeBounds(handle, sewingTolerance,
-                                           &closedCount, &openCount) else { return nil }
-        return FreeBoundsResult(wires: Shape(handle: h),
-                                closedCount: Int(closedCount),
-                                openCount: Int(openCount))
+        guard
+            let h = OCCTShapeFreeBounds(
+                handle, sewingTolerance,
+                &closedCount, &openCount)
+        else { return nil }
+        return FreeBoundsResult(
+            wires: Shape(handle: h),
+            closedCount: Int(closedCount),
+            openCount: Int(openCount))
     }
 
     /// Fix free boundary wires by closing gaps.
@@ -433,17 +451,22 @@ extension Shape {
     ///   - sewingTolerance: Tolerance for sewing free edges
     ///   - closingTolerance: Maximum distance to close a gap
     /// - Returns: Tuple of (fixed shape, number of wires fixed), or nil on failure
-    public func fixedFreeBounds(sewingTolerance: Double = 1e-6,
-                                 closingTolerance: Double = 1e-4) -> (shape: Shape, fixedCount: Int)? {
+    public func fixedFreeBounds(
+        sewingTolerance: Double = 1e-6,
+        closingTolerance: Double = 1e-4
+    ) -> (shape: Shape, fixedCount: Int)? {
         var fixedCount: Int32 = 0
-        guard let h = OCCTShapeFixFreeBounds(handle, sewingTolerance,
-                                              closingTolerance, &fixedCount) else { return nil }
+        guard
+            let h = OCCTShapeFixFreeBounds(
+                handle, sewingTolerance,
+                closingTolerance, &fixedCount)
+        else { return nil }
         return (shape: Shape(handle: h), fixedCount: Int(fixedCount))
     }
 
     // MARK: - Geometry Conversion (v0.41.0)
 
-    /// Convert all surfaces to BSpline form
+    /// Convert all surfaces to BSpline form.
     ///
     /// Uses ShapeCustom::ConvertToBSpline to convert extrusion, revolution,
     /// offset, and/or planar surfaces to BSpline representation.
@@ -453,15 +476,18 @@ extension Shape {
     ///   - offset: Convert offset surfaces (default true)
     ///   - plane: Convert planar surfaces (default false)
     /// - Returns: Shape with surfaces converted, or nil on failure
-    public func withSurfacesAsBSpline(extrusion: Bool = true, revolution: Bool = true,
-                                       offset: Bool = true, plane: Bool = false) -> Shape? {
-        guard let h = OCCTShapeCustomConvertToBSpline(handle, extrusion, revolution, offset, plane) else {
+    public func withSurfacesAsBSpline(
+        extrusion: Bool = true, revolution: Bool = true,
+        offset: Bool = true, plane: Bool = false
+    ) -> Shape? {
+        guard let h = OCCTShapeCustomConvertToBSpline(handle, extrusion, revolution, offset, plane)
+        else {
             return nil
         }
         return Shape(handle: h)
     }
 
-    /// Convert surfaces to revolution form
+    /// Convert surfaces to revolution form.
     ///
     /// Uses ShapeCustom::ConvertToRevolution to convert surfaces that can be
     /// represented as surfaces of revolution.
@@ -484,23 +510,33 @@ extension Shape {
 
     // MARK: - BRepCheck_Face per-wire diagnostics (#266 follow-up)
 
-    /// `BRepCheck_Face` — do this face's boundary wires intersect one another? Returns
-    /// `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
+    /// `BRepCheck_Face` — do this face's boundary wires intersect one another?
+    ///
+    /// Returns `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
     /// if the shape isn't a single face. `geometricControls` enables the (costlier) geometric checks.
     public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus {
-        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceIntersectWires(handle, geometricControls).rawValue)) ?? .checkFail
+        CheckStatus(
+            rawValue: Int32(OCCTBRepCheckFaceIntersectWires(handle, geometricControls).rawValue))
+            ?? .checkFail
     }
 
     /// `BRepCheck_Face` — are the face's wires correctly nested (one outer, the rest enclosed as
-    /// holes)? Returns `.invalidImbricationOfWires` when nesting is wrong.
+    /// holes)?
+    ///
+    /// Returns `.invalidImbricationOfWires` when nesting is wrong.
     public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus {
-        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceClassifyWires(handle, geometricControls).rawValue)) ?? .checkFail
+        CheckStatus(
+            rawValue: Int32(OCCTBRepCheckFaceClassifyWires(handle, geometricControls).rawValue))
+            ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)? Returns
-    /// `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
+    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)?
+    ///
+    /// Returns `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
     public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus {
-        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceOrientationOfWires(handle, geometricControls).rawValue)) ?? .checkFail
+        CheckStatus(
+            rawValue: Int32(OCCTBRepCheckFaceOrientationOfWires(handle, geometricControls).rawValue)
+        ) ?? .checkFail
     }
 
     // MARK: - ShapeFix_ShapeTolerance
@@ -628,7 +664,9 @@ extension Shape {
     /// - Parameter widthFactorThreshold: Width factor below which solids are merged
     /// - Returns: Shape with small solids merged, or nil on failure
     public func mergeSmallSolids(widthFactorThreshold: Double) -> Shape? {
-        guard let ref = OCCTShapeFixMergeSmallSolids(handle, widthFactorThreshold) else { return nil }
+        guard let ref = OCCTShapeFixMergeSmallSolids(handle, widthFactorThreshold) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -676,20 +714,22 @@ extension Shape {
         continuity3d: ParametricContinuity = .c1, continuity2d: ParametricContinuity = .c1,
         degreePriority: Bool = true, rational: Bool = false
     ) -> Shape? {
-        guard let ref = OCCTShapeCustomBSplineRestriction(
-            handle, tol3d, tol2d, Int32(maxDegree), Int32(maxSegments),
-            continuity3d.rawValue, continuity2d.rawValue, degreePriority, rational
-        ) else { return nil }
+        guard
+            let ref = OCCTShapeCustomBSplineRestriction(
+                handle, tol3d, tol2d, Int32(maxDegree), Int32(maxSegments),
+                continuity3d.rawValue, continuity2d.rawValue, degreePriority, rational
+            )
+        else { return nil }
         return Shape(handle: ref)
     }
 
-    /// Result of free bounds analysis
+    /// Result of free bounds analysis.
     public struct FreeBoundsAnalysis: Sendable {
-        /// Total number of free bounds
+        /// Total number of free bounds.
         public let totalCount: Int
-        /// Number of closed free bounds
+        /// Number of closed free bounds.
         public let closedCount: Int
-        /// Number of open free bounds
+        /// Number of open free bounds.
         public let openCount: Int
     }
 
@@ -791,9 +831,9 @@ extension Shape {
 
     /// Result of wire vertex analysis.
     public struct WireVertexAnalysis {
-        /// Number of edges in the wire
+        /// Number of edges in the wire.
         public let edgeCount: Int
-        /// Whether the analysis completed successfully
+        /// Whether the analysis completed successfully.
         public let isDone: Bool
     }
 
@@ -831,11 +871,11 @@ extension Shape {
 
     /// Result of fitting a plane to a set of points.
     public struct NearestPlane {
-        /// Normal direction of the fitted plane
+        /// Normal direction of the fitted plane.
         public let normal: SIMD3<Double>
-        /// A point on the fitted plane
+        /// A point on the fitted plane.
         public let origin: SIMD3<Double>
-        /// Maximum distance from any input point to the fitted plane
+        /// Maximum distance from any input point to the fitted plane.
         public let maxDeviation: Double
     }
 
@@ -877,8 +917,7 @@ extension Shape {
 
     // MARK: BRepTools_Modifier + NurbsConvertModification
 
-    /// Convert shape to NURBS via `BRepTools_Modifier` directly, skipping
-    /// ``convertedToNURBS()``'s vertex-tolerance correction pass.
+    /// Convert shape to NURBS via `BRepTools_Modifier`, skipping the vertex-tolerance correction pass of ``convertedToNURBS()``.
     ///
     /// This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification`
     /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally — the two are
@@ -917,12 +956,12 @@ extension Shape {
 
     // MARK: - ShapeAnalysis_TransferParametersProj
 
-    /// Transfer a parameter from edge to face coordinate system via projection
+    /// Transfer a parameter from edge to face coordinate system via projection.
     public func transferParameterToFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, true)
     }
 
-    /// Transfer a parameter from face to edge coordinate system via projection
+    /// Transfer a parameter from face to edge coordinate system via projection.
     public func transferParameterFromFace(_ param: Double, face: Shape) -> Double {
         OCCTShapeAnalysisTransferParam(handle, face.handle, param, false)
     }
@@ -945,8 +984,10 @@ extension Shape {
     ///   - endVertex: New end vertex (pass nil to keep original)
     /// - Returns: Edge with replaced vertices, or nil on failure
     public func copyEdgeReplacingVertices(startVertex: Shape?, endVertex: Shape?) -> Shape? {
-        guard let ref = OCCTShapeBuildEdgeCopyReplaceVertices(
-            handle, startVertex?.handle, endVertex?.handle) else { return nil }
+        guard
+            let ref = OCCTShapeBuildEdgeCopyReplaceVertices(
+                handle, startVertex?.handle, endVertex?.handle)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -998,7 +1039,9 @@ extension Shape {
     ///   - tolFactor: Tolerance factor (default: 1.0001)
     /// - Returns: Combined vertex as shape, or nil on failure
     public func combineVertex(with other: Shape, tolFactor: Double = 1.0001) -> Shape? {
-        guard let ref = OCCTShapeBuildVertexCombine(handle, other.handle, tolFactor) else { return nil }
+        guard let ref = OCCTShapeBuildVertexCombine(handle, other.handle, tolFactor) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -1016,10 +1059,12 @@ extension Shape {
         point2: SIMD3<Double>, tol2: Double,
         tolFactor: Double = 1.0001
     ) -> Shape? {
-        guard let ref = OCCTShapeBuildVertexCombineFromPoints(
-            point1.x, point1.y, point1.z, tol1,
-            point2.x, point2.y, point2.z, tol2,
-            tolFactor) else { return nil }
+        guard
+            let ref = OCCTShapeBuildVertexCombineFromPoints(
+                point1.x, point1.y, point1.z, tol1,
+                point2.x, point2.y, point2.z, tol2,
+                tolFactor)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1041,7 +1086,9 @@ extension Shape {
     ///   - explore: If true, explore sub-compounds recursively
     /// - Returns: Compound containing only shapes of the specified type, or nil on failure
     public func sortedCompound(type: ShapeFilterType, explore: Bool = true) -> Shape? {
-        guard let ref = OCCTShapeExtendSortedCompound(handle, Int32(type.rawValue), explore) else { return nil }
+        guard let ref = OCCTShapeExtendSortedCompound(handle, Int32(type.rawValue), explore) else {
+            return nil
+        }
         return Shape(handle: ref)
     }
 
@@ -1084,11 +1131,11 @@ extension Shape {
 
     // MARK: - ShapeUpgrade_EdgeDivide
 
-    /// Result of edge divide analysis
+    /// Result of edge divide analysis.
     public struct EdgeDivideResult: Sendable {
-        /// Whether the edge has a 2D curve on the face
+        /// Whether the edge has a 2D curve on the face.
         public let hasCurve2d: Bool
-        /// Whether the edge has a 3D curve
+        /// Whether the edge has a 3D curve.
         public let hasCurve3d: Bool
     }
 
@@ -1145,9 +1192,14 @@ extension Shape {
     ///   - circleMode: Convert circles to Bezier (default: true)
     ///   - conicMode: Convert conics to Bezier (default: true)
     /// - Returns: Shape with Bezier curves, or nil on failure
-    public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = true,
-                                         conicMode: Bool = true) -> Shape? {
-        guard let ref = OCCTShapeUpgradeConvertCurves3dToBezier(handle, lineMode, circleMode, conicMode) else {
+    public func convertCurves3dToBezier(
+        lineMode: Bool = true, circleMode: Bool = true,
+        conicMode: Bool = true
+    ) -> Shape? {
+        guard
+            let ref = OCCTShapeUpgradeConvertCurves3dToBezier(
+                handle, lineMode, circleMode, conicMode)
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -1163,10 +1215,15 @@ extension Shape {
     ///   - extrusionMode: Convert extrusion surfaces (default: true)
     ///   - bsplineMode: Convert BSpline surfaces (default: true)
     /// - Returns: Shape with Bezier surfaces, or nil on failure
-    public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool = true,
-                                         extrusionMode: Bool = true, bsplineMode: Bool = true) -> Shape? {
-        guard let ref = OCCTShapeUpgradeConvertSurfaceToBezier(handle, planeMode, revolutionMode,
-                                                                extrusionMode, bsplineMode) else {
+    public func convertSurfacesToBezier(
+        planeMode: Bool = true, revolutionMode: Bool = true,
+        extrusionMode: Bool = true, bsplineMode: Bool = true
+    ) -> Shape? {
+        guard
+            let ref = OCCTShapeUpgradeConvertSurfaceToBezier(
+                handle, planeMode, revolutionMode,
+                extrusionMode, bsplineMode)
+        else {
             return nil
         }
         return Shape(handle: ref)
@@ -1175,9 +1232,12 @@ extension Shape {
     public static func triangulationFromPoints(_ points: [(Double, Double, Double)]) -> Shape? {
         var coords: [Double] = []
         for p in points {
-            coords.append(p.0); coords.append(p.1); coords.append(p.2)
+            coords.append(p.0)
+            coords.append(p.1)
+            coords.append(p.2)
         }
-        guard let ref = OCCTShapeConstructTriangulationFromPoints(coords, Int32(points.count)) else { return nil }
+        guard let ref = OCCTShapeConstructTriangulationFromPoints(coords, Int32(points.count))
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -1204,44 +1264,63 @@ extension Shape {
     /// ```
     ///
     /// - Parameters:
+    ///   - shape: The shape to restrict
+    ///   - approxSurface: Whether to approximate surfaces (default: true)
+    ///   - approxCurve3d: Whether to approximate 3D curves (default: true)
+    ///   - approxCurve2d: Whether to approximate 2D curves (default: true)
+    ///   - tol3d: 3D tolerance (default: 0.01)
+    ///   - tol2d: 2D tolerance (default: 0.01)
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
     ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
     ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
     ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
+    ///   - maxDegree: Maximum BSpline degree (default: 5)
+    ///   - maxSegments: Maximum number of segments (default: 20)
+    ///   - priorityDegree: If true, prioritize degree over segments (default: true)
+    ///   - convertRational: Allow rational BSplines (default: false)
     /// - Returns: Restricted shape, or nil on failure
-    public static func bsplineRestrictionAdvanced(_ shape: Shape,
-                                                    approxSurface: Bool = true,
-                                                    approxCurve3d: Bool = true,
-                                                    approxCurve2d: Bool = true,
-                                                    tol3d: Double = 0.01,
-                                                    tol2d: Double = 0.01,
-                                                    continuity3d: ParametricContinuity = .c1,
-                                                    continuity2d: ParametricContinuity = .c1,
-                                                    maxDegree: Int = 5,
-                                                    maxSegments: Int = 20,
-                                                    priorityDegree: Bool = true,
-                                                    convertRational: Bool = false) -> Shape? {
-        guard let ref = OCCTShapeBSplineRestrictionAdvanced(shape.handle,
-                                                              approxSurface, approxCurve3d, approxCurve2d,
-                                                              tol3d, tol2d,
-                                                              continuity3d.rawValue, continuity2d.rawValue,
-                                                              Int32(maxDegree), Int32(maxSegments),
-                                                              priorityDegree, convertRational) else { return nil }
+    public static func bsplineRestrictionAdvanced(
+        _ shape: Shape,
+        approxSurface: Bool = true,
+        approxCurve3d: Bool = true,
+        approxCurve2d: Bool = true,
+        tol3d: Double = 0.01,
+        tol2d: Double = 0.01,
+        continuity3d: ParametricContinuity = .c1,
+        continuity2d: ParametricContinuity = .c1,
+        maxDegree: Int = 5,
+        maxSegments: Int = 20,
+        priorityDegree: Bool = true,
+        convertRational: Bool = false
+    ) -> Shape? {
+        guard
+            let ref = OCCTShapeBSplineRestrictionAdvanced(
+                shape.handle,
+                approxSurface, approxCurve3d, approxCurve2d,
+                tol3d, tol2d,
+                continuity3d.rawValue, continuity2d.rawValue,
+                Int32(maxDegree), Int32(maxSegments),
+                priorityDegree, convertRational)
+        else { return nil }
         return Shape(handle: ref)
     }
 
-
     /// Convert surfaces to BSpline with per-type control.
-    public static func convertToBSplineAdvanced(_ shape: Shape,
-                                                  extrusionMode: Bool = true,
-                                                  revolutionMode: Bool = true,
-                                                  offsetMode: Bool = true,
-                                                  planeMode: Bool = false) -> Shape? {
-        guard let ref = OCCTShapeConvertToBSplineAdvanced(shape.handle,
-                                                            extrusionMode, revolutionMode,
-                                                            offsetMode, planeMode) else { return nil }
+    public static func convertToBSplineAdvanced(
+        _ shape: Shape,
+        extrusionMode: Bool = true,
+        revolutionMode: Bool = true,
+        offsetMode: Bool = true,
+        planeMode: Bool = false
+    ) -> Shape? {
+        guard
+            let ref = OCCTShapeConvertToBSplineAdvanced(
+                shape.handle,
+                extrusionMode, revolutionMode,
+                offsetMode, planeMode)
+        else { return nil }
         return Shape(handle: ref)
     }
     /// Compose shell: split a face into sub-faces using composite surface grid.
@@ -1251,7 +1330,7 @@ extension Shape {
     }
 }
 
-public extension Shape {
+extension Shape {
     /// Fix a solid shape (topology and orientation), using `ShapeFix_Solid`.
     ///
     /// Every solid in the receiver is healed, not just the first: a single-body input
@@ -1303,7 +1382,7 @@ public extension Shape {
     ///
     /// - Returns: The repaired body, or a compound of one result per input body for
     ///   multi-body input, or `nil` if the receiver holds no solid.
-    func fixSolid() -> Shape? {
+    public func fixSolid() -> Shape? {
         guard let ref = OCCTShapeFixSolid(handle) else { return nil }
         return Shape(handle: ref)
     }
@@ -1338,23 +1417,23 @@ public extension Shape {
     ///
     /// - Returns: A solid, a compound of solids for multi-body input, or `nil` only if the
     ///   receiver holds no shell at all.
-    func solidFromShellFixed() -> Shape? {
+    public func solidFromShellFixed() -> Shape? {
         guard let ref = OCCTShapeSolidFromShell(handle) else { return nil }
         return Shape(handle: ref)
     }
 }
 
-public extension Shape {
+extension Shape {
     /// Connect edges in a shape by extending/trimming to match.
-    func fixEdgeConnect() -> Shape? {
+    public func fixEdgeConnect() -> Shape? {
         guard let ref = OCCTShapeFixEdgeConnect(handle) else { return nil }
         return Shape(handle: ref)
     }
 }
 
-public extension Shape {
+extension Shape {
     /// Result of shell analysis.
-    struct ShellAnalysisResult: Sendable {
+    public struct ShellAnalysisResult: Sendable {
         public let hasOrientationProblems: Bool
         public let hasFreeEdges: Bool
         public let hasBadEdges: Bool
@@ -1363,7 +1442,7 @@ public extension Shape {
     }
 
     /// Analyze shell orientation and edge connectivity.
-    func analyzeShell() -> ShellAnalysisResult {
+    public func analyzeShell() -> ShellAnalysisResult {
         let r = OCCTShapeAnalyzeShell(handle)
         return ShellAnalysisResult(
             hasOrientationProblems: r.hasOrientationProblems,
@@ -1383,9 +1462,15 @@ extension Shape {
     ///   - edgeIndex: Index of the edge within the face (0-based)
     ///   - precision: Projection precision
     /// - Returns: (firstParam, lastParam) or nil if projection fails
-    public func edgeProjAux(faceIndex: Int, edgeIndex: Int, precision: Double = 1e-6) -> (first: Double, last: Double)? {
-        var first = 0.0, last = 0.0
-        guard OCCTShapeFixEdgeProjAux(handle, Int32(faceIndex), Int32(edgeIndex), precision, &first, &last) else {
+    public func edgeProjAux(faceIndex: Int, edgeIndex: Int, precision: Double = 1e-6) -> (
+        first: Double, last: Double
+    )? {
+        var first = 0.0
+        var last = 0.0
+        guard
+            OCCTShapeFixEdgeProjAux(
+                handle, Int32(faceIndex), Int32(edgeIndex), precision, &first, &last)
+        else {
             return nil
         }
         return (first, last)
@@ -1421,9 +1506,11 @@ extension Shape {
     ///   - dropSmall: If true, remove small edges; if false, merge them with neighbours.
     ///   - limitAngle: Maximum tangent angle for merging (radians). Pass -1 for no limit.
     /// - Returns: Fixed shape, or nil on failure.
-    public func fixSmallEdges(tolerance: Double = 1e-7,
-                               dropSmall: Bool = false,
-                               limitAngle: Double = -1) -> Shape? {
+    public func fixSmallEdges(
+        tolerance: Double = 1e-7,
+        dropSmall: Bool = false,
+        limitAngle: Double = -1
+    ) -> Shape? {
         guard let ref = OCCTShapeFixSmallEdges(handle, tolerance, dropSmall, limitAngle) else {
             return nil
         }
@@ -1475,18 +1562,21 @@ extension Shape {
     }
 
     /// Get the tolerance value of the shape's sub-shapes.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE, 3=SHELL
     public func toleranceValue(mode: ToleranceMode, subShapeType: Int32 = 8) -> Double {
         OCCTShapeToleranceValue(handle, mode.rawValue, subShapeType)
     }
 
     /// Count sub-shapes with tolerance over a given value.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE
     public func toleranceOverCount(value: Double, subShapeType: Int32 = 8) -> Int {
         Int(OCCTShapeToleranceOverCount(handle, value, subShapeType))
     }
 
     /// Count sub-shapes with tolerance in a given range.
+    ///
     /// subShapeType: 8=all(SHAPE), 7=VERTEX, 6=EDGE, 4=FACE
     public func toleranceInRangeCount(min: Double, max: Double, subShapeType: Int32 = 8) -> Int {
         Int(OCCTShapeToleranceInRangeCount(handle, min, max, subShapeType))
@@ -1494,12 +1584,16 @@ extension Shape {
 }
 
 extension Shape {
-    /// Add missing 3D curve to an edge. Returns true if fixed.
+    /// Add missing 3D curve to an edge.
+    ///
+    /// Returns true if fixed.
     public static func fixEdgeAddCurve3d(_ edge: Shape) -> Bool {
         OCCTShapeFixEdgeAddCurve3d(edge.handle)
     }
 
     /// Add missing PCurve to an edge on a face.
+    ///
+    /// Returns true if fixed.
     public static func fixEdgeAddPCurve(_ edge: Shape, face: Shape, isSeam: Bool = false) -> Bool {
         OCCTShapeFixEdgeAddPCurve(edge.handle, face.handle, isSeam)
     }

@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// High-resolution wall-clock timer.
 public final class Timer: @unchecked Sendable {

@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #839: `Shape.droppingSmallEdges(tolerance:)` (Shape+Topology.swift) and
@@ -25,7 +26,7 @@ struct Issue839SmallEdgeToleranceAlignmentTests {
         let p3 = SIMD3<Double>(10, 10, 0)
         let p4 = SIMD3<Double>(0, 10, 0)
         let edges = try [
-            (p0, p1), (p1, p1a), (p1a, p2), (p2, p3), (p3, p4), (p4, p0)
+            (p0, p1), (p1, p1a), (p1a, p2), (p2, p3), (p3, p4), (p4, p0),
         ].map { a, b in try #require(Shape.edgeFromPoints(a, b)) }
         let wireShape = try #require(Shape.wireFromEdges(edges))
         let wire = try #require(Wire(wireShape))
@@ -48,10 +49,13 @@ struct Issue839SmallEdgeToleranceAlignmentTests {
         let dropped = try #require(face.droppingSmallEdges())
         let fixed = try #require(face.fixSmallEdges(dropSmall: true))
 
-        #expect(dropped.edges().count == fixed.edges().count,
-                "droppingSmallEdges() and fixSmallEdges(dropSmall: true) disagreed on a 3e-7 edge at their default tolerances")
-        #expect(dropped.edges().count == 6,
-                "a 3e-7 edge should NOT be dropped at the aligned 1e-7 default")
+        #expect(
+            dropped.edges().count == fixed.edges().count,
+            "droppingSmallEdges() and fixSmallEdges(dropSmall: true) disagreed on a 3e-7 edge at their default tolerances"
+        )
+        #expect(
+            dropped.edges().count == 6,
+            "a 3e-7 edge should NOT be dropped at the aligned 1e-7 default")
     }
 
     /// At a shared EXPLICIT tolerance well above either historical default, both must actually
@@ -70,7 +74,8 @@ struct Issue839SmallEdgeToleranceAlignmentTests {
         let fixed = try #require(face.fixSmallEdges(tolerance: 0.5, dropSmall: true))
 
         #expect(dropped.edges().count == fixed.edges().count)
-        #expect(dropped.edges().count < 6,
-                "a 0.1-length edge should be dropped/merged away by both at a shared 0.5 tolerance")
+        #expect(
+            dropped.edges().count < 6,
+            "a 0.1-length edge should be dropped/merged away by both at a shared 0.5 tolerance")
     }
 }

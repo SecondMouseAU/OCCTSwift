@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // MARK: - #615: the 2D twin that #539/#580 never touched
@@ -52,7 +53,7 @@ struct Issue615Curve2DNearestPointTests {
         let arc = try #require(Self.halfCircle())
         let query = SIMD2<Double>(0, -6)
         let point2D = try #require(Point2D(x: query.x, y: query.y))
-        let truth = 61.0.squareRoot()   // hypot(5, 6) = 7.810249675906654
+        let truth = 61.0.squareRoot()  // hypot(5, 6) = 7.810249675906654
 
         let projected = try #require(arc.project(point: query))
         #expect(abs(projected.distance - truth) < 1e-9)
@@ -143,7 +144,8 @@ struct Issue615Curve2DNearestPointTests {
             // even if all four were wrong. It needs abs() for that reason, without it the
             // comparison is one-sided and passes for any reported distance LARGER than the truth,
             // which is the exact direction every defect in this issue erred in.
-            #expect(abs(Self.distance(projected.point, query) - projected.distance) < 1e-9, "\(label)")
+            #expect(
+                abs(Self.distance(projected.point, query) - projected.distance) < 1e-9, "\(label)")
             #expect(Self.distance(curve.point(at: scalar), projected.point) < 1e-9, "\(label)")
             #expect(curve.domain.contains(scalar), "\(label): \(scalar) outside \(curve.domain)")
         }
@@ -156,7 +158,8 @@ struct Issue615Curve2DNearestPointTests {
     func twoDAndThreeDMatch() throws {
         let arc2 = try #require(Self.halfCircle())
         let arc3 = try #require(
-            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)?.trimmed(from: 0, to: .pi))
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)?.trimmed(
+                from: 0, to: .pi))
 
         for query in [SIMD2<Double>(0, -6), SIMD2(3, -4), SIMD2(0, 7), SIMD2(-8, -1)] {
             let flat = try #require(arc2.project(point: query), "\(query)")

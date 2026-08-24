@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Regression cover for #477: `Curve3D.length` / `length(from:to:)` integrated arc length with
@@ -18,7 +19,9 @@ struct Issue477ArcLengthAccuracyTests {
     // MARK: - Independent reference
 
     /// Summed chord length of `segments` evenly spaced parameter samples.
-    private func polylineLength(_ c: Curve3D, from u1: Double, to u2: Double, segments: Int) -> Double {
+    private func polylineLength(_ c: Curve3D, from u1: Double, to u2: Double, segments: Int)
+        -> Double
+    {
         var total = 0.0
         var prev = c.point(at: u1)
         for i in 1...segments {
@@ -33,8 +36,10 @@ struct Issue477ArcLengthAccuracyTests {
 
     /// Chord-sum arc length converges from below as O(h²), so two sample densities Richardson-
     /// extrapolate to a reference far tighter than either: `L ≈ L₂ₙ + (L₂ₙ − Lₙ) / 3`.
-    private func referenceLength(_ c: Curve3D, from u1: Double, to u2: Double,
-                                 segments n: Int = 20_000) -> Double {
+    private func referenceLength(
+        _ c: Curve3D, from u1: Double, to u2: Double,
+        segments n: Int = 20_000
+    ) -> Double {
         let coarse = polylineLength(c, from: u1, to: u2, segments: n)
         let fine = polylineLength(c, from: u1, to: u2, segments: 2 * n)
         return fine + (fine - coarse) / 3
@@ -49,9 +54,11 @@ struct Issue477ArcLengthAccuracyTests {
         var pts: [SIMD3<Double>] = []
         for i in 0..<40 {
             let s = Double(i) / 39.0
-            pts.append(SIMD3(100.0 * s * s * s,
-                             i.isMultiple(of: 2) ? 0.0 : 8.0,
-                             5.0 * sin(6.0 * .pi * s)))
+            pts.append(
+                SIMD3(
+                    100.0 * s * s * s,
+                    i.isMultiple(of: 2) ? 0.0 : 8.0,
+                    5.0 * sin(6.0 * .pi * s)))
         }
         return Curve3D.interpolate(points: pts)
     }
@@ -84,8 +91,9 @@ struct Issue477ArcLengthAccuracyTests {
             // Measured: 2.9e-7 with the composite integrator, 5.1e-2 with the whole-domain
             // quadrature it replaced. 1e-5 keeps 35x headroom over the former (and over the
             // reference's own residual error) while still failing the latter by 5000x.
-            #expect(relative < 1e-5,
-                    "length \(measured) is \(relative * 100)% away from reference \(reference)")
+            #expect(
+                relative < 1e-5,
+                "length \(measured) is \(relative * 100)% away from reference \(reference)")
         } else {
             Issue.record("length returned nil on a valid interpolated BSpline")
         }
@@ -106,8 +114,10 @@ struct Issue477ArcLengthAccuracyTests {
         if let measured = curve.length(from: u1, to: u2) {
             let relative = abs(measured - reference) / reference
             // The ranged overload had the identical defect: measured 4.8e-10 now, 2.2e-2 before.
-            #expect(relative < 1e-5,
-                    "length(from:to:) \(measured) is \(relative * 100)% away from reference \(reference)")
+            #expect(
+                relative < 1e-5,
+                "length(from:to:) \(measured) is \(relative * 100)% away from reference \(reference)"
+            )
         } else {
             Issue.record("length(from:to:) returned nil on a valid interpolated BSpline")
         }
@@ -154,8 +164,9 @@ struct Issue477ArcLengthAccuracyTests {
         if let measured = curve.length {
             // Measured 4.3e-15 now, 3.9e-6 before: a smooth curve is where the two integrators
             // come closest, so this is the tightest bound the suite can draw between them.
-            #expect(abs(measured - reference) / reference < 1e-8,
-                    "helix length \(measured) vs reference \(reference)")
+            #expect(
+                abs(measured - reference) / reference < 1e-8,
+                "helix length \(measured) vs reference \(reference)")
         } else {
             Issue.record("length returned nil on a valid interpolated helix")
         }
@@ -206,7 +217,9 @@ struct Issue477ArcLengthAccuracyTests {
         let span = d.upperBound - d.lowerBound
         let u1 = d.lowerBound + span / 4
         let u2 = d.lowerBound + 3 * span / 4
-        if let forward = curve.length(from: u1, to: u2), let reversed = curve.length(from: u2, to: u1) {
+        if let forward = curve.length(from: u1, to: u2),
+            let reversed = curve.length(from: u2, to: u1)
+        {
             #expect(abs(forward - reversed) < 1e-9)
         } else {
             Issue.record("length(from:to:) returned nil on a valid sub-range")
@@ -231,14 +244,16 @@ struct Issue477ArcLengthAccuracyTests {
             return
         }
         if let overshot = curve.length(from: d.lowerBound - span, to: d.upperBound + span) {
-            #expect(abs(overshot - whole) < 1e-6,
-                    "overshooting both ends gave \(overshot), expected the domain length \(whole)")
+            #expect(
+                abs(overshot - whole) < 1e-6,
+                "overshooting both ends gave \(overshot), expected the domain length \(whole)")
         } else {
             Issue.record("length(from:to:) returned nil for out-of-domain parameters")
         }
         if let outside = curve.length(from: d.upperBound + span, to: d.upperBound + 2 * span) {
-            #expect(outside == 0.0,
-                    "a range wholly outside the domain gave \(outside), expected 0")
+            #expect(
+                outside == 0.0,
+                "a range wholly outside the domain gave \(outside), expected 0")
         } else {
             Issue.record("length(from:to:) returned nil for a wholly out-of-domain range")
         }

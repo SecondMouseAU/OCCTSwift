@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// `BRepLib::BuildCurves3d` contract tests (#498).
@@ -19,7 +20,7 @@ struct BuildCurves3dTests {
     /// curved support surface, so the approximation branch runs rather than the planar shortcut.
     private func helicalPCurveOnlyEdge() -> Shape? {
         guard let surface = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10),
-              let pcurve = Curve2D.line(through: SIMD2(0.2, -3.0), direction: SIMD2(0.6, 0.8))
+            let pcurve = Curve2D.line(through: SIMD2(0.2, -3.0), direction: SIMD2(0.6, 0.8))
         else { return nil }
         return Shape.edgeOnSurface(pcurve: pcurve, surface: surface, u1: 0, u2: 2)
     }
@@ -66,7 +67,7 @@ struct BuildCurves3dTests {
     @Test("A tighter tolerance produces a curve closer to the exact helix")
     func tighterToleranceIsMoreAccurate() {
         guard let surface = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10),
-              let pcurve = Curve2D.line(through: SIMD2(0.2, -3.0), direction: SIMD2(0.6, 0.8))
+            let pcurve = Curve2D.line(through: SIMD2(0.2, -3.0), direction: SIMD2(0.6, 0.8))
         else {
             Issue.record("could not build the cylinder and pcurve")
             return
@@ -74,8 +75,8 @@ struct BuildCurves3dTests {
 
         func maxDeviation(tolerance: Double) -> Double? {
             guard let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: surface, u1: 0, u2: 2),
-                  edge.buildCurves3d(tolerance: tolerance),
-                  let built = edge.extractEdgeCurve3D()
+                edge.buildCurves3d(tolerance: tolerance),
+                let built = edge.extractEdgeCurve3D()
             else { return nil }
 
             var worst = 0.0
@@ -88,7 +89,8 @@ struct BuildCurves3dTests {
             return worst
         }
 
-        guard let coarse = maxDeviation(tolerance: 1e-5), let fine = maxDeviation(tolerance: 1e-7) else {
+        guard let coarse = maxDeviation(tolerance: 1e-5), let fine = maxDeviation(tolerance: 1e-7)
+        else {
             Issue.record("could not measure the deviation")
             return
         }

@@ -1,8 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Curve local properties at a parameter point
+/// Curve local properties at a parameter point.
 public struct CurveLocalProperties: Sendable {
     public let point: SIMD3<Double>
     public let tangent: SIMD3<Double>?
@@ -11,7 +11,7 @@ public struct CurveLocalProperties: Sendable {
     public let curvature: Double
 }
 
-/// Surface local properties at a (U,V) parameter point
+/// Surface local properties at a (U,V) parameter point.
 public struct SurfaceLocalProperties: Sendable {
     public let point: SIMD3<Double>
     public let normal: SIMD3<Double>?
@@ -32,7 +32,7 @@ public struct SurfaceLocalProperties: Sendable {
     public let isUmbilic: Bool
 }
 
-/// Trihedron frame (tangent, normal, binormal) at a curve parameter
+/// Trihedron frame (tangent, normal, binormal) at a curve parameter.
 public struct TrihedronFrame: Sendable {
     public let tangent: SIMD3<Double>
     public let normal: SIMD3<Double>

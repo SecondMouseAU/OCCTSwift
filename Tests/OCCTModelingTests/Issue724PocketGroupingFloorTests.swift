@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #724: `detectPocketsAAG()` reported 2 pockets for a single blind cylindrical pocket. Ground
@@ -36,8 +37,10 @@ struct Issue724PocketGroupingFloorTests {
     /// top face, at z=10, is the pocket's OPENING, not a second floor.
     @Test("a single blind cylindrical pocket reports exactly one pocket")
     func blindCylindricalPocketReportsOne() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         let cut = try #require(box.subtracting(tool))
 
         let pockets = cut.detectPocketsAAG()
@@ -59,11 +62,15 @@ struct Issue724PocketGroupingFloorTests {
     /// tool's own top extends past the box's top face. If the fix were keyed to the specific
     /// numbers in the issue rather than the general "floor is the wall's low Z" rule, at least one
     /// of these would still double-count.
-    @Test("holds across tool heights that all clear the box's top face",
-          arguments: [15.0, 20.0, 40.0])
+    @Test(
+        "holds across tool heights that all clear the box's top face",
+        arguments: [15.0, 20.0, 40.0])
     func holdsAcrossToolHeight(height: Double) throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: height))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: height)
+        )
         let cut = try #require(box.subtracting(tool))
 
         #expect(cut.detectPocketsAAG().count == 1, "height=\(height)")
@@ -79,7 +86,8 @@ struct Issue724PocketGroupingFloorTests {
     @Test("a genuine four-walled pocket keeps all four walls")
     func genuineFourWalledPocketKeepsAllWalls() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let result = try #require(box.subtracting(pocketTool))
 
         let pockets = result.detectPocketsAAG()
@@ -92,12 +100,14 @@ struct Issue724PocketGroupingFloorTests {
     /// (4 floor/wall + 4 wall/wall corners) with none of the rim-misclassification #724's own
     /// headline exercises, confirming the fix changes nothing for a pocket that was already
     /// correctly grouped.
-    @Test("the pinned square-pocket fixture is unaffected, at several depths",
-          arguments: [2.0, 10.0, 25.0])
+    @Test(
+        "the pinned square-pocket fixture is unaffected, at several depths",
+        arguments: [2.0, 10.0, 25.0])
     func pinnedSquarePocketFixtureUnaffected(depth: Double) throws {
         let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
-        let pocket = try #require(Shape.box(
-            origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
+        let pocket = try #require(
+            Shape.box(
+                origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
         let pocketed = try #require(box.subtracting(pocket))
 
         #expect(pocketed.detectPocketsAAG().count == 1, "depth=\(depth)")

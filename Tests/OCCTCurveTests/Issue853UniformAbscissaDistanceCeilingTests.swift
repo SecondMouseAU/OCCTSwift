@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #853: `Shape.uniformAbscissa(distance:)` and `uniformAbscissa(distance:u1:u2:)` had no

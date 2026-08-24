@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #496, the two hole-drilling families and where their contracts actually part.
@@ -18,7 +19,7 @@ struct Issue496CylindricalHoleTests {
     // 50 x 50 x 20, centred on the origin: X[-25,25] Y[-25,25] Z[-10,10].
     private func plate() -> Shape? { Shape.box(width: 50, height: 50, depth: 20) }
 
-    private static let holeVolume = Double.pi * 25 * 20   // r=5 through 20mm of stock
+    private static let holeVolume = Double.pi * 25 * 20  // r=5 through 20mm of stock
 
     // MARK: - Divergences that block a delegation
 
@@ -29,7 +30,10 @@ struct Issue496CylindricalHoleTests {
     /// comfortably past the far face" is how people drill through without computing the thickness.
     @Test("A blind depth past the far face drills through, but PerformBlind rejects it")
     func blindDepthBeyondTheStock() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 11)
         let axis = SIMD3<Double>(0, 0, -1)
 
@@ -41,8 +45,10 @@ struct Issue496CylindricalHoleTests {
         }
 
         // Feature path: BRepFeat_HoleTooLong, surfaced as nil.
-        #expect(box.cylindricalHoleBlind(axisOrigin: origin, axisDirection: axis,
-                                         radius: 5, depth: 100) == nil)
+        #expect(
+            box.cylindricalHoleBlind(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, depth: 100) == nil)
     }
 
     /// `Perform` cuts an *infinite* cylinder, the axis origin is an anchor, not a starting point.
@@ -50,8 +56,11 @@ struct Issue496CylindricalHoleTests {
     /// the stock the two disagree by exactly the material behind the origin.
     @Test("Through-all ignores the axis origin; the boolean drill starts there")
     func throughAllIgnoresTheAxisOrigin() {
-        guard let box = plate(), let v0 = box.volume else { #expect(Bool(false), "box"); return }
-        let origin = SIMD3<Double>(0, 0, 0)      // the plate's own midplane
+        guard let box = plate(), let v0 = box.volume else {
+            #expect(Bool(false), "box")
+            return
+        }
+        let origin = SIMD3<Double>(0, 0, 0)  // the plate's own midplane
         let axis = SIMD3<Double>(0, 0, -1)
 
         // Boolean: removes only the 10mm below the origin.
@@ -63,7 +72,8 @@ struct Issue496CylindricalHoleTests {
 
         // Feature: removes all 20mm, in both directions from the origin.
         if let d = box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5),
-           let v = d.volume {
+            let v = d.volume
+        {
             #expect(abs((v0 - v) - Self.holeVolume) < 1.0)
         } else {
             #expect(Bool(false), "cylindricalHole failed")
@@ -74,17 +84,23 @@ struct Issue496CylindricalHoleTests {
     /// requirement, and drilling a shell is a real thing callers do to sheet stock.
     @Test("A shell can be drilled by the boolean path, not by the thru-next feature")
     func shellInputIsBooleanOnly() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         guard let shell = box.subShapes(ofType: .shell).first else {
-            #expect(Bool(false), "no shell"); return
+            #expect(Bool(false), "no shell")
+            return
         }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
         #expect(box.drilled(at: origin, direction: axis, radius: 5, depth: 0) != nil)
         #expect(shell.drilled(at: origin, direction: axis, radius: 5, depth: 0) != nil)
-        #expect(shell.cylindricalHoleThruNext(axisOrigin: origin, axisDirection: axis,
-                                              radius: 5) == nil)
+        #expect(
+            shell.cylindricalHoleThruNext(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5) == nil)
     }
 
     // MARK: - Misreports inside the feature family
@@ -101,22 +117,31 @@ struct Issue496CylindricalHoleTests {
     /// result `.throughAll` and ``Shape/drilled(at:direction:radius:depth:)`` always returned.
     @Test("A radius that swallows the solid empties it, for every spelling")
     func oversizedRadiusEmptiesTheSolid() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
-        let radius = 100.0   // wider than the 50mm plate
+        let radius = 100.0  // wider than the 50mm plate
 
         // The boolean drill has always answered this way.
         if let d = box.drilled(at: origin, direction: axis, radius: radius, depth: 0) {
             #expect(d.subShapes(ofType: .solid).isEmpty)
-        } else { #expect(Bool(false), "boolean drill failed") }
+        } else {
+            #expect(Bool(false), "boolean drill failed")
+        }
 
         for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .thruNext] {
-            #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                              radius: radius, extent: extent) == .noError,
-                    "\(extent) refused an oversized radius")
-            if let d = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                           radius: radius, extent: extent) {
+            #expect(
+                box.cylindricalHoleStatus(
+                    axisOrigin: origin, axisDirection: axis,
+                    radius: radius, extent: extent) == .noError,
+                "\(extent) refused an oversized radius")
+            if let d = box.cylindricalHole(
+                axisOrigin: origin, axisDirection: axis,
+                radius: radius, extent: extent)
+            {
                 #expect(d.subShapes(ofType: .solid).isEmpty, "\(extent) left material behind")
             } else {
                 #expect(Bool(false), "\(extent) failed outright")
@@ -130,46 +155,61 @@ struct Issue496CylindricalHoleTests {
     /// through any public spelling, the case existed in the Swift enum and nothing could produce it.
     @Test("The blind-hole extent is the only way to observe .holeTooLong")
     func holeTooLongIsReachable() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 11)
         let axis = SIMD3<Double>(0, 0, -1)
 
         // The through-all query cannot see it, and says so cheerfully.
-        #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                          radius: 5) == .noError)
+        #expect(
+            box.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5) == .noError)
 
         // Asked about the extent actually being drilled, it reports the real reason.
-        #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                          radius: 5, extent: .blind(depth: 100)) == .holeTooLong)
-        #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                          radius: 5, extent: .blind(depth: 11)) == .noError)
+        #expect(
+            box.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, extent: .blind(depth: 100)) == .holeTooLong)
+        #expect(
+            box.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, extent: .blind(depth: 11)) == .noError)
     }
 
     /// A status that disagrees with the drill it describes is the defect above. Every extent must
     /// now agree with its own drill on the same request.
     @Test("Every extent's status agrees with that extent's drill")
     func statusAgreesWithItsOwnDrill() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let axis = SIMD3<Double>(0, 0, -1)
 
         let requests: [(String, SIMD3<Double>, Double, Shape.CylindricalHoleExtent)] = [
-            ("through-all, fits",   SIMD3(0, 0, 15),     5,   .throughAll),
-            ("until-end, fits",     SIMD3(0, 0, 15),     5,   .untilEnd),
-            ("thru-next, fits",     SIMD3(0, 0, 15),     5,   .thruNext),
-            ("blind, fits",         SIMD3(0, 0, 11),     5,   .blind(depth: 11)),
-            ("blind, too long",     SIMD3(0, 0, 11),     5,   .blind(depth: 100)),
-            ("range, fits",         SIMD3(0, 0, 15),     5,   .range(from: 0, to: 100)),
-            ("misses the solid",    SIMD3(100, 100, 15), 5,   .untilEnd),
-            ("radius swallows all", SIMD3(0, 0, 15),     100, .untilEnd),
+            ("through-all, fits", SIMD3(0, 0, 15), 5, .throughAll),
+            ("until-end, fits", SIMD3(0, 0, 15), 5, .untilEnd),
+            ("thru-next, fits", SIMD3(0, 0, 15), 5, .thruNext),
+            ("blind, fits", SIMD3(0, 0, 11), 5, .blind(depth: 11)),
+            ("blind, too long", SIMD3(0, 0, 11), 5, .blind(depth: 100)),
+            ("range, fits", SIMD3(0, 0, 15), 5, .range(from: 0, to: 100)),
+            ("misses the solid", SIMD3(100, 100, 15), 5, .untilEnd),
+            ("radius swallows all", SIMD3(0, 0, 15), 100, .untilEnd),
         ]
 
         for (label, origin, radius, extent) in requests {
-            let status = box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                                   radius: radius, extent: extent)
-            let drilled = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                              radius: radius, extent: extent)
-            #expect((status == .noError) == (drilled != nil),
-                    "\(label): status \(status) but drill \(drilled == nil ? "failed" : "succeeded")")
+            let status = box.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis,
+                radius: radius, extent: extent)
+            let drilled = box.cylindricalHole(
+                axisOrigin: origin, axisDirection: axis,
+                radius: radius, extent: extent)
+            #expect(
+                (status == .noError) == (drilled != nil),
+                "\(label): status \(status) but drill \(drilled == nil ? "failed" : "succeeded")")
         }
     }
 
@@ -190,20 +230,29 @@ struct Issue496CylindricalHoleTests {
     /// disagreement could show up.
     @Test("Status and drill agree at the exact HoleTooLong boundary")
     func statusAgreesWithDrillAtTheHoleTooLongBoundary() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 11)
         let axis = SIMD3<Double>(0, 0, -1)
-        let exitDepth = 21.0   // origin z=11, bottom face z=-10: exactly the exit face
+        let exitDepth = 21.0  // origin z=11, bottom face z=-10: exactly the exit face
 
-        for depth in [exitDepth - 1e-3, exitDepth - 1e-6, exitDepth - 1e-9,
-                      exitDepth, exitDepth + 1e-9, exitDepth + 1e-6, exitDepth + 1e-3] {
+        for depth in [
+            exitDepth - 1e-3, exitDepth - 1e-6, exitDepth - 1e-9,
+            exitDepth, exitDepth + 1e-9, exitDepth + 1e-6, exitDepth + 1e-3,
+        ] {
             let extent = Shape.CylindricalHoleExtent.blind(depth: depth)
-            let status = box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                                    radius: 5, extent: extent)
-            let drilled = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                              radius: 5, extent: extent)
-            #expect((status == .noError) == (drilled != nil),
-                    "depth \(depth): status \(status) but drill \(drilled == nil ? "failed" : "succeeded")")
+            let status = box.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, extent: extent)
+            let drilled = box.cylindricalHole(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, extent: extent)
+            #expect(
+                (status == .noError) == (drilled != nil),
+                "depth \(depth): status \(status) but drill \(drilled == nil ? "failed" : "succeeded")"
+            )
         }
     }
 
@@ -215,22 +264,35 @@ struct Issue496CylindricalHoleTests {
     /// narrowing of that catch would have removed. Both now share one precondition.
     @Test("A zero-length direction is rejected by every drilling spelling")
     func zeroDirectionRejectedEverywhere() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let zero = SIMD3<Double>(0, 0, 0)
 
         #expect(box.drilled(at: origin, direction: zero, radius: 5, depth: 0) == nil)
         #expect(box.cylindricalHole(axisOrigin: origin, axisDirection: zero, radius: 5) == nil)
-        #expect(box.cylindricalHoleBlind(axisOrigin: origin, axisDirection: zero,
-                                         radius: 5, depth: 5) == nil)
-        #expect(box.cylindricalHoleThruNext(axisOrigin: origin, axisDirection: zero,
-                                            radius: 5) == nil)
-        for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .thruNext,
-                                              .blind(depth: 5), .range(from: 0, to: 10)] {
-            #expect(box.cylindricalHole(axisOrigin: origin, axisDirection: zero,
-                                        radius: 5, extent: extent) == nil)
-            #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: zero,
-                                              radius: 5, extent: extent) == .invalidPlacement)
+        #expect(
+            box.cylindricalHoleBlind(
+                axisOrigin: origin, axisDirection: zero,
+                radius: 5, depth: 5) == nil)
+        #expect(
+            box.cylindricalHoleThruNext(
+                axisOrigin: origin, axisDirection: zero,
+                radius: 5) == nil)
+        for extent: Shape.CylindricalHoleExtent in [
+            .throughAll, .untilEnd, .thruNext,
+            .blind(depth: 5), .range(from: 0, to: 10),
+        ] {
+            #expect(
+                box.cylindricalHole(
+                    axisOrigin: origin, axisDirection: zero,
+                    radius: 5, extent: extent) == nil)
+            #expect(
+                box.cylindricalHoleStatus(
+                    axisOrigin: origin, axisDirection: zero,
+                    radius: 5, extent: extent) == .invalidPlacement)
         }
     }
 
@@ -244,28 +306,40 @@ struct Issue496CylindricalHoleTests {
     /// reports success and removes nothing is worse than one that fails.
     @Test("A radius at or below Precision.Confusion is rejected by every drilling spelling")
     func degenerateRadiusRejectedEverywhere() {
-        guard let box = plate(), let v0 = box.volume else { #expect(Bool(false), "box"); return }
+        guard let box = plate(), let v0 = box.volume else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
         for radius in [-5.0, 0.0, 1e-14, 1e-8, 1e-7] {
-            #expect(box.drilled(at: origin, direction: axis, radius: radius, depth: 0) == nil,
-                    "drilled accepted radius \(radius)")
-            #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                              radius: radius) == .invalidPlacement,
-                    "status accepted radius \(radius)")
-            for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .thruNext,
-                                                        .blind(depth: 5)] {
-                #expect(box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                            radius: radius, extent: extent) == nil,
-                        "\(extent) accepted radius \(radius)")
+            #expect(
+                box.drilled(at: origin, direction: axis, radius: radius, depth: 0) == nil,
+                "drilled accepted radius \(radius)")
+            #expect(
+                box.cylindricalHoleStatus(
+                    axisOrigin: origin, axisDirection: axis,
+                    radius: radius) == .invalidPlacement,
+                "status accepted radius \(radius)")
+            for extent: Shape.CylindricalHoleExtent in [
+                .throughAll, .untilEnd, .thruNext,
+                .blind(depth: 5),
+            ] {
+                #expect(
+                    box.cylindricalHole(
+                        axisOrigin: origin, axisDirection: axis,
+                        radius: radius, extent: extent) == nil,
+                    "\(extent) accepted radius \(radius)")
             }
         }
 
         // Just above the threshold still drills, and removes a real (if tiny) amount.
         let r = 1e-6
-        if let d = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                       radius: r, extent: .untilEnd), let v = d.volume {
+        if let d = box.cylindricalHole(
+            axisOrigin: origin, axisDirection: axis,
+            radius: r, extent: .untilEnd), let v = d.volume
+        {
             #expect(abs((v0 - v) - Double.pi * r * r * 20) < 1e-9)
         } else {
             #expect(Bool(false), "a radius just above Confusion should still drill")
@@ -278,12 +352,19 @@ struct Issue496CylindricalHoleTests {
     /// than infinite. It was not wrapped, so the family had no forward-bounded through spelling.
     @Test("untilEnd drills the stock, bounded by the entry and exit faces")
     func untilEndDrillsTheStock() {
-        guard let box = plate(), let v0 = box.volume else { #expect(Bool(false), "box"); return }
-        guard let d = box.cylindricalHole(axisOrigin: SIMD3(0, 0, 15),
-                                          axisDirection: SIMD3(0, 0, -1),
-                                          radius: 5, extent: .untilEnd),
-              let v = d.volume else {
-            #expect(Bool(false), "untilEnd failed"); return
+        guard let box = plate(), let v0 = box.volume else {
+            #expect(Bool(false), "box")
+            return
+        }
+        guard
+            let d = box.cylindricalHole(
+                axisOrigin: SIMD3(0, 0, 15),
+                axisDirection: SIMD3(0, 0, -1),
+                radius: 5, extent: .untilEnd),
+            let v = d.volume
+        else {
+            #expect(Bool(false), "untilEnd failed")
+            return
         }
         #expect(abs((v0 - v) - Self.holeVolume) < 1.0)
         #expect(d.isValid)
@@ -293,7 +374,7 @@ struct Issue496CylindricalHoleTests {
     /// plate A at axis parameters 5...25 and plate B at 45...65.
     private func stack() -> Shape? {
         guard let a = Shape.box(width: 50, height: 50, depth: 20),
-              let b = Shape.box(width: 50, height: 50, depth: 20)?.translated(by: SIMD3(0, 0, -40))
+            let b = Shape.box(width: 50, height: 50, depth: 20)?.translated(by: SIMD3(0, 0, -40))
         else { return nil }
         return Shape.compound([a, b])
     }
@@ -307,33 +388,50 @@ struct Issue496CylindricalHoleTests {
     /// *which* body to drill.
     @Test("range selects a face pair on the axis, not a cut window")
     func rangeSelectsAFacePair() {
-        guard let stack = stack(), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
+        guard let stack = stack(), let v0 = stack.volume else {
+            #expect(Bool(false), "stack")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
         func removed(from: Double, to: Double) -> Double? {
-            guard let d = stack.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                                radius: 5, extent: .range(from: from, to: to)),
-                  let v = d.volume else { return nil }
+            guard
+                let d = stack.cylindricalHole(
+                    axisOrigin: origin, axisDirection: axis,
+                    radius: 5, extent: .range(from: from, to: to)),
+                let v = d.volume
+            else { return nil }
             return v0 - v
         }
 
         // A window over the first plate drills exactly that plate.
-        if let r = removed(from: 0, to: 30) { #expect(abs(r - Self.holeVolume) < 1.0) }
-        else { #expect(Bool(false), "range over plate A failed") }
+        if let r = removed(from: 0, to: 30) {
+            #expect(abs(r - Self.holeVolume) < 1.0)
+        } else {
+            #expect(Bool(false), "range over plate A failed")
+        }
 
         // A window over the second plate drills exactly that plate, the same bore, elsewhere.
-        if let r = removed(from: 30, to: 70) { #expect(abs(r - Self.holeVolume) < 1.0) }
-        else { #expect(Bool(false), "range over plate B failed") }
+        if let r = removed(from: 30, to: 70) {
+            #expect(abs(r - Self.holeVolume) < 1.0)
+        } else {
+            #expect(Bool(false), "range over plate B failed")
+        }
 
         // A window strictly inside plate A still drills all of plate A: the parameters chose the
         // face pair, they did not trim the cut.
-        if let r = removed(from: 10, to: 20) { #expect(abs(r - Self.holeVolume) < 1.0) }
-        else { #expect(Bool(false), "range inside plate A failed") }
+        if let r = removed(from: 10, to: 20) {
+            #expect(abs(r - Self.holeVolume) < 1.0)
+        } else {
+            #expect(Bool(false), "range inside plate A failed")
+        }
 
         // A window covering only the gap names no face pair at all.
-        #expect(stack.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis, radius: 5,
-                                            extent: .range(from: 26, to: 44)) == .invalidPlacement)
+        #expect(
+            stack.cylindricalHoleStatus(
+                axisOrigin: origin, axisDirection: axis, radius: 5,
+                extent: .range(from: 26, to: 44)) == .invalidPlacement)
     }
 
     /// Every spelling that claims to bound the hole by the stock's own faces removes the same
@@ -344,17 +442,27 @@ struct Issue496CylindricalHoleTests {
     /// `Issue532CylindricalHolePartSelectionTests` for the full contract.
     @Test("Every stack-spanning extent removes what the boolean drill removes")
     func multiBodyExtentsDrillEveryBody() {
-        guard let stack = stack(), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
+        guard let stack = stack(), let v0 = stack.volume else {
+            #expect(Bool(false), "stack")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
-        for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .range(from: 0, to: 70)] {
-            #expect(stack.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                                radius: 5, extent: extent) == .noError)
-            if let d = stack.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                             radius: 5, extent: extent), let v = d.volume {
-                #expect(abs((v0 - v) - 2 * Self.holeVolume) < 1.0,
-                        "\(extent) removed \(v0 - v), expected \(2 * Self.holeVolume)")
+        for extent: Shape.CylindricalHoleExtent in [
+            .throughAll, .untilEnd, .range(from: 0, to: 70),
+        ] {
+            #expect(
+                stack.cylindricalHoleStatus(
+                    axisOrigin: origin, axisDirection: axis,
+                    radius: 5, extent: extent) == .noError)
+            if let d = stack.cylindricalHole(
+                axisOrigin: origin, axisDirection: axis,
+                radius: 5, extent: extent), let v = d.volume
+            {
+                #expect(
+                    abs((v0 - v) - 2 * Self.holeVolume) < 1.0,
+                    "\(extent) removed \(v0 - v), expected \(2 * Self.holeVolume)")
                 #expect(d.isValid)
             } else {
                 #expect(Bool(false), "\(extent) failed outright")
@@ -362,9 +470,12 @@ struct Issue496CylindricalHoleTests {
         }
 
         if let d = stack.drilled(at: origin, direction: axis, radius: 5, depth: 0),
-           let v = d.volume {
+            let v = d.volume
+        {
             #expect(abs((v0 - v) - 2 * Self.holeVolume) < 1.0)
-        } else { #expect(Bool(false), "boolean drill failed") }
+        } else {
+            #expect(Bool(false), "boolean drill failed")
+        }
     }
 
     // MARK: - The convenience spellings still mean what they meant
@@ -373,20 +484,33 @@ struct Issue496CylindricalHoleTests {
     /// Each must still produce exactly the shape it produced before.
     @Test("The v0.71.0 spellings agree with their extents")
     func legacySpellingsAgreeWithTheirExtents() {
-        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        guard let box = plate() else {
+            #expect(Bool(false), "box")
+            return
+        }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
         let pairs: [(Shape?, Shape?)] = [
-            (box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5),
-             box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5,
-                                 extent: .throughAll)),
-            (box.cylindricalHoleThruNext(axisOrigin: origin, axisDirection: axis, radius: 5),
-             box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5,
-                                 extent: .thruNext)),
-            (box.cylindricalHoleBlind(axisOrigin: origin, axisDirection: axis, radius: 5, depth: 20),
-             box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5,
-                                 extent: .blind(depth: 20))),
+            (
+                box.cylindricalHole(axisOrigin: origin, axisDirection: axis, radius: 5),
+                box.cylindricalHole(
+                    axisOrigin: origin, axisDirection: axis, radius: 5,
+                    extent: .throughAll)
+            ),
+            (
+                box.cylindricalHoleThruNext(axisOrigin: origin, axisDirection: axis, radius: 5),
+                box.cylindricalHole(
+                    axisOrigin: origin, axisDirection: axis, radius: 5,
+                    extent: .thruNext)
+            ),
+            (
+                box.cylindricalHoleBlind(
+                    axisOrigin: origin, axisDirection: axis, radius: 5, depth: 20),
+                box.cylindricalHole(
+                    axisOrigin: origin, axisDirection: axis, radius: 5,
+                    extent: .blind(depth: 20))
+            ),
         ]
 
         for (legacy, unified) in pairs {
@@ -397,8 +521,10 @@ struct Issue496CylindricalHoleTests {
             }
         }
 
-        #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis, radius: 5)
-                == box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis, radius: 5,
-                                             extent: .throughAll))
+        #expect(
+            box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis, radius: 5)
+                == box.cylindricalHoleStatus(
+                    axisOrigin: origin, axisDirection: axis, radius: 5,
+                    extent: .throughAll))
     }
 }

@@ -3,6 +3,7 @@ import OCCTBridge
 import simd
 
 /// Standalone evaluators for analytical curves and surfaces.
+///
 /// These evaluate mathematical functions without creating persistent Curve3D/Surface objects.
 public enum GeomEval {
 
@@ -205,16 +206,20 @@ public enum Geom2dEval {
     /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
     /// - Parameters:
     ///   - origin: The origin point O of the involute's coordinate system.
-    ///   - direction: The X direction vector (YDir is computed as perpendicular).
+    ///   - direction: The X direction vector (YDir is computed as perpendicular). Must be non-zero.
     ///   - radius: The base circle radius (must be > 0).
     ///   - u: The parameter value.
+    /// - Returns: The evaluated point on the circle involute.
     public static func circleInvoluteD0(
         origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double
     ) -> SIMD2<Double> {
+        let dirLen = hypot(direction.x, direction.y)
+        guard dirLen > 1e-12 else { return SIMD2(0, 0) }
+        let normDir = SIMD2(direction.x / dirLen, direction.y / dirLen)
         var px = 0.0
         var py = 0.0
         OCCTGeom2dEvalCircleInvoluteD0WithPlacement(
-            origin.x, origin.y, direction.x, direction.y, radius, u, &px, &py)
+            origin.x, origin.y, normDir.x, normDir.y, radius, u, &px, &py)
         return SIMD2(px, py)
     }
 
@@ -222,12 +227,15 @@ public enum Geom2dEval {
     public static func circleInvoluteD1(
         origin: SIMD2<Double>, direction: SIMD2<Double>, radius: Double, u: Double
     ) -> (point: SIMD2<Double>, d1: SIMD2<Double>) {
+        let dirLen = hypot(direction.x, direction.y)
+        guard dirLen > 1e-12 else { return (SIMD2(0, 0), SIMD2(0, 0)) }
+        let normDir = SIMD2(direction.x / dirLen, direction.y / dirLen)
         var px = 0.0
         var py = 0.0
         var vx = 0.0
         var vy = 0.0
         OCCTGeom2dEvalCircleInvoluteD1WithPlacement(
-            origin.x, origin.y, direction.x, direction.y, radius, u, &px, &py, &vx, &vy)
+            origin.x, origin.y, normDir.x, normDir.y, radius, u, &px, &py, &vx, &vy)
         return (SIMD2(px, py), SIMD2(vx, vy))
     }
 

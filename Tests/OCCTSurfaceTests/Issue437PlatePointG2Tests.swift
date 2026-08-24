@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #437: `GeomPlate_PointConstraint`'s point constructor throws above order 1 -- a bare point
@@ -59,15 +60,17 @@ import simd
 struct Issue437PlatePointG2Tests {
 
     private let pentagon: [SIMD3<Double>] = [
-        SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2), SIMD3(0, 10, 1), SIMD3(5, 5, 3)
+        SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2), SIMD3(0, 10, 1), SIMD3(5, 5, 3),
     ]
 
     // `try #require` rather than force-unwrap: a nil here should fail the one test that asked
     // for it, not abort the whole `swift test` binary and silently discard every other suite's
     // results in the same run.
     private func rectangleWire() throws -> Wire {
-        try #require(Wire.path([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)],
-                                closed: true))
+        try #require(
+            Wire.path(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)],
+                closed: true))
     }
 
     // MARK: - The guards themselves -- these are the tests that actually prove the mechanism
@@ -100,7 +103,7 @@ struct Issue437PlatePointG2Tests {
         let mixed: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(0, 0, 0), order: .g0),
             (point: SIMD3(1, 0, 0), order: .g1),
-            (point: SIMD3(0, 1, 0), order: .g2)
+            (point: SIMD3(0, 1, 0), order: .g2),
         ]
         #expect(Shape.plateMixedRejectsPointOrders(mixed))
     }
@@ -140,8 +143,10 @@ struct Issue437PlatePointG2Tests {
 
     @Test("g0 and g1 orders still build")
     func g0AndG1StillBuild() {
-        let g0 = Shape.plateSurface(through: pentagon, orders: Array(repeating: .g0, count: pentagon.count))
-        let g1 = Shape.plateSurface(through: pentagon, orders: Array(repeating: .g1, count: pentagon.count))
+        let g0 = Shape.plateSurface(
+            through: pentagon, orders: Array(repeating: .g0, count: pentagon.count))
+        let g1 = Shape.plateSurface(
+            through: pentagon, orders: Array(repeating: .g1, count: pentagon.count))
         #expect(g0 != nil)
         #expect(g1 != nil)
     }

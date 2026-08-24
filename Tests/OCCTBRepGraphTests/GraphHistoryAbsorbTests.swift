@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// Carrying a durable face reference across a boolean split (issue #290).
@@ -23,34 +24,45 @@ struct GraphHistoryAbsorbTests {
     }
 
     static func makeCut() -> Cut? {
-        guard let base = Shape.box(origin: SIMD3<Double>(0, 0, 0),
-                                   width: 10, height: 10, depth: 10),
-              let graph = BRepGraph(shape: base),
-              let rootNode = graph.findNode(for: base) else { return nil }
+        guard
+            let base = Shape.box(
+                origin: SIMD3<Double>(0, 0, 0),
+                width: 10, height: 10, depth: 10),
+            let graph = BRepGraph(shape: base),
+            let rootNode = graph.findNode(for: base)
+        else { return nil }
 
         let faces = base.faces()
         let centroids = base.measure().faceCentroids
-        guard let topIndex = centroids.enumerated()
+        guard
+            let topIndex = centroids.enumerated()
                 .compactMap({ i, c in c.map { (i, $0.z) } })
                 .max(by: { $0.1 < $1.1 })?.0,
-              let topFace = Shape.fromFace(faces[topIndex]),
-              let topNode = graph.findNode(for: topFace) else { return nil }
+            let topFace = Shape.fromFace(faces[topIndex]),
+            let topNode = graph.findNode(for: topFace)
+        else { return nil }
 
-        guard let tool = Shape.box(origin: SIMD3<Double>(-1, 4, 8),
-                                   width: 12, height: 2, depth: 4),
-              let (result, history) = base.subtractedWithFullHistory(tool) else { return nil }
+        guard
+            let tool = Shape.box(
+                origin: SIMD3<Double>(-1, 4, 8),
+                width: 12, height: 2, depth: 4),
+            let (result, history) = base.subtractedWithFullHistory(tool)
+        else { return nil }
 
-        return Cut(base: base,
-                   graph: graph,
-                   root: BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index),
-                   pinnedTop: BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index),
-                   result: result,
-                   history: history)
+        return Cut(
+            base: base,
+            graph: graph,
+            root: BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index),
+            pinnedTop: BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index),
+            result: result,
+            history: history)
     }
 
     /// Area of the face a node reconstructs to.
     static func faceArea(_ graph: BRepGraph, _ node: BRepGraph.NodeRef) -> Double? {
-        guard let shape = graph.shape(nodeKind: node.kind, nodeIndex: node.index) else { return nil }
+        guard let shape = graph.shape(nodeKind: node.kind, nodeIndex: node.index) else {
+            return nil
+        }
         let areas = shape.measure().faceAreas
         guard !areas.isEmpty else { return nil }
         return areas.reduce(0, +)
@@ -58,11 +70,15 @@ struct GraphHistoryAbsorbTests {
 
     @Test("absorbing a boolean's history writes records into the input graph")
     func absorbWritesRecords() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
         #expect(c.graph.historyRecordCount == 0, "graph should start with an empty history log")
 
-        let added = c.graph.add(c.result, absorbing: c.history,
-                                inputRoots: [c.root], operationName: "channel-cut")
+        let added = c.graph.add(
+            c.result, absorbing: c.history,
+            inputRoots: [c.root], operationName: "channel-cut")
 
         #expect(added != nil, "add should return the result's topology root")
         #expect(c.graph.historyRecordCount > 0, "absorb should have written history records")
@@ -71,9 +87,13 @@ struct GraphHistoryAbsorbTests {
     /// The core of #290: the pre-cut face resolves to its two successor strips.
     @Test("pre-cut top face resolves to exactly two coplanar strips")
     func topFaceResolvesToTwoStrips() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
-        c.graph.add(c.result, absorbing: c.history,
-                    inputRoots: [c.root], operationName: "channel-cut")
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
+        c.graph.add(
+            c.result, absorbing: c.history,
+            inputRoots: [c.root], operationName: "channel-cut")
 
         // currentForms unions modified AND generated descendants, so the cut's new
         // section edges come back alongside the strips. Filter to faces.
@@ -96,15 +116,19 @@ struct GraphHistoryAbsorbTests {
 
     @Test("splitOf resolves each strip by occurrence")
     func splitOfResolvesOccurrences() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
-        c.graph.add(c.result, absorbing: c.history,
-                    inputRoots: [c.root], operationName: "channel-cut")
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
+        c.graph.add(
+            c.result, absorbing: c.history,
+            inputRoots: [c.root], operationName: "channel-cut")
 
         let first = c.graph.resolve(.splitOf(original: .literal(c.pinnedTop), occurrence: 0))
         let second = c.graph.resolve(.splitOf(original: .literal(c.pinnedTop), occurrence: 1))
 
         switch (first, second) {
-        case let (.success(a), .success(b)):
+        case (.success(let a), .success(let b)):
             #expect(a != b, "occurrences 0 and 1 should be distinct strips")
             #expect(a.kind == .face && b.kind == .face)
             if let areaA = Self.faceArea(c.graph, a), let areaB = Self.faceArea(c.graph, b) {
@@ -118,9 +142,13 @@ struct GraphHistoryAbsorbTests {
 
     @Test("createdBy matches the operation label the absorb recorded")
     func createdByMatchesLabel() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
-        c.graph.add(c.result, absorbing: c.history,
-                    inputRoots: [c.root], operationName: "channel-cut")
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
+        c.graph.add(
+            c.result, absorbing: c.history,
+            inputRoots: [c.root], operationName: "channel-cut")
 
         let hit = c.graph.resolve(.createdBy(operationName: "channel-cut", kind: .face))
         if case .failure(let e) = hit {
@@ -137,11 +165,15 @@ struct GraphHistoryAbsorbTests {
     /// Without the absorb, none of the above works, this is what #290 reported.
     @Test("without absorbing, the graph log stays empty and recipes do not resolve")
     func withoutAbsorbNothingResolves() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
         // Deliberately no add(_:absorbing:...).
         #expect(c.graph.historyRecordCount == 0)
-        #expect(c.graph.currentForms(of: c.pinnedTop).isEmpty,
-                "no history recorded, so no successors")
+        #expect(
+            c.graph.currentForms(of: c.pinnedTop).isEmpty,
+            "no history recorded, so no successors")
 
         let r = c.graph.resolve(.splitOf(original: .literal(c.pinnedTop), occurrence: 0))
         if case .success = r {
@@ -151,23 +183,31 @@ struct GraphHistoryAbsorbTests {
 
     @Test("a node the operation never touched is neither derived nor deleted")
     func untouchedNodeIsNotDeleted() {
-        guard let c = Self.makeCut() else { Issue.record("setup failed"); return }
-        c.graph.add(c.result, absorbing: c.history,
-                    inputRoots: [c.root], operationName: "channel-cut")
+        guard let c = Self.makeCut() else {
+            Issue.record("setup failed")
+            return
+        }
+        c.graph.add(
+            c.result, absorbing: c.history,
+            inputRoots: [c.root], operationName: "channel-cut")
 
         // The bottom face (z = 0) is nowhere near the channel.
         let faces = c.base.faces()
         let centroids = c.base.measure().faceCentroids
-        guard let bottomIndex = centroids.enumerated()
+        guard
+            let bottomIndex = centroids.enumerated()
                 .compactMap({ i, c in c.map { (i, $0.z) } })
                 .min(by: { $0.1 < $1.1 })?.0,
-              let bottomFace = Shape.fromFace(faces[bottomIndex]),
-              let bottomNode = c.graph.findNode(for: bottomFace) else {
-            Issue.record("bottom face lookup failed"); return
+            let bottomFace = Shape.fromFace(faces[bottomIndex]),
+            let bottomNode = c.graph.findNode(for: bottomFace)
+        else {
+            Issue.record("bottom face lookup failed")
+            return
         }
         let bottom = BRepGraph.NodeRef(kind: bottomNode.kind, index: bottomNode.index)
 
-        #expect(!c.graph.historyIsDeleted(bottom),
-                "an untouched face must not be reported as deleted")
+        #expect(
+            !c.graph.historyIsDeleted(bottom),
+            "an untouched face must not be reported as deleted")
     }
 }

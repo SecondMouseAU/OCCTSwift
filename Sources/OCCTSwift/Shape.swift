@@ -2531,19 +2531,14 @@ public final class Shape: @unchecked Sendable {
     /// Detailed self-intersection check with progress information (BOPAlgo-based).
     ///
     /// Unlike ``isSelfIntersecting(timeout:)``, this returns a ``SelfIntersectionDetailedResult``
-    /// that distinguishes between different reasons for an indeterminate result:
-    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerNotTripped``: the analysis made no measurable
-    ///   progress before the timeout (the OCCT progress breaker was never tripped)
+    /// that distinguishes the reason for an indeterminate result:
     /// - ``SelfIntersectionDetailedResult/indeterminateBreakerTripped``: the analysis was running but didn't
-    ///   complete before the timeout (the breaker was tripped)
-    /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis
+    ///   complete before the timeout (the breaker was tripped). A longer timeout may yield a conclusive result.
+    /// - ``SelfIntersectionDetailedResult/indeterminateBreakerNotTripped``: the analysis completed but exceeded
+    ///   the timeout without the breaker being tripped. This indicates no meaningful progress was made.
+    /// - ``SelfIntersectionDetailedResult/error``: an exception occurred during analysis.
     ///
-    /// This allows callers to distinguish "needs longer timeout" from "will never finish",
-    /// which is especially valuable for B-spline solids where the self-interference phase
-    /// may not reach checkpoints frequently enough.
-    ///
-    /// - Parameters:
-    ///   - timeout: Maximum time in seconds to wait for the check to complete.
+    /// - Parameter timeout: Maximum time in seconds to wait for the check to complete.
     /// - Returns: ``SelfIntersectionDetailedResult`` with status and progress information.
     ///
     /// ```swift
@@ -2554,19 +2549,18 @@ public final class Shape: @unchecked Sendable {
     /// case .indeterminateBreakerTripped:
     ///     print("Breaker tripped - try longer timeout")
     /// case .indeterminateBreakerNotTripped:
-    ///     print("Breaker not tripped - shape may be too complex for this check")
+    ///     print("Timeout exceeded without breaker trip - no progress made")
     /// case .error:                       print("Analysis error - treat as unknown")
     /// }
     /// ```
     public func isSelfIntersectingDetailed(timeout: Double = 30) -> SelfIntersectionDetailedResult {
-        var facesChecked: Int32 = 0
         var totalPairs: Int32 = 0
         var timeSpent: Double = 0.0
-        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &facesChecked, &totalPairs, &timeSpent)
-        return SelfIntersectionDetailedResult(code: code,
-                                      facesChecked: Int(facesChecked),
-                                      totalFacePairs: Int(totalPairs),
-                                      timeSpent: timeSpent)
+        let code = OCCTShapeSelfIntersectsDetailed(handle, timeout, &totalPairs, &timeSpent)
+        return SelfIntersectionDetailedResult(
+            code: code,
+            totalFacePairs: Int(totalPairs),
+            timeSpent: timeSpent)
     }
 
     /// Quick pre-screen to estimate self-intersection check complexity (BOPAlgo-based).
@@ -2594,12 +2588,14 @@ public final class Shape: @unchecked Sendable {
         var numBSplineFaces: Int32 = 0
         var numPlaneFaces: Int32 = 0
         var estimatedCost: Double = 0.0
-        let code = OCCTShapeSelfIntersectEstimateCost(handle, &numFaces, &numBSplineFaces, &numPlaneFaces, &estimatedCost)
+        let code = OCCTShapeSelfIntersectEstimateCost(
+            handle, &numFaces, &numBSplineFaces, &numPlaneFaces, &estimatedCost)
         guard code == 0 else { return nil }
-        return SelfIntersectionCostEstimate(numFaces: Int(numFaces),
-                                            numBSplineFaces: Int(numBSplineFaces),
-                                            numPlaneFaces: Int(numPlaneFaces),
-                                            estimatedCost: estimatedCost)
+        return SelfIntersectionCostEstimate(
+            numFaces: Int(numFaces),
+            numBSplineFaces: Int(numBSplineFaces),
+            numPlaneFaces: Int(numPlaneFaces),
+            estimatedCost: estimatedCost)
     }
 
     // MARK: - Sub-Shape Extraction

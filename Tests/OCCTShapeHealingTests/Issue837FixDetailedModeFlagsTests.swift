@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #837: `Shape.fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`'s `fixShell`/`fixFace`/
@@ -42,20 +43,25 @@ struct Issue837FixDetailedModeFlagsTests {
     /// during construction -- `Shape.face(from:outer:innerWires:)` would fix the hole's
     /// orientation itself via `ShapeFix_Face`, which would defeat this fixture's purpose.
     static func badHoleOrientationFace() -> Shape? {
-        guard let outerWire = Wire.polygon3D(
-            [SIMD3(-5, -5, 0), SIMD3(5, -5, 0), SIMD3(5, 5, 0), SIMD3(-5, 5, 0)], closed: true
-        ), let face = Shape.face(from: outerWire) else { return nil }
+        guard
+            let outerWire = Wire.polygon3D(
+                [SIMD3(-5, -5, 0), SIMD3(5, -5, 0), SIMD3(5, 5, 0), SIMD3(-5, 5, 0)], closed: true
+            ), let face = Shape.face(from: outerWire)
+        else { return nil }
 
         // Same winding (CCW, viewed from +Z) as the outer wire -- should be the opposite for a
         // valid hole.
         let holePoints: [SIMD3<Double>] = [
-            SIMD3(-1, -1, 0), SIMD3(1, -1, 0), SIMD3(1, 1, 0), SIMD3(-1, 1, 0)
+            SIMD3(-1, -1, 0), SIMD3(1, -1, 0), SIMD3(1, 1, 0), SIMD3(-1, 1, 0),
         ]
         guard let holeWireShape = Shape.builderMakeWire() else { return nil }
         for i in 0..<holePoints.count {
-            guard let edgeWire = Wire.line(from: holePoints[i], to: holePoints[(i + 1) % holePoints.count]),
-                  let edge = edgeWire.edges().first,
-                  let edgeShape = Shape.fromEdge(edge) else { return nil }
+            guard
+                let edgeWire = Wire.line(
+                    from: holePoints[i], to: holePoints[(i + 1) % holePoints.count]),
+                let edge = edgeWire.edges().first,
+                let edgeShape = Shape.fromEdge(edge)
+            else { return nil }
             edgeShape.setOrientation(.forward)
             guard holeWireShape.builderAdd(edgeShape) else { return nil }
         }
@@ -76,13 +82,17 @@ struct Issue837FixDetailedModeFlagsTests {
     @Test("fixFace: false leaves a free face's wire-orientation defect uncorrected")
     func fixFaceFalseLeavesDefectInPlace() {
         guard let badFace = Self.badHoleOrientationFace(),
-              let compound = Shape.compound([badFace]) else {
+            let compound = Shape.compound([badFace])
+        else {
             Issue.record("fixture build failed")
             return
         }
-        guard let result = compound.fixed(tolerance: 1e-6, fixSolid: true, fixShell: true,
-                                           fixFace: false, fixWire: true),
-              let resultFace = result.subShapes(ofType: .face).first else {
+        guard
+            let result = compound.fixed(
+                tolerance: 1e-6, fixSolid: true, fixShell: true,
+                fixFace: false, fixWire: true),
+            let resultFace = result.subShapes(ofType: .face).first
+        else {
             Issue.record("fixed(fixFace: false) produced no face")
             return
         }
@@ -92,13 +102,17 @@ struct Issue837FixDetailedModeFlagsTests {
     @Test("fixFace: true corrects a free face's wire-orientation defect")
     func fixFaceTrueCorrectsDefect() {
         guard let badFace = Self.badHoleOrientationFace(),
-              let compound = Shape.compound([badFace]) else {
+            let compound = Shape.compound([badFace])
+        else {
             Issue.record("fixture build failed")
             return
         }
-        guard let result = compound.fixed(tolerance: 1e-6, fixSolid: true, fixShell: true,
-                                           fixFace: true, fixWire: true),
-              let resultFace = result.subShapes(ofType: .face).first else {
+        guard
+            let result = compound.fixed(
+                tolerance: 1e-6, fixSolid: true, fixShell: true,
+                fixFace: true, fixWire: true),
+            let resultFace = result.subShapes(ofType: .face).first
+        else {
             Issue.record("fixed(fixFace: true) produced no face")
             return
         }

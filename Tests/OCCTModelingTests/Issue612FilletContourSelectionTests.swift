@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// The fillet radius-law entry points wrote every law to `SetRadius(law, NbContours(), 1)`. Both
@@ -27,17 +28,21 @@ struct Issue612FilletContourSelection {
     /// Every edge of the top rim is tangent-continuous with its neighbours, so the whole rim is a
     /// single fillet contour holding four edges; the bottom rim is a second, independent one.
     static func roundedSlot() -> Shape? {
-        let l = slotHalfLength, r = slotRadius
+        let l = slotHalfLength
+        let r = slotRadius
         guard let bottom = Wire.line(from: SIMD3(-l, -r, 0), to: SIMD3(l, -r, 0)),
-              let right = Wire.arc(start: SIMD3(l, -r, 0),
-                                   midpoint: SIMD3(l + r, 0, 0),
-                                   end: SIMD3(l, r, 0)),
-              let top = Wire.line(from: SIMD3(l, r, 0), to: SIMD3(-l, r, 0)),
-              let left = Wire.arc(start: SIMD3(-l, r, 0),
-                                  midpoint: SIMD3(-l - r, 0, 0),
-                                  end: SIMD3(-l, -r, 0)),
-              let profile = Wire.join([bottom, right, top, left]),
-              let face = Shape.face(from: profile) else { return nil }
+            let right = Wire.arc(
+                start: SIMD3(l, -r, 0),
+                midpoint: SIMD3(l + r, 0, 0),
+                end: SIMD3(l, r, 0)),
+            let top = Wire.line(from: SIMD3(l, r, 0), to: SIMD3(-l, r, 0)),
+            let left = Wire.arc(
+                start: SIMD3(-l, r, 0),
+                midpoint: SIMD3(-l - r, 0, 0),
+                end: SIMD3(-l, -r, 0)),
+            let profile = Wire.join([bottom, right, top, left]),
+            let face = Shape.face(from: profile)
+        else { return nil }
         return face.extruded(by: SIMD3(0, 0, slotHeight))
     }
 
@@ -52,7 +57,8 @@ struct Issue612FilletContourSelection {
 
     /// Edge indices on a rim at height `z`, split by curve kind.
     static func rimEdges(of shape: Shape, atHeight z: Double) -> (lines: [Int], arcs: [Int]) {
-        var lines: [Int] = [], arcs: [Int] = []
+        var lines: [Int] = []
+        var arcs: [Int] = []
         for (index, edge) in shape.edges().enumerated() {
             let (start, end) = edge.endpoints
             guard abs(start.z - z) < 1e-7, abs(end.z - z) < 1e-7 else { continue }
@@ -67,11 +73,13 @@ struct Issue612FilletContourSelection {
 
     /// The top rim's straight side and one tangent arc: same contour, different slots.
     static func tangentPair(of slot: Shape)
-        -> (line: Edge, arc: Edge, lineIndex: Int, arcIndex: Int)? {
+        -> (line: Edge, arc: Edge, lineIndex: Int, arcIndex: Int)?
+    {
         let top = rimEdges(of: slot, atHeight: slotHeight)
         let edges = slot.edges()
         guard let li = top.lines.first, let ai = top.arcs.first,
-              edges.indices.contains(li), edges.indices.contains(ai) else { return nil }
+            edges.indices.contains(li), edges.indices.contains(ai)
+        else { return nil }
         return (edges[li], edges[ai], li, ai)
     }
 
@@ -176,7 +184,8 @@ struct Issue612FilletContourSelection {
             return
         }
         let bottomLine = edges[bottomIndex]
-        let topRadius = 2.0, bottomRadius = 5.0
+        let topRadius = 2.0
+        let bottomRadius = 5.0
 
         // Reference: top rim at 2, bottom rim at 5, one edge per contour, needs no shared-contour
         // resolution, so it was already correct before this fix.
@@ -200,8 +209,9 @@ struct Issue612FilletContourSelection {
         ])
 
         guard let intendedVolume = intended?.volume,
-              let clobberedVolume = clobbered?.volume,
-              let actualVolume = actual?.volume else {
+            let clobberedVolume = clobbered?.volume,
+            let actualVolume = actual?.volume
+        else {
             Issue.record("one of the fillet requests did not produce a measurable solid")
             return
         }
@@ -258,9 +268,10 @@ struct Issue612FilletContourSelection {
         let constantRadius = shell.filleted(edges: edges, radius: 1)
         let blended = shell.blendedEdges(allIndices.map { ($0, 1.0) })
         let linear = shell.filleted(edges: edges, startRadius: 1, endRadius: 1)
-        let evolving = shell.filletEvolving(edges.map {
-            EvolvingFilletEdge(edge: $0, radiusPoints: Self.constant(1))
-        })
+        let evolving = shell.filletEvolving(
+            edges.map {
+                EvolvingFilletEdge(edge: $0, radiusPoints: Self.constant(1))
+            })
         let withHistory = shell.filletedWithFullHistory(radius: 1, edges: allIndices)?.result
 
         // Measured by surface AREA, not volume: an open shell is not a solid, so `volume` is nil
@@ -275,7 +286,9 @@ struct Issue612FilletContourSelection {
             ("filletedWithFullHistory(radius:edges:)", withHistory?.surfaceArea),
         ]
         for (name, area) in measured where area == nil {
-            Issue.record("\(name) returned nil over an open shell instead of skipping the edges OCCT declined")
+            Issue.record(
+                "\(name) returned nil over an open shell instead of skipping the edges OCCT declined"
+            )
         }
 
         guard let plainArea = shell.surfaceArea else {
@@ -305,8 +318,10 @@ struct Issue612FilletContourSelection {
         // test process down with SIGSEGV, uncatchable, so no catch(...) on the bridge side helps.
         var refusedCount = 0
         for index in shell.edges().indices {
-            if shell.filletedVariable(edgeIndex: index,
-                                      radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil {
+            if shell.filletedVariable(
+                edgeIndex: index,
+                radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil
+            {
                 refusedCount += 1
             }
         }
@@ -323,15 +338,18 @@ struct Issue612FilletContourSelection {
             return
         }
         // Skipping an edge OCCT declines must not have loosened the profile contract (#520).
-        #expect(slot.filletEvolving([
-            EvolvingFilletEdge(edge: pair.line, radiusPoints: Self.constant(2)),
-            EvolvingFilletEdge(edge: pair.arc, radiusPoints: [(0.0, -3.0), (1.0, 2.0)]),
-        ]) == nil)
-        #expect(slot.filletEvolving([
-            EvolvingFilletEdge(edge: pair.line, radiusPoints: [(1.0, 2.0), (0.0, 3.0)]),
-        ]) == nil)
-        #expect(slot.filletEvolving([
-            EvolvingFilletEdge(edge: pair.line, radiusPoints: []),
-        ]) == nil)
+        #expect(
+            slot.filletEvolving([
+                EvolvingFilletEdge(edge: pair.line, radiusPoints: Self.constant(2)),
+                EvolvingFilletEdge(edge: pair.arc, radiusPoints: [(0.0, -3.0), (1.0, 2.0)]),
+            ]) == nil)
+        #expect(
+            slot.filletEvolving([
+                EvolvingFilletEdge(edge: pair.line, radiusPoints: [(1.0, 2.0), (0.0, 3.0)])
+            ]) == nil)
+        #expect(
+            slot.filletEvolving([
+                EvolvingFilletEdge(edge: pair.line, radiusPoints: [])
+            ]) == nil)
     }
 }

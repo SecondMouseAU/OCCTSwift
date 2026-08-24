@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #495: `Shape.continuityOfFaces` documented its own return values wrong.
@@ -25,8 +26,8 @@ struct Issue495FaceContinuityTests {
         return shape.subShapes(ofType: .edge).compactMap { edge in
             let adjacent = shape.adjacentFaces(forEdge: edge)
             guard adjacent.count == 2,
-                  let a = adjacent.first, let b = adjacent.last,
-                  a >= 0, a < faces.count, b >= 0, b < faces.count
+                let a = adjacent.first, let b = adjacent.last,
+                a >= 0, a < faces.count, b >= 0, b < faces.count
             else { return nil }
             return (edge, faces[a], faces[b])
         }
@@ -38,8 +39,9 @@ struct Issue495FaceContinuityTests {
         let triples = sharedEdgeTriples(in: box)
         try #require(!triples.isEmpty, "no shared edge found to check")
         for (edge, f1, f2) in triples {
-            #expect(Shape.continuityClassOfFaces(edge: edge, face1: f1, face2: f2) == .c0,
-                    "a box's faces meet at a right angle")
+            #expect(
+                Shape.continuityClassOfFaces(edge: edge, face1: f1, face2: f2) == .c0,
+                "a box's faces meet at a right angle")
         }
     }
 
@@ -51,8 +53,9 @@ struct Issue495FaceContinuityTests {
         let classes = sharedEdgeTriples(in: filleted).map {
             Shape.continuityClassOfFaces(edge: $0.0, face1: $0.1, face2: $0.2)
         }
-        #expect(classes.contains(.g1),
-                "a filleted box should have tangent joins where the blend meets a wall")
+        #expect(
+            classes.contains(.g1),
+            "a filleted box should have tangent joins where the blend meets a wall")
     }
 
     @Test("a seam on an elementary surface is CN, ordinal 6, which the old comment called 5")
@@ -85,8 +88,9 @@ struct Issue495FaceContinuityTests {
 
         for shape in [box, filleted, cylinder, sphere] {
             for (edge, f1, f2) in sharedEdgeTriples(in: shape) {
-                #expect(Shape.continuityClassOfFaces(edge: edge, face1: f1, face2: f2) != .c3,
-                        "BRepLib::ContinuityOfFaces has no path that returns C3")
+                #expect(
+                    Shape.continuityClassOfFaces(edge: edge, face1: f1, face2: f2) != .c3,
+                    "BRepLib::ContinuityOfFaces has no path that returns C3")
             }
         }
     }

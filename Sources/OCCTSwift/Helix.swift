@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Helix curve construction using OCCT HelixGeom classes (rc4).
 public enum Helix {
@@ -22,6 +22,7 @@ public enum Helix {
     ///   - taperAngle: Taper angle in radians (0 for constant radius)
     ///   - isClockwise: Whether the helix winds clockwise
     ///   - tolerance: Approximation tolerance
+    /// - Returns: The built helix curve with tolerance info, or nil on failure
     public static func build(
         origin: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -34,14 +35,16 @@ public enum Helix {
         tolerance: Double = 0.001
     ) -> BuildResult? {
         var tolReached = 0.0
-        guard let ref = OCCTHelixBuild(
-            origin.x, origin.y, origin.z,
-            direction.x, direction.y, direction.z,
-            xDirection.x, xDirection.y, xDirection.z,
-            parameterRange.lowerBound, parameterRange.upperBound,
-            pitch, radius, taperAngle, isClockwise,
-            tolerance, &tolReached
-        ) else { return nil }
+        guard
+            let ref = OCCTHelixBuild(
+                origin.x, origin.y, origin.z,
+                direction.x, direction.y, direction.z,
+                xDirection.x, xDirection.y, xDirection.z,
+                parameterRange.lowerBound, parameterRange.upperBound,
+                pitch, radius, taperAngle, isClockwise,
+                tolerance, &tolReached
+            )
+        else { return nil }
         return BuildResult(curve: Curve3D(handle: ref), toleranceReached: tolReached)
     }
 
@@ -55,11 +58,13 @@ public enum Helix {
         tolerance: Double = 0.001
     ) -> BuildResult? {
         var tolReached = 0.0
-        guard let ref = OCCTHelixCoilBuild(
-            parameterRange.lowerBound, parameterRange.upperBound,
-            pitch, radius, taperAngle, isClockwise,
-            tolerance, &tolReached
-        ) else { return nil }
+        guard
+            let ref = OCCTHelixCoilBuild(
+                parameterRange.lowerBound, parameterRange.upperBound,
+                pitch, radius, taperAngle, isClockwise,
+                tolerance, &tolReached
+            )
+        else { return nil }
         return BuildResult(curve: Curve3D(handle: ref), toleranceReached: tolReached)
     }
 
@@ -70,9 +75,12 @@ public enum Helix {
         taperAngle: Double = 0, isClockwise: Bool = false,
         at u: Double
     ) -> SIMD3<Double> {
-        var px = 0.0, py = 0.0, pz = 0.0
-        OCCTHelixCurveEval(parameterRange.lowerBound, parameterRange.upperBound,
-                           pitch, radius, taperAngle, isClockwise, u, &px, &py, &pz)
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        OCCTHelixCurveEval(
+            parameterRange.lowerBound, parameterRange.upperBound,
+            pitch, radius, taperAngle, isClockwise, u, &px, &py, &pz)
         return SIMD3(px, py, pz)
     }
 
@@ -83,11 +91,16 @@ public enum Helix {
         taperAngle: Double = 0, isClockwise: Bool = false,
         at u: Double
     ) -> (point: SIMD3<Double>, tangent: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var vx = 0.0, vy = 0.0, vz = 0.0
-        OCCTHelixCurveD1(parameterRange.lowerBound, parameterRange.upperBound,
-                         pitch, radius, taperAngle, isClockwise, u,
-                         &px, &py, &pz, &vx, &vy, &vz)
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var vx = 0.0
+        var vy = 0.0
+        var vz = 0.0
+        OCCTHelixCurveD1(
+            parameterRange.lowerBound, parameterRange.upperBound,
+            pitch, radius, taperAngle, isClockwise, u,
+            &px, &py, &pz, &vx, &vy, &vz)
         return (SIMD3(px, py, pz), SIMD3(vx, vy, vz))
     }
 
@@ -98,12 +111,19 @@ public enum Helix {
         taperAngle: Double = 0, isClockwise: Bool = false,
         at u: Double
     ) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
-        var px = 0.0, py = 0.0, pz = 0.0
-        var v1x = 0.0, v1y = 0.0, v1z = 0.0
-        var v2x = 0.0, v2y = 0.0, v2z = 0.0
-        OCCTHelixCurveD2(parameterRange.lowerBound, parameterRange.upperBound,
-                         pitch, radius, taperAngle, isClockwise, u,
-                         &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
+        var px = 0.0
+        var py = 0.0
+        var pz = 0.0
+        var v1x = 0.0
+        var v1y = 0.0
+        var v1z = 0.0
+        var v2x = 0.0
+        var v2y = 0.0
+        var v2z = 0.0
+        OCCTHelixCurveD2(
+            parameterRange.lowerBound, parameterRange.upperBound,
+            pitch, radius, taperAngle, isClockwise, u,
+            &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
         return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z), SIMD3(v2x, v2y, v2z))
     }
 
@@ -115,11 +135,13 @@ public enum Helix {
         tolerance: Double = 0.001
     ) -> (curve: Curve3D, maxError: Double)? {
         var maxError = 0.0
-        guard let ref = OCCTHelixApproxToBSpline(
-            parameterRange.lowerBound, parameterRange.upperBound,
-            pitch, radius, taperAngle, isClockwise,
-            tolerance, &maxError
-        ) else { return nil }
+        guard
+            let ref = OCCTHelixApproxToBSpline(
+                parameterRange.lowerBound, parameterRange.upperBound,
+                pitch, radius, taperAngle, isClockwise,
+                tolerance, &maxError
+            )
+        else { return nil }
         return (Curve3D(handle: ref), maxError)
     }
 }

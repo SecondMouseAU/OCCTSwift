@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #485, the 2D half: `Curve2D.continuity` (raw `GeomAbs_Shape` ordinal) and
@@ -15,10 +16,11 @@ struct Issue485Curve2DContinuityTests {
         let poles = (1...poleCount).map { i in
             SIMD2<Double>(Double(i), Double(i % 2) * 2.0)
         }
-        return Curve2D.bspline(poles: poles,
-                               knots: [0.0, 0.5, 1.0],
-                               multiplicities: [4, multiplicity, 4],
-                               degree: 3)
+        return Curve2D.bspline(
+            poles: poles,
+            knots: [0.0, 0.5, 1.0],
+            multiplicities: [4, multiplicity, 4],
+            degree: 3)
     }
 
     /// A genuinely G1 2D curve: offset of a C0-but-tangent-continuous basis. See the 3D
@@ -26,14 +28,17 @@ struct Issue485Curve2DContinuityTests {
     static func offsetOfG1Basis() -> Curve2D? {
         let poles: [SIMD2<Double>] = [
             SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 0),
-            SIMD2(3, 0),   // knot pole; 3-4-5 collinear along +x, unequally spaced
+            SIMD2(3, 0),  // knot pole; 3-4-5 collinear along +x, unequally spaced
             SIMD2(5, 0),
-            SIMD2(6, 1), SIMD2(7, 0)
+            SIMD2(6, 1), SIMD2(7, 0),
         ]
-        guard let basis = Curve2D.bspline(poles: poles,
-                                          knots: [0.0, 0.5, 1.0],
-                                          multiplicities: [4, 3, 4],
-                                          degree: 3) else { return nil }
+        guard
+            let basis = Curve2D.bspline(
+                poles: poles,
+                knots: [0.0, 0.5, 1.0],
+                multiplicities: [4, 3, 4],
+                degree: 3)
+        else { return nil }
         return basis.offset(by: 1.0)
     }
 
@@ -41,11 +46,11 @@ struct Issue485Curve2DContinuityTests {
     func knotMultiplicityDrivesMeasuredClass() {
         if let c2 = Self.bspline(interiorMultiplicity: 1) {
             #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)          // the old encoding said 2
+            #expect(c2.continuity == 4)  // the old encoding said 2
         }
         if let c1 = Self.bspline(interiorMultiplicity: 2) {
             #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)          // the old encoding said 1
+            #expect(c1.continuity == 2)  // the old encoding said 1
         }
         if let c0 = Self.bspline(interiorMultiplicity: 3) {
             #expect(c0.continuityClass == .c0)
@@ -68,7 +73,7 @@ struct Issue485Curve2DContinuityTests {
             return
         }
         #expect(g1.continuityClass == .g1)
-        #expect(g1.continuity == 1)      // the old encoding said -2
+        #expect(g1.continuity == 1)  // the old encoding said -2
     }
 
     // Originally compared `continuity` against `continuityOrder`, silencing the deprecation
@@ -77,11 +82,13 @@ struct Issue485Curve2DContinuityTests {
     @Test("continuity and continuityClass agree on the same curve, in every class")
     func bothPropertiesAgree() {
         var checked = 0
-        for curve in [Self.bspline(interiorMultiplicity: 1),
-                      Self.bspline(interiorMultiplicity: 2),
-                      Self.bspline(interiorMultiplicity: 3),
-                      Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)),
-                      Self.offsetOfG1Basis()].compactMap({ $0 }) {
+        for curve in [
+            Self.bspline(interiorMultiplicity: 1),
+            Self.bspline(interiorMultiplicity: 2),
+            Self.bspline(interiorMultiplicity: 3),
+            Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)),
+            Self.offsetOfG1Basis(),
+        ].compactMap({ $0 }) {
             #expect(curve.continuity == Int(curve.continuityClass.rawValue))
             #expect(curve.continuity != 99)
             #expect(curve.continuity != -2)

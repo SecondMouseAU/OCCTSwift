@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #490, curve/analysis half: the two remaining continuity vocabularies, and the domain each one
@@ -13,7 +14,7 @@ struct Issue490CurveContinuityTests {
     private func multiSpanCurve() -> Curve3D? {
         Curve3D.interpolate(points: [
             SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 1),
-            SIMD3(5, 3, 0), SIMD3(7, 0, 2), SIMD3(9, 2, 1)
+            SIMD3(5, 3, 0), SIMD3(7, 0, 2), SIMD3(9, 2, 1),
         ])
     }
 
@@ -43,15 +44,18 @@ struct Issue490CurveContinuityTests {
 
     @Test("the points-to-BSpline family takes the whole ladder without failing")
     func pointFittingDomain() {
-        let points = [SIMD3<Double>(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 1),
-                      SIMD3(5, 3, 0), SIMD3(7, 0, 2), SIMD3(9, 2, 1)]
+        let points = [
+            SIMD3<Double>(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 1),
+            SIMD3(5, 3, 0), SIMD3(7, 0, 2), SIMD3(9, 2, 1),
+        ]
 
         // The other consumer of the same vocabulary treats the request as an upper bound it will
         // try to meet, so every value succeeds. Worth pinning: it is the reason one decoder can
         // serve both families without either needing a private fallback.
         for continuity in 0...3 {
-            #expect(Curve3D.approximate(points: points, continuity: continuity) != nil,
-                    "continuity \(continuity) should still fit a curve")
+            #expect(
+                Curve3D.approximate(points: points, continuity: continuity) != nil,
+                "continuity \(continuity) should still fit a curve")
         }
     }
 
@@ -77,16 +81,20 @@ struct Issue490CurveContinuityTests {
     @Test("the analysis order saturates at C2, the strictest question LocalAnalysis can answer")
     func analysisOrderSaturates() throws {
         guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-              let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
+            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
         else { return }
 
-        let atC2 = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                                  u2: c2.domain.lowerBound, order: .c2))
+        let atC2 = try #require(
+            c1.continuityWith(
+                c2, u1: c1.domain.upperBound,
+                u2: c2.domain.lowerBound, order: .c2))
         // LocalAnalysis_CurveContinuity implements no predicate above C2/G2: asking for C3 or CN
         // leaves every predicate reporting true, i.e. the analysis becomes meaningless. So the
         // shared decoder reads anything above 4 as 4 instead of passing it through.
-        let beyond = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                                    u2: c2.domain.lowerBound, order: .cN))
+        let beyond = try #require(
+            c1.continuityWith(
+                c2, u1: c1.domain.upperBound,
+                u2: c2.domain.lowerBound, order: .cN))
         #expect(atC2.order == beyond.order)
         #expect(atC2.measured == beyond.measured)
         #expect(atC2.flags == beyond.flags)
@@ -98,18 +106,22 @@ struct Issue490CurveContinuityTests {
     @Test("each analysis order below the ceiling asks a different question")
     func analysisOrderIsObservable() throws {
         guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-              let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
+            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
         else { return }
 
         // The order is echoed back verbatim, so what makes each one a *different question* is the
         // set of classes it measures, see Issue495CurveAnalysisOrderTests for that half.
         for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
-            let analysis = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                                          u2: c2.domain.lowerBound, order: order))
-            #expect(analysis.order == order,
-                    "order \(order) should be reported back in the same encoding")
-            #expect(analysis.measured.contains(order),
-                    "the requested class is always among the measured ones")
+            let analysis = try #require(
+                c1.continuityWith(
+                    c2, u1: c1.domain.upperBound,
+                    u2: c2.domain.lowerBound, order: order))
+            #expect(
+                analysis.order == order,
+                "order \(order) should be reported back in the same encoding")
+            #expect(
+                analysis.measured.contains(order),
+                "the requested class is always among the measured ones")
         }
     }
 }

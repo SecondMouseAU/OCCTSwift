@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #211: MeshParameters.allowQualityDecrease (IMeshTools_Parameters::AllowQualityDecrease).
@@ -13,11 +14,17 @@ struct Issue211MeshParam {
 
     @Test("meshing with the flag set produces a valid mesh")
     func meshesWithFlag() {
-        guard let sphere = Shape.sphere(radius: 5) else { #expect(Bool(false)); return }
+        guard let sphere = Shape.sphere(radius: 5) else {
+            #expect(Bool(false))
+            return
+        }
         var params = MeshParameters.default
         params.deflection = 0.1
         params.allowQualityDecrease = true
-        guard let mesh = sphere.mesh(parameters: params) else { #expect(Bool(false)); return }
+        guard let mesh = sphere.mesh(parameters: params) else {
+            #expect(Bool(false))
+            return
+        }
         #expect(mesh.vertexCount > 0)
         #expect(mesh.triangleCount > 0)
     }
@@ -27,11 +34,22 @@ struct Issue211MeshParam {
     @Test("allows a coarser re-mesh to replace a finer one")
     func coarserReplacesFiner() {
         guard let fineShape = Shape.sphere(radius: 5),
-              let coarseShape = Shape.sphere(radius: 5) else { #expect(Bool(false)); return }
-        var fine = MeshParameters.default; fine.deflection = 0.05
-        var coarse = MeshParameters.default; coarse.deflection = 1.0; coarse.allowQualityDecrease = true
+            let coarseShape = Shape.sphere(radius: 5)
+        else {
+            #expect(Bool(false))
+            return
+        }
+        var fine = MeshParameters.default
+        fine.deflection = 0.05
+        var coarse = MeshParameters.default
+        coarse.deflection = 1.0
+        coarse.allowQualityDecrease = true
         guard let fineMesh = fineShape.mesh(parameters: fine),
-              let coarseMesh = coarseShape.mesh(parameters: coarse) else { #expect(Bool(false)); return }
+            let coarseMesh = coarseShape.mesh(parameters: coarse)
+        else {
+            #expect(Bool(false))
+            return
+        }
         #expect(coarseMesh.triangleCount < fineMesh.triangleCount)
     }
 }

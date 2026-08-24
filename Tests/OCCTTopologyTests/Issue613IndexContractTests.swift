@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #613: six entry points still indexed sub-shapes by `TopExp_Explorer` OCCURRENCE after #541 moved
@@ -48,7 +49,7 @@ struct Issue613IndexContractTests {
     /// running the full 40 mm in y. Two fused boxes, the plainest construction that has one.
     static func lBracket() -> Shape? {
         guard let a = Shape.box(origin: .zero, width: 40, height: 40, depth: 10),
-              let b = Shape.box(origin: .zero, width: 10, height: 40, depth: 40)
+            let b = Shape.box(origin: .zero, width: 10, height: 40, depth: 40)
         else { return nil }
         return a.fused(with: b, tolerance: 0)
     }
@@ -104,13 +105,15 @@ struct Issue613IndexContractTests {
 
         // Locate the inner corner geometrically, independent of any index scheme: the edge whose
         // midpoint sits on both walls' inner faces (x = 10 and z = 10).
-        let corner = try #require(Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket),
-                                  "fixture has no inner-corner edge at (10, y, 10)")
+        let corner = try #require(
+            Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket),
+            "fixture has no inner-corner edge at (10, y, 10)")
 
         let concave = bracket.concaveEdges()
         #expect(concave.count == 1, "expected exactly one concave edge, got \(concave.count)")
-        #expect(concave.map(\.index) == [corner],
-                "concaveEdges() named \(concave.map(\.index)), the inner corner is \(corner)")
+        #expect(
+            concave.map(\.index) == [corner],
+            "concaveEdges() named \(concave.map(\.index)), the inner corner is \(corner)")
     }
 
     /// The classification array is positionally the `edges()` array: entry n describes edges()[n].
@@ -127,15 +130,19 @@ struct Issue613IndexContractTests {
         let bracket = try #require(Self.lBracket())
         let pairs = try #require(bracket.edgeConcavities())
 
-        #expect(pairs.count == bracket.edgeCount,
-                "one entry per distinct edge: \(pairs.count) vs \(bracket.edgeCount)")
+        #expect(
+            pairs.count == bracket.edgeCount,
+            "one entry per distinct edge: \(pairs.count) vs \(bracket.edgeCount)")
         #expect(pairs.count > 0)
-        #expect(bracket.edgeConcavityCount(.concave) == pairs.filter { $0.1 == .concave }.count,
-                "counter and classifier disagree on concave edges")
-        #expect(bracket.edgeConcavityCount(.convex) == pairs.filter { $0.1 == .convex }.count,
-                "counter and classifier disagree on convex edges")
-        #expect(bracket.edgeConcavityCount(.tangent) == pairs.filter { $0.1 == .tangent }.count,
-                "counter and classifier disagree on tangent edges")
+        #expect(
+            bracket.edgeConcavityCount(.concave) == pairs.filter { $0.1 == .concave }.count,
+            "counter and classifier disagree on concave edges")
+        #expect(
+            bracket.edgeConcavityCount(.convex) == pairs.filter { $0.1 == .convex }.count,
+            "counter and classifier disagree on convex edges")
+        #expect(
+            bracket.edgeConcavityCount(.tangent) == pairs.filter { $0.1 == .tangent }.count,
+            "counter and classifier disagree on tangent edges")
     }
 
     /// The unlisted sibling in the same MARK block: the count walked the explorer too, so it
@@ -143,15 +150,19 @@ struct Issue613IndexContractTests {
     @Test("edge concavity counts are counts of edges, not of occurrences")
     func concavityCountsAreEdgeCounts() throws {
         let box = try #require(Self.box())
-        #expect(box.edgeConcavityCount(.convex) == 12,
-                "a box's 12 edges are all convex; got \(String(describing: box.edgeConcavityCount(.convex)))")
+        #expect(
+            box.edgeConcavityCount(.convex) == 12,
+            "a box's 12 edges are all convex; got \(String(describing: box.edgeConcavityCount(.convex)))"
+        )
         #expect(box.edgeConcavityCount(.concave) == 0)
 
-        let total = (box.edgeConcavityCount(.convex) ?? 0)
-                  + (box.edgeConcavityCount(.concave) ?? 0)
-                  + (box.edgeConcavityCount(.tangent) ?? 0)
-        #expect(total <= box.edgeCount,
-                "the three counts partition the edges: \(total) vs \(box.edgeCount)")
+        let total =
+            (box.edgeConcavityCount(.convex) ?? 0)
+            + (box.edgeConcavityCount(.concave) ?? 0)
+            + (box.edgeConcavityCount(.tangent) ?? 0)
+        #expect(
+            total <= box.edgeCount,
+            "the three counts partition the edges: \(total) vs \(box.edgeCount)")
 
         // And on a shape that actually has one of each, the counts agree with the classifier.
         let bracket = try #require(Self.lBracket())
@@ -203,14 +214,16 @@ struct Issue613IndexContractTests {
                     break
                 }
             }
-            let found = try #require(extrema, "no reference edge gave an extremum for box edge \(i)")
+            let found = try #require(
+                extrema, "no reference edge gave an extremum for box edge \(i)")
             compared += 1
             // The returned closest point must lie ON edges()[i]. Under the old explorer walk,
             // index i named a different edge from 9 onward, and its closest point landed
             // millimetres away from edges()[i].
             let offBy = distanceToEdge(found.pointOnEdge1, edge)
-            #expect(offBy < 1e-6,
-                    "index \(i): closest point \(found.pointOnEdge1) is \(offBy) from edges()[\(i)]")
+            #expect(
+                offBy < 1e-6,
+                "index \(i): closest point \(found.pointOnEdge1) is \(offBy) from edges()[\(i)]")
         }
         #expect(compared == 12, "only \(compared) of 12 edges compared, fixture too degenerate")
     }
@@ -237,13 +250,17 @@ struct Issue613IndexContractTests {
                 break
             }
         }
-        #expect(answered == box.edgeCount, "only \(answered) of \(box.edgeCount) in-range indices answered")
+        #expect(
+            answered == box.edgeCount,
+            "only \(answered) of \(box.edgeCount) in-range indices answered")
 
         for i in [box.edgeCount, box.edgeCount + 5, 23] {
             #expect(box.edge(at: i) == nil, "premise: index \(i) is past the enumeration")
             for j in 0..<reference.edgeCount {
-                #expect(box.edgeEdgeExtrema(edgeIndex1: i, other: reference, edgeIndex2: j) == nil,
-                        "index \(i) answered (against reference edge \(j)) although edge(at: \(i)) is nil")
+                #expect(
+                    box.edgeEdgeExtrema(edgeIndex1: i, other: reference, edgeIndex2: j) == nil,
+                    "index \(i) answered (against reference edge \(j)) although edge(at: \(i)) is nil"
+                )
             }
         }
     }
@@ -314,18 +331,21 @@ struct Issue613IndexContractTests {
         for i in 0..<box.edgeCount {
             let edge = try #require(box.edge(at: i))
             let target = try #require(Self.mid(edge), "edge \(i) has no midpoint")
-            let split = try #require(box.splitEdge(at: i, parameter: 0.5),
-                                     "splitEdge(at: \(i)) failed")
+            let split = try #require(
+                box.splitEdge(at: i, parameter: 0.5),
+                "splitEdge(at: \(i)) failed")
             // The split inserts one vertex, at the midpoint of whichever edge it chose. Every
             // pre-existing vertex is a box corner, so the inserted one is the only non-corner.
             let inserted = split.vertices().filter { p in
                 ![p.x, p.y, p.z].allSatisfy { abs($0) < 1e-6 || abs($0 - 10) < 1e-6 }
             }
-            #expect(inserted.count == 1,
-                    "index \(i): expected one inserted vertex, got \(inserted.count)")
+            #expect(
+                inserted.count == 1,
+                "index \(i): expected one inserted vertex, got \(inserted.count)")
             if let got = inserted.first {
-                #expect(Self.dist(got, target) < 1e-6,
-                        "index \(i) split the edge at \(got), edges()[\(i)] is at \(target)")
+                #expect(
+                    Self.dist(got, target) < 1e-6,
+                    "index \(i) split the edge at \(got), edges()[\(i)] is at \(target)")
                 checked += 1
             }
         }
@@ -338,8 +358,9 @@ struct Issue613IndexContractTests {
         let box = try #require(Self.box())
         for i in [12, 17, 23] {
             #expect(box.edge(at: i) == nil, "premise: index \(i) is past the enumeration")
-            #expect(box.splitEdge(at: i, parameter: 0.5) == nil,
-                    "splitEdge answered for surplus index \(i)")
+            #expect(
+                box.splitEdge(at: i, parameter: 0.5) == nil,
+                "splitEdge answered for surplus index \(i)")
         }
     }
 
@@ -361,12 +382,15 @@ struct Issue613IndexContractTests {
             guard !found.isEmpty else { continue }
             checkedFaces += 1
             for e in found {
-                let viaIndex = try #require(box.edge(at: e.index),
-                                            "index \(e.index) from face \(faceIndex) addresses nothing")
+                let viaIndex = try #require(
+                    box.edge(at: e.index),
+                    "index \(e.index) from face \(faceIndex) addresses nothing")
                 let a = try #require(Self.mid(e))
                 let b = try #require(Self.mid(viaIndex))
-                #expect(Self.dist(a, b) < 1e-6,
-                        "face \(faceIndex): edge reported at index \(e.index) is at \(a), edges()[\(e.index)] is at \(b)")
+                #expect(
+                    Self.dist(a, b) < 1e-6,
+                    "face \(faceIndex): edge reported at index \(e.index) is at \(a), edges()[\(e.index)] is at \(b)"
+                )
             }
         }
         #expect(checkedFaces == 6, "expected all 6 box faces to report edges, got \(checkedFaces)")
@@ -391,8 +415,10 @@ struct Issue613IndexContractTests {
             for e in found {
                 let m = try #require(Self.mid(e))
                 let truth = try #require(Self.indexOfEdge(matching: m, in: box))
-                #expect(e.index == truth,
-                        "face \(faceIndex): reported \(e.index) for the edge at \(m), truth is \(truth)")
+                #expect(
+                    e.index == truth,
+                    "face \(faceIndex): reported \(e.index) for the edge at \(m), truth is \(truth)"
+                )
             }
         }
         #expect(proved, "no box face reported a non-trivial index set, fixture cannot prove this")
@@ -411,26 +437,31 @@ struct Issue613IndexContractTests {
         let knife = try #require(upright.translated(by: SIMD3(10, 0, 0)))
         let pieces = try #require(block.split(by: knife))
         try #require(pieces.count == 2)
-        let lower = pieces[0], upper = pieces[1]
+        let lower = pieces[0]
+        let upper = pieces[1]
 
         let common = lower.commonEdges(with: upper)
         #expect(common.count >= 4, "expected the four seam edges, got \(common.count)")
 
         for e in common {
-            let viaIndex = try #require(lower.edge(at: e.index),
-                                        "index \(e.index) addresses nothing in lower.edges()")
+            let viaIndex = try #require(
+                lower.edge(at: e.index),
+                "index \(e.index) addresses nothing in lower.edges()")
             let a = try #require(Self.mid(e))
             let b = try #require(Self.mid(viaIndex))
-            #expect(Self.dist(a, b) < 1e-6,
-                    "edge reported at index \(e.index) is at \(a), lower.edges()[\(e.index)] is at \(b)")
+            #expect(
+                Self.dist(a, b) < 1e-6,
+                "edge reported at index \(e.index) is at \(a), lower.edges()[\(e.index)] is at \(b)"
+            )
         }
 
         // And they are not array positions. Compare against `0..<common.count`, NOT a hardcoded
         // `0..<4`: the finder returns 8 entries here, so `Set(0..<4)` never equals the reported set
         // even with the defect fully present, and the assertion could not fire. (Proven: with site 6
         // injected the reported set is {0...7}.)
-        #expect(Set(common.map(\.index)) != Set(0..<common.count),
-                "reported indices are the result-array positions, not real edge indices")
+        #expect(
+            Set(common.map(\.index)) != Set(0..<common.count),
+            "reported indices are the result-array positions, not real edge indices")
     }
 
     // MARK: - Site 7: BiTgte_Blend (unlisted by the issue and by its audit)
@@ -449,18 +480,21 @@ struct Issue613IndexContractTests {
         let bracket = try #require(Self.lBracket())
         // Located geometrically, NOT via concaveEdges(), otherwise this test would also fail when
         // site 1 regresses, and could not attribute a failure to this site.
-        let target = try #require(Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket),
-                                  "fixture has no inner-corner edge at (10, y, 10)")
+        let target = try #require(
+            Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket),
+            "fixture has no inner-corner edge at (10, y, 10)")
 
         let baseline = try #require(bracket.volume)
         var changed: [Int] = []
         for i in 0..<bracket.edgeCount {
             guard let blended = bracket.biTgteBlend(edgeIndices: [i], radius: 3.0),
-                  let v = blended.volume else { continue }
+                let v = blended.volume
+            else { continue }
             if abs(v - baseline) > 1e-6 { changed.append(i) }
         }
-        #expect(changed == [target],
-                "indices that change the shape: \(changed); the concave edge is \(target)")
+        #expect(
+            changed == [target],
+            "indices that change the shape: \(changed); the concave edge is \(target)")
     }
 
     /// The #568 half of the same site: an index naming no edge used to be silently dropped and the
@@ -477,10 +511,12 @@ struct Issue613IndexContractTests {
 
         for surplus in [bracket.edgeCount, bracket.edgeCount + 12, 99] {
             #expect(bracket.edge(at: surplus) == nil, "premise: \(surplus) is past the enumeration")
-            #expect(bracket.biTgteBlend(edgeIndices: [surplus], radius: 3.0) == nil,
-                    "blended for surplus index \(surplus)")
-            #expect(bracket.biTgteBlend(edgeIndices: [target, surplus], radius: 3.0) == nil,
-                    "a mixed batch containing \(surplus) was accepted and partially blended")
+            #expect(
+                bracket.biTgteBlend(edgeIndices: [surplus], radius: 3.0) == nil,
+                "blended for surplus index \(surplus)")
+            #expect(
+                bracket.biTgteBlend(edgeIndices: [target, surplus], radius: 3.0) == nil,
+                "a mixed batch containing \(surplus) was accepted and partially blended")
         }
     }
 }

@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// #532, `BRepFeat_MakeCylindricalHole` selected parts of the **cut result**, not parts of the tool.
@@ -36,8 +37,10 @@ struct Issue532CylindricalHolePartSelectionTests {
     private func stack(_ count: Int) -> Shape? {
         var plates: [Shape] = []
         for i in 0..<count {
-            guard let p = Shape.box(width: 50, height: 50, depth: 20)?
-                    .translated(by: SIMD3(0, 0, -40 * Double(i))) else { return nil }
+            guard
+                let p = Shape.box(width: 50, height: 50, depth: 20)?
+                    .translated(by: SIMD3(0, 0, -40 * Double(i)))
+            else { return nil }
             plates.append(p)
         }
         return Shape.compound(plates)
@@ -50,16 +53,24 @@ struct Issue532CylindricalHolePartSelectionTests {
     /// `.throughAll` always did.
     @Test("untilEnd and a stack-spanning range drill every body on the axis")
     func untilEndAndRangeDrillEveryBody() {
-        guard let stack = stack(2), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
+        guard let stack = stack(2), let v0 = stack.volume else {
+            #expect(Bool(false), "stack")
+            return
+        }
 
         for extent: Shape.CylindricalHoleExtent in [.untilEnd, .range(from: 0, to: 70)] {
-            guard let d = stack.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                                radius: Self.radius, extent: extent),
-                  let v = d.volume else {
-                #expect(Bool(false), "\(extent) failed outright"); continue
+            guard
+                let d = stack.cylindricalHole(
+                    axisOrigin: Self.origin, axisDirection: Self.axis,
+                    radius: Self.radius, extent: extent),
+                let v = d.volume
+            else {
+                #expect(Bool(false), "\(extent) failed outright")
+                continue
             }
-            #expect(abs((v0 - v) - 2 * Self.bore) < 1.0,
-                    "\(extent) removed \(v0 - v), expected \(2 * Self.bore)")
+            #expect(
+                abs((v0 - v) - 2 * Self.bore) < 1.0,
+                "\(extent) removed \(v0 - v), expected \(2 * Self.bore)")
             #expect(d.isValid)
             // Both plates still one solid each: the tool was subtracted, not merely imprinted.
             #expect(d.subShapes(ofType: .solid).count == 2)
@@ -71,13 +82,20 @@ struct Issue532CylindricalHolePartSelectionTests {
     /// depth of 20 from the origin reaches 15mm into the first plate (which starts at parameter 5).
     @Test("blind drills its depth into the first body of a stack")
     func blindDrillsIntoAStack() {
-        guard let stack = stack(2), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
-        let expected = Double.pi * 25 * 15   // 20mm of depth, 5mm of it above the plate
+        guard let stack = stack(2), let v0 = stack.volume else {
+            #expect(Bool(false), "stack")
+            return
+        }
+        let expected = Double.pi * 25 * 15  // 20mm of depth, 5mm of it above the plate
 
-        guard let d = stack.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                            radius: Self.radius, extent: .blind(depth: 20)),
-              let v = d.volume else {
-            #expect(Bool(false), "blind failed outright"); return
+        guard
+            let d = stack.cylindricalHole(
+                axisOrigin: Self.origin, axisDirection: Self.axis,
+                radius: Self.radius, extent: .blind(depth: 20)),
+            let v = d.volume
+        else {
+            #expect(Bool(false), "blind failed outright")
+            return
         }
         #expect(abs((v0 - v) - expected) < 1.0, "blind removed \(v0 - v), expected \(expected)")
         #expect(d.isValid)
@@ -88,19 +106,30 @@ struct Issue532CylindricalHolePartSelectionTests {
     /// face pairs drills exactly those two.
     @Test("A three-plate stack drills as many bodies as the extent names")
     func threePlateStack() {
-        guard let stack = stack(3), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
+        guard let stack = stack(3), let v0 = stack.volume else {
+            #expect(Bool(false), "stack")
+            return
+        }
 
-        guard let all = stack.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                              radius: Self.radius, extent: .untilEnd),
-              let va = all.volume else {
-            #expect(Bool(false), "untilEnd failed"); return
+        guard
+            let all = stack.cylindricalHole(
+                axisOrigin: Self.origin, axisDirection: Self.axis,
+                radius: Self.radius, extent: .untilEnd),
+            let va = all.volume
+        else {
+            #expect(Bool(false), "untilEnd failed")
+            return
         }
         #expect(abs((v0 - va) - 3 * Self.bore) < 1.0)
 
-        guard let two = stack.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                              radius: Self.radius, extent: .range(from: 0, to: 70)),
-              let vt = two.volume else {
-            #expect(Bool(false), "range failed"); return
+        guard
+            let two = stack.cylindricalHole(
+                axisOrigin: Self.origin, axisDirection: Self.axis,
+                radius: Self.radius, extent: .range(from: 0, to: 70)),
+            let vt = two.volume
+        else {
+            #expect(Bool(false), "range failed")
+            return
         }
         #expect(abs((v0 - vt) - 2 * Self.bore) < 1.0)
     }
@@ -114,19 +143,25 @@ struct Issue532CylindricalHolePartSelectionTests {
     @Test("A single solid the bore severs is drilled, not merely imprinted")
     func singleSolidSeveredByItsOwnBore() {
         guard let bar = Shape.box(width: 8, height: 50, depth: 20), let v0 = bar.volume else {
-            #expect(Bool(false), "bar"); return
+            #expect(Bool(false), "bar")
+            return
         }
-        let segment = 25 * acos(0.8) - 4 * 3.0        // r²·acos(d/r) - d·√(r²-d²), d = 4, r = 5
+        let segment = 25 * acos(0.8) - 4 * 3.0  // r²·acos(d/r) - d·√(r²-d²), d = 4, r = 5
         let expected = (Double.pi * 25 - 2 * segment) * 20
 
         for extent: Shape.CylindricalHoleExtent in [.untilEnd, .thruNext, .range(from: 0, to: 30)] {
-            guard let d = bar.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                              radius: Self.radius, extent: extent),
-                  let v = d.volume else {
-                #expect(Bool(false), "\(extent) failed outright"); continue
+            guard
+                let d = bar.cylindricalHole(
+                    axisOrigin: Self.origin, axisDirection: Self.axis,
+                    radius: Self.radius, extent: extent),
+                let v = d.volume
+            else {
+                #expect(Bool(false), "\(extent) failed outright")
+                continue
             }
-            #expect(abs((v0 - v) - expected) < 1.0,
-                    "\(extent) removed \(v0 - v), expected \(expected)")
+            #expect(
+                abs((v0 - v) - expected) < 1.0,
+                "\(extent) removed \(v0 - v), expected \(expected)")
             #expect(d.subShapes(ofType: .solid).count == 2, "\(extent) did not sever the bar")
         }
     }
@@ -138,21 +173,29 @@ struct Issue532CylindricalHolePartSelectionTests {
     @Test("A single plate is unaffected by the part-selection fix")
     func singlePlateUnchanged() {
         guard let plate = Shape.box(width: 50, height: 50, depth: 20),
-              let v0 = plate.volume else { #expect(Bool(false), "plate"); return }
+            let v0 = plate.volume
+        else {
+            #expect(Bool(false), "plate")
+            return
+        }
 
         let expected: [(Shape.CylindricalHoleExtent, Double)] = [
             (.throughAll, Self.bore),
             (.untilEnd, Self.bore),
             (.thruNext, Self.bore),
             (.range(from: 0, to: 30), Self.bore),
-            (.range(from: 10, to: 20), Self.bore),   // a window inside one body still bores all of it
+            (.range(from: 10, to: 20), Self.bore),  // a window inside one body still bores all of it
             (.blind(depth: 20), Double.pi * 25 * 15),
         ]
         for (extent, want) in expected {
-            guard let d = plate.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                                radius: Self.radius, extent: extent),
-                  let v = d.volume else {
-                #expect(Bool(false), "\(extent) failed outright"); continue
+            guard
+                let d = plate.cylindricalHole(
+                    axisOrigin: Self.origin, axisDirection: Self.axis,
+                    radius: Self.radius, extent: extent),
+                let v = d.volume
+            else {
+                #expect(Bool(false), "\(extent) failed outright")
+                continue
             }
             #expect(abs((v0 - v) - want) < 1.0, "\(extent) removed \(v0 - v), expected \(want)")
             #expect(d.subShapes(ofType: .solid).count == 1)
@@ -166,21 +209,30 @@ struct Issue532CylindricalHolePartSelectionTests {
     @Test("A hollow box drills both walls, before and after the fix")
     func hollowBoxDrillsBothWalls() {
         guard let outer = Shape.box(width: 50, height: 50, depth: 50),
-              let inner = Shape.box(width: 40, height: 40, depth: 40),
-              let box = outer.subtracting(inner), let v0 = box.volume else {
-            #expect(Bool(false), "hollow box"); return
+            let inner = Shape.box(width: 40, height: 40, depth: 40),
+            let box = outer.subtracting(inner), let v0 = box.volume
+        else {
+            #expect(Bool(false), "hollow box")
+            return
         }
-        let origin = SIMD3<Double>(0, 0, 30)          // above the box: walls at 5...10 and 50...55
-        let expected = 2 * Double.pi * 25 * 5         // two 5mm walls
+        let origin = SIMD3<Double>(0, 0, 30)  // above the box: walls at 5...10 and 50...55
+        let expected = 2 * Double.pi * 25 * 5  // two 5mm walls
 
-        for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .range(from: 0, to: 60)] {
-            guard let d = box.cylindricalHole(axisOrigin: origin, axisDirection: Self.axis,
-                                              radius: Self.radius, extent: extent),
-                  let v = d.volume else {
-                #expect(Bool(false), "\(extent) failed outright"); continue
+        for extent: Shape.CylindricalHoleExtent in [
+            .throughAll, .untilEnd, .range(from: 0, to: 60),
+        ] {
+            guard
+                let d = box.cylindricalHole(
+                    axisOrigin: origin, axisDirection: Self.axis,
+                    radius: Self.radius, extent: extent),
+                let v = d.volume
+            else {
+                #expect(Bool(false), "\(extent) failed outright")
+                continue
             }
-            #expect(abs((v0 - v) - expected) < 1.0,
-                    "\(extent) removed \(v0 - v), expected \(expected)")
+            #expect(
+                abs((v0 - v) - expected) < 1.0,
+                "\(extent) removed \(v0 - v), expected \(expected)")
             #expect(d.isValid)
         }
     }
@@ -189,12 +241,19 @@ struct Issue532CylindricalHolePartSelectionTests {
     /// still refused, the fix changes which tool parts are kept, not which parameters are legal.
     @Test("A range naming no face pair is still invalidPlacement")
     func rangeOverTheGapIsStillRefused() {
-        guard let stack = stack(2) else { #expect(Bool(false), "stack"); return }
+        guard let stack = stack(2) else {
+            #expect(Bool(false), "stack")
+            return
+        }
 
-        #expect(stack.cylindricalHoleStatus(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                            radius: Self.radius,
-                                            extent: .range(from: 26, to: 44)) == .invalidPlacement)
-        #expect(stack.cylindricalHole(axisOrigin: Self.origin, axisDirection: Self.axis,
-                                      radius: Self.radius, extent: .range(from: 26, to: 44)) == nil)
+        #expect(
+            stack.cylindricalHoleStatus(
+                axisOrigin: Self.origin, axisDirection: Self.axis,
+                radius: Self.radius,
+                extent: .range(from: 26, to: 44)) == .invalidPlacement)
+        #expect(
+            stack.cylindricalHole(
+                axisOrigin: Self.origin, axisDirection: Self.axis,
+                radius: Self.radius, extent: .range(from: 26, to: 44)) == nil)
     }
 }

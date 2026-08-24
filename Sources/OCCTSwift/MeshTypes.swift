@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 2D polygon (sequence of 2D points).
 public final class Polygon2D: @unchecked Sendable {
@@ -19,11 +19,14 @@ public final class Polygon2D: @unchecked Sendable {
         var flat = [Double]()
         flat.reserveCapacity(points.count * 2)
         for p in points {
-            flat.append(p.x); flat.append(p.y)
+            flat.append(p.x)
+            flat.append(p.y)
         }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygon2DCreate(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ buf in
+                OCCTPolyPolygon2DCreate(buf.baseAddress!, Int32(points.count))
+            })
+        else { return nil }
         return Polygon2D(handle: ref)
     }
 
@@ -34,7 +37,8 @@ public final class Polygon2D: @unchecked Sendable {
 
     /// Get node at index (0-based).
     public func node(at index: Int) -> SIMD2<Double>? {
-        var x: Double = 0, y: Double = 0
+        var x: Double = 0
+        var y: Double = 0
         guard OCCTPolyPolygon2DNode(handle, Int32(index), &x, &y) else { return nil }
         return SIMD2(x, y)
     }
@@ -74,8 +78,10 @@ public final class Triangulation: @unchecked Sendable {
     }
 
     /// Create a triangulation from nodes and triangle vertex indices.
-    /// - Parameter nodes: sequence of node positions.
-    /// - Parameter triangles: triangle vertex indices, 0-based, three per triangle.
+    ///
+    /// - Parameters:
+    ///   - nodes: Sequence of node positions.
+    ///   - triangles: Triangle vertex indices, 0-based, three per triangle.
     /// - Returns: nil if any index is out of range or the inputs are empty.
     public static func create(nodes: [SIMD3<Double>], triangles: [Int]) -> Triangulation? {
         guard !nodes.isEmpty, triangles.count > 0, triangles.count % 3 == 0 else { return nil }
@@ -83,16 +89,20 @@ public final class Triangulation: @unchecked Sendable {
         var flatNodes = [Double]()
         flatNodes.reserveCapacity(nodes.count * 3)
         for n in nodes {
-            flatNodes.append(n.x); flatNodes.append(n.y); flatNodes.append(n.z)
+            flatNodes.append(n.x)
+            flatNodes.append(n.y)
+            flatNodes.append(n.z)
         }
         let triInts = triangles.map { Int32($0) }
-        guard let ref = flatNodes.withUnsafeBufferPointer({ nodeBuf in
-            triInts.withUnsafeBufferPointer { triBuf in
-                OCCTPolyTriangulationCreate(
-                    nodeBuf.baseAddress!, Int32(nodes.count),
-                    triBuf.baseAddress!, Int32(triangles.count / 3))
-            }
-        }) else { return nil }
+        guard
+            let ref = flatNodes.withUnsafeBufferPointer({ nodeBuf in
+                triInts.withUnsafeBufferPointer { triBuf in
+                    OCCTPolyTriangulationCreate(
+                        nodeBuf.baseAddress!, Int32(nodes.count),
+                        triBuf.baseAddress!, Int32(triangles.count / 3))
+                }
+            })
+        else { return nil }
         return Triangulation(handle: ref)
     }
 
@@ -104,14 +114,18 @@ public final class Triangulation: @unchecked Sendable {
 
     /// Get node at index (0-based).
     public func node(at index: Int) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTPolyTriangulationNode(handle, Int32(index), &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
 
     /// Get triangle's three node indices at the given triangle index (0-based; returns 0-based vertex indices).
     public func triangle(at index: Int) -> (Int, Int, Int)? {
-        var n1: Int32 = 0, n2: Int32 = 0, n3: Int32 = 0
+        var n1: Int32 = 0
+        var n2: Int32 = 0
+        var n3: Int32 = 0
         guard OCCTPolyTriangulationTriangle(handle, Int32(index), &n1, &n2, &n3) else { return nil }
         return (Int(n1), Int(n2), Int(n3))
     }
@@ -140,11 +154,15 @@ public final class Polygon3D: @unchecked Sendable {
         var flat = [Double]()
         flat.reserveCapacity(points.count * 3)
         for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
         }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygon3DCreate(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ buf in
+                OCCTPolyPolygon3DCreate(buf.baseAddress!, Int32(points.count))
+            })
+        else { return nil }
         return Polygon3D(handle: ref)
     }
 
@@ -153,13 +171,18 @@ public final class Polygon3D: @unchecked Sendable {
         var flat = [Double]()
         flat.reserveCapacity(points.count * 3)
         for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+            flat.append(p.x)
+            flat.append(p.y)
+            flat.append(p.z)
         }
-        guard let ref = flat.withUnsafeBufferPointer({ ptsBuf in
-            parameters.withUnsafeBufferPointer { paramBuf in
-                OCCTPolyPolygon3DCreateWithParams(ptsBuf.baseAddress!, Int32(points.count), paramBuf.baseAddress!)
-            }
-        }) else { return nil }
+        guard
+            let ref = flat.withUnsafeBufferPointer({ ptsBuf in
+                parameters.withUnsafeBufferPointer { paramBuf in
+                    OCCTPolyPolygon3DCreateWithParams(
+                        ptsBuf.baseAddress!, Int32(points.count), paramBuf.baseAddress!)
+                }
+            })
+        else { return nil }
         return Polygon3D(handle: ref)
     }
 
@@ -170,7 +193,9 @@ public final class Polygon3D: @unchecked Sendable {
 
     /// Get node at index (0-based).
     public func node(at index: Int) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         guard OCCTPolyPolygon3DNode(handle, Int32(index), &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
@@ -211,19 +236,25 @@ public final class PolygonOnTriangulation: @unchecked Sendable {
 
     /// Create from node indices.
     public static func create(nodeIndices: [Int32]) -> PolygonOnTriangulation? {
-        guard let ref = nodeIndices.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygonOnTriCreate(buf.baseAddress!, Int32(nodeIndices.count))
-        }) else { return nil }
+        guard
+            let ref = nodeIndices.withUnsafeBufferPointer({ buf in
+                OCCTPolyPolygonOnTriCreate(buf.baseAddress!, Int32(nodeIndices.count))
+            })
+        else { return nil }
         return PolygonOnTriangulation(handle: ref)
     }
 
     /// Create from node indices with parameters.
-    public static func create(nodeIndices: [Int32], parameters: [Double]) -> PolygonOnTriangulation? {
-        guard let ref = nodeIndices.withUnsafeBufferPointer({ idxBuf in
-            parameters.withUnsafeBufferPointer { paramBuf in
-                OCCTPolyPolygonOnTriCreateWithParams(idxBuf.baseAddress!, Int32(nodeIndices.count), paramBuf.baseAddress!)
-            }
-        }) else { return nil }
+    public static func create(nodeIndices: [Int32], parameters: [Double]) -> PolygonOnTriangulation?
+    {
+        guard
+            let ref = nodeIndices.withUnsafeBufferPointer({ idxBuf in
+                parameters.withUnsafeBufferPointer { paramBuf in
+                    OCCTPolyPolygonOnTriCreateWithParams(
+                        idxBuf.baseAddress!, Int32(nodeIndices.count), paramBuf.baseAddress!)
+                }
+            })
+        else { return nil }
         return PolygonOnTriangulation(handle: ref)
     }
 
@@ -260,8 +291,9 @@ public final class PolygonOnTriangulation: @unchecked Sendable {
     }
 
     /// Overwrite the node-index array in place (`ChangeNodeArray()`).
+    ///
     /// The supplied array must have the same length as `nodeCount`.
-    /// - Returns: true on success, false on size mismatch.
+    /// - Returns: True on success, false on size mismatch.
     @discardableResult
     public func setNodes(_ nodeIndices: [Int32]) -> Bool {
         nodeIndices.withUnsafeBufferPointer { buf in
@@ -270,8 +302,9 @@ public final class PolygonOnTriangulation: @unchecked Sendable {
     }
 
     /// Overwrite the parameter array in place (`ChangeParameterArray()`).
+    ///
     /// Requires `hasParameters` and an array length equal to `nodeCount`.
-    /// - Returns: true on success, false otherwise.
+    /// - Returns: True on success, false otherwise.
     @discardableResult
     public func setParameters(_ params: [Double]) -> Bool {
         params.withUnsafeBufferPointer { buf in
@@ -295,9 +328,11 @@ public struct MergedMeshData: Sendable {
 ///   - smoothAngle: Normal smoothing angle threshold in radians
 ///   - mergeTolerance: Distance threshold for merging nodes (0 = positional only)
 /// - Returns: Merged mesh data, or nil on failure
-public func mergedMeshNodes(from shape: Shape,
-                              smoothAngle: Double,
-                              mergeTolerance: Double = 0.0) -> MergedMeshData? {
+public func mergedMeshNodes(
+    from shape: Shape,
+    smoothAngle: Double,
+    mergeTolerance: Double = 0.0
+) -> MergedMeshData? {
     let maxVerts: Int32 = 1_000_000
     let maxIdx: Int32 = 3_000_000
     var vertices = [Float](repeating: 0, count: Int(maxVerts) * 3)
@@ -308,11 +343,12 @@ public func mergedMeshNodes(from shape: Shape,
     let nVerts = vertices.withUnsafeMutableBufferPointer { vBuf in
         normals.withUnsafeMutableBufferPointer { nBuf in
             indices.withUnsafeMutableBufferPointer { iBuf in
-                OCCTPolyMergeNodes(shape.handle, smoothAngle, mergeTolerance,
-                                     vBuf.baseAddress, nBuf.baseAddress,
-                                     iBuf.baseAddress,
-                                     maxVerts, maxIdx,
-                                     &triCount)
+                OCCTPolyMergeNodes(
+                    shape.handle, smoothAngle, mergeTolerance,
+                    vBuf.baseAddress, nBuf.baseAddress,
+                    iBuf.baseAddress,
+                    maxVerts, maxIdx,
+                    &triCount)
             }
         }
     }
@@ -324,8 +360,9 @@ public func mergedMeshNodes(from shape: Shape,
     let norms: [SIMD3<Float>] = unpackSIMD3(normals, count: nv)
     let idxSlice = Array(indices.prefix(nt * 3))
 
-    return MergedMeshData(vertices: verts, normals: norms, indices: idxSlice,
-                            triangleCount: nt, vertexCount: nv)
+    return MergedMeshData(
+        vertices: verts, normals: norms, indices: idxSlice,
+        triangleCount: nt, vertexCount: nv)
 }
 
 /// Mutable coherent triangulation for mesh editing operations.
@@ -347,24 +384,38 @@ public final class CoherentTriangulation: @unchecked Sendable {
     }
 
     /// Create a coherent triangulation from a meshed shape's first face triangulation.
-    /// - Parameter deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
-    public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1) -> CoherentTriangulation? {
-        guard let ref = OCCTCoherentTriangulationCreateFromMesh(shape.handle, deflection) else { return nil }
+    ///
+    /// - Parameters:
+    ///   - shape: A shape that has been triangulated.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    /// - Returns: A CoherentTriangulation, or nil on failure.
+    public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1)
+        -> CoherentTriangulation?
+    {
+        guard let ref = OCCTCoherentTriangulationCreateFromMesh(shape.handle, deflection) else {
+            return nil
+        }
         return CoherentTriangulation(handle: ref)
     }
 
-    /// Add a node at (x, y, z). Returns the 0-based node index.
+    /// Add a node at (x, y, z).
+    ///
+    /// Returns the 0-based node index.
     public func setNode(x: Double, y: Double, z: Double) -> Int {
         Int(OCCTCoherentTriangulationSetNode(handle, x, y, z))
     }
 
-    /// Add a triangle from three 0-based node indices. Returns true on success.
+    /// Add a triangle from three 0-based node indices.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func addTriangle(_ n0: Int, _ n1: Int, _ n2: Int) -> Bool {
         OCCTCoherentTriangulationAddTriangle(handle, Int32(n0), Int32(n1), Int32(n2))
     }
 
-    /// Remove a triangle by 0-based index. Returns true on success.
+    /// Remove a triangle by 0-based index.
+    ///
+    /// Returns true on success.
     @discardableResult
     public func removeTriangle(at index: Int) -> Bool {
         OCCTCoherentTriangulationRemoveTriangle(handle, Int32(index))
@@ -375,12 +426,16 @@ public final class CoherentTriangulation: @unchecked Sendable {
         Int(OCCTCoherentTriangulationNTriangles(handle))
     }
 
-    /// Compute edge links between triangles. Returns the number of links.
+    /// Compute edge links between triangles.
+    ///
+    /// Returns the number of links.
     public func computeLinks() -> Int {
         Int(OCCTCoherentTriangulationComputeLinks(handle))
     }
 
-    /// Number of links (edges). Call computeLinks() first.
+    /// Number of links (edges).
+    ///
+    /// Call computeLinks() first.
     public var linkCount: Int {
         Int(OCCTCoherentTriangulationNLinks(handle))
     }
@@ -395,13 +450,17 @@ public final class CoherentTriangulation: @unchecked Sendable {
         OCCTCoherentTriangulationDeflection(handle)
     }
 
-    /// Remove degenerated triangles within tolerance. Returns true if any were removed.
+    /// Remove degenerated triangles within tolerance.
+    ///
+    /// Returns true if any were removed.
     @discardableResult
     public func removeDegenerated(tolerance: Double) -> Bool {
         OCCTCoherentTriangulationRemoveDegenerated(handle, tolerance)
     }
 
-    /// Convert back to standard triangulation data. Returns (nodeCount, triangleCount) or nil.
+    /// Convert back to standard triangulation data.
+    ///
+    /// Returns (nodeCount, triangleCount) or nil.
     public func getResult() -> (nodeCount: Int, triangleCount: Int)? {
         var nbNodes: Int32 = 0
         var nbTris: Int32 = 0
@@ -411,8 +470,12 @@ public final class CoherentTriangulation: @unchecked Sendable {
 
     /// Get node coordinates by 1-based index (after getResult).
     public func nodeCoords(at index: Int) -> (x: Double, y: Double, z: Double)? {
-        var x = 0.0, y = 0.0, z = 0.0
-        guard OCCTCoherentTriangulationNodeCoords(handle, Int32(index), &x, &y, &z) else { return nil }
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
+        guard OCCTCoherentTriangulationNodeCoords(handle, Int32(index), &x, &y, &z) else {
+            return nil
+        }
         return (x, y, z)
     }
 }

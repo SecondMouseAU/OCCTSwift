@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #478: Curve2D has two transform families that never had a test asserting they agree:
@@ -29,14 +30,18 @@ struct Issue478Curve2DTransformParityTests {
     private func samples(_ curve: Curve2D, count: Int = 7) -> [SIMD2<Double>] {
         let d = curve.domain
         return (0..<count).map { i in
-            curve.point(at: d.lowerBound
-                        + (d.upperBound - d.lowerBound) * (Double(i) / Double(count - 1)))
+            curve.point(
+                at: d.lowerBound
+                    + (d.upperBound - d.lowerBound) * (Double(i) / Double(count - 1)))
         }
     }
 
-    private func assertSameGeometry(_ mutated: Curve2D, _ copied: Curve2D,
-                                    _ label: String, tolerance: Double = 1e-9) {
-        let a = samples(mutated), b = samples(copied)
+    private func assertSameGeometry(
+        _ mutated: Curve2D, _ copied: Curve2D,
+        _ label: String, tolerance: Double = 1e-9
+    ) {
+        let a = samples(mutated)
+        let b = samples(copied)
         #expect(a.count == b.count)
         for (p, q) in zip(a, b) {
             #expect(abs(p.x - q.x) < tolerance, "\(label): x \(p.x) vs \(q.x)")
@@ -46,9 +51,11 @@ struct Issue478Curve2DTransformParityTests {
 
     /// Runs one transform kind over both fixtures: take the immutable copy first, then mutate
     /// the original in place, then compare. `apply` returns false only if the in-place call did.
-    private func checkParity(_ label: String,
-                             copy: (Curve2D) -> Curve2D?,
-                             mutate: (Curve2D) -> Bool) {
+    private func checkParity(
+        _ label: String,
+        copy: (Curve2D) -> Curve2D?,
+        mutate: (Curve2D) -> Bool
+    ) {
         for (name, make) in [("analytic", Self.analytic), ("bezier", Self.poled)] {
             guard let base = make() else {
                 Issue.record("\(label): could not build the \(name) fixture")
@@ -65,17 +72,19 @@ struct Issue478Curve2DTransformParityTests {
 
     @Test("translate vs translated(by:)")
     func translateParity() {
-        checkParity("translate",
-                    copy: { $0.translated(by: SIMD2(3, -2.5)) },
-                    mutate: { $0.translate(dx: 3, dy: -2.5) })
+        checkParity(
+            "translate",
+            copy: { $0.translated(by: SIMD2(3, -2.5)) },
+            mutate: { $0.translate(dx: 3, dy: -2.5) })
     }
 
     @Test("rotate vs rotated(around:angle:)")
     func rotateParity() {
         let centre = SIMD2<Double>(7, 5)
-        checkParity("rotate",
-                    copy: { $0.rotated(around: centre, angle: .pi / 3) },
-                    mutate: { $0.rotate(center: centre, angle: .pi / 3) })
+        checkParity(
+            "rotate",
+            copy: { $0.rotated(around: centre, angle: .pi / 3) },
+            mutate: { $0.rotate(center: centre, angle: .pi / 3) })
     }
 
     // The case whose gp_Trsf2d construction changed: the dispatcher used to compose
@@ -84,9 +93,10 @@ struct Issue478Curve2DTransformParityTests {
     @Test("scale vs scaled(from:factor:) about a non-origin centre")
     func scaleParity() {
         let centre = SIMD2<Double>(12.5, -6.25)
-        checkParity("scale",
-                    copy: { $0.scaled(from: centre, factor: 2.5) },
-                    mutate: { $0.scale(center: centre, factor: 2.5) })
+        checkParity(
+            "scale",
+            copy: { $0.scaled(from: centre, factor: 2.5) },
+            mutate: { $0.scale(center: centre, factor: 2.5) })
     }
 
     // Negative factors are where the two constructions tag the transformation differently
@@ -94,26 +104,29 @@ struct Issue478Curve2DTransformParityTests {
     @Test("scale parity holds for a negative factor")
     func negativeScaleParity() {
         let centre = SIMD2<Double>(12.5, -6.25)
-        checkParity("scale(-1)",
-                    copy: { $0.scaled(from: centre, factor: -1) },
-                    mutate: { $0.scale(center: centre, factor: -1) })
+        checkParity(
+            "scale(-1)",
+            copy: { $0.scaled(from: centre, factor: -1) },
+            mutate: { $0.scale(center: centre, factor: -1) })
     }
 
     @Test("mirrorPoint vs mirrored(acrossPoint:)")
     func mirrorPointParity() {
         let point = SIMD2<Double>(4, 4)
-        checkParity("mirrorPoint",
-                    copy: { $0.mirrored(acrossPoint: point) },
-                    mutate: { $0.mirrorPoint(point) })
+        checkParity(
+            "mirrorPoint",
+            copy: { $0.mirrored(acrossPoint: point) },
+            mutate: { $0.mirrorPoint(point) })
     }
 
     @Test("mirrorAxis vs mirrored(acrossLine:direction:)")
     func mirrorAxisParity() {
         let origin = SIMD2<Double>(0, 2)
         let direction = SIMD2<Double>(1, 2)
-        checkParity("mirrorAxis",
-                    copy: { $0.mirrored(acrossLine: origin, direction: direction) },
-                    mutate: { $0.mirrorAxis(origin: origin, direction: direction) })
+        checkParity(
+            "mirrorAxis",
+            copy: { $0.mirrored(acrossLine: origin, direction: direction) },
+            mutate: { $0.mirrorAxis(origin: origin, direction: direction) })
     }
 }
 // buildTrsf2D's default branch (a selector outside 0...4) has no test: TransformType2D admits
@@ -139,18 +152,22 @@ struct Issue478Curve2DTransformGeometryTests {
         return (curve.point(at: d.lowerBound), curve.point(at: d.upperBound))
     }
 
-    private func expectClose(_ got: SIMD2<Double>, _ want: SIMD2<Double>,
-                             _ label: String, tolerance: Double = 1e-9) {
+    private func expectClose(
+        _ got: SIMD2<Double>, _ want: SIMD2<Double>,
+        _ label: String, tolerance: Double = 1e-9
+    ) {
         #expect(abs(got.x - want.x) < tolerance, "\(label): x \(got.x) expected \(want.x)")
         #expect(abs(got.y - want.y) < tolerance, "\(label): y \(got.y) expected \(want.y)")
     }
 
     /// Applies `expected` to both endpoints and checks the in-place and immutable families
     /// against it independently, so a defect in the shared builder cannot hide behind parity.
-    private func checkAgainstOracle(_ label: String,
-                                    expected: (SIMD2<Double>) -> SIMD2<Double>,
-                                    copy: (Curve2D) -> Curve2D?,
-                                    mutate: (Curve2D) -> Bool) {
+    private func checkAgainstOracle(
+        _ label: String,
+        expected: (SIMD2<Double>) -> SIMD2<Double>,
+        copy: (Curve2D) -> Curve2D?,
+        mutate: (Curve2D) -> Bool
+    ) {
         guard let mutated = Self.segment(), let source = Self.segment() else {
             Issue.record("\(label): could not build the segment fixture")
             return
@@ -172,24 +189,27 @@ struct Issue478Curve2DTransformGeometryTests {
     @Test("translation moves both endpoints by the delta")
     func translateGeometry() {
         let delta = SIMD2<Double>(3, -2.5)
-        checkAgainstOracle("translate",
-                           expected: { $0 + delta },
-                           copy: { $0.translated(by: delta) },
-                           mutate: { $0.translate(dx: delta.x, dy: delta.y) })
+        checkAgainstOracle(
+            "translate",
+            expected: { $0 + delta },
+            copy: { $0.translated(by: delta) },
+            mutate: { $0.translate(dx: delta.x, dy: delta.y) })
     }
 
     @Test("rotation turns both endpoints about the centre")
     func rotateGeometry() {
         let centre = SIMD2<Double>(7, 5)
         let angle = Double.pi / 3
-        checkAgainstOracle("rotate",
-                           expected: { p in
-                               let d = p - centre
-                               return SIMD2(centre.x + d.x * cos(angle) - d.y * sin(angle),
-                                            centre.y + d.x * sin(angle) + d.y * cos(angle))
-                           },
-                           copy: { $0.rotated(around: centre, angle: angle) },
-                           mutate: { $0.rotate(center: centre, angle: angle) })
+        checkAgainstOracle(
+            "rotate",
+            expected: { p in
+                let d = p - centre
+                return SIMD2(
+                    centre.x + d.x * cos(angle) - d.y * sin(angle),
+                    centre.y + d.x * sin(angle) + d.y * cos(angle))
+            },
+            copy: { $0.rotated(around: centre, angle: angle) },
+            mutate: { $0.rotate(center: centre, angle: angle) })
     }
 
     // The construction that changed in #478. Scaling about a centre away from the origin is
@@ -198,28 +218,31 @@ struct Issue478Curve2DTransformGeometryTests {
     func scaleGeometry() {
         let centre = SIMD2<Double>(12.5, -6.25)
         let factor = 2.5
-        checkAgainstOracle("scale",
-                           expected: { centre + (($0 - centre) * factor) },
-                           copy: { $0.scaled(from: centre, factor: factor) },
-                           mutate: { $0.scale(center: centre, factor: factor) })
+        checkAgainstOracle(
+            "scale",
+            expected: { centre + (($0 - centre) * factor) },
+            copy: { $0.scaled(from: centre, factor: factor) },
+            mutate: { $0.scale(center: centre, factor: factor) })
     }
 
     @Test("a negative scale factor reflects through the centre")
     func negativeScaleGeometry() {
         let centre = SIMD2<Double>(12.5, -6.25)
-        checkAgainstOracle("scale(-1)",
-                           expected: { centre + (($0 - centre) * -1.0) },
-                           copy: { $0.scaled(from: centre, factor: -1) },
-                           mutate: { $0.scale(center: centre, factor: -1) })
+        checkAgainstOracle(
+            "scale(-1)",
+            expected: { centre + (($0 - centre) * -1.0) },
+            copy: { $0.scaled(from: centre, factor: -1) },
+            mutate: { $0.scale(center: centre, factor: -1) })
     }
 
     @Test("point mirror reflects both endpoints through the point")
     func mirrorPointGeometry() {
         let point = SIMD2<Double>(4, 4)
-        checkAgainstOracle("mirrorPoint",
-                           expected: { (point * 2.0) - $0 },
-                           copy: { $0.mirrored(acrossPoint: point) },
-                           mutate: { $0.mirrorPoint(point) })
+        checkAgainstOracle(
+            "mirrorPoint",
+            expected: { (point * 2.0) - $0 },
+            copy: { $0.mirrored(acrossPoint: point) },
+            mutate: { $0.mirrorPoint(point) })
     }
 
     @Test("axis mirror reflects both endpoints across the line")
@@ -228,14 +251,15 @@ struct Issue478Curve2DTransformGeometryTests {
         let direction = SIMD2<Double>(1, 2)
         let len = (direction.x * direction.x + direction.y * direction.y).squareRoot()
         let unit = SIMD2<Double>(direction.x / len, direction.y / len)
-        checkAgainstOracle("mirrorAxis",
-                           expected: { p in
-                               let d = p - origin
-                               let along = d.x * unit.x + d.y * unit.y
-                               // reflection = 2 * projection onto the axis, minus the vector
-                               return origin + ((unit * (2 * along)) - d)
-                           },
-                           copy: { $0.mirrored(acrossLine: origin, direction: direction) },
-                           mutate: { $0.mirrorAxis(origin: origin, direction: direction) })
+        checkAgainstOracle(
+            "mirrorAxis",
+            expected: { p in
+                let d = p - origin
+                let along = d.x * unit.x + d.y * unit.y
+                // reflection = 2 * projection onto the axis, minus the vector
+                return origin + ((unit * (2 * along)) - d)
+            },
+            copy: { $0.mirrored(acrossLine: origin, direction: direction) },
+            mutate: { $0.mirrorAxis(origin: origin, direction: direction) })
     }
 }

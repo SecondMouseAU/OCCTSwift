@@ -235,17 +235,16 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 // Status codes:
 //   1  = self-intersects (conclusive)
 //   0  = clean (conclusive)
-//  -1  = indeterminate (timed out, but breaker was tripped - analysis was running)
-//  -2  = indeterminate (timed out, breaker was NOT tripped - analysis made no progress)
+//  -1  = indeterminate (timed out, breaker was tripped - analysis was running)
+//  -2  = indeterminate (timed out, breaker NOT tripped - analysis made no progress)
 //  -3  = error (exception occurred)
 // Output parameters (optional, can pass nullptr):
-//   - outNumFacesChecked: number of face pairs checked before timeout/error
 //   - outTotalFacePairs: estimated total face pairs to check (if available)
 //   - outTimeSpent: actual time spent in seconds
-int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
-                                         int32_t* _Nullable outNumFacesChecked,
-                                         int32_t* _Nullable outTotalFacePairs,
-                                         double* _Nullable outTimeSpent);
+int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
+                                        double       timeoutSeconds,
+                                        int32_t* _Nullable outTotalFacePairs,
+                                        double* _Nullable outTimeSpent);
 
 // Quick pre-screen for self-intersection check complexity.
 // Returns an estimate of the computational cost based on face count and surface types.
@@ -255,11 +254,10 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSecond
 // outEstimatedCost: relative cost estimate (higher = more expensive)
 // Returns 0 on success, -1 on error
 int32_t OCCTShapeSelfIntersectEstimateCost(OCCTShapeRef shape,
-                                            int32_t* _Nullable outNumFaces,
-                                            int32_t* _Nullable outNumBSplineFaces,
-                                            int32_t* _Nullable outNumPlaneFaces,
-                                            double* _Nullable outEstimatedCost);
-
+                                           int32_t* _Nullable outNumFaces,
+                                           int32_t* _Nullable outNumBSplineFaces,
+                                           int32_t* _Nullable outNumPlaneFaces,
+                                           double* _Nullable outEstimatedCost);
 
 // MARK: - Modifications
 

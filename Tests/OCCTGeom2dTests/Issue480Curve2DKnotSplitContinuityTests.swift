@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #480: the 2D sibling of the knot-splitting family.
@@ -13,8 +14,10 @@ struct Issue480Curve2DKnotSplitContinuityTests {
 
     /// A 2D BSpline of the given degree with `interiorKnots` interior knots at multiplicity 1,
     /// except knot `bumpAt` (1-based), which gets `bumpMult`.
-    private func bsplineCurve(degree: Int, interiorKnots: Int,
-                              bumpAt: Int = 0, bumpMult: Int = 1) -> Curve2D? {
+    private func bsplineCurve(
+        degree: Int, interiorKnots: Int,
+        bumpAt: Int = 0, bumpMult: Int = 1
+    ) -> Curve2D? {
         var knots: [Double] = [0]
         var mults: [Int32] = [Int32(degree + 1)]
         for i in 1...interiorKnots {
@@ -34,8 +37,9 @@ struct Issue480Curve2DKnotSplitContinuityTests {
         let curve = try #require(bsplineCurve(degree: 3, interiorKnots: 4))
 
         for continuity: ParametricContinuity in [.c0, .c1, .c2] {
-            #expect(curve.splitIndicesAtDiscontinuities(continuity: continuity) == [1, 6],
-                    "indices at \(continuity)")
+            #expect(
+                curve.splitIndicesAtDiscontinuities(continuity: continuity) == [1, 6],
+                "indices at \(continuity)")
         }
 
         // Knot indices are 1-based into the curve's own knot table, which here is 0...5.

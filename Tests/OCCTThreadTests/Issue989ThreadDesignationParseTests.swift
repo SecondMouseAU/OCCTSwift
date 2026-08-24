@@ -86,7 +86,9 @@ struct Issue989ThreadDesignationParseTests {
             let acme = ThreadSpec.parse("\(body) ACME")
             let unified = ThreadSpec.parse(body)
             guard let acme, let unified else {
-                Issue.record("\(body): ACME \(acme == nil ? "nil" : "ok"), Unified \(unified == nil ? "nil" : "ok")")
+                Issue.record(
+                    "\(body): ACME \(acme == nil ? "nil" : "ok"), Unified \(unified == nil ? "nil" : "ok")"
+                )
                 continue
             }
             #expect(acme.form == .acme)
@@ -107,7 +109,9 @@ struct Issue989ThreadDesignationParseTests {
             "-20",  // no diameter
         ])
     func unrecognisedInputIsRefused(_ text: String) {
-        #expect(ThreadSpec.parse(text) == nil, "\(text) parsed to \(String(describing: ThreadSpec.parse(text)))")
+        #expect(
+            ThreadSpec.parse(text) == nil,
+            "\(text) parsed to \(String(describing: ThreadSpec.parse(text)))")
     }
 
     /// Two measured facts about `parse` that this refactor did not set out to change, pinned so

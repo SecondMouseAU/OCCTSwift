@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Persistent free bounds properties analyzer.
 ///
@@ -40,14 +40,18 @@ public final class FreeBoundsProperties: @unchecked Sendable {
         /// Contours that do not.
         case open
 
-        fileprivate var occt: OCCTFreeBoundKind { self == .closed ? OCCTFreeBoundClosed : OCCTFreeBoundOpen }
+        fileprivate var occt: OCCTFreeBoundKind {
+            self == .closed ? OCCTFreeBoundClosed : OCCTFreeBoundOpen
+        }
     }
 
     /// Create a free bounds properties analyzer.
     ///
-    /// - Parameter tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
-    ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared
-    ///   topology instead of from a sewing pass.
+    /// - Parameters:
+    ///   - shape: The shape to analyze.
+    ///   - tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
+    ///     selects a different OCCT algorithm, taking free edges from the shape's already-shared
+    ///     topology instead of from a sewing pass.
     public init?(shape: Shape, tolerance: Double = 1e-7) {
         guard let r = OCCTFreeBoundsPropsCreate(shape.handle, tolerance) else { return nil }
         self.ref = r
@@ -96,7 +100,9 @@ public final class FreeBoundsProperties: @unchecked Sendable {
     public func closedArea(at index: Int) -> Double { info(.closed, at: index)?.area ?? 0 }
 
     /// Get perimeter of a closed free bound (0-based index), or 0 if the index is out of range.
-    public func closedPerimeter(at index: Int) -> Double { info(.closed, at: index)?.perimeter ?? 0 }
+    public func closedPerimeter(at index: Int) -> Double {
+        info(.closed, at: index)?.perimeter ?? 0
+    }
 
     /// Get aspect ratio of a closed free bound (0-based index), or 0 if the index is out of range.
     ///

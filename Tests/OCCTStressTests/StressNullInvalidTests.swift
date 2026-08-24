@@ -2,8 +2,8 @@
 // Category 2: Null handles, invalid parameters, nil propagation, empty containers.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Nil Propagation
 
@@ -12,7 +12,7 @@ struct StressNilPropagationTests {
 
     @Test func failedFilletFedToBoolean() {
         let box = standardBox()
-        let badFillet = box.filleted(radius: 999.0) // nil, radius too large
+        let badFillet = box.filleted(radius: 999.0)  // nil, radius too large
         #expect(badFillet == nil)
     }
 
@@ -34,7 +34,8 @@ struct StressNilPropagationTests {
         let badShell = box.shelled(thickness: -6.0)
         if let s = badShell {
             // If it succeeded, try to drill it
-            let drilled = s.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
+            let drilled = s.drilled(
+                at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
             if let d = drilled { #expect(d.isValid) }
         }
     }
@@ -223,7 +224,8 @@ struct StressInvalidParameterTests {
 
     @Test func zeroDrill() {
         let box = standardBox()
-        let result = box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 0, depth: 0)
+        let result = box.drilled(
+            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 0, depth: 0)
         if let r = result { _ = r.isValid }
     }
 
@@ -237,7 +239,7 @@ struct StressInvalidParameterTests {
         let box = standardBox()
         // Edge index way out of bounds
         let polyline = box.edgePolyline(at: 999, deflection: 0.1)
-        #expect(polyline == nil || polyline!.isEmpty || true) // Just don't crash
+        #expect(polyline == nil || polyline!.isEmpty || true)  // Just don't crash
     }
 
     @Test func curveEvalOutsideDomain() {
@@ -323,7 +325,11 @@ struct StressPostOperationStateTests {
         let url1 = tempURL("step")
         let url2 = tempURL("brep")
         let url3 = tempURL("stl")
-        defer { cleanupTemp(url1); cleanupTemp(url2); cleanupTemp(url3) }
+        defer {
+            cleanupTemp(url1)
+            cleanupTemp(url2)
+            cleanupTemp(url3)
+        }
         try Exporter.writeSTEP(shape: box, to: url1, modelType: .asIs)
         try Exporter.writeBREP(shape: box, to: url2)
         try Exporter.writeSTL(shape: box, to: url3)
@@ -357,8 +363,9 @@ struct StressUnusualInputTests {
     @Test func booleanWireShapes() {
         // Create wire shapes (not solids) and try boolean ops
         guard let w1 = Wire.rectangle(width: 10, height: 10),
-              let w2 = Wire.rectangle(width: 5, height: 5),
-              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+            let w2 = Wire.rectangle(width: 5, height: 5),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        else { return }
         let result = s1.union(s2)
         // May fail for non-solid inputs, should not crash
         if let r = result { _ = r.isValid }
@@ -366,14 +373,16 @@ struct StressUnusualInputTests {
 
     @Test func filletOnNonSolid() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
-              let shape = Shape.fromWire(wire) else { return }
+            let shape = Shape.fromWire(wire)
+        else { return }
         let result = shape.filleted(radius: 1.0)
         if let r = result { _ = r.isValid }
     }
 
     @Test func volumeOnWireShape() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
-              let shape = Shape.fromWire(wire) else { return }
+            let shape = Shape.fromWire(wire)
+        else { return }
         let vol = shape.volume
         // Wire has no volume, should be nil or 0
         if let v = vol { #expect(v <= 0.001) }
@@ -381,7 +390,8 @@ struct StressUnusualInputTests {
 
     @Test func meshOnWireShape() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
-              let shape = Shape.fromWire(wire) else { return }
+            let shape = Shape.fromWire(wire)
+        else { return }
         let mesh = shape.mesh(linearDeflection: 0.5)
         // Wire can't be meshed, should return nil
         _ = mesh

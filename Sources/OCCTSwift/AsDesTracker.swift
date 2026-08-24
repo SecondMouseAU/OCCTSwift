@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Ascendant-descendant relationship tracker for shapes.
 public final class AsDesTracker: @unchecked Sendable {

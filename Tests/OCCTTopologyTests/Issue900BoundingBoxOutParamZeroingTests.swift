@@ -1,6 +1,7 @@
+import OCCTBridge
 import Testing
 import simd
-import OCCTBridge
+
 @testable import OCCTSwift
 
 /// PR #901 review, finding 1: `OCCTShapeBoundingBox`/`OCCTShapeBoundingBoxOptimal` (the bridge
@@ -38,8 +39,12 @@ struct Issue900BoundingBoxOutParamZeroingTests {
     @Test func plainBoundingBoxZeroesOutParamsOnVoidShape() throws {
         let voidShape = try makeVoidShape()
 
-        var xmin = -999.0, ymin = -999.0, zmin = -999.0
-        var xmax = -999.0, ymax = -999.0, zmax = -999.0
+        var xmin = -999.0
+        var ymin = -999.0
+        var zmin = -999.0
+        var xmax = -999.0
+        var ymax = -999.0
+        var zmax = -999.0
         let ok = OCCTShapeBoundingBox(voidShape.handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
 
         #expect(!ok)
@@ -54,8 +59,12 @@ struct Issue900BoundingBoxOutParamZeroingTests {
     @Test func optimalBoundingBoxZeroesOutParamsOnVoidShape() throws {
         let voidShape = try makeVoidShape()
 
-        var xmin = -999.0, ymin = -999.0, zmin = -999.0
-        var xmax = -999.0, ymax = -999.0, zmax = -999.0
+        var xmin = -999.0
+        var ymin = -999.0
+        var zmin = -999.0
+        var xmax = -999.0
+        var ymax = -999.0
+        var zmax = -999.0
         let ok = OCCTShapeBoundingBoxOptimal(
             voidShape.handle, false, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
 
@@ -71,8 +80,12 @@ struct Issue900BoundingBoxOutParamZeroingTests {
     @Test func plainBoundingBoxZeroesOutParamsOnNullShape() throws {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
 
-        var xmin = -999.0, ymin = -999.0, zmin = -999.0
-        var xmax = -999.0, ymax = -999.0, zmax = -999.0
+        var xmin = -999.0
+        var ymin = -999.0
+        var zmin = -999.0
+        var xmax = -999.0
+        var ymax = -999.0
+        var zmax = -999.0
         let ok = OCCTShapeBoundingBox(nullShape, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
 
         #expect(!ok)
@@ -87,8 +100,12 @@ struct Issue900BoundingBoxOutParamZeroingTests {
     @Test func optimalBoundingBoxZeroesOutParamsOnNullShape() throws {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
 
-        var xmin = -999.0, ymin = -999.0, zmin = -999.0
-        var xmax = -999.0, ymax = -999.0, zmax = -999.0
+        var xmin = -999.0
+        var ymin = -999.0
+        var zmin = -999.0
+        var xmax = -999.0
+        var ymax = -999.0
+        var zmax = -999.0
         let ok = OCCTShapeBoundingBoxOptimal(
             nullShape, false, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
 

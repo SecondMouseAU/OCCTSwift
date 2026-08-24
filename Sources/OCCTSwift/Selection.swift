@@ -1,12 +1,12 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 // MARK: - Ray Hit Result
 
-/// Result from a ray cast against a shape
+/// Result from a ray cast against a shape.
 public struct RayHit: Sendable {
-    /// 3D point where ray intersects surface
+    /// 3D point where ray intersects surface.
     public let point: SIMD3<Double>
 
     /// Surface normal at intersection point.
@@ -15,13 +15,13 @@ public struct RayHit: Sendable {
     /// rather than reading an upward normal as a fact about the geometry.
     public let normal: SIMD3<Double>
 
-    /// Index of the face that was hit (0-based)
+    /// Index of the face that was hit (0-based).
     public let faceIndex: Int
 
-    /// Distance from ray origin to intersection point
+    /// Distance from ray origin to intersection point.
     public let distance: Double
 
-    /// UV parameters on the surface at intersection
+    /// UV parameters on the surface at intersection.
     public let uv: SIMD2<Double>
 
     /// Whether ``normal`` is the surface's own normal or the `(0, 0, 1)` fallback.
@@ -35,7 +35,7 @@ public struct RayHit: Sendable {
 // MARK: - Shape Ray Casting Extension
 
 extension Shape {
-    /// Cast a ray against the shape and find all intersections
+    /// Cast a ray against the shape and find all intersections.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)
@@ -75,32 +75,33 @@ extension Shape {
             &hitBuffer,
             Int32(capacity)
         )
-        
+
         guard hitCount > 0 else { return [] }
-        
+
         // Convert to Swift structs
         var results = [RayHit]()
         results.reserveCapacity(Int(hitCount))
-        
+
         for i in 0..<Int(hitCount) {
             let hit = hitBuffer[i]
-            results.append(RayHit(
-                point: SIMD3(hit.point.0, hit.point.1, hit.point.2),
-                normal: SIMD3(hit.normal.0, hit.normal.1, hit.normal.2),
-                faceIndex: Int(hit.faceIndex),
-                distance: hit.distance,
-                uv: SIMD2(hit.uv.0, hit.uv.1),
-                normalDefined: hit.normalDefined
-            ))
+            results.append(
+                RayHit(
+                    point: SIMD3(hit.point.0, hit.point.1, hit.point.2),
+                    normal: SIMD3(hit.normal.0, hit.normal.1, hit.normal.2),
+                    faceIndex: Int(hit.faceIndex),
+                    distance: hit.distance,
+                    uv: SIMD2(hit.uv.0, hit.uv.1),
+                    normalDefined: hit.normalDefined
+                ))
         }
-        
+
         // Sort by distance (nearest first)
         results.sort { $0.distance < $1.distance }
-        
+
         return results
     }
-    
-    /// Cast a ray and return only the nearest hit
+
+    /// Cast a ray and return only the nearest hit.
     /// - Parameters:
     ///   - origin: Starting point of the ray
     ///   - direction: Direction of the ray

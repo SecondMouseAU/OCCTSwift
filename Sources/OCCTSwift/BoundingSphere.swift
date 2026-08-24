@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Bounding sphere for spatial queries.
 public final class BoundingSphere: @unchecked Sendable {
@@ -15,7 +15,9 @@ public final class BoundingSphere: @unchecked Sendable {
     public var radius: Double { OCCTBndSphereRadius(ref) }
 
     public var center: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
+        var x = 0.0
+        var y = 0.0
+        var z = 0.0
         OCCTBndSphereCenter(ref, &x, &y, &z)
         return SIMD3(x, y, z)
     }

@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 /// `BRepFilletAPI_MakeFillet::Add` silently does nothing for an edge it cannot fillet (most
@@ -81,7 +82,8 @@ struct Issue639FilletDeclinedEdgeReport {
             return
         }
         let edges = shell.edges()
-        guard let report = shell.filletedWithReport(edges: edges, startRadius: 1.0, endRadius: 1.0) else {
+        guard let report = shell.filletedWithReport(edges: edges, startRadius: 1.0, endRadius: 1.0)
+        else {
             Issue.record("filletedWithReport(startRadius:endRadius:) unexpectedly returned nil")
             return
         }
@@ -97,7 +99,9 @@ struct Issue639FilletDeclinedEdgeReport {
             return
         }
         let edges = shell.edges()
-        let laws = edges.map { EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)]) }
+        let laws = edges.map {
+            EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)])
+        }
         guard let report = shell.filletEvolvingWithReport(laws) else {
             Issue.record("filletEvolvingWithReport unexpectedly returned nil")
             return
@@ -111,7 +115,9 @@ struct Issue639FilletDeclinedEdgeReport {
             Issue.record("box fixture failed to build")
             return
         }
-        let laws = box.edges().map { EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)]) }
+        let laws = box.edges().map {
+            EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)])
+        }
         guard let report = box.filletEvolvingWithReport(laws) else {
             Issue.record("filletEvolvingWithReport unexpectedly returned nil on a closed box")
             return
@@ -145,7 +151,9 @@ struct Issue639FilletDeclinedEdgeReport {
 
     // MARK: - ShapeHistoryRecord already answers this (documented, not new code)
 
-    @Test("filletedWithFullHistory's ShapeHistoryRecord names the declined set via generated/isDeleted")
+    @Test(
+        "filletedWithFullHistory's ShapeHistoryRecord names the declined set via generated/isDeleted"
+    )
     func historyRecordNamesDeclinedEdges() {
         guard let shell = Self.openShell() else {
             Issue.record("open shell fixture failed to build")
@@ -154,7 +162,10 @@ struct Issue639FilletDeclinedEdgeReport {
         let edgeShapes = shell.subShapes(ofType: .edge)
         #expect(edgeShapes.count == 12)
 
-        guard let (_, history) = shell.filletedWithFullHistory(radius: 1.0, edges: Array(0..<edgeShapes.count)) else {
+        guard
+            let (_, history) = shell.filletedWithFullHistory(
+                radius: 1.0, edges: Array(0..<edgeShapes.count))
+        else {
             Issue.record("filletedWithFullHistory unexpectedly returned nil")
             return
         }
@@ -172,8 +183,10 @@ struct Issue639FilletDeclinedEdgeReport {
         let declinedWithNonEmptyModified = Self.declinedIndices.filter {
             !history.record(of: edgeShapes[$0]).modified.isEmpty
         }
-        #expect(!declinedWithNonEmptyModified.isEmpty,
-                "expected at least one declined edge to show a non-empty `modified` from neighbour trimming")
+        #expect(
+            !declinedWithNonEmptyModified.isEmpty,
+            "expected at least one declined edge to show a non-empty `modified` from neighbour trimming"
+        )
 
         // And every accepted edge is deleted with something generated -- the opposite pattern.
         for index in Self.acceptedIndices {
@@ -204,7 +217,8 @@ struct Issue639FilletDeclinedEdgeReport {
         // An accepted edge has to be in the list too. Requesting only declined edges leaves
         // nothing to fillet, so Build() fails and the call returns nil with no report to read,
         // which is a different behaviour and not the one under test here.
-        guard let accepted = (0..<edges.count).first(where: { !Self.declinedIndices.contains($0) }) else {
+        guard let accepted = (0..<edges.count).first(where: { !Self.declinedIndices.contains($0) })
+        else {
             Issue.record("fixture has no accepted edge")
             return
         }
@@ -213,8 +227,10 @@ struct Issue639FilletDeclinedEdgeReport {
             Issue.record("filletedWithReport returned nil for the duplicated declined edge")
             return
         }
-        #expect(report.declinedEdgeIndices.count == 2,
-                "expected the decline reported once per request entry, got \(report.declinedEdgeIndices)")
+        #expect(
+            report.declinedEdgeIndices.count == 2,
+            "expected the decline reported once per request entry, got \(report.declinedEdgeIndices)"
+        )
         #expect(Set(report.declinedEdgeIndices) == [declined])
     }
 }

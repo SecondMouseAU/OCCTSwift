@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #173: Exporter.writeSTEPAssembly writes a product-structured (instanced) STEP,
@@ -10,7 +11,8 @@ struct Issue173AssemblySTEP {
     /// Build a document with one unique part placed at `n` distinct X offsets.
     private func makeInstancedDoc(n: Int) -> Document? {
         guard let doc = Document.create(),
-              let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
+            let box = Shape.box(width: 10, height: 10, depth: 10)
+        else { return nil }
         let partId = doc.addShape(box, makeAssembly: false)
         let asmId = doc.newShapeLabel()
         for i in 0..<n {
@@ -24,7 +26,10 @@ struct Issue173AssemblySTEP {
     @Test("geometry is shared: 1 BREP + N occurrences, size scales with unique parts")
     func instancedStructure() throws {
         let n = 20
-        guard let doc = makeInstancedDoc(n: n) else { #expect(Bool(false)); return }
+        guard let doc = makeInstancedDoc(n: n) else {
+            #expect(Bool(false))
+            return
+        }
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("issue173_asm.step")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -42,7 +47,10 @@ struct Issue173AssemblySTEP {
     @Test("round-trips: written assembly reads back with the same occurrence count")
     func roundTrip() throws {
         let n = 8
-        guard let doc = makeInstancedDoc(n: n) else { #expect(Bool(false)); return }
+        guard let doc = makeInstancedDoc(n: n) else {
+            #expect(Bool(false))
+            return
+        }
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("issue173_rt.step")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -63,7 +71,10 @@ struct Issue173AssemblySTEP {
 
     @Test("empty path throws, not crashes")
     func emptyPathThrows() throws {
-        guard let doc = makeInstancedDoc(n: 2) else { #expect(Bool(false)); return }
+        guard let doc = makeInstancedDoc(n: 2) else {
+            #expect(Bool(false))
+            return
+        }
         #expect(throws: Exporter.ExportError.self) {
             try Exporter.writeSTEPAssembly(doc, to: URL(fileURLWithPath: ""))
         }

@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // MARK: - #570: the healing paths that accept an approximation on MaxError() <= tol
@@ -44,7 +45,9 @@ struct Issue570HealingApproxTests {
     /// Worst distance between the first face's surface of `result` and `source`, sampled on a grid
     /// of `source`'s domain. Both carry the same parameterisation here (measured), so comparing at
     /// equal (u, v) is meaningful.
-    static func maxDeviation(of result: Shape, from source: Surface, samples: Int = 24) throws -> Double {
+    static func maxDeviation(of result: Shape, from source: Surface, samples: Int = 24) throws
+        -> Double
+    {
         let first: Shape = try #require(result.subShapes(ofType: .face).first)
         let fitted = try #require(first.faceSurfaceGeom())
         let d = source.domain
@@ -103,9 +106,11 @@ struct Issue570HealingApproxTests {
     func bsplineRestrictionHonoursTolerance() throws {
         let (face, offset) = try Self.offsetSphereFace()
         let tolerance = 0.01
-        let restricted = try #require(face.bsplineRestriction(surfaceTolerance: tolerance,
-                                                             curveTolerance: tolerance,
-                                                             maxDegree: 9, maxSegments: 10000))
+        let restricted = try #require(
+            face.bsplineRestriction(
+                surfaceTolerance: tolerance,
+                curveTolerance: tolerance,
+                maxDegree: 9, maxSegments: 10000))
 
         let restrictedFace: Shape = try #require(restricted.subShapes(ofType: .face).first)
         let fitted = try #require(restrictedFace.faceSurfaceGeom())
@@ -117,33 +122,39 @@ struct Issue570HealingApproxTests {
         #expect(deviation <= tolerance, "restricted to \(deviation), tolerance was \(tolerance)")
     }
 
-    @Test("every requested continuity stays inside the tolerance, not just the one that succeeds",
-          arguments: [ParametricContinuity.c0, .c1, .c2])
+    @Test(
+        "every requested continuity stays inside the tolerance, not just the one that succeeds",
+        arguments: [ParametricContinuity.c0, .c1, .c2])
     func bsplineRestrictionAtEachContinuity(_ continuity: ParametricContinuity) throws {
         let (face, offset) = try Self.offsetSphereFace()
         let tolerance = 0.01
-        let restricted = try #require(face.bsplineRestriction(tol3d: tolerance, tol2d: tolerance,
-                                                             maxDegree: 9, maxSegments: 10000,
-                                                             continuity3d: continuity,
-                                                             continuity2d: continuity,
-                                                             degreePriority: true, rational: true))
+        let restricted = try #require(
+            face.bsplineRestriction(
+                tol3d: tolerance, tol2d: tolerance,
+                maxDegree: 9, maxSegments: 10000,
+                continuity3d: continuity,
+                continuity2d: continuity,
+                degreePriority: true, rational: true))
         // With degreePriority the outer loop degrades continuity to C0 whenever the requested one
         // cannot meet the tolerance within maxDegree, so all three requests land on the collapsing
         // continuity for this fixture, the wrong answer was identical for C0, C1 and C2.
         let deviation = try Self.maxDeviation(of: restricted, from: offset)
-        #expect(deviation <= tolerance,
-                "\(continuity) restricted to \(deviation), tolerance was \(tolerance)")
+        #expect(
+            deviation <= tolerance,
+            "\(continuity) restricted to \(deviation), tolerance was \(tolerance)")
     }
 
     @Test("bsplineRestrictionAdvanced builds the same modification by hand and inherits the fix")
     func bsplineRestrictionAdvancedHonoursTolerance() throws {
         let (face, offset) = try Self.offsetSphereFace()
         let tolerance = 0.01
-        let restricted = try #require(Shape.bsplineRestrictionAdvanced(face,
-                                                                      tol3d: tolerance,
-                                                                      tol2d: tolerance,
-                                                                      maxDegree: 9,
-                                                                      maxSegments: 10000))
+        let restricted = try #require(
+            Shape.bsplineRestrictionAdvanced(
+                face,
+                tol3d: tolerance,
+                tol2d: tolerance,
+                maxDegree: 9,
+                maxSegments: 10000))
         let deviation = try Self.maxDeviation(of: restricted, from: offset)
         #expect(deviation <= tolerance, "restricted to \(deviation), tolerance was \(tolerance)")
     }

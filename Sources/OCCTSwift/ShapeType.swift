@@ -1,8 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
-/// Topological type of a shape (matches OCCT TopAbs_ShapeEnum)
+/// Topological type of a shape (matches OCCT TopAbs_ShapeEnum).
 public enum ShapeType: Int, CustomStringConvertible, Sendable {
     case compound = 0
     case compSolid = 1

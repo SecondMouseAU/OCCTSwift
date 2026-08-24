@@ -1,6 +1,7 @@
-import Testing
 import Foundation
 import OCCTBridge
+import Testing
+
 @testable import OCCTSwift
 
 /// PR #870 aggregate review: `OCCTShapeExtendShapeType`'s null-shape/exception fallback used to

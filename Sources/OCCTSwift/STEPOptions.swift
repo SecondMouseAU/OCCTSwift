@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// STEP representation type for controlling how shapes are written.
 public enum StepModelType: Int32, Sendable {
@@ -22,21 +22,23 @@ public enum StepModelType: Int32, Sendable {
 
 /// Mode flags for STEPCAFControl_Reader controlling which data to import from STEP files.
 public struct STEPReaderModes: Sendable {
-    /// Import color information (default: true)
+    /// Import color information (default: true).
     public var color: Bool
-    /// Import name/label information (default: true)
+    /// Import name/label information (default: true).
     public var name: Bool
-    /// Import layer information (default: true)
+    /// Import layer information (default: true).
     public var layer: Bool
-    /// Import validation properties (default: true)
+    /// Import validation properties (default: true).
     public var props: Bool
-    /// Import GD&T data (default: false)
+    /// Import GD&T data (default: false).
     public var gdt: Bool
-    /// Import material data (default: true)
+    /// Import material data (default: true).
     public var material: Bool
 
-    public init(color: Bool = true, name: Bool = true, layer: Bool = true,
-                props: Bool = true, gdt: Bool = false, material: Bool = true) {
+    public init(
+        color: Bool = true, name: Bool = true, layer: Bool = true,
+        props: Bool = true, gdt: Bool = false, material: Bool = true
+    ) {
         self.color = color
         self.name = name
         self.layer = layer
@@ -48,19 +50,21 @@ public struct STEPReaderModes: Sendable {
 
 /// Mode flags for STEPCAFControl_Writer controlling which data to export to STEP files.
 public struct STEPWriterModes: Sendable {
-    /// Export color information (default: true)
+    /// Export color information (default: true).
     public var color: Bool
-    /// Export name/label information (default: true)
+    /// Export name/label information (default: true).
     public var name: Bool
-    /// Export layer information (default: true)
+    /// Export layer information (default: true).
     public var layer: Bool
-    /// Export dimension/tolerance data (default: false)
+    /// Export dimension/tolerance data (default: false).
     public var dimTol: Bool
-    /// Export material data (default: true)
+    /// Export material data (default: true).
     public var material: Bool
 
-    public init(color: Bool = true, name: Bool = true, layer: Bool = true,
-                dimTol: Bool = false, material: Bool = true) {
+    public init(
+        color: Bool = true, name: Bool = true, layer: Bool = true,
+        dimTol: Bool = false, material: Bool = true
+    ) {
         self.color = color
         self.name = name
         self.layer = layer

@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // Robustness fixes for issue #181 (kept in their own file so edits here don't
@@ -14,15 +15,18 @@ struct Issue181RobustnessTests {
     // return a BRepCheck-"valid" solid extending well past the blank (e.g. ~Ø22 on a
     // Ø12 blank), which then crashed STEP export. The guard returns nil for those,
     // so across a range of pitches the result is always nil OR strictly in-envelope.
-    @Test("threadedShaft is always nil or within the blank envelope, never garbage (#181-C)",
-          arguments: [1.0, 1.75, 2.0, 3.14159])
+    @Test(
+        "threadedShaft is always nil or within the blank envelope, never garbage (#181-C)",
+        arguments: [1.0, 1.75, 2.0, 3.14159])
     func threadedShaftNeverEscapesEnvelope(pitch: Double) {
         guard let blank = Shape.cylinder(radius: 6, height: 18) else {
-            Issue.record("could not create blank"); return
+            Issue.record("could not create blank")
+            return
         }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: pitch)
-        let result = blank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                                         spec: spec, length: 16)
+        let result = blank.threadedShaft(
+            axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+            spec: spec, length: 16)
         // nil is acceptable (failed/garbage cut); a returned solid must be in-envelope.
         // Measure the *optimal* (tight) box: the smooth analytic helicoid (v1.4.1) has a
         // BSpline convex-hull default Bnd_Box that overshoots the real surface by ~0.1–0.35 mm
@@ -31,7 +35,8 @@ struct Issue181RobustnessTests {
         // guards against (the old ~Ø22 result on a Ø12 blank).
         if let result {
             guard let b = blank.boundingBoxOptimal(), let c = result.boundingBoxOptimal() else {
-                Issue.record("optimal bounds unavailable"); return
+                Issue.record("optimal bounds unavailable")
+                return
             }
             let tol = 1e-2
             #expect(c.max.x <= b.max.x + tol)
@@ -47,7 +52,8 @@ struct Issue181RobustnessTests {
     @Test("Single STEP export still succeeds after writer serialization (#181-B)")
     func singleSTEPExportStillWorks() throws {
         guard let box = Shape.box(width: 4, height: 3, depth: 2) else {
-            Issue.record("could not create box"); return
+            Issue.record("could not create box")
+            return
         }
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt181_single_\(UUID().uuidString).step")

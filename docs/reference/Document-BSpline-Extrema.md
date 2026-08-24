@@ -2058,13 +2058,13 @@ public static func pointToTorus(
 
 `TrigRoots` solves equations of the form `A·cos(x) + B·sin(x) + C·cos(2x) + D·sin(2x) + E = 0` over a specified interval (v0.109.0).
 
-### `TrigRoots.solve(A:B:C:D:E:from:to:)`
+### `TrigRoots.solve(a:b:c:d:e:from:to:)`
 
 Find all roots of the trigonometric polynomial in `[inf, sup]`.
 
 ```swift
 public static func solve(
-    A: Double = 0, B: Double = 0, C: Double = 0, D: Double = 0, E: Double = 0,
+    a: Double = 0, b: Double = 0, c: Double = 0, d: Double = 0, e: Double = 0,
     from inf: Double, to sup: Double
 ) -> [Double]
 ```
@@ -2081,13 +2081,13 @@ public static func solve(
 
 ---
 
-### `TrigRoots.hasInfiniteRoots(A:B:C:D:E:from:to:)`
+### `TrigRoots.hasInfiniteRoots(a:b:c:d:e:from:to:)`
 
 Check whether all values in `[inf, sup]` satisfy the equation (the equation is identically zero on the interval).
 
 ```swift
 public static func hasInfiniteRoots(
-    A: Double = 0, B: Double = 0, C: Double = 0, D: Double = 0, E: Double = 0,
+    a: Double = 0, b: Double = 0, c: Double = 0, d: Double = 0, e: Double = 0,
     from inf: Double, to sup: Double
 ) -> Bool
 ```

@@ -3,8 +3,8 @@
 // Goal: verify no crash and reasonable output for each API entry point.
 
 import Foundation
-import Testing
 import OCCTSwift
+import Testing
 
 // MARK: - Shape Factory Methods
 
@@ -12,9 +12,13 @@ import OCCTSwift
 struct StressShapeFactoryTests {
 
     @Test func box() { #expect(Shape.box(width: 10, height: 20, depth: 30) != nil) }
-    @Test func boxWithOrigin() { #expect(Shape.box(origin: SIMD3<Double>(1, 2, 3), width: 10, height: 20, depth: 30) != nil) }
+    @Test func boxWithOrigin() {
+        #expect(Shape.box(origin: SIMD3<Double>(1, 2, 3), width: 10, height: 20, depth: 30) != nil)
+    }
     @Test func cylinder() { #expect(Shape.cylinder(radius: 5, height: 10) != nil) }
-    @Test func cylinderAtPosition() { #expect(Shape.cylinder(at: SIMD2(0, 0), bottomZ: 0, radius: 5, height: 10) != nil) }
+    @Test func cylinderAtPosition() {
+        #expect(Shape.cylinder(at: SIMD2(0, 0), bottomZ: 0, radius: 5, height: 10) != nil)
+    }
     @Test func sphere() { #expect(Shape.sphere(radius: 5) != nil) }
     @Test func cone() { #expect(Shape.cone(bottomRadius: 5, topRadius: 2, height: 10) != nil) }
     @Test func torus() { #expect(Shape.torus(majorRadius: 10, minorRadius: 3) != nil) }
@@ -42,7 +46,7 @@ struct StressShapeFactoryTests {
         // Revolve a line segment to create a cylinder-like shape
         if let wire = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)) {
             let rev = Shape.revolve(profile: wire, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1))
-            if let r = rev { _ = r.isValid } // Revolution of open wire may not be "valid" solid
+            if let r = rev { _ = r.isValid }  // Revolution of open wire may not be "valid" solid
         }
     }
 }
@@ -104,7 +108,8 @@ struct StressShapeFeatureTests {
     }
 
     @Test func drill() {
-        let r = standardBox().drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
+        let r = standardBox().drilled(
+            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
         if let r { #expect(r.isValid) }
     }
 
@@ -119,7 +124,8 @@ struct StressShapeFeatureTests {
     }
 
     @Test func circularPattern() {
-        let r = standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)
+        let r = standardBox().circularPattern(
+            axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)
         if let r { #expect(r.isValid) }
     }
 
@@ -346,7 +352,8 @@ struct StressFaceAPITests {
         let faces = box.faces()
         for face in faces {
             let b = face.bounds!
-            _ = b.min; _ = b.max
+            _ = b.min
+            _ = b.max
         }
     }
 
@@ -362,7 +369,9 @@ struct StressFaceAPITests {
     @Test func faceClassification() {
         let box = standardBox()
         let faces = box.faces()
-        var up = 0; var down = 0; var vert = 0
+        var up = 0
+        var down = 0
+        var vert = 0
         for face in faces {
             if face.isUpwardFacing() { up += 1 }
             if face.isDownwardFacing() { down += 1 }
@@ -611,16 +620,18 @@ struct StressMathUtilTests {
     @Test func gaussIntegration() {
         let result = MathSolver.integGauss(over: 0...1, points: 10, function: { x in x * x })
         #expect(result != nil)
-        if let r = result { #expect(abs(r.value - 1.0/3.0) < 0.001) }
+        if let r = result { #expect(abs(r.value - 1.0 / 3.0) < 0.001) }
     }
 
     @Test func planeGeometry() {
-        let dist = PlaneGeometry.distanceToPoint(planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), point: SIMD3(0, 0, 5))
+        let dist = PlaneGeometry.distanceToPoint(
+            planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), point: SIMD3(0, 0, 5))
         #expect(abs(dist - 5.0) < 0.001)
     }
 
     @Test func lineGeometry() {
-        let dist = LineGeometry.distanceToPoint(linePoint: .zero, lineDirection: SIMD3(1, 0, 0), point: SIMD3(5, 3, 0))
+        let dist = LineGeometry.distanceToPoint(
+            linePoint: .zero, lineDirection: SIMD3(1, 0, 0), point: SIMD3(5, 3, 0))
         #expect(abs(dist - 3.0) < 0.001)
     }
 

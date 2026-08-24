@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #272: `Shape.drilled(at:direction:radius:depth:)` ignored its `direction` argument, the
@@ -32,10 +33,14 @@ struct Issue272DrilledDirectionTests {
         let original = block.volume ?? 0
 
         // Enter from just outside the -X face, bore along +X, through-hole (depth 0).
-        guard let drilledX = block.drilled(at: SIMD3(-31, 0, 0),
-                                           direction: SIMD3(1, 0, 0),
-                                           radius: radius, depth: 0) else {
-            Issue.record("drilled(+X) returned nil"); return
+        guard
+            let drilledX = block.drilled(
+                at: SIMD3(-31, 0, 0),
+                direction: SIMD3(1, 0, 0),
+                radius: radius, depth: 0)
+        else {
+            Issue.record("drilled(+X) returned nil")
+            return
         }
         #expect(drilledX.isValid)
 
@@ -59,13 +64,18 @@ struct Issue272DrilledDirectionTests {
     func xAndZBoresDiffer() {
         let original = makeBlock().volume ?? 0
 
-        guard let drilledX = makeBlock().drilled(at: SIMD3(-31, 0, 0),
-                                                 direction: SIMD3(1, 0, 0),
-                                                 radius: radius, depth: 0),
-              let drilledZ = makeBlock().drilled(at: SIMD3(0, 0, 7),
-                                                 direction: SIMD3(0, 0, -1),
-                                                 radius: radius, depth: 0) else {
-            Issue.record("drill setup failed"); return
+        guard
+            let drilledX = makeBlock().drilled(
+                at: SIMD3(-31, 0, 0),
+                direction: SIMD3(1, 0, 0),
+                radius: radius, depth: 0),
+            let drilledZ = makeBlock().drilled(
+                at: SIMD3(0, 0, 7),
+                direction: SIMD3(0, 0, -1),
+                radius: radius, depth: 0)
+        else {
+            Issue.record("drill setup failed")
+            return
         }
 
         let removedX = original - (drilledX.volume ?? 0)

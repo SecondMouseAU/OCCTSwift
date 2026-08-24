@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("Sweep Tests")
 struct SweepTests {
@@ -36,12 +35,14 @@ struct SweepTests {
             Issue.record("Failed to create circle profile")
             return
         }
-        guard let path = Wire.arc(
-            center: .zero,
-            radius: 50,
-            startAngle: 0,
-            endAngle: .pi / 2
-        ) else {
+        guard
+            let path = Wire.arc(
+                center: .zero,
+                radius: 50,
+                startAngle: 0,
+                endAngle: .pi / 2
+            )
+        else {
             Issue.record("Failed to create arc path")
             return
         }
@@ -52,12 +53,15 @@ struct SweepTests {
     @Test("Revolution")
     func revolution() {
         // Create a simple profile to revolve
-        guard let profile = Wire.polygon([
-            SIMD2(5, 0),
-            SIMD2(7, 0),
-            SIMD2(7, 10),
-            SIMD2(5, 10)
-        ], closed: true) else {
+        guard
+            let profile = Wire.polygon(
+                [
+                    SIMD2(5, 0),
+                    SIMD2(7, 0),
+                    SIMD2(7, 10),
+                    SIMD2(5, 10),
+                ], closed: true)
+        else {
             Issue.record("Failed to create polygon profile")
             return
         }
@@ -251,12 +255,14 @@ struct AdvancedModelingTests {
     @Test("Pipe shell with Frenet mode")
     func pipeShellFrenet() {
         // Create a simple S-curve path
-        guard let spine = Wire.bspline([
-            SIMD3(0, 0, 0),
-            SIMD3(10, 0, 0),
-            SIMD3(20, 10, 0),
-            SIMD3(30, 10, 0)
-        ]) else {
+        guard
+            let spine = Wire.bspline([
+                SIMD3(0, 0, 0),
+                SIMD3(10, 0, 0),
+                SIMD3(20, 10, 0),
+                SIMD3(30, 10, 0),
+            ])
+        else {
             Issue.record("Could not create spine")
             return
         }
@@ -274,12 +280,14 @@ struct AdvancedModelingTests {
     @Test("Pipe shell with corrected Frenet mode")
     func pipeShellCorrectedFrenet() {
         // Create a curve that might have inflection points
-        guard let spine = Wire.bspline([
-            SIMD3(0, 0, 0),
-            SIMD3(10, 5, 0),
-            SIMD3(20, -5, 10),
-            SIMD3(30, 0, 10)
-        ]) else {
+        guard
+            let spine = Wire.bspline([
+                SIMD3(0, 0, 0),
+                SIMD3(10, 5, 0),
+                SIMD3(20, -5, 10),
+                SIMD3(30, 0, 10),
+            ])
+        else {
             Issue.record("Could not create spine")
             return
         }
@@ -296,10 +304,12 @@ struct AdvancedModelingTests {
     @Test("Pipe shell with fixed binormal")
     func pipeShellFixedBinormal() {
         // Straight path where we want to control orientation
-        guard let spine = Wire.bspline([
-            SIMD3(0, 0, 0),
-            SIMD3(50, 0, 0)
-        ]) else {
+        guard
+            let spine = Wire.bspline([
+                SIMD3(0, 0, 0),
+                SIMD3(50, 0, 0),
+            ])
+        else {
             Issue.record("Could not create spine")
             return
         }
@@ -311,7 +321,8 @@ struct AdvancedModelingTests {
         }
 
         // Keep profile vertical (binormal = Z)
-        let pipe = Shape.pipeShell(spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1)))
+        let pipe = Shape.pipeShell(
+            spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1)))
         #expect(pipe != nil)
     }
 
@@ -336,7 +347,8 @@ struct AdvancedModelingTests {
     @Test("Multi-section pipe shell (Frenet) sweeps varying-radius circles into a valid solid")
     func multiSectionFrenetVaryingRadius() {
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)) else {
-            Issue.record("Could not create spine"); return
+            Issue.record("Could not create spine")
+            return
         }
         // Three coaxial circles of different radius at z = 0, 5, 10 (a "vase").
         let stations = Array(zip([0.0, 5.0, 10.0], [2.0, 1.0, 2.0])).compactMap {
@@ -344,7 +356,8 @@ struct AdvancedModelingTests {
         }
         #expect(stations.count == 3)
 
-        let pipe = Shape.pipeShellMultiSection(spine: spine, profiles: stations, mode: .frenet, solid: true)
+        let pipe = Shape.pipeShellMultiSection(
+            spine: spine, profiles: stations, mode: .frenet, solid: true)
         #expect(pipe != nil)
         if let pipe {
             #expect(pipe.isValid)
@@ -355,12 +368,16 @@ struct AdvancedModelingTests {
     @Test("Multi-section pipe shell with auxiliary spine (the #180 worm-thread case)")
     func multiSectionAuxiliarySpine() {
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)),
-              let aux = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(3, 0, 10)) else {
-            Issue.record("Could not create spine/aux"); return
+            let aux = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(3, 0, 10))
+        else {
+            Issue.record("Could not create spine/aux")
+            return
         }
         guard let c0 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 2.0),
-              let c1 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 1.0) else {
-            Issue.record("Could not create profiles"); return
+            let c1 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 1.0)
+        else {
+            Issue.record("Could not create profiles")
+            return
         }
         let pipe = Shape.pipeShellMultiSection(
             spine: spine, profiles: [c0, c1], mode: .auxiliary(spine: aux), solid: true)
@@ -371,8 +388,10 @@ struct AdvancedModelingTests {
     @Test("Multi-section pipe shell: empty profiles return nil, single profile is allowed")
     func multiSectionProfileCountBounds() {
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)),
-              let one = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 2.0) else {
-            Issue.record("Could not create spine/profile"); return
+            let one = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 2.0)
+        else {
+            Issue.record("Could not create spine/profile")
+            return
         }
         #expect(Shape.pipeShellMultiSection(spine: spine, profiles: []) == nil)
         // A single profile degenerates to an ordinary pipe shell, must still build.
@@ -467,7 +486,7 @@ struct AdvancedModelingTests {
         let curvature = circle?.curvature(at: 0.5)
         #expect(curvature != nil)
         // Curvature of circle = 1/radius
-        #expect(abs(curvature! - 1.0/radius) < 0.001)
+        #expect(abs(curvature! - 1.0 / radius) < 0.001)
     }
 
     @Test("Wire curvature of line is zero")
@@ -488,7 +507,7 @@ struct AdvancedModelingTests {
 
         let cp = circle?.curvePoint(at: 0.25)
         #expect(cp != nil)
-        #expect(abs(cp!.curvature - 1.0/radius) < 0.001)
+        #expect(abs(cp!.curvature - 1.0 / radius) < 0.001)
         // For a circle, the normal should point toward center
         #expect(cp!.normal != nil)
     }
@@ -516,7 +535,7 @@ struct AdvancedModelingTests {
             [SIMD3(0, 0, 0), SIMD3(0, 10, 0), SIMD3(0, 20, 0), SIMD3(0, 30, 0)],
             [SIMD3(10, 0, 1), SIMD3(10, 10, 1), SIMD3(10, 20, 1), SIMD3(10, 30, 1)],
             [SIMD3(20, 0, 1), SIMD3(20, 10, 1), SIMD3(20, 20, 1), SIMD3(20, 30, 1)],
-            [SIMD3(30, 0, 0), SIMD3(30, 10, 0), SIMD3(30, 20, 0), SIMD3(30, 30, 0)]
+            [SIMD3(30, 0, 0), SIMD3(30, 10, 0), SIMD3(30, 20, 0), SIMD3(30, 30, 0)],
         ]
 
         let surface = Shape.surface(poles: poles)
@@ -562,7 +581,6 @@ struct AdvancedModelingTests {
     }
 }
 
-
 // MARK: - Feature-Based Modeling Tests (v0.12.0)
 
 @Suite("Prismatic Feature Tests")
@@ -600,7 +618,8 @@ struct PrismaticFeatureTests {
         let pocketProfile = Wire.rectangle(width: 20, height: 20)!
 
         // Create pocket going down into the box
-        let withPocket = box.withPocket(profile: pocketProfile, direction: SIMD3(0, 0, -1), depth: 10)
+        let withPocket = box.withPocket(
+            profile: pocketProfile, direction: SIMD3(0, 0, -1), depth: 10)
 
         #expect(withPocket != nil)
         #expect(withPocket!.isValid)
@@ -613,7 +632,6 @@ struct PrismaticFeatureTests {
     }
 }
 
-
 @Suite("Drilling Tests")
 struct DrillingTests {
 
@@ -624,7 +642,8 @@ struct DrillingTests {
         let originalVolume = box.volume ?? 0
 
         // Drill from slightly above top surface (Z=10), at center (X=0, Y=0)
-        let drilled = box.drilled(at: SIMD3(0, 0, 11), direction: SIMD3(0, 0, -1), radius: 5, depth: 11)
+        let drilled = box.drilled(
+            at: SIMD3(0, 0, 11), direction: SIMD3(0, 0, -1), radius: 5, depth: 11)
 
         #expect(drilled != nil)
         #expect(drilled!.isValid)
@@ -643,7 +662,8 @@ struct DrillingTests {
         let originalVolume = box.volume ?? 0
 
         // Drill through (depth = 0 means through) starting above top surface
-        let drilled = box.drilled(at: SIMD3(0, 0, 15), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
+        let drilled = box.drilled(
+            at: SIMD3(0, 0, 15), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
 
         #expect(drilled != nil)
         #expect(drilled!.isValid)
@@ -661,19 +681,29 @@ struct DrillingTests {
         let box = Shape.box(width: 50, height: 50, depth: 10)!
 
         // Drill multiple holes from above top surface (Z=5) along Y centerline
-        guard var r = box.drilled(at: SIMD3(-15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) else {
-            #expect(Bool(false), "First drill failed"); return
+        guard
+            var r = box.drilled(
+                at: SIMD3(-15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        else {
+            #expect(false, "First drill failed")
+            return
         }
-        guard let r2 = r.drilled(at: SIMD3(0, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) else {
-            #expect(Bool(false), "Second drill failed"); return
+        guard
+            let r2 = r.drilled(at: SIMD3(0, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        else {
+            #expect(false, "Second drill failed")
+            return
         }
-        guard let r3 = r2.drilled(at: SIMD3(15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0) else {
-            #expect(Bool(false), "Third drill failed"); return
+        guard
+            let r3 = r2.drilled(
+                at: SIMD3(15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
+        else {
+            #expect(false, "Third drill failed")
+            return
         }
         #expect(r3.isValid)
     }
 }
-
 
 @Suite("Shape Splitting Tests")
 struct ShapeSplittingTests {
@@ -730,7 +760,6 @@ struct ShapeSplittingTests {
         #expect(pieces!.count >= 1)
     }
 }
-
 
 @Suite("Pattern Tests")
 struct PatternTests {
@@ -824,7 +853,6 @@ struct PatternTests {
     }
 }
 
-
 @Suite("Glue Tests")
 struct GlueTests {
 
@@ -909,7 +937,7 @@ struct MultiEdgeBlendTests {
         let blended = box.blendedEdges([
             (0, 1.0),
             (1, 2.0),
-            (2, 1.5)
+            (2, 1.5),
         ])
 
         #expect(blended != nil)
@@ -1070,11 +1098,12 @@ struct AAGTests {
             return
         }
         guard let resultVolume = result.volume, let boxVolume = box.volume else {
-            #expect(Bool(false), "volume computation failed; fixture proves nothing")
+            #expect(false, "volume computation failed; fixture proves nothing")
             return
         }
-        #expect(resultVolume < boxVolume,
-                "pocket tool must actually remove material, or this fixture proves nothing")
+        #expect(
+            resultVolume < boxVolume,
+            "pocket tool must actually remove material, or this fixture proves nothing")
         let pockets = result.detectPocketsAAG()
         // Should detect at least one pocket
         #expect(pockets.count >= 1)
@@ -1405,14 +1434,56 @@ struct LoftPolarMethodCrashTests {
     func mismatchedPolarProfilesDoNotCrash() {
         // local (x, y) per station; z is the third tuple element
         let stations: [(z: Double, pts: [(Double, Double)])] = [
-            (-3.7500, [(-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300), (0.0123, 2.1692)]),
-            (-2.9167, [(-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053), (0.0463, 0.2250)]),
-            (-2.0833, [(-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405), (0.0007, -0.7416)]),
-            (-1.2500, [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]),
-            (1.2500,  [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]),
-            (2.0833,  [(-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405), (0.0007, -0.7416)]),
-            (2.9167,  [(-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053), (0.0463, 0.2250)]),
-            (3.7500,  [(-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300), (0.0123, 2.1692)]),
+            (
+                -3.7500,
+                [
+                    (-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300),
+                    (0.0123, 2.1692),
+                ]
+            ),
+            (
+                -2.9167,
+                [
+                    (-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053),
+                    (0.0463, 0.2250),
+                ]
+            ),
+            (
+                -2.0833,
+                [
+                    (-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405),
+                    (0.0007, -0.7416),
+                ]
+            ),
+            (
+                -1.2500,
+                [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]
+            ),
+            (
+                1.2500,
+                [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]
+            ),
+            (
+                2.0833,
+                [
+                    (-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405),
+                    (0.0007, -0.7416),
+                ]
+            ),
+            (
+                2.9167,
+                [
+                    (-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053),
+                    (0.0463, 0.2250),
+                ]
+            ),
+            (
+                3.7500,
+                [
+                    (-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300),
+                    (0.0123, 2.1692),
+                ]
+            ),
         ]
         let profiles = stations.compactMap { station in
             Wire.polygon3D(station.pts.map { SIMD3($0.0, $0.1, station.z) }, closed: true)
@@ -1420,7 +1491,7 @@ struct LoftPolarMethodCrashTests {
         #expect(profiles.count == stations.count)
         // The call must return (nil or a shape) without aborting the process.
         _ = Shape.loft(profiles: profiles, solid: true)
-        #expect(Bool(true))   // reaching here means the polar-method crash did not fire
+        #expect(true)  // reaching here means the polar-method crash did not fire
     }
 }
 
@@ -1429,8 +1500,9 @@ struct LoftVertexEndpointTests {
     @Test("Cone: circle lofted to vertex point")
     func coneFromCircle() {
         let circle = Wire.circle(radius: 5)!
-        let cone = Shape.loft(profiles: [circle], solid: true, ruled: true,
-                              lastVertex: SIMD3(0, 0, 10))
+        let cone = Shape.loft(
+            profiles: [circle], solid: true, ruled: true,
+            lastVertex: SIMD3(0, 0, 10))
         #expect(cone != nil)
         if let c = cone {
             #expect(c.isValid)
@@ -1441,17 +1513,19 @@ struct LoftVertexEndpointTests {
     @Test("Bicone: vertex-circle-vertex")
     func bicone() {
         let circle = Wire.circle(radius: 10)!
-        let bicone = Shape.loft(profiles: [circle], solid: true, ruled: true,
-                                firstVertex: SIMD3(0, 0, -20),
-                                lastVertex: SIMD3(0, 0, 20))
+        let bicone = Shape.loft(
+            profiles: [circle], solid: true, ruled: true,
+            firstVertex: SIMD3(0, 0, -20),
+            lastVertex: SIMD3(0, 0, 20))
         #expect(bicone != nil)
     }
 
     @Test("Smooth cone tapering to point")
     func smoothCone() {
         let circle = Wire.circle(radius: 5)!
-        let shape = Shape.loft(profiles: [circle], solid: true, ruled: false,
-                               lastVertex: SIMD3(0, 0, 10))
+        let shape = Shape.loft(
+            profiles: [circle], solid: true, ruled: false,
+            lastVertex: SIMD3(0, 0, 10))
         #expect(shape != nil)
     }
 }
@@ -1506,8 +1580,9 @@ struct DraftPrismTests {
         // Create a small rectangular profile on top face
         let profile = Wire.rectangle(width: 20, height: 20)!
         // Find the top face index (face 5 is typically the top of a box at origin)
-        let result = box.addingDraftPrism(profile: profile, sketchFaceIndex: 0,
-                                          draftAngle: 5.0, height: 30.0, fuse: true)
+        let result = box.addingDraftPrism(
+            profile: profile, sketchFaceIndex: 0,
+            draftAngle: 5.0, height: 30.0, fuse: true)
         // Draft prism requires profile on the sketch face, may need specific face
         _ = result
     }
@@ -1516,8 +1591,9 @@ struct DraftPrismTests {
     func draftPrismThruAll() {
         let box = Shape.box(width: 100, height: 100, depth: 20)!
         let profile = Wire.rectangle(width: 20, height: 20)!
-        let result = box.addingDraftPrismThruAll(profile: profile, sketchFaceIndex: 0,
-                                                  draftAngle: 5.0, fuse: true)
+        let result = box.addingDraftPrismThruAll(
+            profile: profile, sketchFaceIndex: 0,
+            draftAngle: 5.0, fuse: true)
         _ = result
     }
 }
@@ -1546,7 +1622,8 @@ struct EvolvedAdvancedTests {
         let spine = Wire.rectangle(width: 10, height: 10)!
         let profile = Wire.rectangle(width: 0.5, height: 0.5)!
         let result = Shape.evolvedAdvanced(
-            spine: Shape.evolved(spine: spine, profile: Wire.rectangle(width: 0.1, height: 0.1)!) ?? Shape.box(width: 10, height: 10, depth: 1)!,
+            spine: Shape.evolved(spine: spine, profile: Wire.rectangle(width: 0.1, height: 0.1)!)
+                ?? Shape.box(width: 10, height: 10, depth: 1)!,
             profile: profile,
             joinType: .intersection, solid: false
         )
@@ -1787,7 +1864,8 @@ struct BooleanFullHistoryTests {
         #expect(rec.modified.count <= 1)
     }
 
-    @Test("Subtract that splits a face → modified or generated mapping returns multiple output faces")
+    @Test(
+        "Subtract that splits a face → modified or generated mapping returns multiple output faces")
     func subtractedWithFullHistorySplitsFace() {
         // A box with a slab subtracted that crosses ALL THE WAY through →
         // top/bottom/side faces are fully bisected into multiple separate
@@ -1815,7 +1893,10 @@ struct BooleanFullHistoryTests {
                 break
             }
         }
-        #expect(foundSplit, "expected at least one input face to map to multiple output faces (modified ∪ generated)")
+        #expect(
+            foundSplit,
+            "expected at least one input face to map to multiple output faces (modified ∪ generated)"
+        )
     }
 
     @Test("Intersect of overlapping boxes returns history; non-overlap region inputs are deleted")
@@ -1913,8 +1994,9 @@ struct Tier2HistoryTests {
         // The filleted edge itself: typically deleted + a generated fillet face.
         let inputEdge = edges[workingEdgeIdx]
         let rec = r.history.record(of: inputEdge)
-        #expect(rec.modified.count + rec.generated.count > 0 || rec.isDeleted,
-                "input edge should appear in history (modified, generated, or deleted)")
+        #expect(
+            rec.modified.count + rec.generated.count > 0 || rec.isDeleted,
+            "input edge should appear in history (modified, generated, or deleted)")
     }
 
     @Test("Chamfered edges → result smaller volume, history queryable")
@@ -2009,8 +2091,9 @@ struct ReconstructorHistoryTests {
         let result = FeatureReconstructor.build(from: [.revolve(r), .hole(h)])
         #expect(result.shape != nil)
         // The hole feature uses a history-recording subtract → must register.
-        #expect(result.histories["drill_top"] != nil,
-                "hole with non-nil id should retain history")
+        #expect(
+            result.histories["drill_top"] != nil,
+            "hole with non-nil id should retain history")
         // Look up history for any base-shape face, must not crash.
         if let history = result.histories["drill_top"], let final = result.shape {
             for face in final.subShapes(ofType: .face).prefix(3) {
@@ -2065,8 +2148,9 @@ struct ReconstructorHistoryTests {
         let result = FeatureReconstructor.build(from: [.extrude(e), .fillet(f)])
         #expect(result.shape != nil)
         #expect(result.fulfilled.contains("round_all"))
-        #expect(result.histories["round_all"] != nil,
-                "fillet with non-nil id should retain history (#166)")
+        #expect(
+            result.histories["round_all"] != nil,
+            "fillet with non-nil id should retain history (#166)")
     }
 
     @Test("Chamfer feature (.all) with id retains history under that id")
@@ -2079,8 +2163,9 @@ struct ReconstructorHistoryTests {
         let result = FeatureReconstructor.build(from: [.extrude(e), .chamfer(c)])
         #expect(result.shape != nil)
         #expect(result.fulfilled.contains("ch_all"))
-        #expect(result.histories["ch_all"] != nil,
-                "chamfer with non-nil id should retain history (#166)")
+        #expect(
+            result.histories["ch_all"] != nil,
+            "chamfer with non-nil id should retain history (#166)")
     }
 
     @Test("Chamfer .nearPoint now resolves (was skipped as unsupported in v1.0.3)")
@@ -2233,10 +2318,12 @@ struct EvolvingFilletTests {
         // Try multiple edges until one succeeds (edge ordering can vary)
         var result: Shape? = nil
         for edge in box.edges() {
-            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
-                (parameter: 0.0, radius: 1.0),
-                (parameter: 1.0, radius: 2.0)
-            ])
+            let spec = EvolvingFilletEdge(
+                edge: edge,
+                radiusPoints: [
+                    (parameter: 0.0, radius: 1.0),
+                    (parameter: 1.0, radius: 2.0),
+                ])
             result = box.filletEvolving([spec])
             if result != nil { break }
         }
@@ -2250,10 +2337,12 @@ struct EvolvingFilletTests {
         // Find two edges that work
         var workingEdges: [Edge] = []
         for edge in box.edges() {
-            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
-                (parameter: 0.0, radius: 1.0),
-                (parameter: 1.0, radius: 1.0)
-            ])
+            let spec = EvolvingFilletEdge(
+                edge: edge,
+                radiusPoints: [
+                    (parameter: 0.0, radius: 1.0),
+                    (parameter: 1.0, radius: 1.0),
+                ])
             if box.filletEvolving([spec]) != nil {
                 workingEdges.append(edge)
                 if workingEdges.count >= 2 { break }
@@ -2261,10 +2350,12 @@ struct EvolvingFilletTests {
         }
         guard workingEdges.count >= 2 else { return }
         let specs = workingEdges.map { edge in
-            EvolvingFilletEdge(edge: edge, radiusPoints: [
-                (parameter: 0.0, radius: 1.0),
-                (parameter: 1.0, radius: 1.5)
-            ])
+            EvolvingFilletEdge(
+                edge: edge,
+                radiusPoints: [
+                    (parameter: 0.0, radius: 1.0),
+                    (parameter: 1.0, radius: 1.5),
+                ])
         }
         let result = box.filletEvolving(specs)
         #expect(result != nil)
@@ -2276,17 +2367,19 @@ struct EvolvingFilletTests {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         var result: Shape? = nil
         for edge in box.edges() {
-            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
-                (parameter: 0.0, radius: 2.0),
-                (parameter: 1.0, radius: 2.0)
-            ])
+            let spec = EvolvingFilletEdge(
+                edge: edge,
+                radiusPoints: [
+                    (parameter: 0.0, radius: 2.0),
+                    (parameter: 1.0, radius: 2.0),
+                ])
             result = box.filletEvolving([spec])
             if result != nil { break }
         }
         #expect(result != nil)
         if let r = result {
             #expect(r.isValid)
-            #expect(r.volume! < 64000.0) // less than 40^3
+            #expect(r.volume! < 64000.0)  // less than 40^3
         }
     }
 }
@@ -2441,8 +2534,9 @@ struct LocalPrismTests {
     func localPrismWithTranslation() throws {
         let wire = Wire.rectangle(width: 5, height: 5)!
         let face = Shape.face(from: wire)!
-        let prism = face.localPrism(direction: SIMD3(0, 0, 10),
-                                     translation: SIMD3(2, 0, 0))
+        let prism = face.localPrism(
+            direction: SIMD3(0, 0, 10),
+            translation: SIMD3(2, 0, 0))
         #expect(prism != nil)
     }
 
@@ -2501,8 +2595,9 @@ struct ConstrainedFillTests {
         let edges = boxTopEdges()
         #expect(edges.count >= 4)
         // Use 4 edges from the box
-        _ = Shape.constrainedFill(edge1: edges[0], edge2: edges[1],
-                                   edge3: edges[2], edge4: edges[3])
+        _ = Shape.constrainedFill(
+            edge1: edges[0], edge2: edges[1],
+            edge3: edges[2], edge4: edges[3])
         // May or may not succeed depending on edge connectivity
         // The important thing is it doesn't crash
     }
@@ -2747,9 +2842,9 @@ struct BOPAlgoSplitterTests {
     @Test("Split box by another box")
     func splitBoxes() {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
-              let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
         else {
-            #expect(Bool(false), "Failed to create boxes")
+            #expect(false, "Failed to create boxes")
             return
         }
         let result = Shape.split(objects: [box1], by: [box2])
@@ -2762,9 +2857,9 @@ struct BOPAlgoSplitterTests {
     func splitProducesMultipleSolids() {
         // Two overlapping boxes: box1 from -10..10, box2 from 0..20
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
-              let box2 = Shape.box(origin: SIMD3(0, -10, -10), width: 20, height: 20, depth: 20)
+            let box2 = Shape.box(origin: SIMD3(0, -10, -10), width: 20, height: 20, depth: 20)
         else {
-            #expect(Bool(false), "Failed to create boxes")
+            #expect(false, "Failed to create boxes")
             return
         }
         let result = Shape.split(objects: [box1], by: [box2])
@@ -2779,9 +2874,9 @@ struct BOPAlgoCellsBuilderTests {
     @Test("Create CellsBuilder")
     func createCellsBuilder() {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
-              let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
         else {
-            #expect(Bool(false), "Failed to create boxes")
+            #expect(false, "Failed to create boxes")
             return
         }
         let builder = CellsBuilder(shapes: [box1, box2])
@@ -2791,9 +2886,9 @@ struct BOPAlgoCellsBuilderTests {
     @Test("AddAll and RemoveAll")
     func addRemoveAll() {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
-              let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
         else {
-            #expect(Bool(false), "Failed to create boxes")
+            #expect(false, "Failed to create boxes")
             return
         }
         if let builder = CellsBuilder(shapes: [box1, box2]) {
@@ -2812,9 +2907,9 @@ struct BOPAlgoCellsBuilderTests {
     @Test("RemoveInternalBoundaries")
     func removeInternalBoundaries() {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
-              let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
         else {
-            #expect(Bool(false), "Failed to create boxes")
+            #expect(false, "Failed to create boxes")
             return
         }
         if let builder = CellsBuilder(shapes: [box1, box2]) {
@@ -2833,9 +2928,9 @@ struct BOPAlgoArgumentAnalyzerTests {
     @Test("Valid shapes for fuse")
     func validShapesForFuse() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let sphere = Shape.sphere(radius: 5)
+            let sphere = Shape.sphere(radius: 5)
         else {
-            #expect(Bool(false), "Failed to create shapes")
+            #expect(false, "Failed to create shapes")
             return
         }
         let valid = Shape.analyzeBoolean(box, sphere, operation: .fuse)
@@ -2845,9 +2940,9 @@ struct BOPAlgoArgumentAnalyzerTests {
     @Test("Valid shapes for cut")
     func validShapesForCut() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let sphere = Shape.sphere(radius: 5)
+            let sphere = Shape.sphere(radius: 5)
         else {
-            #expect(Bool(false), "Failed to create shapes")
+            #expect(false, "Failed to create shapes")
             return
         }
         let valid = Shape.analyzeBoolean(box, sphere, operation: .cut)
@@ -2875,7 +2970,8 @@ struct LocOpeSpliterTests {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         // Create a wire that crosses a face as Shape
         guard let wire = Wire.line(from: SIMD3(-6, 0, 5), to: SIMD3(6, 0, 5)),
-              let wireShape = Shape.fromWire(wire) else { return }
+            let wireShape = Shape.fromWire(wire)
+        else { return }
         // Try each face, the wire must lie on one of them
         var splitFound = false
         for i: Int32 in 1...6 {
@@ -2907,7 +3003,8 @@ struct BRepFeatBuilderTests {
     @Test("Feature fuse two boxes")
     func featFuse() {
         guard let box1 = Shape.box(width: 10, height: 10, depth: 10),
-              let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) else { return }
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        else { return }
         let result = box1.featFuse(with: box2)
         #expect(result != nil)
         if let result = result {
@@ -2918,7 +3015,8 @@ struct BRepFeatBuilderTests {
     @Test("Feature cut box from box")
     func featCut() {
         guard let box1 = Shape.box(width: 10, height: 10, depth: 10),
-              let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) else { return }
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        else { return }
         let result = box1.featCut(with: box2)
         #expect(result != nil)
         if let result = result {
@@ -3004,7 +3102,8 @@ struct BOPAlgoSectionTests {
     @Test("Section box and sphere")
     func sectionBoxSphere() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let sphere = Shape.sphere(radius: 6) else { return }
+            let sphere = Shape.sphere(radius: 6)
+        else { return }
         if let result = box.section(with: [sphere]) {
             let edges = result.subShapes(ofType: .edge)
             #expect(edges.count > 0)
@@ -3014,7 +3113,8 @@ struct BOPAlgoSectionTests {
     @Test("Section two overlapping boxes")
     func sectionTwoBoxes() {
         guard let box1 = Shape.box(width: 10, height: 10, depth: 10),
-              let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10) else { return }
+            let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10)
+        else { return }
         if let result = box1.section(with: [box2]) {
             #expect(result.shapeType == .compound)
         }
@@ -3023,7 +3123,8 @@ struct BOPAlgoSectionTests {
     @Test("Static section between multiple shapes")
     func staticSection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let sphere = Shape.sphere(radius: 7) else { return }
+            let sphere = Shape.sphere(radius: 7)
+        else { return }
         if let result = Shape.section(shapes: [box, sphere]) {
             let edges = result.subShapes(ofType: .edge)
             #expect(edges.count > 0)
@@ -3518,13 +3619,18 @@ struct BRepFillEvolvedTests {
     @Test("evolved shape from face spine + wire profile")
     func evolvedShape() {
         if let rect = Wire.rectangle(width: 100, height: 100),
-           let spineFace = Shape.face(from: rect) {
-            if let profileWire = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(5, 0, 0),
-                                                    SIMD3(5, 0, 5), SIMD3(0, 0, 5)], closed: false),
-               let profile = Shape.fromWire(profileWire) {
+            let spineFace = Shape.face(from: rect)
+        {
+            if let profileWire = Wire.polygon3D(
+                [
+                    SIMD3(0, 0, 0), SIMD3(5, 0, 0),
+                    SIMD3(5, 0, 5), SIMD3(0, 0, 5),
+                ], closed: false),
+                let profile = Shape.fromWire(profileWire)
+            {
                 // BRepFill_Evolved is finicky, may or may not produce a result
                 let _ = Shape.evolved(spineFace: spineFace, profileWire: profile)
-                #expect(Bool(true))
+                #expect(true)
             }
         }
     }
@@ -3535,7 +3641,8 @@ struct BRepFillOffsetAncestorsTests {
     @Test("create and query offset ancestors")
     func offsetAncestors() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let face = Shape.face(from: rect) {
+            let face = Shape.face(from: rect)
+        {
             if let ancestors = OffsetAncestors.create(face: face, offset: 1.0) {
                 #expect(ancestors.isDone)
             }
@@ -3545,13 +3652,14 @@ struct BRepFillOffsetAncestorsTests {
     @Test("find ancestor edge")
     func findAncestor() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let face = Shape.face(from: rect) {
+            let face = Shape.face(from: rect)
+        {
             if let ancestors = OffsetAncestors.create(face: face, offset: 1.0) {
                 if ancestors.isDone {
                     let edges = face.subShapes(ofType: .edge)
                     if let firstEdge = edges.first {
                         let _ = ancestors.hasAncestor(firstEdge)
-                        #expect(Bool(true))
+                        #expect(true)
                     }
                 }
             }
@@ -3564,8 +3672,9 @@ struct BRepFillNSectionsTests {
     @Test("create from wires")
     func createFromWires() {
         if let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-           let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) {
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        {
             if let nsec = NSections.create(wires: [s1, s2]) {
                 #expect(nsec.lawCount > 0)
                 #expect(!nsec.isVertex)
@@ -3576,11 +3685,12 @@ struct BRepFillNSectionsTests {
     @Test("isConstant query")
     func isConstantQuery() {
         if let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 5),
-           let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) {
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 5),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        {
             if let nsec = NSections.create(wires: [s1, s2]) {
                 let _ = nsec.isConstant
-                #expect(Bool(true))
+                #expect(true)
             }
         }
     }
@@ -3655,9 +3765,11 @@ struct BRepAlgoFaceRestrictorTests {
 
     @Test func restrictFace() {
         // Shape.box centers at origin, use origin-based box for consistent face indexing
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
         let count = box.faceRestrictAlgo(faceIndex: 0)
-        #expect(count >= 0) // 0 is valid if no wires restrict the face further
+        #expect(count >= 0)  // 0 is valid if no wires restrict the face further
     }
 }
 
@@ -3675,7 +3787,8 @@ struct BRepAlgoImageTests {
 
     @Test func bindAndQuery() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let sphere = Shape.sphere(radius: 5) else { return }
+            let sphere = Shape.sphere(radius: 5)
+        else { return }
         let image = ShapeImage()
         image.setRoot(box)
         image.bind(old: box, new: sphere)
@@ -3685,7 +3798,8 @@ struct BRepAlgoImageTests {
 
     @Test func clear() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let sphere = Shape.sphere(radius: 5) else { return }
+            let sphere = Shape.sphere(radius: 5)
+        else { return }
         let image = ShapeImage()
         image.setRoot(box)
         image.bind(old: box, new: sphere)
@@ -3710,11 +3824,14 @@ struct BRepAlgoLoopTests {
 struct DraftModificationTests {
 
     @Test func draftFace() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else { return }
-        let result = box.draftModification(faceIndex: 0, direction: SIMD3(0, 0, 1),
-                                            angle: .pi / 18,
-                                            neutralPlaneOrigin: SIMD3(0, 0, 0),
-                                            neutralPlaneNormal: SIMD3(0, 0, 1))
+        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
+            return
+        }
+        let result = box.draftModification(
+            faceIndex: 0, direction: SIMD3(0, 0, 1),
+            angle: .pi / 18,
+            neutralPlaneOrigin: SIMD3(0, 0, 0),
+            neutralPlaneNormal: SIMD3(0, 0, 1))
         // Draft may or may not succeed depending on face geometry
         if let result {
             #expect(result.isValid)
@@ -3879,7 +3996,8 @@ struct BooleanToleranceTests {
 
     @Test func fuseWithTolerance() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(9.999, 0, 0), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(9.999, 0, 0), width: 10, height: 10, depth: 10)
+        {
             // With fuzzy tolerance, near-touching shapes can fuse
             let fused = box1.fused(with: box2, tolerance: 0.01)
             #expect(fused != nil)
@@ -3891,7 +4009,8 @@ struct BooleanToleranceTests {
 
     @Test func cutWithTolerance() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let cut = box1.subtracted(box2, tolerance: 0.001)
             #expect(cut != nil)
             if let c = cut {
@@ -3902,7 +4021,8 @@ struct BooleanToleranceTests {
 
     @Test func commonWithTolerance() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let common = box1.intersected(with: box2, tolerance: 0.001)
             #expect(common != nil)
             if let c = common {
@@ -3913,7 +4033,8 @@ struct BooleanToleranceTests {
 
     @Test func fuseWithGlue() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)
+        {
             let fused = box1.fused(with: box2, glue: .shift)
             #expect(fused != nil)
             if let f = fused {
@@ -3924,7 +4045,8 @@ struct BooleanToleranceTests {
 
     @Test func cutWithGlue() {
         if let box1 = Shape.box(width: 20, height: 20, depth: 20),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let cut = box1.subtracted(box2, glue: .off)
             #expect(cut != nil)
         }
@@ -3932,7 +4054,8 @@ struct BooleanToleranceTests {
 
     @Test func commonWithGlue() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let common = box1.intersected(with: box2, glue: .off)
             #expect(common != nil)
         }
@@ -3944,7 +4067,8 @@ struct OffsetWireFaceTests {
 
     @Test func offsetWire() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let wireShape = Shape.fromWire(rect) {
+            let wireShape = Shape.fromWire(rect)
+        {
             let offset = wireShape.offsetWireOnPlane(distance: 2.0)
             #expect(offset != nil)
         }
@@ -3952,7 +4076,8 @@ struct OffsetWireFaceTests {
 
     @Test func offsetWireIntersection() {
         if let rect = Wire.rectangle(width: 10, height: 10),
-           let wireShape = Shape.fromWire(rect) {
+            let wireShape = Shape.fromWire(rect)
+        {
             let offset = wireShape.offsetWireOnPlane(distance: 1.0, joinType: .intersection)
             #expect(offset != nil)
         }
@@ -3960,7 +4085,8 @@ struct OffsetWireFaceTests {
 
     @Test func offsetFace() {
         if let rect = Wire.rectangle(width: 20, height: 20),
-           let face = Shape.face(from: rect) {
+            let face = Shape.face(from: rect)
+        {
             let offset = face.offsetFace(distance: 2.0)
             #expect(offset != nil)
         }
@@ -3972,7 +4098,8 @@ struct BooleanExpansionTests {
 
     @Test func sectionWithTolerance() {
         if let box1 = Shape.box(width: 10, height: 10, depth: 10),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let sec = box1.section(with: box2, tolerance: 0.001)
             #expect(sec != nil)
         }
@@ -3980,7 +4107,8 @@ struct BooleanExpansionTests {
 
     @Test func splitMulti() {
         if let box = Shape.box(width: 20, height: 20, depth: 20),
-           let tool = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let tool = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let split = box.split(tools: [tool])
             #expect(split != nil)
         }
@@ -3988,7 +4116,8 @@ struct BooleanExpansionTests {
 
     @Test func cutWithHistory() {
         if let box1 = Shape.box(width: 20, height: 20, depth: 20),
-           let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10) {
+            let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
+        {
             let result = box1.subtractedWithHistory(box2)
             #expect(result != nil)
             if let r = result {
@@ -4031,10 +4160,11 @@ struct BooleanExpansionTests {
 struct ThruSectionsBuilderTests {
 
     @Test func basicThruSections() {
-        if let w1 = Wire.circle(origin: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5),
-           let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3),
-           let s1 = Shape.fromWire(w1),
-           let s2 = Shape.fromWire(w2) {
+        if let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1),
+            let s2 = Shape.fromWire(w2)
+        {
             let ts = ThruSectionsBuilder(isSolid: true, isRuled: false)
             ts.addWire(s1)
             ts.addWire(s2)
@@ -4050,9 +4180,10 @@ struct ThruSectionsBuilderTests {
 
     @Test func ruledThruSections() {
         if let w1 = Wire.rectangle(width: 10, height: 10),
-           let w2 = Wire.circle(origin: SIMD3(0,0,15), normal: SIMD3(0,0,1), radius: 5),
-           let s1 = Shape.fromWire(w1),
-           let s2 = Shape.fromWire(w2) {
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 15), normal: SIMD3(0, 0, 1), radius: 5),
+            let s1 = Shape.fromWire(w1),
+            let s2 = Shape.fromWire(w2)
+        {
             let ts = ThruSectionsBuilder(isSolid: true, isRuled: true)
             ts.addWire(s1)
             ts.addWire(s2)
@@ -4062,12 +4193,13 @@ struct ThruSectionsBuilderTests {
     }
 
     @Test func thruSectionsWithSettings() {
-        if let w1 = Wire.circle(origin: SIMD3(0,0,0), normal: SIMD3(0,0,1), radius: 5),
-           let w2 = Wire.circle(origin: SIMD3(0,0,5), normal: SIMD3(0,0,1), radius: 7),
-           let w3 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3),
-           let s1 = Shape.fromWire(w1),
-           let s2 = Shape.fromWire(w2),
-           let s3 = Shape.fromWire(w3) {
+        if let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1), radius: 7),
+            let w3 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1),
+            let s2 = Shape.fromWire(w2),
+            let s3 = Shape.fromWire(w3)
+        {
             let ts = ThruSectionsBuilder(isSolid: true)
             ts.setSmoothing(true)
             ts.setMaxDegree(8)
@@ -4159,7 +4291,7 @@ struct IntegrationBooleanChainStressTests {
 
     @Test func twentySubtractions() {
         guard var shape = Shape.box(width: 100, height: 100, depth: 100) else {
-            #expect(Bool(false), "Failed to create box")
+            #expect(false, "Failed to create box")
             return
         }
         let origVolume = shape.volume ?? 0
@@ -4171,8 +4303,9 @@ struct IntegrationBooleanChainStressTests {
             let x = 30.0 * cos(angle)
             let y = 30.0 * sin(angle)
             if let sphere = Shape.sphere(radius: 5),
-               let positioned = sphere.translated(by: SIMD3(x, y, 0.0)),
-               let result = shape.subtracting(positioned) {
+                let positioned = sphere.translated(by: SIMD3(x, y, 0.0)),
+                let result = shape.subtracting(positioned)
+            {
                 shape = result
             }
 
@@ -4201,14 +4334,14 @@ struct IntegrationDraftAnalysisTests {
 
     @Test func boxFaceNormalClassification() {
         guard let box = Shape.box(width: 20, height: 30, depth: 40) else {
-            #expect(Bool(false), "Failed to create box")
+            #expect(false, "Failed to create box")
             return
         }
 
         let allFaces = box.faces()
         #expect(allFaces.count == 6, "Box should have 6 faces")
 
-        let pullDirection = SIMD3<Double>(0, 0, 1) // Z-up pull direction
+        let pullDirection = SIMD3<Double>(0, 0, 1)  // Z-up pull direction
 
         var topBottom = 0
         var side = 0
@@ -4219,7 +4352,9 @@ struct IntegrationDraftAnalysisTests {
                 if len < 1e-10 { continue }
                 let normalized = n / len
                 // dot product with pull direction
-                let dot = normalized.x * pullDirection.x + normalized.y * pullDirection.y + normalized.z * pullDirection.z
+                let dot =
+                    normalized.x * pullDirection.x + normalized.y * pullDirection.y + normalized.z
+                    * pullDirection.z
                 let angleDeg = acos(min(max(dot, -1.0), 1.0)) * 180.0 / .pi
 
                 if angleDeg < 5.0 || angleDeg > 175.0 {
@@ -4241,7 +4376,7 @@ struct IntegrationThicknessAnalysisTests {
     @Test func shelledBoxWallThickness() {
         let wallThickness = 2.0
         guard let box = Shape.box(width: 40, height: 40, depth: 40) else {
-            #expect(Bool(false), "Failed to create box")
+            #expect(false, "Failed to create box")
             return
         }
 
@@ -4253,7 +4388,10 @@ struct IntegrationThicknessAnalysisTests {
         // Find an upward-facing face to use as the open face
         var openFace: Face? = nil
         for f in boxFaces {
-            if f.isUpwardFacing() { openFace = f; break }
+            if f.isUpwardFacing() {
+                openFace = f
+                break
+            }
         }
 
         var shelled: Shape? = nil
@@ -4268,17 +4406,21 @@ struct IntegrationThicknessAnalysisTests {
         guard let shelledShape = shelled else {
             // Shelling can be finicky, skip thickness check but don't fail the test hard
             // Instead, verify ray intersection works on a simple hollow box via boolean subtraction
-            guard let innerBox = Shape.box(width: 40 - 2 * wallThickness,
-                                            height: 40 - 2 * wallThickness,
-                                            depth: 40 - 2 * wallThickness),
-                  let hollow = box.subtracting(innerBox) else {
-                #expect(Bool(false), "Failed to create hollow box via subtraction")
+            guard
+                let innerBox = Shape.box(
+                    width: 40 - 2 * wallThickness,
+                    height: 40 - 2 * wallThickness,
+                    depth: 40 - 2 * wallThickness),
+                let hollow = box.subtracting(innerBox)
+            else {
+                #expect(false, "Failed to create hollow box via subtraction")
                 return
             }
             #expect(hollow.isValid)
             // Ray cast from outside through the wall
-            let hits = hollow.intersectLine(origin: SIMD3(0.0, 0.0, 50.0),
-                                             direction: SIMD3(0, 0, -1))
+            let hits = hollow.intersectLine(
+                origin: SIMD3(0.0, 0.0, 50.0),
+                direction: SIMD3(0, 0, -1))
             #expect(hits.count >= 2, "Should hit at least 2 surfaces on hollow box")
             return
         }
@@ -4315,8 +4457,9 @@ struct IntegrationThicknessAnalysisTests {
                 }
 
                 if minDist < Double.infinity && minDist < 20.0 {
-                    #expect(abs(minDist - wallThickness) < 1.0,
-                            "Wall thickness \(minDist) should be ~\(wallThickness)")
+                    #expect(
+                        abs(minDist - wallThickness) < 1.0,
+                        "Wall thickness \(minDist) should be ~\(wallThickness)")
                     measurementCount += 1
                 }
             }
@@ -4546,7 +4689,8 @@ struct HistoryExtendedTests {
         let box2 = Shape.box(width: 5, height: 5, depth: 5)
         let box3 = Shape.box(width: 3, height: 3, depth: 3)
         if let history1 = h1, let history2 = h2,
-           let b1 = box1, let b2 = box2, let b3 = box3 {
+            let b1 = box1, let b2 = box2, let b3 = box3
+        {
             history1.addModified(initial: b1, modified: b2)
             history2.addGenerated(initial: b2, generated: b3)
             history1.merge(history2)
@@ -4599,8 +4743,8 @@ struct ThruSectionsExtensionsTests {
     func checkCompatibility() {
         let ts = ThruSectionsBuilder(isSolid: true)
         ts.checkCompatibility(true)
-        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 5.0)
-        let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3.0)
+        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
+        let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3.0)
         if let w1 = w1, let w2 = w2 {
             if let ws1 = Shape.fromWire(w1), let ws2 = Shape.fromWire(w2) {
                 ts.addWire(ws1)
@@ -4614,9 +4758,9 @@ struct ThruSectionsExtensionsTests {
     @Test("SetParType parameterization")
     func setParType() {
         let ts = ThruSectionsBuilder(isSolid: true)
-        ts.setParType(0) // ChordLength
-        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 5.0)
-        let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3.0)
+        ts.setParType(0)  // ChordLength
+        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
+        let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3.0)
         if let w1 = w1, let w2 = w2 {
             if let ws1 = Shape.fromWire(w1), let ws2 = Shape.fromWire(w2) {
                 ts.addWire(ws1)
@@ -4631,8 +4775,8 @@ struct ThruSectionsExtensionsTests {
     func setCriteriumWeight() {
         let ts = ThruSectionsBuilder(isSolid: true)
         #expect(ts.setCriteriumWeight(w1: 1.0, w2: 1.0, w3: 1.0) == true)
-        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 5.0)
-        let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3.0)
+        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
+        let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3.0)
         if let w1 = w1, let w2 = w2 {
             if let ws1 = Shape.fromWire(w1), let ws2 = Shape.fromWire(w2) {
                 ts.addWire(ws1)
@@ -4657,14 +4801,14 @@ struct ThruSectionsExtensionsTests {
     @Test("GeneratedFace from edge")
     func generatedFace() {
         let ts = ThruSectionsBuilder(isSolid: true)
-        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0,0,1), radius: 5.0)
-        let w2 = Wire.circle(origin: SIMD3(0,0,10), normal: SIMD3(0,0,1), radius: 3.0)
+        let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5.0)
+        let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3.0)
         if let w1 = w1, let w2 = w2 {
             if let ws1 = Shape.fromWire(w1), let ws2 = Shape.fromWire(w2) {
                 ts.addWire(ws1)
                 ts.addWire(ws2)
                 ts.build()
-                if let _ = ts.shape {
+                if ts.shape != nil {
                     let edges = ws1.subShapes(ofType: .edge)
                     if edges.count > 0 {
                         let face = ts.generatedFace(from: edges[0])
@@ -4754,7 +4898,8 @@ struct SectionExtendedTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         let sphere = Shape.sphere(radius: 7.0)
         if let b = box, let s = sphere {
-            let section = Shape.sectionWithOptions(b, s,
+            let section = Shape.sectionWithOptions(
+                b, s,
                 approximation: true, computePCurve1: true, computePCurve2: true)
             #expect(section != nil)
         }
@@ -4769,7 +4914,8 @@ struct SectionExtendedTests {
             if let sec = section {
                 let edges = sec.subShapes(ofType: .edge)
                 if edges.count > 0 {
-                    let ancestor = Shape.sectionAncestorFaceOn1(b, s, edge: edges[0],
+                    let ancestor = Shape.sectionAncestorFaceOn1(
+                        b, s, edge: edges[0],
                         approximation: true, computePCurve1: true)
                     // May or may not find ancestor
                     let _ = ancestor
@@ -4788,7 +4934,8 @@ struct SectionExtendedTests {
             if let sec = section {
                 let edges = sec.subShapes(ofType: .edge)
                 if edges.count > 0 {
-                    let ancestor = Shape.sectionAncestorFaceOn2(b, s, edge: edges[0],
+                    let ancestor = Shape.sectionAncestorFaceOn2(
+                        b, s, edge: edges[0],
                         approximation: true, computePCurve2: true)
                     let _ = ancestor
                     #expect(true)
@@ -4817,7 +4964,7 @@ struct ChamferBuilderCompletionsV124Tests {
                     let len = cb.length(contour: 1)
                     #expect(len > 0)
                     let closed = cb.isClosed(contour: 1)
-                    #expect(!closed || closed) // just check no crash
+                    #expect(!closed || closed)  // just check no crash
                     let cat = cb.isClosedAndTangent(contour: 1)
                     #expect(!cat || cat)
                 }
@@ -5074,7 +5221,8 @@ struct FilletBuilderCompletionsTests {
         if let box = box {
             let fb = FilletBuilder(shape: box)
             if let fb = fb {
-                fb.setParams(tang: 1e-4, tesp: 1e-3, t2d: 1e-5, tApp3d: 1e-4, tApp2d: 1e-5, fleche: 1e-3)
+                fb.setParams(
+                    tang: 1e-4, tesp: 1e-3, t2d: 1e-5, tApp3d: 1e-4, tApp2d: 1e-5, fleche: 1e-3)
                 // Should not crash
             }
         }
@@ -5086,10 +5234,10 @@ struct FilletBuilderCompletionsTests {
         if let box = box {
             let fb = FilletBuilder(shape: box)
             if let fb = fb {
-                fb.setContinuity(1, angularTolerance: 0.001) // C1
-                fb.setFilletShape(1) // QuasiAngular
+                fb.setContinuity(1, angularTolerance: 0.001)  // C1
+                fb.setFilletShape(1)  // QuasiAngular
                 #expect(fb.filletShape == 1)
-                fb.setFilletShape(0) // Rational
+                fb.setFilletShape(0)  // Rational
                 #expect(fb.filletShape == 0)
             }
         }
@@ -5147,7 +5295,7 @@ struct FilletBuilderHistoryTests {
         guard !edges.isEmpty else { return }
         let added = builder.addEdge(edges[0], radius: 1.0)
         if added {
-            if let _ = builder.build() {
+            if builder.build() != nil {
                 if let edgeShape = Shape.fromEdge(edges[0]) {
                     let gen = builder.generated(from: edgeShape)
                     #expect(gen.count > 0)
@@ -5164,7 +5312,7 @@ struct FilletBuilderHistoryTests {
         guard !edges.isEmpty else { return }
         let added = builder.addEdge(edges[0], radius: 1.0)
         if added {
-            if let _ = builder.build() {
+            if builder.build() != nil {
                 let faces = box.subShapes(ofType: .face)
                 if !faces.isEmpty {
                     let mod = builder.modified(from: faces[0])
@@ -5183,10 +5331,10 @@ struct FilletBuilderHistoryTests {
         guard !edges.isEmpty else { return }
         let added = builder.addEdge(edges[0], radius: 1.0)
         if added {
-            if let _ = builder.build() {
+            if builder.build() != nil {
                 if let edgeShape = Shape.fromEdge(edges[0]) {
                     let deleted = builder.isDeleted(edgeShape)
-                    #expect(deleted == true) // The original edge should be replaced
+                    #expect(deleted == true)  // The original edge should be replaced
                 }
             }
         }
@@ -5299,7 +5447,7 @@ struct SectionBuilderTests {
 
         if let builder = SectionBuilder() {
             builder.init1(shape: box)
-            builder.init2(plane: 0, 0, 1, -5) // z = 5 plane
+            builder.init2(plane: 0, 0, 1, -5)  // z = 5 plane
 
             if let result = builder.build() {
                 #expect(result.isValid)
@@ -5349,7 +5497,8 @@ struct ThruSectionsGuardTests {
 
     @Test func singleWireBuildReturnsFalse() {
         guard let w = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let s = Shape.fromWire(w) else { return }
+            let s = Shape.fromWire(w)
+        else { return }
         let ts = ThruSectionsBuilder(isSolid: true, isRuled: false)
         ts.addWire(s)
         #expect(!ts.build())
@@ -5365,8 +5514,9 @@ struct ThruSectionsGuardTests {
 
     @Test func twoSectionsBuildSucceeds() {
         guard let w1 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-              let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
-              let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
+            let w2 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3),
+            let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
+        else { return }
         let ts = ThruSectionsBuilder(isSolid: true, isRuled: false)
         ts.addWire(s1)
         ts.addWire(s2)
@@ -5387,7 +5537,8 @@ struct CellsBuilderGuardTests {
 
     @Test func validShapesSucceeds() {
         guard let box1 = Shape.box(width: 10, height: 10, depth: 10),
-              let box2 = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10) else { return }
+            let box2 = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
+        else { return }
         if let cb = CellsBuilder(shapes: [box1, box2]) {
             cb.addAllToResult()
             cb.removeInternalBoundaries()
@@ -5403,7 +5554,8 @@ struct CellsBuilderGuardTests {
 @Suite("Oriented Cylinder")
 struct OrientedCylinderTests {
     @Test func cylinderAlongZ() {
-        let cyl = Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
+        let cyl = Shape.cylinder(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
         #expect(cyl != nil)
         if let cyl {
             if let vol = cyl.volume { #expect(abs(vol - Double.pi * 25 * 10) < 1.0) }
@@ -5411,7 +5563,8 @@ struct OrientedCylinderTests {
     }
 
     @Test func cylinderAlongX() {
-        let cyl = Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0), radius: 3, height: 20)
+        let cyl = Shape.cylinder(
+            at: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0), radius: 3, height: 20)
         #expect(cyl != nil)
         if let cyl {
             if let vol = cyl.volume { #expect(vol > 0) }
@@ -5419,7 +5572,8 @@ struct OrientedCylinderTests {
     }
 
     @Test func cylinderAlongDiagonal() {
-        let cyl = Shape.cylinder(at: SIMD3(5, 5, 5), direction: SIMD3(1, 1, 1), radius: 2, height: 15)
+        let cyl = Shape.cylinder(
+            at: SIMD3(5, 5, 5), direction: SIMD3(1, 1, 1), radius: 2, height: 15)
         #expect(cyl != nil)
         if let cyl {
             if let vol = cyl.volume { #expect(abs(vol - Double.pi * 4 * 15) < 1.0) }
@@ -5427,12 +5581,14 @@ struct OrientedCylinderTests {
     }
 
     @Test func cylinderOffOrigin() {
-        let cyl = Shape.cylinder(at: SIMD3(100, 200, 300), direction: SIMD3(0, 1, 0), radius: 1, height: 5)
+        let cyl = Shape.cylinder(
+            at: SIMD3(100, 200, 300), direction: SIMD3(0, 1, 0), radius: 1, height: 5)
         #expect(cyl != nil)
     }
 
     @Test func cylinderIsValid() {
-        let cyl = Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
+        let cyl = Shape.cylinder(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
         if let cyl { #expect(cyl.isValid) }
     }
 }
@@ -5485,8 +5641,9 @@ struct OrientedPrimitivesTests {
 
     @Test("Oriented cone")
     func orientedCone() {
-        let c = Shape.cone(at: SIMD3(10, 0, 0), direction: SIMD3(0, 1, 0),
-                           bottomRadius: 5, topRadius: 2, height: 10)
+        let c = Shape.cone(
+            at: SIMD3(10, 0, 0), direction: SIMD3(0, 1, 0),
+            bottomRadius: 5, topRadius: 2, height: 10)
         #expect(c != nil)
         if let c {
             #expect(c.isValid)
@@ -5501,8 +5658,9 @@ struct OrientedPrimitivesTests {
     @Test("Oriented cone volume matches default")
     func orientedConeVolume() {
         let c1 = Shape.cone(bottomRadius: 5, topRadius: 2, height: 10)
-        let c2 = Shape.cone(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
-                            bottomRadius: 5, topRadius: 2, height: 10)
+        let c2 = Shape.cone(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
+            bottomRadius: 5, topRadius: 2, height: 10)
         if let v1 = c1?.volume, let v2 = c2?.volume {
             #expect(abs(v1 - v2) < 0.01)
         }
@@ -5512,8 +5670,9 @@ struct OrientedPrimitivesTests {
 
     @Test("Oriented torus")
     func orientedTorus() {
-        let t = Shape.torus(at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
-                            majorRadius: 10, minorRadius: 3)
+        let t = Shape.torus(
+            at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
+            majorRadius: 10, minorRadius: 3)
         #expect(t != nil)
         if let t {
             #expect(t.isValid)
@@ -5528,8 +5687,9 @@ struct OrientedPrimitivesTests {
     @Test("Oriented torus volume matches default")
     func orientedTorusVolume() {
         let t1 = Shape.torus(majorRadius: 10, minorRadius: 3)
-        let t2 = Shape.torus(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
-                             majorRadius: 10, minorRadius: 3)
+        let t2 = Shape.torus(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
+            majorRadius: 10, minorRadius: 3)
         if let v1 = t1?.volume, let v2 = t2?.volume {
             #expect(abs(v1 - v2) < 0.01)
         }
@@ -5539,8 +5699,9 @@ struct OrientedPrimitivesTests {
 
     @Test("Oriented box")
     func orientedBox() {
-        let b = Shape.box(at: SIMD3(5, 5, 5), direction: SIMD3(0, 1, 0),
-                          width: 10, height: 20, depth: 30)
+        let b = Shape.box(
+            at: SIMD3(5, 5, 5), direction: SIMD3(0, 1, 0),
+            width: 10, height: 20, depth: 30)
         #expect(b != nil)
         if let b {
             #expect(b.isValid)
@@ -5554,8 +5715,9 @@ struct OrientedPrimitivesTests {
     @Test("Oriented box volume matches default")
     func orientedBoxVolume() {
         let b1 = Shape.box(width: 10, height: 20, depth: 30)
-        let b2 = Shape.box(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
-                           width: 10, height: 20, depth: 30)
+        let b2 = Shape.box(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
+            width: 10, height: 20, depth: 30)
         if let v1 = b1?.volume, let v2 = b2?.volume {
             #expect(abs(v1 - v2) < 0.01)
         }
@@ -5590,8 +5752,9 @@ struct OrientedPrimitivesTests {
 
     @Test("Oriented wedge")
     func orientedWedge() {
-        let w = Shape.wedge(at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
-                            dx: 10, dy: 5, dz: 8, ltx: 4)
+        let w = Shape.wedge(
+            at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
+            dx: 10, dy: 5, dz: 8, ltx: 4)
         #expect(w != nil)
         if let w {
             #expect(w.isValid)
@@ -5601,8 +5764,9 @@ struct OrientedPrimitivesTests {
     @Test("Oriented wedge volume matches default")
     func orientedWedgeVolume() {
         let w1 = Shape.wedge(dx: 10, dy: 5, dz: 8, ltx: 4)
-        let w2 = Shape.wedge(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
-                             dx: 10, dy: 5, dz: 8, ltx: 4)
+        let w2 = Shape.wedge(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
+            dx: 10, dy: 5, dz: 8, ltx: 4)
         if let v1 = w1?.volume, let v2 = w2?.volume {
             #expect(abs(v1 - v2) < 0.01)
         }
@@ -5614,8 +5778,10 @@ struct PartialOrientedPrimitivesTests {
 
     @Test("Oriented partial cylinder")
     func orientedPartialCylinder() {
-        let full = Shape.cylinder(at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
-        let partial = Shape.cylinder(at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, height: 10, angle: .pi)
+        let full = Shape.cylinder(
+            at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, height: 10)
+        let partial = Shape.cylinder(
+            at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, height: 10, angle: .pi)
         #expect(full != nil)
         #expect(partial != nil)
         if let p = partial { #expect(p.isValid) }
@@ -5627,8 +5793,12 @@ struct PartialOrientedPrimitivesTests {
 
     @Test("Oriented partial cone")
     func orientedPartialCone() {
-        let full = Shape.cone(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), bottomRadius: 5, topRadius: 2, height: 10)
-        let partial = Shape.cone(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), bottomRadius: 5, topRadius: 2, height: 10, angle: .pi)
+        let full = Shape.cone(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), bottomRadius: 5, topRadius: 2, height: 10
+        )
+        let partial = Shape.cone(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), bottomRadius: 5, topRadius: 2,
+            height: 10, angle: .pi)
         #expect(full != nil)
         #expect(partial != nil)
         if let p = partial { #expect(p.isValid) }
@@ -5640,8 +5810,11 @@ struct PartialOrientedPrimitivesTests {
 
     @Test("Oriented partial torus")
     func orientedPartialTorus() {
-        let full = Shape.torus(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
-        let partial = Shape.torus(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3, angle: .pi)
+        let full = Shape.torus(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
+        let partial = Shape.torus(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3,
+            angle: .pi)
         #expect(full != nil)
         #expect(partial != nil)
         if let p = partial { #expect(p.isValid) }
@@ -5653,8 +5826,11 @@ struct PartialOrientedPrimitivesTests {
 
     @Test("Oriented torus segment")
     func orientedTorusSegment() {
-        let full = Shape.torus(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
-        let segment = Shape.torus(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3, angle1: 0, angle2: .pi)
+        let full = Shape.torus(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
+        let segment = Shape.torus(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3,
+            angle1: 0, angle2: .pi)
         #expect(full != nil)
         #expect(segment != nil)
         if let s = segment { #expect(s.isValid) }
@@ -5666,7 +5842,8 @@ struct PartialOrientedPrimitivesTests {
     @Test("Oriented partial sphere")
     func orientedPartialSphere() {
         let full = Shape.sphere(at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5)
-        let partial = Shape.sphere(at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, angle: .pi)
+        let partial = Shape.sphere(
+            at: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1), radius: 5, angle: .pi)
         #expect(full != nil)
         #expect(partial != nil)
         if let p = partial { #expect(p.isValid) }
@@ -5679,7 +5856,8 @@ struct PartialOrientedPrimitivesTests {
     @Test("Oriented sphere segment")
     func orientedSphereSegment() {
         let full = Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5)
-        let segment = Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, angle1: 0, angle2: .pi / 2)
+        let segment = Shape.sphere(
+            at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 5, angle1: 0, angle2: .pi / 2)
         #expect(full != nil)
         #expect(segment != nil)
         if let s = segment { #expect(s.isValid) }
@@ -5774,13 +5952,15 @@ struct FeatureReconstructorTests {
         if case .thread(let spec, let holeRef, _) = result.annotations.first?.kind {
             #expect(spec == "M5x0.8")
             #expect(holeRef == "hole_1")
-        } else { Issue.record("expected thread annotation") }
+        } else {
+            Issue.record("expected thread annotation")
+        }
     }
 
     @Test("Underdetermined revolve skipped without aborting")
     func underdeterminedSkipped() {
         let bad = FeatureSpec.Revolve(
-            profilePoints2D: [SIMD2(0, 0), SIMD2(1, 0)],   // only 2 points
+            profilePoints2D: [SIMD2(0, 0), SIMD2(1, 0)],  // only 2 points
             axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
             id: "bad")
         let good = FeatureSpec.Revolve(
@@ -5816,19 +5996,19 @@ struct FeatureReconstructorTests {
     @Test("JSON front end parses a revolve")
     func jsonRevolve() throws {
         let json = """
-        {
-          "features": [
             {
-              "kind": "revolve",
-              "profile_points_2d": [[5, 0], [10, 0], [10, 5]],
-              "axis_origin": [0, 0, 0],
-              "axis_direction": [0, 0, 1],
-              "angle_deg": 360,
-              "id": "rev_1"
+              "features": [
+                {
+                  "kind": "revolve",
+                  "profile_points_2d": [[5, 0], [10, 0], [10, 5]],
+                  "axis_origin": [0, 0, 0],
+                  "axis_direction": [0, 0, 1],
+                  "angle_deg": 360,
+                  "id": "rev_1"
+                }
+              ]
             }
-          ]
-        }
-        """
+            """
         let data = json.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(data)
         #expect(result.fulfilled == ["rev_1"])
@@ -5860,7 +6040,8 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.shape != nil)
         // Volume preserved, no features applied.
         if let s = result.shape {
-            let box1 = box.bounds!, box2 = s.bounds!
+            let box1 = box.bounds!
+            let box2 = s.bounds!
             #expect(abs(box1.min.x - box2.min.x) < 1e-9)
             #expect(abs(box1.max.x - box2.max.x) < 1e-9)
         }
@@ -5971,19 +6152,19 @@ struct FeatureReconstructorInputBodyTests {
     func buildJSONForwardsInput() throws {
         let plate = Shape.box(width: 20, height: 20, depth: 4)!
         let json = """
-        {
-          "features": [
             {
-              "kind": "hole",
-              "axis_point": [10, 10, 0],
-              "axis_direction": [0, 0, 1],
-              "diameter": 3.0,
-              "depth": 6.0,
-              "id": "h"
+              "features": [
+                {
+                  "kind": "hole",
+                  "axis_point": [10, 10, 0],
+                  "axis_direction": [0, 0, 1],
+                  "diameter": 3.0,
+                  "depth": 6.0,
+                  "id": "h"
+                }
+              ]
             }
-          ]
-        }
-        """.data(using: .utf8)!
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         #expect(result.fulfilled.contains("h"))
         #expect(result.shape != nil)
@@ -6021,30 +6202,31 @@ struct FeatureReconstructorJSONBooleanTests {
         let plate = Shape.box(width: 40, height: 40, depth: 5)!
         let plateBoundsBefore = plate.bounds!
         let json = """
-        {
-          "features": [
             {
-              "kind": "extrude",
-              "id": "slot",
-              "profile_points_2d": [[10, 10], [20, 10], [20, 20], [10, 20]],
-              "plane_origin": [0, 0, 0],
-              "plane_normal": [0, 0, 1],
-              "length": 10
-            },
-            {
-              "kind": "boolean",
-              "id": "cut_slot",
-              "op": "subtract",
-              "left": "@input",
-              "right": "slot"
+              "features": [
+                {
+                  "kind": "extrude",
+                  "id": "slot",
+                  "profile_points_2d": [[10, 10], [20, 10], [20, 20], [10, 20]],
+                  "plane_origin": [0, 0, 0],
+                  "plane_normal": [0, 0, 1],
+                  "length": 10
+                },
+                {
+                  "kind": "boolean",
+                  "id": "cut_slot",
+                  "op": "subtract",
+                  "left": "@input",
+                  "right": "slot"
+                }
+              ]
             }
-          ]
-        }
-        """.data(using: .utf8)!
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         #expect(result.fulfilled.contains("slot"))
-        #expect(result.fulfilled.contains("cut_slot"),
-                 "expected cut_slot to be fulfilled, was: \(result.fulfilled)")
+        #expect(
+            result.fulfilled.contains("cut_slot"),
+            "expected cut_slot to be fulfilled, was: \(result.fulfilled)")
         #expect(result.shape != nil)
         // Outer bbox unchanged (slot is internal).
         if let s = result.shape, let after = s.bounds {
@@ -6056,34 +6238,34 @@ struct FeatureReconstructorJSONBooleanTests {
     @Test("JSON boolean union of two extruded profiles")
     func jsonBooleanUnion() throws {
         let json = """
-        {
-          "features": [
             {
-              "kind": "extrude",
-              "id": "a",
-              "profile_points_2d": [[0, 0], [10, 0], [10, 10], [0, 10]],
-              "plane_origin": [0, 0, 0],
-              "plane_normal": [0, 0, 1],
-              "length": 5
-            },
-            {
-              "kind": "extrude",
-              "id": "b",
-              "profile_points_2d": [[5, 5], [15, 5], [15, 15], [5, 15]],
-              "plane_origin": [0, 0, 0],
-              "plane_normal": [0, 0, 1],
-              "length": 5
-            },
-            {
-              "kind": "boolean",
-              "id": "ab_union",
-              "op": "union",
-              "left": "a",
-              "right": "b"
+              "features": [
+                {
+                  "kind": "extrude",
+                  "id": "a",
+                  "profile_points_2d": [[0, 0], [10, 0], [10, 10], [0, 10]],
+                  "plane_origin": [0, 0, 0],
+                  "plane_normal": [0, 0, 1],
+                  "length": 5
+                },
+                {
+                  "kind": "extrude",
+                  "id": "b",
+                  "profile_points_2d": [[5, 5], [15, 5], [15, 15], [5, 15]],
+                  "plane_origin": [0, 0, 0],
+                  "plane_normal": [0, 0, 1],
+                  "length": 5
+                },
+                {
+                  "kind": "boolean",
+                  "id": "ab_union",
+                  "op": "union",
+                  "left": "a",
+                  "right": "b"
+                }
+              ]
             }
-          ]
-        }
-        """.data(using: .utf8)!
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.contains("ab_union"))
     }
@@ -6092,18 +6274,18 @@ struct FeatureReconstructorJSONBooleanTests {
     func jsonBooleanBadOpReported() throws {
         let plate = Shape.box(width: 20, height: 20, depth: 5)!
         let json = """
-        {
-          "features": [
             {
-              "kind": "boolean",
-              "id": "bad_op",
-              "op": "smush",
-              "left": "@input",
-              "right": "@input"
+              "features": [
+                {
+                  "kind": "boolean",
+                  "id": "bad_op",
+                  "op": "smush",
+                  "left": "@input",
+                  "right": "@input"
+                }
+              ]
             }
-          ]
-        }
-        """.data(using: .utf8)!
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         let skip = result.skipped.first { $0.featureID == "bad_op" }
         #expect(skip != nil)
@@ -6117,23 +6299,23 @@ struct FeatureReconstructorJSONBooleanTests {
     @Test("Unknown JSON kind with id is reported as unsupported skip")
     func unknownKindReported() throws {
         let json = """
-        {
-          "features": [
             {
-              "kind": "extrude",
-              "id": "good",
-              "profile_points_2d": [[0, 0], [5, 0], [5, 5], [0, 5]],
-              "plane_origin": [0, 0, 0],
-              "plane_normal": [0, 0, 1],
-              "length": 1
-            },
-            {
-              "kind": "shrubbery",
-              "id": "ni"
+              "features": [
+                {
+                  "kind": "extrude",
+                  "id": "good",
+                  "profile_points_2d": [[0, 0], [5, 0], [5, 5], [0, 5]],
+                  "plane_origin": [0, 0, 0],
+                  "plane_normal": [0, 0, 1],
+                  "length": 1
+                },
+                {
+                  "kind": "shrubbery",
+                  "id": "ni"
+                }
+              ]
             }
-          ]
-        }
-        """.data(using: .utf8)!
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.contains("good"))
         let skip = result.skipped.first { $0.featureID == "ni" }
@@ -6148,12 +6330,12 @@ struct FeatureReconstructorJSONBooleanTests {
     @Test("Unknown JSON kind without id is silently ignored (matches kernel policy)")
     func unknownKindWithoutIdIgnored() throws {
         let json = """
-        {
-          "features": [
-            { "kind": "shrubbery" }
-          ]
-        }
-        """.data(using: .utf8)!
+            {
+              "features": [
+                { "kind": "shrubbery" }
+              ]
+            }
+            """.data(using: .utf8)!
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.isEmpty)
         #expect(result.skipped.isEmpty)
@@ -6188,10 +6370,13 @@ struct BooleanRegistryTests {
         let b = FeatureSpec.Boolean(op: .union, leftID: "nope", rightID: "alsoNope", id: "bad")
         let result = FeatureReconstructor.build(from: [.boolean(b)])
         if let skip = result.skipped.first(where: { $0.featureID == "bad" }) {
-            if case .unresolvedRef = skip.reason {} else {
+            if case .unresolvedRef = skip.reason {
+            } else {
                 Issue.record("expected unresolvedRef")
             }
-        } else { Issue.record("expected skipped") }
+        } else {
+            Issue.record("expected skipped")
+        }
     }
 }
 
@@ -6245,12 +6430,13 @@ struct EdgeSelectorWiredTests {
 struct FeatureSpecCodableTests {
     @Test("Encode/decode roundtrip of a revolve")
     func revolveRoundtrip() throws {
-        let r = FeatureSpec.revolve(.init(
-            profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5)],
-            axisOrigin: .zero,
-            axisDirection: SIMD3(0, 0, 1),
-            angleDeg: 360,
-            id: "rev"))
+        let r = FeatureSpec.revolve(
+            .init(
+                profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5)],
+                axisOrigin: .zero,
+                axisDirection: SIMD3(0, 0, 1),
+                angleDeg: 360,
+                id: "rev"))
         let enc = try JSONEncoder().encode(r)
         let dec = try JSONDecoder().decode(FeatureSpec.self, from: enc)
         #expect(dec == r)
@@ -6267,15 +6453,19 @@ struct FeatureSpecCodableTests {
     @Test("Encode/decode an array of mixed specs")
     func mixedArray() throws {
         let specs: [FeatureSpec] = [
-            .revolve(.init(profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5)],
-                           axisOrigin: .zero,
-                           axisDirection: SIMD3(0, 0, 1),
-                           id: "base")),
-            .hole(.init(axisPoint: SIMD3(5, 0, 0),
-                        axisDirection: SIMD3(0, 0, 1),
-                        diameter: 2.0, depth: 5.0, id: "h1")),
+            .revolve(
+                .init(
+                    profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5)],
+                    axisOrigin: .zero,
+                    axisDirection: SIMD3(0, 0, 1),
+                    id: "base")),
+            .hole(
+                .init(
+                    axisPoint: SIMD3(5, 0, 0),
+                    axisDirection: SIMD3(0, 0, 1),
+                    diameter: 2.0, depth: 5.0, id: "h1")),
             .fillet(.init(edgeSelector: .all, radius: 0.5, id: "f")),
-            .boolean(.init(op: .union, leftID: "base", rightID: "h1", id: "u"))
+            .boolean(.init(op: .union, leftID: "base", rightID: "h1", id: "u")),
         ]
         let enc = try JSONEncoder().encode(specs)
         let dec = try JSONDecoder().decode([FeatureSpec].self, from: enc)
@@ -6288,7 +6478,7 @@ struct FeatureSpecCodableTests {
         let selectors: [FeatureSpec.EdgeSelector] = [
             .all,
             .nearPoint(SIMD3(1, 2, 3), tolerance: 0.5),
-            .onFeature("base")
+            .onFeature("base"),
         ]
         for s in selectors {
             let enc = try JSONEncoder().encode(s)
@@ -6312,8 +6502,9 @@ struct SewQuiltHealFullHistoryTests {
     }
 
     static func edgeNearX(_ shape: Shape, _ x: Double) -> Shape {
-        shape.subShapes(ofType: .edge).min { 
-            abs(($0.center?.x ?? .greatestFiniteMagnitude) - x) < abs(($1.center?.x ?? .greatestFiniteMagnitude) - x)
+        shape.subShapes(ofType: .edge).min {
+            abs(($0.center?.x ?? .greatestFiniteMagnitude) - x)
+                < abs(($1.center?.x ?? .greatestFiniteMagnitude) - x)
         }!
     }
 
@@ -6444,8 +6635,9 @@ struct SewQuiltHealFullHistoryTests {
     func sewHistoryAbsorbsIntoGraph() {
         let (face1, face2) = Self.touchingFaces()
         guard let compound = Shape.compound([face1, face2]),
-              let graph = BRepGraph(shape: compound),
-              let root = graph.findNode(for: compound) else {
+            let graph = BRepGraph(shape: compound),
+            let root = graph.findNode(for: compound)
+        else {
             Issue.record("graph setup failed")
             return
         }
@@ -6454,9 +6646,10 @@ struct SewQuiltHealFullHistoryTests {
             return
         }
         #expect(graph.historyRecordCount == 0)
-        let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-                              operationName: "sew")
+        let added = graph.add(
+            r.result, absorbing: r.history,
+            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+            operationName: "sew")
         #expect(added != nil, "add(absorbing:) should succeed for a sew's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")
     }
@@ -6530,7 +6723,10 @@ struct TransformPatternFullHistoryTests {
     func linearPatternHistory() {
         let hole = Shape.cylinder(radius: 3, height: 10)!
         let count = 4
-        guard let r = hole.linearPatternWithFullHistory(direction: SIMD3(20, 0, 0), spacing: 20, count: count) else {
+        guard
+            let r = hole.linearPatternWithFullHistory(
+                direction: SIMD3(20, 0, 0), spacing: 20, count: count)
+        else {
             Issue.record("linear pattern should succeed")
             return
         }
@@ -6538,8 +6734,9 @@ struct TransformPatternFullHistoryTests {
         for face in hole.subShapes(ofType: .face) {
             let rec = r.history.record(of: face)
             #expect(!rec.isDeleted)
-            #expect(rec.modified.count == count,
-                    "expected \(count) pattern-instance faces, got \(rec.modified.count)")
+            #expect(
+                rec.modified.count == count,
+                "expected \(count) pattern-instance faces, got \(rec.modified.count)")
         }
     }
 
@@ -6547,9 +6744,11 @@ struct TransformPatternFullHistoryTests {
     func circularPatternHistory() {
         let hole = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(20, 0, 0))!
         let count = 6
-        guard let r = hole.circularPatternWithFullHistory(
-            axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: count
-        ) else {
+        guard
+            let r = hole.circularPatternWithFullHistory(
+                axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: count
+            )
+        else {
             Issue.record("circular pattern should succeed")
             return
         }
@@ -6557,8 +6756,9 @@ struct TransformPatternFullHistoryTests {
         for face in hole.subShapes(ofType: .face) {
             let rec = r.history.record(of: face)
             #expect(!rec.isDeleted)
-            #expect(rec.modified.count == count,
-                    "expected \(count) pattern-instance faces, got \(rec.modified.count)")
+            #expect(
+                rec.modified.count == count,
+                "expected \(count) pattern-instance faces, got \(rec.modified.count)")
         }
     }
 
@@ -6566,7 +6766,8 @@ struct TransformPatternFullHistoryTests {
     func translateHistoryAbsorbsIntoGraph() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let graph = BRepGraph(shape: box),
-              let root = graph.findNode(for: box) else {
+            let root = graph.findNode(for: box)
+        else {
             Issue.record("graph setup failed")
             return
         }
@@ -6575,10 +6776,12 @@ struct TransformPatternFullHistoryTests {
             return
         }
         #expect(graph.historyRecordCount == 0)
-        let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-                              operationName: "translate")
-        #expect(added != nil, "add(absorbing:) should succeed for a translate's synthesized history")
+        let added = graph.add(
+            r.result, absorbing: r.history,
+            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+            operationName: "translate")
+        #expect(
+            added != nil, "add(absorbing:) should succeed for a translate's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")
     }
 
@@ -6592,7 +6795,8 @@ struct TransformPatternFullHistoryTests {
     @Test("Circular pattern with a zero-length axis direction fails gracefully (does not crash)")
     func circularPatternZeroAxisDoesNotCrash() {
         let hole = Shape.cylinder(radius: 3, height: 10)!
-        let r = hole.circularPatternWithFullHistory(axisPoint: .zero, axisDirection: .zero, count: 6)
+        let r = hole.circularPatternWithFullHistory(
+            axisPoint: .zero, axisDirection: .zero, count: 6)
         #expect(r == nil)
     }
 
@@ -6600,18 +6804,23 @@ struct TransformPatternFullHistoryTests {
     func linearPatternHistoryAbsorbsIntoGraph() {
         let hole = Shape.cylinder(radius: 3, height: 10)!
         guard let graph = BRepGraph(shape: hole),
-              let root = graph.findNode(for: hole) else {
+            let root = graph.findNode(for: hole)
+        else {
             Issue.record("graph setup failed")
             return
         }
-        guard let r = hole.linearPatternWithFullHistory(direction: SIMD3(20, 0, 0), spacing: 20, count: 3) else {
+        guard
+            let r = hole.linearPatternWithFullHistory(
+                direction: SIMD3(20, 0, 0), spacing: 20, count: 3)
+        else {
             Issue.record("linear pattern should succeed")
             return
         }
         #expect(graph.historyRecordCount == 0)
-        let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
-                              operationName: "linearPattern")
+        let added = graph.add(
+            r.result, absorbing: r.history,
+            inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
+            operationName: "linearPattern")
         #expect(added != nil, "add(absorbing:) should succeed for a pattern's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")
     }

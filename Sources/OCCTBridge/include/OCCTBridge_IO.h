@@ -10,7 +10,6 @@
 #ifndef OCCTBridge_IO_h
 #define OCCTBridge_IO_h
 
-
 // MARK: - Export
 
 bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection);
@@ -42,37 +41,41 @@ OCCTShapeRef OCCTImportSTEP(const char* path);
 // failure. One true from shouldCancel is also enough -- it is latched, so a
 // caller that answers true once and false afterwards still stops the call.
 
-typedef struct OCCTImportProgress {
-    /// Called as the importer advances. fraction is 0.0...1.0; step is a
-    /// human-readable name of the current sub-task (may be NULL or empty).
-    void (* _Nullable onProgress)(double fraction, const char* _Nullable step, void* _Nullable userData);
+typedef struct OCCTImportProgress
+{
+  /// Called as the importer advances. fraction is 0.0...1.0; step is a
+  /// human-readable name of the current sub-task (may be NULL or empty).
+  void (*_Nullable onProgress)(double fraction,
+                               const char* _Nullable step,
+                               void* _Nullable userData);
 
-    /// Return true to cooperatively cancel the in-flight import.
-    bool (* _Nullable shouldCancel)(void* _Nullable userData);
+  /// Return true to cooperatively cancel the in-flight import.
+  bool (*_Nullable shouldCancel)(void* _Nullable userData);
 
-    /// Opaque pointer passed back to onProgress and shouldCancel.
-    void* _Nullable userData;
+  /// Opaque pointer passed back to onProgress and shouldCancel.
+  void* _Nullable userData;
 } OCCTImportProgress;
 
 OCCTShapeRef _Nullable OCCTImportSTEPProgress(const char* _Nonnull path,
-                                                const OCCTImportProgress* _Nullable ctx,
-                                                bool* _Nullable outCancelled);
+                                              const OCCTImportProgress* _Nullable ctx,
+                                              bool* _Nullable outCancelled);
 
 OCCTShapeRef _Nullable OCCTImportSTEPRobustProgress(const char* _Nonnull path,
+                                                    const OCCTImportProgress* _Nullable ctx,
+                                                    bool* _Nullable outCancelled);
+
+OCCTShapeRef _Nullable OCCTImportSTEPWithUnitProgress(const char* _Nonnull path,
+                                                      double unitInMeters,
                                                       const OCCTImportProgress* _Nullable ctx,
                                                       bool* _Nullable outCancelled);
-
-OCCTShapeRef _Nullable OCCTImportSTEPWithUnitProgress(const char* _Nonnull path, double unitInMeters,
-                                                       const OCCTImportProgress* _Nullable ctx,
-                                                       bool* _Nullable outCancelled);
 
 OCCTShapeRef _Nullable OCCTImportIGESProgress(const char* _Nonnull path,
-                                                const OCCTImportProgress* _Nullable ctx,
-                                                bool* _Nullable outCancelled);
+                                              const OCCTImportProgress* _Nullable ctx,
+                                              bool* _Nullable outCancelled);
 
 OCCTShapeRef _Nullable OCCTImportIGESRobustProgress(const char* _Nonnull path,
-                                                      const OCCTImportProgress* _Nullable ctx,
-                                                      bool* _Nullable outCancelled);
+                                                    const OCCTImportProgress* _Nullable ctx,
+                                                    bool* _Nullable outCancelled);
 
 // MARK: - Mesh + export progress (v0.169.0, follow-up to issue #98)
 //
@@ -85,40 +88,44 @@ OCCTShapeRef _Nullable OCCTImportIGESRobustProgress(const char* _Nonnull path,
 /// same TopoDS_Shape) on success, or nullptr on failure / cancellation. Sets
 /// *outCancelled=true on cancellation.
 OCCTShapeRef _Nullable OCCTShapeIncrementalMeshProgress(OCCTShapeRef _Nonnull shape,
-                                                          double linearDeflection,
-                                                          double angularDeflection,
-                                                          const OCCTImportProgress* _Nullable ctx,
-                                                          bool* _Nullable outCancelled);
+                                                        double linearDeflection,
+                                                        double angularDeflection,
+                                                        const OCCTImportProgress* _Nullable ctx,
+                                                        bool* _Nullable outCancelled);
 
 /// Export a shape to STEP with optional progress + cancellation.
-bool OCCTExportSTEPProgress(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
-                             const OCCTImportProgress* _Nullable ctx,
-                             bool* _Nullable outCancelled);
+bool OCCTExportSTEPProgress(OCCTShapeRef _Nonnull shape,
+                            const char* _Nonnull path,
+                            const OCCTImportProgress* _Nullable ctx,
+                            bool* _Nullable outCancelled);
 
 /// Export a shape to STEP with explicit model type + progress.
-bool OCCTExportSTEPWithModeProgress(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
-                                      int32_t modelType,
-                                      const OCCTImportProgress* _Nullable ctx,
-                                      bool* _Nullable outCancelled);
+bool OCCTExportSTEPWithModeProgress(OCCTShapeRef _Nonnull shape,
+                                    const char* _Nonnull path,
+                                    int32_t modelType,
+                                    const OCCTImportProgress* _Nullable ctx,
+                                    bool* _Nullable outCancelled);
 
 /// Export a shape to IGES with optional progress + cancellation.
-bool OCCTExportIGESProgress(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
-                             const OCCTImportProgress* _Nullable ctx,
-                             bool* _Nullable outCancelled);
+bool OCCTExportIGESProgress(OCCTShapeRef _Nonnull shape,
+                            const char* _Nonnull path,
+                            const OCCTImportProgress* _Nullable ctx,
+                            bool* _Nullable outCancelled);
 
 // Document progress entry points are declared further down (after OCCTDocumentRef typedef).
 
 // MARK: - Robust STEP Import
 
 /// Import result structure with diagnostics
-typedef struct {
-    OCCTShapeRef shape;
-    int originalType;   // TopAbs_ShapeEnum: 0=Compound, 1=CompSolid, 2=Solid, 3=Shell, 4=Face, etc.
-    int resultType;     // Type after processing
-    bool sewingApplied;
-    bool solidCreated;
-    bool healingApplied;
-    int solidsCreated;  // How many shells became solids: >1 means a multibody file (#302)
+typedef struct
+{
+  OCCTShapeRef shape;
+  int  originalType; // TopAbs_ShapeEnum: 0=Compound, 1=CompSolid, 2=Solid, 3=Shell, 4=Face, etc.
+  int  resultType;   // Type after processing
+  bool sewingApplied;
+  bool solidCreated;
+  bool healingApplied;
+  int  solidsCreated; // How many shells became solids: >1 means a multibody file (#302)
 } OCCTSTEPImportResult;
 
 /// Import STEP file with robust handling: sewing, solid creation, and shape healing
@@ -134,19 +141,25 @@ int OCCTShapeGetType(OCCTShapeRef shape);
 bool OCCTShapeIsValidSolid(OCCTShapeRef shape);
 
 OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPProgress(const char* _Nonnull path,
-                                                         const OCCTImportProgress* _Nullable ctx,
-                                                         bool* _Nullable outCancelled);
+                                                       const OCCTImportProgress* _Nullable ctx,
+                                                       bool* _Nullable outCancelled);
 
-OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPWithModesProgress(const char* _Nonnull path,
-                                                                  bool colorMode, bool nameMode, bool layerMode,
-                                                                  bool propsMode, bool gdtMode, bool matMode,
-                                                                  const OCCTImportProgress* _Nullable ctx,
-                                                                  bool* _Nullable outCancelled);
+OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPWithModesProgress(
+  const char* _Nonnull path,
+  bool colorMode,
+  bool nameMode,
+  bool layerMode,
+  bool propsMode,
+  bool gdtMode,
+  bool matMode,
+  const OCCTImportProgress* _Nullable ctx,
+  bool* _Nullable outCancelled);
 
 /// Write a Document to STEP with optional progress + cancellation.
-bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef _Nonnull doc, const char* _Nonnull path,
-                                     const OCCTImportProgress* _Nullable ctx,
-                                     bool* _Nullable outCancelled);
+bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef _Nonnull doc,
+                                   const char* _Nonnull path,
+                                   const OCCTImportProgress* _Nullable ctx,
+                                   bool* _Nullable outCancelled);
 
 // MARK: - IGES Import/Export (v0.10.0)
 
@@ -185,7 +198,10 @@ bool OCCTExportBREP(OCCTShapeRef shape, const char* path);
 /// @param withTriangles Include triangulation data
 /// @param withNormals Include normal data (only if withTriangles is true)
 /// @return true on success
-bool OCCTExportBREPWithTriangles(OCCTShapeRef shape, const char* path, bool withTriangles, bool withNormals);
+bool OCCTExportBREPWithTriangles(OCCTShapeRef shape,
+                                 const char*  path,
+                                 bool         withTriangles,
+                                 bool         withNormals);
 
 // MARK: - STL Import (v0.17.0)
 
@@ -225,8 +241,10 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath);
 bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelType);
 
 /// Export shape to STEP with model type and tolerance.
-bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape, const char* path,
-                                         int32_t modelType, double tolerance);
+bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
+                                        const char*  path,
+                                        int32_t      modelType,
+                                        double       tolerance);
 
 /// Export shape to STEP and clean duplicate entities before writing.
 bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t modelType);
@@ -250,14 +268,23 @@ int32_t OCCTSTEPReaderNbShapes(const char* path);
 /// Load STEP file into XDE document with individual mode control.
 /// All mode flags: true=enabled, false=disabled.
 OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
-    bool colorMode, bool nameMode, bool layerMode,
-    bool propsMode, bool gdtMode, bool matMode);
+                                              bool        colorMode,
+                                              bool        nameMode,
+                                              bool        layerMode,
+                                              bool        propsMode,
+                                              bool        gdtMode,
+                                              bool        matMode);
 
 /// Write XDE document to STEP with model type and individual mode control.
 /// modelType: 0=AsIs, 1=ManifoldSolidBrep, etc.
-bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc, const char* path,
-    int32_t modelType, bool colorMode, bool nameMode, bool layerMode,
-    bool dimTolMode, bool materialMode);
+bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
+                                    const char*     path,
+                                    int32_t         modelType,
+                                    bool            colorMode,
+                                    bool            nameMode,
+                                    bool            layerMode,
+                                    bool            dimTolMode,
+                                    bool            materialMode);
 
 // MARK: - IGES Full Coverage — Reader (v0.59.0)
 
@@ -293,7 +320,8 @@ OCCTDocumentRef OCCTDocumentLoadOBJ(const char* path);
 /// singlePrecision: true for float, false for double vertex coords.
 /// systemLengthUnit: length unit in meters (e.g. 0.001 for mm). 0 = default.
 OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
-    bool singlePrecision, double systemLengthUnit);
+                                               bool        singlePrecision,
+                                               double      systemLengthUnit);
 
 /// Write an XDE document to OBJ format.
 /// deflection: mesh deflection for tessellation. 0 = skip re-meshing.
@@ -302,12 +330,20 @@ bool OCCTDocumentWriteOBJ(OCCTDocumentRef doc, const char* path, double deflecti
 // MARK: - PLY Export Expansion (v0.59.0)
 
 /// Export an XDE document to PLY format with options.
-bool OCCTDocumentWritePLY(OCCTDocumentRef doc, const char* path, double deflection,
-    bool normals, bool colors, bool texCoords);
+bool OCCTDocumentWritePLY(OCCTDocumentRef doc,
+                          const char*     path,
+                          double          deflection,
+                          bool            normals,
+                          bool            colors,
+                          bool            texCoords);
 
 /// Export a shape to PLY format with normals/colors/texCoords options.
-bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double deflection,
-    bool normals, bool colors, bool texCoords);
+bool OCCTExportPLYWithOptions(OCCTShapeRef shape,
+                              const char*  path,
+                              double       deflection,
+                              bool         normals,
+                              bool         colors,
+                              bool         texCoords);
 
 // MARK: - RWMesh Coordinate System (v0.59.0)
 
@@ -317,40 +353,50 @@ bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double defle
 /// Load an OBJ file into an XDE document with coordinate system conversion.
 /// inputCS and outputCS: -1=Undefined, 0=Zup/Blender, 1=Yup/glTF
 OCCTDocumentRef OCCTDocumentLoadOBJWithCS(const char* path,
-    int32_t inputCS, int32_t outputCS, double inputLengthUnit, double outputLengthUnit);
+                                          int32_t     inputCS,
+                                          int32_t     outputCS,
+                                          double      inputLengthUnit,
+                                          double      outputLengthUnit);
 
 // --- GeomTools_CurveSet: 3D curve collection with persistence ---
 /// Serialize a set of 3D curves to string
-const char * _Nullable OCCTGeomToolsCurveSetWrite(const OCCTCurve3DRef _Nonnull * _Nonnull curveRefs, int count);
+const char* _Nullable OCCTGeomToolsCurveSetWrite(const OCCTCurve3DRef _Nonnull* _Nonnull curveRefs,
+                                                 int count);
 
 /// Deserialize 3D curves from string; returns array count via outCount
-OCCTCurve3DRef _Nullable * _Nullable OCCTGeomToolsCurveSetRead(const char * _Nonnull data, int * _Nonnull outCount);
+OCCTCurve3DRef _Nullable* _Nullable OCCTGeomToolsCurveSetRead(const char* _Nonnull data,
+                                                              int* _Nonnull outCount);
 
 /// Free array of curve refs returned by CurveSetRead
-void OCCTGeomToolsCurveSetFreeArray(OCCTCurve3DRef _Nullable * _Nullable array, int count);
+void OCCTGeomToolsCurveSetFreeArray(OCCTCurve3DRef _Nullable* _Nullable array, int count);
 
 // --- GeomTools_Curve2dSet: 2D curve collection with persistence ---
 /// Serialize a set of 2D curves to string
-const char * _Nullable OCCTGeomToolsCurve2dSetWrite(const OCCTCurve2DRef _Nonnull * _Nonnull curveRefs, int count);
+const char* _Nullable OCCTGeomToolsCurve2dSetWrite(
+  const OCCTCurve2DRef _Nonnull* _Nonnull curveRefs,
+  int count);
 
 /// Deserialize 2D curves from string
-OCCTCurve2DRef _Nullable * _Nullable OCCTGeomToolsCurve2dSetRead(const char * _Nonnull data, int * _Nonnull outCount);
+OCCTCurve2DRef _Nullable* _Nullable OCCTGeomToolsCurve2dSetRead(const char* _Nonnull data,
+                                                                int* _Nonnull outCount);
 
 /// Free array of curve2d refs
-void OCCTGeomToolsCurve2dSetFreeArray(OCCTCurve2DRef _Nullable * _Nullable array, int count);
+void OCCTGeomToolsCurve2dSetFreeArray(OCCTCurve2DRef _Nullable* _Nullable array, int count);
 
 // --- GeomTools_SurfaceSet: Surface collection with persistence ---
 /// Serialize a set of surfaces to string
-const char * _Nullable OCCTGeomToolsSurfaceSetWrite(const OCCTSurfaceRef _Nonnull * _Nonnull surfRefs, int count);
+const char* _Nullable OCCTGeomToolsSurfaceSetWrite(const OCCTSurfaceRef _Nonnull* _Nonnull surfRefs,
+                                                   int count);
 
 /// Deserialize surfaces from string
-OCCTSurfaceRef _Nullable * _Nullable OCCTGeomToolsSurfaceSetRead(const char * _Nonnull data, int * _Nonnull outCount);
+OCCTSurfaceRef _Nullable* _Nullable OCCTGeomToolsSurfaceSetRead(const char* _Nonnull data,
+                                                                int* _Nonnull outCount);
 
 /// Free array of surface refs
-void OCCTGeomToolsSurfaceSetFreeArray(OCCTSurfaceRef _Nullable * _Nullable array, int count);
+void OCCTGeomToolsSurfaceSetFreeArray(OCCTSurfaceRef _Nullable* _Nullable array, int count);
 
 /// Free string returned by GeomTools*Write functions
-void OCCTGeomToolsFreeString(const char * _Nullable str);
+void OCCTGeomToolsFreeString(const char* _Nullable str);
 
 // =============================================================================
 // MARK: - v0.84.0: VrmlAPI, TDataStd Directory/Variable/Expression, TDocStd_XLink,
@@ -360,18 +406,19 @@ void OCCTGeomToolsFreeString(const char * _Nullable str);
 // --- VrmlAPI_Writer ---
 
 /// VRML representation mode
-typedef enum {
-    OCCTVrmlRepresentationShaded = 0,
-    OCCTVrmlRepresentationWireFrame = 1,
-    OCCTVrmlRepresentationBoth = 2
+typedef enum
+{
+  OCCTVrmlRepresentationShaded    = 0,
+  OCCTVrmlRepresentationWireFrame = 1,
+  OCCTVrmlRepresentationBoth      = 2
 } OCCTVrmlRepresentation;
 
 /// Write a shape to VRML file (version 1 or 2)
 bool OCCTVrmlWriteShape(OCCTShapeRef _Nonnull shape,
                         const char* _Nonnull filePath,
-                        int version,
+                        int    version,
                         double deflection,
-                        int representation);
+                        int    representation);
 
 /// Write an XDE document to VRML file with scale
 bool OCCTVrmlWriteDocument(OCCTDocumentRef _Nonnull document,
@@ -429,10 +476,14 @@ void OCCTMessengerRelease(OCCTMessengerRef _Nonnull messenger);
 int OCCTMessengerPrinterCount(OCCTMessengerRef _Nonnull messenger);
 
 /// Send a message with gravity level (0=Trace, 1=Info, 2=Warning, 3=Alarm, 4=Fail)
-void OCCTMessengerSend(OCCTMessengerRef _Nonnull messenger, const char* _Nonnull message, int gravity);
+void OCCTMessengerSend(OCCTMessengerRef _Nonnull messenger,
+                       const char* _Nonnull message,
+                       int gravity);
 
 /// Add a file printer to messenger, returns true if added
-bool OCCTMessengerAddFilePrinter(OCCTMessengerRef _Nonnull messenger, const char* _Nonnull filePath, int gravity);
+bool OCCTMessengerAddFilePrinter(OCCTMessengerRef _Nonnull messenger,
+                                 const char* _Nonnull filePath,
+                                 int gravity);
 
 /// Remove all printers
 void OCCTMessengerRemoveAllPrinters(OCCTMessengerRef _Nonnull messenger);
@@ -537,8 +588,8 @@ const char* _Nullable OCCTOSDPathSystemName(const char* _Nonnull path);
 
 /// Split path into folder and filename. Caller must free both.
 void OCCTOSDPathFolderAndFile(const char* _Nonnull path,
-                               const char* _Nullable * _Nonnull outFolder,
-                               const char* _Nullable * _Nonnull outFile);
+                              const char* _Nullable* _Nonnull outFolder,
+                              const char* _Nullable* _Nonnull outFile);
 
 /// Check if a path is valid.
 bool OCCTOSDPathIsValid(const char* _Nonnull path);
@@ -668,7 +719,8 @@ void OCCTStepHeaderSetOrganization(OCCTStepHeaderRef _Nonnull header, const char
 char* _Nullable OCCTStepHeaderGetPreprocessorVersion(OCCTStepHeaderRef _Nonnull header);
 
 /// Set the preprocessor version.
-void OCCTStepHeaderSetPreprocessorVersion(OCCTStepHeaderRef _Nonnull header, const char* _Nonnull ppv);
+void OCCTStepHeaderSetPreprocessorVersion(OCCTStepHeaderRef _Nonnull header,
+                                          const char* _Nonnull ppv);
 
 /// Get the originating system. Caller must free() the returned string.
 char* _Nullable OCCTStepHeaderGetOriginatingSystem(OCCTStepHeaderRef _Nonnull header);
@@ -683,19 +735,26 @@ OCCTResourceManagerRef _Nonnull OCCTResourceManagerCreate(void);
 void OCCTResourceManagerRelease(OCCTResourceManagerRef _Nonnull mgr);
 
 /// Set a string resource.
-void OCCTResourceManagerSetString(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key, const char* _Nonnull value);
+void OCCTResourceManagerSetString(OCCTResourceManagerRef _Nonnull mgr,
+                                  const char* _Nonnull key,
+                                  const char* _Nonnull value);
 
 /// Set an integer resource.
-void OCCTResourceManagerSetInt(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key, int32_t value);
+void OCCTResourceManagerSetInt(OCCTResourceManagerRef _Nonnull mgr,
+                               const char* _Nonnull key,
+                               int32_t value);
 
 /// Set a real resource.
-void OCCTResourceManagerSetReal(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key, double value);
+void OCCTResourceManagerSetReal(OCCTResourceManagerRef _Nonnull mgr,
+                                const char* _Nonnull key,
+                                double value);
 
 /// Check if a resource key exists.
 bool OCCTResourceManagerFind(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key);
 
 /// Get a string resource value. Caller must free() the returned string.
-char* _Nullable OCCTResourceManagerGetString(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key);
+char* _Nullable OCCTResourceManagerGetString(OCCTResourceManagerRef _Nonnull mgr,
+                                             const char* _Nonnull key);
 
 /// Get an integer resource value.
 int32_t OCCTResourceManagerGetInt(OCCTResourceManagerRef _Nonnull mgr, const char* _Nonnull key);
@@ -714,9 +773,9 @@ char* _Nullable OCCTSystemVersion(void);
 /// Get the internet address. Caller must free().
 char* _Nullable OCCTInternetAddress(void);
 OCCTPerfMeterRef _Nonnull OCCTPerfMeterCreate(const char* _Nonnull name);
-void OCCTPerfMeterRelease(OCCTPerfMeterRef _Nonnull meter);
-void OCCTPerfMeterStart(OCCTPerfMeterRef _Nonnull meter);
-void OCCTPerfMeterStop(OCCTPerfMeterRef _Nonnull meter);
+void   OCCTPerfMeterRelease(OCCTPerfMeterRef _Nonnull meter);
+void   OCCTPerfMeterStart(OCCTPerfMeterRef _Nonnull meter);
+void   OCCTPerfMeterStop(OCCTPerfMeterRef _Nonnull meter);
 double OCCTPerfMeterElapsed(OCCTPerfMeterRef _Nonnull meter);
 
 // MARK: - OSD_Directory (v0.105.0)
@@ -746,7 +805,8 @@ char* _Nullable OCCTUnicodeConvertToUnicode(const char* _Nonnull input);
 
 /// Convert from UTF-8 to current format. Returns true on success.
 bool OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,
-                                    char* _Nonnull output, int32_t maxSize);
+                                   char* _Nonnull output,
+                                   int32_t maxSize);
 
 // MARK: - OSD_DirectoryIterator (v0.106.0)
 
@@ -754,12 +814,16 @@ bool OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,
 int32_t OCCTDirectoryIteratorCount(const char* _Nonnull path, const char* _Nonnull mask);
 
 /// Get directory name at index from directory listing. Caller must free returned string.
-char* _Nullable OCCTDirectoryIteratorName(const char* _Nonnull path, const char* _Nonnull mask,
-                                           int32_t index);
+char* _Nullable OCCTDirectoryIteratorName(const char* _Nonnull path,
+                                          const char* _Nonnull mask,
+                                          int32_t index);
 
-/// List directory names matching mask. Returns count of entries written. names array must be pre-allocated.
-int32_t OCCTDirectoryList(const char* _Nonnull path, const char* _Nonnull mask,
-                           char* _Nullable * _Nonnull names, int32_t maxCount);
+/// List directory names matching mask. Returns count of entries written. names array must be
+/// pre-allocated.
+int32_t OCCTDirectoryList(const char* _Nonnull path,
+                          const char* _Nonnull mask,
+                          char* _Nullable* _Nonnull names,
+                          int32_t maxCount);
 
 // MARK: - OSD_FileIterator (v0.106.0)
 
@@ -767,12 +831,16 @@ int32_t OCCTDirectoryList(const char* _Nonnull path, const char* _Nonnull mask,
 int32_t OCCTFileIteratorCount(const char* _Nonnull path, const char* _Nonnull mask);
 
 /// Get file name at index from file listing. Caller must free returned string.
-char* _Nullable OCCTFileIteratorName(const char* _Nonnull path, const char* _Nonnull mask,
-                                      int32_t index);
+char* _Nullable OCCTFileIteratorName(const char* _Nonnull path,
+                                     const char* _Nonnull mask,
+                                     int32_t index);
 
-/// List file names matching mask. Returns count of entries written. names array must be pre-allocated.
-int32_t OCCTFileList(const char* _Nonnull path, const char* _Nonnull mask,
-                      char* _Nullable * _Nonnull names, int32_t maxCount);
+/// List file names matching mask. Returns count of entries written. names array must be
+/// pre-allocated.
+int32_t OCCTFileList(const char* _Nonnull path,
+                     const char* _Nonnull mask,
+                     char* _Nullable* _Nonnull names,
+                     int32_t maxCount);
 
 // MARK: - OSD_Disk (v0.109.0)
 
@@ -828,7 +896,8 @@ double OCCTUnitsGetLengthUnitScale(int32_t fromUnit, int32_t toUnit);
 /// Get string name for a length unit enum value.
 const char* _Nullable OCCTUnitsDumpLengthUnit(int32_t unit);
 
-// MARK: - v0.119.0: BREP serialization, gp distance/contains, BezierSurface, Curve2D Bezier/BSpline extras, BSplineSurface extras
+// MARK: - v0.119.0: BREP serialization, gp distance/contains, BezierSurface, Curve2D Bezier/BSpline
+// extras, BSplineSurface extras
 
 // --- BREP string serialization ---
 
@@ -845,8 +914,10 @@ OCCTShapeRef _Nullable OCCTImportGLTF(const char* _Nonnull path);
 
 /// Export a shape to GLTF format. isBinary=true for GLB, false for GLTF.
 /// The shape must be meshed first (call mesh() before exporting).
-bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
-                      bool isBinary, double deflection);
+bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape,
+                    const char* _Nonnull path,
+                    bool   isBinary,
+                    double deflection);
 
 /// Load a GLTF/GLB file into an XDE document (preserves names, materials, colors).
 OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path);

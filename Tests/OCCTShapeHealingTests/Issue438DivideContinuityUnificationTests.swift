@@ -1,4 +1,5 @@
 import Testing
+
 @testable import OCCTSwift
 
 // #438: `Shape` exposed `ShapeUpgrade_ShapeDivideContinuity` twice. `divided(at:)` set the
@@ -28,7 +29,10 @@ struct Issue438DivideContinuityUnificationTests {
     // box has no interior surface knots to divide at, and a cylinder's single lateral face is one
     // smooth periodic surface with none either.
     private func kinkedSurfaceFace() -> Shape? {
-        let degree = 3, interiorKnots = 4, bumpAt = 2, bumpMult = 3
+        let degree = 3
+        let interiorKnots = 4
+        let bumpAt = 2
+        let bumpMult = 3
         var knots: [Double] = [0]
         var mults: [Int32] = [Int32(degree + 1)]
         for i in 1...interiorKnots {
@@ -39,30 +43,34 @@ struct Issue438DivideContinuityUnificationTests {
         mults.append(Int32(degree + 1))
         let poleCount = Int(mults.reduce(0, +)) - degree - 1
 
-        guard let surface = Surface.bspline(
-            poles: (0..<poleCount).map { u in
-                (0..<poleCount).map { v in
-                    SIMD3<Double>(Double(u), Double(v), Double((u + v) % 3) * 0.5)
-                }
-            },
-            knotsU: knots, multiplicitiesU: mults,
-            knotsV: knots, multiplicitiesV: mults,
-            degreeU: degree, degreeV: degree) else { return nil }
+        guard
+            let surface = Surface.bspline(
+                poles: (0..<poleCount).map { u in
+                    (0..<poleCount).map { v in
+                        SIMD3<Double>(Double(u), Double(v), Double((u + v) % 3) * 0.5)
+                    }
+                },
+                knotsU: knots, multiplicitiesU: mults,
+                knotsV: knots, multiplicitiesV: mults,
+                degreeU: degree, degreeV: degree)
+        else { return nil }
         let bounds = surface.domain
-        return Shape.face(from: surface, uRange: bounds.uMin...bounds.uMax, vRange: bounds.vMin...bounds.vMax)
+        return Shape.face(
+            from: surface, uRange: bounds.uMin...bounds.uMax, vRange: bounds.vMin...bounds.vMax)
     }
 
     // MARK: - The actual fix: all three criteria, not just the boundary one
 
-    @Test("divided(at:tolerance:) varies with continuity because it sets all three criteria",
-          arguments: [
+    @Test(
+        "divided(at:tolerance:) varies with continuity because it sets all three criteria",
+        arguments: [
             (Shape.ContinuityLevel.c0, nil as Int?),
             (.c1, 4), (.c2, 4), (.c3, 25), (.cn, 25),
             // G1/G2 are not recognised by ShapeUpgrade_Split*Continuity::SetCriterion, which
             // falls through to its own C1 default for them (read from Libraries/occt-src), so
             // they are expected to agree with .c1, not to add new behaviour of their own.
             (.g1, 4), (.g2, 4),
-          ])
+        ])
     func dividedVariesWithContinuity(level: Shape.ContinuityLevel, expectedFaces: Int?) throws {
         let face = try #require(kinkedSurfaceFace())
         let result = face.divided(at: level, tolerance: 1e-4)

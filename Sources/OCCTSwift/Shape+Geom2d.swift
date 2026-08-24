@@ -1,9 +1,8 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 extension Shape {
-
 
     /// Apply 2D fillets (rounded corners) to a planar face at specified vertices.
     ///
@@ -34,7 +33,8 @@ extension Shape {
         let indices = vertexIndices.map { Int32($0) }
         let result = indices.withUnsafeBufferPointer { idxBuf in
             radii.withUnsafeBufferPointer { radBuf in
-                OCCTFace2DFillet(handle, idxBuf.baseAddress, radBuf.baseAddress, Int32(vertexIndices.count))
+                OCCTFace2DFillet(
+                    handle, idxBuf.baseAddress, radBuf.baseAddress, Int32(vertexIndices.count))
             }
         }
         guard let result = result else { return nil }
@@ -85,8 +85,9 @@ extension Shape {
         let result = edge1Indices.withUnsafeBufferPointer { e1Buf in
             edge2Indices.withUnsafeBufferPointer { e2Buf in
                 distances.withUnsafeBufferPointer { distBuf in
-                    OCCTFace2DChamfer(handle, e1Buf.baseAddress, e2Buf.baseAddress,
-                                       distBuf.baseAddress, Int32(edgePairs.count))
+                    OCCTFace2DChamfer(
+                        handle, e1Buf.baseAddress, e2Buf.baseAddress,
+                        distBuf.baseAddress, Int32(edgePairs.count))
                 }
             }
         }
@@ -96,11 +97,11 @@ extension Shape {
 
     /// Result of a 2D analytical fillet operation.
     public struct AnaFilletResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
     }
 
@@ -128,9 +129,10 @@ extension Shape {
             planeNormal.x, planeNormal.y, planeNormal.z,
             radius)
         guard r.success,
-              let fillet = r.fillet,
-              let e1 = r.edge1,
-              let e2 = r.edge2 else { return nil }
+            let fillet = r.fillet,
+            let e1 = r.edge1,
+            let e2 = r.edge2
+        else { return nil }
         return AnaFilletResult(
             fillet: Shape(handle: fillet),
             edge1: Shape(handle: e1),
@@ -147,9 +149,11 @@ extension Shape {
         radius: Double
     ) -> AnaFilletResult? {
         guard let s1 = Shape.fromEdge(edge1),
-              let s2 = Shape.fromEdge(edge2) else { return nil }
-        return anaFillet(edge1: s1, edge2: s2,
-                         planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
+            let s2 = Shape.fromEdge(edge2)
+        else { return nil }
+        return anaFillet(
+            edge1: s1, edge2: s2,
+            planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
     }
 
     /// Compute a 2D analytical fillet between two edges of a wire.
@@ -172,21 +176,22 @@ extension Shape {
     ) -> AnaFilletResult? {
         let edges = wire.edges()
         guard edgeIndex >= 0, edgeIndex + 1 < edges.count else { return nil }
-        return anaFillet(edge1: edges[edgeIndex], edge2: edges[edgeIndex + 1],
-                         planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
+        return anaFillet(
+            edge1: edges[edgeIndex], edge2: edges[edgeIndex + 1],
+            planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
     }
 
     // MARK: - ChFi2d_FilletAlgo
 
     /// Result of a 2D iterative fillet operation.
     public struct FilletAlgoResult {
-        /// The fillet arc edge
+        /// The fillet arc edge.
         public let fillet: Shape
-        /// Trimmed first edge
+        /// Trimmed first edge.
         public let edge1: Shape
-        /// Trimmed second edge
+        /// Trimmed second edge.
         public let edge2: Shape
-        /// Number of fillet solutions found
+        /// Number of fillet solutions found.
         public let resultCount: Int
     }
 
@@ -214,9 +219,10 @@ extension Shape {
             planeNormal.x, planeNormal.y, planeNormal.z,
             radius)
         guard r.success,
-              let fillet = r.fillet,
-              let e1 = r.edge1,
-              let e2 = r.edge2 else { return nil }
+            let fillet = r.fillet,
+            let e1 = r.edge1,
+            let e2 = r.edge2
+        else { return nil }
         return FilletAlgoResult(
             fillet: Shape(handle: fillet),
             edge1: Shape(handle: e1),
@@ -234,9 +240,11 @@ extension Shape {
         radius: Double
     ) -> FilletAlgoResult? {
         guard let s1 = Shape.fromEdge(edge1),
-              let s2 = Shape.fromEdge(edge2) else { return nil }
-        return filletAlgo(edge1: s1, edge2: s2,
-                          planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
+            let s2 = Shape.fromEdge(edge2)
+        else { return nil }
+        return filletAlgo(
+            edge1: s1, edge2: s2,
+            planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
     }
 
     /// Compute a 2D iterative fillet between two edges of a wire.
@@ -256,8 +264,9 @@ extension Shape {
     ) -> FilletAlgoResult? {
         let edges = wire.edges()
         guard edgeIndex >= 0, edgeIndex + 1 < edges.count else { return nil }
-        return filletAlgo(edge1: edges[edgeIndex], edge2: edges[edgeIndex + 1],
-                          planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
+        return filletAlgo(
+            edge1: edges[edgeIndex], edge2: edges[edgeIndex + 1],
+            planeOrigin: planeOrigin, planeNormal: planeNormal, radius: radius)
     }
 
     // MARK: BRepBuilderAPI_MakeEdge2d
@@ -285,10 +294,12 @@ extension Shape {
         p1: Double,
         p2: Double
     ) -> Shape? {
-        guard let h = OCCTMakeEdge2dFromCircle(
-            center.x, center.y, direction.x, direction.y,
-            radius, p1, p2
-        ) else { return nil }
+        guard
+            let h = OCCTMakeEdge2dFromCircle(
+                center.x, center.y, direction.x, direction.y,
+                radius, p1, p2
+            )
+        else { return nil }
         return Shape(handle: h)
     }
 
@@ -299,24 +310,28 @@ extension Shape {
         p1: Double,
         p2: Double
     ) -> Shape? {
-        guard let h = OCCTMakeEdge2dFromLine(
-            origin.x, origin.y, direction.x, direction.y,
-            p1, p2
-        ) else { return nil }
+        guard
+            let h = OCCTMakeEdge2dFromLine(
+                origin.x, origin.y, direction.x, direction.y,
+                p1, p2
+            )
+        else { return nil }
         return Shape(handle: h)
     }
 
     // MARK: - ProjLib_ComputeApprox
 
-    /// Project this edge's 3D curve onto a face's surface → edge on surface
+    /// Project this edge's 3D curve onto a face's surface → edge on surface.
     public func projectOntoSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
         guard let h = OCCTProjLibComputeApprox(handle, face.handle, tolerance) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface
+    /// Project this edge's 3D curve onto a polar surface (sphere, torus) → edge on surface.
     public func projectOntoPolarSurface(_ face: Shape, tolerance: Double = 1e-3) -> Shape? {
-        guard let h = OCCTProjLibComputeApproxOnPolarSurface(handle, face.handle, tolerance) else { return nil }
+        guard let h = OCCTProjLibComputeApproxOnPolarSurface(handle, face.handle, tolerance) else {
+            return nil
+        }
         return Shape(handle: h)
     }
 
@@ -344,14 +359,16 @@ extension Shape {
 
     /// Normalize a 2D vector.
     public static func vector2DNormalized(_ v: SIMD2<Double>) -> SIMD2<Double> {
-        var x = v.x, y = v.y
+        var x = v.x
+        var y = v.y
         OCCTVector2DNormalize(&x, &y)
         return SIMD2(x, y)
     }
 
     /// Create a normalized 2D direction from components.
     public static func direction2DNormalized(_ v: SIMD2<Double>) -> SIMD2<Double> {
-        var x = v.x, y = v.y
+        var x = v.x
+        var y = v.y
         OCCTDirection2DNormalize(&x, &y)
         return SIMD2(x, y)
     }
@@ -381,9 +398,14 @@ extension Shape {
         tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
-        let count = OCCTGccAnaCirc2d3TanPoints(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        let count = OCCTGccAnaCirc2d3TanPoints(
+            p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, tolerance, &sols, maxSols)
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Find circles tangent to 3 lines.
@@ -394,13 +416,17 @@ extension Shape {
         tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
         let count = OCCTGccAnaCirc2d3TanLines(
             l1Point.x, l1Point.y, l1Dir.x, l1Dir.y,
             l2Point.x, l2Point.y, l2Dir.x, l2Dir.y,
             l3Point.x, l3Point.y, l3Dir.x, l3Dir.y,
             tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Find circles tangent to 3 circles.
@@ -426,13 +452,17 @@ extension Shape {
         tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
         let count = OCCTGccAnaCirc2d3TanCircles(
             c1Center.x, c1Center.y, c1Radius,
             c2Center.x, c2Center.y, c2Radius,
             c3Center.x, c3Center.y, c3Radius,
             tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Find circles tangent to 2 circles through 1 point.
@@ -452,12 +482,16 @@ extension Shape {
         point: SIMD2<Double>, tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
         let count = OCCTGccAnaCirc2d2CirclesPoint(
             c1Center.x, c1Center.y, c1Radius,
             c2Center.x, c2Center.y, c2Radius,
             point.x, point.y, tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Find circles tangent to 1 circle through 2 points.
@@ -476,11 +510,15 @@ extension Shape {
         p1: SIMD2<Double>, p2: SIMD2<Double>, tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
         let count = OCCTGccAnaCirc2dCircle2Points(
             circleCenter.x, circleCenter.y, circleRadius,
             p1.x, p1.y, p2.x, p2.y, tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Find circles tangent to 2 lines through 1 point.
@@ -490,12 +528,16 @@ extension Shape {
         point: SIMD2<Double>, tolerance: Double = 1e-6
     ) -> [Circle2DSolution] {
         let maxSols: Int32 = 16
-        var sols = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
+        var sols = [OCCTCircle2DSolution](
+            repeating: OCCTCircle2DSolution(centerX: 0, centerY: 0, radius: 0), count: Int(maxSols))
         let count = OCCTGccAnaCirc2d2LinesPoint(
             l1Point.x, l1Point.y, l1Dir.x, l1Dir.y,
             l2Point.x, l2Point.y, l2Dir.x, l2Dir.y,
             point.x, point.y, tolerance, &sols, maxSols)
-        return (0..<Int(count)).map { Circle2DSolution(centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius) }
+        return (0..<Int(count)).map {
+            Circle2DSolution(
+                centerX: sols[$0].centerX, centerY: sols[$0].centerY, radius: sols[$0].radius)
+        }
     }
 
     /// Classify a 2D point relative to a face boundary in parameter space.
@@ -525,7 +567,9 @@ extension Shape {
     ///   - v: V parameter coordinate
     ///   - tolerance: Classification tolerance (default 1e-6)
     /// - Returns: Point classification
-    public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-6) -> OCCTSwift.PointClassification {
+    public func classifyPoint2d(u: Double, v: Double, tolerance: Double = 1e-6)
+        -> OCCTSwift.PointClassification
+    {
         let result = OCCTIntToolsFClass2dPerform(handle, u, v, tolerance)
         // Bridge returns: 0=IN, 1=ON, 2=OUT, 3=UNKNOWN
         // PointClassification: inside=0, outside=1, onBoundary=2, unknown=3
@@ -581,7 +625,8 @@ extension Shape {
     ///   - d2: Distance on second edge.
     /// - Returns: Result face with chamfer, or nil if shape is not a planar face.
     public func addChamfer2d(edge1Index: Int, edge2Index: Int, d1: Double, d2: Double) -> Shape? {
-        guard let ref = OCCTChFi2dAddChamfer(handle, Int32(edge1Index), Int32(edge2Index), d1, d2) else { return nil }
+        guard let ref = OCCTChFi2dAddChamfer(handle, Int32(edge1Index), Int32(edge2Index), d1, d2)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -594,8 +639,13 @@ extension Shape {
     ///   - distance: Distance on edge.
     ///   - angle: Chamfer angle in radians.
     /// - Returns: Result face with chamfer, or nil on failure.
-    public func addChamfer2dAngle(edgeIndex: Int, vertexIndex: Int, distance: Double, angle: Double) -> Shape? {
-        guard let ref = OCCTChFi2dAddChamferAngle(handle, Int32(edgeIndex), Int32(vertexIndex), distance, angle) else { return nil }
+    public func addChamfer2dAngle(edgeIndex: Int, vertexIndex: Int, distance: Double, angle: Double)
+        -> Shape?
+    {
+        guard
+            let ref = OCCTChFi2dAddChamferAngle(
+                handle, Int32(edgeIndex), Int32(vertexIndex), distance, angle)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -607,8 +657,13 @@ extension Shape {
     ///   - filletEdgeIndex: 0-based index of the fillet edge in this face.
     ///   - newRadius: New fillet radius.
     /// - Returns: Result face with modified fillet, or nil on failure.
-    public func modifyFillet2d(originalFace: Shape, filletEdgeIndex: Int, newRadius: Double) -> Shape? {
-        guard let ref = OCCTChFi2dModifyFillet(originalFace.handle, handle, Int32(filletEdgeIndex), newRadius) else { return nil }
+    public func modifyFillet2d(originalFace: Shape, filletEdgeIndex: Int, newRadius: Double)
+        -> Shape?
+    {
+        guard
+            let ref = OCCTChFi2dModifyFillet(
+                originalFace.handle, handle, Int32(filletEdgeIndex), newRadius)
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -620,7 +675,8 @@ extension Shape {
     ///   - filletEdgeIndex: 0-based index of the fillet edge in this face.
     /// - Returns: Result face with fillet removed, or nil on failure.
     public func removeFillet2d(originalFace: Shape, filletEdgeIndex: Int) -> Shape? {
-        guard let ref = OCCTChFi2dRemoveFillet(originalFace.handle, handle, Int32(filletEdgeIndex)) else { return nil }
+        guard let ref = OCCTChFi2dRemoveFillet(originalFace.handle, handle, Int32(filletEdgeIndex))
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -632,7 +688,9 @@ extension Shape {
     ///   - chamferEdgeIndex: 0-based index of the chamfer edge in this face.
     /// - Returns: Result face with chamfer removed, or nil on failure.
     public func removeChamfer2d(originalFace: Shape, chamferEdgeIndex: Int) -> Shape? {
-        guard let ref = OCCTChFi2dRemoveChamfer(originalFace.handle, handle, Int32(chamferEdgeIndex)) else { return nil }
+        guard
+            let ref = OCCTChFi2dRemoveChamfer(originalFace.handle, handle, Int32(chamferEdgeIndex))
+        else { return nil }
         return Shape(handle: ref)
     }
 
@@ -656,10 +714,16 @@ extension Shape {
     ///   - d1: Distance on first edge.
     ///   - d2: Distance on second edge.
     /// - Returns: Chamfer result with edges, or nil on failure.
-    public static func chamfer2dEdges(edge1: Shape, edge2: Shape, d1: Double, d2: Double) -> Chamfer2DEdgeResult? {
+    public static func chamfer2dEdges(edge1: Shape, edge2: Shape, d1: Double, d2: Double)
+        -> Chamfer2DEdgeResult?
+    {
         let result = OCCTChFi2dChamferEdges(edge1.handle, edge2.handle, d1, d2)
-        guard let ce = result.chamferEdge, let me1 = result.modifiedEdge1, let me2 = result.modifiedEdge2 else { return nil }
-        return Chamfer2DEdgeResult(chamferEdge: Shape(handle: ce), modifiedEdge1: Shape(handle: me1), modifiedEdge2: Shape(handle: me2))
+        guard let ce = result.chamferEdge, let me1 = result.modifiedEdge1,
+            let me2 = result.modifiedEdge2
+        else { return nil }
+        return Chamfer2DEdgeResult(
+            chamferEdge: Shape(handle: ce), modifiedEdge1: Shape(handle: me1),
+            modifiedEdge2: Shape(handle: me2))
     }
 
     // MARK: - ChFi2d_FilletAPI (v0.72.0)
@@ -686,45 +750,61 @@ extension Shape {
     ///   - radius: Fillet radius.
     ///   - nearPoint: Point near desired fillet location (for choosing among solutions).
     /// - Returns: Fillet result with edges and solution count, or nil on failure.
-    public static func fillet2dEdges(edge1: Shape, edge2: Shape,
-                                     planeNormal: SIMD3<Double>,
-                                     radius: Double,
-                                     nearPoint: SIMD3<Double>) -> Fillet2DEdgeResult? {
-        let result = OCCTChFi2dFilletEdges(edge1.handle, edge2.handle,
+    public static func fillet2dEdges(
+        edge1: Shape, edge2: Shape,
+        planeNormal: SIMD3<Double>,
+        radius: Double,
+        nearPoint: SIMD3<Double>
+    ) -> Fillet2DEdgeResult? {
+        let result = OCCTChFi2dFilletEdges(
+            edge1.handle, edge2.handle,
             planeNormal.x, planeNormal.y, planeNormal.z,
             radius, nearPoint.x, nearPoint.y, nearPoint.z)
-        guard let fe = result.filletEdge, let me1 = result.modifiedEdge1, let me2 = result.modifiedEdge2 else { return nil }
-        return Fillet2DEdgeResult(filletEdge: Shape(handle: fe), modifiedEdge1: Shape(handle: me1),
-                                  modifiedEdge2: Shape(handle: me2), solutionCount: Int(result.solutionCount))
+        guard let fe = result.filletEdge, let me1 = result.modifiedEdge1,
+            let me2 = result.modifiedEdge2
+        else { return nil }
+        return Fillet2DEdgeResult(
+            filletEdge: Shape(handle: fe), modifiedEdge1: Shape(handle: me1),
+            modifiedEdge2: Shape(handle: me2), solutionCount: Int(result.solutionCount))
     }
 }
 
 extension Shape {
     /// Create a 2D edge from a full circle.
     ///
-    /// - Parameter radius: circle radius. Must be greater than zero.
-    /// - Returns: the edge, or `nil` if the circle is degenerate.
+    /// - Parameters:
+    ///   - center: Center of the circle.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - radius: Circle radius. Must be greater than zero.
+    /// - Returns: The edge, or `nil` if the circle is degenerate.
     ///
     /// ```swift
     /// if let e = Shape.edge2dFullCircle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
     ///     print(e.edges().count)   // 1
     /// }
     /// ```
-    public static func edge2dFullCircle(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                         radius: Double) -> Shape? {
-        guard let h = OCCTMakeEdge2dFullCircle(center.x, center.y,
-                                                direction.x, direction.y,
-                                                radius) else { return nil }
+    public static func edge2dFullCircle(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        radius: Double
+    ) -> Shape? {
+        guard
+            let h = OCCTMakeEdge2dFullCircle(
+                center.x, center.y,
+                direction.x, direction.y,
+                radius)
+        else { return nil }
         return Shape(handle: h)
     }
 
     /// Create a 2D edge from an ellipse.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///   - center: Center of the ellipse.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - majorRadius: Semi-major axis. Must be greater than zero.
+    ///   - minorRadius: Semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
+    /// - Returns: The edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
     ///   from a zero-radius ellipse, and a doubled-back segment from a zero minor radius.
     ///
     /// ```swift
@@ -733,21 +813,30 @@ extension Shape {
     ///     print(e.edges().count)   // 1
     /// }
     /// ```
-    public static func edge2dEllipse(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                      majorRadius: Double, minorRadius: Double) -> Shape? {
-        guard let h = OCCTMakeEdge2dEllipse(center.x, center.y,
-                                             direction.x, direction.y,
-                                             majorRadius, minorRadius) else { return nil }
+    public static func edge2dEllipse(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Shape? {
+        guard
+            let h = OCCTMakeEdge2dEllipse(
+                center.x, center.y,
+                direction.x, direction.y,
+                majorRadius, minorRadius)
+        else { return nil }
         return Shape(handle: h)
     }
 
     /// Create a 2D edge from an ellipse arc.
     ///
     /// - Parameters:
-    ///   - majorRadius: semi-major axis. Must be greater than zero.
-    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///   - center: Center of the ellipse.
+    ///   - direction: Direction of the X axis of the local 2D frame.
+    ///   - majorRadius: Semi-major axis. Must be greater than zero.
+    ///   - minorRadius: Semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
-    /// - Returns: the edge, or `nil` if the ellipse is degenerate.
+    ///   - u1: Start parameter in radians.
+    ///   - u2: End parameter in radians.
+    /// - Returns: The edge, or `nil` if the ellipse is degenerate.
     ///
     /// ```swift
     /// if let e = Shape.edge2dEllipseArc(center: .zero, direction: SIMD2(1, 0),
@@ -755,13 +844,18 @@ extension Shape {
     ///     print(e.edges().count)   // 1
     /// }
     /// ```
-    public static func edge2dEllipseArc(center: SIMD2<Double>, direction: SIMD2<Double>,
-                                         majorRadius: Double, minorRadius: Double,
-                                         u1: Double, u2: Double) -> Shape? {
-        guard let h = OCCTMakeEdge2dEllipseArc(center.x, center.y,
-                                                direction.x, direction.y,
-                                                majorRadius, minorRadius,
-                                                u1, u2) else { return nil }
+    public static func edge2dEllipseArc(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double,
+        u1: Double, u2: Double
+    ) -> Shape? {
+        guard
+            let h = OCCTMakeEdge2dEllipseArc(
+                center.x, center.y,
+                direction.x, direction.y,
+                majorRadius, minorRadius,
+                u1, u2)
+        else { return nil }
         return Shape(handle: h)
     }
 

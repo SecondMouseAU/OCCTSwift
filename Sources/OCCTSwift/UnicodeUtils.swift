@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Unicode format for Resource_Unicode.
 public enum UnicodeFormat: Int32, Sendable {
@@ -31,8 +31,11 @@ public enum UnicodeUtils {
 
     /// Convert from UTF-8 to current format.
     ///
-    /// - Parameter maxSize: Output buffer *capacity* in bytes (default 4096), clamped into
-    ///   `0...` ``Sampling/maximumSampleCount``; 0 or less returns `nil` (#622).
+    /// - Parameters:
+    ///   - utf8Input: The UTF-8 string to convert.
+    ///   - maxSize: Output buffer *capacity* in bytes (default 4096), clamped into
+    ///     `0...` ``Sampling/maximumSampleCount``; 0 or less returns `nil` (#622).
+    /// - Returns: The converted string, or nil on failure.
     public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String? {
         let maxSize = Sampling.capacity(maxSize)
         guard maxSize > 0 else { return nil }

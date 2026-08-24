@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #702: `Shape.healed()` and `Shape.fixSolid()` can reach `isValid == true` by demoting a
@@ -100,7 +101,7 @@ struct Issue702SolidDemotion {
     @Test("isValid alone does not distinguish a demoted shell from a healthy solid")
     func isValidAloneIsAmbiguous() {
         guard let fake = fakeSolid(), let fixed = fake.fixSolid(),
-              let box = Shape.box(width: 10, height: 10, depth: 10)
+            let box = Shape.box(width: 10, height: 10, depth: 10)
         else {
             Issue.record("could not build fixtures")
             return
@@ -116,7 +117,7 @@ struct Issue702SolidDemotion {
     @Test("isValidSolid is false on a demoted shell, true on a genuine solid")
     func isValidSolidDistinguishesDemotion() {
         guard let fake = fakeSolid(), let fixed = fake.fixSolid(), let healed = fake.healed(),
-              let box = Shape.box(width: 10, height: 10, depth: 10)
+            let box = Shape.box(width: 10, height: 10, depth: 10)
         else {
             Issue.record("could not build fixtures")
             return
@@ -157,8 +158,9 @@ struct Issue702SolidDemotion {
         let shellAnalysis = shell.analyzeShell()
         #expect(shellAnalysis.hasFreeEdges)
         #expect(shellAnalysis.freeEdgeCount == 4, "4 edges ring the one missing face")
-        #expect(analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
-                "analyze() must agree with the already-correct analyzeShell()")
+        #expect(
+            analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
+            "analyze() must agree with the already-correct analyzeShell()")
         #expect(analysis.freeFaceCount == 1, "one shell, and it is not fully closed")
         // #717 review (the totalProblems double-count): totalProblems must count this shell's free edges once, not once
         // via freeEdgeCount and again as +1 via freeFaceCount for the same open shell. The expected
@@ -168,8 +170,9 @@ struct Issue702SolidDemotion {
         // do with the bug this test exists to catch.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
-        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
-                "adding freeFaceCount again would double-count this shell's one open boundary")
+        #expect(
+            analysis.totalProblems != expected + analysis.freeFaceCount,
+            "adding freeFaceCount again would double-count this shell's one open boundary")
     }
 
     @Test("analyze reports the demoted fixSolid shell's free edges too")
@@ -191,8 +194,9 @@ struct Issue702SolidDemotion {
         // #717 review (the totalProblems double-count), same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
-        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
-                "adding freeFaceCount again would double-count this shell's one open boundary")
+        #expect(
+            analysis.totalProblems != expected + analysis.freeFaceCount,
+            "adding freeFaceCount again would double-count this shell's one open boundary")
     }
 
     @Test("analyze reports zero free edges/faces on a genuinely closed solid")
@@ -212,7 +216,7 @@ struct Issue702SolidDemotion {
     @Test("analyze counts free faces per shell on a compound of two open shells")
     func analyzeCountsFreeFacesPerShell() {
         guard let shellA = openShellMissingOneFace(), let shellB = openShellMissingOneFace(),
-              let compound = Shape.compound([shellA, shellB])
+            let compound = Shape.compound([shellA, shellB])
         else {
             Issue.record("could not build the two-open-shell compound")
             return
@@ -226,8 +230,9 @@ struct Issue702SolidDemotion {
         // #717 review (the totalProblems double-count), same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
-        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
-                "adding freeFaceCount again would double-count both shells' open boundaries")
+        #expect(
+            analysis.totalProblems != expected + analysis.freeFaceCount,
+            "adding freeFaceCount again would double-count both shells' open boundaries")
     }
 
     /// `totalProblems`'s own contract (see ``ShapeAnalysisResult/totalProblems``): every field
@@ -236,9 +241,8 @@ struct Issue702SolidDemotion {
     /// measure the real fields (including this fixture's own nonzero `gapCount`) rather than a
     /// guessed total.
     private static func totalProblemsExcludingFreeFace(_ analysis: ShapeAnalysisResult) -> Int {
-        analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount +
-            analysis.freeEdgeCount +
-            (analysis.hasInvalidTopology ? 1 : 0)
+        analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount
+            + analysis.freeEdgeCount + (analysis.hasInvalidTopology ? 1 : 0)
     }
 
     // MARK: - checkinternaledges must match between analyze() and analyzeShell() (#717 review, the checkinternaledges divergence)
@@ -272,12 +276,14 @@ struct Issue702SolidDemotion {
     /// constant regardless of what composes with it (`TopAbs.hxx`), the child edge reads `.internal`
     /// however it was oriented on its own.
     private func openShellWithInternalDuplicateFreeEdge() -> Shape? {
-        guard let outerWire = Wire.polygon3D(
-            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
-        ), let face = Shape.face(from: outerWire) else { return nil }
+        guard
+            let outerWire = Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
+            ), let face = Shape.face(from: outerWire)
+        else { return nil }
 
         guard let candidate = face.subShapes(ofType: .edge).first,
-              let wire = Shape.builderMakeWire()
+            let wire = Shape.builderMakeWire()
         else { return nil }
         candidate.setOrientation(.internal)
         guard wire.builderAdd(candidate) else { return nil }
@@ -297,13 +303,15 @@ struct Issue702SolidDemotion {
         let shellAnalysis = shell.analyzeShell()
         // Fixture sanity check: 3, not the plain fixture's 4, proves the duplicate actually
         // suppressed one edge via checkinternaledges rather than the fixture doing nothing.
-        #expect(shellAnalysis.freeEdgeCount == 3,
-                "the INTERNAL duplicate's own edge must drop out of the free count")
+        #expect(
+            shellAnalysis.freeEdgeCount == 3,
+            "the INTERNAL duplicate's own edge must drop out of the free count")
         guard let analysis = shell.analyze(tolerance: 1e-6) else {
             Issue.record("analyze returned nil")
             return
         }
-        #expect(analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
-                "analyze() must agree with analyzeShell() even with an INTERNAL duplicate present")
+        #expect(
+            analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
+            "analyze() must agree with analyzeShell() even with an INTERNAL duplicate present")
     }
 }

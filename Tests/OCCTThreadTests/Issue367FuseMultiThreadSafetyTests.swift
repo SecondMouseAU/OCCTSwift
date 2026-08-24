@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // Issue #367: OCCTShapeFuseMulti (Shape.fuseAll(_:)) set builder.SetRunParallel(true)
@@ -17,7 +18,8 @@ import Foundation
 // Scripts/repro/342-boolean-ops/occt_342_boolean_stress.cpp (fuse_multi_parallel scenario),
 // which DID reliably reproduce it (100% of runs) before the fix. This suite is a basic exerciser
 // confirming the fixed code path still produces correct, consistent results under concurrency.
-@Suite("Issue #367, Shape.fuseAll concurrent calls produce correct results (SetRunParallel removed)")
+@Suite(
+    "Issue #367, Shape.fuseAll concurrent calls produce correct results (SetRunParallel removed)")
 struct Issue367FuseMultiThreadSafetyTests {
 
     @Test("Concurrent fuseAll calls all match the single-threaded baseline face count")
@@ -59,7 +61,9 @@ struct Issue367FuseMultiThreadSafetyTests {
         }
 
         #expect(agg.failures == 0, "concurrent fuseAll calls failed (expected 0 of 400)")
-        #expect(agg.wrongFaceCounts == 0,
-                "concurrent fuseAll produced a face count diverging from the single-threaded baseline (\(baselineFaceCount)), the #367 corruption")
+        #expect(
+            agg.wrongFaceCounts == 0,
+            "concurrent fuseAll produced a face count diverging from the single-threaded baseline (\(baselineFaceCount)), the #367 corruption"
+        )
     }
 }

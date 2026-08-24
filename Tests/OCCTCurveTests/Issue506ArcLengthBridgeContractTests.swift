@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Cover for #506, which deleted three orphaned arc-length bridge functions
@@ -34,14 +35,16 @@ struct Issue506ArcLengthBridgeContractTests {
             SIMD3(10, 40, 0),
             SIMD3(20, 0, 0),
             SIMD3(200, 5, 0),
-            SIMD3(210, 60, 30)
+            SIMD3(210, 60, 30),
         ])
     }
 
     /// Chord-sum reference, so the clamping assertions compare against the curve's real length
     /// rather than against whatever the implementation returns for the whole domain.
-    private func polylineLength(_ c: Curve3D, from u1: Double, to u2: Double,
-                               segments: Int = 20_000) -> Double {
+    private func polylineLength(
+        _ c: Curve3D, from u1: Double, to u2: Double,
+        segments: Int = 20_000
+    ) -> Double {
         var total = 0.0
         var prev = c.point(at: u1)
         for i in 1...segments {
@@ -62,7 +65,8 @@ struct Issue506ArcLengthBridgeContractTests {
         let hi = d.lowerBound + 0.6 * (d.upperBound - d.lowerBound)
 
         guard let forward = c.length(from: lo, to: hi),
-              let reversed = c.length(from: hi, to: lo) else {
+            let reversed = c.length(from: hi, to: lo)
+        else {
             Issue.record("both orderings must measure on a valid curve")
             return
         }
@@ -88,7 +92,8 @@ struct Issue506ArcLengthBridgeContractTests {
         // The pre-bounded adaptor evaluated the BSpline's polynomial past its knots: 8489.78
         // against a curve 360.99 long, reported as an ordinary success.
         #expect(overshot == whole)
-        #expect(abs(overshot - polylineLength(c, from: d.lowerBound, to: d.upperBound)) < 0.01 * whole)
+        #expect(
+            abs(overshot - polylineLength(c, from: d.lowerBound, to: d.upperBound)) < 0.01 * whole)
     }
 
     @Test("A range wholly outside the domain measures zero")
@@ -110,7 +115,7 @@ struct Issue506ArcLengthBridgeContractTests {
             ("reversed", d.lowerBound + 0.6 * span, d.lowerBound + 0.1 * span),
             ("overshoot both ends", d.lowerBound - span, d.upperBound + span),
             ("wholly outside", d.upperBound + 1, d.upperBound + 2),
-            ("equal parameters", d.lowerBound + 0.3 * span, d.lowerBound + 0.3 * span)
+            ("equal parameters", d.lowerBound + 0.3 * span, d.lowerBound + 0.3 * span),
         ]
 
         // #408 made these three spellings one computation. They shared no code before it: two

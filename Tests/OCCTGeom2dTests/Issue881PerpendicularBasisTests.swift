@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 // #881: `Shape.sectionPlaneBasis(normal:explicitU:)`'s auto-derive branch (no `explicitU`
@@ -38,6 +39,8 @@ struct Issue881SectionPerpendicularBasisTests {
         let (u, v) = Shape.sectionPlaneBasis(normal: Self.nearDegenerate, explicitU: explicit)
         #expect(abs(simd_length(u) - 1.0) < 1e-9)
         #expect(abs(simd_dot(u, simd_normalize(Self.nearDegenerate))) < 1e-9)
-        #expect(simd_length(v - simd_normalize(simd_cross(simd_normalize(Self.nearDegenerate), u))) < 1e-9)
+        #expect(
+            simd_length(v - simd_normalize(simd_cross(simd_normalize(Self.nearDegenerate), u)))
+                < 1e-9)
     }
 }

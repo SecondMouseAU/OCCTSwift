@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #840: three wrapped classifiers answer the same "is this UV point inside/on/outside the face
@@ -33,8 +34,10 @@ struct Issue840ClassifyPoint2dToleranceTests {
         let viaFaceClassify = face.classify(u: u, v: v)
         let viaClassifyPoint2D = shape.classifyPoint2D(faceIndex: 0, u: u, v: v)
 
-        #expect(viaClassifyPoint2d == .onBoundary,
-                "classifyPoint2d's aligned 1e-6 default should treat a 5e-7-off point as on the boundary")
+        #expect(
+            viaClassifyPoint2d == .onBoundary,
+            "classifyPoint2d's aligned 1e-6 default should treat a 5e-7-off point as on the boundary"
+        )
         #expect(viaFaceClassify == .onBoundary)
         #expect(viaClassifyPoint2D == .on)
 

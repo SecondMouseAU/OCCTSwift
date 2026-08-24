@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #481: `LawFunction.knotSplitting` read into a fixed 100-entry buffer and returned however
@@ -23,7 +24,8 @@ struct Issue481LawKnotSplittingTruncationTests {
         // Non-periodic BSpline: nbPoles == sum(multiplicities) - degree - 1.
         let poleCount = Int(mults.reduce(0, +)) - degree - 1
         let poles = (0..<poleCount).map { Double($0 % 7) }
-        return LawFunction.bspline(poles: poles, knots: knots, multiplicities: mults, degree: degree)
+        return LawFunction.bspline(
+            poles: poles, knots: knots, multiplicities: mults, degree: degree)
     }
 
     @Test("Index and parameter forms agree past the old 100-entry buffer")

@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #733 (review of #724): #724's fix compares a candidate wall's `bounds.min.z` against its
@@ -34,11 +35,14 @@ struct Issue733MeshTriangulationBoundsTests {
     /// combined workflow this repo's own MCP tools invite (mesh for preview, then recognize
     /// features on the same value). Before the fix this dropped the pocket outright at every
     /// deflection tried; after the fix it must not drop at any of them.
-    @Test("meshing a shape before detecting pockets does not drop a real pocket",
-          arguments: [0.001, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0])
+    @Test(
+        "meshing a shape before detecting pockets does not drop a real pocket",
+        arguments: [0.001, 0.01, 0.1, 0.5, 1.0, 2.0, 5.0])
     func meshingDoesNotDropTheCylindricalPocket(deflection: Double) throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         let cut = try #require(box.subtracting(tool))
 
         _ = cut.mesh(linearDeflection: deflection, angularDeflection: 0.5)
@@ -55,8 +59,10 @@ struct Issue733MeshTriangulationBoundsTests {
     /// tessellation-independent could pass the test above while being wrong for the ordinary path.
     @Test("the same fixture, never meshed, still reports the pocket")
     func unmeshedFixtureStillReportsThePocket() throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         let cut = try #require(box.subtracting(tool))
 
         #expect(cut.detectPocketsAAG().count == 1)
@@ -66,18 +72,22 @@ struct Issue733MeshTriangulationBoundsTests {
     /// `AAGNode.bounds.min.z` must stay within the tolerance the grouping check applies, regardless
     /// of meshing. Asserts the quantity #724's comparison actually reads, rather than only the
     /// count that comparison feeds.
-    @Test("a cylindrical wall's AAGNode bounds do not drift after meshing",
-          arguments: [0.001, 0.1, 1.0, 5.0])
+    @Test(
+        "a cylindrical wall's AAGNode bounds do not drift after meshing",
+        arguments: [0.001, 0.1, 1.0, 5.0])
     func wallBoundsDoNotDriftAfterMeshing(deflection: Double) throws {
-        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
-        let tool = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 4, height: 20))
         let cut = try #require(box.subtracting(tool))
 
         _ = cut.mesh(linearDeflection: deflection, angularDeflection: 0.5)
 
         let aag = cut.buildAAG()
         var checkedAWall = false
-        for (index, node) in aag.nodes.enumerated() where node.isUpward && node.isHorizontal && node.isPlanar {
+        for (index, node) in aag.nodes.enumerated()
+        where node.isUpward && node.isHorizontal && node.isPlanar {
             guard let floorZ = node.zLevel else { continue }
             for wallIndex in aag.concaveNeighbors(of: index) {
                 let wall = aag.nodes[wallIndex]
@@ -108,7 +118,9 @@ struct Issue733MeshTriangulationBoundsTests {
                 if hi - lo > 1e-6 { checkedNonDegenerateAxis = true }
             }
         }
-        #expect(checkedNonDegenerateAxis, "no face produced a non-degenerate axis to check, test is vacuous")
+        #expect(
+            checkedNonDegenerateAxis,
+            "no face produced a non-degenerate axis to check, test is vacuous")
     }
 }
 
@@ -129,7 +141,8 @@ struct Issue733ConfigurableToleranceTests {
     @Test("an absurdly tight tolerance rejects a real pocket")
     func absurdlyTightToleranceRejectsRealPocket() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let result = try #require(box.subtracting(pocketTool))
 
         #expect(result.detectPocketsAAG().count == 1)
@@ -141,7 +154,8 @@ struct Issue733ConfigurableToleranceTests {
     @Test("AAG.detectPockets(tolerance:) itself honors a tight tolerance")
     func aagDetectPocketsHonorsTolerance() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let result = try #require(box.subtracting(pocketTool))
         let aag = result.buildAAG()
 
@@ -154,7 +168,8 @@ struct Issue733ConfigurableToleranceTests {
     @Test("a generous tolerance still finds the pocket")
     func generousToleranceStillFindsPocket() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let pocketTool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let result = try #require(box.subtracting(pocketTool))
 
         #expect(result.detectPocketsAAG(tolerance: 1.0).count == 1)

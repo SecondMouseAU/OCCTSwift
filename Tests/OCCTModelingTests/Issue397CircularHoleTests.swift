@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Issue #397: `Shape.faceAddHole(face:wire:)` returned nil for *every* hole wire built from
@@ -14,8 +15,11 @@ struct Issue397CircularHoleTests {
 
     /// A 20x20 rectangle face in the XY plane, the issue's own fixture.
     private func rectFace() -> Shape? {
-        guard let w = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0), SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
-                                     closed: true) else { return nil }
+        guard
+            let w = Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(20, 0, 0), SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
+                closed: true)
+        else { return nil }
         return Shape.face(from: w, planar: true)
     }
 
@@ -23,10 +27,15 @@ struct Issue397CircularHoleTests {
     @Test("Wire.circle hole is accepted (was nil for every radius)")
     func circleWireHoleAccepted() {
         guard let face = rectFace(),
-              let cw = Wire.circle(origin: SIMD3(10, 10, 0), normal: SIMD3(0, 0, 1), radius: 0.5),
-              let cs = Shape.fromWire(cw) else { Issue.record("setup"); return }
+            let cw = Wire.circle(origin: SIMD3(10, 10, 0), normal: SIMD3(0, 0, 1), radius: 0.5),
+            let cs = Shape.fromWire(cw)
+        else {
+            Issue.record("setup")
+            return
+        }
         guard let holed = Shape.faceAddHole(face: face, wire: cs) else {
-            Issue.record("circular hole wire rejected (#397)"); return
+            Issue.record("circular hole wire rejected (#397)")
+            return
         }
         // The hole is really cut out of the face: area = 20*20 - pi*0.5^2.
         if let a = holed.surfaceArea {
@@ -38,17 +47,25 @@ struct Issue397CircularHoleTests {
     /// The `Wire.arc` + `Wire.join` idiom from the issue: two semicircles, two vertices.
     @Test("Two-arc circle hole is accepted in both windings")
     func twoArcCircleHoleAccepted() {
-        let c = SIMD2<Double>(10, 10), r = 3.0
-        let q0 = SIMD3(c.x + r, c.y, 0.0), q1 = SIMD3(c.x, c.y + r, 0.0)
-        let q2 = SIMD3(c.x - r, c.y, 0.0), q3 = SIMD3(c.x, c.y - r, 0.0)
-        for (a, b) in [(q1, q3), (q3, q1)] {   // CCW then CW
+        let c = SIMD2<Double>(10, 10)
+        let r = 3.0
+        let q0 = SIMD3(c.x + r, c.y, 0.0)
+        let q1 = SIMD3(c.x, c.y + r, 0.0)
+        let q2 = SIMD3(c.x - r, c.y, 0.0)
+        let q3 = SIMD3(c.x, c.y - r, 0.0)
+        for (a, b) in [(q1, q3), (q3, q1)] {  // CCW then CW
             guard let face = rectFace(),
-                  let arc1 = Wire.arc(start: q0, midpoint: a, end: q2),
-                  let arc2 = Wire.arc(start: q2, midpoint: b, end: q0),
-                  let cw = Wire.join([arc1, arc2]),
-                  let cs = Shape.fromWire(cw) else { Issue.record("setup"); return }
+                let arc1 = Wire.arc(start: q0, midpoint: a, end: q2),
+                let arc2 = Wire.arc(start: q2, midpoint: b, end: q0),
+                let cw = Wire.join([arc1, arc2]),
+                let cs = Shape.fromWire(cw)
+            else {
+                Issue.record("setup")
+                return
+            }
             guard let holed = Shape.faceAddHole(face: face, wire: cs) else {
-                Issue.record("two-arc circular hole rejected (#397)"); return
+                Issue.record("two-arc circular hole rejected (#397)")
+                return
             }
             if let area = holed.surfaceArea {
                 #expect(abs(area - (400.0 - Double.pi * r * r)) < 1e-3)
@@ -60,11 +77,13 @@ struct Issue397CircularHoleTests {
     @Test("Circular hole survives extrusion into a valid solid")
     func circularHoleExtrudes() {
         guard let face = rectFace(),
-              let cw = Wire.circle(origin: SIMD3(10, 10, 0), normal: SIMD3(0, 0, 1), radius: 3),
-              let cs = Shape.fromWire(cw),
-              let holed = Shape.faceAddHole(face: face, wire: cs),
-              let prism = holed.extruded(by: SIMD3(0, 0, 5)) else {
-            Issue.record("circular hole rejected or not extrudable (#397)"); return
+            let cw = Wire.circle(origin: SIMD3(10, 10, 0), normal: SIMD3(0, 0, 1), radius: 3),
+            let cs = Shape.fromWire(cw),
+            let holed = Shape.faceAddHole(face: face, wire: cs),
+            let prism = holed.extruded(by: SIMD3(0, 0, 5))
+        else {
+            Issue.record("circular hole rejected or not extrudable (#397)")
+            return
         }
         #expect(prism.isValidSolid)
         if let v = prism.volume {
@@ -79,13 +98,17 @@ struct Issue397CircularHoleTests {
     /// grew by the hole's and the prism was not a valid solid. Either winding must now cut.
     @Test("A same-winding polygon hole cuts instead of adding area")
     func polygonHoleWindingIndependent() {
-        let ccw: [SIMD3<Double>] = [SIMD3(9, 9, 0), SIMD3(11, 9, 0), SIMD3(11, 11, 0), SIMD3(9, 11, 0)]
+        let ccw: [SIMD3<Double>] = [
+            SIMD3(9, 9, 0), SIMD3(11, 9, 0), SIMD3(11, 11, 0), SIMD3(9, 11, 0),
+        ]
         for pts in [ccw, ccw.reversed().map { $0 }] {
-            guard let face = rectFace(),          // outer boundary is CCW
-                  let hw = Wire.polygon3D(pts, closed: true),
-                  let hs = Shape.fromWire(hw),
-                  let holed = Shape.faceAddHole(face: face, wire: hs) else {
-                Issue.record("polygon hole rejected"); return
+            guard let face = rectFace(),  // outer boundary is CCW
+                let hw = Wire.polygon3D(pts, closed: true),
+                let hs = Shape.fromWire(hw),
+                let holed = Shape.faceAddHole(face: face, wire: hs)
+            else {
+                Issue.record("polygon hole rejected")
+                return
             }
             if let area = holed.surfaceArea { #expect(abs(area - (400.0 - 4.0)) < 1e-6) }
             #expect(holed.extruded(by: SIMD3(0, 0, 5))?.isValidSolid == true)
@@ -99,9 +122,13 @@ struct Issue397CircularHoleTests {
     @Test("A hole wire crossing the face boundary is declined, not returned invalid")
     func boundaryCrossingHoleDeclined() {
         guard let face = rectFace(),
-              // centred on the face's edge at x = 20, so half the circle is outside it
-              let cw = Wire.circle(origin: SIMD3(20, 10, 0), normal: SIMD3(0, 0, 1), radius: 3),
-              let cs = Shape.fromWire(cw) else { Issue.record("setup"); return }
+            // centred on the face's edge at x = 20, so half the circle is outside it
+            let cw = Wire.circle(origin: SIMD3(20, 10, 0), normal: SIMD3(0, 0, 1), radius: 3),
+            let cs = Shape.fromWire(cw)
+        else {
+            Issue.record("setup")
+            return
+        }
         #expect(Shape.faceAddHole(face: face, wire: cs) == nil)
     }
 
@@ -109,14 +136,17 @@ struct Issue397CircularHoleTests {
     /// must still be rejected, sampling the curve is not a licence to accept zero-area holes.
     @Test("Zero-area curved hole wire is still rejected")
     func outAndBackArcRejected() {
-        let c = SIMD2<Double>(10, 10), r = 3.0
-        let q0 = SIMD3(c.x + r, c.y, 0.0), q1 = SIMD3(c.x, c.y + r, 0.0)
+        let c = SIMD2<Double>(10, 10)
+        let r = 3.0
+        let q0 = SIMD3(c.x + r, c.y, 0.0)
+        let q1 = SIMD3(c.x, c.y + r, 0.0)
         let q2 = SIMD3(c.x - r, c.y, 0.0)
         guard let face = rectFace(),
-              let arc1 = Wire.arc(start: q0, midpoint: q1, end: q2),
-              let arc2 = Wire.arc(start: q2, midpoint: q1, end: q0),   // the same arc, backwards
-              let w = Wire.join([arc1, arc2]),
-              let s = Shape.fromWire(w) else { return }   // if OCCT declines the wire, nothing to guard
+            let arc1 = Wire.arc(start: q0, midpoint: q1, end: q2),
+            let arc2 = Wire.arc(start: q2, midpoint: q1, end: q0),  // the same arc, backwards
+            let w = Wire.join([arc1, arc2]),
+            let s = Shape.fromWire(w)
+        else { return }  // if OCCT declines the wire, nothing to guard
         #expect(Shape.faceAddHole(face: face, wire: s) == nil)
     }
 }

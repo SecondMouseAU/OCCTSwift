@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// File path parsing and manipulation utilities, wrapping OCCT's `OSD_Path`.
 ///
@@ -94,7 +94,10 @@ public enum OSDPath {
         var filePtr: UnsafePointer<CChar>?
         OCCTOSDPathFolderAndFile(path, &folderPtr, &filePtr)
         guard let fp = folderPtr, let flp = filePtr else { return nil }
-        defer { OCCTOSDPathFreeString(fp); OCCTOSDPathFreeString(flp) }
+        defer {
+            OCCTOSDPathFreeString(fp)
+            OCCTOSDPathFreeString(flp)
+        }
         return (String(cString: fp), String(cString: flp))
     }
 
@@ -129,14 +132,18 @@ public enum OSDPath {
     /// ```
     public static func isUnixPath(_ path: String) -> Bool { OCCTOSDPathIsUnixPath(path) }
 
-    /// Check if path is relative. Pure syntax, no filesystem access.
+    /// Check if path is relative.
+    ///
+    /// Pure syntax, no filesystem access.
     ///
     /// ```swift
     /// OSDPath.isRelative("./sub/f.txt")  // true
     /// ```
     public static func isRelative(_ path: String) -> Bool { OCCTOSDPathIsRelative(path) }
 
-    /// Check if path is absolute. Pure syntax, no filesystem access.
+    /// Check if path is absolute.
+    ///
+    /// Pure syntax, no filesystem access.
     ///
     /// Recognises Unix, DOS, UNC and remote-protocol spellings.
     ///

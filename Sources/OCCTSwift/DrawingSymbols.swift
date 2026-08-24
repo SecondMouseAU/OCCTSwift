@@ -15,11 +15,11 @@ public enum SurfaceFinishSymbol: String, Sendable, Hashable, Codable {
     case machiningProhibited
 }
 
-public extension DrawingAnnotation {
+extension DrawingAnnotation {
     /// ISO 1302 surface finish annotation: a check-mark style symbol with Ra
     /// value, a leader line pointing at the feature, and an optional
     /// production-method text block.
-    static func surfaceFinish(
+    public static func surfaceFinish(
         at position: SIMD2<Double>,
         leaderTo target: SIMD2<Double>,
         ra: Double,
@@ -43,11 +43,15 @@ public extension DrawingAnnotation {
 
         var result: [DrawingAnnotation] = [
             // Long arm of the check
-            .centreline(.init(from: apex, to: rightTop, style: .solid,
-                              id: "surface-finish-right")),
+            .centreline(
+                .init(
+                    from: apex, to: rightTop, style: .solid,
+                    id: "surface-finish-right")),
             // Short arm
-            .centreline(.init(from: apex, to: leftTop, style: .solid,
-                              id: "surface-finish-left")),
+            .centreline(
+                .init(
+                    from: apex, to: leftTop, style: .solid,
+                    id: "surface-finish-left")),
         ]
 
         switch symbol {
@@ -66,32 +70,45 @@ public extension DrawingAnnotation {
                 pts.append(SIMD2(apex.x + r * cos(t), apex.y + r + r * sin(t)))
             }
             // Emit as text label for simplicity (consumers can swap for a real arc)
-            result.append(.textLabel(.init(position: SIMD2(apex.x, apex.y + r),
-                                            text: "O", height: 3)))
+            result.append(
+                .textLabel(
+                    .init(
+                        position: SIMD2(apex.x, apex.y + r),
+                        text: "O", height: 3)))
         }
 
         // Ra value above the bar
         let raLabel = String(format: "Ra %.2f", ra)
-        result.append(.textLabel(.init(position: SIMD2(rightTop.x + 2, rightTop.y - 1),
-                                        text: raLabel, height: 3)))
+        result.append(
+            .textLabel(
+                .init(
+                    position: SIMD2(rightTop.x + 2, rightTop.y - 1),
+                    text: raLabel, height: 3)))
 
         // Production method below the bar
         if let method = method {
-            result.append(.textLabel(.init(position: SIMD2(rightTop.x + 2, rightTop.y - 5),
-                                            text: method, height: 2.5)))
+            result.append(
+                .textLabel(
+                    .init(
+                        position: SIMD2(rightTop.x + 2, rightTop.y - 5),
+                        text: method, height: 2.5)))
         }
 
         // Leader line from apex to target
-        result.append(.centreline(.init(from: apex, to: target, style: .solid,
-                                         id: "surface-finish-leader")))
+        result.append(
+            .centreline(
+                .init(
+                    from: apex, to: target, style: .solid,
+                    id: "surface-finish-leader")))
         return result
     }
 }
 
 // MARK: - GD&T symbols (ISO 1101)
 
-/// ISO 1101 geometric characteristic symbol. Matches `Document.GeomToleranceType`
-/// raw values for easy round-trip from XDE into drawings.
+/// ISO 1101 geometric characteristic symbol.
+///
+/// Matches `Document.GeomToleranceType` raw values for easy round-trip from XDE into drawings.
 public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case straightness, flatness, circularity, cylindricity
     case profileOfLine, profileOfSurface
@@ -100,39 +117,41 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case circularRunout, totalRunout
 
     /// Unicode glyph or short textual representation — used when emitting to
-    /// DXF via plain TEXT. (Full Unicode glyphs render in AutoCAD but require
-    /// a TrueType font; the textual form is always safe.)
+    /// DXF via plain TEXT.
+    ///
+    /// (Full Unicode glyphs render in AutoCAD but require a TrueType font;
+    /// the textual form is always safe.)
     public var glyph: String {
         switch self {
-        case .straightness:     return "STR"
-        case .flatness:         return "FLT"
-        case .circularity:      return "O"
-        case .cylindricity:     return "CYL"
-        case .profileOfLine:    return "⌒"
+        case .straightness: return "STR"
+        case .flatness: return "FLT"
+        case .circularity: return "O"
+        case .cylindricity: return "CYL"
+        case .profileOfLine: return "⌒"
         case .profileOfSurface: return "⌓"
         case .perpendicularity: return "⊥"
-        case .parallelism:      return "∥"
-        case .angularity:       return "∠"
-        case .position:         return "⌖"
-        case .concentricity:    return "⊙"
-        case .symmetry:         return "="
-        case .coaxiality:       return "◎"
-        case .circularRunout:   return "↗"
-        case .totalRunout:      return "↗↗"
+        case .parallelism: return "∥"
+        case .angularity: return "∠"
+        case .position: return "⌖"
+        case .concentricity: return "⊙"
+        case .symmetry: return "="
+        case .coaxiality: return "◎"
+        case .circularRunout: return "↗"
+        case .totalRunout: return "↗↗"
         }
     }
 }
 
-public extension DrawingAnnotation {
+extension DrawingAnnotation {
     /// ISO 1101 feature control frame — the classic rectangular box with
     /// symbol | tolerance | datum references.
     ///
     /// Example: `[⌖] [0.1 Ⓜ] [A] [B] [C]` — positional tolerance 0.1 at
     /// maximum material condition relative to datums A, B, C.
-    static func featureControlFrame(
+    public static func featureControlFrame(
         at position: SIMD2<Double>,
         symbol: GDTSymbol,
-        tolerance: String,                // e.g. "0.1" or "0.1 M" for MMC
+        tolerance: String,  // e.g. "0.1" or "0.1 M" for MMC
         datums: [String] = [],
         leaderTo target: SIMD2<Double>? = nil
     ) -> [DrawingAnnotation] {
@@ -148,47 +167,79 @@ public extension DrawingAnnotation {
         let bottomLeft = position
         let topRight = SIMD2(position.x + totalW, position.y + cellH)
         // Represent as 4 lines forming the outer box
-        result.append(.centreline(.init(from: bottomLeft,
-                                         to: SIMD2(topRight.x, bottomLeft.y),
-                                         style: .solid)))
-        result.append(.centreline(.init(from: SIMD2(topRight.x, bottomLeft.y),
-                                         to: topRight, style: .solid)))
-        result.append(.centreline(.init(from: topRight,
-                                         to: SIMD2(bottomLeft.x, topRight.y),
-                                         style: .solid)))
-        result.append(.centreline(.init(from: SIMD2(bottomLeft.x, topRight.y),
-                                         to: bottomLeft, style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: bottomLeft,
+                    to: SIMD2(topRight.x, bottomLeft.y),
+                    style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: SIMD2(topRight.x, bottomLeft.y),
+                    to: topRight, style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: topRight,
+                    to: SIMD2(bottomLeft.x, topRight.y),
+                    style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: SIMD2(bottomLeft.x, topRight.y),
+                    to: bottomLeft, style: .solid)))
 
         // Vertical dividers
         let divX1 = bottomLeft.x + symbolW
         let divX2 = divX1 + toleranceW
-        result.append(.centreline(.init(from: SIMD2(divX1, bottomLeft.y),
-                                         to: SIMD2(divX1, topRight.y),
-                                         style: .solid)))
-        result.append(.centreline(.init(from: SIMD2(divX2, bottomLeft.y),
-                                         to: SIMD2(divX2, topRight.y),
-                                         style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: SIMD2(divX1, bottomLeft.y),
+                    to: SIMD2(divX1, topRight.y),
+                    style: .solid)))
+        result.append(
+            .centreline(
+                .init(
+                    from: SIMD2(divX2, bottomLeft.y),
+                    to: SIMD2(divX2, topRight.y),
+                    style: .solid)))
 
         // Symbol glyph in first cell
-        result.append(.textLabel(.init(position: SIMD2(bottomLeft.x + symbolW / 3,
-                                                         bottomLeft.y + cellH / 3),
-                                        text: symbol.glyph, height: 4)))
+        result.append(
+            .textLabel(
+                .init(
+                    position: SIMD2(
+                        bottomLeft.x + symbolW / 3,
+                        bottomLeft.y + cellH / 3),
+                    text: symbol.glyph, height: 4)))
 
         // Tolerance in second cell
-        result.append(.textLabel(.init(position: SIMD2(divX1 + 2, bottomLeft.y + cellH / 3),
-                                        text: tolerance, height: 3.5)))
+        result.append(
+            .textLabel(
+                .init(
+                    position: SIMD2(divX1 + 2, bottomLeft.y + cellH / 3),
+                    text: tolerance, height: 3.5)))
 
         // Datum cells
         for (i, datum) in datums.enumerated() {
             let cellX = divX2 + Double(i) * datumW
             if i > 0 {
-                result.append(.centreline(.init(from: SIMD2(cellX, bottomLeft.y),
-                                                 to: SIMD2(cellX, topRight.y),
-                                                 style: .solid)))
+                result.append(
+                    .centreline(
+                        .init(
+                            from: SIMD2(cellX, bottomLeft.y),
+                            to: SIMD2(cellX, topRight.y),
+                            style: .solid)))
             }
-            result.append(.textLabel(.init(position: SIMD2(cellX + datumW / 3,
-                                                             bottomLeft.y + cellH / 3),
-                                            text: datum, height: 3.5)))
+            result.append(
+                .textLabel(
+                    .init(
+                        position: SIMD2(
+                            cellX + datumW / 3,
+                            bottomLeft.y + cellH / 3),
+                        text: datum, height: 3.5)))
         }
 
         // Leader line
@@ -200,8 +251,8 @@ public extension DrawingAnnotation {
     }
 
     /// ISO 1101 datum feature symbol — letter in a box with triangle pointer.
-    static func datumFeature(
-        label: String,                 // single letter like "A"
+    public static func datumFeature(
+        label: String,  // single letter like "A"
         at position: SIMD2<Double>,
         pointingTo target: SIMD2<Double>
     ) -> [DrawingAnnotation] {
@@ -216,8 +267,10 @@ public extension DrawingAnnotation {
             .centreline(.init(from: SIMD2(tr.x, bl.y), to: tr, style: .solid)),
             .centreline(.init(from: tr, to: SIMD2(bl.x, tr.y), style: .solid)),
             .centreline(.init(from: SIMD2(bl.x, tr.y), to: bl, style: .solid)),
-            .textLabel(.init(position: SIMD2(bl.x + boxSize / 3, bl.y + boxSize / 3),
-                              text: label, height: 4))
+            .textLabel(
+                .init(
+                    position: SIMD2(bl.x + boxSize / 3, bl.y + boxSize / 3),
+                    text: label, height: 4)),
         ]
 
         // Triangle pointing at target
@@ -243,24 +296,28 @@ public extension DrawingAnnotation {
 
 // MARK: - Detail view + break lines (G5)
 
-public extension Drawing {
+extension Drawing {
     /// Compose a detail view of a region from this drawing, scaled up and
-    /// placed at `placement`. Returns a `TransformedDrawing` ready to pass to
-    /// `DXFWriter.collectFromDrawing`.
+    /// placed at `placement`.
+    ///
+    /// Returns a `TransformedDrawing` ready to pass to `DXFWriter.collectFromDrawing`.
     ///
     /// Caller should pair with a `DrawingAnnotation.textLabel` marker on the
     /// parent view indicating the detail bubble + a textLabel on the detail
     /// placement indicating the scale, e.g. "DETAIL A  2:1".
-    func detailView(at placement: SIMD2<Double>, scale: Double) -> TransformedDrawing {
+    public func detailView(at placement: SIMD2<Double>, scale: Double) -> TransformedDrawing {
         transformed(translate: placement, scale: scale)
     }
 }
 
-public extension DrawingAnnotation {
-    /// ISO 128-30 break line marking compressed length. Renders as a short
-    /// zigzag at the midpoint of the two endpoints.
-    static func breakLine(from: SIMD2<Double>, to: SIMD2<Double>,
-                          amplitude: Double = 2.0) -> [DrawingAnnotation] {
+extension DrawingAnnotation {
+    /// ISO 128-30 break line marking compressed length.
+    ///
+    /// Renders as a short zigzag at the midpoint of the two endpoints.
+    public static func breakLine(
+        from: SIMD2<Double>, to: SIMD2<Double>,
+        amplitude: Double = 2.0
+    ) -> [DrawingAnnotation] {
         let mid = (from + to) / 2
         let dir = simd_normalize(to - from)
         let perp = SIMD2(-dir.y, dir.x)
@@ -274,7 +331,7 @@ public extension DrawingAnnotation {
             .centreline(.init(from: p1, to: p2, style: .solid)),
             .centreline(.init(from: p2, to: p3, style: .solid)),
             .centreline(.init(from: p3, to: p4, style: .solid)),
-            .centreline(.init(from: p4, to: to, style: .solid))
+            .centreline(.init(from: p4, to: to, style: .solid)),
         ]
     }
 }

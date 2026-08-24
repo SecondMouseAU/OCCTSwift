@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import OCCTSwift
 
 // #502: `solids`/`shells`/`wires` walked a bare `TopExp_Explorer`, which yields one entry per
@@ -76,9 +77,10 @@ struct Issue502SubShapeTraversalTests {
     func shellReusedByTwoSolidsCountsOnce() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let shell = box.shells.first,
-              let s1 = Shape.solidFromShells([shell]),
-              let s2 = Shape.solidFromShells([shell]),
-              let both = Shape.compound([s1, s2]) else {
+            let s1 = Shape.solidFromShells([shell]),
+            let s2 = Shape.solidFromShells([shell]),
+            let both = Shape.compound([s1, s2])
+        else {
             Issue.record("could not build two solids over one shell")
             return
         }
@@ -93,10 +95,12 @@ struct Issue502SubShapeTraversalTests {
     @Test("A wire reused by two faces counts once")
     func wireReusedByTwoFacesCountsOnce() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
-              let planar = Shape.face(from: wire),
-              let onPlane = Shape.face(from: Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!,
-                                       boundary: wire),
-              let both = Shape.compound([planar, onPlane]) else {
+            let planar = Shape.face(from: wire),
+            let onPlane = Shape.face(
+                from: Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!,
+                boundary: wire),
+            let both = Shape.compound([planar, onPlane])
+        else {
             Issue.record("could not build two faces over one wire")
             return
         }
@@ -115,7 +119,8 @@ struct Issue502SubShapeTraversalTests {
     func twoPlacementsOfOneBodyCountTwice() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         guard let moved = box.translated(by: SIMD3(50, 0, 0)),
-              let assembly = Shape.compound([box, moved]) else {
+            let assembly = Shape.compound([box, moved])
+        else {
             Issue.record("compound failed")
             return
         }
@@ -151,7 +156,8 @@ struct Issue502SubShapeTraversalTests {
         let block = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
         let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!
         guard let hollow = block.subtracting(cavity),
-              let assembly = Shape.compound([hollow, hollow.translated(by: SIMD3(40, 0, 0))!]) else {
+            let assembly = Shape.compound([hollow, hollow.translated(by: SIMD3(40, 0, 0))!])
+        else {
             Issue.record("fixture failed")
             return
         }
@@ -160,7 +166,7 @@ struct Issue502SubShapeTraversalTests {
             switch type {
             case .solid: typed = assembly.solids
             case .shell: typed = assembly.shells
-            default:     typed = assembly.wires
+            default: typed = assembly.wires
             }
             let generic = assembly.subShapes(ofType: type)
             #expect(typed.count == generic.count, "\(type) count")

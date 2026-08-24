@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Configuration for a rendering Z-layer that controls depth testing, polygon offset,
 /// and other render-pass properties.
@@ -92,14 +92,18 @@ public final class ZLayerSettings: @unchecked Sendable {
     /// Polygon offset (depth bias) parameters for this layer.
     public var polygonOffset: PolygonOffset {
         get {
-            var mode: Int32 = 0, factor: Float = 0, units: Float = 0
+            var mode: Int32 = 0
+            var factor: Float = 0
+            var units: Float = 0
             OCCTZLayerSettingsGetPolygonOffset(handle, &mode, &factor, &units)
-            return PolygonOffset(mode: PolygonOffsetMode(rawValue: mode) ?? .off,
-                                 factor: factor, units: units)
+            return PolygonOffset(
+                mode: PolygonOffsetMode(rawValue: mode) ?? .off,
+                factor: factor, units: units)
         }
         set {
-            OCCTZLayerSettingsSetPolygonOffset(handle, newValue.mode.rawValue,
-                                               newValue.factor, newValue.units)
+            OCCTZLayerSettingsSetPolygonOffset(
+                handle, newValue.mode.rawValue,
+                newValue.factor, newValue.units)
         }
     }
 
@@ -173,7 +177,9 @@ public final class ZLayerSettings: @unchecked Sendable {
     /// in the model-view matrix.
     public var origin: SIMD3<Double> {
         get {
-            var x = 0.0, y = 0.0, z = 0.0
+            var x = 0.0
+            var y = 0.0
+            var z = 0.0
             OCCTZLayerSettingsGetOrigin(handle, &x, &y, &z)
             return SIMD3(x, y, z)
         }

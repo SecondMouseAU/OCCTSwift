@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// Wrapper for XCAFView_Object — standalone view definition.
 public final class ViewObject: @unchecked Sendable {
@@ -39,7 +39,9 @@ public final class ViewObject: @unchecked Sendable {
 
     /// Get the view direction.
     public var viewDirection: (x: Double, y: Double, z: Double) {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTViewObjectGetViewDirection(handle, &x, &y, &z)
         return (x, y, z)
     }
@@ -51,7 +53,9 @@ public final class ViewObject: @unchecked Sendable {
 
     /// Get the up direction.
     public var upDirection: (x: Double, y: Double, z: Double) {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTViewObjectGetUpDirection(handle, &x, &y, &z)
         return (x, y, z)
     }

@@ -52,10 +52,13 @@ public final class PlateSolver: @unchecked Sendable {
     ///   - value: Target derivative value
     ///   - derivativeOrderU: U derivative order (0 for position, 1+ for derivatives)
     ///   - derivativeOrderV: V derivative order
-    public func loadDerivativeConstraint(u: Double, v: Double, value: SIMD3<Double>,
-                                          derivativeOrderU: Int, derivativeOrderV: Int) {
-        OCCTPlateLoadPinpoint(handle, u, v, value.x, value.y, value.z,
-                              Int32(derivativeOrderU), Int32(derivativeOrderV))
+    public func loadDerivativeConstraint(
+        u: Double, v: Double, value: SIMD3<Double>,
+        derivativeOrderU: Int, derivativeOrderV: Int
+    ) {
+        OCCTPlateLoadPinpoint(
+            handle, u, v, value.x, value.y, value.z,
+            Int32(derivativeOrderU), Int32(derivativeOrderV))
     }
 
     /// Load a geometric-to-continuity (GtoC) constraint at G1 level.
@@ -68,13 +71,19 @@ public final class PlateSolver: @unchecked Sendable {
     ///   - v: V parameter
     ///   - sourceD1: Source surface first derivatives (tangentU, tangentV) as flat 6 doubles
     ///   - targetD1: Target surface first derivatives
-    public func loadGtoC(u: Double, v: Double,
-                          sourceD1: (tangentU: SIMD3<Double>, tangentV: SIMD3<Double>),
-                          targetD1: (tangentU: SIMD3<Double>, tangentV: SIMD3<Double>)) {
-        var d1s: [Double] = [sourceD1.tangentU.x, sourceD1.tangentU.y, sourceD1.tangentU.z,
-                             sourceD1.tangentV.x, sourceD1.tangentV.y, sourceD1.tangentV.z]
-        var d1t: [Double] = [targetD1.tangentU.x, targetD1.tangentU.y, targetD1.tangentU.z,
-                             targetD1.tangentV.x, targetD1.tangentV.y, targetD1.tangentV.z]
+    public func loadGtoC(
+        u: Double, v: Double,
+        sourceD1: (tangentU: SIMD3<Double>, tangentV: SIMD3<Double>),
+        targetD1: (tangentU: SIMD3<Double>, tangentV: SIMD3<Double>)
+    ) {
+        var d1s: [Double] = [
+            sourceD1.tangentU.x, sourceD1.tangentU.y, sourceD1.tangentU.z,
+            sourceD1.tangentV.x, sourceD1.tangentV.y, sourceD1.tangentV.z,
+        ]
+        var d1t: [Double] = [
+            targetD1.tangentU.x, targetD1.tangentU.y, targetD1.tangentU.z,
+            targetD1.tangentV.x, targetD1.tangentV.y, targetD1.tangentV.z,
+        ]
         OCCTPlateLoadGtoC(handle, u, v, &d1s, &d1t)
     }
 
@@ -103,7 +112,9 @@ public final class PlateSolver: @unchecked Sendable {
     /// Returns the 3D displacement/position computed by the solver.
     /// Must call `solve()` first.
     public func evaluate(u: Double, v: Double) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
         OCCTPlateEvaluate(handle, u, v, &x, &y, &z)
         return SIMD3(x, y, z)
     }
@@ -115,17 +126,26 @@ public final class PlateSolver: @unchecked Sendable {
     ///   - v: V parameter
     ///   - derivativeOrderU: U derivative order
     ///   - derivativeOrderV: V derivative order
-    public func evaluateDerivative(u: Double, v: Double,
-                                    derivativeOrderU: Int, derivativeOrderV: Int) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTPlateEvaluateDerivative(handle, u, v, Int32(derivativeOrderU), Int32(derivativeOrderV),
-                                    &x, &y, &z)
+    /// - Returns: The derivative vector at the given UV parameters.
+    public func evaluateDerivative(
+        u: Double, v: Double,
+        derivativeOrderU: Int, derivativeOrderV: Int
+    ) -> SIMD3<Double> {
+        var x: Double = 0
+        var y: Double = 0
+        var z: Double = 0
+        OCCTPlateEvaluateDerivative(
+            handle, u, v, Int32(derivativeOrderU), Int32(derivativeOrderV),
+            &x, &y, &z)
         return SIMD3(x, y, z)
     }
 
     /// UV bounding box of the constraint points.
     public var uvBox: (umin: Double, umax: Double, vmin: Double, vmax: Double) {
-        var umin: Double = 0, umax: Double = 0, vmin: Double = 0, vmax: Double = 0
+        var umin: Double = 0
+        var umax: Double = 0
+        var vmin: Double = 0
+        var vmax: Double = 0
         OCCTPlateUVBox(handle, &umin, &umax, &vmin, &vmax)
         return (umin, umax, vmin, vmax)
     }
@@ -139,23 +159,31 @@ public final class PlateSolver: @unchecked Sendable {
 extension PlateSolver {
     /// Load a plane constraint at UV point.
     @discardableResult
-    public func loadPlaneConstraint(u: Double, v: Double, planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>) -> Bool {
-        OCCTPlateLoadPlaneConstraint(handle, u, v,
-                                      planePoint.x, planePoint.y, planePoint.z,
-                                      planeNormal.x, planeNormal.y, planeNormal.z)
+    public func loadPlaneConstraint(
+        u: Double, v: Double, planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>
+    ) -> Bool {
+        OCCTPlateLoadPlaneConstraint(
+            handle, u, v,
+            planePoint.x, planePoint.y, planePoint.z,
+            planeNormal.x, planeNormal.y, planeNormal.z)
     }
 
     /// Load a line constraint at UV point.
     @discardableResult
-    public func loadLineConstraint(u: Double, v: Double, linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>) -> Bool {
-        OCCTPlateLoadLineConstraint(handle, u, v,
-                                     linePoint.x, linePoint.y, linePoint.z,
-                                     lineDirection.x, lineDirection.y, lineDirection.z)
+    public func loadLineConstraint(
+        u: Double, v: Double, linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>
+    ) -> Bool {
+        OCCTPlateLoadLineConstraint(
+            handle, u, v,
+            linePoint.x, linePoint.y, linePoint.z,
+            lineDirection.x, lineDirection.y, lineDirection.z)
     }
 
     /// Load a free G1 continuity constraint at UV point.
     @discardableResult
-    public func loadFreeG1Constraint(u: Double, v: Double, du: SIMD3<Double>, dv: SIMD3<Double>) -> Bool {
+    public func loadFreeG1Constraint(u: Double, v: Double, du: SIMD3<Double>, dv: SIMD3<Double>)
+        -> Bool
+    {
         OCCTPlateLoadFreeG1Constraint(handle, u, v, du.x, du.y, du.z, dv.x, dv.y, dv.z)
     }
 }
@@ -163,6 +191,7 @@ extension PlateSolver {
 extension PlateSolver {
 
     /// Load a global translation constraint.
+    ///
     /// All sample points are constrained to translate by the same unknown displacement.
     @discardableResult
     public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool {

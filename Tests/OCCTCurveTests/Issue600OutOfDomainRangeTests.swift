@@ -1,6 +1,7 @@
-import Testing
 import Foundation
+import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// Cover for #600: a finite parameter range reaching outside the curve's domain.
@@ -36,21 +37,23 @@ struct Issue600OutOfDomainRangeTests {
     private func multiSpanCurve() -> Curve3D? {
         Curve3D.interpolate(points: [
             SIMD3(0, 0, 0), SIMD3(100, 50, 0), SIMD3(150, -60, 40),
-            SIMD3(250, 30, -20), SIMD3(300, 0, 60)
+            SIMD3(250, 30, -20), SIMD3(300, 0, 60),
         ])
     }
 
     private func periodicCurve() -> Curve3D? {
         Curve3D.interpolatePeriodic(points: [
             SIMD3(0, 0, 0), SIMD3(100, 40, 0), SIMD3(160, -30, 20),
-            SIMD3(60, -90, -10), SIMD3(-40, -30, 30)
+            SIMD3(60, -90, -10), SIMD3(-40, -30, 30),
         ])
     }
 
     /// Chord sum over the range *as the curve evaluates it*, so it winds on a periodic curve and
     /// extrapolates on a polynomial one. Used only where the two should agree.
-    private func tracedLength(_ c: Curve3D, from u1: Double, to u2: Double,
-                              segments: Int = 20_000) -> Double {
+    private func tracedLength(
+        _ c: Curve3D, from u1: Double, to u2: Double,
+        segments: Int = 20_000
+    ) -> Double {
         var total = 0.0
         var prev = c.point(at: u1)
         for i in 1...segments {
@@ -67,7 +70,8 @@ struct Issue600OutOfDomainRangeTests {
     @Test("A segment measures its own length past the end, not the line's extension")
     func segmentDoesNotExtendPastItsTrim() {
         guard let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
-              let whole = seg.length else { return }
+            let whole = seg.length
+        else { return }
         let d = seg.domain
         let span = d.upperBound - d.lowerBound
 
@@ -85,9 +89,11 @@ struct Issue600OutOfDomainRangeTests {
 
     @Test("A Bezier is not evaluated past its poles")
     func bezierDoesNotExtrapolate() {
-        guard let bez = Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(30, 60, 0), SIMD3(70, -40, 20), SIMD3(100, 0, 0)
-        ]), let whole = bez.length else { return }
+        guard
+            let bez = Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(30, 60, 0), SIMD3(70, -40, 20), SIMD3(100, 0, 0),
+            ]), let whole = bez.length
+        else { return }
         let d = bez.domain
         let span = d.upperBound - d.lowerBound
 
@@ -100,15 +106,16 @@ struct Issue600OutOfDomainRangeTests {
     @Test("An arc stops at its trim, even though its basis circle is periodic")
     func trimmedArcDoesNotFinishTheCircle() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let arc = circle.trimmed(from: 0, to: .pi),
-              let whole = arc.length else { return }
+            let arc = circle.trimmed(from: 0, to: .pi),
+            let whole = arc.length
+        else { return }
 
         // The adaptor reports IsPeriodic() == true here, a Geom_TrimmedCurve inherits its basis
         // curve's periodicity, so periodicity alone cannot be the test. Its domain covers half a
         // period, and the half the caller trimmed away is not part of this curve.
         #expect(abs(whole - 5 * Double.pi) < 1e-6)
-        #expect(arc.length(from: 0, to: 2 * .pi) == whole)          // was 31.42, the full circle
-        #expect(arc.length(from: 2 * .pi, to: 3 * .pi) == 0)        // was 15.71
+        #expect(arc.length(from: 0, to: 2 * .pi) == whole)  // was 31.42, the full circle
+        #expect(arc.length(from: 2 * .pi, to: 3 * .pi) == 0)  // was 15.71
     }
 
     @Test("A multi-span BSpline keeps the behaviour #477 and #506 pinned")
@@ -127,7 +134,8 @@ struct Issue600OutOfDomainRangeTests {
     @Test("A circle still winds: two periods measure two circumferences")
     func circleStillWinds() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let whole = circle.length else { return }
+            let whole = circle.length
+        else { return }
 
         // Confining would have been a regression here: the curve is periodic, and the range says
         // "go round twice".
@@ -150,9 +158,12 @@ struct Issue600OutOfDomainRangeTests {
 
     @Test("An ellipse winds too, in whole multiples of its own measured length")
     func ellipseWinds() {
-        guard let ellipse = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
-                                            majorRadius: 8, minorRadius: 3),
-              let whole = ellipse.length else { return }
+        guard
+            let ellipse = Curve3D.ellipse(
+                center: .zero, normal: SIMD3(0, 0, 1),
+                majorRadius: 8, minorRadius: 3),
+            let whole = ellipse.length
+        else { return }
 
         // Compared against the curve's own whole-domain measurement rather than an independent
         // reference: GCPnts integrates a single-span conic with one quadrature over the whole
@@ -202,22 +213,23 @@ struct Issue600OutOfDomainRangeTests {
     @Test("Curve2D answers an out-of-domain range the way Curve3D does")
     func curve2DMatchesCurve3D() {
         guard let seg2 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)),
-              let circle2 = Curve2D.circle(center: .zero, radius: 5),
-              let spline2 = Curve2D.interpolate(through: [
-                  SIMD2(0, 0), SIMD2(100, 50), SIMD2(150, -60), SIMD2(250, 30), SIMD2(300, 0)
-              ]) else {
+            let circle2 = Curve2D.circle(center: .zero, radius: 5),
+            let spline2 = Curve2D.interpolate(through: [
+                SIMD2(0, 0), SIMD2(100, 50), SIMD2(150, -60), SIMD2(250, 30), SIMD2(300, 0),
+            ])
+        else {
             Issue.record("2D fixtures must build")
             return
         }
 
         if let whole = seg2.length {
-            #expect(seg2.length(from: 0, to: 20) == whole)        // was 20
-            #expect(seg2.length(from: 20, to: 30) == 0)           // was 10
-            #expect(seg2.arcLength(from: 0, to: 20) == whole)     // was 20, via the other spelling
+            #expect(seg2.length(from: 0, to: 20) == whole)  // was 20
+            #expect(seg2.length(from: 20, to: 30) == 0)  // was 10
+            #expect(seg2.arcLength(from: 0, to: 20) == whole)  // was 20, via the other spelling
             #expect(seg2.arcLength(from: 20, to: 30) == 0)
         }
         if let whole = circle2.length, let two = circle2.length(from: 0, to: 4 * .pi) {
-            #expect(abs(two - 2 * whole) < 1e-6)                  // still winds
+            #expect(abs(two - 2 * whole) < 1e-6)  // still winds
             #expect(abs(circle2.arcLength(from: 0, to: 4 * .pi) - 2 * whole) < 1e-6)
         }
         if let whole = spline2.length {
@@ -225,7 +237,8 @@ struct Issue600OutOfDomainRangeTests {
             let span = d.upperBound - d.lowerBound
             #expect(spline2.length(from: d.lowerBound, to: d.upperBound + span) == whole)
             // The pre-bounded spelling used to extrapolate here: 4771.88 for a curve 457.26 long.
-            #expect(abs(spline2.arcLength(from: d.lowerBound, to: d.upperBound + span) - whole)
+            #expect(
+                abs(spline2.arcLength(from: d.lowerBound, to: d.upperBound + span) - whole)
                     < 1e-6 * whole)
         }
     }
@@ -233,20 +246,25 @@ struct Issue600OutOfDomainRangeTests {
     @Test("An edge answers the same as the curve it was built from")
     func edgeMatchesItsCurve() {
         guard let straight = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)),
-              let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let circleEdge = Shape.edgeFromCurve(circle),
-              let periodic = periodicCurve(),
-              let periodicEdge = Shape.edgeFromCurve(periodic) else {
+            let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+            let circleEdge = Shape.edgeFromCurve(circle),
+            let periodic = periodicCurve(),
+            let periodicEdge = Shape.edgeFromCurve(periodic)
+        else {
             Issue.record("edge fixtures must build")
             return
         }
 
         let sd = straight.edgeAdaptorDomain
         let sspan = sd.upperBound - sd.lowerBound
-        #expect(abs(straight.edgeArcLength(from: sd.lowerBound, to: sd.upperBound + sspan)
-                    - straight.edgeArcLength) < 1e-9)                       // was 20
-        #expect(straight.edgeArcLength(from: sd.upperBound + sspan,
-                                       to: sd.upperBound + 2 * sspan) == 0) // was 10
+        #expect(
+            abs(
+                straight.edgeArcLength(from: sd.lowerBound, to: sd.upperBound + sspan)
+                    - straight.edgeArcLength) < 1e-9)  // was 20
+        #expect(
+            straight.edgeArcLength(
+                from: sd.upperBound + sspan,
+                to: sd.upperBound + 2 * sspan) == 0)  // was 10
 
         let cwhole = circleEdge.edgeArcLength
         #expect(abs(circleEdge.edgeArcLength(from: 0, to: 4 * .pi) - 2 * cwhole) < 1e-6)
@@ -255,8 +273,11 @@ struct Issue600OutOfDomainRangeTests {
         let period = pd.upperBound - pd.lowerBound
         let pwhole = periodicEdge.edgeArcLength
         // Was one period, the same silent stop as the curve spelling.
-        #expect(abs(periodicEdge.edgeArcLength(from: pd.lowerBound,
-                                               to: pd.lowerBound + 2 * period) - 2 * pwhole)
+        #expect(
+            abs(
+                periodicEdge.edgeArcLength(
+                    from: pd.lowerBound,
+                    to: pd.lowerBound + 2 * period) - 2 * pwhole)
                 < 1e-6 * pwhole)
     }
 
@@ -265,8 +286,9 @@ struct Issue600OutOfDomainRangeTests {
     @Test("In-domain measurements are untouched")
     func inDomainRangesAreUnchanged() {
         guard let c = multiSpanCurve(), let whole = c.length,
-              let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-              let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else { return }
+            let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+            let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
+        else { return }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -276,7 +298,8 @@ struct Issue600OutOfDomainRangeTests {
             #expect(abs(half - traced) < 0.01 * traced)
         }
         // Order tolerance and the zero-width interval, both from #506/#408.
-        let lo = d.lowerBound + 0.1 * span, hi = d.lowerBound + 0.6 * span
+        let lo = d.lowerBound + 0.1 * span
+        let hi = d.lowerBound + 0.6 * span
         #expect(c.length(from: hi, to: lo) == c.length(from: lo, to: hi))
         #expect(c.length(from: hi, to: hi) == 0)
         #expect(seg.length(from: 2, to: 7) == 5)

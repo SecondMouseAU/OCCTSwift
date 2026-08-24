@@ -1,17 +1,16 @@
-import Testing
 import Foundation
+import Testing
 import simd
-@testable import OCCTSwift
 
+@testable import OCCTSwift
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {
-        let len = sqrt(x*x + y*y + z*z)
+        let len = sqrt(x * x + y * y + z * z)
         guard len > 0 else { return self }
-        return SIMD3(x/len, y/len, z/len)
+        return SIMD3(x / len, y / len, z / len)
     }
 }
-
 
 @Suite("Document Tests")
 struct DocumentTests {
@@ -94,7 +93,6 @@ struct GDTDocumentTests {
         #expect(doc.datum(at: -1) == nil)
     }
 }
-
 
 // MARK: - TNaming: Topological Naming (v0.25.0)
 
@@ -511,8 +509,10 @@ struct XCAFComponentMatrixTests {
     @Test("Full 4x4 places components (rotation + reflection) under an assembly")
     func matrixComponentPlacement() throws {
         guard let doc = Document.create(), let box = Shape.box(width: 4, height: 2, depth: 1),
-              let asmShape = Shape.box(width: 1, height: 1, depth: 1) else {
-            Issue.record("no doc/box"); return
+            let asmShape = Shape.box(width: 1, height: 1, depth: 1)
+        else {
+            Issue.record("no doc/box")
+            return
         }
         let part = doc.addShape(box, makeAssembly: false)
         let asm = doc.addShape(asmShape, makeAssembly: true)
@@ -524,7 +524,8 @@ struct XCAFComponentMatrixTests {
         let reflect: [Double] = [-1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]
         #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: reflect) >= 0)
         // A malformed matrix is rejected.
-        #expect(doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: [1, 2, 3]) == -1)
+        #expect(
+            doc.addComponent(assemblyLabelId: asm, shapeLabelId: part, matrix: [1, 2, 3]) == -1)
         #expect(doc.componentCount(assemblyLabelId: asm) == 2)
     }
 }
@@ -1447,7 +1448,9 @@ struct TDataXtdGeometryAttributeTests {
     @Test("All geometry type values")
     func allGeometryTypes() {
         let doc = Document.create()!
-        let types: [GeometryType] = [.anyGeom, .point, .line, .circle, .ellipse, .spline, .plane, .cylinder]
+        let types: [GeometryType] = [
+            .anyGeom, .point, .line, .circle, .ellipse, .spline, .plane, .cylinder,
+        ]
         for type in types {
             let label = doc.createLabel()!
             #expect(label.setGeometryType(type))
@@ -1496,7 +1499,7 @@ struct Issue443TriangulationAttributeTests {
     @Test("a box stores all six faces, not one")
     func boxStoresEveryFace() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let box = Shape.box(width: 10, height: 10, depth: 10)
+            let box = Shape.box(width: 10, height: 10, depth: 10)
         else {
             Issue.record("could not build the document or the box")
             return
@@ -1514,9 +1517,9 @@ struct Issue443TriangulationAttributeTests {
     @Test("a two-body compound stores both bodies")
     func compoundStoresEveryBody() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-              let compound = Shape.compound([a, b])
+            let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+            let compound = Shape.compound([a, b])
         else {
             Issue.record("could not build the two-box compound")
             return
@@ -1532,8 +1535,8 @@ struct Issue443TriangulationAttributeTests {
     @Test("deflection still controls mesh density on a curved shape")
     func deflectionControlsDensity() {
         guard let doc = Document.create(),
-              let coarseLabel = doc.createLabel(), let fineLabel = doc.createLabel(),
-              let sphere = Shape.sphere(radius: 10.0)
+            let coarseLabel = doc.createLabel(), let fineLabel = doc.createLabel(),
+            let sphere = Shape.sphere(radius: 10.0)
         else {
             Issue.record("could not build the document or the sphere")
             return
@@ -1556,7 +1559,7 @@ struct Issue443TriangulationAttributeTests {
     @Test("a planar shape reports its faces' own deflection")
     func planarDeflection() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let box = Shape.box(width: 10, height: 10, depth: 10)
+            let box = Shape.box(width: 10, height: 10, depth: 10)
         else {
             Issue.record("could not build the document or the box")
             return
@@ -1572,8 +1575,8 @@ struct Issue443TriangulationAttributeTests {
     @Test("a located shape stores nodes in the shape's frame, not the face's")
     func locatedShapeStoresShapeFrame() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let moved = box.moved(dx: 100, dy: 200, dz: 300)
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let moved = box.moved(dx: 100, dy: 200, dz: 300)
         else {
             Issue.record("could not build the located box")
             return
@@ -1593,12 +1596,15 @@ struct Issue443TriangulationAttributeTests {
                 Issue.record("node \(i) could not be read")
                 return
             }
-            #expect(node.x >= bounds.min.x - slack && node.x <= bounds.max.x + slack,
-                    "node \(i) x \(node.x) outside [\(bounds.min.x), \(bounds.max.x)]")
-            #expect(node.y >= bounds.min.y - slack && node.y <= bounds.max.y + slack,
-                    "node \(i) y \(node.y) outside [\(bounds.min.y), \(bounds.max.y)]")
-            #expect(node.z >= bounds.min.z - slack && node.z <= bounds.max.z + slack,
-                    "node \(i) z \(node.z) outside [\(bounds.min.z), \(bounds.max.z)]")
+            #expect(
+                node.x >= bounds.min.x - slack && node.x <= bounds.max.x + slack,
+                "node \(i) x \(node.x) outside [\(bounds.min.x), \(bounds.max.x)]")
+            #expect(
+                node.y >= bounds.min.y - slack && node.y <= bounds.max.y + slack,
+                "node \(i) y \(node.y) outside [\(bounds.min.y), \(bounds.max.y)]")
+            #expect(
+                node.z >= bounds.min.z - slack && node.z <= bounds.max.z + slack,
+                "node \(i) z \(node.z) outside [\(bounds.min.z), \(bounds.max.z)]")
         }
     }
 
@@ -1608,8 +1614,8 @@ struct Issue443TriangulationAttributeTests {
     @Test("a mirrored shape stores every face, in frame")
     func mirroredShapeStoresEveryFace() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let box = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
-              let mirrored = box.mirrored(planeNormal: SIMD3(1, 0, 0), planeOrigin: SIMD3(0, 0, 0))
+            let box = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
+            let mirrored = box.mirrored(planeNormal: SIMD3(1, 0, 0), planeOrigin: SIMD3(0, 0, 0))
         else {
             Issue.record("could not build the mirrored box")
             return
@@ -1630,8 +1636,9 @@ struct Issue443TriangulationAttributeTests {
                 Issue.record("node \(i) could not be read")
                 return
             }
-            #expect(node.x >= bounds.min.x - 1e-6 && node.x <= bounds.max.x + 1e-6,
-                    "node \(i) x \(node.x) outside [\(bounds.min.x), \(bounds.max.x)]")
+            #expect(
+                node.x >= bounds.min.x - 1e-6 && node.x <= bounds.max.x + 1e-6,
+                "node \(i) x \(node.x) outside [\(bounds.min.x), \(bounds.max.x)]")
         }
     }
 
@@ -1641,16 +1648,16 @@ struct Issue443TriangulationAttributeTests {
     @Test("triangulationNode rejects out-of-range and attribute-less labels")
     func triangulationNodeBounds() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let empty = doc.createLabel(),
-              let box = Shape.box(width: 10, height: 10, depth: 10)
+            let empty = doc.createLabel(),
+            let box = Shape.box(width: 10, height: 10, depth: 10)
         else {
             Issue.record("could not build the document or the box")
             return
         }
-        #expect(empty.triangulationNode(at: 1) == nil)   // no attribute at all
+        #expect(empty.triangulationNode(at: 1) == nil)  // no attribute at all
 
         #expect(label.setTriangulationFromShape(box, deflection: 1.0))
-        #expect(label.triangulationNode(at: 0) == nil)   // 1-based
+        #expect(label.triangulationNode(at: 0) == nil)  // 1-based
         #expect(label.triangulationNode(at: 1) != nil)
         #expect(label.triangulationNode(at: label.triangulationNodeCount) != nil)
         #expect(label.triangulationNode(at: label.triangulationNodeCount + 1) == nil)
@@ -1677,7 +1684,7 @@ struct Issue443TriangulationAttributeTests {
             return
         }
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let brepLabel = doc.createLabel()
+            let brepLabel = doc.createLabel()
         else {
             Issue.record("could not build the document")
             return
@@ -1698,11 +1705,13 @@ struct Issue443TriangulationAttributeTests {
         var checked = 0
         for i in Int32(1)...min(label.triangulationNodeCount, 200) {
             guard let n = label.triangulationNormal(at: i),
-                  let p = label.triangulationNode(at: i) else { continue }
+                let p = label.triangulationNode(at: i)
+            else { continue }
             let radial = simd_length(p)
             guard radial > 1e-6 else { continue }
-            #expect(simd_dot(n, p / radial) > 0.5,
-                    "node \(i) normal \(n) does not point outward from \(p)")
+            #expect(
+                simd_dot(n, p / radial) > 0.5,
+                "node \(i) normal \(n) does not point outward from \(p)")
             checked += 1
         }
         #expect(checked > 0, "no node normal could be checked")
@@ -1718,8 +1727,8 @@ struct Issue443TriangulationAttributeTests {
     @Test("a shape with no face stores nothing")
     func noFaceStoresNothing() {
         guard let doc = Document.create(), let label = doc.createLabel(),
-              let box = Shape.box(width: 10, height: 10, depth: 10),
-              let edge = box.subShapes(ofType: .edge).first
+            let box = Shape.box(width: 10, height: 10, depth: 10),
+            let edge = box.subShapes(ofType: .edge).first
         else {
             Issue.record("could not build an edge")
             return
@@ -1746,16 +1755,20 @@ struct TDataXtdGeometricAttrTests {
     func setAxis() {
         let doc = Document.create()!
         let label = doc.createLabel()!
-        #expect(label.setAxisAttribute(originX: 0, originY: 0, originZ: 0,
-                                        directionX: 0, directionY: 0, directionZ: 1))
+        #expect(
+            label.setAxisAttribute(
+                originX: 0, originY: 0, originZ: 0,
+                directionX: 0, directionY: 0, directionZ: 1))
     }
 
     @Test("Set plane attribute")
     func setPlane() {
         let doc = Document.create()!
         let label = doc.createLabel()!
-        #expect(label.setPlaneAttribute(originX: 0, originY: 0, originZ: 0,
-                                         normalX: 0, normalY: 0, normalZ: 1))
+        #expect(
+            label.setPlaneAttribute(
+                originX: 0, originY: 0, originZ: 0,
+                normalX: 0, normalY: 0, normalZ: 1))
     }
 }
 
@@ -1832,7 +1845,9 @@ struct TFunctionGraphNodeTests {
     @Test("All execution statuses")
     func allStatuses() {
         let doc = Document.create()!
-        let statuses: [ExecutionStatus] = [.wrongDefinition, .notExecuted, .executing, .succeeded, .failed]
+        let statuses: [ExecutionStatus] = [
+            .wrongDefinition, .notExecuted, .executing, .succeeded, .failed,
+        ]
         for status in statuses {
             let label = doc.createLabel()!
             label.setGraphNode()
@@ -2145,8 +2160,9 @@ struct OBJDocumentIOTests {
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeOBJ(to: url)
 
-        let doc = Document.loadOBJ(from: url,
-                                    inputCS: .zUp, outputCS: .yUp)
+        let doc = Document.loadOBJ(
+            from: url,
+            inputCS: .zUp, outputCS: .yUp)
         #expect(doc != nil)
         try? FileManager.default.removeItem(atPath: tmpPath)
     }
@@ -2251,14 +2267,16 @@ struct XDEAssemblyOperationTests {
             let assemblyLabelId = doc.newShapeLabel()
             #expect(assemblyLabelId >= 0)
 
-            let comp1 = doc.addComponent(assemblyLabelId: assemblyLabelId,
-                                          shapeLabelId: boxLabelId,
-                                          translation: (0, 0, 0))
+            let comp1 = doc.addComponent(
+                assemblyLabelId: assemblyLabelId,
+                shapeLabelId: boxLabelId,
+                translation: (0, 0, 0))
             #expect(comp1 >= 0)
 
-            let comp2 = doc.addComponent(assemblyLabelId: assemblyLabelId,
-                                          shapeLabelId: sphereLabelId,
-                                          translation: (50, 0, 0))
+            let comp2 = doc.addComponent(
+                assemblyLabelId: assemblyLabelId,
+                shapeLabelId: sphereLabelId,
+                translation: (50, 0, 0))
             #expect(comp2 >= 0)
 
             #expect(doc.componentCount(assemblyLabelId: assemblyLabelId) == 2)
@@ -2275,8 +2293,9 @@ struct XDEAssemblyOperationTests {
         if let box = box {
             let boxLabelId = doc.addShape(box)
             let assemblyLabelId = doc.newShapeLabel()
-            let compId = doc.addComponent(assemblyLabelId: assemblyLabelId,
-                                           shapeLabelId: boxLabelId)
+            let compId = doc.addComponent(
+                assemblyLabelId: assemblyLabelId,
+                shapeLabelId: boxLabelId)
             #expect(compId >= 0)
             let compLabelId = doc.componentLabelId(assemblyLabelId: assemblyLabelId, at: 0)
             #expect(compLabelId >= 0)
@@ -2302,7 +2321,7 @@ struct XDEAssemblyOperationTests {
             #expect(doc.componentCount(assemblyLabelId: asmId) == 2)
             doc.removeComponent(labelId: comp2)
             #expect(doc.componentCount(assemblyLabelId: asmId) == 1)
-            _ = comp1 // silence warning
+            _ = comp1  // silence warning
         }
     }
 
@@ -2567,7 +2586,7 @@ struct XDEEditorTests {
                 #expect(labelId >= 0)
                 // editorExpand may or may not succeed depending on shape structure
                 _ = doc.editorExpand(labelId: labelId, recursively: false)
-                #expect(Bool(true)) // no crash = success
+                #expect(Bool(true))  // no crash = success
             }
         }
     }
@@ -2583,7 +2602,7 @@ struct XDEEditorTests {
             let labelId = doc.addShape(box)
             // Rescale may return false for non-root labels, but shouldn't crash
             _ = doc.rescaleGeometry(labelId: labelId, scaleFactor: 2.0, forceIfNotRoot: true)
-            #expect(Bool(true)) // no crash = success
+            #expect(Bool(true))  // no crash = success
         }
     }
 }
@@ -2622,7 +2641,8 @@ struct XCAFDocGraphNodeTests {
     @Test func setAndRelate() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let l1 = doc.createLabel(parent: main),
-               let l2 = doc.createLabel(parent: main) {
+                let l2 = doc.createLabel(parent: main)
+            {
                 #expect(l1.setXCAFGraphNode())
                 #expect(l2.setXCAFGraphNode())
                 #expect(l1.xcafGraphNodeSetChild(l2))
@@ -2636,7 +2656,8 @@ struct XCAFDocGraphNodeTests {
     @Test func unsetRelationship() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let l1 = doc.createLabel(parent: main),
-               let l2 = doc.createLabel(parent: main) {
+                let l2 = doc.createLabel(parent: main)
+            {
                 l1.setXCAFGraphNode()
                 l2.setXCAFGraphNode()
                 l1.xcafGraphNodeSetChild(l2)
@@ -2652,7 +2673,8 @@ struct XCAFDocGraphNodeTests {
     @Test func isFatherIsChild() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let l1 = doc.createLabel(parent: main),
-               let l2 = doc.createLabel(parent: main) {
+                let l2 = doc.createLabel(parent: main)
+            {
                 l1.setXCAFGraphNode()
                 l2.setXCAFGraphNode()
                 l1.xcafGraphNodeSetChild(l2)
@@ -2698,7 +2720,7 @@ struct XCAFDocColorTests {
                 // Quantity_NOC_RED = 485 in OCCT 8
                 #expect(label.setColorAttribute(red: 1.0, green: 0.0, blue: 0.0))
                 let noc = label.colorNOCAttribute
-                #expect(noc >= 0) // Just verify it returns a valid value
+                #expect(noc >= 0)  // Just verify it returns a valid value
             }
         }
     }
@@ -2709,10 +2731,11 @@ struct XCAFDocMaterialTests {
     @Test func setAndGet() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let label = doc.createLabel(parent: main) {
-                #expect(label.setMaterialAttribute(
-                    name: "Steel", description: "Carbon steel",
-                    density: 7850.0, densityName: "density",
-                    densityValueType: "kg/m3"))
+                #expect(
+                    label.setMaterialAttribute(
+                        name: "Steel", description: "Carbon steel",
+                        density: 7850.0, densityName: "density",
+                        densityValueType: "kg/m3"))
                 #expect(label.hasMaterialAttribute)
                 #expect(label.materialAttributeName == "Steel")
                 #expect(label.materialAttributeDescription == "Carbon steel")
@@ -2738,8 +2761,10 @@ struct XCAFDocNoteCommentTests {
     @Test func setAndGet() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let label = doc.createLabel(parent: main) {
-                #expect(label.setNoteComment(userName: "TestUser", timeStamp: "2026-03-14",
-                                              comment: "This is a comment"))
+                #expect(
+                    label.setNoteComment(
+                        userName: "TestUser", timeStamp: "2026-03-14",
+                        comment: "This is a comment"))
                 #expect(label.noteCommentText == "This is a comment")
                 #expect(label.noteUserName == "TestUser")
             }
@@ -2752,8 +2777,10 @@ struct XCAFDocNoteBalloonTests {
     @Test func setAndGet() {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let label = doc.createLabel(parent: main) {
-                #expect(label.setNoteBalloon(userName: "User", timeStamp: "2026-03-14",
-                                              comment: "Balloon text"))
+                #expect(
+                    label.setNoteBalloon(
+                        userName: "User", timeStamp: "2026-03-14",
+                        comment: "Balloon text"))
             }
         }
     }
@@ -2765,10 +2792,12 @@ struct XCAFDocNoteBinDataTests {
         if let doc = Document.create(), let main = doc.mainLabel {
             if let label = doc.createLabel(parent: main) {
                 let data: [UInt8] = [0xDE, 0xAD, 0xBE, 0xEF]
-                #expect(label.setNoteBinData(userName: "User", timeStamp: "2026-03-14",
-                                              title: "test.bin",
-                                              mimeType: "application/octet-stream",
-                                              data: data))
+                #expect(
+                    label.setNoteBinData(
+                        userName: "User", timeStamp: "2026-03-14",
+                        title: "test.bin",
+                        mimeType: "application/octet-stream",
+                        data: data))
                 #expect(label.noteBinDataSize == 4)
             }
         }
@@ -2780,8 +2809,9 @@ struct XCAFDocNotesToolTests {
     @Test func createAndCountNotes() {
         if let doc = Document.create() {
             #expect(doc.notesToolNoteCount == 0)
-            let note = doc.notesToolCreateComment(userName: "User", timeStamp: "2026-03-14",
-                                                    comment: "Comment 1")
+            let note = doc.notesToolCreateComment(
+                userName: "User", timeStamp: "2026-03-14",
+                comment: "Comment 1")
             #expect(note != nil)
             #expect(doc.notesToolNoteCount == 1)
         }
@@ -2789,8 +2819,9 @@ struct XCAFDocNotesToolTests {
 
     @Test func createBalloon() {
         if let doc = Document.create() {
-            let note = doc.notesToolCreateBalloon(userName: "User", timeStamp: "2026-03-14",
-                                                    comment: "Balloon")
+            let note = doc.notesToolCreateBalloon(
+                userName: "User", timeStamp: "2026-03-14",
+                comment: "Balloon")
             #expect(note != nil)
             #expect(doc.notesToolNoteCount == 1)
         }
@@ -2799,10 +2830,11 @@ struct XCAFDocNotesToolTests {
     @Test func createBinData() {
         if let doc = Document.create() {
             let data: [UInt8] = [1, 2, 3, 4]
-            let note = doc.notesToolCreateBinData(userName: "User", timeStamp: "2026-03-14",
-                                                    title: "data.bin",
-                                                    mimeType: "application/octet-stream",
-                                                    data: data)
+            let note = doc.notesToolCreateBinData(
+                userName: "User", timeStamp: "2026-03-14",
+                title: "data.bin",
+                mimeType: "application/octet-stream",
+                data: data)
             #expect(note != nil)
             #expect(doc.notesToolNoteCount == 1)
         }
@@ -2812,8 +2844,9 @@ struct XCAFDocNotesToolTests {
         if let doc = Document.create() {
             doc.notesToolCreateComment(userName: "U", timeStamp: "T", comment: "C1")
             doc.notesToolCreateBalloon(userName: "U", timeStamp: "T", comment: "C2")
-            doc.notesToolCreateBinData(userName: "U", timeStamp: "T", title: "t",
-                                        mimeType: "m", data: [0])
+            doc.notesToolCreateBinData(
+                userName: "U", timeStamp: "T", title: "t",
+                mimeType: "m", data: [0])
             #expect(doc.notesToolNoteCount == 3)
             let deleted = doc.notesToolDeleteAllNotes()
             #expect(deleted == 3)
@@ -2837,7 +2870,8 @@ struct XCAFDocClippingPlaneToolTests {
             if let clip = doc.clippingPlaneToolAdd(
                 originX: 0, originY: 0, originZ: 5,
                 normalX: 0, normalY: 0, normalZ: 1,
-                name: "ZClip", capping: true) {
+                name: "ZClip", capping: true)
+            {
                 #expect(doc.clippingPlaneToolIsClipPlane(clip))
                 if let plane = doc.clippingPlaneToolGet(clip) {
                     #expect(abs(plane.originZ - 5.0) < 1e-6)
@@ -2853,7 +2887,8 @@ struct XCAFDocClippingPlaneToolTests {
             if let clip = doc.clippingPlaneToolAdd(
                 originX: 0, originY: 0, originZ: 0,
                 normalX: 1, normalY: 0, normalZ: 0,
-                name: "XClip", capping: false) {
+                name: "XClip", capping: false)
+            {
                 #expect(doc.clippingPlaneToolRemove(clip))
             }
         }
@@ -3003,8 +3038,9 @@ struct XCAFNoteObjectsTests {
 
     @Test func setPlane() {
         if let obj = NoteObject() {
-            obj.setPlane(originX: 1, originY: 2, originZ: 3,
-                         normalX: 0, normalY: 0, normalZ: 1)
+            obj.setPlane(
+                originX: 1, originY: 2, originZ: 3,
+                normalX: 0, normalY: 0, normalZ: 1)
             #expect(obj.hasPlane)
             let origin = obj.planeOrigin
             #expect(abs(origin.x - 1.0) < 1e-6)
@@ -3031,8 +3067,9 @@ struct XCAFNoteObjectsTests {
 
     @Test func reset() {
         if let obj = NoteObject() {
-            obj.setPlane(originX: 1, originY: 2, originZ: 3,
-                         normalX: 0, normalY: 0, normalZ: 1)
+            obj.setPlane(
+                originX: 1, originY: 2, originZ: 3,
+                normalX: 0, normalY: 0, normalZ: 1)
             obj.setPoint(x: 10, y: 20, z: 30)
             obj.reset()
             #expect(!obj.hasPlane)
@@ -3062,8 +3099,10 @@ struct XCAFPrsStyleTests {
     }
 
     @Test func equality() {
-        let s1 = PresentationStyle(surfaceRed: 1.0, surfaceGreen: 0.0, surfaceBlue: 0.0, surfaceAlpha: 0.5)
-        let s2 = PresentationStyle(surfaceRed: 1.0, surfaceGreen: 0.0, surfaceBlue: 0.0, surfaceAlpha: 0.5)
+        let s1 = PresentationStyle(
+            surfaceRed: 1.0, surfaceGreen: 0.0, surfaceBlue: 0.0, surfaceAlpha: 0.5)
+        let s2 = PresentationStyle(
+            surfaceRed: 1.0, surfaceGreen: 0.0, surfaceBlue: 0.0, surfaceAlpha: 0.5)
         #expect(s1.isEqual(to: s2))
     }
 }
@@ -3664,7 +3703,8 @@ struct TFunctionIFunctionTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        let ok = doc.newFunction(labelId: node.labelId, guid: "12345678-1234-1234-1234-123456789abc")
+        let ok = doc.newFunction(
+            labelId: node.labelId, guid: "12345678-1234-1234-1234-123456789abc")
         doc.commitTransaction()
         #expect(ok)
     }
@@ -3806,8 +3846,9 @@ struct TDFChildIDIteratorTests {
         doc.openTransaction()
         guard let parent = doc.createLabel() else { return }
         guard let c1 = doc.createLabel(parent: parent),
-              let c2 = doc.createLabel(parent: parent),
-              let c3 = doc.createLabel(parent: parent) else { return }
+            let c2 = doc.createLabel(parent: parent),
+            let c3 = doc.createLabel(parent: parent)
+        else { return }
         // Set Name on 2 children, leave c3 without Name
         c1.setName("Child1")
         c2.setName("Child2")
@@ -3823,7 +3864,8 @@ struct TDFChildIDIteratorTests {
     @Test func emptyResult() {
         guard let doc = Document.create() else { return }
         guard let parent = doc.createLabel() else { return }
-        let count = doc.childIDCount(labelId: parent.labelId, guid: "99999999-9999-9999-9999-999999999999")
+        let count = doc.childIDCount(
+            labelId: parent.labelId, guid: "99999999-9999-9999-9999-999999999999")
         #expect(count == 0)
     }
 }
@@ -3914,7 +3956,8 @@ struct TDataXtdPresentationTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setPresentation(labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
+        doc.setPresentation(
+            labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
         doc.commitTransaction()
         #expect(doc.hasPresentation(labelId: node.labelId))
     }
@@ -3923,8 +3966,9 @@ struct TDataXtdPresentationTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setPresentation(labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
-        doc.presentationSetColor(labelId: node.labelId, colorIndex: 12) // RED
+        doc.setPresentation(
+            labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
+        doc.presentationSetColor(labelId: node.labelId, colorIndex: 12)  // RED
         doc.presentationSetTransparency(labelId: node.labelId, value: 0.5)
         doc.commitTransaction()
 
@@ -3940,7 +3984,8 @@ struct TDataXtdPresentationTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setPresentation(labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
+        doc.setPresentation(
+            labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
         doc.presentationSetWidth(labelId: node.labelId, width: 2.0)
         doc.presentationSetMode(labelId: node.labelId, mode: 1)
         doc.commitTransaction()
@@ -3957,7 +4002,8 @@ struct TDataXtdPresentationTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setPresentation(labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
+        doc.setPresentation(
+            labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
         doc.presentationSetDisplayed(labelId: node.labelId, displayed: true)
         doc.commitTransaction()
         #expect(doc.presentationIsDisplayed(labelId: node.labelId))
@@ -3967,7 +4013,8 @@ struct TDataXtdPresentationTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setPresentation(labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
+        doc.setPresentation(
+            labelId: node.labelId, driverGUID: "12345678-1234-1234-1234-123456789abc")
         doc.unsetPresentation(labelId: node.labelId)
         doc.commitTransaction()
         #expect(!doc.hasPresentation(labelId: node.labelId))
@@ -3997,7 +4044,9 @@ struct XCAFDocAssemblyIteratorTests {
             doc.addShape(box)
         }
         let count = doc.assemblyItemCount()
-        #expect(count != nil, "a 3-shape document is far inside the bound, so it must not report truncation")
+        #expect(
+            count != nil,
+            "a 3-shape document is far inside the bound, so it must not report truncation")
         if let count { #expect(count >= 3) }
     }
 }
@@ -4009,8 +4058,9 @@ struct XCAFDocDimTolTests {
         guard let doc = Document.create() else { return }
         doc.openTransaction()
         guard let node = doc.createLabel() else { return }
-        doc.setDimTol(labelId: node.labelId, kind: 1, values: [0.01, 0.05],
-                      name: "Flatness", description: "Surface flatness tolerance")
+        doc.setDimTol(
+            labelId: node.labelId, kind: 1, values: [0.01, 0.05],
+            name: "Flatness", description: "Surface flatness tolerance")
         doc.commitTransaction()
 
         if let kind = doc.dimTolKind(labelId: node.labelId) {
@@ -4469,15 +4519,22 @@ struct DocumentGDTTests {
     /// had a readback check for the opposite conversion and this one did not.
     @Test("setDimensionBounds refuses a plus/minus dimension instead of corrupting it")
     func setDimensionBoundsRefusesPlusMinus() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let labelId = doc.addShape(box, makeAssembly: false)
-        guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0,
-                                           lowerTolerance: -0.3, upperTolerance: 0.7)
+        guard
+            let idx = doc.createDimension(
+                on: labelId, type: .sizeDiameter, value: 20.0,
+                lowerTolerance: -0.3, upperTolerance: 0.7)
         else {
-            Issue.record("createDimension nil"); return
+            Issue.record("createDimension nil")
+            return
         }
         #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == false)
         if let dim = doc.dimension(at: idx) {
@@ -4489,14 +4546,19 @@ struct DocumentGDTTests {
     /// The simple-to-range conversion the mutator is for still works.
     @Test("setDimensionBounds still converts a simple dimension to a range")
     func setDimensionBoundsConvertsSimple() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let labelId = doc.addShape(box, makeAssembly: false)
         guard let idx = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0)
         else {
-            Issue.record("createDimension nil"); return
+            Issue.record("createDimension nil")
+            return
         }
         #expect(doc.setDimensionBounds(at: idx, lower: 10.0, upper: 12.0) == true)
         if let dim = doc.dimension(at: idx) {
@@ -4505,18 +4567,23 @@ struct DocumentGDTTests {
     }
     @Test("Create dimension on a box shape and read it back")
     func createAndReadDimension() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 100, height: 50, depth: 25) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let labelId = doc.addShape(box, makeAssembly: false)
         #expect(labelId >= 0)
 
-        let idx = doc.createDimension(on: labelId,
-                                       type: .sizeRadius,
-                                       value: 25.0,
-                                       lowerTolerance: -0.1,
-                                       upperTolerance: 0.1)
+        let idx = doc.createDimension(
+            on: labelId,
+            type: .sizeRadius,
+            value: 25.0,
+            lowerTolerance: -0.1,
+            upperTolerance: 0.1)
         #expect(idx == 0)
         #expect(doc.dimensionCount == 1)
 
@@ -4533,9 +4600,13 @@ struct DocumentGDTTests {
 
     @Test("Create geometric tolerance (flatness) on a shape")
     func createTolerance() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let labelId = doc.addShape(box, makeAssembly: false)
         let idx = doc.createGeomTolerance(on: labelId, type: .flatness, value: 0.01)
@@ -4550,7 +4621,10 @@ struct DocumentGDTTests {
 
     @Test("Create datum A")
     func createDatum() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         let idx = doc.createDatum(name: "A")
         #expect(idx == 0)
         if let datum = doc.datum(at: 0) {
@@ -4562,9 +4636,13 @@ struct DocumentGDTTests {
 
     @Test("Full authoring: box + 3 dimensions + 2 tolerances + 2 datums")
     func fullAuthoring() throws {
-        guard let doc = Document.create() else { Issue.record("doc nil"); return }
+        guard let doc = Document.create() else {
+            Issue.record("doc nil")
+            return
+        }
         guard let box = Shape.box(width: 100, height: 50, depth: 25) else {
-            Issue.record("box nil"); return
+            Issue.record("box nil")
+            return
         }
         let shapeId = doc.addShape(box, makeAssembly: false)
         doc.createDimension(on: shapeId, type: .sizeDiameter, value: 10.0)
@@ -4885,7 +4963,8 @@ struct BRepGraphAttributeTests {
     /// Attach mixed attribute types to face/edge/vertex nodes and read them back.
     @Test func attachAndReadMixedAttributes() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = BRepGraph(shape: box) else { return }
+            let graph = BRepGraph(shape: box)
+        else { return }
 
         let faceNode = BRepGraph.NodeRef(kind: .face, index: 0)
         let edgeNode = BRepGraph.NodeRef(kind: .edge, index: 0)
@@ -4909,7 +4988,8 @@ struct BRepGraphAttributeTests {
     /// Clearing the last attribute on a node drops the node entry entirely.
     @Test func clearingLastAttributeDropsNode() {
         guard let box = Shape.box(width: 5, height: 5, depth: 5),
-              let graph = BRepGraph(shape: box) else { return }
+            let graph = BRepGraph(shape: box)
+        else { return }
         let node = BRepGraph.NodeRef(kind: .face, index: 1)
         graph.setAttribute("a", .int(1), for: node)
         graph.setAttribute("b", .int(2), for: node)
@@ -4925,7 +5005,8 @@ struct BRepGraphAttributeTests {
     /// on the correct node.
     @Test func snapshotJSONRoundTrip() throws {
         guard let box = Shape.box(width: 12, height: 8, depth: 4),
-              let graph = BRepGraph(shape: box) else { return }
+            let graph = BRepGraph(shape: box)
+        else { return }
 
         let f0 = BRepGraph.NodeRef(kind: .face, index: 0)
         let f3 = BRepGraph.NodeRef(kind: .face, index: 3)
@@ -4953,7 +5034,8 @@ struct BRepGraphAttributeTests {
     /// the contract for diffable, versionable snapshots.
     @Test func encodingIsDeterministic() throws {
         guard let box = Shape.box(width: 3, height: 3, depth: 3),
-              let graph = BRepGraph(shape: box) else { return }
+            let graph = BRepGraph(shape: box)
+        else { return }
         for i in 0..<graph.faceCount {
             graph.setAttribute("idx", .int(i), for: BRepGraph.NodeRef(kind: .face, index: i))
         }
@@ -4967,10 +5049,11 @@ struct BRepGraphAttributeTests {
     /// snapshot round-trip relies on. Verify a node index resolves to the same geometry.
     @Test func nodeIndexingDeterministicAcrossRebuild() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let g1 = BRepGraph(shape: box),
-              let brep = box.toBREPString(),
-              let box2 = Shape.fromBREPString(brep),
-              let g2 = BRepGraph(shape: box2) else { return }
+            let g1 = BRepGraph(shape: box),
+            let brep = box.toBREPString(),
+            let box2 = Shape.fromBREPString(brep),
+            let g2 = BRepGraph(shape: box2)
+        else { return }
 
         #expect(g1.faceCount == g2.faceCount)
         #expect(g1.edgeCount == g2.edgeCount)
@@ -4989,9 +5072,11 @@ struct BRepGraphAttributeTests {
     /// A snapshot from a newer format version is rejected.
     @Test func futureFormatVersionRejected() {
         guard let box = Shape.box(width: 2, height: 2, depth: 2),
-              let brep = box.toBREPString() else { return }
-        let future = GraphSnapshot(brep: brep, attributes: NodeAttributeStore(),
-                                   formatVersion: GraphSnapshot.currentFormatVersion + 1)
+            let brep = box.toBREPString()
+        else { return }
+        let future = GraphSnapshot(
+            brep: brep, attributes: NodeAttributeStore(),
+            formatVersion: GraphSnapshot.currentFormatVersion + 1)
         #expect(throws: GraphSnapshotError.self) {
             _ = try BRepGraph(snapshot: future)
         }
@@ -5005,7 +5090,6 @@ struct BRepGraphAttributeTests {
         }
     }
 }
-
 
 @Suite("GD&T dimension accessors (#1004)")
 struct GDTDimensionAccessorTests {

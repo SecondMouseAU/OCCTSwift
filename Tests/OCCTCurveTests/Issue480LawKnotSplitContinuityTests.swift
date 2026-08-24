@@ -1,5 +1,6 @@
 import Testing
 import simd
+
 @testable import OCCTSwift
 
 /// #480: `LawFunction.knotSplitting`/`knotSplitParameters` took a raw `Int` documented as
@@ -13,8 +14,10 @@ struct Issue480LawKnotSplitContinuityTests {
 
     /// A BSpline law of the given degree with `interiorKnots` interior knots at multiplicity 1,
     /// except knot `bumpAt` (1-based), which gets `bumpMult`.
-    private func bsplineLaw(degree: Int, interiorKnots: Int,
-                            bumpAt: Int = 0, bumpMult: Int = 1) -> LawFunction? {
+    private func bsplineLaw(
+        degree: Int, interiorKnots: Int,
+        bumpAt: Int = 0, bumpMult: Int = 1
+    ) -> LawFunction? {
         var knots: [Double] = [0]
         var mults: [Int32] = [Int32(degree + 1)]
         for i in 1...interiorKnots {
@@ -26,7 +29,8 @@ struct Issue480LawKnotSplitContinuityTests {
 
         let nPoles = Int(mults.reduce(0, +)) - degree - 1
         let poles = (0..<nPoles).map { Double($0 % 4) * 1.5 }
-        return LawFunction.bspline(poles: poles, knots: knots, multiplicities: mults, degree: degree)
+        return LawFunction.bspline(
+            poles: poles, knots: knots, multiplicities: mults, degree: degree)
     }
 
     @Test("A cubic law with simple interior knots reports interior splits only at .c3")
@@ -34,10 +38,12 @@ struct Issue480LawKnotSplitContinuityTests {
         let law = try #require(bsplineLaw(degree: 3, interiorKnots: 4))
 
         for continuity: ParametricContinuity in [.c0, .c1, .c2] {
-            #expect(law.knotSplitParameters(continuityOrder: continuity) == [0, 5],
-                    "params at \(continuity)")
-            #expect(law.knotSplitting(continuityOrder: continuity).count == 2,
-                    "indices at \(continuity)")
+            #expect(
+                law.knotSplitParameters(continuityOrder: continuity) == [0, 5],
+                "params at \(continuity)")
+            #expect(
+                law.knotSplitting(continuityOrder: continuity).count == 2,
+                "indices at \(continuity)")
         }
 
         #expect(law.knotSplitParameters(continuityOrder: .c3) == [0, 1, 2, 3, 4, 5])
@@ -57,9 +63,10 @@ struct Issue480LawKnotSplitContinuityTests {
         let law = try #require(bsplineLaw(degree: 3, interiorKnots: 4))
         // Same analyzer, so the two spellings must always agree on how many splits there are.
         for continuity in ParametricContinuity.allCases {
-            #expect(law.knotSplitting(continuityOrder: continuity).count
+            #expect(
+                law.knotSplitting(continuityOrder: continuity).count
                     == law.knotSplitParameters(continuityOrder: continuity).count,
-                    "at \(continuity)")
+                "at \(continuity)")
         }
     }
 }

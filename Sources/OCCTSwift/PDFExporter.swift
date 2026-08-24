@@ -30,7 +30,7 @@ public enum PDFError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .writeFailed(let msg): return "PDF write failed: \(msg)"
-        case .drawingEmpty:         return "Drawing contains no edges or annotations"
+        case .drawingEmpty: return "Drawing contains no edges or annotations"
         }
     }
 }
@@ -41,22 +41,27 @@ extension Exporter {
     /// A3 landscape in points (420 × 297 mm).
     public static let pdfA3Landscape = SIMD2<Double>(1191, 842)
 
-    public static func writePDF(drawing: Drawing, to url: URL,
-                                 pageSize: SIMD2<Double> = SIMD2(841, 595),
-                                 deflection: Double = 0.1) throws {
+    public static func writePDF(
+        drawing: Drawing, to url: URL,
+        pageSize: SIMD2<Double> = SIMD2(841, 595),
+        deflection: Double = 0.1
+    ) throws {
         let writer = PDFWriter(pageSize: pageSize, deflection: deflection)
         writer.collectFromDrawing(drawing)
         try writer.write(to: url)
     }
 
-    public static func writePDF(sheet: Sheet, body: (PDFWriter) -> Void,
-                                 to url: URL,
-                                 deflection: Double = 0.1) throws {
+    public static func writePDF(
+        sheet: Sheet, body: (PDFWriter) -> Void,
+        to url: URL,
+        deflection: Double = 0.1
+    ) throws {
         // Page size = sheet dimensions in mm → pts at 72 dpi.
         let dim = sheet.dimensions
         let mmToPt = 72.0 / 25.4
-        let writer = PDFWriter(pageSize: SIMD2(dim.x * mmToPt, dim.y * mmToPt),
-                                deflection: deflection)
+        let writer = PDFWriter(
+            pageSize: SIMD2(dim.x * mmToPt, dim.y * mmToPt),
+            deflection: deflection)
         body(writer)
         try writer.write(to: url)
     }
@@ -69,9 +74,16 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
     private var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
     private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
-    private var arcs: [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] = []
-    private var texts: [(position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double, layer: String)] = []
-    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    private var arcs:
+        [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] =
+            []
+    private var texts:
+        [(
+            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
+            layer: String
+        )] = []
+    /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
+    ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(pageSize: SIMD2<Double> = SIMD2(841, 595), deflection: Double = 0.1) {
@@ -85,7 +97,9 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         lines.append((a, b, layer))
     }
 
-    public func addPolyline(_ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE") {
+    public func addPolyline(
+        _ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE"
+    ) {
         guard points.count >= 2 else { return }
         polylines.append((points, closed, layer))
     }
@@ -94,15 +108,19 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         circles.append((centre, radius, layer))
     }
 
-    public func addArc(centre: SIMD2<Double>, radius: Double,
-                        startAngleDeg: Double, endAngleDeg: Double,
-                        layer: String = "VISIBLE") {
+    public func addArc(
+        centre: SIMD2<Double>, radius: Double,
+        startAngleDeg: Double, endAngleDeg: Double,
+        layer: String = "VISIBLE"
+    ) {
         arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
     }
 
-    public func addText(_ text: String, at position: SIMD2<Double>,
-                        height: Double = 3.5, rotationDeg: Double = 0,
-                        layer: String = "TEXT") {
+    public func addText(
+        _ text: String, at position: SIMD2<Double>,
+        height: Double = 3.5, rotationDeg: Double = 0,
+        layer: String = "TEXT"
+    ) {
         texts.append((position, text, height, rotationDeg, layer))
     }
 
@@ -116,16 +134,19 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
     // MARK: - Collection from Drawing
 
-    public func collectFromDrawing(_ drawing: Drawing,
-                                    translate: SIMD2<Double> = .zero,
-                                    scale: Double = 1.0) {
+    public func collectFromDrawing(
+        _ drawing: Drawing,
+        translate: SIMD2<Double> = .zero,
+        scale: Double = 1.0
+    ) {
         collectDrawing(drawing, translate: translate, scale: scale, into: self)
     }
 
     public func collectFromDrawing(_ transformed: TransformedDrawing) {
-        collectFromDrawing(transformed.source,
-                            translate: transformed.translate,
-                            scale: transformed.scale)
+        collectFromDrawing(
+            transformed.source,
+            translate: transformed.translate,
+            scale: transformed.scale)
     }
 
     // MARK: - PDF 1.4 serialization
@@ -150,12 +171,14 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
         addObject(1, body: "<< /Type /Catalog /Pages 2 0 R >>")
         addObject(2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>")
-        addObject(3, body: """
-            << /Type /Page /Parent 2 0 R \
-            /MediaBox [0 0 \(formatMM(pageSize.x)) \(formatMM(pageSize.y))] \
-            /Contents 4 0 R \
-            /Resources << /Font << /F1 5 0 R >> >> >>
-            """.replacingOccurrences(of: "\n", with: ""))
+        addObject(
+            3,
+            body: """
+                << /Type /Page /Parent 2 0 R \
+                /MediaBox [0 0 \(formatMM(pageSize.x)) \(formatMM(pageSize.y))] \
+                /Contents 4 0 R \
+                /Resources << /Font << /F1 5 0 R >> >> >>
+                """.replacingOccurrences(of: "\n", with: ""))
 
         // Object 4: content stream.
         let content = buildContentStream()
@@ -165,7 +188,10 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         body.append(contentData)
         appendAscii("\nendstream\nendobj\n")
 
-        addObject(5, body: "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
+        addObject(
+            5,
+            body:
+                "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
 
         // xref table.
         let xrefOffset = body.count
@@ -174,7 +200,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         for i in 1..<offsets.count {
             appendAscii(String(format: "%010d 00000 n \n", offsets[i]))
         }
-        appendAscii("trailer\n<< /Size \(offsets.count) /Root 1 0 R >>\nstartxref\n\(xrefOffset)\n%%EOF\n")
+        appendAscii(
+            "trailer\n<< /Size \(offsets.count) /Root 1 0 R >>\nstartxref\n\(xrefOffset)\n%%EOF\n")
 
         do {
             try body.write(to: url)
@@ -195,19 +222,21 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
         // Group entities by layer so we can set linewidth + dash once per group.
         let groups: [(String, () -> String)] = [
-            ("VISIBLE",    { self.emitLayerGeometry(layer: "VISIBLE") }),
-            ("OUTLINE",    { self.emitLayerGeometry(layer: "OUTLINE") }),
-            ("BORDER",     { self.emitLayerGeometry(layer: "BORDER") }),
-            ("TITLE",      { self.emitLayerGeometry(layer: "TITLE") }),
-            ("HIDDEN",     { self.emitLayerGeometry(layer: "HIDDEN") }),
-            ("CENTER",     { self.emitLayerGeometry(layer: "CENTER") }),
-            ("DIMENSION",  { self.emitLayerGeometry(layer: "DIMENSION") }),
-            ("HATCH",      { self.emitLayerGeometry(layer: "HATCH") }),
-            ("TEXT",       { self.emitLayerText(layer: "TEXT") })
+            ("VISIBLE", { self.emitLayerGeometry(layer: "VISIBLE") }),
+            ("OUTLINE", { self.emitLayerGeometry(layer: "OUTLINE") }),
+            ("BORDER", { self.emitLayerGeometry(layer: "BORDER") }),
+            ("TITLE", { self.emitLayerGeometry(layer: "TITLE") }),
+            ("HIDDEN", { self.emitLayerGeometry(layer: "HIDDEN") }),
+            ("CENTER", { self.emitLayerGeometry(layer: "CENTER") }),
+            ("DIMENSION", { self.emitLayerGeometry(layer: "DIMENSION") }),
+            ("HATCH", { self.emitLayerGeometry(layer: "HATCH") }),
+            ("TEXT", { self.emitLayerText(layer: "TEXT") }),
         ]
         // Also emit text on any non-"TEXT" layer (e.g., TITLE labels).
-        let nonTextLayers = ["VISIBLE", "OUTLINE", "BORDER", "TITLE",
-                              "HIDDEN", "CENTER", "DIMENSION", "HATCH"]
+        let nonTextLayers = [
+            "VISIBLE", "OUTLINE", "BORDER", "TITLE",
+            "HIDDEN", "CENTER", "DIMENSION", "HATCH",
+        ]
 
         for (layer, emit) in groups {
             let geom = emit()
@@ -233,9 +262,9 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
     private static func dashPattern(for layer: String) -> String {
         switch layer {
-        case "HIDDEN":  return "[3 2] 0"
-        case "CENTER":  return "[8 2 2 2] 0"
-        default:        return "[] 0"
+        case "HIDDEN": return "[3 2] 0"
+        case "CENTER": return "[8 2 2 2] 0"
+        default: return "[] 0"
         }
     }
 
@@ -243,7 +272,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private func emitLayerGeometry(layer: String) -> String {
         var s = ""
         for l in lines where l.layer == layer {
-            s += "\(formatMM(l.a.x)) \(formatMM(l.a.y)) m \(formatMM(l.b.x)) \(formatMM(l.b.y)) l S\n"
+            s +=
+                "\(formatMM(l.a.x)) \(formatMM(l.a.y)) m \(formatMM(l.b.x)) \(formatMM(l.b.y)) l S\n"
         }
         for p in polylines where p.layer == layer {
             guard let first = p.points.first else { continue }
@@ -258,8 +288,9 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
             s += PDFWriter.circlePath(centre: c.centre, radius: c.radius)
         }
         for a in arcs where a.layer == layer {
-            s += PDFWriter.arcPath(centre: a.centre, radius: a.radius,
-                                    startDeg: a.startDeg, endDeg: a.endDeg)
+            s += PDFWriter.arcPath(
+                centre: a.centre, radius: a.radius,
+                startDeg: a.startDeg, endDeg: a.endDeg)
         }
         return s
     }
@@ -269,10 +300,12 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         var s = ""
         for t in texts where t.layer == layer {
             let rad = t.rotationDeg * .pi / 180
-            let cosR = cos(rad), sinR = sin(rad)
+            let cosR = cos(rad)
+            let sinR = sin(rad)
             let pdfString = PDFWriter.escapeString(t.text)
             s += "BT\n/F1 \(formatMM(t.height)) Tf\n"
-            s += "\(formatMM(cosR)) \(formatMM(sinR)) \(formatMM(-sinR)) \(formatMM(cosR)) \(formatMM(t.position.x)) \(formatMM(t.position.y)) Tm\n"
+            s +=
+                "\(formatMM(cosR)) \(formatMM(sinR)) \(formatMM(-sinR)) \(formatMM(cosR)) \(formatMM(t.position.x)) \(formatMM(t.position.y)) Tm\n"
             s += "(\(pdfString)) Tj\nET\n"
         }
         return s
@@ -283,20 +316,27 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     /// Four cubic Bézier segments approximating a full circle.
     private static func circlePath(centre: SIMD2<Double>, radius: Double) -> String {
         let k = 0.5522847498 * radius
-        let cx = centre.x, cy = centre.y
+        let cx = centre.x
+        let cy = centre.y
         var s = "\(formatMM(cx + radius)) \(formatMM(cy)) m\n"
-        s += "\(formatMM(cx + radius)) \(formatMM(cy + k)) \(formatMM(cx + k)) \(formatMM(cy + radius)) \(formatMM(cx)) \(formatMM(cy + radius)) c\n"
-        s += "\(formatMM(cx - k)) \(formatMM(cy + radius)) \(formatMM(cx - radius)) \(formatMM(cy + k)) \(formatMM(cx - radius)) \(formatMM(cy)) c\n"
-        s += "\(formatMM(cx - radius)) \(formatMM(cy - k)) \(formatMM(cx - k)) \(formatMM(cy - radius)) \(formatMM(cx)) \(formatMM(cy - radius)) c\n"
-        s += "\(formatMM(cx + k)) \(formatMM(cy - radius)) \(formatMM(cx + radius)) \(formatMM(cy - k)) \(formatMM(cx + radius)) \(formatMM(cy)) c\n"
+        s +=
+            "\(formatMM(cx + radius)) \(formatMM(cy + k)) \(formatMM(cx + k)) \(formatMM(cy + radius)) \(formatMM(cx)) \(formatMM(cy + radius)) c\n"
+        s +=
+            "\(formatMM(cx - k)) \(formatMM(cy + radius)) \(formatMM(cx - radius)) \(formatMM(cy + k)) \(formatMM(cx - radius)) \(formatMM(cy)) c\n"
+        s +=
+            "\(formatMM(cx - radius)) \(formatMM(cy - k)) \(formatMM(cx - k)) \(formatMM(cy - radius)) \(formatMM(cx)) \(formatMM(cy - radius)) c\n"
+        s +=
+            "\(formatMM(cx + k)) \(formatMM(cy - radius)) \(formatMM(cx + radius)) \(formatMM(cy - k)) \(formatMM(cx + radius)) \(formatMM(cy)) c\n"
         s += "h S\n"
         return s
     }
 
     /// Arc from startDeg to endDeg, split into cubic-Bézier chunks of at
     /// most 90° each.
-    private static func arcPath(centre: SIMD2<Double>, radius: Double,
-                                 startDeg: Double, endDeg: Double) -> String {
+    private static func arcPath(
+        centre: SIMD2<Double>, radius: Double,
+        startDeg: Double, endDeg: Double
+    ) -> String {
         let a0 = startDeg * .pi / 180
         let a1 = endDeg * .pi / 180
         let totalSpan = a1 - a0
@@ -316,12 +356,13 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
             let kappa = 4.0 / 3.0 * tan(halfAngle / 2)
             // Control-point offsets along the tangent at current/next.
             let p0 = SIMD2(centre.x + radius * cos(current), centre.y + radius * sin(current))
-            let p3 = SIMD2(centre.x + radius * cos(next),    centre.y + radius * sin(next))
+            let p3 = SIMD2(centre.x + radius * cos(next), centre.y + radius * sin(next))
             let t0 = SIMD2(-sin(current), cos(current)) * radius * kappa * direction
-            let t3 = SIMD2(-sin(next),    cos(next))    * radius * kappa * direction
+            let t3 = SIMD2(-sin(next), cos(next)) * radius * kappa * direction
             let p1 = p0 + t0
             let p2 = p3 - t3
-            s += "\(formatMM(p1.x)) \(formatMM(p1.y)) \(formatMM(p2.x)) \(formatMM(p2.y)) \(formatMM(p3.x)) \(formatMM(p3.y)) c\n"
+            s +=
+                "\(formatMM(p1.x)) \(formatMM(p1.y)) \(formatMM(p2.x)) \(formatMM(p2.y)) \(formatMM(p3.x)) \(formatMM(p3.y)) c\n"
             current = next
         }
         s += "S\n"
@@ -333,11 +374,13 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         out.reserveCapacity(s.count)
         for c in s {
             switch c {
-            case "(", ")", "\\": out.append("\\"); out.append(c)
+            case "(", ")", "\\":
+                out.append("\\")
+                out.append(c)
             case "\n": out.append("\\n")
             case "\r": out.append("\\r")
             case "\t": out.append("\\t")
-            default:    out.append(c)
+            default: out.append(c)
             }
         }
         return out

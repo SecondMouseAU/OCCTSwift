@@ -1,6 +1,6 @@
 import Foundation
-import simd
 import OCCTBridge
+import simd
 
 /// A 1D interval [min, max] with void state.
 public final class Range: @unchecked Sendable {
@@ -23,9 +23,12 @@ public final class Range: @unchecked Sendable {
     /// Whether the range is void.
     public var isVoid: Bool { OCCTRangeIsVoid(handle) }
 
-    /// Get bounds as (first, last). Returns nil if void.
+    /// Get bounds as (first, last).
+    ///
+    /// Returns nil if void.
     public var bounds: (first: Double, last: Double)? {
-        var first = 0.0, last = 0.0
+        var first = 0.0
+        var last = 0.0
         guard OCCTRangeGetBounds(handle, &first, &last) else { return nil }
         return (first, last)
     }
