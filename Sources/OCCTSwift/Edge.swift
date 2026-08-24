@@ -360,43 +360,19 @@ extension Edge {
     /// Get the faces adjacent to this edge within the given shape.
     ///
     /// Most interior edges have exactly 2 adjacent faces. Boundary edges have 1.
-    ///
-    /// **Reports at most two, even where more bound the edge** (#777). An edge can bound three or
-    /// more faces in a compound whose solids share a face, and this returns whichever two the
-    /// underlying `TopExp::MapShapesAndAncestors` list holds first, with no signal that it
-    /// truncated. Measured on two solids sharing one cut face: each of the four shared edges is
-    /// bounded by four face occurrences, three distinct under `IsSame`, and this hands back two
-    /// `Face` values.
-    ///
-    /// ``Shape/adjacentFaces(forEdge:)`` sees more of them, and is not a complete answer either:
-    /// it walks `MapShapesAndUniqueAncestors` through an `IsSame`-keyed map, so it reports the
-    /// three DISTINCT faces rather than the four occurrences, and it caps at 64 with no signal
-    /// when it truncates. Neither entry point can currently report an occurrence set. Tracked as
-    /// #1087.
+    /// Non-manifold edges can have 3 or more adjacent faces.
     ///
     /// - Parameter shape: The shape containing this edge
-    /// - Returns: Tuple of (face1, face2) where face2 may be nil for boundary edges,
-    ///   or nil if the edge has no adjacent faces
-    public func adjacentFaces(in shape: Shape) -> (Face, Face?)? {
-        var face1: OCCTFaceRef?
-        var face2: OCCTFaceRef?
-        let count = OCCTEdgeGetAdjacentFaces(shape.handle, handle, &face1, &face2)
-        guard count >= 1, let f1 = face1 else { return nil }
-        let firstFace = Face(handle: f1)
-        let secondFace = face2.map { Face(handle: $0) }
-        return (firstFace, secondFace)
+    /// - Returns: Array of adjacent faces, or nil if the edge has no adjacent faces
+    ///            (empty array is not returned; nil indicates the edge is not in the shape)
+    public func adjacentFaces(in shape: Shape) -> [Face]? {
+        let maxFaces: Int32 = 64
+        var faces = [OCCTFaceRef?](repeating: nil, count: Int(maxFaces))
+        let count = OCCTEdgeGetAdjacentFacesArray(shape.handle, handle, &faces, maxFaces)
+        guard count >= 1 else { return nil }
+        return faces.prefix(Int(count)).map { Face(handle: $0!) }
     }
 
-    /// Compute the dihedral angle between two faces at this edge.
-    ///
-    /// The dihedral angle is measured between the face normals at the specified
-    /// parameter along the edge curve.
-    ///
-    /// - Parameters:
-    ///   - face1: First adjacent face
-    ///   - face2: Second adjacent face
-    ///   - parameter: Parameter along edge (0.0 to 1.0) where to measure
-    /// - Returns: Dihedral angle in radians (0 to 2*PI), or nil on error
     public func dihedralAngle(between face1: Face, and face2: Face, at parameter: Double = 0.5)
         -> Double?
     {

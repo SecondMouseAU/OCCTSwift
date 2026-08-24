@@ -178,7 +178,7 @@ struct FillingSupportFaceTests {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
-        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+        guard let wall = rim.adjacentFaces(in: bowl)?.first else {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
@@ -417,7 +417,7 @@ struct FillingSupportFaceTests {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
-        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+        guard let wall = rim.adjacentFaces(in: bowl)?.first else {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
@@ -478,7 +478,7 @@ struct FillingSupportFaceTests {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
-        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+        guard let wall = rim.adjacentFaces(in: bowl)?.first else {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
@@ -563,7 +563,7 @@ struct FillingSupportFaceTests {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
-        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+        guard let wall = rim.adjacentFaces(in: bowl)?.first else {
             Issue.record("The rim should have an adjacent face to be tangent to")
             return
         }
