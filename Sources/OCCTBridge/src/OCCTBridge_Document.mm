@@ -1502,18 +1502,18 @@ static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_Dimension
 /// attaches the DimTol and Shape tools to Main() when they are absent, so the first GD&T call on a
 /// fresh document leaves those behind whatever it returns. That was true before this change too.
 static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
-                                               int64_t         shapeLabelId,
-                                               int32_t         type,
-                                               double          value,
-                                               bool            withTolerance,
-                                               double          lowerTol,
-                                               double          upperTol)
+                                                int64_t         shapeLabelId,
+                                                int32_t         type,
+                                                double          value,
+                                                bool            withTolerance,
+                                                double          lowerTol,
+                                                double          upperTol)
 {
   if (!doc || doc->doc.IsNull())
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
     TDF_Label                  shapeLabel = doc->getLabel(shapeLabelId);
     if (shapeLabel.IsNull())
       return -1;
