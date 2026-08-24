@@ -803,10 +803,16 @@ int32_t OCCTUnicodeGetFormat(void);
 /// Convert a string from current format to UTF-8. Returns allocated string (caller must free).
 char* _Nullable OCCTUnicodeConvertToUnicode(const char* _Nonnull input);
 
-/// Convert from UTF-8 to current format. Returns true on success.
-bool OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,
-                                   char* _Nonnull output,
-                                   int32_t maxSize);
+/// Convert from UTF-8 to current format.
+/// @param utf8Input The UTF-8 string to convert
+/// @param output Output buffer for the converted string (may be NULL if maxSize is 0)
+/// @param maxSize Maximum length of the output buffer (use 0 with NULL output to query length)
+/// @return Length of the converted string in bytes (not counting the NUL terminator), or -1 on failure.
+///         If output is non-NULL and maxSize > 0, the buffer receives a NUL-terminated copy
+///         truncated to maxSize-1 bytes. A return value >= maxSize indicates truncation occurred.
+int32_t OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,
+                                      char* _Nullable output,
+                                      int32_t maxSize);
 
 // MARK: - OSD_DirectoryIterator (v0.106.0)
 
