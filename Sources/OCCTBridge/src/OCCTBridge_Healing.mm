@@ -5089,7 +5089,7 @@ OCCTShapeRef OCCTShapeFreeBoundsOpen(OCCTShapeRef shape, double tolerance)
 
 bool OCCTWireCheckOrder(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5107,7 +5107,7 @@ bool OCCTWireCheckOrder(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckConnected(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5125,7 +5125,7 @@ bool OCCTWireCheckConnected(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckSmall(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5143,7 +5143,7 @@ bool OCCTWireCheckSmall(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckDegenerated(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5161,7 +5161,7 @@ bool OCCTWireCheckDegenerated(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckClosed(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5179,7 +5179,7 @@ bool OCCTWireCheckClosed(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckSelfIntersection(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5197,7 +5197,7 @@ bool OCCTWireCheckSelfIntersection(OCCTShapeRef wire, OCCTShapeRef face, double 
 
 bool OCCTWireCheckGaps3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5215,7 +5215,7 @@ bool OCCTWireCheckGaps3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckGaps2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5233,7 +5233,7 @@ bool OCCTWireCheckGaps2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckEdgeCurves(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5251,7 +5251,7 @@ bool OCCTWireCheckEdgeCurves(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 bool OCCTWireCheckLacking(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5269,7 +5269,7 @@ bool OCCTWireCheckLacking(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 int32_t OCCTWireEdgeCount(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0;
   try
   {
@@ -5287,7 +5287,7 @@ int32_t OCCTWireEdgeCount(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 double OCCTWireMinDistance3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0;
   try
   {
@@ -5306,7 +5306,7 @@ double OCCTWireMinDistance3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 double OCCTWireMaxDistance3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0;
   try
   {
@@ -5325,7 +5325,7 @@ double OCCTWireMaxDistance3d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 double OCCTWireMinDistance2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0;
   try
   {
@@ -5344,7 +5344,7 @@ double OCCTWireMinDistance2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 
 double OCCTWireMaxDistance2d(OCCTShapeRef wire, OCCTShapeRef face, double prec)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return 0;
   try
   {
@@ -5366,7 +5366,7 @@ bool OCCTWireCheckConnectedEdge(OCCTShapeRef wire,
                                 double       prec,
                                 int32_t      edgeIndex)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5384,7 +5384,7 @@ bool OCCTWireCheckConnectedEdge(OCCTShapeRef wire,
 
 bool OCCTWireCheckSmallEdge(OCCTShapeRef wire, OCCTShapeRef face, double prec, int32_t edgeIndex)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5405,7 +5405,7 @@ bool OCCTWireCheckDegeneratedEdge(OCCTShapeRef wire,
                                   double       prec,
                                   int32_t      edgeIndex)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
@@ -5423,7 +5423,7 @@ bool OCCTWireCheckDegeneratedEdge(OCCTShapeRef wire,
 
 bool OCCTWireCheckGap3dEdge(OCCTShapeRef wire, OCCTShapeRef face, double prec, int32_t edgeIndex)
 {
-  if (!wire || !face)
+  if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
     return false;
   try
   {
