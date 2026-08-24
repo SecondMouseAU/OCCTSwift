@@ -1650,14 +1650,11 @@ on the same shape, because the lookup runs before any of them reads what it retu
 location array cannot supply the point array's own lower index is refused for the same reason: that
 index is what the kernel reads.
 
-**Two GD&T tables are in play, and the refusal covers both.** The datum accessors and mutators on
-this page read the tool this package attaches to the document's main label. `dimTolToolToleranceCount`
-and `rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` reach `GetObject` by a different route,
-on the `XCAFDoc_DocumentTool` table that every importer writes, so they are guarded separately and
-refuse with `0` and `false` respectively. Measured in
-`Scripts/repro/1030-datum-lookup-guard/`: both took the process down before that guard, and a datum
-in one table is invisible to the other, so `datumCount` reports `0` for a datum an importer wrote.
-That divergence is a separate defect from this crash and is tracked as #1051.
+**There is now a single GD&T table.** The datum accessors, mutators, `dimTolToolToleranceCount`,
+and `rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` all read and write the same tool
+attached to the document's main label. The `XCAFDoc_DocumentTool` table that importers wrote is
+no longer used for GD&T. The refusal for a datum with a point and no plane covers all datum
+operations uniformly. #1051 (the table-divergence defect) is resolved.
 
 One reader is still unguarded and is unreachable rather than fixed: `STEPCAFControl_Writer` calls
 `GetObject()` on every datum on its AP242 branch. None of the three bridge sites that construct one
@@ -1718,7 +1715,7 @@ public var datums: [Datum] { get }
   doc.createDatum(name: "A")
   for datum in doc.datums { print("Datum:", datum.name) }
   ```
-- **Note:** this reads the GD&T table this package writes, not the `XCAFDoc_DocumentTool` one an importer fills, so datums that arrived with a STEP file are not listed here. See the two-table note under [`datum(at:)`](#datumat).
+- **Note:** there is now a single GD&T table; all datums are listed here regardless of origin.
 
 ---
 
