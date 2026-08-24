@@ -801,38 +801,46 @@ int32_t OCCTDocumentGetLayerCount(OCCTDocumentRef doc)
   }
 }
 
-bool OCCTDocumentGetLayerName(OCCTDocumentRef doc, int32_t index, char* outName, int32_t maxLen)
+int32_t OCCTDocumentGetLayerName(OCCTDocumentRef doc, int32_t index, char* _Nullable outName, int32_t maxLen)
 {
-  if (!doc || doc->doc.IsNull() || !outName || maxLen <= 0)
-    return false;
+  if (!doc || doc->doc.IsNull())
+    return -1;
+  if (maxLen < 0)
+    return -1;
   try
   {
     Handle(XCAFDoc_LayerTool) layerTool = XCAFDoc_LayerTool::Set(doc->doc->Main());
     if (layerTool.IsNull())
-      return false;
+      return -1;
     TDF_LabelSequence labels;
     layerTool->GetLayerLabels(labels);
     if (index < 0 || index >= labels.Length())
-      return false;
+      return -1;
     TDF_Label                  label = labels.Value(index + 1);
     TCollection_ExtendedString name;
     if (!layerTool->GetLayer(label, name))
-      return false;
+      return -1;
     // Convert ExtendedString to ASCII
     TCollection_AsciiString ascii(name);
     int32_t                 len = ascii.Length();
-    if (len >= maxLen)
-      len = maxLen - 1;
-    for (int32_t i = 0; i < len; i++)
+    // Allow length-only query with outName == NULL and maxLen == 0
+    if (!outName && maxLen == 0)
+      return len;
+    // Invalid: null buffer with positive maxLen, or non-null buffer with zero/negative maxLen
+    if (!outName || maxLen <= 0)
+      return -1;
+    // Copy up to maxLen-1 characters, NUL-terminate
+    int32_t copyLen = std::min(len, maxLen - 1);
+    for (int32_t i = 0; i < copyLen; i++)
     {
       outName[i] = ascii.Value(i + 1);
     }
-    outName[len] = '\0';
-    return true;
+    outName[copyLen] = '\0';
+    return len;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 

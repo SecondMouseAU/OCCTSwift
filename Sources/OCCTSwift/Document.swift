@@ -383,8 +383,11 @@ extension Document {
     /// - Parameter index: Zero-based layer index.
     /// - Returns: Layer name, or nil if index is out of range
     public func layerName(at index: Int) -> String? {
-        var buf = [CChar](repeating: 0, count: 256)
-        guard OCCTDocumentGetLayerName(handle, Int32(index), &buf, 256) else { return nil }
+        let len = OCCTDocumentGetLayerName(handle, Int32(index), nil, 0)
+        guard len >= 0 else { return nil }
+        var buf = [CChar](repeating: 0, count: Int(len) + 1)
+        let actualLen = OCCTDocumentGetLayerName(handle, Int32(index), &buf, Int32(buf.count))
+        guard actualLen >= 0 else { return nil }
         return Self.string(fromCString: buf)
     }
 

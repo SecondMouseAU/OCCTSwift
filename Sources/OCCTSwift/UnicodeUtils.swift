@@ -33,17 +33,28 @@ public enum UnicodeUtils {
     ///
     /// - Parameters:
     ///   - utf8Input: The UTF-8 string to convert.
-    ///   - maxSize: Output buffer *capacity* in bytes (default 4096), clamped into
-    ///     `0...` ``Sampling/maximumSampleCount``; 0 or less returns `nil` (#622).
+    ///   - maxSize: Output buffer *capacity* in bytes (default 4096). If the converted string
+    ///     exceeds this capacity, it will be truncated. Use a larger value or call without
+    ///     maxSize to automatically allocate the full required buffer.
+    /// - Returns: The converted string, or nil on failure.
+    /// Convert from UTF-8 to current format.
+    ///
+    /// - Parameters:
+    ///   - utf8Input: The UTF-8 string to convert.
+    ///   - maxSize: Output buffer *capacity* in bytes (default 4096). If the converted string
+    ///     exceeds this capacity, it will be truncated. Use a larger value or call without
+    ///     maxSize to automatically allocate the full required buffer.
     /// - Returns: The converted string, or nil on failure.
     public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String? {
-        let maxSize = Sampling.capacity(maxSize)
         guard maxSize > 0 else { return nil }
-        var output = [CChar](repeating: 0, count: maxSize)
-        guard OCCTUnicodeConvertFromUnicode(utf8Input, &output, Int32(maxSize)) else { return nil }
-        let result = output.withUnsafeBufferPointer { buf in
-            String(cString: buf.baseAddress!)
-        }
-        return result
+        let len = OCCTUnicodeConvertFromUnicode(utf8Input, nil, 0)
+        guard len >= 0 else { return nil }
+        let bufSize = Swift.min(Int(len) + 1, maxSize)
+        var output = [CChar](repeating: 0, count: bufSize)
+        let actualLen = OCCTUnicodeConvertFromUnicode(utf8Input, &output, Int32(bufSize))
+        guard actualLen >= 0 else { return nil }
+        // Ensure null-termination as a safeguard
+        output[Int(len) < bufSize ? Int(len) : bufSize - 1] = 0
+        return String(cString: output)
     }
 }
