@@ -1632,7 +1632,7 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
 
     TDF_Label             datLabel = dimTolTool->AddDatum();
     Handle(XCAFDoc_Datum) datAttr;
