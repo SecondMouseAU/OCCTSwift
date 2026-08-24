@@ -186,7 +186,7 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
 }
 
 /// Errors raised while snapshotting or rebuilding a `BRepGraph`.
-public enum GraphSnapshotError: Error, Equatable, Sendable {
+public enum GraphSnapshotError: Error, Equatable, Hashable, Sendable {
     /// The graph has no captured source shape to serialize (e.g. built from a handle directly).
     case noSourceShape
     /// The snapshot's BREP string could not be deserialized into a shape.
