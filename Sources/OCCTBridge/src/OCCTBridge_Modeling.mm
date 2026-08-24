@@ -16413,16 +16413,20 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 // Output parameters (optional, can pass nullptr):
 //   - outTotalFacePairs: estimated total face pairs to check
 //   - outTimeSpent: actual time spent in seconds
-int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape, double timeoutSeconds,
-                                         int32_t* _Nullable outNumFacesChecked,
-                                         int32_t* _Nullable outTotalFacePairs,
-                                         double* _Nullable outTimeSpent)
+int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
+                                        double       timeoutSeconds,
+                                        int32_t* _Nullable outNumFacesChecked,
+                                        int32_t* _Nullable outTotalFacePairs,
+                                        double* _Nullable outTimeSpent)
 {
   if (!shape)
     return -3;
-  if (outNumFacesChecked) *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
-  if (outTotalFacePairs) *outTotalFacePairs = 0;
-  if (outTimeSpent) *outTimeSpent = 0.0;
+  if (outNumFacesChecked)
+    *outNumFacesChecked = 0; // Not available from BOPAlgo_ArgumentAnalyzer
+  if (outTotalFacePairs)
+    *outTotalFacePairs = 0;
+  if (outTimeSpent)
+    *outTimeSpent = 0.0;
 
   auto startTime = std::chrono::steady_clock::now();
   occtEnsureSignals();
