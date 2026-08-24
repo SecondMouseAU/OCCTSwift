@@ -588,23 +588,25 @@ public final class BRepGraph: @unchecked Sendable {
     ///
     /// - Parameter index: 0-based index into the history log.
     /// - Returns: The record, or nil if `index` is out of range.
+    /// Get a single history record by index.
+    ///
+    /// - Parameter index: 0-based index into the history log.
+    /// - Returns: The record, or nil if `index` is out of range.
     public func historyRecord(at index: Int) -> HistoryRecord? {
         guard index >= 0, index < historyRecordCount else { return nil }
-        var opNameBuffer = [CChar](repeating: 0, count: 128)
+        var dummySeq: Int32 = 0
+        let len = OCCTBRepGraphHistoryGetRecordInfo(handle, Int32(index), nil, 0, &dummySeq)
+        guard len >= 0 else { return nil }
+        var opNameBuffer = [CChar](repeating: 0, count: Int(len) + 1)
         var sequence: Int32 = 0
-        let ok = opNameBuffer.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphHistoryGetRecordInfo(
-                handle, Int32(index),
-                buf.baseAddress!, Int32(buf.count),
-                &sequence)
-        }
-        guard ok else { return nil }
-        // The bridge fills a fixed 128-byte buffer and NUL-terminates it. Decode only up to that
-        // terminator — String(decoding:as:) over the whole buffer would carry the NUL padding into
-        // the string.
-        let opName = String(
-            decoding: opNameBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
-            as: UTF8.self)
+        let actualLen = OCCTBRepGraphHistoryGetRecordInfo(
+            handle, Int32(index),
+            &opNameBuffer, Int32(opNameBuffer.count),
+            &sequence)
+        guard actualLen >= 0 else { return nil }
+        // Ensure null-termination as a safeguard
+        opNameBuffer[Int(len)] = 0
+        let opName = String(cString: opNameBuffer)
 
         // Collect originals.
         let count = Int(OCCTBRepGraphHistoryGetRecordOriginalsCount(handle, Int32(index)))
