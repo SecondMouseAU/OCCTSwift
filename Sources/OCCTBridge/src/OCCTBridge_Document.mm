@@ -956,7 +956,7 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
     return 0;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_LabelSequence          labels;
     dimTolTool->GetDatumLabels(labels);
     return (int32_t)labels.Length();
@@ -1313,6 +1313,8 @@ static bool occtDocumentToolToleranceDatumsAreReadable(const TDF_Label& access)
 }
 
 // The datum counterpart of occtDocumentDimensionObjectAt, for the same reason (#1004).
+// Uses XCAFDoc_DocumentTool::DimTolTool to access the same 0:1:4 table that importers
+// and dimTolToolToleranceCount use, instead of the 0:1 table on Main().
 static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc,
                                       int32_t                                datumIndex,
                                       Handle(XCAFDoc_Datum)&                 outAttr,
@@ -1321,7 +1323,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   if (!doc || doc->doc.IsNull() || datumIndex < 0)
     return false;
 
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
   TDF_LabelSequence          labels;
   dimTolTool->GetDatumLabels(labels);
   if (datumIndex >= (int32_t)labels.Length())
@@ -1632,7 +1634,7 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
 
     TDF_Label             datLabel = dimTolTool->AddDatum();
     Handle(XCAFDoc_Datum) datAttr;
