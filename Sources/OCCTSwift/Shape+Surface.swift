@@ -201,7 +201,7 @@ extension Shape {
     ///
     /// ```swift
     /// // Curvature-continuous against the wall the rim came from, positional elsewhere
-    /// let wall = rim.adjacentFaces(in: bowl)![0]
+    /// let wall = rim.adjacentFaces(in: bowl)?.first
     ///
     /// let patch = Shape.fill(constraints: [
     ///     FillConstraint(edge: rim, support: wall, continuity: .g2),
