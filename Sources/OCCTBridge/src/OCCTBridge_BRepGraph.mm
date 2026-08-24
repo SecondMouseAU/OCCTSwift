@@ -5509,10 +5509,10 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape,
   {
     int32_t written = 0;
     int32_t total   = countOrCollectSharedEdges(face1->face,
-                                                face2->face,
-                                                outFirstEdge,
-                                                outFirstEdge ? 1 : 0,
-                                                &written);
+                                              face2->face,
+                                              outFirstEdge,
+                                              outFirstEdge ? 1 : 0,
+                                              &written);
     return total;
   }
   catch (...)
