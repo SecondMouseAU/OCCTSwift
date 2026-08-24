@@ -1580,15 +1580,15 @@ int32_t OCCTDocumentCreateDimensionWithTolerance(OCCTDocumentRef doc,
 }
 
 int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef doc,
-                                        int64_t         shapeLabelId,
-                                        int32_t         type,
-                                        double          value)
+                                         int64_t         shapeLabelId,
+                                         int32_t         type,
+                                         double          value)
 {
   if (!doc || doc->doc.IsNull())
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
     TDF_Label                  shapeLabel = doc->getLabel(shapeLabelId);
     if (shapeLabel.IsNull())
       return -1;
