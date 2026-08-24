@@ -37,14 +37,6 @@ public enum UnicodeUtils {
     ///     exceeds this capacity, it will be truncated. Use a larger value or call without
     ///     maxSize to automatically allocate the full required buffer.
     /// - Returns: The converted string, or nil on failure.
-    /// Convert from UTF-8 to current format.
-    ///
-    /// - Parameters:
-    ///   - utf8Input: The UTF-8 string to convert.
-    ///   - maxSize: Output buffer *capacity* in bytes (default 4096). If the converted string
-    ///     exceeds this capacity, it will be truncated. Use a larger value or call without
-    ///     maxSize to automatically allocate the full required buffer.
-    /// - Returns: The converted string, or nil on failure.
     public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String? {
         guard maxSize > 0 else { return nil }
         let len = OCCTUnicodeConvertFromUnicode(utf8Input, nil, 0)
