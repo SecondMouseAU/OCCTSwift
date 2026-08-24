@@ -662,6 +662,28 @@ constructor are plumbing every wrapped OCAF attribute has and none exposes.
 coverage figure should have counted against this class. The row is worth acting on for the linkage
 methods and for nothing else, which is the answer #1021 asked for.
 
+
+### Pass 4a coverage audit: eight classes at 12-50% (#1021)
+
+[#1021](https://github.com/SecondMouseAU/OCCTSwift/issues/1021) measured 8 OCCT classes with low
+method-level coverage (12-50%) by the bridge. For each, the decision is recorded as **deliberate
+omission** (by design, documented reason) or **unexamined gap** (not yet wrapped, could be).
+
+| OCCT Class | Coverage | Verdict | Reason |
+|------------|----------|---------|--------|
+| `GeomPlate_BuildPlateSurface` | 12% (4/34) | **Deliberate omission** | Only the plate builder entry point (`Shape.fill` / `FillingSurface`) is exposed. The 30 unreached methods are internal builder state (`AddConstraint`/`Load` overloads, tolerance setters, `myTol2d`/`myTol3d`, `SetDegree`/`SetNbPtsOnCur`/`SetNbIter`, `SetContinuity`, error accessors `G0Error`/`G1Error`/`G2Error`). All are builder configuration knobs the Swift API hardcodes for `Shape.fill` defaults. Exposing them would mean a separate `PlateBuilder` type, which is a separate API design issue (#430). |
+| `Plate_Plate` | 17% (4/23) | **Deliberate omission** | Only the solver entry point (`Plate_Plate::SolveTI` / `Solve`, `IsDone`, `Continuity`) is invoked by `NLPlate_NLPlate`. The 19 unreached methods include 9 `Load` overloads (constraint builders), `SetTol2d`/`SetTol3d`, `SetMaxDegree`, `SetMaxSegments`, `SetContinuity`, `GetTol2d`/`GetTol3d`, `GetMaxDegree`, `GetMaxSegments`, `GetContinuity`, `GetDegree`, `GetNbPtsOnCur`, `GetNbIter`, `GetTolerance`, `GetError`, `GetG0Error`/`G1Error`/`G2Error`. All are internal solver configuration. One gap recorded separately: `Plate_SampledCurveConstraint` is the one `Load` overload (of 9) the bridge never reaches (#1021, folded into `Plate_Plate` row). |
+| `BRepFeat_Gluer` | 22% (2/9) | **Deliberate omission** | Only `Perform()` is called. The 7 unreached methods are `OpeType()`, `GlueSolid()`, `GlueShell()`, `GlueFace()`, `GlueWire()`, `GlueEdge()`, `GlueVertex()`. `OpeType()` is a read-only status getter the bridge does not surface (the Swift API returns the result shape directly). The `Glue*` methods are redundant entry points to the same `Perform()` logic. Not a capability gap. |
+| `BRepFeat_MakeDPrism` | 23% (3/13) | **Deliberate omission** | Only `Perform()` is called (via `Shape.withPrism`). The 10 unreached methods are `SetOperation()`, `PerformThruNext()`, `PerformUntilEnd()`, `Perform(Radius, PFrom, PTo)`, `PerformBlind()`, `AddFace()`, `AddWire()`, `AddVertex()`, `AddEdge()`, `AddShape()`. All are legacy extent/face-selection entry points the Swift API does not expose (`withPrism` uses `BRepPrimAPI_MakePrism` + boolean, not `BRepFeat_MakeDPrism`). Recorded in #1047. |
+| `XCAFDoc_DimTolTool` | 23% (9/39) | **Partial gap / deliberate** | Split three ways (see detailed section above): (1) **Real gap**: linkage methods (`GetRefDimensionLabels`, `GetRefGeomToleranceLabels`, `GetRefDatumLabel`, `GetRefShapeLabel`, `GetDatumOfTolerLabels`, `GetDatumWithObjectOfTolerLabels`, `GetTolerOfDatumLabels`, `SetDatumToGeomTol`, `SetDatum` overloads, `FindDatum`) — largest missing piece of GD&T surface. (2) **Deliberate**: legacy `XCAFDoc_DimTol` API (`IsDimTol`, `GetDimTolLabels`, `FindDimTol`, `AddDimTol`, `SetDimTol`, `GetDimTol`) — second spelling of `XCAFDoc_DimTol` wrapped directly. (3) **Not a gap**: classifiers/plumbing (`IsDimension`, `IsGeomTolerance`, `IsDatum`, `IsLocked`/`Lock`/`Unlock`, `GetGDTPresentations`/`SetGDTPresentations`, `BaseLabel`, `ShapeTool`, `GetID`, `ID`, `DumpJson`). |
+| `GeomPlate_MakeApprox` | 33% (1/3) | **Deliberate omission** | Only `Perform()` is called. The 2 unreached methods are `GetMaxDegree()` and `GetNbPatches()`. Both are read-only getters for post-approximation metadata the Swift API does not surface (the approximator's internal patch count/degree). Not a capability gap. |
+| `BRepMAT2d_BisectingLocus` | 45% (5/11) | **Deliberate omission** | Only `Compute()` is called (via `MedialAxis(of:)`). The 6 unreached methods are `LineIndex()`, `ASide()`, `BJoinType()`, `GetResult()`, `GetResult1()`, `GetResult2()`. `Compute()` is the single entry point the Swift API exposes (`bisector2D`); the rest are internal state getters. Not a capability gap. |
+| `NLPlate_NLPlate` | 50% (6/12) | **Partial gap / deliberate** | (1) **Deliberate**: `Evaluate()`, `EvaluateDerivative()`, `GetDeformedPoint()`, `GetDeformedTangent()`, `GetDeformedNormal()`, `GetDeformedPosition()` are evaluator methods the Swift API does not expose directly — the bridge samples `Evaluate` on a grid and refits with `GeomAPI_PointsToBSplineSurface` (`Surface.nlPlateDeformed`), which is the intended API. (2) **Real gap**: `SetTolerance()`, `SetMaxDegree()`, `SetMaxSegments()`, `SetContinuity()`, `SetDegree()`, `GetDegree()`, `GetContinuity()`, `GetTolerance()`, `GetNbPatches()`, `GetMaxDegree()`, `GetMaxSegments()` — solver configuration methods the Swift API hardcodes. Exposing them would mean a `NLPlateBuilder` type, which is a separate API design issue. |
+
+**On the metric.** #1021's caveat holds across all rows: the denominator counts `Set*` and
+`DumpJson`, inflating the gap. The linkage methods in `XCAFDoc_DimTolTool` are the only actionable
+gap; all other rows are deliberate omissions documented here.
+
 ### NLPlate deformation returns a refit BSpline (#1046)
 
 `Surface.nlPlateDeformed` and its four siblings (`nlPlateDeformedG1`, `nlPlateDeformedG2`,

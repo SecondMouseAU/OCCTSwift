@@ -922,7 +922,7 @@ int32_t OCCTDocumentGetDimensionCount(OCCTDocumentRef doc)
     return 0;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_LabelSequence          labels;
     dimTolTool->GetDimensionLabels(labels);
     return (int32_t)labels.Length();
@@ -939,7 +939,7 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc)
     return 0;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_LabelSequence          labels;
     dimTolTool->GetGeomToleranceLabels(labels);
     return (int32_t)labels.Length();
@@ -978,7 +978,7 @@ static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                       
   if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
     return false;
 
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
   TDF_LabelSequence          labels;
   dimTolTool->GetDimensionLabels(labels);
   if (dimensionIndex >= (int32_t)labels.Length())
@@ -1131,7 +1131,7 @@ static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc
   if (!doc || doc->doc.IsNull() || toleranceIndex < 0)
     return false;
 
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
   TDF_LabelSequence          labels;
   dimTolTool->GetGeomToleranceLabels(labels);
   if (toleranceIndex >= (int32_t)labels.Length())
@@ -1513,7 +1513,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_Label                  shapeLabel = doc->getLabel(shapeLabelId);
     if (shapeLabel.IsNull())
       return -1;
@@ -1588,7 +1588,7 @@ int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef doc,
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_Label                  shapeLabel = doc->getLabel(shapeLabelId);
     if (shapeLabel.IsNull())
       return -1;
