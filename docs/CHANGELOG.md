@@ -690,50 +690,6 @@ curve and surface families, immutable and in place, against values computed inde
 
 
 
-
-### GD&T datum/dimension/tolerance tables unified to the document tool label (0:1:4) (#1051)
-
-The bridge used two separate GD&T tables: the old table at label `0:1` (created via
-`XCAFDoc_DimTolTool::Set(doc->doc->Main())`) and the new table at label `0:1:4` (created via
-`XCAFDoc_DocumentTool::DimTolTool()`). Swift API writes went to the old table; STEP/OCAF importers
-wrote to the new table. This caused a split where:
-
-- Datums created via Swift API (`createDatum()`) were invisible to `dimTolToolToleranceCount` /
-  `dimTolToolDimensionCount`
-- Datums, dimensions, and geometric tolerances from STEP/OCAF imports were invisible to
-  `Document.datumCount`, `Document.dimensions`, `Document.geomTolerances`, etc.
-
-**Write path**: All Swift API create functions now write to the new table (0:1:4) via
-`XCAFDoc_DocumentTool::DimTolTool()`:
-- `OCCTDocumentCreateDatum`
-- `OCCTDocumentCreateDimension` / `OCCTDocumentCreateDimensionWithTolerance`
-- `OCCTDocumentCreateGeomTolerance`
-
-**Read path**: All read/count functions now search BOTH tables, presenting a unified view:
-- New table entries first (importers + new Swift API writes)
-- Old table entries second (for backward compatibility with existing documents)
-- Updated: `OCCTDocumentGetDatumCount`, `OCCTDocumentGetDimensionCount`,
-  `OCCTDocumentGetGeomToleranceCount`
-- Updated: `occtDocumentDatumObjectAt`, `occtDocumentDimensionObjectAt`,
-  `occtDocumentGeomToleranceObjectAt`
-
-**Mutator path**: Works through the unified lookup, so modifications apply to the correct table.
-
-**Migration**: During the transition period, documents created with the old API (data in old table)
-remain fully readable. New writes go to the new table. The unified read presents all data
-regardless of which table it lives in. This ensures:
-- Existing OCAF documents written by this package remain readable
-- STEP/OCAF imports work correctly with the Swift API
-- No data loss during migration
-
-Added comprehensive test suite `Issue1051GDTTableUnificationTests` verifying:
-- Swift API datums visible to both `datumCount` and `dimTolToolToleranceCount`
-- Dimension/GeomTolerance counts work correctly
-- Multiple entries counted correctly
-- Mutators work through unified lookup
-- Datum name round-trip
-- Datum target operations
-
 ### One GD&T read family, and OCCT's dimension kinds instead of zero-filled fields (#996)
 
 `Document`'s GD&T read surface existed twice: an untyped family (`DimensionInfo`,
