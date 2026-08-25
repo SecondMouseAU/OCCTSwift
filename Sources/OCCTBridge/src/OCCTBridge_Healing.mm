@@ -5809,63 +5809,21 @@ int32_t OCCTCheckFaceStatus(OCCTShapeRef shape, OCCTShapeRef face)
 {
   if (!shape || !face)
     return -1;
-  try
-  {
-    BRepCheck_Analyzer       ana(shape->shape, Standard_True);
-    Handle(BRepCheck_Result) res = ana.Result(face->shape);
-    if (res.IsNull())
-      return -1;
-    const BRepCheck_ListOfStatus& st = res->Status();
-    if (st.IsEmpty())
-      return 0; // NoError
-    return (int32_t)st.First();
-  }
-  catch (...)
-  {
-    return -1;
-  }
+  return occtBRepCheckSubShapeStatus(shape->shape, face->shape);
 }
 
 int32_t OCCTCheckEdgeStatus(OCCTShapeRef shape, OCCTShapeRef edge)
 {
   if (!shape || !edge)
     return -1;
-  try
-  {
-    BRepCheck_Analyzer       ana(shape->shape, Standard_True);
-    Handle(BRepCheck_Result) res = ana.Result(edge->shape);
-    if (res.IsNull())
-      return -1;
-    const BRepCheck_ListOfStatus& st = res->Status();
-    if (st.IsEmpty())
-      return 0;
-    return (int32_t)st.First();
-  }
-  catch (...)
-  {
-    return -1;
-  }
+  return occtBRepCheckSubShapeStatus(shape->shape, edge->shape);
 }
 
 int32_t OCCTCheckVertexStatus(OCCTShapeRef shape, OCCTShapeRef vertex)
 {
   if (!shape || !vertex)
     return -1;
-  try
-  {
-    BRepCheck_Analyzer       ana(shape->shape, Standard_True);
-    Handle(BRepCheck_Result) res = ana.Result(vertex->shape);
-    if (res.IsNull())
-      return -1;
-    const BRepCheck_ListOfStatus& st = res->Status();
-    if (st.IsEmpty())
-      return 0;
-    return (int32_t)st.First();
-  }
-  catch (...)
-  {
-    return -1;
-  }
+  return occtBRepCheckSubShapeStatus(shape->shape, vertex->shape);
 }
 
 double OCCTShapeMaxTolerance(OCCTShapeRef shape, int32_t type)
