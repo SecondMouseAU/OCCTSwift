@@ -74,12 +74,16 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
 
         // Also verify that multi-face boundary edges exist (the cut face edges are shared by 3 faces)
         var multiFaceEdges = 0
+<<<<<<< HEAD
         var edgeAdjFacesCount = 0
+=======
+>>>>>>> 671770df (Add test for PocketFeature.isOpen on compound where solidGroups cannot partition (#1089))
         let occurrences = compound.orientedFaces()
         for pocket in pockets {
             guard let outer = occurrences[pocket.floorFaceIndex].outerWire else { continue }
             for edge in outer.edges() {
                 guard let wrapped = Shape.fromEdge(edge) else { continue }
+<<<<<<< HEAD
                 let count = compound.adjacentFaces(forEdge: wrapped).count
                 if count > 2 { 
                     multiFaceEdges += 1
@@ -88,9 +92,12 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
                 if let adj = edge.adjacentFaces(in: compound) {
                     edgeAdjFacesCount = max(edgeAdjFacesCount, adj.count)
                 }
+=======
+                if compound.adjacentFaces(forEdge: wrapped).count > 2 { multiFaceEdges += 1 }
+>>>>>>> 671770df (Add test for PocketFeature.isOpen on compound where solidGroups cannot partition (#1089))
             }
         }
-        #expect(multiFaceEdges >= 1, "Fixture must have boundary edges with >2 adjacent faces")
+#expect(multiFaceEdges >= 1, "Fixture must have boundary edges with >2 adjacent faces")
     }
 
     /// A simpler variant: two separate boxes (not sharing topology) + free face, one with a pocket.
