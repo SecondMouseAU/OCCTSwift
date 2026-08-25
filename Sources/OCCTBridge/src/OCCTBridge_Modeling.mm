@@ -6875,27 +6875,7 @@ bool OCCTBOPAlgoAnalyzeArguments(OCCTShapeRef shape1, OCCTShapeRef shape2, int32
     BOPAlgo_ArgumentAnalyzer analyzer;
     analyzer.SetShape1(shape1->shape);
     analyzer.SetShape2(shape2->shape);
-    switch (operation)
-    {
-      case 0:
-        analyzer.OperationType() = BOPAlgo_FUSE;
-        break;
-      case 1:
-        analyzer.OperationType() = BOPAlgo_COMMON;
-        break;
-      case 2:
-        analyzer.OperationType() = BOPAlgo_CUT;
-        break;
-      case 3:
-        analyzer.OperationType() = BOPAlgo_CUT21;
-        break;
-      case 4:
-        analyzer.OperationType() = BOPAlgo_SECTION;
-        break;
-      default:
-        analyzer.OperationType() = BOPAlgo_FUSE;
-        break;
-    }
+    analyzer.OperationType() = static_cast<BOPAlgo_Operation>(operation);
     analyzer.ArgumentTypeMode() = true;
     analyzer.SelfInterMode()    = true;
     analyzer.SmallEdgeMode()    = true;

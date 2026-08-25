@@ -2268,8 +2268,8 @@ extension Shape {
 
     /// Boolean operation type for argument analysis.
     public enum BooleanOperation: Int32 {
-        case fuse = 0
-        case common = 1
+        case common = 0
+        case fuse = 1
         case cut = 2
         case cut21 = 3
         case section = 4
