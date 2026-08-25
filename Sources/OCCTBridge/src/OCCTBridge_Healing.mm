@@ -5802,6 +5802,15 @@ bool OCCTEdgeCheckPCurveRange(OCCTShapeRef edge, OCCTShapeRef face, double first
   }
 }
 
+// === #1077: shared BRepCheck tri-state decoder ===
+//
+// The three functions OCCTCheckFaceStatus, OCCTCheckEdgeStatus, OCCTCheckVertexStatus
+// all implement the identical tri-state pattern:
+//   -1 = error (null input, analyzer failed, result null)
+//    0 = BRepCheck_NoError (status list empty)
+//   >0 = first BRepCheck_Status value from the list
+//
+
 // MARK: - v0.112: BRepCheck extended + tolerance helpers
 // --- BRepCheck extended ---
 
