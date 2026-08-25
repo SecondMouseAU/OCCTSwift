@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Opt-in pre-commit hook: runs the same static gate scripts and censuses CI's `gate-scripts` job
-# runs, flag for flag.
+# runs, flag for flag, plus the bridge clang-format check from CI's `code-style` job.
 #
 # NOT installed by cloning. A repo cannot install its own hooks, `.git/hooks` is not versioned,
 # and that is the right default here: a hook that appears in a contributor's workflow without them
@@ -37,9 +37,15 @@
 #     temp tree on every commit, which costs more than it saves for a convenience hook;
 #   - it runs whatever `python3` is on your PATH; CI pins 3.12;
 #   - if `python3` is missing entirely it warns and exits 0, so "the hook passed" can mean "the hook
-#     did nothing".
+#     did nothing". The bridge clang-format check warns and passes the same way when clang-format is
+#     absent or is a major version that disagrees with Scripts/clang-format-version.txt.
 #
 # All three resolve the same way: CI is what decides, and it runs on every push regardless. #625.
+#
+# It does NOT cover the rest of the `code-style` job: swift-format, SwiftLint and
+# check-style-manifest.py are still push-and-find-out. clang-format is here because it is the only
+# one of them whose findings are wholly mechanical, so the hook can point at a one-command fix
+# (`Scripts/format-bridge.sh`) rather than at prose that needs rewriting.
 
 set -uo pipefail
 
@@ -116,6 +122,51 @@ run "census-doc-occt-attribution.py --self-test" Scripts/census-doc-occt-attribu
 # way, since a bare run lists `@Test(arguments:)` element types for a human to judge rather than
 # reaching a verdict.
 run "census-arguments-tuple-shapes.py --self-test" Scripts/census-arguments-tuple-shapes.py --self-test
+
+# The bridge's clang-format check, from a DIFFERENT CI job (`code-style`, not `gate-scripts`) and
+# not a Python gate, so it does not go through run() either. Here because it is the check that was
+# costing the most round trips: every one of Sources/OCCTBridge's 33 files is now off the exemption
+# manifest and enforced, and OCCT's style aligns consecutive declarations and assignments, so
+# almost any hand-written addition to a bridge .mm violates it. Finding that out from a red PR
+# rather than from a commit is a push-and-wait cycle per attempt.
+#
+# CI and this hook run the SAME script with the SAME flags, which is stronger than the flag-for-flag
+# duplication the Python gates above rely on: there is only one copy of the file selection and the
+# check loop.
+#
+# Exit codes are NOT all treated as failure, deliberately. 1 means a real violation and blocks the
+# commit. Anything else means the check could not run (clang-format absent, or a major version that
+# disagrees with Scripts/clang-format-version.txt) and only warns, matching how a missing python3 is
+# handled above: CI pins the version exactly and is the authority, so local drift should not stand
+# between you and a commit that touches no bridge file at all.
+if command -v "${CLANG_FORMAT:-clang-format}" >/dev/null 2>&1; then
+    Scripts/format-bridge.sh --self-test >/tmp/occtswift-cf-$$.log 2>&1
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "--- FAIL: format-bridge.sh --self-test"
+        cat /tmp/occtswift-cf-$$.log
+        failed+=("format-bridge.sh --self-test")
+    fi
+
+    Scripts/format-bridge.sh --check >/tmp/occtswift-cf-$$.log 2>&1
+    case $? in
+        0) ;;
+        1)
+            echo ""
+            echo "--- FAIL: clang-format (Sources/OCCTBridge)"
+            cat /tmp/occtswift-cf-$$.log
+            failed+=("clang-format")
+            ;;
+        *)
+            echo ""
+            echo "pre-commit: bridge clang-format check skipped (CI still runs it):" >&2
+            cat /tmp/occtswift-cf-$$.log >&2
+            ;;
+    esac
+    rm -f /tmp/occtswift-cf-$$.log
+else
+    echo "pre-commit: clang-format not found; skipping the bridge format check (CI still runs it)." >&2
+fi
 
 if [ ${#failed[@]} -ne 0 ]; then
     echo ""

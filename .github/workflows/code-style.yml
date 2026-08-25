@@ -15,6 +15,13 @@ name: code-style
 #
 # swift-format, SwiftLint, and clang-format are blocking for everything NOT on
 # a manifest: formatting has no judgment call in it once a file complies.
+#
+# The bridge half of that rollout is finished: Scripts/style-manifest-bridge.txt
+# is now empty, so all 33 OCCTBridge files are enforced. That is why the
+# pre-commit hook gained the clang-format check (Scripts/format-bridge.sh) and
+# why the version is pinned below: with nothing grandfathered, OCCT's
+# consecutive-alignment rules put almost every hand-written bridge addition in
+# violation, and finding that out from a red PR costs a push per attempt.
 # check-style-manifest.py is blocking (its whole job is catching a specific,
 # unambiguous rule violation). The comment-ratio check is report-only by
 # design (see its own header) and never fails.
@@ -46,8 +53,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install swift-format, SwiftLint, clang-format
-        run: brew install swift-format swiftlint clang-format
+      - name: Install swift-format, SwiftLint
+        run: brew install swift-format swiftlint
+
+      # clang-format is PINNED, unlike the two above, and deliberately not installed from Homebrew:
+      # `brew install clang-format` takes whatever is current, and clang-format's output changes
+      # between major versions, so a Homebrew bump can turn a green `main` red with no code change
+      # and a contributor on a different major produces a diff this job rejects. OCCT's own CI pins
+      # for the same reason (its clang-format-check action pins 18.1.8 and hard-fails a mismatch).
+      #
+      # The PyPI wheel is the pin: a ~2 MB binary, not the full LLVM toolchain, so this stays about
+      # as fast as the brew bottle it replaces (`brew install llvm@22` would also pin it, at a
+      # gigabyte-scale download). Scripts/clang-format-version.txt is the single source of truth,
+      # read here, by Scripts/format-bridge.sh and through it by the pre-commit hook.
+      #
+      # GITHUB_PATH prepends, so this clang-format wins over any other on the runner image.
+      - name: Install pinned clang-format
+        run: |
+          version=$(grep -v '^#' Scripts/clang-format-version.txt | grep -v '^[[:space:]]*$' | head -1 | tr -d '[:space:]')
+          python3 -m venv /tmp/clang-format-venv
+          /tmp/clang-format-venv/bin/pip install --quiet --disable-pip-version-check "clang-format==$version"
+          echo /tmp/clang-format-venv/bin >> "$GITHUB_PATH"
+
+      # Fails on a mismatch rather than only printing, so a pin that silently stopped resolving is a
+      # red step instead of a formatting diff nobody can reproduce locally.
+      - name: clang-format version assertion
+        run: Scripts/format-bridge.sh --print-version
 
       - name: swift-format lint --strict (files not on the exemption manifest)
         run: |
@@ -61,21 +92,18 @@ jobs:
         if: '!cancelled()'
         run: swiftlint lint --strict --config .swiftlint.yml
 
+      # The file selection and check loop that used to be inline here live in the script now, so
+      # this job, the pre-commit hook and a local run cannot check different files or different
+      # flags. The self-test runs first, for the reason every other detector in this repo has one:
+      # a --check that reports "all clear" because it is blind looks exactly like one reporting
+      # "all clear" because the bridge is clean.
+      - name: format-bridge.sh --self-test
+        if: '!cancelled()'
+        run: Scripts/format-bridge.sh --self-test
+
       - name: clang-format check (OCCTBridge files not on the exemption manifest)
         if: '!cancelled()'
-        run: |
-          missing=0
-          comm -23 \
-            <(find Sources/OCCTBridge \( -name '*.h' -o -name '*.mm' \) | sort) \
-            <(grep -v '^#' Scripts/style-manifest-bridge.txt | sort) \
-            > /tmp/non-manifest-bridge.txt
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            if ! clang-format --dry-run --Werror -style=file "$f"; then
-              missing=1
-            fi
-          done < /tmp/non-manifest-bridge.txt
-          exit $missing
+        run: Scripts/format-bridge.sh --check
 
       - name: check-style-manifest.py --self-test
         if: '!cancelled()'
