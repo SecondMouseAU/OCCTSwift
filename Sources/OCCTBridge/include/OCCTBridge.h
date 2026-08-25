@@ -585,8 +585,8 @@
 //                                       OCCTSurfaceIsDegenerated, OCCTSurfaceIsUClosedSA,
 //                                       OCCTSurfaceIsVClosedSA
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
-// ShapeAnalysis_Wire                  → OCCTWireAnalyze, OCCTWireAnalyzer*, OCCTWireCheck* (all but
-//                                       OCCTWireCheckOuterBound, which only explores for a wire),
+// ShapeAnalysis_Wire                  → OCCTWireAnalyze, OCCTWireAnalyzer*, OCCTWireCheck*,
+// OCCTWireCheckOuterBound,
 //                                       OCCTWireEdgeCount, OCCTWireMinDistance*,
 //                                       OCCTWireMaxDistance*, OCCTShapeAnalyze
 // ShapeAnalysis_WireOrder             → OCCTWireOrderAnalyze, OCCTWireOrderAnalyzeWire
