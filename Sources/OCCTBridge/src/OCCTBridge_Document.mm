@@ -1321,7 +1321,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   if (!doc || doc->doc.IsNull() || datumIndex < 0)
     return false;
 
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
   TDF_LabelSequence          labels;
   dimTolTool->GetDatumLabels(labels);
   if (datumIndex >= (int32_t)labels.Length())
