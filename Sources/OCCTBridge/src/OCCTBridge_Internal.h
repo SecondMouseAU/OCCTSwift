@@ -3135,7 +3135,6 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
   return new OCCTShape(result);
 }
 
-
 // === #1077: shared BRepCheck tri-state decoder ===
 //
 // The three functions OCCTCheckFaceStatus, OCCTCheckEdgeStatus, OCCTCheckVertexStatus
@@ -3147,12 +3146,11 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
 // This helper consolidates that logic so the three call sites share one implementation.
 //
 // Returns: -1 on error, 0 for NoError, >0 for first status enum value.
-inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape,
-                                           const TopoDS_Shape& subShape)
+inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const TopoDS_Shape& subShape)
 {
   try
   {
-    BRepCheck_Analyzer analyzer(shape, Standard_True);
+    BRepCheck_Analyzer       analyzer(shape, Standard_True);
     Handle(BRepCheck_Result) res = analyzer.Result(subShape);
     if (res.IsNull())
       return -1;
