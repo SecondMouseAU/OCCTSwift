@@ -807,7 +807,8 @@ char* _Nullable OCCTUnicodeConvertToUnicode(const char* _Nonnull input);
 /// @param utf8Input The UTF-8 string to convert
 /// @param output Output buffer for the converted string (may be NULL if maxSize is 0)
 /// @param maxSize Maximum length of the output buffer (use 0 with NULL output to query length)
-/// @return Length of the converted string in bytes (not counting the NUL terminator), or -1 on failure.
+/// @return Length of the converted string in bytes (not counting the NUL terminator), or -1 on
+/// failure.
 ///         If output is non-NULL and maxSize > 0, the buffer receives a NUL-terminated copy
 ///         truncated to maxSize-1 bytes. A return value >= maxSize indicates truncation occurred.
 int32_t OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,

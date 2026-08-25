@@ -3936,7 +3936,7 @@ int32_t OCCTUnicodeConvertFromUnicode(const char* utf8Input,
     /* Estimate: UTF-8 to other encodings typically does not expand by more than 2x */
     std::vector<char>   tempBuf(std::strlen(utf8Input) * 4 + 1);
     Standard_PCharacter tempBufPtr = tempBuf.data();
-    bool                ok         = Resource_Unicode::ConvertUnicodeToFormat(eStr,
+    bool ok = Resource_Unicode::ConvertUnicodeToFormat(eStr,
                                                        tempBufPtr,
                                                        static_cast<int32_t>(tempBuf.size()));
     if (!ok)
