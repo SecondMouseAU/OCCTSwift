@@ -75,7 +75,24 @@ swift test                           # Run all tests (~3900 tests across per-dom
 swift test --filter "Issue187"       # Run suites whose struct name matches (matches the type, not @Suite title)
 swift run OCCTTest                   # Run test executable
 Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concurrency-touching changes (see docs/thread-safety.md)
+Scripts/format-bridge.sh             # clang-format every enforced Sources/OCCTBridge file in place
+Scripts/format-bridge.sh --check     # ...or just report, which is exactly what CI and the hook run
 ```
+
+**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.**
+`Scripts/style-manifest-bridge.txt` is now empty, so all 33 bridge files are enforced, and OCCT's
+style aligns consecutive declarations and assignments: two ordinary new locals in a row are a
+violation unless the tool wrote them. Hand-aligning is not a substitute and reads as if it were, an
+`int32_t      maxFaces` that clang-format wants *un*-aligned (because a `_Nonnull` on the line above
+breaks the alignment run) is the tell that a human did it by eye. The version is pinned in
+`Scripts/clang-format-version.txt`; a clang-format on a different major is refused rather than
+allowed to produce a diff CI rejects, and 21.1.8 vs 22.1.8 was measured to disagree on 10 of the 33
+files, so this is not a formality. To get that version onto a machine that has no working pip or
+venv (a minimal Debian/Ubuntu image, where `ensurepip` lives in a separate `python3.N-venv` package
+that may have no installation candidate), run `Scripts/install-clang-format.py`: standard library
+only, no pip, venv, curl, unzip or apt. See
+[`docs/guides/clang-format-setup.md`](docs/guides/clang-format-setup.md) for the other routes and a
+self-contained one-liner for a container build step.
 
 ### Static Gate Scripts
 
@@ -181,12 +198,25 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs nineteen of CI's twenty
-invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real run, which
-audits the branch's merge history and so answers a question about the branch rather than about the
-commit you are making; its `--self-test` does run. That is the only deliberate divergence between
-the two lists, and it is here rather than in a comment because an undocumented difference between
-the hook and CI is exactly the thing that makes a passing hook misleading. It is **opt-in and not installed by cloning**, so enable it deliberately:
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs nineteen of `gate-scripts`'
+twenty invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real
+run, which audits the branch's merge history and so answers a question about the branch rather than
+about the commit you are making; its `--self-test` does run. That is the only deliberate divergence
+between the two lists, and it is here rather than in a comment because an undocumented difference
+between the hook and CI is exactly the thing that makes a passing hook misleading.
+
+**It also runs `Scripts/format-bridge.sh --self-test` and `--check`**, which belong to a different
+CI job (`code-style`, not `gate-scripts`). Those two are stronger than flag-for-flag agreement: CI
+and the hook invoke the same script, so there is only one copy of the file selection and the check
+loop to drift. The rest of `code-style` (swift-format, SwiftLint, `check-style-manifest.py`) is
+still push-and-find-out, because clang-format is the only one of them whose findings are wholly
+mechanical, so it is the only one the hook can answer with a one-command fix rather than with prose
+somebody has to rewrite. Two exit codes are treated differently on purpose: a violation blocks the
+commit, while "clang-format is absent, or is a major the pin disagrees with" only warns, the same
+way a missing `python3` does. A wrong major does **not** fail the `--self-test` either, since what
+that proves is that the detector is not blind, which holds at any version.
+
+It is **opt-in and not installed by cloning**, so enable it deliberately:
 
 ```bash
 # main checkout, surgical, leaves other hooks alone
@@ -641,6 +671,7 @@ docs/
 ├── guides/
 │   ├── adding-features.md    # Step-by-step: bridge header → impl → Swift → test
 │   ├── building-occt.md      # Rebuild OCCT.xcframework from source
+│   ├── clang-format-setup.md # Getting the pinned clang-format, incl. no-pip/no-venv images
 │   ├── consuming-from-objective-c.md  # What a CONSUMER's own target must set (#967)
 │   ├── cookbook/             # Task-oriented, example-rich guides
 │   ├── prebuilt-bridge.md    # Opt-in prebuilt bridge binary (#339)

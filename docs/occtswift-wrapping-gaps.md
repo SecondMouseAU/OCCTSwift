@@ -320,13 +320,15 @@ These require implementing C++ abstract classes, which the bridge architecture d
   exact `GCE2d_*`/`GC_*` prefix confusion #508 warned future audits to watch for; all six corrected
   here. #809's sweep also found one site that regressed back to the deprecated spelling,
   `OCCTBridge_Modeling.mm`'s `OCCTShapeCreateFaceFromSurfaceUVPolygon` still calls
-  `GCE2d_MakeSegment`: but **left it unrenamed**: that file is grandfathered on
-  `Scripts/style-manifest-bridge.txt`, and `check-style-manifest.py` mechanically requires bringing
+  `GCE2d_MakeSegment`: but **left it unrenamed**, because at the time that file was grandfathered on
+  `Scripts/style-manifest-bridge.txt` and `check-style-manifest.py` mechanically required bringing
   the *whole* file into `clang-format` compliance (a ~24,000-line diff) the moment any line in it
-  changes, the same situation #917 already tracks (deferred from PR #912). The rename is
-  behavior-identical (the deprecated name is literally a type alias for the one it would become) and
-  is noted on #917 to land with that file's eventual compliance sweep, not forced in here. So one
-  `GCE2d_*` reference remains in the bridge as of this entry; current docs (outside
+  changed, the same situation #917 then tracked (deferred from PR #912). **That blocker is gone**:
+  #917 is closed, `OCCTBridge_Modeling.mm` is compliant, and `Scripts/style-manifest-bridge.txt` is
+  now empty, so the file costs nothing extra to touch. The rename itself was never done, so one
+  `GCE2d_*` reference still remains in the bridge (`OCCTBridge_Modeling.mm:3035`, plus its include
+  at `:174`); it is behavior-identical (the deprecated name is a type alias for the one it would
+  become) and now needs only its own change, not a sweep. Current docs (outside
   `docs/CHANGELOG.md`, a historical record) reference none. (#809, #917)
 - Thirty deprecated collection typedefs: `BRepBuilderAPI_CellFilter`,
   `BRepCheck_DataMapOfShapeListOfStatus`, `BRepCheck_IndexedDataMapOfShapeResult`,

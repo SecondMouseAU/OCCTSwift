@@ -21,6 +21,412 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Install the pinned clang-format without pip or venv, and document how (#1123)
+
+`Scripts/install-clang-format.py` installs the clang-format version pinned in
+`Scripts/clang-format-version.txt` using nothing but the Python standard library:
+
+```bash
+Scripts/install-clang-format.py                    # -> /usr/local/bin/clang-format
+Scripts/install-clang-format.py --version 22.1.8   # outside a checkout
+```
+
+No pip, venv, curl, unzip or apt. This matters for container images: Debian and Ubuntu split
+`ensurepip` out of `python3` into a versioned `python3.N-venv` package, so `python3 -m venv` fails
+with "ensurepip is not available", the unversioned `apt install python3-venv` it suggests can answer
+"no installation candidate", and a newer distro's PEP 668 separately refuses a plain `pip install`.
+A clang-format wheel is a zip holding one static binary, so `urllib` and `zipfile` are enough. The
+sha256 PyPI publishes is verified before the binary is written, the write is staged and renamed so a
+half-written file is never found on `PATH`, and the installed binary is run to confirm it reports
+the expected version.
+
+[`docs/guides/clang-format-setup.md`](guides/clang-format-setup.md) is new: why the version is
+pinned (21.1.8 and 22.1.8 disagree on 10 of the 33 enforced bridge files), the three install routes
+and when each applies, the Debian/Ubuntu `ensurepip` failure with both of its dead ends, a
+self-contained one-liner for a container build step that runs before a checkout, and how to verify.
+`Scripts/format-bridge.sh --check` is the verification step to put in an image build: it checks the
+version, that `-style=file` actually resolved to `Sources/OCCTBridge/.clang-format`, and that the
+tree is clean, the middle one mattering because clang-format falls back to LLVM style rather than
+failing when it finds no config.
+
+### One clang-format entry point for the bridge, a pre-commit check, and a pinned version (#1121)
+
+`Scripts/format-bridge.sh` is the single entry point for formatting the `OCCTBridge` C++ layer.
+Run it after any edit to a bridge `.h`/`.mm`:
+
+```bash
+Scripts/format-bridge.sh            # rewrite every enforced bridge file in place
+Scripts/format-bridge.sh --check    # report only; exactly what CI and the pre-commit hook run
+Scripts/format-bridge.sh One.mm     # just these files
+```
+
+It replaces the file-selection and check loop `.github/workflows/code-style.yml` carried inline, so
+CI, the optional pre-commit hook (`Scripts/git-hooks/pre-commit`, which gained the check) and a
+local run cannot check different files or different flags. This matters now that
+`Scripts/style-manifest-bridge.txt` is empty and all 33 bridge files are enforced: OCCT's
+`AlignConsecutiveDeclarations`/`AlignConsecutiveAssignments` make two ordinary consecutive locals a
+violation unless the tool wrote them, and hand-aligning produces something that looks compliant and
+is not.
+
+The clang-format version is now pinned in `Scripts/clang-format-version.txt` (22.1.8) and installed
+from PyPI in CI rather than taken from Homebrew. clang-format's output changes between major
+versions: 21.1.8 and 22.1.8 were measured to disagree on 10 of the 33 enforced files, so an unpinned
+install could turn a green `main` red on a Homebrew bump with no code change. A clang-format on a
+different major is refused locally rather than allowed to produce a diff CI rejects; a differing
+minor or patch only warns.
+
+No bridge source changed: the tree was already clean under the pinned version.
+
+### GD&T datum/dimension/tolerance tables unified to the document tool label (0:1:4) (#1051)
+
+The bridge used two separate GD&T tables: the old table at label `0:1` (created via
+`XCAFDoc_DimTolTool::Set(doc->doc->Main())`) and the new table at label `0:1:4` (created via
+`XCAFDoc_DocumentTool::DimTolTool()`). Swift API writes went to the old table; STEP/OCAF importers
+wrote to the new table. This caused a split where:
+
+- Datums created via Swift API (`createDatum()`) were invisible to `dimTolToolToleranceCount` /
+  `dimTolToolDimensionCount`
+- Datums, dimensions, and geometric tolerances from STEP/OCAF imports were invisible to
+  `Document.datumCount`, `Document.dimensions`, `Document.geomTolerances`, etc.
+
+**Write path**: All Swift API create functions now write to the new table (0:1:4) via
+`XCAFDoc_DocumentTool::DimTolTool()`:
+- `OCCTDocumentCreateDatum`
+- `OCCTDocumentCreateDimension` / `OCCTDocumentCreateDimensionWithTolerance`
+- `OCCTDocumentCreateGeomTolerance`
+
+**Read path**: All read/count functions now search BOTH tables, presenting a unified view:
+- New table entries first (importers + new Swift API writes)
+- Old table entries second (for backward compatibility with existing documents)
+- Updated: `OCCTDocumentGetDatumCount`, `OCCTDocumentGetDimensionCount`,
+  `OCCTDocumentGetGeomToleranceCount`
+- Updated: `occtDocumentDatumObjectAt`, `occtDocumentDimensionObjectAt`,
+  `occtDocumentGeomToleranceObjectAt`
+
+**Mutator path**: Works through the unified lookup, so modifications apply to the correct table.
+
+**Migration**: During the transition period, documents created with the old API (data in old table)
+remain fully readable. New writes go to the new table. The unified read presents all data
+regardless of which table it lives in. This ensures:
+- Existing OCAF documents written by this package remain readable
+- STEP/OCAF imports work correctly with the Swift API
+- No data loss during migration
+
+Added comprehensive test suite `Issue1051GDTTableUnificationTests` verifying:
+- Swift API datums visible to both `datumCount` and `dimTolToolToleranceCount`
+- Dimension/GeomTolerance counts work correctly
+- Multiple entries counted correctly
+- Mutators work through unified lookup
+- Datum name round-trip
+- Datum target operations
+
+### `Shape.selfIntersects` answers the check instead of the checker, and is deprecated (#1088)
+
+`Shape.selfIntersects` returned `BOPAlgo_CheckerSI::HasErrors()`, which is "did this algorithm
+fail" rather than "did it find an interference". The result of the check lives in
+`BOPDS_DS::Interferences()`, which the bridge function never read.
+
+Measured on three independent constructions of a genuinely self-intersecting shape, two overlapping
+boxes in a compound, two overlapping spheres, and a bowtie profile swept into a prism: **all three
+returned `false`**. On this evidence the property never returned `true` for a shape that
+self-intersects. In the other direction, a clean box the checker records an error for returned
+`true`. Nothing in the test suite was affected, because the property's one call site asks whether a
+clean box self-intersects, which is the single question the old code happened to get right.
+
+It now reads the interference map, skipping pairs that involve a shape the pave filler created, the
+same reading `BOPAlgo_ArgumentAnalyzer::TestSelfInterferences` performs. A null shape is refused
+rather than passed to `BOPAlgo_CheckerSI::Perform`, which dereferences it and SIGSEGVs in a
+standalone process.
+
+**`Shape.selfIntersects` is deprecated**, pointing at `Shape.isSelfIntersecting(timeout:)`. The
+property keeps working. Two reasons it is not the call to reach for: its `Bool` cannot express
+"could not answer", so `false` means both "clean" and "the check failed"; and it is unbounded, on a
+check measured at 619 s on one artifact (#319) and at 339 s to 463 s on an ordinary bevel gear
+(#1054). `isSelfIntersecting(timeout:)` bounds the work and returns `nil` for indeterminate.
+
+```swift
+switch shape.isSelfIntersecting(timeout: 30) {
+case .some(true):  break  // heal before booleans
+case .some(false): break  // clean
+case .none:        break  // unknown, not clean
+}
+```
+
+Reproducers, transcripts and the injection matrix are in
+[`Scripts/repro/1088-selfintersects-answer/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1088-selfintersects-answer).
+
+### A boolean timeout is no longer indistinguishable from a boolean failure (#1067)
+
+`subtracting`, `union` and `intersection` return `nil` both when the boolean fails and when it
+exceeds its wall-clock `timeout` (`Shape.defaultBooleanTimeout`, 120s). The two mean opposite things:
+a failure is a property of the geometry, a timeout is a property of the deadline and of whatever else
+the machine was doing. Reporting the second as the first sends whoever reads the error to inspect a
+shape that is fine, which is how it surfaced downstream as a gear-construction error under load.
+
+Three new methods report which happened, and the existing three are unchanged:
+
+```swift
+switch blank.subtractionOutcome(tools) {
+case .success(let cut): print(cut.volume as Any)
+case .timedOut:         print(blank.subtractionOutcome(tools, timeout: 600).shape as Any)
+case .failed:           print("the boolean declined these operands, a longer timeout will not help")
+}
+```
+
+`unionOutcome`, `subtractionOutcome` and `intersectionOutcome` take exactly the parameters their
+named siblings take and return `Shape.BooleanOutcome` (`.success(Shape)` / `.failed` / `.timedOut`,
+plus `.shape` for the collapsed answer). `union`, `subtracting` and `intersection` keep `-> Shape?`
+and are now thin wrappers returning `.shape`, so nothing changes for a caller who does not want the
+distinction, and `+`, `-` and `&` are untouched. `.timedOut` is **indeterminate**, not a negative
+result, the same contract `isSelfIntersecting(timeout:)` gives its `nil`, and it inherits the same
+caveat that `timeout:` is cooperative rather than a hard deadline (#293). With `timeout: 0` there is
+no watchdog, so `.timedOut` cannot occur.
+
+The distinction was already computed and discarded: `OCCTBoolTimeoutBreaker::tripped()` has existed
+since #206 and is read by `OCCTShapeSelfIntersectsBounded`, but not by the booleans. It agrees with
+OCCT's own `BOPAlgo_AlertUserBreak` on 200/200 repeats
+([`Scripts/repro/1067-boolean-timeout-outcome/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1067-boolean-timeout-outcome)).
+
+Separately, `circularPatternCut` gains a `timeout:` parameter, defaulted, so a caller whose cut is
+legitimately long can raise a bound that previously applied to it without being reachable from its
+signature. Its three indistinguishable `nil` returns (`count <= 0`, the pattern failing, the
+subtraction failing or timing out) are now documented, with the two-step decomposition that tells
+them apart.
+
+### `Surface.nlPlateDeformed` and its four siblings return the deformation where the caller put it (#1049, #1046)
+
+`NLPlate_NLPlate::Evaluate` returns the absolute deformed point rather than a displacement, so
+`nlPlateDeformed` and `nlPlateDeformedG1` adding the input surface to it put every result at twice
+its distance from the origin. A part positioned anywhere but the origin came back at double its
+offset, and the defect was as old as the bridge function; an origin-centred plane, which is what
+every shipped fixture was, came back stretched by two in u and v instead. All five entry points now
+sample `Evaluate` alone.
+
+The returned surface also carries the parametrisation of the working domain it was sampled over,
+instead of the `[0, 1] x [0, 1]` the fit produces, so the `(u, v)` a constraint was written at
+addresses the same place on the result. `nlPlateDeformedG2`, `nlPlateDeformedG3` and
+`nlPlateDeformedIncremental` additionally sampled a hardcoded `[0, 1] x [0, 1]` of the input rather
+than the working domain, and now sample the same domain as the other two: the input surface's own
+range in a direction it bounds, and the constraint span padded by 10 in one it does not. A
+deformed cylinder therefore spans its own `[0, 2pi]` rather than an interval derived from where its
+constraints happened to sit.
+
+A periodic input still comes back non-periodic and the 20x20 sample grid is still fixed; both are
+recorded in [`docs/occtswift-wrapping-gaps.md`](docs/occtswift-wrapping-gaps.md). The cookbook's
+`nlPlateDeformed` snippet is corrected too: it passed `maxIterations:`, the label #1017 renamed to
+`resolutionOrder:` in this same unreleased section, so it had not compiled since. The reproducer,
+the closed-form fixture and the before/after transcripts are in
+[`Scripts/repro/1049-nlplate-double-base/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1049-nlplate-double-base).
+
+`nlPlateDerivative`'s documentation called its result a displacement, which was the same misreading;
+it is a derivative of the deformed surface. Documentation only, no behaviour change there.
+
+### The datum lookup refuses the shape that crashes `XCAFDoc_Datum::GetObject` (#1030)
+
+`XCAFDoc_Datum::GetObject` builds the datum point's X out of the annotation plane's array instead of
+the point's own, so a datum carrying a point with no plane location dereferences a null handle. That
+is an OS signal, not a `Standard_Failure`, so the bridge's `catch (...)` could not absorb it and the
+process died. `Scripts/patches/0029-*` fixes it in the kernel and is in none of the seventeen patches
+the pinned v3.0.0 asset carries, so nothing protected a consumer.
+
+The bridge now refuses that one shape before calling `GetObject`, at all three sites that reach it.
+`Document.datum(at:)` returns `nil` and `Document.datums` omits the datum; the five datum write
+methods and `clearDatumTarget(at:)` return `false`, because the lookup they share runs before any of
+them can read what it returned; `Document.dimTolToolToleranceCount` returns `0` and
+`Document.rescaleGeometry(labelId:scaleFactor:forceIfNotRoot:)` returns `false`, since those two
+reach `GetObject` on the `XCAFDoc_DocumentTool` table instead, outside the shared lookup.
+
+A datum carrying both a point and a plane is unaffected and still reads, though the point OCCT builds
+for it has the wrong X until a rebuilt kernel ships. Nothing on the GD&T write path produces the
+refused shape: `createDatum(name:)` sets a name, a position and a modifier pair, never a point. It
+arrives with an OCAF document or through the label API.
+
+Two defects found while measuring this and filed rather than folded in: the datum accessors and
+`dimTolToolToleranceCount` read two different GD&T tables, so a datum an importer wrote is invisible
+to `Document.datums` (#1051); and `check-null-handle-guards.py` is structurally blind to a null
+handle a kernel method fetches from its own OCAF state (#1052).
+
+### Sub-kind 4 for the unmeasured-values census: the subject the caller never fed (#726)
+
+`Scripts/census-unmeasured-values.py` gains a fourth sub-kind. The first three all key on the shape
+of an OUTPUT (a literal on the right of an assignment, a pinned `.count`, a boolean that never
+flips), so a function that queries a throwaway object it built itself, and returns what that
+throwaway says, satisfies all three: measured against #1000's six deleted `DraftInfo` members,
+reconstructed from PR #1002's own diff, sub-kinds 1 and 3 report none of them. Sub-kind 4 keys on
+the subject instead. It taints the function's own parameters, grows the set through assignment,
+call and control-dependence edges, and reports any return, out-parameter write or result field
+whose expression reads a member of a local no caller input ever reached, plus any function whose
+only answer is a parameter it reads nowhere else. It catches five of #1000's six.
+
+The other two Pass 4a instances are measured as out of reach from bridge text rather than assumed
+to be covered, and both reasons are recorded in the script and in
+`Scripts/repro/726-unfed-subjects/`: #999's `OCCTGeomPlateErrors` was fed the caller's own points
+and tolerance, with the fabrication inside the kernel and its bridge-visible half already reported
+by `detect-dead-parameters.py`, and #996's GD&T reader called three real accessors on the caller's
+own dimension object whose zeroes were OCCT answering "not applicable".
+
+It reports rather than gates, exiting 0 as before, with CI running only its `--self-test`, now 54
+cases against 36. Its bare run over this tree reports 46 candidates in 18 functions and 0 echoes,
+every one of which adjudicates to "not an instance" against a compiled probe committed alongside:
+a fresh `OSD_MemInfo` moves by exactly 67108864 bytes across a 64 MiB allocation, while three
+consecutive fresh `Draft_EdgeInfo` instances answer `false` every time.
+
+No public API change; one census script, its repro directory, and `CLAUDE.md`'s gate-timing note,
+since a bare census run is now ~13s where the `--self-test` stays at 0.5s.
+
+### Pass 3: XDE/Assembly duplication audit (#384)
+
+- **Refactor:** Extracted shared document initialization boilerplate into `occtDocumentInit()` helper (used by `OCCTDocumentCreate`, `OCCTDocumentLoadSTEP`, and 12 sites in `OCCTBridge_IO.mm`). Eliminates ~30 lines of duplicated code per pair, adds missing null-check guard to 6 sites in `IO.mm`.
+
+- **Refactor:** Templated naming trace pair (`OCCTDocumentNamingTraceForward` / `OCCTDocumentNamingTraceBackward`) on iterator type (`TNaming_NewShapeIterator` / `TNaming_OldShapeIterator`). Eliminates ~30 lines of duplicated boilerplate.
+
+- **Refactor:** Templated format enumeration pair (`OCCTDocumentReadingFormats` / `OCCTDocumentWritingFormats`) on member function pointer. Eliminates ~25 lines of duplicated boilerplate.
+
+- **Refactor:** Unified Swift-side format enumeration (`readingFormats` / `writingFormats`) and naming trace (`tracedForward` / `tracedBackward`) accessors in `Document.swift` behind private helpers parameterized by the bridge call. Each pair was byte-identical apart from the bridge symbol.
+
+- **Fix:** Moved `occtDocumentInit` to `OCCTBridge_Internal.h` as `inline` so it can be used across translation units. All 14 document-creation sites now route through the shared helper. Added missing null-check guard to 6 sites in `IO.mm` that previously dereferenced `doc->Main()` without checking `IsNull()`.
+
+- **Internal:** Probe confirmed `TDocStd_Application::NewDocument("MDTV-XCAF", doc)` does not return null on the pinned OCCT 8.0.1 kernel: the six previously unguarded `IO.mm` sites were not on a latent crash branch.
+
+- **Style:** Fixed all 91 swift-format doc comment violations in `Document.swift` (periods, blank lines, parameter syntax, missing Returns sections). Removed `Document.swift` from style manifest (now compliant).
+
+### Pass 2a: Shape/Topology core duplication audit (#382)
+
+25 findings plus #796's census resolved, several of them live bugs.
+
+A duplication audit of `Shape.swift`'s domain-split descendants (`Shape+Analysis`, `+Curve`,
+`+Geom2d`, `+Math`, `+Mesh`, `+Modeling`, `+ShapeHealing`, `+Surface`, `+Topology`) plus
+`Edge`/`Face`/`Wire`/`WireOrder`/`TopologyRef` (#382, part of the #377 segmented audit). Grouped
+by what actually changed for a consumer:
+
+**Fixed: already-diverged duplicate copies, i.e. real bugs**
+
+- `FaceFixer.Status`'s raw `Int32` values were wrong from `.fail1` onward (shifted by one ordinal
+  against the real `ShapeExtend_Status` enum: `.done` queried `ShapeExtend_FAIL8` instead of the
+  combined `DONE` flag) since the type was added; corrected. `ShapeFixer` gains a type-safe
+  `status(_ status: ShapeFixStatus) -> Bool` overload sharing the corrected type; the legacy
+  `status(Int)` is unchanged. (#849)
+- `Shape.fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`'s `fixShell`/`fixFace`/`fixWire`
+  parameters were accepted and silently discarded: only `fixSolid` ever reached
+  `ShapeFix_Shape`. Wired to `FixFreeShellMode()`/`FixFreeFaceMode()`/`FixFreeWireMode()` (which
+  govern **free**, unattached content specifically). Existing callers passing non-default values
+  for these three will see different, correct output. (#837)
+- `Shape.uniformAbscissa(distance:)`/`(distance:u1:u2:)` had no ceiling at all, unlike their
+  `pointCount:` siblings: a small enough `distance` could ask OCCT to discretize an unbounded
+  number of points. Both now derive the implied count from curve length and reject before calling
+  OCCT. (#853)
+- `Shape.bounds` fabricated `(0,0,0)`-`(0,0,0)` for a void shape as if it were real geometry,
+  unlike the identical `Shape.boundingBox` computation, which correctly signals failure. Bridge
+  hygiene fixed (explicit `IsVoid()` guard); the full fix (`bounds` becoming `Optional`) is a
+  breaking change to 20 call sites and is documented as a candidate follow-up, not executed here.
+  (#834)
+- `Shape.droppingSmallEdges(tolerance:)` defaulted to `1e-6` against the identical
+  `fixSmallEdges(tolerance:dropSmall: true)`'s `1e-7`, aligned to `1e-7`. (#839)
+- `Shape.classifyPoint2d(u:v:tolerance:)` defaulted to `1e-7` against `Face.classify(u:v:)`/
+  `Shape.classifyPoint2D`'s `1e-6` for the same UV-boundary question, aligned to `1e-6`. (#840)
+- `Shape.maxTolerance(type:)`/`minTolerance(type:)`/`avgTolerance(type:)` used an `Int` encoding
+  incompatible with `maxTolerance(subShapeType:)`'s real `TopAbs_ShapeEnum` ordinals (the same
+  literal meant a different sub-shape type under each). Gained additive `ShapeType`-typed
+  overloads that agree with the ordinal convention; legacy `Int` overloads unchanged, documented
+  as legacy. The three new bridge functions backing them originally triplicated their body
+  (differing only in a hardcoded mode literal); deduplicated behind one shared helper in the same
+  review pass that caught it. (#833)
+- `docs/thread-safety.md`/`docs/naming-conventions.md` incorrectly claimed the no-argument
+  `Shape.deepCopy()` uses `BRepBuilderAPI_Copy` with independent geometry. It actually uses
+  `TNaming_CopyShape::CopyTool` and only clones topology: `Geom_Surface`/`Geom_Curve`/
+  `Poly_Triangulation` handles are shared with the original. Docs corrected on all three copy
+  methods. `Shape.isSelfIntersecting(hardTimeout:)`'s reliance on this for background-thread
+  isolation is flagged as a latent risk, not changed. (#831)
+
+**Breaking change**
+
+- `Selector.SubShapeType.compsolid` is renamed `compSolid`, matching `ShapeType`'s casing (the two
+  had drifted). `Shape.ShapeFilterType`'s `RawValue` changes from `Int32` to `Int` as part of
+  becoming a `ShapeType` typealias. Migration: rename `.compsolid` → `.compSolid`; if code depends
+  on `ShapeFilterType`'s raw type being `Int32`, cast explicitly. A third consolidated type,
+  `Shape.TopAbs_ShapeEnum`, was originally deleted outright with no compatibility path; the only
+  one of the four #844 consolidated without one, inconsistent with `ShapeFilterType`'s typealias
+  and the transform-matrix methods' deprecated overloads. Caught by the aggregate review; restored
+  as `@available(*, deprecated, renamed: "ShapeType") public typealias TopAbs_ShapeEnum =
+  ShapeType` before this PR went any further, so this is additive-again rather than a third
+  breaking change. (#844)
+
+**Additive**
+
+- `Shape+Modeling`'s six legacy `fused`/`subtracted`/`intersected(tolerance:/glue:)` entry points
+  now delegate to `union`/`subtracting`/`intersection`, inheriting the `#206` boolean-op timeout
+  watchdog they previously lacked entirely. Each gained a `timeout:` parameter (default
+  `Shape.defaultBooleanTimeout`, matching the safer family's own parameter) so a caller needing
+  longer can opt out of the new bound. (#832)
+- `Shape.transformed(matrix:)` now takes a new `Matrix12Grouped` type; `transformed(byMatrix:)`/
+  `gTransformed(matrix:)` now take `TransformMatrix3D` (previously only a `TransformFactory3D`
+  return type, now also constructible directly). The two layouts these three methods use
+  (GROUPED vs. INTERLEAVED) were previously indistinguishable `[Double]` arrays that could be
+  silently swapped with no error; that's now a compile error. Conversions
+  (`Matrix12Grouped.interleaved`/`TransformMatrix3D.grouped`) are provided. The previous
+  `[Double]`-taking overloads are kept as `@available(*, deprecated)` forwarders, so existing source
+  still compiles, with a warning. Both new types' initializers were briefly a trapping
+  `precondition` on a wrong element count instead of the graceful `nil` the methods they replace
+  always guaranteed: a caller migrating off the deprecated overload with malformed/deserialized
+  data would crash the process instead of getting `nil`. Caught by the aggregate review; changed
+  to a failable `init?(_:)` before this PR went any further. (#835)
+- `Shape.VolumeInertia`/`SurfaceInertia` gain `hasSymmetryAxis`/`hasSymmetryPoint` fields, matching
+  what `InertiaProperties` has always reported, read from the same already-computed
+  `GProp_PrincipalProps` object, no extra cost. (#848)
+- `Shape.faceFromPlane`/`faceFromCylinder`'s `uBounds`/`vBounds` overload pair gains an additive
+  `tolerance:` parameter (default `1e-7`, matching prior silent behavior); now delegates to the
+  `uRange`/`vRange` pair instead of duplicating the underlying `BRepLib_MakeFace` call. (#841)
+
+**Internal only, zero behavior change**
+
+- `TopologyRef`'s occurrence-bounds guard (duplicated 4x) and ancestor-resolve switch (duplicated
+  2x) consolidated into two shared private helpers; three previously-untested failure branches
+  gained regression coverage. The three resolver functions still each repeated the same
+  switch/bind/early-return block to *use* those helpers' `Result`s, caught by the aggregate
+  review and collapsed to `.flatMap` chaining, matching the `.map` style the same functions
+  already used elsewhere. (#846, #854)
+- `Face`'s six-way-duplicated zero-mass centroid ternary consolidated into one `massCentroid`
+  helper; `isHorizontal` is now provably `isUpwardFacing || isDownwardFacing` computed from a
+  single `normal` fetch instead of two (a real fix for a review-caught performance regression: the
+  first version of this consolidation fetched `normal` twice). `Face.SurfaceType` is now a
+  typealias for `Surface.SurfaceType`. (#842, #843, #850)
+- `ShapeContents`/`ShapeContentsExtended`'s two independent 9-field mappings unified behind one
+  internal `ShapeContentsCore` type, so the two can no longer silently transpose relative to each
+  other. (#855)
+- `WireOrder.analyze(edges:)`/`analyze(wire:)` share one decode helper instead of duplicating the
+  status/index-rebuild logic. (#845)
+- `Shape.findSurface`/`findSurfaceEx`/`findSurfaceTolerance`/`findSurfaceExisted` (5 entry points)
+  share one internal `BRepLib_FindSurface` helper; gained a null-shape guard the 3 unguarded ones
+  lacked (not reachable from Swift today). Two review passes caught and fixed three regressions
+  the consolidation introduced along the way: an `OCCTSurface` allocation briefly sat outside its
+  try/catch (risking a crash instead of a graceful `nil` on allocation failure), the shared
+  accessor call briefly fate-shared callers that used to be independent (a tolerance-only caller
+  could have failed for reasons that never touched tolerance before), and (caught only once the
+  two fixes above landed and the *aggregate* diff was reviewed) the fix for the second regression
+  still computed both `ToleranceReached()` and `Existed()` on every diagnostic call even though
+  each of `findSurfaceTolerance`/`findSurfaceExisted` only ever reads one; a 3-way selector
+  (`OCCTFindSurfaceWant`) now computes exactly the one each caller needs, matching the
+  pre-consolidation code. All three fixed before this PR went any further. (#838)
+- `Shape.orientedBoundingBoxDetailed` shares its `Bnd_OBB` computation with `orientedBoundingBox`
+  instead of computing a second one. (#847)
+- `Shape.recognizeCanonicalSurface`/`recognizeCanonicalCurve`, `Shape.pointCloudByTriangulation`/
+  `pointCloudByDensity`, `Shape.coonsFilling`/`curvedFilling`, `Shape.discreteTrihedron`/
+  `correctedFrenet`/`draftTrihedron`, and `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`
+  each share a private helper for their previously-copy-pasted marshaling. No behavioral
+  divergence found in any of the 5 pairs, all pure duplication. (#796, all 5 pairs)
+- `Shape.classifyPoint`/`classify(point:)` now route through the same `BRepClass3d_SolidClassifier`
+  mechanism (previously `classifyPoint` hand-built the lower-level pieces that class already
+  wraps). (#851)
+- `Shape.uniformAbscissa`'s four overloads and `uniformDeflection`'s two overloads share their
+  size-then-fill/malloc-then-unpack idioms; a review pass found and fixed a doubled arc-length
+  computation the first version of the `distance:` ceiling fix introduced, replacing it with a
+  purpose-built cheap quadrature bridge call. `Shape.curveShapeIntersect`/`ShapeRayIntersection`
+  now cross-reference each other in their docs (two independent line/shape intersectors, neither
+  aware of the other). (#852, #853)
+- `nurbsConvertViaModifier()`/`convertedToNURBS()` now cross-reference their real divergence (the
+  former skips the latter's final vertex-tolerance correction pass) instead of two undocumented,
+  unrelated-looking entry points. (#836)
+
 ### Circle involute with explicit placement (#1023)
 
 Added `Geom2dEval.circleInvoluteD0(origin:direction:radius:u:)` and `Geom2dEval.circleInvoluteD1(origin:direction:radius:u:)` to evaluate a circle involute at a parameter with an explicit placement (origin + X direction). Previously the involute was fixed to the canonical coordinate system (origin at 0,0; XDir along +X). The underlying bridge functions `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` and `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` were added, along with `OCCTGeom2dEvalCircleInvoluteCurveCreate` for creating a persistent `Geom2dEval_CircleInvoluteCurve`.
