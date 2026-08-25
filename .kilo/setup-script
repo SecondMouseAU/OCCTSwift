@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Setup script for cloud agent environment - ensures clang-format is installed
+
+set -euo pipefail
+
+# The repo path is available as REPO_PATH, or we can derive it from the script location
+REPO_ROOT="${REPO_PATH:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+echo "Setting up clang-format..."
+python3 "${REPO_ROOT}/Scripts/install-clang-format.py"
+
+echo "clang-format setup complete"
