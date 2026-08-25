@@ -258,11 +258,6 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef        spine,
 // === Thread Cutter (analytic helicoid) ===
 
 // Analytic helicoid thread cutter (#187): smooth ruled-face solid, no faceting/balloon.
-#include <BRepFill.hxx>
-#include <GeomAPI_Interpolate.hxx>
-#include <TColgp_HArray1OfPnt.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
-#include <BRepLib.hxx>
 
 OCCTShapeRef OCCTShapeBuildThreadCutter(double  ox,
                                         double  oy,
