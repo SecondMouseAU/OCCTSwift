@@ -165,4 +165,29 @@ struct Issue1058OuterBoundRefusalTests {
         #expect(wire.subShapes(ofType: .edge).count == 2)
         #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: panel) == nil)
     }
+
+    // #1073: A wire whose projected area cancels to rounding (~1.8e-15) is refused.
+    // The cylinder's seam wire (a closed circle) projected onto a planar panel face
+    // produces a degenerate pcurve where the signed area sums to near-zero. The old
+    // guard only required SOME edge to have a pcurve, so this passed through and
+    // the sign of the near-zero area decided the verdict. The new guard requires
+    // ALL edges to have pcurves AND the area magnitude to be significant relative
+    // to the face UV bounds.
+    @Test("A wire whose projected area cancels to rounding is refused (#1073)")
+    func cylinderWireOnPlanarFaceIsRefused() {
+        guard let panel = panelWithCentredWindow(), let lateral = cylinderLateralFace()
+        else {
+            Issue.record("fixtures failed")
+            return
+        }
+        guard let cylinderWire = lateral.subShapes(ofType: .wire).first else {
+            Issue.record("cylinder has no wire")
+            return
+        }
+        // Before #1073 this was `true` (or `false` depending on sign), the same as a
+        // real problem verdict, produced by signing a cancelling area of ~-1.8e-15.
+        // All four edges of the cylinder's seam wire have pcurves on the plane (projected),
+        // but the projection degenerates and the area cancels.
+        #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: panel) == nil)
+    }
 }
