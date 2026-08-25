@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v3.0.0
+## Current: v3.0.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the seventeen carried patches `0010`-`0012` and
 `0014`-`0027`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
@@ -16,6 +16,30 @@ A correctness and consolidation release. The kernel does not move, but it is reb
 asset was missing two carried patches (#905, #913) that no CI job exercised. Two breaking changes,
 each named with its migration in [`SEMVER.md`](SEMVER.md#v300), an enum rename (#844), and six
 bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0,0)-(0,0,0)` (#943).
+
+---
+
+## v3.0.1
+
+### OCCTBridge_Modeling split into HLR and AdvancedModeling domains (#1071)
+
+The monolithic `OCCTBridge_Modeling.h/.mm` (62K lines) is split into three domain-specific files:
+
+- `OCCTBridge_HLR.h/.mm` — Hidden Line Removal / Drawing (HLRBRep, HLRAlgo, BRepMesh)
+- `OCCTBridge_AdvancedModeling.h/.mm` — Filleting, drafting, defeaturing, pipe sweeps, thread cutters, B-spline/ruled surfaces, shell-with-open-faces
+- `OCCTBridge_Modeling.h/.mm` — Remaining core modeling (booleans, offsets, sweeps, features, healing, etc.)
+
+No public Swift API changes. The C bridge headers are re-exported through `OCCTBridge.h`, so existing imports continue to work. Internal only.
+
+### Deflection validation added to `OCCTDrawingCreatePoly` (#1130 review)
+
+`OCCTDrawingCreatePoly` now validates `deflection > 0` before passing to `BRepMesh_IncrementalMesh`, returning `NULL` for non-positive values instead of risking undefined behaviour.
+
+### Internal comment and type safety fixes (#1130 review)
+
+- Duplicate includes removed from `OCCTBridge_AdvancedModeling.mm`
+- Misleading comment for `OCCTShapeCreateRuled` corrected (uses `BRepFill::Shell`, not `BRepFill::Face`)
+- `occtPipeShellSetMode` parameter changed from `int32_t` to `OCCTPipeMode` enum for compile-time safety
 
 ---
 

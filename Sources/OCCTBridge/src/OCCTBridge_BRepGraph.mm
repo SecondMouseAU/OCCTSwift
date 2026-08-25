@@ -1505,7 +1505,7 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
     // Copy up to outOpNameMax-1 characters, NUL-terminate
     int copyLen = std::min(srcLen, outOpNameMax - 1);
     memcpy(outOpName, src, copyLen);
-    outOpName[copyLen] = '\0';
+    outOpName[copyLen] = '0';
     return srcLen;
   }
   catch (...)

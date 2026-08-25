@@ -64,6 +64,8 @@
 #include <Bnd_Box.hxx>    // #943: the shared bounding-box helper below
 #include <BRepBndLib.hxx> // #943: same
 #include <BRepFeat_MakeCylindricalHole.hxx>
+#include <BRepOffsetAPI_MakePipeShell.hxx>
+#include <TopoDS_Wire.hxx>
 #include <BRepFeat_Status.hxx>
 #include <Precision.hxx>
 #include <gp_Ax1.hxx>
@@ -3071,6 +3073,63 @@ inline bool occtBuildTrsf3D(gp_Trsf& trsf,
     default:
       return false;
   }
+}
+
+// === Pipe Shell helpers (shared with AdvancedModeling) ===
+//
+// Apply an orientation mode. Returns false when the mode's own argument is missing;
+// a zero-length binormal throws out of gp_Dir and is caught by the caller.
+//
+// SetMode's own parameter is named IsFrenet, and its header says so: "If IsFrenet is false,
+// a corrected Frenet trihedron is used." #598: this used to pass the opposite boolean for
+// both cases, so OCCTPipeModeFrenet built a corrected-Frenet sweep and OCCTPipeModeCorrectedFrenet
+// built a plain Frenet one, straight through to every public PipeSweepMode caller.
+inline bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell,
+                                 OCCTPipeMode                 mode,
+                                 double                       bnX,
+                                 double                       bnY,
+                                 double                       bnZ,
+                                 OCCTWireRef                  auxSpine)
+{
+  switch (mode)
+  {
+    case OCCTPipeModeFrenet:
+      pipeShell.SetMode(Standard_True);
+      return true;
+    case OCCTPipeModeCorrectedFrenet:
+      pipeShell.SetMode(Standard_False);
+      return true;
+    case OCCTPipeModeFixedBinormal:
+      pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
+      return true;
+    case OCCTPipeModeAuxiliary:
+      if (!auxSpine)
+        return false;
+      pipeShell.SetMode(auxSpine->wire, Standard_False); // curvilinear equivalence = false
+      return true;
+  }
+  return false;
+}
+
+// Build the configured shell and, when asked, close it into a solid. Holds the sole copy
+// of the build-history workaround that used to be pasted into all six entry points.
+inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid)
+{
+  pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
+  pipeShell.Build();
+  if (!pipeShell.IsDone())
+    return nullptr;
+
+  TopoDS_Shape result = pipeShell.Shape();
+  if (solid)
+  {
+    pipeShell.MakeSolid();
+    if (pipeShell.IsDone())
+    {
+      result = pipeShell.Shape();
+    }
+  }
+  return new OCCTShape(result);
 }
 
 #endif /* OCCTBridge_Internal_h */

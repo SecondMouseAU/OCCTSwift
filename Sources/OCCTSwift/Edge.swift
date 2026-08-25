@@ -370,7 +370,7 @@ extension Edge {
         var faces = [OCCTFaceRef?](repeating: nil, count: Int(maxFaces))
         let count = OCCTEdgeGetAdjacentFacesArray(shape.handle, handle, &faces, maxFaces)
         guard count >= 1 else { return nil }
-        return faces.prefix(Int(count)).compactMap { $0.map { Face(handle: $0) } }
+        return faces.prefix(Int(count)).map { Face(handle: $0!) }
     }
 
     public func dihedralAngle(between face1: Face, and face2: Face, at parameter: Double = 0.5)
