@@ -798,10 +798,6 @@ extern "C"
   /// Opaque handle for XDE document
   typedef struct OCCTDocument* OCCTDocumentRef;
 
-  // MARK: - 2D Drawing / HLR Projection (v0.6.0)
-
-  /// Opaque handle for 2D drawing (HLR projection result)
-  typedef struct OCCTDrawing* OCCTDrawingRef;
 
   // MARK: - Camera (Metal Visualization)
 
@@ -1287,7 +1283,9 @@ extern "C"
 #import "OCCTBridge_Curve3D.h"
 #import "OCCTBridge_Document.h"
 #import "OCCTBridge_Geom2d.h"
+#import "OCCTBridge_AdvancedModeling.h"
 #import "OCCTBridge_Healing.h"
+#import "OCCTBridge_HLR.h"
 #import "OCCTBridge_IO.h"
 #import "OCCTBridge_Mesh.h"
 #import "OCCTBridge_Modeling.h"

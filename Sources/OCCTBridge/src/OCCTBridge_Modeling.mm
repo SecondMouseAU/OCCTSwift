@@ -33,6 +33,7 @@
 
 #include <BRep_Builder.hxx>
 #include <BRepLib_FindSurface.hxx>
+#include <BRepLib.hxx>
 #include <Geom_Plane.hxx>
 #include <BRepAdaptor_CompCurve.hxx>
 #include <BRepAlgoAPI_Defeaturing.hxx>
@@ -248,751 +249,7 @@ static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
   return true;
 }
 
-OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
-                                 double             dirX,
-                                 double             dirY,
-                                 double             dirZ,
-                                 OCCTProjectionType projectionType,
-                                 double             focus)
-{
-  if (!shape)
-    return nullptr;
 
-  // #999: projectionType used to be read by nothing, so a caller asking for perspective got the
-  // orthographic projection silently. focus is what the perspective constructor needs and there is
-  // no defensible default for it, so it is a parameter rather than a literal. Reject a
-  // non-positive or NaN focus outright: it is a distance, and OCCT does not raise on one. Measured
-  // on a 100x50x30 box viewed down +Z, focus 0 and 1e-12 return an empty VCompound and a negative
-  // focus returns a real but differently-scaled projection, so neither reads as failure at the call
-  // site. (#1036 trimmed this list rather than corrected it: focus 5 and 15 were cited here too,
-  // and they do return an empty VCompound on that fixture, but both are positive and both pass this
-  // test, so they were never evidence for it. That box spans z [-15, 15], so 5 and 15 put the eye
-  // inside it or on its face: they were measuring the straddling case, which this test never
-  // rejected and the reach guard below now does. Re-measured in
-  // Scripts/repro/1036-perspective-eye-anchor/guard_comment_probe.mm.)
-  if (projectionType == OCCTProjectionPerspective && !(focus > 0))
-    return nullptr;
-
-  try
-  {
-    // Normalize direction
-    gp_Dir viewDir(dirX, dirY, dirZ);
-
-    // #1036: the projection frame below is anchored at the WORLD origin, so the eye sits at
-    // focus * viewDir and the picture plane passes through the origin. HLRAlgo_Projector::Project
-    // divides by R = 1 - Z/focus, with Z the point's coordinate in that frame, so a point at or
-    // beyond the eye has R <= 0 and comes back mirrored through the origin instead of not at all.
-    // Measured on a box spanning x [20,30], z [1000,1010] viewed down +Z: focus 50 returns seven
-    // edges spanning x [-1.579, -1.042] where the correct answer is [40, 60.606], focus landing
-    // exactly on a face returns coordinates of order 1e17, and an eye plane cutting the shape
-    // returns one half mirrored against the other (x [-24.444, 20] for a box at x [20,30]). All
-    // three report success, which is the same hazard the focus > 0 test above rejects. The bound is
-    // the shape's reach along the view direction from the origin, not its own extent.
-    if (projectionType == OCCTProjectionPerspective)
-    {
-      double reach = 0.0;
-      if (!occtDrawingReachAlongDirection(shape->shape, viewDir, reach) || reach >= focus)
-        return nullptr;
-    }
-
-    gp_Ax2            projAxis(gp_Pnt(0, 0, 0), viewDir);
-    HLRAlgo_Projector projector = projectionType == OCCTProjectionPerspective
-                                    ? HLRAlgo_Projector(projAxis, focus)
-                                    : HLRAlgo_Projector(projAxis);
-
-    // Create HLR algorithm
-    Handle(HLRBRep_Algo) hlrAlgo = new HLRBRep_Algo();
-    hlrAlgo->Add(shape->shape);
-    hlrAlgo->Projector(projector);
-    hlrAlgo->Update();
-    hlrAlgo->Hide();
-
-    // Extract edges
-    HLRBRep_HLRToShape shapes(hlrAlgo);
-
-    OCCTDrawing* drawing    = new OCCTDrawing();
-    drawing->visibleSharp   = shapes.VCompound();
-    drawing->visibleSmooth  = shapes.Rg1LineVCompound();
-    drawing->visibleOutline = shapes.OutLineVCompound();
-    drawing->hiddenSharp    = shapes.HCompound();
-    drawing->hiddenSmooth   = shapes.Rg1LineHCompound();
-    drawing->hiddenOutline  = shapes.OutLineHCompound();
-
-    return drawing;
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-void OCCTDrawingRelease(OCCTDrawingRef drawing)
-{
-  delete drawing;
-}
-
-OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType)
-{
-  if (!drawing)
-    return nullptr;
-
-  try
-  {
-    TopoDS_Shape    result;
-    BRep_Builder    builder;
-    TopoDS_Compound compound;
-    builder.MakeCompound(compound);
-
-    switch (edgeType)
-    {
-      case OCCTEdgeTypeVisible:
-        if (!drawing->visibleSharp.IsNull())
-        {
-          builder.Add(compound, drawing->visibleSharp);
-        }
-        if (!drawing->visibleSmooth.IsNull())
-        {
-          builder.Add(compound, drawing->visibleSmooth);
-        }
-        if (!drawing->visibleOutline.IsNull())
-        {
-          builder.Add(compound, drawing->visibleOutline);
-        }
-        break;
-
-      case OCCTEdgeTypeHidden:
-        if (!drawing->hiddenSharp.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenSharp);
-        }
-        if (!drawing->hiddenSmooth.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenSmooth);
-        }
-        if (!drawing->hiddenOutline.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenOutline);
-        }
-        break;
-
-      case OCCTEdgeTypeOutline:
-        if (!drawing->visibleOutline.IsNull())
-        {
-          builder.Add(compound, drawing->visibleOutline);
-        }
-        if (!drawing->hiddenOutline.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenOutline);
-        }
-        break;
-    }
-
-    if (compound.IsNull())
-      return nullptr;
-
-    return new OCCTShape(compound);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-// MARK: - Advanced Modeling (v0.8.0)
-
-// The three edge-list fillet entry points share occtShapeFilletEdgeList (OCCTBridge_Internal.h)
-// and supply only their own radius law; OCCTShapeBlendEdges, the per-edge one, lives in
-// OCCTBridge_Healing.mm. See that helper for why the radius precondition is the bridge's. #489
-//
-// #639: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined
-// (occtFilletWriteDeclined). Both are nullable and the existing skip behaviour is unchanged when
-// they are null; `filleted(edges:radius:)` passes null for both,
-// `filletedWithReport(edges:radius:)` does not. `declinedEdgeIndices`, when non-null, must have
-// capacity >= edgeCount.
-OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef   shape,
-                                  const int32_t* edgeIndices,
-                                  int32_t        edgeCount,
-                                  double         radius,
-                                  int32_t*       declinedEdgeIndices,
-                                  int32_t*       outDeclinedCount)
-{
-  if (outDeclinedCount)
-    *outDeclinedCount = 0;
-  if (!occtValidFilletRadius(radius))
-    return nullptr;
-
-  return occtShapeFilletEdgeList(
-    shape,
-    edgeIndices,
-    edgeCount,
-    [radius](BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge, int32_t) {
-      fillet.Add(radius, edge);
-      return true;
-    },
-    declinedEdgeIndices,
-    outDeclinedCount);
-}
-
-// #639: same reporting contract as OCCTShapeFilletEdges above.
-OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef   shape,
-                                        const int32_t* edgeIndices,
-                                        int32_t        edgeCount,
-                                        double         startRadius,
-                                        double         endRadius,
-                                        int32_t*       declinedEdgeIndices,
-                                        int32_t*       outDeclinedCount)
-{
-  if (outDeclinedCount)
-    *outDeclinedCount = 0;
-  if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius))
-    return nullptr;
-
-  return occtShapeFilletEdgeList(
-    shape,
-    edgeIndices,
-    edgeCount,
-    [startRadius, endRadius](BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge, int32_t) {
-      // #612: this used to be Add(edge) followed by SetRadius(R1, R2, NbContours(), 1). Both
-      // coordinates were wrong, a tangent-continuous edge extends an existing contour rather
-      // than creating one, and the third argument is the edge's index *within* the contour, not
-      // a constant 1, so every edge of a tangent chain landed on one slot and only the last
-      // survived (measured 10273.238348 for two edges of a slot rim at 1 -> 4, exactly what
-      // filleting the first alone produces, against 10297.711861 correct).
-      //
-      // OCCT ships the whole thing as one call: Add(R1, R2, E) is Add(E) plus the same
-      // Contains(E, IinC) slot resolution plus SetRadius(R1, R2, IC, IinC). Verified equivalent
-      // to resolving the slot by hand, identical to the digit on that rim for the pair
-      // (10297.711860842), the straight side alone (10273.238347801) and the arc alone
-      // (10276.405613964), and it declines an unfilletable edge by construction, which is the
-      // skip the sibling entry points get from Add(Radius, E).
-      fillet.Add(startRadius, endRadius, edge);
-      return true;
-    },
-    declinedEdgeIndices,
-    outDeclinedCount);
-}
-
-OCCTShapeRef OCCTShapeDraft(OCCTShapeRef   shape,
-                            const int32_t* faceIndices,
-                            int32_t        faceCount,
-                            double         dirX,
-                            double         dirY,
-                            double         dirZ,
-                            double         angle,
-                            double         planeX,
-                            double         planeY,
-                            double         planeZ,
-                            double         planeNx,
-                            double         planeNy,
-                            double         planeNz)
-{
-  if (!shape || !faceIndices || faceCount <= 0)
-    return nullptr;
-
-  try
-  {
-    // Pull direction (typically vertical for mold release)
-    gp_Dir pullDir(dirX, dirY, dirZ);
-
-    // Neutral plane - where draft angle is measured from
-    gp_Pnt planePoint(planeX, planeY, planeZ);
-    gp_Dir planeNormal(planeNx, planeNy, planeNz);
-    gp_Pln neutralPlane(planePoint, planeNormal);
-
-    BRepOffsetAPI_DraftAngle draft(shape->shape);
-
-    // #568: a face index naming no face of this shape rejects the whole draft. It used to be
-    // skipped, and BRepOffsetAPI_DraftAngle reports IsDone() for a request it was handed no
-    // faces for at all, so a draft naming only foreign faces returned the input shape,
-    // undrafted, presented as a successful draft. See OCCTBridge_Internal.h.
-    if (!occtUseSubShapesByIndex(shape->shape,
-                                 TopAbs_FACE,
-                                 faceIndices,
-                                 faceCount,
-                                 [&](const TopoDS_Shape& face, int32_t) {
-                                   draft.Add(TopoDS::Face(face), pullDir, angle, neutralPlane);
-                                 }))
-      return nullptr;
-
-    draft.Build();
-    if (!draft.IsDone())
-      return nullptr;
-
-    return new OCCTShape(draft.Shape());
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-// MARK: - Defeaturing (BRepAlgoAPI_Defeaturing)
-
-// The shared skeleton behind every defeaturing entry point, here and in OCCTBridge_Healing.mm.
-// See OCCTBridge_Internal.h for what the four copies this replaces disagreed about, and for why
-// the fuzzy-tolerance wrapper that used to be the fifth is gone rather than folded in. #497
-
-bool occtDefeaturingFacesByIndex(const TopoDS_Shape&   shape,
-                                 const int32_t*        faceIndices,
-                                 int32_t               faceCount,
-                                 TopTools_ListOfShape& outFaces)
-{
-  if (faceIndices == nullptr || faceCount < 1)
-    return false;
-
-  TopTools_IndexedMapOfShape faceMap;
-  TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
-
-  for (int32_t i = 0; i < faceCount; i++)
-  {
-    int32_t idx = faceIndices[i];
-    if (idx < 0 || idx >= faceMap.Extent())
-      return false;
-    outFaces.Append(faceMap(idx + 1));
-  }
-  return true;
-}
-
-bool occtDefeaturingFacesFromShapes(const TopoDS_Shape&     shape,
-                                    const OCCTShape* const* faces,
-                                    int32_t                 faceCount,
-                                    TopTools_ListOfShape&   outFaces)
-{
-  if (faces == nullptr || faceCount < 1)
-    return false;
-
-  TopTools_IndexedMapOfShape faceMap;
-  TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
-
-  for (int32_t i = 0; i < faceCount; i++)
-  {
-    if (faces[i] == nullptr)
-      return false;
-
-    // Each carrier stands for the faces it contains, so explore rather than assume a face was
-    // handed over: the kernel accepts a compound, a shell or a whole solid here, and passing the
-    // faces it explores is the same request BREP for BREP (#578, section 3 of the probe).
-    int32_t contributed = 0;
-    for (TopExp_Explorer exp(faces[i]->shape, TopAbs_FACE); exp.More(); exp.Next())
-    {
-      if (!faceMap.Contains(exp.Current()))
-        return false;
-      outFaces.Append(exp.Current());
-      contributed++;
-    }
-    if (contributed == 0)
-      return false;
-  }
-  return true;
-}
-
-bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing&    defeaturing,
-                          const TopoDS_Shape&         shape,
-                          const TopTools_ListOfShape& facesToRemove,
-                          TopoDS_Shape&               outResult)
-{
-  defeaturing.SetShape(shape);
-  defeaturing.AddFacesToRemove(facesToRemove);
-  defeaturing.Build();
-  if (!defeaturing.IsDone())
-    return false;
-
-  outResult = defeaturing.Shape();
-  return !outResult.IsNull();
-}
-
-OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef   shape,
-                                     const int32_t* faceIndices,
-                                     int32_t        faceCount)
-{
-  if (!shape)
-    return nullptr;
-
-  try
-  {
-    TopTools_ListOfShape facesToRemove;
-    if (!occtDefeaturingFacesByIndex(shape->shape, faceIndices, faceCount, facesToRemove))
-    {
-      return nullptr;
-    }
-
-    BRepAlgoAPI_Defeaturing defeaturing;
-    TopoDS_Shape            result;
-    if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result))
-      return nullptr;
-
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-// MARK: - Pipe shell (BRepOffsetAPI_MakePipeShell)
-//
-// Every Add()-based pipe shell in this bridge is one call to
-// OCCTShapeCreatePipeShellMultiSection. The single-profile spellings that used to sit
-// here (OCCTShapeCreatePipeShell, ...WithBinormal, ...WithAuxSpine, ...WithTransition)
-// were that function with profileCount == 1 and some of its arguments nailed shut, and
-// two of them disagreed with it about what a mode means (#503).
-
-// Apply an orientation mode. Returns false when the mode's own argument is missing;
-// a zero-length binormal throws out of gp_Dir and is caught by the caller.
-//
-// SetMode's own parameter is named IsFrenet, and its header says so: "If IsFrenet is false,
-// a corrected Frenet trihedron is used." #598: this used to pass the opposite boolean for
-// both cases, so OCCTPipeModeFrenet built a corrected-Frenet sweep and OCCTPipeModeCorrectedFrenet
-// built a plain Frenet one, straight through to every public PipeSweepMode caller.
-static bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell,
-                                 OCCTPipeMode                 mode,
-                                 double                       bnX,
-                                 double                       bnY,
-                                 double                       bnZ,
-                                 OCCTWireRef                  auxSpine)
-{
-  switch (mode)
-  {
-    case OCCTPipeModeFrenet:
-      pipeShell.SetMode(Standard_True);
-      return true;
-    case OCCTPipeModeCorrectedFrenet:
-      pipeShell.SetMode(Standard_False);
-      return true;
-    case OCCTPipeModeFixedBinormal:
-      pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
-      return true;
-    case OCCTPipeModeAuxiliary:
-      if (!auxSpine)
-        return false;
-      pipeShell.SetMode(auxSpine->wire, Standard_False); // curvilinear equivalence = false
-      return true;
-  }
-  return false;
-}
-
-// Build the configured shell and, when asked, close it into a solid. Holds the sole copy
-// of the build-history workaround that used to be pasted into all six entry points.
-static OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid)
-{
-  pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-  pipeShell.Build();
-  if (!pipeShell.IsDone())
-    return nullptr;
-
-  TopoDS_Shape result = pipeShell.Shape();
-  if (solid)
-  {
-    pipeShell.MakeSolid();
-    if (pipeShell.IsDone())
-    {
-      result = pipeShell.Shape();
-    }
-  }
-  return new OCCTShape(result);
-}
-
-// Multi-section pipe shell (#180): one MakePipeShell, several Add() calls.
-// Since #503 this is also the single-profile form, and the only Add()-based pipe shell.
-OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef        spine,
-                                                  const OCCTWireRef* profiles,
-                                                  int32_t            profileCount,
-                                                  OCCTPipeMode       mode,
-                                                  double             bnX,
-                                                  double             bnY,
-                                                  double             bnZ,
-                                                  OCCTWireRef        auxSpine,
-                                                  int32_t            transitionMode,
-                                                  bool               withContact,
-                                                  bool               withCorrection,
-                                                  bool               solid)
-{
-  if (!spine || !profiles || profileCount < 1)
-    return nullptr;
-
-  try
-  {
-    BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-    if (!occtPipeShellSetMode(pipeShell, mode, bnX, bnY, bnZ, auxSpine))
-      return nullptr;
-
-    switch (transitionMode)
-    {
-      case 1:
-        pipeShell.SetTransitionMode(BRepBuilderAPI_RightCorner);
-        break;
-      case 2:
-        pipeShell.SetTransitionMode(BRepBuilderAPI_RoundCorner);
-        break;
-      default:
-        pipeShell.SetTransitionMode(BRepBuilderAPI_Transformed);
-        break;
-    }
-
-    // Add every profile (variable cross-section).
-    for (int32_t i = 0; i < profileCount; ++i)
-    {
-      if (!profiles[i])
-        return nullptr;
-      pipeShell.Add(profiles[i]->wire,
-                    withContact ? Standard_True : Standard_False,
-                    withCorrection ? Standard_True : Standard_False);
-    }
-
-    return occtPipeShellFinish(pipeShell, solid);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-// Analytic helicoid thread cutter (#187): smooth ruled-face solid, no faceting/balloon.
-#include <BRepFill.hxx>
-#include <GeomAPI_Interpolate.hxx>
-#include <TColgp_HArray1OfPnt.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
-#include <BRepLib.hxx>
-
-OCCTShapeRef OCCTShapeBuildThreadCutter(double  ox,
-                                        double  oy,
-                                        double  oz,
-                                        double  ax,
-                                        double  ay,
-                                        double  az,
-                                        double  rx,
-                                        double  ry,
-                                        double  rz,
-                                        double  pitch,
-                                        double  turns,
-                                        double  apexSign,
-                                        double  helixRadius,
-                                        double  cutDepth,
-                                        double  outerHalf,
-                                        double  apexHalf,
-                                        double  bleed,
-                                        double  phase,
-                                        double  handed,
-                                        int32_t nSections)
-{
-  if (pitch <= 0 || turns <= 0 || nSections < 2)
-    return nullptr;
-  try
-  {
-    const gp_Vec O(ox, oy, oz), A(ax, ay, az), R0(rx, ry, rz);
-    const gp_Vec T0     = A.Crossed(R0);                     // tangential0 = axis x radial0
-    const double outerR = helixRadius - apexSign * bleed;    // outer end bleeds past surface
-    const double apexR  = helixRadius + apexSign * cutDepth; // apex = the deep cut
-    const double cr[4]  = {outerR, apexR, apexR, outerR};
-    const double cz[4]  = {-outerHalf,
-                           -apexHalf,
-                           apexHalf,
-                           outerHalf}; // wide at surface, narrow at apex (#213)
-    const int    N      = nSections;
-
-    // Each V-corner traces a single-edge BSpline helix.
-    TopoDS_Edge edges[4];
-    for (int k = 0; k < 4; ++k)
-    {
-      Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, N + 1);
-      for (int i = 0; i <= N; ++i)
-      {
-        const double fr     = (double)i / (double)N;
-        const double theta  = handed * (phase + 2.0 * M_PI * turns * fr);
-        const double zc     = pitch * turns * fr + cz[k];
-        const gp_Vec radial = R0 * std::cos(theta) + T0 * std::sin(theta);
-        const gp_Vec P      = O + A * zc + radial * cr[k];
-        pts->SetValue(i + 1, gp_Pnt(P.X(), P.Y(), P.Z()));
-      }
-      GeomAPI_Interpolate interp(pts, Standard_False, 1e-7);
-      interp.Perform();
-      if (!interp.IsDone())
-        return nullptr;
-      edges[k] = BRepBuilderAPI_MakeEdge(interp.Curve());
-      if (edges[k].IsNull())
-        return nullptr;
-    }
-
-    // Ruled flank/crest/root faces between consecutive corner helices, + 2 V end caps.
-    BRepBuilderAPI_Sewing sewer(1e-6);
-    for (int k = 0; k < 4; ++k)
-    {
-      TopoDS_Face f = BRepFill::Face(edges[k], edges[(k + 1) % 4]);
-      if (f.IsNull())
-        return nullptr;
-      sewer.Add(f);
-    }
-    for (int cap = 0; cap < 2; ++cap)
-    {
-      const double               fr     = (double)cap;
-      const double               theta  = handed * (phase + 2.0 * M_PI * turns * fr);
-      const double               zbase  = pitch * turns * fr;
-      const gp_Vec               radial = R0 * std::cos(theta) + T0 * std::sin(theta);
-      BRepBuilderAPI_MakePolygon poly;
-      for (int k = 0; k < 4; ++k)
-      {
-        const gp_Vec P = O + A * (zbase + cz[k]) + radial * cr[k];
-        poly.Add(gp_Pnt(P.X(), P.Y(), P.Z()));
-      }
-      poly.Close();
-      BRepBuilderAPI_MakeFace mf(poly.Wire(), Standard_True);
-      if (!mf.IsDone())
-        return nullptr;
-      sewer.Add(mf.Face());
-    }
-    sewer.Perform();
-    TopoDS_Shape shell = sewer.SewedShape();
-    if (shell.IsNull())
-      return nullptr;
-    // #443 audit: first shell only, but the faces sewn above are one closed helical
-    // cutter by construction, so there is never a second. No caller-visible risk.
-    TopExp_Explorer se(shell, TopAbs_SHELL);
-    if (!se.More())
-      return nullptr;
-    TopoDS_Solid solid = BRepBuilderAPI_MakeSolid(TopoDS::Shell(se.Current())).Solid();
-    // Orient outward so it is a proper positive-volume solid (the sewn shell can be
-    // inside-out, which would make the boolean intersect instead of subtract).
-    BRepLib::OrientClosedSolid(solid);
-    return new OCCTShape(solid);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-// MARK: - Surface Construction (v0.9.0)
-
-OCCTShapeRef OCCTShapeCreateBSplineSurface(const double* poles,
-                                           int32_t       uCount,
-                                           int32_t       vCount,
-                                           int32_t       uDegree,
-                                           int32_t       vDegree)
-{
-  if (!poles || uCount < 2 || vCount < 2)
-    return nullptr;
-  if (uDegree < 1 || vDegree < 1)
-    return nullptr;
-  if (uCount < uDegree + 1 || vCount < vDegree + 1)
-    return nullptr;
-
-  try
-  {
-    // Create 2D array of control points (1-indexed for OCCT)
-    TColgp_Array2OfPnt polesArray(1, uCount, 1, vCount);
-
-    for (int32_t u = 0; u < uCount; u++)
-    {
-      for (int32_t v = 0; v < vCount; v++)
-      {
-        int32_t idx = (u * vCount + v) * 3;
-        polesArray.SetValue(u + 1, v + 1, gp_Pnt(poles[idx], poles[idx + 1], poles[idx + 2]));
-      }
-    }
-
-    // Create uniform clamped knot vectors
-    int32_t uKnotCount = uCount - uDegree + 1;
-    int32_t vKnotCount = vCount - vDegree + 1;
-
-    TColStd_Array1OfReal    uKnots(1, uKnotCount);
-    TColStd_Array1OfReal    vKnots(1, vKnotCount);
-    TColStd_Array1OfInteger uMults(1, uKnotCount);
-    TColStd_Array1OfInteger vMults(1, vKnotCount);
-
-    // Uniform knot values
-    for (int32_t i = 1; i <= uKnotCount; i++)
-    {
-      uKnots.SetValue(i, (double)(i - 1) / (uKnotCount - 1));
-      uMults.SetValue(i, (i == 1 || i == uKnotCount) ? uDegree + 1 : 1);
-    }
-    for (int32_t i = 1; i <= vKnotCount; i++)
-    {
-      vKnots.SetValue(i, (double)(i - 1) / (vKnotCount - 1));
-      vMults.SetValue(i, (i == 1 || i == vKnotCount) ? vDegree + 1 : 1);
-    }
-
-    // Create B-spline surface
-    Handle(Geom_BSplineSurface) surface =
-      new Geom_BSplineSurface(polesArray, uKnots, vKnots, uMults, vMults, uDegree, vDegree);
-
-    if (surface.IsNull())
-      return nullptr;
-
-    // Create face from surface
-    BRepBuilderAPI_MakeFace faceMaker(surface, 1e-6);
-    if (!faceMaker.IsDone())
-      return nullptr;
-
-    return new OCCTShape(faceMaker.Face());
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef OCCTShapeCreateRuled(OCCTWireRef wire1, OCCTWireRef wire2)
-{
-  if (!wire1 || !wire2)
-    return nullptr;
-
-  try
-  {
-    // Use BRepFill::Face to create a ruled surface between two edges/wires
-    TopoDS_Shape result = BRepFill::Shell(wire1->wire, wire2->wire);
-
-    if (result.IsNull())
-      return nullptr;
-
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef   shape,
-                                         double         thickness,
-                                         const int32_t* openFaceIndices,
-                                         int32_t        faceCount)
-{
-  if (!shape || !openFaceIndices || faceCount < 1)
-    return nullptr;
-
-  try
-  {
-    // #568: a face index naming no face of this shape rejects the whole call. It used to be
-    // skipped, and the only thing that caught it was a `facesToRemove.IsEmpty()` check here --
-    // which fires only when *every* index is unresolvable. A list mixing one real open face
-    // with one foreign one shelled the solid with fewer openings than asked for and reported
-    // success. That check is gone rather than kept: the helper refuses a count below 1 and
-    // appends for every index it does resolve, so an empty list is now unreachable.
-    // See OCCTBridge_Internal.h.
-    TopTools_ListOfShape facesToRemove;
-    if (!occtUseSubShapesByIndex(
-          shape->shape,
-          TopAbs_FACE,
-          openFaceIndices,
-          faceCount,
-          [&](const TopoDS_Shape& face, int32_t) { facesToRemove.Append(face); }))
-      return nullptr;
-
-    // Create thick solid (shell) with open faces
-    BRepOffsetAPI_MakeThickSolid thickSolid;
-    thickSolid.MakeThickSolidByJoin(shape->shape, facesToRemove, thickness, 1e-6);
-
-    if (!thickSolid.IsDone())
-      return nullptr;
-
-    return new OCCTShape(thickSolid.Shape());
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
 
 // MARK: - Helix Curves (v0.28.0)
 
@@ -3514,46 +2771,6 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
 // orthographic one at focus 20, 50, 200 and 1000, while HLRBRep_Algo on the same inputs scales
 // +-50 to +-200, +-71.43, +-54.05 and +-50.76. So the parameter is dropped rather than faked.
 // See Scripts/repro/999-dead-parameters/hlr_perspective.mm.
-OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
-                                     double       dirX,
-                                     double       dirY,
-                                     double       dirZ,
-                                     double       deflection)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    // Ensure the shape has a triangulation
-    BRepMesh_IncrementalMesh mesh(shape->shape, deflection);
-
-    gp_Dir            viewDir(dirX, dirY, dirZ);
-    gp_Ax2            projAxis(gp_Pnt(0, 0, 0), viewDir);
-    HLRAlgo_Projector projector(projAxis);
-
-    Handle(HLRBRep_PolyAlgo) polyAlgo = new HLRBRep_PolyAlgo();
-    polyAlgo->Projector(projector);
-    polyAlgo->Load(shape->shape);
-    polyAlgo->Update();
-
-    HLRBRep_PolyHLRToShape shapes;
-    shapes.Update(polyAlgo);
-
-    OCCTDrawing* drawing    = new OCCTDrawing();
-    drawing->visibleSharp   = shapes.VCompound();
-    drawing->visibleSmooth  = shapes.Rg1LineVCompound();
-    drawing->visibleOutline = shapes.OutLineVCompound();
-    drawing->hiddenSharp    = shapes.HCompound();
-    drawing->hiddenSmooth   = shapes.Rg1LineHCompound();
-    drawing->hiddenOutline  = shapes.OutLineHCompound();
-
-    return drawing;
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
 
 OCCTShapeRef OCCTShapePipeFeature(OCCTShapeRef shape,
                                   int32_t      profileFaceIndex,
@@ -17042,4 +16259,116 @@ void OCCTFreeWireArrayOnly(OCCTWireRef* wires)
   if (!wires)
     return;
   delete[] wires;
+}
+
+// MARK: - Defeaturing Helper Functions
+
+bool occtDefeaturingFacesByIndex(const TopoDS_Shape&   shape,
+                                 const int32_t*        faceIndices,
+                                 int32_t               faceCount,
+                                 TopTools_ListOfShape& outFaces)
+{
+  if (!faceIndices || faceCount <= 0)
+    return false;
+
+  try
+  {
+    // Build a map of faces in the shape (1-based index -> face)
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
+
+    if (faceMap.Extent() == 0)
+      return false;
+
+    for (int32_t i = 0; i < faceCount; i++)
+    {
+      // Swift passes 0-based indices (Face.index from wrapSubShapeEnumeration)
+      // Convert to 1-based for TopTools_IndexedMapOfShape
+      int32_t idx = faceIndices[i] + 1;
+      if (idx < 1 || idx > faceMap.Extent())
+        return false; // out of range - fail the whole request
+      outFaces.Append(faceMap.FindKey(idx));
+    }
+
+    return outFaces.Extent() == faceCount;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape&     shape,
+                                    const OCCTShape* const* faces,
+                                    int32_t                 faceCount,
+                                    TopTools_ListOfShape&   outFaces)
+{
+  if (!faces || faceCount <= 0)
+    return false;
+
+  try
+  {
+    // Build a map of faces in the input shape for membership testing (IsSame)
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
+
+    if (faceMap.Extent() == 0)
+      return false;
+
+    for (int32_t i = 0; i < faceCount; i++)
+    {
+      const OCCTShape* carrier = faces[i];
+      if (!carrier)
+        return false; // null element - fail the whole request
+
+      // Explode the carrier for faces
+      TopExp_Explorer explorer(carrier->shape, TopAbs_FACE);
+      bool foundAny = false;
+      while (explorer.More())
+      {
+        TopoDS_Face face = TopoDS::Face(explorer.Current());
+        // Check if this face belongs to the input shape (IsSame via indexed map)
+        if (!faceMap.Contains(face))
+        {
+          return false; // carrier contains a face not in the input shape - fail entire call
+        }
+        outFaces.Append(face);
+        foundAny = true;
+        explorer.Next();
+      }
+      if (!foundAny)
+        return false; // carrier contributed no faces from the input shape
+    }
+
+    return outFaces.Extent() > 0;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing&    defeaturing,
+                          const TopoDS_Shape&         shape,
+                          const TopTools_ListOfShape& facesToRemove,
+                          TopoDS_Shape&               outResult)
+{
+  if (facesToRemove.Extent() == 0)
+    return false;
+
+  try
+  {
+    defeaturing.SetShape(shape);
+    defeaturing.AddFacesToRemove(facesToRemove);
+    defeaturing.Build();
+    if (!defeaturing.IsDone())
+      return false;
+
+    outResult = defeaturing.Shape();
+    return !outResult.IsNull();
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
