@@ -255,7 +255,7 @@ An empty result therefore has **four** causes, and they are not distinguished in
 1. One of the pairs is **too close together** to yield a bisector, and the call is refused. The threshold is not machine epsilon: measured, a separation of `1e-9` still gives a crossing and `1e-10` does not. Two different mechanisms refuse, at very different separations. From about `1e-10` down it is `GccAna_NoSolution`, raised inside `Bisector_Bisec::Perform` because the bisector construction has no solution to return. The perpendicular's own normalisation only refuses from about `1e-162`, where the squared component underflows to zero, and an exactly coincident pair reaches that one first. So a caller meeting this in practice meets `GccAna_NoSolution`, not a zero-length direction. Both figures come from the fixture in `Scripts/repro/1050-bisector-domain/occt_1050_limits.mm`, which builds its pair at the origin; treat them as the order of magnitude to expect rather than as constants.
 2. The two bisectors are parallel and distinct, and never cross.
 3. They cross, but on the dead side of one of the half-lines.
-4. They **coincide**, overlapping along their whole length. OCCT reports an overlap as a segment rather than a point, and this function reports only points, so two bisectors that meet everywhere come back as meeting nowhere. Reversing one pair flips a ray and turns the same input into a single point. Tracked as [#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070).
+4. They **coincide**, overlapping along their whole length. OCCT reports this as an intersection segment; the function now returns the segment's endpoints (the shared midpoint and the point at infinity / `Precision::Infinite()`). Reversing one pair flips a ray and turns the same input into a single point. Fixed in [#1070](https://github.com/SecondMouseAU/OCCTSwift/issues/1070).
 
 That list is closed **over the geometry**: either a bisector does not exist (1), or both do, and then the two underlying lines are parallel-distinct (2), identical (4), or cross at exactly one point, which either lies on both kept rays or does not (3). It assumes the call returns a result at all, which is a separate condition: a non-finite or near-`1e300` coordinate does not return in bounded time ([#1085](https://github.com/SecondMouseAU/OCCTSwift/issues/1085), pre-existing and not specific to this function's domain).
 
@@ -266,7 +266,7 @@ That range ends rather than being unbounded, and the ending is worth knowing bec
 A distant crossing is computed accurately but is **ill-conditioned in the input**, and the difference matters. Against a closed-form solve of the same four points, the returned crossing is correct to about 1e-16 relative at every distance measured, out to parameter 1e10. What is fragile is the input: a crossing that far away means two nearly parallel bisectors, so perturbing a coordinate by one part in 1e16 moves the crossing by hundreds of units. Feed such a case exact inputs, or treat the answer as a direction rather than a position; re-deriving the points from rounded values will not give you the same crossing back.
 
 - **Parameters:** `a`, `b`, first point pair; `c`, `d`, second point pair, all as `(x, y)`.
-- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; see the four causes above for what empty means.
+- **Returns:** Array of intersection points. Two distinct half-lines meet at most once, so this is empty or holds a single point; coincident half-lines return two points (the segment endpoints); see the four causes above for what empty means.
 - **OCCT:** `Bisector_Bisec` (its point-point `Perform`) / `Bisector_Inter` via `OCCTBisectorInterPointPoint`.
 - **Example:** the circumcentre of the triangle `(0,0) (4,0) (2,3)`, and the three orderings of the same two pairs that return nothing.
   ```swift
@@ -279,6 +279,16 @@ A distant crossing is computed accurately but is **ill-conditioned in the input*
   bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0))  // []
   bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0))  // []
   ```
+
+- **Example:** coincident bisectors (same pair twice) return the segment endpoints.
+  ```swift
+  let coincident = bisectorIntersections(a: (0, 0), b: (4, 0),
+                                          c: (0, 0), d: (4, 0))
+  // coincident.count == 2
+  // coincident[0] is the shared midpoint (2, 0), paramOnFirst == 0
+  // coincident[1] is at infinity (Precision::Infinite()), paramOnFirst > 1e99
+  ```
+
 - **Example:** a crossing far from the four points, which the pre-#1050 window discarded.
   ```swift
   // Bisector of (0,0)-(0,10) runs along -x from (0,5); bisector of
