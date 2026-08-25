@@ -212,13 +212,36 @@ def entry_is_present(entry, changelog_text):
     for line in prose.split("\n"):
         t = line.strip()
         if t.startswith("###") or t.startswith("- "):
-            return t in changelog_text
+            if t in changelog_text:
+                return True
+            return _matches_up_to_em_dash(t, changelog_text)
     # No heading and no bullet: the author wrote the entry as prose. Match its longest line, which
     # is the most distinctive thing available and survives the surrounding text being reflowed.
     candidates = [l.strip() for l in prose.split("\n") if len(l.strip()) > 40]
     if not candidates:
         return False
     return max(candidates, key=len) in changelog_text
+
+
+# okf/policies/writing-style.md bans em-dashes in changelogs, so a PR body whose entry heading has
+# one CANNOT be transcribed verbatim: the transcriber is obliged to repunctuate it. Comparing the
+# whole line then fails on an entry that is correctly present, which is the one shape where this
+# check reports a miss for doing the right thing. #870 is the live case.
+#
+# The relaxation is narrow on purpose. It only applies when the PR body's own line contains an
+# em-dash, it only matches the part BEFORE the first one, and that part has to be long enough to
+# identify an entry on its own. A heading that is mostly em-dash clause does not qualify and is
+# still reported, because a stub prefix would match almost anything.
+MIN_DISTINCTIVE_PREFIX = 24
+
+
+def _matches_up_to_em_dash(line, changelog_text):
+    if "\u2014" not in line:
+        return False
+    prefix = line.split("\u2014")[0].strip()
+    if len(prefix.lstrip("#- ")) < MIN_DISTINCTIVE_PREFIX:
+        return False
+    return prefix in changelog_text
 
 
 def classify_untranscribed(untranscribed, changelog_text, lookup=gh_pr_body):
@@ -449,12 +472,20 @@ def _verify_cases():
         # naming a symbol called None, which nothing will ever transcribe, so it reads as missing
         # forever.
         "18": "## CHANGELOG entry\n\n### None, investigation only, no functional change (#18)\n",
+        # An entry whose heading carries an em-dash. writing-style.md bans them in the changelog, so
+        # the transcriber had to repunctuate; the entry IS present and must not read as missing.
+        "19": "## CHANGELOG entry\n\n### Pass 9: a duplication audit of some breadth \u2014 12 findings (#19)\n",
+        # The same shape with nothing distinctive before the em-dash. Still reported, because a
+        # short prefix would match an unrelated entry and turn the relaxation into a rubber stamp.
+        "20": "## CHANGELOG entry\n\n### Pass 10 \u2014 a heading that is all em-dash clause (#20)\n",
     }
     changelog = ("# Changelog\n\n## Unreleased\n\n"
                  "### Widget rotation is no longer inverted (#10)\n\nBody.\n\n"
                  "- A bullet-shaped entry (#13)\n\n"
                  "A prose entry with no heading and no bullet, long enough to be distinctive (#15).\n\n"
-                 "### A real entry sitting under None-shaped boilerplate (#17)\n")
+                 "### A real entry sitting under None-shaped boilerplate (#17)\n\n"
+                 "### Pass 9: a duplication audit of some breadth (#19)\n\n"
+                 "### Pass 10, a heading that is all em-dash clause (#20)\n")
     rows = [
         ("aaa1111", "Merge pull request #10 from x/late"),
         ("bbb2222", "Merge pull request #11 from x/missing"),
@@ -467,6 +498,8 @@ def _verify_cases():
         ("iii9999", "Merge pull request #16 from x/prose-missing"),
         ("jjj0000", "Merge pull request #17 from x/none-shaped-boilerplate"),
         ("kkk1234", "Merge pull request #18 from x/none-as-heading"),
+        ("lll5555", "Merge pull request #19 from x/em-dash-repunctuated"),
+        ("mmm6666", "Merge pull request #20 from x/em-dash-only-heading"),
     ]
     b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
     late = {s for s, _, _ in b["late"]}
@@ -475,8 +508,11 @@ def _verify_cases():
     unknown = {s for s, _, _ in b["unknown"]}
     dnone = {s for s, _, _ in b["declared_none"]}
     return [
-        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000"}),
-        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999"}),
+        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000", "lll5555"}),
+        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999", "mmm6666"}),
+        ("#1125: a heading repunctuated to drop a banned em-dash is still found", "lll5555" in late),
+        ("#1125: a heading with nothing distinctive before the em-dash is still MISSING",
+         "mmm6666" in missing),
         ("#788: a PR body with no entry section classifies as absent", absent == {"ccc3333"}),
         ("#788: a subject with no PR number is unverified, not silently clean", "eee5555" in unknown),
         ("#788: an unreadable body is unverified, not silently clean", "fff6666" in unknown),
