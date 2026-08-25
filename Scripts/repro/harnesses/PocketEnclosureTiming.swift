@@ -225,11 +225,10 @@ private func pocketWork(for shape: Shape) -> [PocketWork] {
 /// the covering set by `IsSame`. Returns true when the pocket is ENCLOSED.
 private func adjacentFacesPredicate(_ work: PocketWork) -> Bool {
     work.floorBoundaryEdges.allSatisfy { edge in
-        guard let (face1, face2) = edge.adjacentFaces(in: work.shape) else { return false }
+        guard let adj = edge.adjacentFaces(in: work.shape) else { return false }
         return work.coveringFaces.contains { index in
             let covering = work.occurrences[index]
-            return facesAreSame(face1, covering)
-                || (face2.map { facesAreSame($0, covering) } ?? false)
+            return adj.contains(where: { facesAreSame($0, covering) })
         }
     }
 }
@@ -465,11 +464,9 @@ enum PocketEnclosureTiming {
         for edge in edges {
             guard let wrapped = Shape.fromEdge(edge) else { continue }
             var setA = Set<Int>()
-            if let (face1, face2) = edge.adjacentFaces(in: shape) {
+            if let adj = edge.adjacentFaces(in: shape) {
                 for (index, occurrence) in occurrences.enumerated() {
-                    if facesAreSame(face1, occurrence)
-                        || (face2.map { facesAreSame($0, occurrence) } ?? false)
-                    {
+                    if adj.contains(where: { facesAreSame($0, occurrence) }) {
                         setA.insert(index)
                     }
                 }

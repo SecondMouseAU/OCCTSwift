@@ -194,12 +194,17 @@ struct Issue638EdgeOrientationContractTests {
             return
         }
 
-        guard let (f1, f2) = forwardEdge.adjacentFaces(in: box),
-            let (r1, r2) = reversedEdge.adjacentFaces(in: box)
+        guard let fAdj = forwardEdge.adjacentFaces(in: box),
+            let rAdj = reversedEdge.adjacentFaces(in: box),
+            fAdj.count >= 2, rAdj.count >= 2
         else {
             Issue.record("edge reported no adjacent faces")
             return
         }
+        let f1 = fAdj[0]
+        let f2 = fAdj[1]
+        let r1 = rAdj[0]
+        let r2 = rAdj[1]
         // Compare geometry, not `Face.index`. `adjacentFaces(in:)` builds its results with
         // `Face(handle:)` and no index argument, so every face it returns carries the default
         // `index` of -1. An earlier version of this test compared `Set([f1, f2].compactMap
@@ -208,15 +213,14 @@ struct Issue638EdgeOrientationContractTests {
         //
         // Bounding boxes are enough to identify a box's planar faces and are cheap. Order is not
         // guaranteed, so compare as sets.
-        func fingerprint(_ face: Face?) -> String? {
-            guard let face else { return nil }
+        func fingerprint(_ face: Face) -> String {
             let b = face.bounds!
             return String(
                 format: "%.6f,%.6f,%.6f/%.6f,%.6f,%.6f",
                 b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
         }
-        let forwardFaces = Set([f1, f2].compactMap(fingerprint))
-        let reversedFaces = Set([r1, r2].compactMap(fingerprint))
+        let forwardFaces = Set([f1, f2].map(fingerprint))
+        let reversedFaces = Set([r1, r2].map(fingerprint))
 
         // Without this the comparison could pass on two empty sets, which is the same vacuity in
         // a different coat.

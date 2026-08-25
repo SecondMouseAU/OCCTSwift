@@ -354,19 +354,18 @@ enum Issue761 {
         var agree = 0
         var disagree = 0
         for edge in floorEdges {
-            guard let (f1, f2) = edge.adjacentFaces(in: shape) else { continue }
+            guard let adj = edge.adjacentFaces(in: shape) else { continue }
             // Find this edge's BRepGraph node the same way faces were mapped, via findNode on a
             // Shape wrapping the edge.
             guard let wrapped = Shape.fromEdge(edge) else { continue }
             guard let node = map.graph.findNode(for: wrapped), node.kind == .edge else { continue }
             let brgFaces = map.graph.faces(of: node.index)
-            let handRolledCount = f2 == nil ? 1 : 2
+            let handRolledCount = adj.count
             if brgFaces.count == handRolledCount {
                 agree += 1
             } else {
                 disagree += 1
             }
-            _ = f1
         }
         print("    per-edge face-count agreement: \(agree) agree, \(disagree) disagree (of \(floorEdges.count) edges)")
 

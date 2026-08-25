@@ -1660,7 +1660,7 @@ struct EdgeAdjacencyTests {
         let adj = edge.adjacentFaces(in: box)
         #expect(adj != nil)
         if let adj {
-            #expect(adj.1 != nil)  // Both faces should exist for interior edges
+            #expect(adj.count == 2)  // Both faces should exist for interior edges
         }
     }
 
@@ -1671,7 +1671,9 @@ struct EdgeAdjacencyTests {
 
         // Find an edge with two adjacent faces
         for edge in edges {
-            if let (f1, f2) = edge.adjacentFaces(in: box), let f2 {
+            if let adj = edge.adjacentFaces(in: box), adj.count >= 2 {
+                let f1 = adj[0]
+                let f2 = adj[1]
                 let angle = edge.dihedralAngle(between: f1, and: f2)
                 #expect(angle != nil)
                 if let angle {
@@ -1693,7 +1695,7 @@ struct EdgeAdjacencyTests {
 
         var foundPair = false
         for edge in edges {
-            if let (_, f2) = edge.adjacentFaces(in: cyl), f2 != nil {
+            if let adj = edge.adjacentFaces(in: cyl), adj.count >= 2 {
                 foundPair = true
                 break
             }

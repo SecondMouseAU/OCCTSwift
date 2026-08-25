@@ -114,7 +114,7 @@ struct Issue762ChamferedPocketDetectionTests {
         var chamferSpecs: [(edgeIndex: Int, faceIndex: Int, dist1: Double, dist2: Double)] = []
         for (i, edge) in allEdges.enumerated() {
             guard abs(edge.bounds!.min.z) < 1e-6, abs(edge.bounds!.max.z) < 1e-6 else { continue }
-            guard let (face1, _) = edge.adjacentFaces(in: cut) else { continue }
+            guard let adj = edge.adjacentFaces(in: cut), let face1 = adj.first else { continue }
             guard
                 let faceIndex = allFaces.firstIndex(where: { abs($0.area() - face1.area()) < 1e-6 })
             else { continue }

@@ -5279,6 +5279,62 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape,
   }
 }
 
+int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
+                                      OCCTEdgeRef  edge,
+                                      OCCTFaceRef* _Nonnull outFaces,
+                                      int32_t maxFaces)
+{
+  if (!shape || !edge || !outFaces || maxFaces <= 0)
+    return 0;
+
+  // Initialize output array
+  for (int32_t i = 0; i < maxFaces; ++i)
+  {
+    outFaces[i] = nullptr;
+  }
+
+  try
+  {
+    // Build edge-to-face map using UniqueAncestors (same as OCCTEdgeAdjacentFaces)
+    // to properly handle compound shapes where edges may be shared across sub-shapes
+    NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher>
+      edgeFaceMap;
+    TopExp::MapShapesAndUniqueAncestors(shape->shape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
+
+    // Find the edge in the map (by IsSame, like OCCTEdgeAdjacentFaces does)
+    TopoDS_Edge e       = TopoDS::Edge(edge->edge);
+    int         edgeIdx = edgeFaceMap.FindIndex(e);
+    if (edgeIdx == 0)
+    {
+      return 0;
+    }
+
+    const TopTools_ListOfShape& faces = edgeFaceMap(edgeIdx);
+    int32_t                     count = 0;
+
+    for (auto it = faces.cbegin(); it != faces.cend() && count < maxFaces; ++it)
+    {
+      TopoDS_Face face  = TopoDS::Face(*it);
+      outFaces[count++] = new OCCTFace(face);
+    }
+
+    return count;
+  }
+  catch (...)
+  {
+    // Release any faces we created before the exception
+    for (int32_t i = 0; i < maxFaces; ++i)
+    {
+      if (outFaces[i])
+      {
+        delete outFaces[i];
+        outFaces[i] = nullptr;
+      }
+    }
+    return 0;
+  }
+}
+
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape,
                                        OCCTEdgeRef  edge,
                                        OCCTFaceRef  face1,

@@ -27,10 +27,22 @@ typedef enum
 /// @param outFace2 Output: second adjacent face (caller must release), may be NULL for boundary
 /// edges
 /// @return Number of adjacent faces (0, 1, or 2)
+/// @deprecated Use OCCTEdgeGetAdjacentFacesArray instead for non-manifold edges
 int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape,
                                  OCCTEdgeRef  edge,
                                  OCCTFaceRef* outFace1,
                                  OCCTFaceRef* outFace2);
+
+/// Get all faces adjacent to an edge within a shape (supports non-manifold edges)
+/// @param shape The shape containing the edge and faces
+/// @param edge The edge to query
+/// @param outFaces Output array for adjacent faces (caller allocates, must release each)
+/// @param maxFaces Maximum number of faces to return
+/// @return Number of adjacent faces found (may exceed maxFaces, in which case output is truncated)
+int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
+                                      OCCTEdgeRef  edge,
+                                      OCCTFaceRef* _Nonnull outFaces,
+                                      int32_t maxFaces);
 
 /// Determine the convexity of an edge between two faces.
 ///
