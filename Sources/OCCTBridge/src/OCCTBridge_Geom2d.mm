@@ -4621,8 +4621,8 @@ OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx,
   try
   {
     gp_Elips2d                    e(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0), gp_Dir2d(0, 1)),
-                 majorRadius,
-                 minorRadius);
+                                    majorRadius,
+                                    minorRadius);
     Convert_EllipseToBSplineCurve conv(e, u1, u2);
     return buildCurve2DFromConic(conv);
   }
@@ -4644,8 +4644,8 @@ OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx,
   try
   {
     gp_Hypr2d                       h(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0), gp_Dir2d(0, 1)),
-                majorRadius,
-                minorRadius);
+                                      majorRadius,
+                                      minorRadius);
     Convert_HyperbolaToBSplineCurve conv(h, u1, u2);
     return buildCurve2DFromConic(conv);
   }

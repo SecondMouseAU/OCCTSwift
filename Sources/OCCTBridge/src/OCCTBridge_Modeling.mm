@@ -5240,8 +5240,8 @@ OCCTWireRef OCCTWireCreateFromPoints3D(const double* points, int32_t pointCount,
     if (closed && pointCount > 2)
     {
       gp_Pnt      pLast(points[(pointCount - 1) * 3],
-                   points[(pointCount - 1) * 3 + 1],
-                   points[(pointCount - 1) * 3 + 2]);
+                        points[(pointCount - 1) * 3 + 1],
+                        points[(pointCount - 1) * 3 + 2]);
       gp_Pnt      pFirst(points[0], points[1], points[2]);
       TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(pLast, pFirst);
       wireMaker.Add(edge);
@@ -6287,7 +6287,7 @@ OCCTShapeRef OCCTLocOpeRevol(OCCTShapeRef profile,
   try
   {
     gp_Ax1       axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                gp_Dir(axisDirX, axisDirY, axisDirZ));
+                      gp_Dir(axisDirX, axisDirY, axisDirZ));
     LocOpe_Revol revol;
     revol.Perform(profile->shape, axis, angle);
     TopoDS_Shape result = revol.Shape();
@@ -6316,7 +6316,7 @@ OCCTShapeRef OCCTLocOpeRevolWithOffset(OCCTShapeRef profile,
   try
   {
     gp_Ax1       axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                gp_Dir(axisDirX, axisDirY, axisDirZ));
+                      gp_Dir(axisDirX, axisDirY, axisDirZ));
     LocOpe_Revol revol;
     revol.Perform(profile->shape, axis, angle, angledec);
     TopoDS_Shape result = revol.Shape();

@@ -703,10 +703,10 @@ void OCCTDocumentSetLabelMaterial(OCCTDocumentRef doc, int64_t labelId, OCCTMate
     // Set PBR properties
     XCAFDoc_VisMaterialPBR pbr;
     pbr.BaseColor      = Quantity_ColorRGBA(Quantity_Color(material.baseColor.r,
-                                                      material.baseColor.g,
-                                                      material.baseColor.b,
-                                                      Quantity_TOC_RGB),
-                                       static_cast<float>(material.baseColor.a));
+                                                           material.baseColor.g,
+                                                           material.baseColor.b,
+                                                           Quantity_TOC_RGB),
+                                            static_cast<float>(material.baseColor.a));
     pbr.Metallic       = static_cast<Standard_ShortReal>(material.metallic);
     pbr.Roughness      = static_cast<Standard_ShortReal>(material.roughness);
     pbr.EmissiveFactor = Graphic3d_Vec3(static_cast<float>(material.emissive.r),
@@ -7049,7 +7049,7 @@ int64_t OCCTDocumentClipPlaneToolAdd(OCCTDocumentRef ref,
     if (tool.IsNull())
       return -1;
     gp_Pln                     plane(gp_Pnt(planeOrigX, planeOrigY, planeOrigZ),
-                 gp_Dir(planeNormX, planeNormY, planeNormZ));
+                                     gp_Dir(planeNormX, planeNormY, planeNormZ));
     TCollection_ExtendedString eName(name);
     TDF_Label                  clipLabel = tool->AddClippingPlane(plane, eName, capping);
     if (clipLabel.IsNull())
@@ -12091,8 +12091,8 @@ bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef docRef, int32_t index)
     Handle(TDocStd_Document)  doc       = docRef->doc;
     Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
     XCAFPrs_DocumentExplorer  explorer(doc,
-                                      XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes,
-                                      XCAFPrs_Style());
+                                       XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes,
+                                       XCAFPrs_Style());
     int32_t                   i = 0;
     while (explorer.More())
     {

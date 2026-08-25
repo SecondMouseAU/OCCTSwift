@@ -3502,7 +3502,7 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
                                                          int    joinType);
 bool                   OCCTBRepFillOffsetAncestorsIsDone(OCCTOffsetAncestorsRef _Nonnull ref);
 bool                   OCCTBRepFillOffsetAncestorsHasAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
-                                            OCCTShapeRef _Nonnull edgeRef);
+                                                              OCCTShapeRef _Nonnull edgeRef);
 OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsGetAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
                                                               OCCTShapeRef _Nonnull edgeRef);
 void OCCTBRepFillOffsetAncestorsRelease(OCCTOffsetAncestorsRef _Nonnull ref);

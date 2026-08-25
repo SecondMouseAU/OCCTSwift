@@ -935,8 +935,8 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
       gp_XYZ        target(c[2], c[3], c[4]);
       Plate_D1      d1(gp_XYZ(c[5], c[6], c[7]), gp_XYZ(c[8], c[9], c[10]));
       Plate_D2      d2(gp_XYZ(c[11], c[12], c[13]),
-                  gp_XYZ(c[14], c[15], c[16]),
-                  gp_XYZ(c[17], c[18], c[19]));
+                       gp_XYZ(c[14], c[15], c[16]),
+                       gp_XYZ(c[17], c[18], c[19]));
 
       Handle(NLPlate_HPG0G2Constraint) g0g2 = new NLPlate_HPG0G2Constraint(uv, target, d1, d2);
       solver.Load(g0g2);
@@ -984,12 +984,12 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
       gp_XYZ        target(c[2], c[3], c[4]);
       Plate_D1      d1(gp_XYZ(c[5], c[6], c[7]), gp_XYZ(c[8], c[9], c[10]));
       Plate_D2      d2(gp_XYZ(c[11], c[12], c[13]),
-                  gp_XYZ(c[14], c[15], c[16]),
-                  gp_XYZ(c[17], c[18], c[19]));
+                       gp_XYZ(c[14], c[15], c[16]),
+                       gp_XYZ(c[17], c[18], c[19]));
       Plate_D3      d3(gp_XYZ(c[20], c[21], c[22]),
-                  gp_XYZ(c[23], c[24], c[25]),
-                  gp_XYZ(c[26], c[27], c[28]),
-                  gp_XYZ(c[29], c[30], c[31]));
+                       gp_XYZ(c[23], c[24], c[25]),
+                       gp_XYZ(c[26], c[27], c[28]),
+                       gp_XYZ(c[29], c[30], c[31]));
 
       Handle(NLPlate_HPG0G3Constraint) g0g3 = new NLPlate_HPG0G3Constraint(uv, target, d1, d2, d3);
       solver.Load(g0g3);
