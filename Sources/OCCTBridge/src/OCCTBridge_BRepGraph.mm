@@ -1478,9 +1478,9 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef g)
 
 int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
                                           int32_t          recordIdx,
-                                          char* _Nullable  outOpName,
-                                          int32_t          outOpNameMax,
-                                          int32_t*         outSequenceNumber)
+                                          char* _Nullable outOpName,
+                                          int32_t  outOpNameMax,
+                                          int32_t* outSequenceNumber)
 {
   if (!g || !outSequenceNumber)
     return -1;
@@ -1498,7 +1498,8 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
     // Allow length-only query with outOpName == NULL and outOpNameMax == 0
     if (!outOpName && outOpNameMax == 0)
       return srcLen;
-    // Invalid: null buffer with positive outOpNameMax, or non-null buffer with zero/negative outOpNameMax
+    // Invalid: null buffer with positive outOpNameMax, or non-null buffer with zero/negative
+    // outOpNameMax
     if (!outOpName || outOpNameMax <= 0)
       return -1;
     // Copy up to outOpNameMax-1 characters, NUL-terminate
@@ -5291,7 +5292,7 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape,
 int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
                                       OCCTEdgeRef  edge,
                                       OCCTFaceRef* _Nonnull outFaces,
-                                      int32_t      maxFaces)
+                                      int32_t maxFaces)
 {
   if (!shape || !edge || !outFaces || maxFaces <= 0)
     return 0;
@@ -5306,23 +5307,24 @@ int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
   {
     // Build edge-to-face map using UniqueAncestors (same as OCCTEdgeAdjacentFaces)
     // to properly handle compound shapes where edges may be shared across sub-shapes
-    NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher> edgeFaceMap;
+    NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher>
+      edgeFaceMap;
     TopExp::MapShapesAndUniqueAncestors(shape->shape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
 
     // Find the edge in the map (by IsSame, like OCCTEdgeAdjacentFaces does)
-    TopoDS_Edge e = TopoDS::Edge(edge->edge);
-    int edgeIdx = edgeFaceMap.FindIndex(e);
+    TopoDS_Edge e       = TopoDS::Edge(edge->edge);
+    int         edgeIdx = edgeFaceMap.FindIndex(e);
     if (edgeIdx == 0)
     {
       return 0;
     }
 
     const TopTools_ListOfShape& faces = edgeFaceMap(edgeIdx);
-    int32_t count = 0;
+    int32_t                     count = 0;
 
     for (auto it = faces.cbegin(); it != faces.cend() && count < maxFaces; ++it)
     {
-      TopoDS_Face face = TopoDS::Face(*it);
+      TopoDS_Face face  = TopoDS::Face(*it);
       outFaces[count++] = new OCCTFace(face);
     }
 
@@ -5342,7 +5344,6 @@ int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
     return 0;
   }
 }
-
 
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape,
                                        OCCTEdgeRef  edge,
@@ -5518,10 +5519,10 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape,
   {
     int32_t written = 0;
     int32_t total   = countOrCollectSharedEdges(face1->face,
-                                                face2->face,
-                                                outFirstEdge,
-                                                outFirstEdge ? 1 : 0,
-                                                &written);
+                                              face2->face,
+                                              outFirstEdge,
+                                              outFirstEdge ? 1 : 0,
+                                              &written);
     return total;
   }
   catch (...)
