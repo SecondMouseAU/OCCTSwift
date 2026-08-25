@@ -45,6 +45,10 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
+
+The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.
+
 ### Install the pinned clang-format without pip or venv, and document how (#1123)
 
 `Scripts/install-clang-format.py` installs the clang-format version pinned in
