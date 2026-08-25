@@ -1478,9 +1478,9 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef g)
 
 int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
                                           int32_t          recordIdx,
-                                          char* _Nullable  outOpName,
-                                          int32_t          outOpNameMax,
-                                          int32_t*         outSequenceNumber)
+                                          char* _Nullable outOpName,
+                                          int32_t  outOpNameMax,
+                                          int32_t* outSequenceNumber)
 {
   if (!g || !outSequenceNumber)
     return -1;
@@ -1498,7 +1498,8 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
     // Allow length-only query with outOpName == NULL and outOpNameMax == 0
     if (!outOpName && outOpNameMax == 0)
       return srcLen;
-    // Invalid: null buffer with positive outOpNameMax, or non-null buffer with zero/negative outOpNameMax
+    // Invalid: null buffer with positive outOpNameMax, or non-null buffer with zero/negative
+    // outOpNameMax
     if (!outOpName || outOpNameMax <= 0)
       return -1;
     // Copy up to outOpNameMax-1 characters, NUL-terminate

@@ -495,11 +495,14 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef _Nonnull graph);
 /// @param graph The BRepGraph to query
 /// @param recordIdx Zero-based record index
 /// @param outOpName Output buffer for the operation name (may be NULL if outOpNameMax is 0)
-/// @param outOpNameMax Maximum length of the output buffer (use 0 with NULL outOpName to query length)
+/// @param outOpNameMax Maximum length of the output buffer (use 0 with NULL outOpName to query
+/// length)
 /// @param outSequenceNumber Output for the record's sequence number
-/// @return Length of the operation name in bytes (not counting the NUL terminator), or -1 on failure.
+/// @return Length of the operation name in bytes (not counting the NUL terminator), or -1 on
+/// failure.
 ///         If outOpName is non-NULL and outOpNameMax > 0, the buffer receives a NUL-terminated copy
-///         truncated to outOpNameMax-1 bytes. A return value >= outOpNameMax indicates truncation occurred.
+///         truncated to outOpNameMax-1 bytes. A return value >= outOpNameMax indicates truncation
+///         occurred.
 int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef _Nonnull graph,
                                           int32_t recordIdx,
                                           char* _Nullable outOpName,
