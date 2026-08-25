@@ -445,7 +445,7 @@ OCCTShapeRef OCCTShapeCreateRuled(OCCTWireRef wire1, OCCTWireRef wire2)
 
   try
   {
-    // Use BRepFill::Face to create a ruled surface between two edges/wires
+    // Use BRepFill::Shell to create a ruled surface between two wires
     TopoDS_Shape result = BRepFill::Shell(wire1->wire, wire2->wire);
 
     if (result.IsNull())
