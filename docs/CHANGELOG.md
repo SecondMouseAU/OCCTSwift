@@ -21,6 +21,34 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Install the pinned clang-format without pip or venv, and document how (#1123)
+
+`Scripts/install-clang-format.py` installs the clang-format version pinned in
+`Scripts/clang-format-version.txt` using nothing but the Python standard library:
+
+```bash
+Scripts/install-clang-format.py                    # -> /usr/local/bin/clang-format
+Scripts/install-clang-format.py --version 22.1.8   # outside a checkout
+```
+
+No pip, venv, curl, unzip or apt. This matters for container images: Debian and Ubuntu split
+`ensurepip` out of `python3` into a versioned `python3.N-venv` package, so `python3 -m venv` fails
+with "ensurepip is not available", the unversioned `apt install python3-venv` it suggests can answer
+"no installation candidate", and a newer distro's PEP 668 separately refuses a plain `pip install`.
+A clang-format wheel is a zip holding one static binary, so `urllib` and `zipfile` are enough. The
+sha256 PyPI publishes is verified before the binary is written, the write is staged and renamed so a
+half-written file is never found on `PATH`, and the installed binary is run to confirm it reports
+the expected version.
+
+[`docs/guides/clang-format-setup.md`](guides/clang-format-setup.md) is new: why the version is
+pinned (21.1.8 and 22.1.8 disagree on 10 of the 33 enforced bridge files), the three install routes
+and when each applies, the Debian/Ubuntu `ensurepip` failure with both of its dead ends, a
+self-contained one-liner for a container build step that runs before a checkout, and how to verify.
+`Scripts/format-bridge.sh --check` is the verification step to put in an image build: it checks the
+version, that `-style=file` actually resolved to `Sources/OCCTBridge/.clang-format`, and that the
+tree is clean, the middle one mattering because clang-format falls back to LLVM style rather than
+failing when it finds no config.
+
 ### Circle involute with explicit placement (#1023)
 
 Added `Geom2dEval.circleInvoluteD0(origin:direction:radius:u:)` and `Geom2dEval.circleInvoluteD1(origin:direction:radius:u:)` to evaluate a circle involute at a parameter with an explicit placement (origin + X direction). Previously the involute was fixed to the canonical coordinate system (origin at 0,0; XDir along +X). The underlying bridge functions `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` and `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` were added, along with `OCCTGeom2dEvalCircleInvoluteCurveCreate` for creating a persistent `Geom2dEval_CircleInvoluteCurve`.
