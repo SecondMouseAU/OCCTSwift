@@ -186,7 +186,7 @@ struct Issue1058OuterBoundRefusalTests {
         }
         // Before #1073 this was `true` (or `false` depending on sign), the same as a
         // real problem verdict, produced by signing a cancelling area of ~-1.8e-15.
-        // All four edges of the cylinder's seam wire have pcurves on the plane (projected),
+        // All edges of the cylinder's seam wire have pcurves on the plane (projected),
         // but the projection degenerates and the area cancels.
         #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: panel) == nil)
     }
