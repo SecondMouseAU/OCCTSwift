@@ -2948,6 +2948,17 @@ struct BOPAlgoArgumentAnalyzerTests {
         let valid = Shape.analyzeBoolean(box, sphere, operation: .cut)
         #expect(valid)
     }
+
+    @Test("BooleanOperation raw values match OCCT BOPAlgo_Operation")
+    func booleanOperationRawValuesMatchOCCT() {
+        // Verify Swift enum raw values match OCCT's BOPAlgo_Operation enum
+        // BOPAlgo_Operation: COMMON=0, FUSE=1, CUT=2, CUT21=3, SECTION=4
+        #expect(Shape.BooleanOperation.common.rawValue == 0)
+        #expect(Shape.BooleanOperation.fuse.rawValue == 1)
+        #expect(Shape.BooleanOperation.cut.rawValue == 2)
+        #expect(Shape.BooleanOperation.cut21.rawValue == 3)
+        #expect(Shape.BooleanOperation.section.rawValue == 4)
+    }
 }
 
 @Suite("LocOpe BuildWires")
