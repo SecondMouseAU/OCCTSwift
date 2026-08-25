@@ -1,0 +1,28 @@
+# The clang-format version Sources/OCCTBridge is formatted with, and the one CI installs.
+#
+# Single source of truth: read by .github/workflows/code-style.yml (which pip-installs exactly
+# this version), by Scripts/format-bridge.sh, and through that script by the pre-commit hook.
+# Comment lines and blank lines are ignored; the first remaining line is the version.
+#
+# Why pinned at all: clang-format's output changes between MAJOR versions, so an unpinned
+# `brew install clang-format` can turn a green `main` red on a Homebrew bump with no code change,
+# and a contributor on a different major produces a diff CI rejects. OCCT's own CI pins for the
+# same reason (Libraries/occt-src/.github/actions/clang-format-check/action.yml pins 18.1.8 and
+# hard-fails on a mismatch).
+#
+# Why 22.1.8 and not OCCT's 18.1.8: the bridge tree was brought into compliance under 22.x, and
+# every one of Sources/OCCTBridge's 33 files is now off the exemption manifest and enforced.
+# Moving to 18.1.8 would reformat all 33 for no readability gain. The CONFIG is still OCCT's
+# (Sources/OCCTBridge/.clang-format is byte-identical to Libraries/occt-src/.clang-format once
+# the local header comment is stripped); only the binary reading it is newer.
+#
+# The drift is not theoretical. Measured 2026-08-25 across the 33 enforced bridge files,
+# clang-format 21.1.8 and 22.1.8 produce DIFFERENT output on 10 of them, so an unpinned job that
+# happened to install 21 would have reported violations in code nobody touched. The PyPI wheel and
+# the Homebrew bottle of the same version agree byte for byte on all 33, which is what makes the
+# pip pin a safe swap for the brew install it replaced.
+#
+# To bump: change the version here, run `Scripts/format-bridge.sh` to reformat the bridge, and
+# commit the reformat in the SAME PR. A bump with no reformat diff means the new version agrees
+# with the old one, which is worth saying in the PR body rather than leaving unexplained.
+22.1.8

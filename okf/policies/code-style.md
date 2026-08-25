@@ -28,6 +28,22 @@ targets OCCT's style too, since it's OCCT-adjacent C++ written in OCCT's own idi
 public API** is unaffected: it keeps the verbose doc comments [docs-current](docs-current.md)
 expects, same as before.
 
+**Do not hand-format the bridge; run `Scripts/format-bridge.sh`.** It rewrites every enforced file
+in place, and `--check` is the report-only form CI and the pre-commit hook both invoke, so all three
+run one copy of the file selection and the check loop rather than three that can drift.
+`AlignConsecutiveDeclarations`/`AlignConsecutiveAssignments` make this non-negotiable in practice:
+two ordinary consecutive locals are a violation unless the tool wrote them, and the alignment run is
+broken by things that are not obvious by eye (a `_Nonnull` in a parameter list is enough), so
+imitating the style by hand produces something that looks formatted and is not.
+
+**The clang-format version is pinned** in `Scripts/clang-format-version.txt`, read by CI, by the
+script, and through the script by the hook. clang-format's output changes between major versions:
+21.1.8 and 22.1.8 were measured to disagree on 10 of the 33 enforced bridge files, so an unpinned
+`brew install clang-format` can turn a green `main` red on a Homebrew bump with no code change. CI
+installs exactly the pinned version from PyPI (a ~2 MB wheel, byte-identical output to the Homebrew
+bottle of the same version) and asserts it; the script refuses a different major locally rather than
+letting you produce a diff CI will reject. OCCT's own CI pins for the same reason.
+
 **SwiftLint is scoped to `orphaned_doc_comment` only** (`.swiftlint.yml`, `only_rules`, not the
 default set). SwiftLint's defaults duplicate `swift-format`'s formatting opinions (can disagree
 with them on the same line) and separately add a large code-quality/complexity surface
@@ -83,6 +99,10 @@ work nobody has touched. Instead:
 - The manifest only shrinks. A new file is never grandfathered onto it; new code complies from
   creation, checked by the same `swift-format`/`clang-format`/SwiftLint steps running unconditionally
   against anything not already listed.
+- **The bridge half is finished.** `Scripts/style-manifest-bridge.txt` is empty: all 33
+  `Sources/OCCTBridge` files are enforced. Nothing is grandfathered there any more, which is what
+  made a local fix command and a pre-commit check worth adding rather than optional convenience.
+  `Scripts/style-manifest-swift.txt` still has entries, so the Swift half is still rolling out.
 
 Why: the ecosystem-wide proposal and evidence (comment:code ratios, a live doc-drift bug found in
 `docs/reference/CurveAdaptors.md`) live in
