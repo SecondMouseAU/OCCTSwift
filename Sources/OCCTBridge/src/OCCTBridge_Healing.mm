@@ -5818,7 +5818,7 @@ static inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape,
 {
   try
   {
-    BRepCheck_Analyzer analyzer(shape, Standard_True);
+    BRepCheck_Analyzer       analyzer(shape, Standard_True);
     Handle(BRepCheck_Result) res = analyzer.Result(subShape);
     if (res.IsNull())
       return -1;
