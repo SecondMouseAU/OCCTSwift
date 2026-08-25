@@ -5810,28 +5810,6 @@ bool OCCTEdgeCheckPCurveRange(OCCTShapeRef edge, OCCTShapeRef face, double first
 //    0 = BRepCheck_NoError (status list empty)
 //   >0 = first BRepCheck_Status value from the list
 //
-// This helper consolidates that logic so the three call sites share one implementation.
-//
-// Returns: -1 on error, 0 for NoError, >0 for first status enum value.
-static inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape,
-                                                  const TopoDS_Shape& subShape)
-{
-  try
-  {
-    BRepCheck_Analyzer       analyzer(shape, Standard_True);
-    Handle(BRepCheck_Result) res = analyzer.Result(subShape);
-    if (res.IsNull())
-      return -1;
-    const BRepCheck_ListOfStatus& st = res->Status();
-    if (st.IsEmpty())
-      return 0; // BRepCheck_NoError
-    return static_cast<int32_t>(st.First());
-  }
-  catch (...)
-  {
-    return -1;
-  }
-}
 
 // MARK: - v0.112: BRepCheck extended + tolerance helpers
 // --- BRepCheck extended ---
