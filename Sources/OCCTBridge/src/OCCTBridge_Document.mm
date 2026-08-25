@@ -956,7 +956,7 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
     return 0;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_LabelSequence          labels;
     dimTolTool->GetDatumLabels(labels);
     return (int32_t)labels.Length();
