@@ -54,15 +54,32 @@ struct Issue1017NLPlateResolutionOrderTests {
     // The two ends of the accepted range, and the shipped default in between, all still build.
     // This is the other half of the guard: a range check that refused a legitimate order would
     // look exactly like one that refuses only the illegitimate ones.
-    @Test("Every order the kernel accepts still builds", arguments: [2, 3, 4, 5, 8, 9])
+    @Test("Every order the kernel accepts still builds and deforms", arguments: [2, 3, 4, 5, 8, 9])
     func inRangeOrderStillBuilds(order: Int) {
         guard let surface = plane() else {
             #expect(Bool(false), "Failed to create plane")
             return
         }
-        #expect(
-            surface.nlPlateDeformed(
-                constraints: Self.g0Constraints, resolutionOrder: order, tolerance: 0.1) != nil)
+        guard
+            let deformed = surface.nlPlateDeformed(
+                constraints: Self.g0Constraints, resolutionOrder: order, tolerance: 0.1)
+        else {
+            Issue.record("order \(order) should build")
+            return
+        }
+        // Before the fix an out-of-range order returned the undeformed surface, and nothing
+        // distinguished that from a solve that had run. The property worth pinning is that the
+        // result moves off the source plane at all.
+        let domain = deformed.domain
+        var maxAbsZ = 0.0
+        for i in 0...8 {
+            for j in 0...8 {
+                let u = domain.uMin + (domain.uMax - domain.uMin) * Double(i) / 8.0
+                let v = domain.vMin + (domain.vMax - domain.vMin) * Double(j) / 8.0
+                maxAbsZ = max(maxAbsZ, abs(deformed.point(atU: u, v: v).z))
+            }
+        }
+        #expect(maxAbsZ > 1.0, "order \(order) did not deform the surface (maxAbsZ = \(maxAbsZ))")
     }
 
     // Characterisation, not a proof of the fix: this passed before the rename too. It is here
