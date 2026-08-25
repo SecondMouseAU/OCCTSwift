@@ -5485,7 +5485,7 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     double umin = 0.0, umax = 0.0, vmin = 0.0, vmax = 0.0;
     ShapeAnalysis::GetFaceUVBounds(aProbe, umin, umax, vmin, vmax);
     double faceAreaScale = (umax - umin) * (vmax - vmin);
-    // The same WireData that CheckOuterBound uses internally.
+    // A WireData built the same way CheckOuterBound does internally.
     occ::handle<ShapeExtend_WireData> sewd = new ShapeExtend_WireData(aBuilt);
     double totcross = ShapeAnalysis::TotCross2D(sewd, aProbe);
     // Reject areas whose magnitude is negligible relative to the face scale.
