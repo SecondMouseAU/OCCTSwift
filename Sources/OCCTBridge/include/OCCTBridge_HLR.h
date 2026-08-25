@@ -53,7 +53,8 @@ OCCTDrawingRef _Nullable OCCTDrawingCreatePoly(OCCTShapeRef shape,
 /// Extract edges of a specific type from a drawing.
 /// @param drawing The drawing reference
 /// @param edgeType Type of edges to extract
-/// @return Shape containing the edges, or NULL on failure. Caller must release with OCCTShapeRelease.
+/// @return Shape containing the edges, or NULL on failure. Caller must release with
+/// OCCTShapeRelease.
 OCCTShapeRef _Nullable OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 
 /// Release a drawing reference.

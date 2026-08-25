@@ -21,7 +21,8 @@
 #include <TopoDS_Compound.hxx>
 
 // Helper: compute how far a shape reaches along a view direction from the world origin.
-// Returns false for a shape with no bounds. Used by OCCTDrawingCreate for perspective guard (#1036).
+// Returns false for a shape with no bounds. Used by OCCTDrawingCreate for perspective guard
+// (#1036).
 static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
                                            const gp_Dir&       viewDir,
                                            double&             outReach)

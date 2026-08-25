@@ -798,7 +798,6 @@ extern "C"
   /// Opaque handle for XDE document
   typedef struct OCCTDocument* OCCTDocumentRef;
 
-
   // MARK: - Camera (Metal Visualization)
 
   typedef struct OCCTCamera* OCCTCameraRef;

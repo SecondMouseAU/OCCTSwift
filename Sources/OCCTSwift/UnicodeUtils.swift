@@ -32,11 +32,6 @@ public enum UnicodeUtils {
     /// Convert from UTF-8 to current format.
     ///
     /// - Parameters:
-    ///   - utf8Input: The UTF-8 string to convert.
-    ///   - maxSize: Output buffer *capacity* in bytes (default 4096). If the converted string
-    ///     exceeds this capacity, it will be truncated. Use a larger value or call without
-    ///     maxSize to automatically allocate the full required buffer.
-    /// - Returns: The converted string, or nil on failure.
     /// Convert from UTF-8 to current format.
     ///
     /// - Parameters:

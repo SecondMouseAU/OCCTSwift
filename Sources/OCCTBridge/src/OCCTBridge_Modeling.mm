@@ -249,8 +249,6 @@ static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
   return true;
 }
 
-
-
 // MARK: - Helix Curves (v0.28.0)
 
 #include <HelixBRep_BuilderHelix.hxx>
@@ -16323,7 +16321,7 @@ bool occtDefeaturingFacesFromShapes(const TopoDS_Shape&     shape,
 
       // Explode the carrier for faces
       TopExp_Explorer explorer(carrier->shape, TopAbs_FACE);
-      bool foundAny = false;
+      bool            foundAny = false;
       while (explorer.More())
       {
         TopoDS_Face face = TopoDS::Face(explorer.Current());

@@ -3920,37 +3920,42 @@ char* OCCTUnicodeConvertToUnicode(const char* input)
   }
 }
 
-int32_t OCCTUnicodeConvertFromUnicode(const char* utf8Input, char* _Nullable output, int32_t maxSize)
+int32_t OCCTUnicodeConvertFromUnicode(const char* utf8Input,
+                                      char* _Nullable output,
+                                      int32_t maxSize)
 {
   try
   {
     TCollection_ExtendedString eStr(utf8Input, true);
-    
+
     /* First, get the converted string length by converting with a sufficiently large buffer */
-    /* We need to know the length before we can return it. Since Resource_Unicode::ConvertUnicodeToFormat */
+    /* We need to know the length before we can return it. Since
+     * Resource_Unicode::ConvertUnicodeToFormat */
     /* requires a buffer, we will do the conversion to a temporary buffer first. */
-    
+
     /* Estimate: UTF-8 to other encodings typically does not expand by more than 2x */
-    std::vector<char> tempBuf(std::strlen(utf8Input) * 4 + 1);
+    std::vector<char>   tempBuf(std::strlen(utf8Input) * 4 + 1);
     Standard_PCharacter tempBufPtr = tempBuf.data();
-    bool ok = Resource_Unicode::ConvertUnicodeToFormat(eStr, tempBufPtr, static_cast<int32_t>(tempBuf.size()));
+    bool ok = Resource_Unicode::ConvertUnicodeToFormat(eStr,
+                                                       tempBufPtr,
+                                                       static_cast<int32_t>(tempBuf.size()));
     if (!ok)
       return -1;
-    
+
     int32_t resultLen = static_cast<int32_t>(std::strlen(tempBuf.data()));
-    
+
     /* Handle edge cases for maxSize */
     if (maxSize < 0)
       return -1;
-    
+
     /* Allow length-only query with output == NULL and maxSize == 0 */
     if (!output && maxSize == 0)
       return resultLen;
-    
+
     /* Invalid: null buffer with positive maxSize, or non-null buffer with zero/negative maxSize */
     if (!output || maxSize <= 0)
       return -1;
-    
+
     /* Copy up to maxSize-1 characters, NUL-terminate */
     int32_t copyLen = std::min(resultLen, maxSize - 1);
     memcpy(output, tempBuf.data(), copyLen);

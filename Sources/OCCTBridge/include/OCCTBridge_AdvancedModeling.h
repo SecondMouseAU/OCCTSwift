@@ -178,7 +178,6 @@ OCCTShapeRef OCCTShapeBuildThreadCutter(double  ox,
                                         double  handed,
                                         int32_t nSections);
 
-
 /// Create B-spline surface from a grid of control points
 /// @param poles Control points as [x,y,z,...] in row-major order (uCount * vCount * 3 doubles)
 /// @param uCount Number of control points in U direction

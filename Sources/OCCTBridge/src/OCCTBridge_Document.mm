@@ -801,7 +801,10 @@ int32_t OCCTDocumentGetLayerCount(OCCTDocumentRef doc)
   }
 }
 
-int32_t OCCTDocumentGetLayerName(OCCTDocumentRef doc, int32_t index, char* _Nullable outName, int32_t maxLen)
+int32_t OCCTDocumentGetLayerName(OCCTDocumentRef doc,
+                                 int32_t         index,
+                                 char* _Nullable outName,
+                                 int32_t maxLen)
 {
   if (!doc || doc->doc.IsNull())
     return -1;

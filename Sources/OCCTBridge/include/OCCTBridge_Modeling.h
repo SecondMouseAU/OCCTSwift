@@ -412,8 +412,6 @@ void OCCTFreeWireArray(OCCTWireRef* wires, int32_t count);
 /// @param wires Array of wire references
 void OCCTFreeWireArrayOnly(OCCTWireRef* wires);
 
-
-
 // MARK: - Geometry Construction (v0.11.0)
 
 /// Create a planar face from a closed wire
@@ -1569,7 +1567,6 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
                                     int32_t        faceCount,
                                     double         tolerance,
                                     int32_t        joinType);
-
 
 /// Create a pipe feature (protrusion or depression) by sweeping a profile along a spine.
 /// The profile is swept along the spine wire and fused/cut with the base shape.
