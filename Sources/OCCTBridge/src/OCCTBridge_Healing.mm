@@ -1606,13 +1606,13 @@ OCCTShapeRef OCCTShapeBSplineRestriction(OCCTShapeRef shape,
     // BSplineRestriction(shape, Tol3d, Tol2d, MaxDegree, MaxNbSegment,
     //                    Continuity3d, Continuity2d, Degree, Rational, aParameters)
     Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
-    TopoDS_Shape result = ShapeCustom::BSplineRestriction(shape->shape,
+    TopoDS_Shape                              result = ShapeCustom::BSplineRestriction(shape->shape,
                                                           surfaceTol,
                                                           curveTol,
                                                           maxDegree,
                                                           maxSegments,
-                                                          GeomAbs_C1,    // Continuity3d
-                                                          GeomAbs_C1,    // Continuity2d
+                                                          GeomAbs_C1, // Continuity3d
+                                                          GeomAbs_C1, // Continuity2d
                                                           Standard_True, // Degree priority
                                                           Standard_True, // Rational
                                                           params);
@@ -3808,9 +3808,9 @@ OCCTShapeRef _Nullable OCCTShapeExtendSortedCompound(OCCTShapeRef shape,
   {
     ShapeExtend_Explorer explorer;
     TopoDS_Shape         result = explorer.SortedCompound(shape->shape,
-                                                          (TopAbs_ShapeEnum)shapeType,
-                                                          explore ? Standard_True : Standard_False,
-                                                          Standard_True);
+                                                  (TopAbs_ShapeEnum)shapeType,
+                                                  explore ? Standard_True : Standard_False,
+                                                  Standard_True);
     if (result.IsNull())
       return nullptr;
     return new OCCTShape(result);

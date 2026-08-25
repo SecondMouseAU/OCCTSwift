@@ -1667,10 +1667,10 @@ OCCTCurve3DRef OCCTEdgeApproxCurve(OCCTEdgeRef edge,
   {
     BRepAdaptor_Curve adaptorCurve(edge->edge);
     Approx_Curve3d    approx(new BRepAdaptor_Curve(adaptorCurve),
-                             tolerance,
-                             GeomAbs_C2,
-                             maxSegments,
-                             maxDegree);
+                          tolerance,
+                          GeomAbs_C2,
+                          maxSegments,
+                          maxDegree);
     if (!approx.IsDone() && !approx.HasResult())
       return nullptr;
     auto bspline = approx.Curve();
@@ -1698,10 +1698,10 @@ bool OCCTEdgeApproxCurveInfo(OCCTEdgeRef edge,
   {
     BRepAdaptor_Curve adaptorCurve(edge->edge);
     Approx_Curve3d    approx(new BRepAdaptor_Curve(adaptorCurve),
-                             tolerance,
-                             GeomAbs_C2,
-                             maxSegments,
-                             maxDegree);
+                          tolerance,
+                          GeomAbs_C2,
+                          maxSegments,
+                          maxDegree);
     if (!approx.IsDone() && !approx.HasResult())
       return false;
     *outMaxError = approx.MaxError();
@@ -7979,14 +7979,14 @@ OCCTCurve3DRef _Nullable OCCTHelixApproxToBSpline(double t1,
     Handle(Geom_BSplineCurve) bspl;
     double                    err    = 0;
     int                       status = HelixGeom_Tools::ApprHelix(t1,
-                                                                  t2,
-                                                                  pitch,
-                                                                  rStart,
-                                                                  taperAngle,
-                                                                  isClockwise,
-                                                                  tolerance,
-                                                                  bspl,
-                                                                  err);
+                                            t2,
+                                            pitch,
+                                            rStart,
+                                            taperAngle,
+                                            isClockwise,
+                                            tolerance,
+                                            bspl,
+                                            err);
     if (status != 0 || bspl.IsNull())
       return nullptr;
     *maxError  = err;

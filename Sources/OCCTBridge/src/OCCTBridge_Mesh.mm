@@ -488,11 +488,11 @@ OCCTEdgePolylinesRef OCCTShapeComputeAllEdgePolylines(OCCTShapeRef shape,
     { // OCCT is 1-based
       TopoDS_Edge edge = TopoDS::Edge(edgeMap(i));
       int32_t     n    = DiscretizeEdgeInto(edge,
-                                            deflection,
-                                            maxPointsPerEdge,
-                                            shape->shape,
-                                            fallbackMap,
-                                            scratch.data());
+                                     deflection,
+                                     maxPointsPerEdge,
+                                     shape->shape,
+                                     fallbackMap,
+                                     scratch.data());
       if (n <= 0)
       {
         result->offsets.push_back(0);

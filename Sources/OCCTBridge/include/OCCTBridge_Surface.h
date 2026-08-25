@@ -1130,7 +1130,7 @@ bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef);
 
 OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void);
 void                    OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref,
-                                                     OCCTCurve3DRef _Nonnull curveRef);
+                                  OCCTCurve3DRef _Nonnull curveRef);
 bool OCCTGeomFillProfilerPerform(OCCTGeomFillProfilerRef _Nonnull ref, double tolerance);
 int  OCCTGeomFillProfilerDegree(OCCTGeomFillProfilerRef _Nonnull ref);
 int  OCCTGeomFillProfilerNbPoles(OCCTGeomFillProfilerRef _Nonnull ref);
@@ -1173,7 +1173,7 @@ OCCTLocationDraftRef OCCTGeomFillLocationDraftCreate(double dirX,
                                                      double dirZ,
                                                      double angle);
 bool                 OCCTGeomFillLocationDraftSetCurve(OCCTLocationDraftRef _Nonnull ref,
-                                                       OCCTCurve3DRef _Nonnull curveRef);
+                                       OCCTCurve3DRef _Nonnull curveRef);
 bool                 OCCTGeomFillLocationDraftD0(OCCTLocationDraftRef _Nonnull ref,
                                                  double param,
                                                  double* _Nonnull mat,
@@ -1189,7 +1189,7 @@ void OCCTGeomFillLocationDraftRelease(OCCTLocationDraftRef _Nonnull ref);
 
 OCCTGuideTrihedronACRef OCCTGeomFillGuideTrihedronACCreate(OCCTCurve3DRef _Nonnull guideCurveRef);
 bool                    OCCTGeomFillGuideTrihedronACSetCurve(OCCTGuideTrihedronACRef _Nonnull ref,
-                                                             OCCTCurve3DRef _Nonnull pathCurveRef);
+                                          OCCTCurve3DRef _Nonnull pathCurveRef);
 bool                    OCCTGeomFillGuideTrihedronACD0(OCCTGuideTrihedronACRef _Nonnull ref,
                                                        double param,
                                                        double* _Nonnull tX,
