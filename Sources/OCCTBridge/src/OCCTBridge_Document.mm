@@ -978,20 +978,26 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
   }
 }
 
-
 // Generic GD&T label lookup helper. Consolidates the three near-identical helpers for
 // dimensions, geometric tolerances, and datums (#1065).
-template<typename AttrType, typename ObjType, typename ToolGetter, typename LabelsGetter, typename ReadableCheck>
-static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef doc, int32_t index,
-                                        ToolGetter&& getTool, LabelsGetter&& getLabels,
-                                        ReadableCheck&& isReadable,
-                                        Handle(AttrType)& outAttr, Handle(ObjType)& outObj)
+template <typename AttrType,
+          typename ObjType,
+          typename ToolGetter,
+          typename LabelsGetter,
+          typename ReadableCheck>
+static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef   doc,
+                                        int32_t           index,
+                                        ToolGetter&&      getTool,
+                                        LabelsGetter&&    getLabels,
+                                        ReadableCheck&&   isReadable,
+                                        Handle(AttrType)& outAttr,
+                                        Handle(ObjType)&  outObj)
 {
   if (!doc || doc->doc.IsNull() || index < 0)
     return false;
 
   Handle(XCAFDoc_DimTolTool) tool = getTool(doc);
-  TDF_LabelSequence labels;
+  TDF_LabelSequence          labels;
   getLabels(tool, labels);
   if (index >= (int32_t)labels.Length())
     return false;
@@ -1008,7 +1014,10 @@ static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef doc, int32_t index,
 }
 
 // Always-true readability check for types that do not need it.
-static bool occtDocumentGdtAlwaysReadable(const TDF_Label&) { return true; }
+static bool occtDocumentGdtAlwaysReadable(const TDF_Label&)
+{
+  return true;
+}
 
 // Resolve a dimension index to its attribute and its object. Every per-dimension accessor and
 // mutator below differs only in what it then reads or sets, so the lookup lives here rather than
@@ -1019,11 +1028,13 @@ static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                       
                                           Handle(XCAFDimTolObjects_DimensionObject)& outObj)
 {
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Dimension, XCAFDimTolObjects_DimensionObject>(
-    doc, dimensionIndex,
+    doc,
+    dimensionIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDimensionLabels(l); },
     occtDocumentGdtAlwaysReadable,
-    outAttr, outObj);
+    outAttr,
+    outObj);
 }
 
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index)
@@ -1163,11 +1174,13 @@ static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc
                                               Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj)
 {
   return occtDocumentGdtObjectAtImpl<XCAFDoc_GeomTolerance, XCAFDimTolObjects_GeomToleranceObject>(
-    doc, toleranceIndex,
+    doc,
+    toleranceIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetGeomToleranceLabels(l); },
     occtDocumentGdtAlwaysReadable,
-    outAttr, outObj);
+    outAttr,
+    outObj);
 }
 
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index)
@@ -1344,11 +1357,13 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
                                       Handle(XCAFDimTolObjects_DatumObject)& outObj)
 {
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
-    doc, datumIndex,
+    doc,
+    datumIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
-    outAttr, outObj);
+    outAttr,
+    outObj);
 }
 
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
