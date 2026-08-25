@@ -492,13 +492,22 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef _Nonnull graph);
 // --- History Record Readback (v0.141, #72 Phase 0) ---
 
 /// Get operation name and sequence number of history record at index.
-/// outOpName is written with a NUL-terminated string up to outOpNameMax bytes.
-/// Returns false on invalid index.
-bool OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef _Nonnull graph,
-                                       int32_t recordIdx,
-                                       char* _Nonnull outOpName,
-                                       int32_t outOpNameMax,
-                                       int32_t* _Nonnull outSequenceNumber);
+/// @param graph The BRepGraph to query
+/// @param recordIdx Zero-based record index
+/// @param outOpName Output buffer for the operation name (may be NULL if outOpNameMax is 0)
+/// @param outOpNameMax Maximum length of the output buffer (use 0 with NULL outOpName to query
+/// length)
+/// @param outSequenceNumber Output for the record's sequence number
+/// @return Length of the operation name in bytes (not counting the NUL terminator), or -1 on
+/// failure.
+///         If outOpName is non-NULL and outOpNameMax > 0, the buffer receives a NUL-terminated copy
+///         truncated to outOpNameMax-1 bytes. A return value >= outOpNameMax indicates truncation
+///         occurred.
+int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef _Nonnull graph,
+                                          int32_t recordIdx,
+                                          char* _Nullable outOpName,
+                                          int32_t outOpNameMax,
+                                          int32_t* _Nonnull outSequenceNumber);
 
 /// Number of original (pre-mutation) nodes in record's mapping.
 int32_t OCCTBRepGraphHistoryGetRecordOriginalsCount(OCCTBRepGraphRef _Nonnull graph,

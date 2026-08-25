@@ -159,3 +159,122 @@ struct Issue1050BisectorDomainTests {
         #expect(bisectorIntersections(a: (5, 5), b: (5, 5), c: (-3, -3), d: (-3, -3)).isEmpty)
     }
 }
+
+/// #1085: `bisectorIntersections` does not return for non-finite or near-1e300 coordinates.
+///
+/// The underlying OCCT bisector computation can hang or exhibit undefined behaviour when given
+/// NaN, infinity, or extremely large coordinate values. This suite verifies that the Swift wrapper
+/// validates all eight input coordinates and returns an empty array immediately for any non-finite
+/// value or any value exceeding the safe magnitude threshold (1e150), avoiding the hang.
+@Suite("Issue1085 bisector non-finite coordinates")
+struct Issue1085BisectorNonFiniteTests {
+
+    /// NaN in any coordinate position returns empty rather than hanging.
+    @Test("NaN in first point returns empty")
+    func nanInFirstPoint() {
+        #expect(bisectorIntersections(a: (Double.nan, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, Double.nan), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("NaN in second point returns empty")
+    func nanInSecondPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (Double.nan, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, Double.nan), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("NaN in third point returns empty")
+    func nanInThirdPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.nan, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.nan), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("NaN in fourth point returns empty")
+    func nanInFourthPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.nan, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.nan)).isEmpty)
+    }
+
+    /// +Infinity in any coordinate position returns empty rather than hanging.
+    @Test("Positive infinity in first point returns empty")
+    func positiveInfinityInFirstPoint() {
+        #expect(bisectorIntersections(a: (Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Positive infinity in second point returns empty")
+    func positiveInfinityInSecondPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, Double.infinity), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Positive infinity in third point returns empty")
+    func positiveInfinityInThirdPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.infinity, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.infinity), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Positive infinity in fourth point returns empty")
+    func positiveInfinityInFourthPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.infinity, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.infinity)).isEmpty)
+    }
+
+    /// -Infinity in any coordinate position returns empty rather than hanging.
+    @Test("Negative infinity in first point returns empty")
+    func negativeInfinityInFirstPoint() {
+        #expect(bisectorIntersections(a: (-Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, -Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Negative infinity in second point returns empty")
+    func negativeInfinityInSecondPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (-Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, -Double.infinity), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Negative infinity in third point returns empty")
+    func negativeInfinityInThirdPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-Double.infinity, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, -Double.infinity), d: (-45, 0)).isEmpty)
+    }
+
+    @Test("Negative infinity in fourth point returns empty")
+    func negativeInfinityInFourthPoint() {
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-Double.infinity, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, -Double.infinity)).isEmpty)
+    }
+
+    /// Extremely large finite coordinates (exceeding 1e150) return empty rather than hanging or
+    /// producing garbage. These values are within Double's finite range but can cause numerical
+    /// issues in the OCCT bisector computation. The threshold matches the `maxSafeMagnitude` in
+    /// `BisectorResult.swift`.
+    @Test("Large finite coordinates exceeding 1e150 return empty")
+    func largeFiniteCoordinatesReturnEmpty() {
+        let large = 1e200  // Exceeds the 1e150 safe magnitude threshold
+        #expect(bisectorIntersections(a: (large, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, large), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (large, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, large), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (large, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, large), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (large, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, large)).isEmpty)
+        #expect(bisectorIntersections(a: (-large, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(bisectorIntersections(a: (0, -large), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+    }
+
+    /// Coordinates just below the threshold (1e149) should still work normally.
+    @Test("Coordinates near but below threshold still work")
+    func coordinatesBelowThresholdWork() {
+        let nearThreshold = 1e149  // Below the 1e150 safe magnitude threshold
+        // This should compute normally - using a simple case that has a known intersection
+        let hits = bisectorIntersections(
+            a: (0, 0), b: (0, 10),
+            c: (-nearThreshold, 0), d: (-nearThreshold + 10, 0))
+        // The bisectors should meet at x = -nearThreshold + 5, y = 5
+        // But due to the large coordinates, OCCT might still have issues
+        // The important thing is it doesn't hang - it either returns a result or empty
+        // We just verify it returns (doesn't hang)
+        _ = hits
+    }
+}

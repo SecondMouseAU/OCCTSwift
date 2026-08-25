@@ -628,10 +628,15 @@ int32_t OCCTDocumentGetLayerCount(OCCTDocumentRef doc);
 /// Get the name of a layer by index.
 /// @param doc The document to query
 /// @param index Zero-based layer index
-/// @param outName Output buffer for the layer name
-/// @param maxLen Maximum length of the output buffer
-/// @return true if the layer name was retrieved successfully
-bool OCCTDocumentGetLayerName(OCCTDocumentRef doc, int32_t index, char* outName, int32_t maxLen);
+/// @param outName Output buffer for the layer name (may be NULL if maxLen is 0)
+/// @param maxLen Maximum length of the output buffer (use 0 with NULL outName to query length)
+/// @return Length of the layer name in bytes (not counting the NUL terminator), or -1 on failure.
+///         If outName is non-NULL and maxLen > 0, the buffer receives a NUL-terminated copy
+///         truncated to maxLen-1 bytes. A return value >= maxLen indicates truncation occurred.
+int32_t OCCTDocumentGetLayerName(OCCTDocumentRef doc,
+                                 int32_t         index,
+                                 char* _Nullable outName,
+                                 int32_t maxLen);
 
 // MARK: - Document Materials (v0.31.0)
 

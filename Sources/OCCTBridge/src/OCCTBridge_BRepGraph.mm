@@ -1476,31 +1476,41 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef g)
   }
 }
 
-bool OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
-                                       int32_t          recordIdx,
-                                       char*            outOpName,
-                                       int32_t          outOpNameMax,
-                                       int32_t*         outSequenceNumber)
+int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
+                                          int32_t          recordIdx,
+                                          char* _Nullable outOpName,
+                                          int32_t  outOpNameMax,
+                                          int32_t* outSequenceNumber)
 {
-  if (!g || !outOpName || !outSequenceNumber || outOpNameMax <= 0)
-    return false;
+  if (!g || !outSequenceNumber)
+    return -1;
+  if (outOpNameMax < 0)
+    return -1;
   try
   {
     auto hist = bgHistory(g);
     if (hist.IsNull() || recordIdx < 0 || recordIdx >= (int32_t)hist->NbRecords())
-      return false;
+      return -1;
     const auto& rec    = hist->Record((size_t)recordIdx);
     const char* src    = rec.OperationName.ToCString();
     int         srcLen = rec.OperationName.Length();
-    int         copy   = std::min(srcLen, outOpNameMax - 1);
-    memcpy(outOpName, src, copy);
-    outOpName[copy]    = '\0';
     *outSequenceNumber = (int32_t)rec.SequenceNumber;
-    return true;
+    // Allow length-only query with outOpName == NULL and outOpNameMax == 0
+    if (!outOpName && outOpNameMax == 0)
+      return srcLen;
+    // Invalid: null buffer with positive outOpNameMax, or non-null buffer with zero/negative
+    // outOpNameMax
+    if (!outOpName || outOpNameMax <= 0)
+      return -1;
+    // Copy up to outOpNameMax-1 characters, NUL-terminate
+    int copyLen = std::min(srcLen, outOpNameMax - 1);
+    memcpy(outOpName, src, copyLen);
+    outOpName[copyLen] = '\0';
+    return srcLen;
   }
   catch (...)
   {
-    return false;
+    return -1;
   }
 }
 
