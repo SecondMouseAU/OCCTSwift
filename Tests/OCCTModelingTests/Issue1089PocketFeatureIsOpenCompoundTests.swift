@@ -83,13 +83,18 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
                 let count = compound.adjacentFaces(forEdge: wrapped).count
                 if count > 2 { 
                     multiFaceEdges += 1
+                    print("DEBUG Issue1089: Shape.adjacentFaces count = \(count) for edge \(edge.index)")
                 }
                 // Also test Edge.adjacentFaces(in:)
                 if let adj = edge.adjacentFaces(in: compound) {
                     edgeAdjFacesCount = max(edgeAdjFacesCount, adj.count)
+                    if adj.count > 2 {
+                        print("DEBUG Issue1089: Edge.adjacentFaces count = \(adj.count) for edge \(edge.index)")
+                    }
                 }
             }
         }
+        print("DEBUG Issue1089: multiFaceEdges = \(multiFaceEdges), max Edge.adjacentFaces = \(edgeAdjFacesCount)")
         #expect(multiFaceEdges >= 1, "Fixture must have boundary edges with >2 adjacent faces")
     }
 
