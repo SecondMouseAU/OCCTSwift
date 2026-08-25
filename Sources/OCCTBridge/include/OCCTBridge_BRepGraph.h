@@ -42,7 +42,7 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape,
 int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
                                       OCCTEdgeRef  edge,
                                       OCCTFaceRef* _Nonnull outFaces,
-                                      int32_t maxFaces);
+                                      int32_t      maxFaces);
 
 /// Determine the convexity of an edge between two faces.
 ///
