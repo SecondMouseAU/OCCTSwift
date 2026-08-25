@@ -6875,7 +6875,7 @@ bool OCCTBOPAlgoAnalyzeArguments(OCCTShapeRef shape1, OCCTShapeRef shape2, int32
     BOPAlgo_ArgumentAnalyzer analyzer;
     analyzer.SetShape1(shape1->shape);
     analyzer.SetShape2(shape2->shape);
-    analyzer.OperationType() = static_cast<BOPAlgo_Operation>(operation);
+    analyzer.OperationType()    = static_cast<BOPAlgo_Operation>(operation);
     analyzer.ArgumentTypeMode() = true;
     analyzer.SelfInterMode()    = true;
     analyzer.SmallEdgeMode()    = true;
