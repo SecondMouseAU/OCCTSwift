@@ -7,7 +7,7 @@ This document catalogs all `int32_t` bridge functions that return tri-state valu
 
 The three functions `OCCTCheckFaceStatus`, `OCCTCheckEdgeStatus`, `OCCTCheckVertexStatus`
 formerly contained identical tri-state decoder logic. They now share the helper
-`occtBRepCheckSubShapeStatus` in `Sources/OCCTBridge/src/OCCTBridge_Healing.mm`.
+`occtBRepCheckSubShapeStatus` in `OCCTBridge_Internal.h`.
 
 **Encoding:**
 - `-1` = error (null input, analyzer failed, result null, exception)
@@ -77,6 +77,7 @@ These return counts (0 to N) with -1 for error, but are NOT tri-state booleans:
 
 - `OCCTShapeCheckSmallFaces` - returns count of small faces found
 - `OCCTCheckShapeDetailed` - returns count of status issues found
+- `OCCTBRepGraphValidateIssueCount` - returns count of validation issues
 - `OCCTShapeSelfIntersectsDetailed` - returns count of self-intersections
 - All `*Get*Count`, `*Nb*`, `*Count*` functions
 
@@ -86,6 +87,8 @@ These return counts (0 to N) with -1 for error, but are NOT tri-state booleans:
 
 These return enum values or indices directly, with -1 for error:
 
+- `OCCTFilletBuilderStripeStatus` - stripe status enum
+- `OCCTFilletBuilderFaultyContour` - fault index
 - `OCCTMakeEdgeError` - edge error enum
 - `OCCTWireBuilderError` - wire error enum
 - `OCCTShapeWireVertexStatus` - vertex status enum
@@ -106,6 +109,7 @@ These return enum values or indices directly, with -1 for error:
 2. `OCCTCheckEdgeStatus` → shared helper
 3. `OCCTCheckVertexStatus` → shared helper
 4. `OCCTShapeWireVertexStatus`
+5. `OCCTFilletBuilderStripeStatus`
 
 **Count-returning with error sentinel** (-1/0..N):
 - `OCCTShapeCheckSmallFaces`
@@ -118,7 +122,7 @@ These return enum values or indices directly, with -1 for error:
 
 ## Shared Helper
 
-**`occtBRepCheckSubShapeStatus`** in `Sources/OCCTBridge/src/OCCTBridge_Healing.mm:5816`
+**`occtBRepCheckSubShapeStatus`** in `OCCTBridge_Internal.h:3150`
 
 Consolidates the identical tri-state decoder previously duplicated in:
 - `OCCTCheckFaceStatus`
