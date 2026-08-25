@@ -978,6 +978,47 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
   }
 }
 
+// Generic GD&T label lookup helper. Consolidates the three near-identical helpers for
+// dimensions, geometric tolerances, and datums (#1065).
+template <typename AttrType,
+          typename ObjType,
+          typename ToolGetter,
+          typename LabelsGetter,
+          typename ReadableCheck>
+static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef   doc,
+                                        int32_t           index,
+                                        ToolGetter&&      getTool,
+                                        LabelsGetter&&    getLabels,
+                                        ReadableCheck&&   isReadable,
+                                        Handle(AttrType)& outAttr,
+                                        Handle(ObjType)&  outObj)
+{
+  if (!doc || doc->doc.IsNull() || index < 0)
+    return false;
+
+  Handle(XCAFDoc_DimTolTool) tool = getTool(doc);
+  TDF_LabelSequence          labels;
+  getLabels(tool, labels);
+  if (index >= (int32_t)labels.Length())
+    return false;
+
+  TDF_Label label = labels.Value(index + 1);
+  if (!label.FindAttribute(AttrType::GetID(), outAttr))
+    return false;
+
+  if (!isReadable(label))
+    return false;
+
+  outObj = outAttr->GetObject();
+  return !outObj.IsNull();
+}
+
+// Always-true readability check for types that do not need it.
+static bool occtDocumentGdtAlwaysReadable(const TDF_Label&)
+{
+  return true;
+}
+
 // Resolve a dimension index to its attribute and its object. Every per-dimension accessor and
 // mutator below differs only in what it then reads or sets, so the lookup lives here rather than
 // once per entry point (#996, extended to the read path by #1004).
@@ -986,21 +1027,14 @@ static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                       
                                           Handle(XCAFDoc_Dimension)&                 outAttr,
                                           Handle(XCAFDimTolObjects_DimensionObject)& outObj)
 {
-  if (!doc || doc->doc.IsNull() || dimensionIndex < 0)
-    return false;
-
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
-  TDF_LabelSequence          labels;
-  dimTolTool->GetDimensionLabels(labels);
-  if (dimensionIndex >= (int32_t)labels.Length())
-    return false;
-
-  TDF_Label label = labels.Value(dimensionIndex + 1);
-  if (!label.FindAttribute(XCAFDoc_Dimension::GetID(), outAttr))
-    return false;
-
-  outObj = outAttr->GetObject();
-  return !outObj.IsNull();
+  return occtDocumentGdtObjectAtImpl<XCAFDoc_Dimension, XCAFDimTolObjects_DimensionObject>(
+    doc,
+    dimensionIndex,
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
+    [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDimensionLabels(l); },
+    occtDocumentGdtAlwaysReadable,
+    outAttr,
+    outObj);
 }
 
 OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t index)
@@ -1139,21 +1173,14 @@ static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc
                                               Handle(XCAFDoc_GeomTolerance)& outAttr,
                                               Handle(XCAFDimTolObjects_GeomToleranceObject)& outObj)
 {
-  if (!doc || doc->doc.IsNull() || toleranceIndex < 0)
-    return false;
-
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
-  TDF_LabelSequence          labels;
-  dimTolTool->GetGeomToleranceLabels(labels);
-  if (toleranceIndex >= (int32_t)labels.Length())
-    return false;
-
-  TDF_Label label = labels.Value(toleranceIndex + 1);
-  if (!label.FindAttribute(XCAFDoc_GeomTolerance::GetID(), outAttr))
-    return false;
-
-  outObj = outAttr->GetObject();
-  return !outObj.IsNull();
+  return occtDocumentGdtObjectAtImpl<XCAFDoc_GeomTolerance, XCAFDimTolObjects_GeomToleranceObject>(
+    doc,
+    toleranceIndex,
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
+    [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetGeomToleranceLabels(l); },
+    occtDocumentGdtAlwaysReadable,
+    outAttr,
+    outObj);
 }
 
 OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int32_t index)
@@ -1329,24 +1356,14 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
                                       Handle(XCAFDoc_Datum)&                 outAttr,
                                       Handle(XCAFDimTolObjects_DatumObject)& outObj)
 {
-  if (!doc || doc->doc.IsNull() || datumIndex < 0)
-    return false;
-
-  Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
-  TDF_LabelSequence          labels;
-  dimTolTool->GetDatumLabels(labels);
-  if (datumIndex >= (int32_t)labels.Length())
-    return false;
-
-  TDF_Label label = labels.Value(datumIndex + 1);
-  if (!label.FindAttribute(XCAFDoc_Datum::GetID(), outAttr))
-    return false;
-
-  if (!occtDatumLabelIsReadable(label))
-    return false;
-
-  outObj = outAttr->GetObject();
-  return !outObj.IsNull();
+  return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
+    doc,
+    datumIndex,
+    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
+    occtDatumLabelIsReadable,
+    outAttr,
+    outObj);
 }
 
 OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
