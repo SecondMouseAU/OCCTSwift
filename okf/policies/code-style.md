@@ -43,6 +43,10 @@ script, and through the script by the hook. clang-format's output changes betwee
 installs exactly the pinned version from PyPI (a ~2 MB wheel, byte-identical output to the Homebrew
 bottle of the same version) and asserts it; the script refuses a different major locally rather than
 letting you produce a diff CI will reject. OCCT's own CI pins for the same reason.
+`Scripts/install-clang-format.py` installs the pinned binary using nothing but the Python standard
+library, for images with no working pip or venv;
+[`docs/guides/clang-format-setup.md`](../../docs/guides/clang-format-setup.md) covers every route
+and how to verify one.
 
 **SwiftLint is scoped to `orphaned_doc_comment` only** (`.swiftlint.yml`, `only_rules`, not the
 default set). SwiftLint's defaults duplicate `swift-format`'s formatting opinions (can disagree

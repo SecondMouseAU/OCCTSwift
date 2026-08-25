@@ -87,7 +87,12 @@ violation unless the tool wrote them. Hand-aligning is not a substitute and read
 breaks the alignment run) is the tell that a human did it by eye. The version is pinned in
 `Scripts/clang-format-version.txt`; a clang-format on a different major is refused rather than
 allowed to produce a diff CI rejects, and 21.1.8 vs 22.1.8 was measured to disagree on 10 of the 33
-files, so this is not a formality.
+files, so this is not a formality. To get that version onto a machine that has no working pip or
+venv (a minimal Debian/Ubuntu image, where `ensurepip` lives in a separate `python3.N-venv` package
+that may have no installation candidate), run `Scripts/install-clang-format.py`: standard library
+only, no pip, venv, curl, unzip or apt. See
+[`docs/guides/clang-format-setup.md`](docs/guides/clang-format-setup.md) for the other routes and a
+self-contained one-liner for a container build step.
 
 ### Static Gate Scripts
 
@@ -666,6 +671,7 @@ docs/
 ├── guides/
 │   ├── adding-features.md    # Step-by-step: bridge header → impl → Swift → test
 │   ├── building-occt.md      # Rebuild OCCT.xcframework from source
+│   ├── clang-format-setup.md # Getting the pinned clang-format, incl. no-pip/no-venv images
 │   ├── consuming-from-objective-c.md  # What a CONSUMER's own target must set (#967)
 │   ├── cookbook/             # Task-oriented, example-rich guides
 │   ├── prebuilt-bridge.md    # Opt-in prebuilt bridge binary (#339)
