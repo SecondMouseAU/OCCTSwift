@@ -60,6 +60,9 @@
 // occtBRepFeatCylindricalHole) rather than the
 // structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
+#include <BRepCheck_Analyzer.hxx>
+#include <BRepCheck_Result.hxx>
+#include <BRepCheck_ListOfStatus.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <Bnd_Box.hxx>    // #943: the shared bounding-box helper below
 #include <BRepBndLib.hxx> // #943: same
@@ -3130,6 +3133,36 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
     }
   }
   return new OCCTShape(result);
+}
+
+// === #1077: shared BRepCheck tri-state decoder ===
+//
+// The three functions OCCTCheckFaceStatus, OCCTCheckEdgeStatus, OCCTCheckVertexStatus
+// all implement the identical tri-state pattern:
+//   -1 = error (null input, analyzer failed, result null)
+//    0 = BRepCheck_NoError (status list empty)
+//   >0 = first BRepCheck_Status value from the list
+//
+// This helper consolidates that logic so the three call sites share one implementation.
+//
+// Returns: -1 on error, 0 for NoError, >0 for first status enum value.
+inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const TopoDS_Shape& subShape)
+{
+  try
+  {
+    BRepCheck_Analyzer       analyzer(shape, Standard_True);
+    Handle(BRepCheck_Result) res = analyzer.Result(subShape);
+    if (res.IsNull())
+      return -1;
+    const BRepCheck_ListOfStatus& st = res->Status();
+    if (st.IsEmpty())
+      return 0; // BRepCheck_NoError
+    return static_cast<int32_t>(st.First());
+  }
+  catch (...)
+  {
+    return -1;
+  }
 }
 
 #endif /* OCCTBridge_Internal_h */
