@@ -62,6 +62,7 @@
 #include <ShapeAnalysis_ShapeTolerance.hxx>
 #include <ShapeAnalysis_Shell.hxx>
 #include <ShapeAnalysis_Wire.hxx>
+#include <ShapeAnalysis.hxx>
 #include <ShapeFix_Face.hxx>
 #include <ShapeExtend_Status.hxx>
 #include <NCollection_Sequence.hxx>
@@ -5447,6 +5448,10 @@ bool OCCTWireCheckGap3dEdge(OCCTShapeRef wire, OCCTShapeRef face, double prec, i
 // #1058: the return is tri-state, because `false` used to be both the verdict for a wire that IS
 // the outer bound and the answer from every path that could not run the check. See the header for
 // the encoding and for what the pcurve guard below is protecting against.
+// #1073: the pcurve guard now requires EVERY edge to carry a pcurve (not just some), and the
+// returned area is tested against the face's UV bounds to reject cancellation to rounding.
+// A partial pcurve set or a degenerate projection that cancels to ~1e-15 both produce a verdict
+// whose sign is numerical noise, not geometry. Both are refused with -1.
 int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
 {
   if (!occtShapeIsType(wire, TopAbs_WIRE) || !occtShapeIsType(face, TopAbs_FACE))
@@ -5457,18 +5462,9 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     saw.Init(TopoDS::Wire(wire->shape), TopoDS::Face(face->shape), Precision::Confusion());
     if (!saw.IsReady())
       return -1;
-    // Rebuild what CheckOuterBound hands to ShapeAnalysis::IsOuterBound and refuse if no edge of
-    // it carries a pcurve on the face: TotCross2D would then sign an area nothing contributed to.
-    // OCCTShapeUpgradeWireDivideOnFace above has the near-sibling of this walk, deliberately not
-    // shared with it: that one requires EVERY edge to carry a pcurve, because
-    // ShapeUpgrade_WireDivide null-derefs on the first that does not, while this one requires only
-    // that SOME edge does, because TotCross2D skips the rest rather than crashing on them. Same
-    // call, opposite quantifier, and this one walks the EmptyCopied face and the WireAPIMake wire
-    // rather than the caller's own, so a shared helper would have to take both the quantifier and
-    // the pair. WireAPIMake is null whenever BRepBuilderAPI_MakeWire cannot assemble the loaded
-    // edges, e.g. for two disconnected edges, and BRep_Builder::Add dereferences its component with
-    // no null test, which is a signal the catch below cannot see. CheckOuterBound builds the same
-    // wire, so this refuses one line before OCCT would have crashed on it.
+    // Rebuild what CheckOuterBound hands to ShapeAnalysis::IsOuterBound and refuse if any edge
+    // lacks a pcurve on the face: TotCross2D would then sign an area only the pcurved subset
+    // contributed to. The sibling OCCTShapeUpgradeWireDivideOnFace has the same requirement.
     TopoDS_Wire aBuilt = saw.WireData()->WireAPIMake();
     if (aBuilt.IsNull())
       return -1;
@@ -5476,14 +5472,26 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     TopoDS_Face  aProbe  = TopoDS::Face(anEmpty);
     BRep_Builder aBuilder;
     aBuilder.Add(aProbe, aBuilt);
-    bool hasPCurve = false;
-    for (TopExp_Explorer anIt(aProbe, TopAbs_EDGE); anIt.More() && !hasPCurve; anIt.Next())
+    // Require EVERY edge to have a pcurve on the face.
+    for (TopExp_Explorer anIt(aProbe, TopAbs_EDGE); anIt.More(); anIt.Next())
     {
       double aFirst, aLast;
-      hasPCurve =
-        !BRep_Tool::CurveOnSurface(TopoDS::Edge(anIt.Current()), aProbe, aFirst, aLast).IsNull();
+      if (BRep_Tool::CurveOnSurface(TopoDS::Edge(anIt.Current()), aProbe, aFirst, aLast).IsNull())
+        return -1;
     }
-    if (!hasPCurve)
+    // Compute the signed area and test its magnitude against the face UV bounds.
+    // A wire whose projected area cancels to rounding (~1e-15) produces a verdict driven
+    // by numerical noise, not geometry. The face UV bounds give a characteristic area scale.
+    double umin = 0.0, umax = 0.0, vmin = 0.0, vmax = 0.0;
+    ShapeAnalysis::GetFaceUVBounds(aProbe, umin, umax, vmin, vmax);
+    double faceAreaScale = (umax - umin) * (vmax - vmin);
+    // A WireData built the same way CheckOuterBound does internally.
+    occ::handle<ShapeExtend_WireData> sewd     = new ShapeExtend_WireData(aBuilt);
+    double                            totcross = ShapeAnalysis::TotCross2D(sewd, aProbe);
+    // Reject areas whose magnitude is negligible relative to the face scale.
+    // Threshold: 1e-12 of the face UV area. This is well below any legitimate
+    // outer/inner wire distinction and well above rounding cancellation.
+    if (faceAreaScale > 0.0 && std::abs(totcross) < faceAreaScale * 1e-12)
       return -1;
     return saw.CheckOuterBound() ? 1 : 0;
   }
