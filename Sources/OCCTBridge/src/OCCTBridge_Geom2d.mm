@@ -8922,18 +8922,18 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
     return 0;
   try
   {
-    Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
-    int32_t                   n = std::min((int32_t)inter.NbPoints(), max);
+    Geom2dAdaptor_Curve          ac1(c1->curve), ac2(c2->curve);
+    IntAna2d_AnaIntersection     inter(ac1, ac2, tolerance);
+    if (!inter.IsDone() || inter.IsEmpty())
+      return 0;
+    int32_t n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Pnt2d p = inter.Point(i + 1);
-      out[i].x   = p.X();
-      out[i].y   = p.Y();
-      double u1 = 0, u2 = 0;
-      occtNearestProjectionOnCurve2d(c1, p, nullptr, &u1, nullptr);
-      occtNearestProjectionOnCurve2d(c2, p, nullptr, &u2, nullptr);
-      out[i].u1 = u1;
-      out[i].u2 = u2;
+      const IntAna2d_IntPoint& pt = inter.Point(i + 1);
+      out[i].x  = pt.Value().X();
+      out[i].y  = pt.Value().Y();
+      out[i].u1 = pt.ParamOnFirst();
+      out[i].u2 = pt.ParamOnSecond();
     }
     return n;
   }
