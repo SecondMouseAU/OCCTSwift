@@ -1209,6 +1209,11 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
                     if hm.start() > m.start():
                         continue  # helper appears after the use, not a guard for this use
                     # Check if label_var is at the right argument position
+                    # NOTE: This manual argument parsing is fragile. It does not handle nested templates,
+                    # default arguments, or complex expressions (e.g., helper(label, true) with templates).
+                    # Current helpers (occtDatumLabelIsReadable, occtDocumentGdtAlwaysReadable) take a
+                    # single TDF_Label argument, so this simple scan works for now. If helper signatures
+                    # grow more complex, replace with a proper C++ argument parser.
                     call_args = body[hm.end():]
                     arg_idx = 0
                     in_paren = 1
