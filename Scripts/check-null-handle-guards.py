@@ -427,8 +427,9 @@ OCAF_FINDATTRIBUTE = re.compile(
 
 # #1052: regex to detect handle declarations that are later filled by FindAttribute (declare-then-assign).
 # Matches: Handle(SomeType) name; or occ::handle<SomeType> name;
+# Also matches: Handle(SomeType) name = ...; and Handle(SomeType) name(...);
 OCAF_HANDLE_DECL = re.compile(
-    r'\b(?:Handle\s*\(\s*(\w+)\s*\)|occ::handle\s*<\s*(\w+)\s*>)\s+(\w+)\s*;'
+    r'\b(?:Handle\s*\(\s*(\w+)\s*\)|occ::handle\s*<\s*(\w+)\s*>)\s+(\w+)\s*(?:=|;|\()'
 )
 
 # #1052: named-helper guards for OCAF handle dereferencers. These are functions that perform
