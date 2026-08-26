@@ -8923,17 +8923,17 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
-    if (!inter.IsDone())
-      return 0;
-    int32_t n = std::min((int32_t)inter.NbPoints(), max);
+    int32_t                   n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      const IntRes2d_IntersectionPoint& pt =
-        static_cast<const IntRes2d_Intersection&>(inter).Point(i + 1);
-      out[i].x  = pt.Value().X();
-      out[i].y  = pt.Value().Y();
-      out[i].u1 = pt.ParamOnFirst();
-      out[i].u2 = pt.ParamOnSecond();
+      gp_Pnt2d p = inter.Point(i + 1);
+      out[i].x   = p.X();
+      out[i].y   = p.Y();
+      double u1, u2;
+      occtNearestProjectionOnCurve2d(c1, p, nullptr, &u1, nullptr);
+      occtNearestProjectionOnCurve2d(c2, p, nullptr, &u2, nullptr);
+      out[i].u1 = u1;
+      out[i].u2 = u2;
     }
     return n;
   }
@@ -8953,17 +8953,17 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c->curve, tolerance);
-    if (!inter.IsDone())
-      return 0;
-    int32_t n = std::min((int32_t)inter.NbPoints(), max);
+    int32_t                   n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      const IntRes2d_IntersectionPoint& pt =
-        static_cast<const IntRes2d_Intersection&>(inter).Point(i + 1);
-      out[i].x  = pt.Value().X();
-      out[i].y  = pt.Value().Y();
-      out[i].u1 = pt.ParamOnFirst();
-      out[i].u2 = pt.ParamOnSecond();
+      gp_Pnt2d p = inter.Point(i + 1);
+      out[i].x   = p.X();
+      out[i].y   = p.Y();
+      double u1, u2;
+      occtNearestProjectionOnCurve2d(c, p, nullptr, &u1, nullptr);
+      occtNearestProjectionOnCurve2d(c, p, nullptr, &u2, nullptr);
+      out[i].u1 = u1;
+      out[i].u2 = u2;
     }
     return n;
   }
