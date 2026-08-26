@@ -4738,7 +4738,7 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
     return false;
   try
   {
-    TopLoc_Location loc = g->graph.Topo().OccurrenceLocation(
+    TopLoc_Location loc = g->graph.Topo().Occurrences().OccurrenceLocation(
       BRepGraph_OccurrenceId(occurrenceDefIndex));
     occtMatrix12FromLocation(loc, outMatrix);
     return true;
