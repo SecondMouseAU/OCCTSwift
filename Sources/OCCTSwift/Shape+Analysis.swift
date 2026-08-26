@@ -999,7 +999,7 @@ extension Shape {
     ///   - edge1: First edge shape (must contain an edge topology)
     ///   - edge2: Second edge shape (must contain an edge topology)
     /// - Returns: Edge-edge extrema result, or nil on failure
-    public func edgeEdgeExtrema(edge1: Shape, edge2: Shape) -> EdgeEdgeExtrema? {
+    public static func edgeEdgeExtrema(edge1: Shape, edge2: Shape) -> EdgeEdgeExtrema? {
         let result = OCCTBRepExtremaExtCCEdges(edge1.handle, edge2.handle)
         guard result.solutionCount > 0 else { return nil }
         return EdgeEdgeExtrema(
