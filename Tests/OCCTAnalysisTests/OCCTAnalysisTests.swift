@@ -2489,7 +2489,10 @@ struct BRepExtremaExtCCTests {
         let edges2 = box2.edges()
         #expect(!edges1.isEmpty)
         #expect(!edges2.isEmpty)
-        if let edge1Shape = edges1.first, let edge2Shape = edges2.first {
+        if let edge1 = edges1.first, let edge2 = edges2.first {
+            // Convert Edge to Shape for the edgeEdgeExtrema function
+            let edge1Shape = Shape(handle: edge1.handle)
+            let edge2Shape = Shape(handle: edge2.handle)
             let result = box1.edgeEdgeExtrema(edge1: edge1Shape, edge2: edge2Shape)
             if let r = result {
                 #expect(r.distance >= 0, "Distance should be non-negative")
