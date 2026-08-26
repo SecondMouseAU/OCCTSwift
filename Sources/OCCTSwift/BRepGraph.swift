@@ -356,7 +356,7 @@ public final class BRepGraph: @unchecked Sendable {
             return nil
         }
         var shape = Shape(handle: ref)
-        
+
         // For occurrence nodes, apply the occurrence's local location
         if nodeKind == .occurrence {
             if let locMatrix = occurrenceRefLocalLocation(nodeIndex) {
@@ -382,13 +382,13 @@ public final class BRepGraph: @unchecked Sendable {
                 matrix4x4[13] = 0
                 matrix4x4[14] = 0
                 matrix4x4[15] = 1
-                
+
                 if let located = shape.located(matrix: matrix4x4) {
                     shape = located
                 }
             }
         }
-        
+
         return shape
     }
 
@@ -2125,7 +2125,8 @@ public final class BRepGraph: @unchecked Sendable {
     public func occurrenceRefLocalLocation(_ occurrenceDefIndex: Int) -> [Double]? {
         var matrix = [Double](repeating: 0, count: 12)
         let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetOccurrenceRefLocalLocation(handle, Int32(occurrenceDefIndex), buf.baseAddress!)
+            OCCTBRepGraphGetOccurrenceRefLocalLocation(
+                handle, Int32(occurrenceDefIndex), buf.baseAddress!)
         }
         return ok ? matrix : nil
     }
@@ -2137,7 +2138,8 @@ public final class BRepGraph: @unchecked Sendable {
     public func childRefLocalLocation(_ childRefIndex: Int) -> [Double]? {
         var matrix = [Double](repeating: 0, count: 12)
         let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetChildRefLocalLocation(handle, Int32(childRefIndex), buf.baseAddress!)
+            OCCTBRepGraphGetChildRefLocalLocation(
+                handle, Int32(childRefIndex), buf.baseAddress!)
         }
         return ok ? matrix : nil
     }
