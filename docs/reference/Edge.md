@@ -813,10 +813,10 @@ public func split(at parameter: Double, vertex: SIMD3<Double>) -> (Edge, Edge)?
 Divides the edge at `parameter`, placing a new vertex at `vertex`. The two result edges share the new vertex. The original edge is not modified.
 
 - **Parameters:**
-  - `parameter`: native OCCT curve parameter at which to split (must be within `parameterBounds`).
+  - `parameter`: native OCCT curve parameter at which to split. Must be strictly within the edge's own parameter range (`parameterBounds`), i.e. greater than the first parameter and less than the last parameter. Parameters at or outside the endpoints are refused and return `nil`.
   - `vertex`: 3D position for the split vertex (should lie on the curve at `parameter`).
-- **Returns:** Tuple `(edge1, edge2)` representing the two halves, or `nil` if splitting fails.
-- **OCCT:** `ShapeFix_SplitTool::SplitEdge` with a synthetic planar face context.
+- **Returns:** Tuple `(edge1, edge2)` representing the two halves, or `nil` if splitting fails (including when `parameter` is outside the edge's range).
+- **OCCT:** `ShapeFix_SplitTool::SplitEdge` with a synthetic planar face context. The bridge guards the parameter against the edge's own range before calling `SplitEdge`; `ShapeFix_SplitTool` itself only checks for a parameter at either endpoint and would otherwise extrapolate the underlying unbounded curve.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -831,7 +831,7 @@ Divides the edge at `parameter`, placing a new vertex at `vertex`. The two resul
       break
   }
   ```
-- **Note:** The synthetic planar face used internally (`gp_Pln` through the curve midpoint with Z normal) may cause `SplitEdge` to fail for space curves not lying near Z=0. Provide a curve midpoint as `vertex` for best results.
+
 
 ---
 
