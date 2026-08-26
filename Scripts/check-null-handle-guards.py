@@ -1182,34 +1182,7 @@ def ocaf_findattribute_sites(body, decls_by_var):
     return sites
 
 
-def ocaf_guarding_helpers(parsed):
-    """(function, argument_index) for every bridge function that guards an OCAF attribute handle
-    via a named helper before calling a dereferencing method."""
-    guards = set()
-    for path, raw, text, ctext, lines, funcs in parsed:
-        for name, params, bs, be in funcs:
-            body = ctext[bs:be + 1]
-            # Check each parameter to see if it's an OCAF attribute handle type
-            for i, p in enumerate(split_params(params)):
-                p = p.strip()
-                for attr_type in OCAF_DEREF_RECEIVERS.keys():
-                    if re.search(r'\b' + re.escape(attr_type) + r'\b', p):
-                        # Check if this parameter is guarded by a named helper
-                        m = re.search(r'(\w+)\s*$', p.strip())
-                        if not m:
-                            continue
-                        param_name = m.group(1)
-                        # Look for guard helper calls with this parameter
-                        for (helper_name, helper_arg_idx), _ in OCAF_GUARD_HELPERS.items():
-                            # Check if helper is called with this parameter
-                            pattern = r'\b' + re.escape(helper_name) + r'\s*\(\s*' + re.escape(param_name)
-                            if re.search(pattern, body):
-                                guards.add((name, i))
-                                break
-    return guards
-
-
-def ocaf_events(body, decls_by_var, ocaf_sites, ocaf_helpers):
+def ocaf_events(body, decls_by_var, ocaf_sites):
     """Ordered (position, 'guard'|'use', detail) for OCAF handle sites."""
     ev = []
     
@@ -1286,7 +1259,7 @@ def ocaf_events(body, decls_by_var, ocaf_sites, ocaf_helpers):
     return ev
 
 
-def ocaf_hazard_sites(parsed, ocaf_helpers):
+def ocaf_hazard_sites(parsed):
     """#1052: every (file, line, function, variable) whose OCAF attribute handle reaches
     a dereferencing method with no structural guard dominating it. Tagged 'ocaf'."""
     found = []
@@ -1303,7 +1276,7 @@ def ocaf_hazard_sites(parsed, ocaf_helpers):
             if not ocaf_sites:
                 continue
             
-            ev = ocaf_events(body, decls_by_var, ocaf_sites, ocaf_helpers)
+            ev = ocaf_events(body, decls_by_var, ocaf_sites)
             
             for var_name, attr_type, decl_start, decl_end, fa_end, label_var in ocaf_sites:
                 # Find first use for this variable
@@ -1328,10 +1301,9 @@ def all_sites(sources):
     parsed = parse_sources(sources)
     helpers = guarding_helpers(parsed)
     shape_helpers = shape_guarding_helpers(parsed)
-    ocaf_helpers = ocaf_guarding_helpers(parsed)
     return (unguarded_sites(parsed, helpers) + local_handle_sites(parsed, helpers)
             + shape_hazard_sites(parsed, shape_helpers)
-            + ocaf_hazard_sites(parsed, ocaf_helpers))
+            + ocaf_hazard_sites(parsed))
 
 
 def bridge_sources():
@@ -1814,7 +1786,7 @@ def direct_walk(kind, parsed):
     if kind == 'local':
         return local_handle_sites(parsed, guarding_helpers(parsed))
     if kind == 'ocaf':
-        return ocaf_hazard_sites(parsed, ocaf_guarding_helpers(parsed))
+        return ocaf_hazard_sites(parsed)
     return shape_hazard_sites(parsed, shape_guarding_helpers(parsed))
 
 
