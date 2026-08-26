@@ -84,6 +84,15 @@ BOUND = {
     "DatumTargetType": "XCAFDimTolObjects_DatumTargetType",
 }
 
+# Enums that exist in OCCT headers but are intentionally not wrapped in Swift.
+# These have no corresponding getter functions wrapped in the bridge.
+# If a new enum is added to OCCT, it must be added either to BOUND (if wrapped)
+# or to KNOWN_UNBOUND (if intentionally not wrapped). Any enum in neither set
+# is a hard error caught by --reverify-headers.
+KNOWN_UNBOUND = {
+    "XCAFDimTolObjects_ToleranceZoneAffectedPlane",
+}
+
 # Every XCAFDimTolObjects enum header, so --reverify-headers can name the unbound ones rather than
 # leaving "which enums exist" to the reader's memory. Derived by listing the directory, filtered to
 # headers whose body is a bare `enum`, which is what makes one transcribable at all.
@@ -256,6 +265,21 @@ def write_manifest(derived, path):
             fh.write(f"[{name}]\n")
             for case, ordinal, occt in derived[name]:
                 fh.write(f"{case} {ordinal} {occt}\n")
+
+
+def find_enum_headers(header_dir):
+    """Return all XCAFDimTolObjects_* headers that declare a bare enum."""
+    enum_headers = []
+    for filename in sorted(os.listdir(header_dir)):
+        if not filename.startswith(ALL_ENUM_HEADERS_GLOB) or not filename.endswith(".hxx"):
+            continue
+        stem = filename[:-4]
+        path = os.path.join(header_dir, filename)
+        with open(path, errors="ignore") as fh:
+            members = parse_occt_enum(fh.read())
+        if members:
+            enum_headers.append((stem, len(members)))
+    return enum_headers
 
 
 # --- self-test ---------------------------------------------------------------------------------
@@ -493,21 +517,28 @@ def self_test():
     return 1 if failed else 0
 
 
-def unbound_enum_headers(header_dir):
-    """XCAFDimTolObjects headers that declare a bare enum and are not among the four bound ones."""
+def check_unknown_enums(header_dir):
+    """Check for enum headers that are neither in BOUND nor KNOWN_UNBOUND.
+
+    Returns a list of (stem, count) for unknown enums. Empty list means all enums accounted for.
+    """
     bound_types = set(BOUND.values())
-    unbound = []
+    known_unbound = set(KNOWN_UNBOUND)
+    all_accounted = bound_types | known_unbound
+
+    unknown = []
     for filename in sorted(os.listdir(header_dir)):
         if not filename.startswith(ALL_ENUM_HEADERS_GLOB) or not filename.endswith(".hxx"):
             continue
         stem = filename[:-4]
-        if stem in bound_types:
+        if stem in all_accounted:
             continue
-        with open(os.path.join(header_dir, filename), errors="ignore") as fh:
+        path = os.path.join(header_dir, filename)
+        with open(path, errors="ignore") as fh:
             members = parse_occt_enum(fh.read())
         if members:
-            unbound.append((stem, len(members)))
-    return unbound
+            unknown.append((stem, len(members)))
+    return unknown
 
 
 def main():
@@ -552,12 +583,27 @@ def main():
         drift = compare(derived, {k: [(c, o) for c, o, _ in v] for k, v in manifest.items()})
         for name, kind, detail in drift:
             print(f"  {kind:12s} {name}: {detail}", file=sys.stderr)
-        for stem, count in unbound_enum_headers(OCCT_HEADERS):
-            print(f"  unbound      {stem} ({count} members), no Swift enum, see #1004")
-        if drift:
-            print("\nThe manifest no longer matches the pinned headers. Re-run with "
-                  "--write-manifest, then bring GDTRead.swift's enums into line with it.",
+
+        # Check for unknown enums (not in BOUND, not in KNOWN_UNBOUND)
+        unknown = check_unknown_enums(OCCT_HEADERS)
+        for stem, count in unknown:
+            print(f"  UNKNOWN      {stem} ({count} members) — not in BOUND or KNOWN_UNBOUND",
                   file=sys.stderr)
+
+        # Report known unbound enums for visibility
+        for stem, count in find_enum_headers(OCCT_HEADERS):
+            if stem in KNOWN_UNBOUND:
+                print(f"  unbound      {stem} ({count} members), no Swift enum, see #1004")
+
+        if drift or unknown:
+            if unknown:
+                print("\nUnknown GD&T enums detected in the pinned kernel. Each must be added to "
+                      "BOUND (if wrapped in Swift) or KNOWN_UNBOUND (if intentionally not wrapped).",
+                      file=sys.stderr)
+            if drift:
+                print("\nThe manifest no longer matches the pinned headers. Re-run with "
+                      "--write-manifest, then bring GDTRead.swift's enums into line with it.",
+                      file=sys.stderr)
             return 1
         print("manifest matches the pinned headers")
         return 0
