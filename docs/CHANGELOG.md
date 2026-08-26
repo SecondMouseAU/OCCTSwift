@@ -45,6 +45,10 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### Compute qualifier for GCC 2D tangent solvers and intersection parameters (#781)
+
+Ten GCC 2D tangent solver functions now return the correct `qualifier` value (inside/outside/on classification) instead of hardcoded 0. Two curve intersection functions (`OCCTCurve2DIntersect`, `OCCTCurve2DSelfIntersect`) now return the correct curve parameters `u1`/`u2` at intersection points via `IntAna2d_AnaIntersection` instead of projecting intersection points back onto curves.
+
 ### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
 
 The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.

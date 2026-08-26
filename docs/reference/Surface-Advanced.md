@@ -777,7 +777,7 @@ public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> C
 
 - **Parameters:** `criterion`, continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance`, tolerance for continuity checking.
 - **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
-- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity via OCCTSurfaceSplitByContinuity`.
+- **OCCT:** `BSplSLib::SplitByContinuity`.
 - **Example:**
   ```swift
   let r = surf.splitByContinuity(criterion: 2)
@@ -819,7 +819,7 @@ Number of split values found along V.
 
 - **Parameters:** `criterion`, continuity level (0=C0, 1=C1, 2=C2, 3=C3); `tolerance`, tolerance for continuity checking.
 - **Returns:** `ContinuitySplitResult` with `wasSplit`, `alreadyMeetsCriterion`, `uSplitCount`, and `vSplitCount`.
-- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity via OCCTSurfaceSplitByContinuity`.
+- **OCCT:** `BSplSLib::SplitByContinuity`.
 - **Example:**
   ```swift
   let r = surf.splitByContinuity(criterion: 2)
