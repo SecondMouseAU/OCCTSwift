@@ -1203,6 +1203,12 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
             
             # Check for guard: named helper call with the LABEL variable used in FindAttribute
             # Guard must appear BEFORE the use (earlier in the function body)
+            # NOTE: This finds any helper call textually before the use, but does NOT verify
+            # control-flow dominance (i.e., that the helper executes on ALL paths to the use).
+            # A helper in a different branch or after an early return would be incorrectly
+            # considered a guard. Current helpers (occtDatumLabelIsReadable, occtDocumentGdtAlwaysReadable)
+            # are typically used as early-return guards, so this limitation may not cause false
+            # negatives in practice. For a complete check, implement a proper dominance analysis.
             is_guarded = False
             guard_pos = -1
             for (helper_name, helper_arg_idx), _ in OCAF_GUARD_HELPERS.items():
