@@ -5486,8 +5486,8 @@ int32_t OCCTWireCheckOuterBound(OCCTShapeRef wire, OCCTShapeRef face)
     ShapeAnalysis::GetFaceUVBounds(aProbe, umin, umax, vmin, vmax);
     double faceAreaScale = (umax - umin) * (vmax - vmin);
     // A WireData built the same way CheckOuterBound does internally.
-    occ::handle<ShapeExtend_WireData> sewd = new ShapeExtend_WireData(aBuilt);
-    double totcross = ShapeAnalysis::TotCross2D(sewd, aProbe);
+    occ::handle<ShapeExtend_WireData> sewd     = new ShapeExtend_WireData(aBuilt);
+    double                            totcross = ShapeAnalysis::TotCross2D(sewd, aProbe);
     // Reject areas whose magnitude is negligible relative to the face scale.
     // Threshold: 1e-12 of the face UV area. This is well below any legitimate
     // outer/inner wire distinction and well above rounding cancellation.
