@@ -1184,7 +1184,8 @@ def ocaf_findattribute_sites(body, decls_by_var):
 
 
 def ocaf_events(body, decls_by_var, ocaf_sites):
-    """Ordered (position, 'guard'|'use', detail) for OCAF handle sites."""
+    """Ordered (position, 'guard'|'use', decl_start, detail) for OCAF handle sites.
+    decl_start identifies which declaration this event belongs to for correct filtering."""
     ev = []
     
     # For each FindAttribute site, track the handle variable
@@ -1203,6 +1204,7 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
             # Check for guard: named helper call with the LABEL variable used in FindAttribute
             # Guard must appear BEFORE the use (earlier in the function body)
             is_guarded = False
+            guard_pos = -1
             for (helper_name, helper_arg_idx), _ in OCAF_GUARD_HELPERS.items():
                 helper_pat = re.compile(r'\b' + re.escape(helper_name) + r'\s*\(')
                 for hm in helper_pat.finditer(body):
@@ -1226,6 +1228,7 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
                                 arg_text = call_args[arg_start:j].strip()
                                 if arg_text == label_var or arg_text.endswith('.' + label_var) or arg_text.endswith('->' + label_var):
                                     is_guarded = True
+                                    guard_pos = hm.start()
                             in_paren -= 1
                             if in_paren == 0:
                                 break
@@ -1234,6 +1237,7 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
                                 arg_text = call_args[arg_start:j].strip()
                                 if arg_text == label_var or arg_text.endswith('.' + label_var) or arg_text.endswith('->' + label_var):
                                     is_guarded = True
+                                    guard_pos = hm.start()
                             arg_idx += 1
                             arg_start = j + 1
                     if is_guarded:
@@ -1242,7 +1246,8 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
                     break
             
             if is_guarded:
-                ev.append((m.start(), 'guard', f'{var_name} guarded by helper'))
+                # Record guard at helper call position with decl_start for correct filtering
+                ev.append((guard_pos, 'guard', decl_start, f'{var_name} guarded by helper'))
                 continue
             
             # Check for dereferencing method call on this variable
@@ -1251,7 +1256,7 @@ def ocaf_events(body, decls_by_var, ocaf_sites):
             if method_match:
                 method = method_match.group(1)
                 if attr_type in OCAF_DEREF_RECEIVERS and method in OCAF_DEREF_RECEIVERS[attr_type]:
-                    ev.append((m.start(), 'use', f'{attr_type}::{method}'))
+                    ev.append((m.start(), 'use', decl_start, f'{attr_type}::{method}'))
                     continue
             
             # Also check if the variable is passed to a function that calls the dereferencing method
@@ -1286,8 +1291,8 @@ def ocaf_hazard_sites(parsed):
             
             for var_name, attr_type, decl_start, decl_end, fa_end, label_var in ocaf_sites:
                 # Find first use for this variable
-                # Filter events for this variable - detail contains the attr_type::method or "guarded by helper"
-                var_events = [(p, k, d) for p, k, d in ev if attr_type in d or var_name in d or d.startswith(var_name)]
+                # Filter events by exact decl_start match to avoid mixing shadowed declarations
+                var_events = [(p, k, d) for p, k, ds, d in ev if ds == decl_start]
                 first = next((p for p, k, _ in var_events if k == 'use'), None)
                 if first is None or any(k == 'guard' and p < first for p, k, _ in var_events):
                     continue
