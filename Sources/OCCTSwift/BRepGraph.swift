@@ -346,12 +346,53 @@ public final class BRepGraph: @unchecked Sendable {
     // MARK: - Shape Reconstruction (v0.133.0)
 
     /// Reconstruct a TopoDS_Shape from a graph node.
+    ///
+    /// For occurrence nodes (NodeKind.occurrence), the returned shape has the
+    /// occurrence's local location applied, so its geometry reflects the placed
+    /// position in the assembly.
     public func shape(nodeKind: NodeKind, nodeIndex: Int) -> Shape? {
         guard let ref = OCCTBRepGraphShapeFromNode(handle, nodeKind.rawValue, Int32(nodeIndex))
         else {
             return nil
         }
-        return Shape(handle: ref)
+        var shape = Shape(handle: ref)
+
+        // For occurrence nodes, apply the occurrence's local location
+        if nodeKind == .occurrence {
+            // Look up the occurrence reference index for this occurrence definition index
+            if let occRefIndex = findOccurrenceRefIndex(for: nodeIndex),
+                let locMatrix = occurrenceRefLocalLocation(occRefIndex)
+            {
+                // Convert 3x4 matrix to 4x4 for Shape.located(matrix:)
+                var matrix4x4 = [Double](repeating: 0, count: 16)
+                // Row 0
+                matrix4x4[0] = locMatrix[0]
+                matrix4x4[1] = locMatrix[1]
+                matrix4x4[2] = locMatrix[2]
+                matrix4x4[3] = locMatrix[3]
+                // Row 1
+                matrix4x4[4] = locMatrix[4]
+                matrix4x4[5] = locMatrix[5]
+                matrix4x4[6] = locMatrix[6]
+                matrix4x4[7] = locMatrix[7]
+                // Row 2
+                matrix4x4[8] = locMatrix[8]
+                matrix4x4[9] = locMatrix[9]
+                matrix4x4[10] = locMatrix[10]
+                matrix4x4[11] = locMatrix[11]
+                // Row 3 (identity)
+                matrix4x4[12] = 0
+                matrix4x4[13] = 0
+                matrix4x4[14] = 0
+                matrix4x4[15] = 1
+
+                if let located = shape.located(matrix: matrix4x4) {
+                    shape = located
+                }
+            }
+        }
+
+        return shape
     }
 
     /// Find the node (kind, index) for a shape.
@@ -1205,6 +1246,14 @@ public final class BRepGraph: @unchecked Sendable {
         Int(OCCTBRepGraphRefOrientation(handle, refKind.rawValue, Int32(refIndex)))
     }
 
+    /// Find the occurrence reference index for a given occurrence definition index.
+    /// - Parameter occurrenceDefIndex: The occurrence definition index.
+    /// - Returns: The occurrence reference index, or nil if not found.
+    public func findOccurrenceRefIndex(for occurrenceDefIndex: Int) -> Int? {
+        let idx = Int(OCCTBRepGraphFindOccurrenceRefIndex(handle, Int32(occurrenceDefIndex)))
+        return idx >= 0 ? idx : nil
+    }
+
     // MARK: - Face Definition Details (v0.134.0)
 
     /// Number of wire refs on a face.
@@ -2019,6 +2068,106 @@ public final class BRepGraph: @unchecked Sendable {
     }
     public func setChildRefLocalLocation(_ childRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetChildRefLocalLocation(handle, Int32(childRefIndex), $0) }
+    }
+
+    // MARK: - EditorView Ref LocalLocation getters (v0.165.0)
+
+    /// Get the local `TopLoc_Location` of a vertex reference entry.
+    ///
+    /// - Parameter vertexRefIndex: The vertex reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (vertex refs do not store a local location).
+    public func vertexRefLocalLocation(_ vertexRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetVertexRefLocalLocation(handle, Int32(vertexRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a coedge reference entry.
+    ///
+    /// - Parameter coedgeRefIndex: The coedge reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (coedge refs do not store a local location).
+    public func coEdgeRefLocalLocation(_ coedgeRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a wire reference entry.
+    ///
+    /// - Parameter wireRefIndex: The wire reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (wire refs do not store a local location).
+    public func wireRefLocalLocation(_ wireRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetWireRefLocalLocation(handle, Int32(wireRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a face reference entry.
+    ///
+    /// - Parameter faceRefIndex: The face reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (face refs do not store a local location).
+    public func faceRefLocalLocation(_ faceRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetFaceRefLocalLocation(handle, Int32(faceRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a shell reference entry.
+    ///
+    /// - Parameter shellRefIndex: The shell reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (shell refs do not store a local location).
+    public func shellRefLocalLocation(_ shellRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetShellRefLocalLocation(handle, Int32(shellRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a solid reference entry.
+    ///
+    /// - Parameter solidRefIndex: The solid reference index.
+    /// - Returns: Always returns nil in OCCT 8.0.0p1 (solid refs do not store a local location).
+    public func solidRefLocalLocation(_ solidRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetSolidRefLocalLocation(handle, Int32(solidRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of an occurrence reference entry.
+    ///
+    /// - Parameter occurrenceRefIndex: The occurrence reference index (as returned by `linkProducts`'s `occurrenceRefIndex`).
+    /// - Returns: A 3x4 row-major matrix (12 doubles), or nil if the reference is invalid.
+    public func occurrenceRefLocalLocation(_ occurrenceRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetOccurrenceRefLocalLocation(
+                handle, Int32(occurrenceRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
+    }
+
+    /// Get the local `TopLoc_Location` of a child reference entry.
+    ///
+    /// - Parameter childRefIndex: The child reference index.
+    /// - Returns: A 3x4 row-major matrix (12 doubles), or nil if the reference is invalid.
+    public func childRefLocalLocation(_ childRefIndex: Int) -> [Double]? {
+        var matrix = [Double](repeating: 0, count: 12)
+        let ok = matrix.withUnsafeMutableBufferPointer { buf in
+            OCCTBRepGraphGetChildRefLocalLocation(
+                handle, Int32(childRefIndex), buf.baseAddress!)
+        }
+        return ok ? matrix : nil
     }
 
     /// Identity matrix (3x4) usable with the location setters.

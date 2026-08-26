@@ -811,6 +811,11 @@ int32_t OCCTBRepGraphRefOrientation(OCCTBRepGraphRef _Nonnull graph,
                                     int32_t refKind,
                                     int32_t refIndex);
 
+/// Find the occurrence reference index for a given occurrence definition index.
+/// Returns -1 if not found.
+int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef _Nonnull graph,
+                                            int32_t occurrenceDefIndex);
+
 // --- Face Definition Details ---
 
 /// Number of wire refs on a face.
@@ -1316,6 +1321,60 @@ void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
 void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                            int32_t childRefIndex,
                                            const double* _Nonnull matrix);
+
+// MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
+
+/// Get the local TopLoc_Location of a vertex reference entry.
+/// @param graph The BRepGraph instance
+/// @param vertexRefIndex The vertex reference index
+/// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
+/// @return true on success, false if the reference is invalid or an error occurred
+bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                            int32_t vertexRefIndex,
+                                            double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a coedge reference entry.
+bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                            int32_t coedgeRefIndex,
+                                            double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a wire reference entry.
+bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                          int32_t wireRefIndex,
+                                          double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a face reference entry.
+bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                          int32_t faceRefIndex,
+                                          double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a shell reference entry.
+bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                           int32_t shellRefIndex,
+                                           double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a solid reference entry.
+bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                           int32_t solidRefIndex,
+                                           double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of an occurrence reference entry.
+/// @param graph The BRepGraph instance
+/// @param occurrenceRefIndex The occurrence reference index
+/// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
+/// @return true on success, false if the reference is invalid or an error occurred
+bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                                int32_t occurrenceRefIndex,
+                                                double* _Nonnull outMatrix);
+
+/// Get the local TopLoc_Location of a child reference entry.
+/// @param graph The BRepGraph instance
+/// @param childRefIndex The child reference index
+/// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
+/// @return true on success, false if the reference is invalid or an error occurred
+bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
+                                           int32_t childRefIndex,
+                                           double* _Nonnull outMatrix);
 
 // MARK: - BRepGraph EditorView v0.163.0. ProductOps assembly building
 
