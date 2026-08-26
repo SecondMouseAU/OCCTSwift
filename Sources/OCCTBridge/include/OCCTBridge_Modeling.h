@@ -2053,7 +2053,7 @@ OCCTWireRef _Nullable OCCTWireMakePolygonFromPoints(const double* coords,
 /// @param count Number of edges
 /// @return Wire, or NULL on failure
 OCCTWireRef _Nullable OCCTWireMakeWireFromEdgeRefs(const OCCTEdgeRef _Nonnull* _Nonnull edges,
-                                                 int32_t count);
+                                                   int32_t count);
 
 // --- BRepLib_MakeSolid ---
 
