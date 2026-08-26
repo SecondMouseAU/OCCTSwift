@@ -2493,7 +2493,7 @@ struct BRepExtremaExtCCTests {
             // Convert Edge to Shape for the edgeEdgeExtrema function
             let edge1Shape = Shape(handle: edge1.handle)
             let edge2Shape = Shape(handle: edge2.handle)
-            let result = box1.edgeEdgeExtrema(edge1: edge1Shape, edge2: edge2Shape)
+            let result = Shape.edgeEdgeExtrema(edge1: edge1Shape, edge2: edge2Shape)
             if let r = result {
                 #expect(r.distance >= 0, "Distance should be non-negative")
                 #expect(r.solutionCount >= 1)
