@@ -8929,7 +8929,7 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
       gp_Pnt2d p = inter.Point(i + 1);
       out[i].x   = p.X();
       out[i].y   = p.Y();
-      double u1, u2;
+      double u1 = 0, u2 = 0;
       occtNearestProjectionOnCurve2d(c1, p, nullptr, &u1, nullptr);
       occtNearestProjectionOnCurve2d(c2, p, nullptr, &u2, nullptr);
       out[i].u1 = u1;
@@ -8959,7 +8959,7 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
       gp_Pnt2d p = inter.Point(i + 1);
       out[i].x   = p.X();
       out[i].y   = p.Y();
-      double u1, u2;
+      double u1 = 0, u2 = 0;
       occtNearestProjectionOnCurve2d(c, p, nullptr, &u1, nullptr);
       occtNearestProjectionOnCurve2d(c, p, nullptr, &u2, nullptr);
       out[i].u1 = u1;
