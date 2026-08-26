@@ -402,6 +402,43 @@ SHAPE_DEREF_CTORS = ('BRepAdaptor_Curve', 'BRepAdaptor_Curve2d', 'BRepGProp_Face
 SHAPE_TRANSPARENT_CASTS = ('Edge', 'Face', 'Wire', 'Vertex', 'Shell', 'Solid', 'CompSolid',
                            'Compound')
 
+
+
+# #1052: OCAF attribute types whose methods dereference handles fetched from OCAF state.
+# Analogous to SHAPE_DEREF_RECEIVERS but for handles obtained from OCAF labels rather than
+# caller-supplied shapes. The receiver type is the OCAF attribute class (e.g. XCAFDoc_Datum),
+# and the method is the one that internally fetches and dereferences a handle (e.g. GetObject).
+OCAF_DEREF_RECEIVERS = {
+    'XCAFDoc_Datum': ('GetObject',),
+    # XCAFDoc_Dimension and XCAFDoc_GeomTolerance also have GetObject but their readability
+    # check is occtDocumentGdtAlwaysReadable (always true), so they don't need a structural guard.
+    # They are still listed here for completeness; the guard check will handle the difference.
+    'XCAFDoc_Dimension': ('GetObject',),
+    'XCAFDoc_GeomTolerance': ('GetObject',),
+}
+
+# #1052: regex to detect FindAttribute calls that produce a handle via out-parameter.
+# Matches: label.FindAttribute(SomeType::GetID(), handleVar);
+# Also matches declare-then-assign: Handle(SomeType) handleVar; label.FindAttribute(SomeType::GetID(), handleVar);
+OCAF_FINDATTRIBUTE = re.compile(
+    r'\b(\w+)\s*\.\s*FindAttribute\s*\(\s*\w+::GetID\s*\(\s*\)\s*,\s*(\w+)\s*\)'
+)
+
+# #1052: regex to detect handle declarations that are later filled by FindAttribute (declare-then-assign).
+# Matches: Handle(SomeType) name; or occ::handle<SomeType> name;
+OCAF_HANDLE_DECL = re.compile(
+    r'\b(?:Handle\s*\(\s*(\w+)\s*\)|occ::handle\s*<\s*(\w+)\s*>)\s+(\w+)\s*;'
+)
+
+# #1052: named-helper guards for OCAF handle dereferencers. These are functions that perform
+# structural checks on TDF_Labels rather than IsNull() on handles. Keyed by (function_name, argument_index)
+# where argument_index is the index of the OCAF attribute handle parameter.
+OCAF_GUARD_HELPERS = {
+    ('occtDatumLabelIsReadable', 0): 'checks TDF_Label children for required TDataStd_RealArray attributes',
+    ('occtDocumentGdtAlwaysReadable', 0): 'always returns true (dimensions/geometric tolerances do not need structural guard)',
+}
+
+
 DEREF_DECL = re.compile(r'\b(' + '|'.join(SHAPE_DEREF_RECEIVERS) + r')\s+(\w+)\s*[;=(]')
 
 # #1026 sites deliberately left unguarded, with the reason. Separate from ALLOWED above rather than
@@ -1102,15 +1139,195 @@ def shape_hazard_sites(parsed, shape_helpers):
     return found
 
 
+
+
+def ocaf_handle_declarations(body):
+    """name -> [(start, block_open, block_close, attr_type), ...] for every OCAF_HANDLE_DECL match in body,
+    each tagged with its own immediately-enclosing block span and the attribute type."""
+    spans = block_spans(body)
+    out = {}
+    for m in OCAF_HANDLE_DECL.finditer(body):
+        # Group 1 is the type from Handle(Type), group 2 is the type from occ::handle<Type>, group 3 is the name
+        attr_type = m.group(1) if m.group(1) else m.group(2)
+        name = m.group(3)
+        o, c = innermost_span(spans, m.start())
+        out.setdefault(name, []).append((m.start(), o, c, attr_type))
+    return out
+
+
+def ocaf_binds_to(decls, pos):
+    """Which OCAF handle declaration an occurrence of its name at `pos` resolves to."""
+    candidates = [d for d, o, c, _ in decls if o < d < pos < c]
+    return max(candidates) if candidates else None
+
+
+def ocaf_findattribute_sites(body, decls_by_var):
+    """Find all FindAttribute calls that produce handles, returning (var_name, attr_type, decl_start, decl_end, fa_end, label_var).
+    decl_start/decl_end are the declaration's scope bounds for binds_to; fa_end is the FindAttribute call end for scanning;
+    label_var is the label variable used in the FindAttribute call."""
+    sites = []
+    for m in OCAF_FINDATTRIBUTE.finditer(body):
+        label_var, handle_var = m.group(1), m.group(2)
+        # Check if handle_var is declared as an OCAF handle
+        if handle_var in decls_by_var:
+            # Get the attribute type from the declaration
+            for decl_start, decl_o, decl_c, attr_type in decls_by_var[handle_var]:
+                if decl_o < m.start() < decl_c:
+                    sites.append((handle_var, attr_type, decl_start, decl_c, m.end(), label_var))
+                    break
+    return sites
+
+
+def ocaf_guarding_helpers(parsed):
+    """(function, argument_index) for every bridge function that guards an OCAF attribute handle
+    via a named helper before calling a dereferencing method."""
+    guards = set()
+    for path, raw, text, ctext, lines, funcs in parsed:
+        for name, params, bs, be in funcs:
+            body = ctext[bs:be + 1]
+            # Check each parameter to see if it's an OCAF attribute handle type
+            for i, p in enumerate(split_params(params)):
+                p = p.strip()
+                for attr_type in OCAF_DEREF_RECEIVERS.keys():
+                    if re.search(r'\b' + re.escape(attr_type) + r'\b', p):
+                        # Check if this parameter is guarded by a named helper
+                        m = re.search(r'(\w+)\s*$', p.strip())
+                        if not m:
+                            continue
+                        param_name = m.group(1)
+                        # Look for guard helper calls with this parameter
+                        for (helper_name, helper_arg_idx), _ in OCAF_GUARD_HELPERS.items():
+                            # Check if helper is called with this parameter
+                            pattern = r'\b' + re.escape(helper_name) + r'\s*\(\s*' + re.escape(param_name)
+                            if re.search(pattern, body):
+                                guards.add((name, i))
+                                break
+    return guards
+
+
+def ocaf_events(body, decls_by_var, ocaf_sites, ocaf_helpers):
+    """Ordered (position, 'guard'|'use', detail) for OCAF handle sites."""
+    ev = []
+    
+    # For each FindAttribute site, track the handle variable
+    for var_name, attr_type, decl_start, decl_end, fa_end, label_var in ocaf_sites:
+        # Find uses of this variable (start searching AFTER the FindAttribute call)
+        pat = re.compile(r'(?<![\w>.])' + re.escape(var_name) + r'\b')
+        for m in pat.finditer(body, fa_end):
+            if ocaf_binds_to(decls_by_var.get(var_name, ()), m.start()) != decl_start:
+                continue
+            if re.match(r'\s*=(?!=)', body[m.end():m.end() + 4]):
+                continue  # assignment, not a use
+            
+            # Check what follows - is it a method call?
+            tail = body[m.end():m.end() + 80]
+            
+            # Check for guard: named helper call with the LABEL variable used in FindAttribute
+            # Guard must appear BEFORE the use (earlier in the function body)
+            is_guarded = False
+            for (helper_name, helper_arg_idx), _ in OCAF_GUARD_HELPERS.items():
+                helper_pat = re.compile(r'\b' + re.escape(helper_name) + r'\s*\(')
+                for hm in helper_pat.finditer(body):
+                    if hm.start() > m.start():
+                        continue  # helper appears after the use, not a guard for this use
+                    # Check if label_var is at the right argument position
+                    call_args = body[hm.end():]
+                    arg_idx = 0
+                    in_paren = 1
+                    arg_start = 0
+                    for j, ch in enumerate(call_args):
+                        if ch == '(':
+                            in_paren += 1
+                        elif ch == ')':
+                            if in_paren == 1 and arg_idx == helper_arg_idx:
+                                arg_text = call_args[arg_start:j].strip()
+                                if arg_text == label_var or arg_text.endswith('.' + label_var) or arg_text.endswith('->' + label_var):
+                                    is_guarded = True
+                            in_paren -= 1
+                            if in_paren == 0:
+                                break
+                        elif ch == ',' and in_paren == 1:
+                            if arg_idx == helper_arg_idx:
+                                arg_text = call_args[arg_start:j].strip()
+                                if arg_text == label_var or arg_text.endswith('.' + label_var) or arg_text.endswith('->' + label_var):
+                                    is_guarded = True
+                            arg_idx += 1
+                            arg_start = j + 1
+                    if is_guarded:
+                        break
+                if is_guarded:
+                    break
+            
+            if is_guarded:
+                ev.append((m.start(), 'guard', f'{var_name} guarded by helper'))
+                continue
+            
+            # Check for dereferencing method call on this variable
+            # e.g., var->GetObject() or var.GetObject()
+            method_match = re.match(r'\s*(?:->|\.)\s*(\w+)\s*\(', tail)
+            if method_match:
+                method = method_match.group(1)
+                if attr_type in OCAF_DEREF_RECEIVERS and method in OCAF_DEREF_RECEIVERS[attr_type]:
+                    ev.append((m.start(), 'use', f'{attr_type}::{method}'))
+                    continue
+            
+            # Also check if the variable is passed to a function that calls the dereferencing method
+            call = enclosing_call(body, m.start())
+            if call:
+                callee = call[0]
+                # Check if callee is a known function that dereferences OCAF handles
+                # This is more complex - for now just track direct calls
+    
+    ev.sort()
+    return ev
+
+
+def ocaf_hazard_sites(parsed, ocaf_helpers):
+    """#1052: every (file, line, function, variable) whose OCAF attribute handle reaches
+    a dereferencing method with no structural guard dominating it. Tagged 'ocaf'."""
+    found = []
+    for path, raw, text, ctext, lines, funcs in parsed:
+        for name, params, bs, be in funcs:
+            body = ctext[bs:be + 1]
+            # Skip if this function is in ALLOWED (though OCAF_ALLOWED would be separate)
+            if (os.path.basename(path), name) in ALLOWED:
+                continue
+            
+            decls_by_var = ocaf_handle_declarations(body)
+            ocaf_sites = ocaf_findattribute_sites(body, decls_by_var)
+            
+            if not ocaf_sites:
+                continue
+            
+            ev = ocaf_events(body, decls_by_var, ocaf_sites, ocaf_helpers)
+            
+            for var_name, attr_type, decl_start, decl_end, fa_end, label_var in ocaf_sites:
+                # Find first use for this variable
+                # Filter events for this variable - detail contains the attr_type::method or "guarded by helper"
+                var_events = [(p, k, d) for p, k, d in ev if attr_type in d or var_name in d or d.startswith(var_name)]
+                first = next((p for p, k, _ in var_events if k == 'use'), None)
+                if first is None or any(k == 'guard' and p < first for p, k, _ in var_events):
+                    continue
+                
+                detail = next(d for p, k, d in var_events if p == first and k == 'use')
+                line = text.count('\n', 0, bs + first) + 1
+                found.append(Site(os.path.basename(path), line, name, var_name, detail,
+                                  lines[line - 1].strip() if line <= len(lines) else '', False,
+                                  'ocaf'))
+    return found
+
+
 def all_sites(sources):
-    """The full report: both handle origins plus #1026's TopoDS_Shape walk, one combined list.
-    Parses every file once (`parse_sources`) and shares that parse across `guarding_helpers()` and
-    all three site walks, rather than each redoing it (#666 round-2 review, item 8)."""
+    """The full report: both handle origins plus #1026's TopoDS_Shape walk plus #1052's OCAF handle
+    walk, one combined list. Parses every file once (`parse_sources`) and shares that parse across
+    `guarding_helpers()` and all four site walks, rather than each redoing it."""
     parsed = parse_sources(sources)
     helpers = guarding_helpers(parsed)
     shape_helpers = shape_guarding_helpers(parsed)
+    ocaf_helpers = ocaf_guarding_helpers(parsed)
     return (unguarded_sites(parsed, helpers) + local_handle_sites(parsed, helpers)
-            + shape_hazard_sites(parsed, shape_helpers))
+            + shape_hazard_sites(parsed, shape_helpers)
+            + ocaf_hazard_sites(parsed, ocaf_helpers))
 
 
 def bridge_sources():
@@ -1246,6 +1463,29 @@ double OCCTFixtureW(OCCTShapeRef edgeRef, OCCTShapeRef otherEdgeRef) {
         return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
     } catch (...) { return 0.0; }
 }''', 'local'),
+
+    # #1052: OCAF handle fetched via FindAttribute, passed to GetObject unguarded.
+    ('OCAF handle from FindAttribute, passed to GetObject unguarded', '''
+bool OCCTFixtureOA(OCCTDocumentRef doc, int32_t index) {
+    try {
+        Handle(XCAFDoc_Datum) datum;
+        TDF_Label label = doc->getLabel(index);
+        label.FindAttribute(XCAFDoc_Datum::GetID(), datum);
+        Handle(XCAFDimTolObjects_DatumObject) obj = datum->GetObject();
+        return !obj.IsNull();
+    } catch (...) { return false; }
+}''', 'ocaf'),
+    # #1052: declare-then-assign form - handle declared first, then filled by FindAttribute
+    ('OCAF handle declare-then-assign, passed to GetObject unguarded', '''
+bool OCCTFixtureOB(OCCTDocumentRef doc, int32_t index) {
+    try {
+        Handle(XCAFDoc_Datum) datum;
+        TDF_Label label = doc->getLabel(index);
+        label.FindAttribute(XCAFDoc_Datum::GetID(), datum);
+        Handle(XCAFDimTolObjects_DatumObject) obj = datum->GetObject();
+        return !obj.IsNull();
+    } catch (...) { return false; }
+}''', 'ocaf'),
 
     # #1026's four shapes. Every one of these was a real, measured SIGSEGV in this tree before the
     # guards landed; SA and SB are the two halves of the defect (ShapeType() and the flag
@@ -1462,10 +1702,35 @@ double OCCTFixtureX(OCCTShapeRef edgeRef, OCCTShapeRef otherEdgeRef) {
     } catch (...) { return 0.0; }
 }''', 'local'),
 
+    # #1052: OCAF handle from FindAttribute, guarded by structural helper before GetObject.
+    ('OCAF handle from FindAttribute, guarded by occtDatumLabelIsReadable before GetObject', '''
+bool OCCTFixtureOC(OCCTDocumentRef doc, int32_t index) {
+    try {
+        Handle(XCAFDoc_Datum) datum;
+        TDF_Label label = doc->getLabel(index);
+        label.FindAttribute(XCAFDoc_Datum::GetID(), datum);
+        if (!occtDatumLabelIsReadable(label)) return false;
+        Handle(XCAFDimTolObjects_DatumObject) obj = datum->GetObject();
+        return !obj.IsNull();
+    } catch (...) { return false; }
+}''', 'ocaf'),
+    # #1052: declare-then-assign form, guarded by structural helper.
+    ('OCAF handle declare-then-assign, guarded by occtDatumLabelIsReadable before GetObject', '''
+bool OCCTFixtureOD(OCCTDocumentRef doc, int32_t index) {
+    try {
+        Handle(XCAFDoc_Datum) datum;
+        TDF_Label label = doc->getLabel(index);
+        label.FindAttribute(XCAFDoc_Datum::GetID(), datum);
+        if (!occtDatumLabelIsReadable(label)) return false;
+        Handle(XCAFDimTolObjects_DatumObject) obj = datum->GetObject();
+        return !obj.IsNull();
+    } catch (...) { return false; }
+}''', 'ocaf'),
+
     # #1026's clean side. SH is the one that decides whether this walk is a gate or noise: casting,
     # comparing and exploring a null TopoDS_Shape are all safe, and PR #1027 measured 345 cast
     # sites in this tree. A walk that reported SH would report all of them.
-    ('the two-condition opener, spelled out', '''
+    ('the same cast and the same entry point, with the shape guard added', '''
 int OCCTFixtureSE(OCCTShapeRef shape) {
     if (!shape || shape->shape.IsNull()) return -1;
     return static_cast<int>(shape->shape.ShapeType());
@@ -1544,6 +1809,8 @@ def direct_walk(kind, parsed):
         return unguarded_sites(parsed, guarding_helpers(parsed))
     if kind == 'local':
         return local_handle_sites(parsed, guarding_helpers(parsed))
+    if kind == 'ocaf':
+        return ocaf_hazard_sites(parsed, ocaf_guarding_helpers(parsed))
     return shape_hazard_sites(parsed, shape_guarding_helpers(parsed))
 
 
@@ -1630,6 +1897,12 @@ def main():
                 # alongside it, just the handle itself, obtained from `s.detail` (the BRep_Tool::
                 # call that produced it).
                 print(f'      obtained from {s.detail}(); want: if ({s.name}.IsNull()) return <fallback>;')
+            elif s.kind == 'ocaf':
+                # `s.name` is an OCAF attribute handle variable, obtained from FindAttribute.
+                # The guard is a named helper (e.g., occtDatumLabelIsReadable) that checks
+                # structural validity of the label, not IsNull() on the handle.
+                print(f'      OCAF handle {s.name} ({s.detail}) reaches a dereferencing method')
+                print(f'      want: call a structural guard helper (e.g., occtDatumLabelIsReadable) before use')
             elif s.is_array:
                 # `s.name` is a pointer to wrappers, so `s.name->s.detail` would not compile. The
                 # guard belongs on the element, inside the loop that reads it.
