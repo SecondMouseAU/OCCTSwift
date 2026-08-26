@@ -2467,25 +2467,22 @@ public final class Shape: @unchecked Sendable {
     /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
     /// reaches a checkpoint to poll.
     ///
-    /// Runs the check on a detached background thread against a `deepCopy()` of this shape
-    /// and waits on the calling thread with a real deadline. If the deadline passes first, this
-    /// returns `nil` immediately and the background computation is **abandoned, not cancelled**,
-    /// it keeps running orphaned on its own thread until it eventually completes. That is a
-    /// deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same one the
-    /// #286 mesher-hang caller accepted.
+    /// Runs the check on a detached background thread against a geometry-independent copy of
+    /// this shape and waits on the calling thread with a real deadline. If the deadline passes
+    /// first, this returns `nil` immediately and the background computation is **abandoned, not
+    /// cancelled**, it keeps running orphaned on its own thread until it eventually completes.
+    /// That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same
+    /// one the #286 mesher-hang caller accepted.
     ///
-    /// - Warning: **Latent thread-safety risk, flagged but not fixed here (#831).** The
-    ///   no-argument instance `deepCopy()` used above gives independent *topology* only, it
-    ///   shares `Geom_Surface`/`Geom_Curve` handles (via `TNaming_CopyShape::CopyTool`) with
-    ///   `self`, not the independent geometry `docs/thread-safety.md` used to (incorrectly)
-    ///   describe it as providing. The orphaned background computation on `probe` and the caller
-    ///   continuing to use `self` after a timeout are therefore two `TopoDS_Shape`s with distinct
-    ///   `TShape` identity but the *same* underlying geometry objects, evaluated concurrently,
-    ///   exactly the shared-adaptor-cache race `docs/thread-safety.md` item 1 warns about. This
-    ///   was verified by reading the OCCT source chain, not reproduced under ThreadSanitizer, so
-    ///   treat it as a well-evidenced risk rather than a confirmed race. Fixing it (e.g. switching
-    ///   to `copy(copyGeometry: true)`, which does clone geometry) is left as a follow-up rather
-    ///   than changed in the PR that found this, to keep that PR's behavior change scoped to docs.
+    /// - Note: The probe is built via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
+    ///   (`BRepTools_CopyModification`), not the no-argument instance `deepCopy()`
+    ///   (`TNaming_CopyShape::CopyTool`), which only clones topology and would leave the probe
+    ///   sharing `Geom_Surface`/`Geom_Curve` handles, and their mutable evaluation caches, with
+    ///   `self` (#1160, following up on #831). The orphaned background computation on `probe`
+    ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
+    ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
+    ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
+    ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis.
     ///
     /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
     ///   concurrently with unrelated OCCT calls on other threads was verified with a
@@ -2518,7 +2515,7 @@ public final class Shape: @unchecked Sendable {
         final class SelfIntersectResultBox: @unchecked Sendable {
             var rawResult: Int32 = -1
         }
-        let probe = deepCopy() ?? self
+        let probe = Shape.deepCopy(self, copyGeometry: true, copyMesh: false) ?? self
         let box = SelfIntersectResultBox()
         // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
         // test depends on it: passing 0 means no watchdog exists, so this call can never lose a

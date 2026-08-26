@@ -89,14 +89,17 @@ DispatchQueue.concurrentPerform(iterations: 4) { i in
 }
 ```
 
-**A real, already-shipped call site relies on the weaker guarantee**:
-`Shape.isSelfIntersecting(hardTimeout:)` (`Shape.swift`) uses the no-argument instance
-`deepCopy()` to get a probe shape for a detached background thread, on the reasoning that an
-orphaned computation past the deadline can keep running without racing the caller. Per the
-table above, that probe shares `Geom_Surface`/`Geom_Curve` handles (and the mutable evaluation
-caches on them, item 1) with `self`, a well-evidenced latent risk (read from the OCCT source
-chain, not reproduced under ThreadSanitizer) rather than a confirmed race, tracked in #831 as a
-candidate follow-up rather than changed here.
+**A real, already-shipped call site used to rely on the weaker guarantee, now fixed (#1160)**:
+`Shape.isSelfIntersecting(hardTimeout:)` (`Shape.swift`) builds a probe shape for a detached
+background thread, on the reasoning that an orphaned computation past the deadline can keep
+running without racing the caller. It originally did so via the no-argument instance
+`deepCopy()`, which per the table above shares `Geom_Surface`/`Geom_Curve` handles (and the
+mutable evaluation caches on them, item 1) with `self`, a well-evidenced latent risk (read from
+the OCCT source chain, not reproduced under ThreadSanitizer) tracked in #831 as a candidate
+follow-up. It now builds the probe via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
+(`BRepTools_CopyModification`), which does clone geometry, so the orphaned background
+computation and the caller's continued use of `self` no longer share anything item 1's race
+lives on.
 
 ### Manual Lock/Unlock
 

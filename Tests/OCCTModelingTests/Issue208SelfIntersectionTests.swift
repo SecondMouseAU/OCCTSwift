@@ -102,4 +102,21 @@ struct Issue319HardBoundedSelfIntersection {
             elapsed < 2.0,
             "hard deadline should bound the caller's wall-clock time, got \(elapsed)s")
     }
+
+    // #1160: the probe this entry point builds used to share Geom_Surface/Geom_Curve handles
+    // with `self` via the no-argument instance deepCopy(); a box's faces are all planar, so
+    // that mistake was invisible on the fixture the two tests above use. A filleted box has
+    // toroidal blend surfaces, exercising a curved Geom_Surface the analysis actually evaluates,
+    // so this pins the check still answers correctly now that the probe clones geometry
+    // (Shape.deepCopy(_:copyGeometry:true)) instead of sharing it.
+    @Test("a clean solid with curved (filleted) surfaces reports not self-intersecting")
+    func filletedSolidWithCurvedSurfacesIsClean() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+            let filleted = box.filleted(radius: 1)
+        else {
+            #expect(Bool(false))
+            return
+        }
+        #expect(filleted.isSelfIntersecting(hardTimeout: 30) == false)
+    }
 }
