@@ -1446,41 +1446,6 @@ extension Surface {
     }
 }
 
-// MARK: - Curve-Surface Intersection (v0.35.0)
-
-/// Result of a curve-surface intersection point.
-public struct CurveSurfaceIntersection: Sendable {
-    /// 3D intersection point.
-    public var point: SIMD3<Double>
-    /// Surface parameters (u, v) at the intersection.
-    public var surfaceUV: SIMD2<Double>
-    /// Curve parameter at the intersection.
-    public var curveParameter: Double
-}
-
-extension Curve3D {
-    /// Compute intersection points between this curve and a surface.
-    ///
-    /// - Parameter surface: The surface to intersect with
-    /// - Returns: Array of intersection results with 3D points, surface UV, and curve parameter
-    public func intersections(with surface: Surface) -> [CurveSurfaceIntersection] {
-        let maxPoints: Int32 = 64
-        var points = [OCCTCurveSurfacePoint](
-            repeating: OCCTCurveSurfacePoint(), count: Int(maxPoints))
-        let count = points.withUnsafeMutableBufferPointer { buf in
-            OCCTCurveSurfaceIntersect(handle, surface.handle, buf.baseAddress, maxPoints)
-        }
-        return (0..<Int(count)).map { i in
-            let p = points[i]
-            return CurveSurfaceIntersection(
-                point: SIMD3(p.x, p.y, p.z),
-                surfaceUV: SIMD2(p.u, p.v),
-                curveParameter: p.w
-            )
-        }
-    }
-}
-
 // MARK: - Surface to Bezier Patches (v0.36.0)
 
 extension Surface {
