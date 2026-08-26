@@ -4757,7 +4757,7 @@ bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
     return false;
   try
   {
-    TopLoc_Location loc = g->graph.Refs().LocalLocation(
+    TopLoc_Location loc = g->graph.Refs().Gen().LocalLocation(
       BRepGraph_ChildRefId(childRefIndex));
     occtMatrix12FromLocation(loc, outMatrix);
     return true;
