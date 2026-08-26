@@ -8912,13 +8912,6 @@ double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2)
 
 // Intersection
 
-static IntRes2d_Domain makeDomain(const Handle(Geom2d_Curve)& curve)
-{
-  const double f = curve->FirstParameter();
-  const double l = curve->LastParameter();
-  return IntRes2d_Domain(gp_Pnt2d(curve->Value(f)), f, 1e-6, gp_Pnt2d(curve->Value(l)), l, 1e-6);
-}
-
 int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
                              OCCTCurve2DRef           c2,
                              double                   tolerance,
@@ -8929,19 +8922,18 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
     return 0;
   try
   {
-    IntRes2d_Domain       d1 = makeDomain(c1->curve);
-    IntRes2d_Domain       d2 = makeDomain(c2->curve);
-    IntRes2d_Intersection inter(d1, d2);
+    Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
     if (!inter.IsDone())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      const IntRes2d_IntersectionPoint& pt = inter.Point(i + 1);
-      out[i].x                             = pt.Value().X();
-      out[i].y                             = pt.Value().Y();
-      out[i].u1                            = pt.ParamOnFirst();
-      out[i].u2                            = pt.ParamOnSecond();
+      const IntRes2d_IntersectionPoint& pt =
+        static_cast<const IntRes2d_Intersection&>(inter).Point(i + 1);
+      out[i].x  = pt.Value().X();
+      out[i].y  = pt.Value().Y();
+      out[i].u1 = pt.ParamOnFirst();
+      out[i].u2 = pt.ParamOnSecond();
     }
     return n;
   }
@@ -8960,18 +8952,18 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
     return 0;
   try
   {
-    IntRes2d_Domain       d = makeDomain(c->curve);
-    IntRes2d_Intersection inter(d, tolerance);
+    Geom2dAPI_InterCurveCurve inter(c->curve, tolerance);
     if (!inter.IsDone())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      const IntRes2d_IntersectionPoint& pt = inter.Point(i + 1);
-      out[i].x                             = pt.Value().X();
-      out[i].y                             = pt.Value().Y();
-      out[i].u1                            = pt.ParamOnFirst();
-      out[i].u2                            = pt.ParamOnSecond();
+      const IntRes2d_IntersectionPoint& pt =
+        static_cast<const IntRes2d_Intersection&>(inter).Point(i + 1);
+      out[i].x  = pt.Value().X();
+      out[i].y  = pt.Value().Y();
+      out[i].u1 = pt.ParamOnFirst();
+      out[i].u2 = pt.ParamOnSecond();
     }
     return n;
   }
