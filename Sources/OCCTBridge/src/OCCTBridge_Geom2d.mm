@@ -8924,10 +8924,10 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
-    if (!inter.IsDone() || inter.IsEmpty())
+    const Geom2dInt_GInter& alg = inter.Intersector();
+    if (!alg.IsDone() || alg.IsEmpty())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
-    const Geom2dInt_GInter& alg = inter.Intersector();
     for (int32_t i = 0; i < n; i++)
     {
       const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
@@ -8954,10 +8954,10 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c->curve, tolerance);
-    if (!inter.IsDone() || inter.IsEmpty())
+    const Geom2dInt_GInter& alg = inter.Intersector();
+    if (!alg.IsDone() || alg.IsEmpty())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
-    const Geom2dInt_GInter& alg = inter.Intersector();
     for (int32_t i = 0; i < n; i++)
     {
       const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
