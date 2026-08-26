@@ -4731,15 +4731,15 @@ bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
 }
 
 bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
-                                                int32_t occurrenceRefIndex,
+                                                int32_t occurrenceDefIndex,
                                                 double* outMatrix)
 {
   if (!g || !outMatrix)
     return false;
   try
   {
-    TopLoc_Location loc = g->graph.Editor().Occurrences().RefLocalLocation(
-      BRepGraph_OccurrenceRefId(occurrenceRefIndex));
+    TopLoc_Location loc = g->graph.Topo().OccurrenceLocation(
+      BRepGraph_OccurrenceId(occurrenceDefIndex));
     occtMatrix12FromLocation(loc, outMatrix);
     return true;
   }
@@ -4757,7 +4757,7 @@ bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
     return false;
   try
   {
-    TopLoc_Location loc = g->graph.Editor().Gen().ChildRefLocalLocation(
+    TopLoc_Location loc = g->graph.Refs().LocalLocation(
       BRepGraph_ChildRefId(childRefIndex));
     occtMatrix12FromLocation(loc, outMatrix);
     return true;

@@ -2120,12 +2120,12 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Get the local `TopLoc_Location` of an occurrence reference entry.
     ///
-    /// - Parameter occurrenceRefIndex: The occurrence reference index.
+    /// - Parameter occurrenceDefIndex: The occurrence **definition** index (as returned by `linkProducts`'s `occurrenceIndex`), not the ref index.
     /// - Returns: A 3x4 row-major matrix (12 doubles), or nil if the reference is invalid.
-    public func occurrenceRefLocalLocation(_ occurrenceRefIndex: Int) -> [Double]? {
+    public func occurrenceRefLocalLocation(_ occurrenceDefIndex: Int) -> [Double]? {
         var matrix = [Double](repeating: 0, count: 12)
         let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetOccurrenceRefLocalLocation(handle, Int32(occurrenceRefIndex), buf.baseAddress!)
+            OCCTBRepGraphGetOccurrenceRefLocalLocation(handle, Int32(occurrenceDefIndex), buf.baseAddress!)
         }
         return ok ? matrix : nil
     }

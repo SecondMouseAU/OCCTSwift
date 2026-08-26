@@ -441,6 +441,7 @@ struct BRepGraphShapeReconstructionTests {
                 }
                 
                 // Reconstruct the occurrence shape - it should have the placement applied
+                // Use occurrence DEFINITION index (linked.occurrenceIndex)
                 let occShape = graph.shape(nodeKind: .occurrence, nodeIndex: linked.occurrenceIndex)
                 #expect(occShape != nil)
                 if let occShape {

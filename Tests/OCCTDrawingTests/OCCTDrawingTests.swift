@@ -1346,10 +1346,10 @@ struct EditorViewProductOpsTests {
                     Issue.record("linkProducts nil")
                     return
                 }
-                let occRefIndex = linked.occurrenceRefIndex
+                let occDefIndex = linked.occurrenceIndex
                 
-                // Read back the placement
-                let readMatrix = graph.occurrenceRefLocalLocation(occRefIndex)
+                // Read back the placement using the occurrence DEFINITION index
+                let readMatrix = graph.occurrenceRefLocalLocation(occDefIndex)
                 #expect(readMatrix != nil)
                 if let readMatrix {
                     // Check that the translation components match

@@ -1355,11 +1355,11 @@ bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
 
 /// Get the local TopLoc_Location of an occurrence reference entry.
 /// @param graph The BRepGraph instance
-/// @param occurrenceRefIndex The occurrence reference index
+/// @param occurrenceDefIndex The occurrence definition index (not the ref index)
 /// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
 /// @return true on success, false if the reference is invalid or an error occurred
 bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                                int32_t occurrenceRefIndex,
+                                                int32_t occurrenceDefIndex,
                                                 double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a child reference entry.
