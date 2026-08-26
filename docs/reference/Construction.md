@@ -56,6 +56,26 @@ public let zAxis: SIMD3<Double>   // unit
 
 ---
 
+### `Placement.lift(_:)`
+
+Maps a 2D point in the placement's local (x, y) plane to 3D world space.
+
+```swift
+public func lift(_ p: SIMD2<Double>) -> SIMD3<Double>
+```
+
+- **Parameters:**
+  - `p`: 2D coordinates where `x` scales `xAxis` and `y` scales `yAxis`.
+- **Returns:** The corresponding 3D point: `origin + x * xAxis + y * yAxis`.
+- **Example:**
+  ```swift
+  let placement = Placement(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1))
+  let worldPoint = placement.lift(SIMD2(5, 10))
+  // worldPoint == SIMD3(6, 12, 3)
+  ```
+
+---
+
 ### `Placement.init(origin:normal:)`
 
 Constructs a placement from an origin and a normal, deriving deterministic X/Y axes perpendicular to the normal.
@@ -64,7 +84,7 @@ Constructs a placement from an origin and a normal, deriving deterministic X/Y a
 public init(origin: SIMD3<Double>, normal: SIMD3<Double>)
 ```
 
-Picks a stable X axis using `worldUp × normal`; falls back to `worldY × normal` when the normal is near-parallel to `worldUp`. Use this convenience form when you only know the plane origin and normal and don't care about a specific X orientation.
+Derives the X and Y axes using the canonical `perpendicularBasis(to:)` algorithm, shared with OCCT's `gp_Ax2` constructor. This picks the component of the normal with the smallest magnitude and constructs the perpendicular basis algebraically, with no fallback branches. Use this convenience form when you only know the plane origin and normal and don't care about a specific X orientation.
 
 - **Parameters:**
   - `origin`: the origin point of the plane.
@@ -72,7 +92,7 @@ Picks a stable X axis using `worldUp × normal`; falls back to `worldY × normal
 - **Example:**
   ```swift
   let xzPlacement = Placement(origin: .zero, normal: SIMD3(0, 1, 0))
-  // xAxis ≈ (1,0,0), yAxis ≈ (0,0,1)
+  // xAxis ≈ (0,0,1), yAxis ≈ (1,0,0)
   ```
 
 ---
@@ -1430,7 +1450,7 @@ Construction elements are filtered at this single site, upstream views (solver, 
   }
   ```
 
-*(Internal, not public API: `buildProfile(in:graph:)` above is implemented with two `private func` helpers on `Sketch`. `lift(_:with:)` computes the `placement.origin + pt.x * placement.xAxis + pt.y * placement.yAxis` 2D-to-3D mapping described above for each tessellated point. `approxEqual(_:_:tolerance:)` compares two lifted 3D points by squared distance to decide whether the resulting polyline's first and last points coincide closely enough to close the wire.)*
+*(Internal, not public API: `buildProfile(in:graph:)` above is implemented with a `private func` helper on `Sketch`. `approxEqual(_:_:tolerance:)` compares two lifted 3D points by squared distance to decide whether the resulting polyline's first and last points coincide closely enough to close the wire. The 2D-to-3D lifting uses the public `Placement.lift(_:)` method.)*
 
 ---
 ## Shape.section2D
