@@ -45,6 +45,20 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### `Curve2D.swift`'s Gcc/analytic-intersection/extrema families split into their own files (#687)
+
+`Curve2D.swift` carried 962 lines across 13 declarations belonging to other type families. Split
+out:
+
+- `Curve2DGcc.swift` — `Curve2DGcc`, `Curve2DQualifier`, `Curve2DCircleSolution`,
+  `Curve2DLineSolution`, `Curve2DHatchSegment`, `BisecType`, `BisecSolution`, `GccAnaBisector`
+- `IntAna2d.swift` — `Intersection2DPoint`, `IntAna2d`
+- `Extrema2d.swift` — `Extrema2DResult`, `Extrema2d`
+
+`Surface.swift`'s `CurveSurfaceIntersection` and its `Curve3D` intersection extension move onto
+`Curve3D.swift`. No public API changes: same types, same signatures, same module, just relocated.
+`BRepGraph.swift` and `Curve3D.swift` were re-measured and confirmed to need no split of their own.
+
 ### Fixed `Shape.isSelfIntersecting(hardTimeout:)` probe clones geometry, not just topology ([#1160](https://github.com/SecondMouseAU/OCCTSwift/issues/1160))
 
 `Shape.isSelfIntersecting(hardTimeout:)`'s background probe now clones geometry (`copyGeometry: true`), not just topology, removing a latent BSpline-adaptor-cache race with the caller's continued use of the original shape.
