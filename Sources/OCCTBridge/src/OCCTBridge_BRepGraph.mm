@@ -4738,8 +4738,9 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
     return false;
   try
   {
-    TopLoc_Location loc =
-      g->graph.Refs().Occurrences().RefLocalLocation(BRepGraph_OccurrenceRefId(occurrenceRefIndex));
+    // OCCT 8.0.0p1: Use generic Refs().Gen() interface for cross-kind ref queries.
+    BRepGraph_RefId rid(BRepGraph_RefId::Kind::Occurrence, (uint32_t)occurrenceRefIndex);
+    TopLoc_Location loc = g->graph.Refs().Gen().LocalLocation(rid);
     occtMatrix12FromLocation(loc, outMatrix);
     return true;
   }
@@ -4779,11 +4780,13 @@ int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g,
     int32_t nbRefs = g->graph.Refs().Occurrences().Nb();
     for (int32_t i = 0; i < nbRefs; ++i)
     {
-      BRepGraph_OccurrenceRefId refId(i);
-      if (!g->graph.Refs().Occurrences().IsActive(refId))
+      BRepGraph_RefId rid(BRepGraph_RefId::Kind::Occurrence, (uint32_t)i);
+      if (g->graph.Refs().Gen().IsRemoved(rid))
         continue;
-      BRepGraph_OccurrenceId occDefId = g->graph.Refs().Occurrences().Occurrence(refId);
-      if (occDefId.IsValid() && (int32_t)occDefId.Index == occurrenceDefIndex)
+      // Get the child node (occurrence definition) this ref points to
+      BRepGraph_NodeId nid = g->graph.Refs().Gen().ChildNode(rid);
+      if (nid.IsValid() && nid.NodeKind == BRepGraph_NodeId::Kind::Occurrence &&
+          (int32_t)nid.Index == occurrenceDefIndex)
         return i;
     }
     return -1;
