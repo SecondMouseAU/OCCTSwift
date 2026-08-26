@@ -420,8 +420,9 @@ OCAF_DEREF_RECEIVERS = {
 # #1052: regex to detect FindAttribute calls that produce a handle via out-parameter.
 # Matches: label.FindAttribute(SomeType::GetID(), handleVar);
 # Also matches declare-then-assign: Handle(SomeType) handleVar; label.FindAttribute(SomeType::GetID(), handleVar);
+# Also matches pointer access: label->FindAttribute(SomeType::GetID(), handleVar);
 OCAF_FINDATTRIBUTE = re.compile(
-    r'\b(\w+)\s*\.\s*FindAttribute\s*\(\s*\w+::GetID\s*\(\s*\)\s*,\s*(\w+)\s*\)'
+    r'\b(\w+)\s*(?:\.|->)\s*FindAttribute\s*\(\s*\w+::GetID\s*\(\s*\)\s*,\s*(\w+)\s*\)'
 )
 
 # #1052: regex to detect handle declarations that are later filled by FindAttribute (declare-then-assign).
