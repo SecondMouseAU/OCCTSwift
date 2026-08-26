@@ -2216,7 +2216,7 @@ public init?()
 ```
 
 - **Returns:** A messenger, or `nil` if OCCT allocation fails.
-- **OCCT:** `Message_Messenger::New`
+- **OCCT:** `Message_Messenger()` (default constructor).
 - **Example:**
   ```swift
   if let messenger = Messenger() {
@@ -2287,4 +2287,4 @@ Detach all printers from this messenger.
 public func removeAllPrinters()
 ```
 
-- **OCCT:** `Message_Messenger::RemoveAllPrinters`
+- **OCCT:** `Message_Messenger::RemovePrinters(Message_Printer)` (via `OCCTMessengerRemoveAllPrinters`).

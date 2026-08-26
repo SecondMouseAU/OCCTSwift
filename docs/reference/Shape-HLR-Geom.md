@@ -368,7 +368,7 @@ public var isProbablyEmpty: Bool { get }
 ```
 
 - **Returns:** `true` if `start + tolStart > end - tolEnd`.
-- **OCCT:** `Intrv_Interval::IsVoid` via `OCCTIntrvIntervalIsProbablyEmpty`.
+- **OCCT:** `Intrv_Interval::IsProbablyEmpty` via `OCCTIntrvIntervalIsProbablyEmpty`.
 
 ---
 
@@ -575,7 +575,7 @@ Number of non-overlapping intervals in the set.
 public var count: Int { get }
 ```
 
-- **OCCT:** `Intrv_Intervals::Length` via `OCCTIntrvIntervalsCount`.
+- **OCCT:** `Intrv_Intervals::NbIntervals` via `OCCTIntrvIntervalsCount`.
 
 ---
 
@@ -1778,7 +1778,7 @@ Returns the sum of this vector and another.
 public func added(_ other: GeomVector3D) -> GeomVector3D
 ```
 
-- **OCCT:** `Geom_Vector::Added` via `OCCTGeomVector3DAdded`.
+- **OCCT:** `gp_Vec::Added` via `OCCTGeomVector3DAdded`.
 
 ---
 

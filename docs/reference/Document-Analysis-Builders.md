@@ -839,7 +839,7 @@ public func integer(_ key: String) -> Int
 ```
 
 - **Returns:** The stored integer, or `0` if the key is not found.
-- **OCCT:** `Resource_Manager::IntegerValue` via `OCCTResourceManagerGetInt`.
+- **OCCT:** `Resource_Manager::Integer` via `OCCTResourceManagerGetInt`.
 
 ---
 
@@ -852,7 +852,7 @@ public func real(_ key: String) -> Double
 ```
 
 - **Returns:** The stored real value, or `0.0` if the key is not found.
-- **OCCT:** `Resource_Manager::RealValue` via `OCCTResourceManagerGetReal`.
+- **OCCT:** `Resource_Manager::Real` via `OCCTResourceManagerGetReal`.
 - **Example:**
   ```swift
   let rm = ResourceManager()

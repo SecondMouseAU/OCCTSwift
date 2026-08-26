@@ -1259,7 +1259,7 @@ public func pointCloudByTriangulation() -> PointCloudResult?
 The shape must be meshed first. One point and normal per triangulation node.
 
 - **Returns:** `PointCloudResult`, or `nil` if the shape has no triangulation or generation fails.
-- **OCCT:** `BRepLib_PointCloudShape::GetPoints` via `OCCTBRepLibPointCloudByTriangulation`.
+- **OCCT:** `BRepLib_PointCloudShape::GeneratePointsByTriangulation` via `OCCTBRepLibPointCloudByTriangulation`.
 
 ---
 
@@ -1275,7 +1275,7 @@ The shape must be meshed first.
 
 - **Parameters:** `density`, target number of points per unit area.
 - **Returns:** `PointCloudResult`, or `nil` on failure.
-- **OCCT:** `BRepLib_PointCloudShape::GetPointsByDensity` via `OCCTBRepLibPointCloudByDensity`.
+- **OCCT:** `BRepLib_PointCloudShape::GeneratePointsByDensity` via `OCCTBRepLibPointCloudByDensity`.
 
 ---
 

@@ -1023,7 +1023,7 @@ public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? { get }
 ```
 
 - **Returns:** Tuple of min and max corner coordinates, or `nil` if the bounding box cannot be computed (e.g. unbounded line).
-- **OCCT:** `BRepBndLib::AddGenev` / `Bnd_Box` (via `OCCTCurve3DGetBoundingBox`).
+- **OCCT:** `BndLib_Add3dCurve::Add` / `Bnd_Box` (via `OCCTCurve3DGetBoundingBox`).
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: SIMD3(1,2,3), to: SIMD3(4,5,6))!

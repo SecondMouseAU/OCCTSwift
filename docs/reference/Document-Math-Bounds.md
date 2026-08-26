@@ -130,7 +130,7 @@ public var matrix: [Double] { get }
 ```
 
 - **Returns:** A 9-element `[Double]` where `matrix[row*3 + col]` is `M[row][col]`.
-- **OCCT:** `gp_Quaternion::GetVectorPart` / matrix conversion (via `OCCTQuaternionGetMatrix`).
+- **OCCT:** `gp_Quaternion::GetMatrix` / matrix conversion (via `OCCTQuaternionGetMatrix`).
 - **Example:**
   ```swift
   let m = q.matrix
@@ -1198,7 +1198,7 @@ Write the element at (row, col), **1-based**.
 public func setValue(row: Int, col: Int, value: Double)
 ```
 
-- **OCCT:** `math_Matrix::SetValue` (via `OCCTMathMatrixSetValue`).
+- **OCCT:** `math_Matrix::Value` (via `OCCTMathMatrixSetValue`).
 
 ---
 
@@ -1640,7 +1640,7 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
   existing `matrix`/`rhs` length checks, or this returns `nil` (#640): `rows >= cols` alone does
   not exclude `rows: 0, cols: -1`. `rows * cols` is itself checked for overflow (#716's review
   finding 8).
-- **OCCT:** `math_Householder::Solve` (via `OCCTMathHouseholderSolve`).
+- **OCCT:** `math_Householder::Perform` (via `OCCTMathHouseholderSolve`).
 - **Example:**
   ```swift
   let A = [1.0, 1, 1, 2, 1, 3]  // 3x2
@@ -2022,7 +2022,7 @@ Whether the path is relative (does not start at the filesystem root).
 public static func isRelative(_ path: String) -> Bool
 ```
 
-- **OCCT:** `OSD_Path::IsRelative` (via `OCCTOSDPathIsRelative`).
+- **OCCT:** `OSD_Path::IsRelativePath` (via `OCCTOSDPathIsRelative`).
 
 ---
 
@@ -2034,7 +2034,7 @@ Whether the path is absolute.
 public static func isAbsolute(_ path: String) -> Bool
 ```
 
-- **OCCT:** `OSD_Path::IsAbsolute` (via `OCCTOSDPathIsAbsolute`).
+- **OCCT:** `OSD_Path::IsAbsolutePath` (via `OCCTOSDPathIsAbsolute`).
 
 ---
 
@@ -2085,7 +2085,7 @@ Count the boundary edges of a face using `BRepGProp_Domain`.
 public func faceDomainEdgeCount(faceIndex: Int) -> Int
 ```
 
-- **OCCT:** `BRepGProp_Domain::NbEdges` (via `OCCTShapeFaceDomainEdgeCount`).
+- **OCCT:** `BRepGProp_Domain` iteration (Init/More/Next) via `OCCTShapeFaceDomainEdgeCount`.
 
 ---
 

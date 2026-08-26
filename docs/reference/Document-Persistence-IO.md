@@ -243,7 +243,7 @@ Whether the function attribute on this label has entered a failed state.
 public var functionIsFailed: Bool
 ```
 
-- **OCCT:** `TFunction_Function::IsFailed`.
+- **OCCT:** `TFunction_Function::Failed`.
 
 ---
 

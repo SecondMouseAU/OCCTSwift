@@ -339,7 +339,7 @@ public var nBounds: (uSpans: Int, vSpans: Int)
 ```
 
 - **Returns:** A tuple `(uSpans, vSpans)` reporting how many knot intervals exist in each direction. Always `(1, 1)` for analytic surfaces.
-- **OCCT:** `Geom_Surface::NbUPoles`/`NbVPoles` count derivation (bridge-specific).
+- **OCCT:** `Geom_BSplineSurface::NbUPoles`/`NbVPoles` count derivation (bridge-specific).
 
 ---
 

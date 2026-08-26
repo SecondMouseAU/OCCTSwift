@@ -152,7 +152,7 @@ public static func fixEdgeAddCurve3d(_ edge: Shape) -> Bool
 
 - **Parameters:** `edge`, an edge shape missing its 3D curve.
 - **Returns:** `true` if the 3D curve was successfully added.
-- **OCCT:** `ShapeFix_Edge::AddCurve3d`.
+- **OCCT:** `ShapeFix_Edge::FixAddCurve3d`.
 - **Example:**
   ```swift
   if Shape.fixEdgeAddCurve3d(myEdge) {
@@ -172,7 +172,7 @@ public static func fixEdgeAddPCurve(_ edge: Shape, face: Shape, isSeam: Bool = f
 
 - **Parameters:** `edge`, the edge; `face`, the face to add the PCurve on; `isSeam`, whether the edge is a seam.
 - **Returns:** `true` if the PCurve was added.
-- **OCCT:** `ShapeFix_Edge::AddPCurve`.
+- **OCCT:** `ShapeFix_Edge::FixAddPCurve`.
 - **Example:**
   ```swift
   Shape.fixEdgeAddPCurve(edge, face: face, isSeam: false)
@@ -190,7 +190,7 @@ public static func fixEdgeRemoveCurve3d(_ edge: Shape) -> Bool
 
 - **Parameters:** `edge`, edge whose 3D curve should be removed.
 - **Returns:** `true` on success.
-- **OCCT:** `ShapeFix_Edge::RemoveCurve3d`.
+- **OCCT:** `ShapeFix_Edge::FixRemoveCurve3d`.
 - **Example:**
   ```swift
   Shape.fixEdgeRemoveCurve3d(myEdge)
@@ -208,7 +208,7 @@ public static func fixEdgeRemovePCurve(_ edge: Shape, face: Shape) -> Bool
 
 - **Parameters:** `edge`, the edge; `face`, the face carrying the PCurve to remove.
 - **Returns:** `true` on success.
-- **OCCT:** `ShapeFix_Edge::RemovePCurve`.
+- **OCCT:** `ShapeFix_Edge::FixRemovePCurve`.
 - **Example:**
   ```swift
   Shape.fixEdgeRemovePCurve(edge, face: face)
