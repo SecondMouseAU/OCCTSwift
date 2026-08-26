@@ -536,7 +536,7 @@ public var totalSeconds: Int { get }
 
 Pair with `totalMicroseconds` to get the full sub-second precision. Together they satisfy: `duration ≈ totalSeconds + totalMicroseconds * 1e-6`.
 
-- **OCCT:** `Quantity_Period::GetWhole(ss, mics)`, the seconds output.
+- **OCCT:** `Quantity_Period::Values(ss, mics)`, the seconds output.
 - **Example:**
   ```swift
   if let p = Period(days: 1) {
@@ -556,7 +556,7 @@ public var totalMicroseconds: Int { get }
 
 Returns the sub-second microsecond part only (0–999999). For example, a period of 1.0005 seconds has `totalSeconds == 1` and `totalMicroseconds == 500`.
 
-- **OCCT:** `Quantity_Period::GetWhole(ss, mics)`, the microseconds output.
+- **OCCT:** `Quantity_Period::Values(ss, mics)`, the microseconds output.
 - **Example:**
   ```swift
   if let p = Period(seconds: 1, milliseconds: 500) {

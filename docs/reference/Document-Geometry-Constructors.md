@@ -661,7 +661,7 @@ public func setFrenet(_ frenet: Bool = true)
 ```
 
 - **Parameters:** `frenet`, `true` to enable Frenet mode (default).
-- **OCCT:** `BRepFill_PipeShell::SetMode(Standard_Boolean)`
+- **OCCT:** `BRepFill_PipeShell::Set(Standard_Boolean)`
 - **Example:**
   ```swift
   pipe.setFrenet(true)
@@ -677,7 +677,7 @@ Use a discrete (piecewise constant) trihedron mode.
 public func setDiscrete()
 ```
 
-- **OCCT:** `BRepFill_PipeShell::SetDiscreteMode`
+- **OCCT:** `BRepFill_PipeShell::SetDiscrete`
 - **Example:**
   ```swift
   pipe.setDiscrete()
@@ -694,7 +694,7 @@ public func setFixed(binormal: SIMD3<Double>)
 ```
 
 - **Parameters:** `binormal`, world-space binormal direction.
-- **OCCT:** `BRepFill_PipeShell::SetMode(gp_Dir)`
+- **OCCT:** `BRepFill_PipeShell::Set(gp_Dir)`
 - **Example:**
   ```swift
   pipe.setFixed(binormal: SIMD3(0, 0, 1))
@@ -2383,7 +2383,7 @@ public func setBuildHistory(_ enabled: Bool)
 History is **disabled by default** to avoid a segfault in `BRepFill_PipeShell::BuildHistory` when using closed spine+profile combinations (OCCT bug). Enable only when `generated`/`modified`/`isDeleted` queries on the result are required.
 
 - **Parameters:** `enabled`, `true` to enable history.
-- **OCCT:** `BRepFill_PipeShell::SetBuildHistory`
+- **OCCT:** `BRepFill_PipeShell::SetIsBuildHistory`
 - **Note:** Enabling history on closed spine/profile geometries can trigger an OCCT segfault, use with caution.
 - **Example:**
   ```swift

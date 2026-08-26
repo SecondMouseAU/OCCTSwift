@@ -182,7 +182,7 @@ Number of comp-solid definitions in the graph.
 public var compSolidCount: Int { get }
 ```
 
-- **OCCT:** `BRepGraph_EditorView::NbCompSolids`.
+- **OCCT:** `BRepGraph::Topo().CompSolids().Nb()`.
 - **Example:**
   ```swift
   print(graph.compSolidCount)
@@ -517,7 +517,7 @@ public func clearFaceMesh(faceIndex: Int)
 ```
 
 - **Parameters:** `faceIndex`, face definition index.
-- **OCCT:** `BRepGraph_EditorView::Mesh::Editor::Faces().Clear(BRepGraph_FaceId)`.
+- **OCCT:** `BRepGraph::Mesh().Editor().Faces().Clear(BRepGraph_FaceId)`.
 
 ---
 
@@ -530,7 +530,7 @@ public func clearEdgePolygon3D(edgeIndex: Int)
 ```
 
 - **Parameters:** `edgeIndex`, edge definition index.
-- **OCCT:** `BRepGraph_EditorView::Mesh::Editor::Edges().Clear(BRepGraph_EdgeId)`.
+- **OCCT:** `BRepGraph::Mesh().Editor().Edges().Clear(BRepGraph_EdgeId)`.
 - **Example:**
   ```swift
   graph.clearFaceMesh(faceIndex: 0)

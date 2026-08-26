@@ -910,7 +910,7 @@ Returns the equivalent line curve along with reparametrized bounds, or `nil` if 
 
 - **Parameters:** `first`/`last`, parameter range to check; `tolerance`, deviation tolerance.
 - **Returns:** Tuple `(line, newFirst, newLast, deviation)`, or `nil` if not linear within tolerance.
-- **OCCT:** `ShapeCustom_Curve2d::ConvertToLine`.
+- **OCCT:** `ShapeCustom_Curve2d::ConvertToLine2d`.
 - **Example:**
   ```swift
   if let bsp = someCurve.toBSpline(),
@@ -934,7 +934,7 @@ Mutates the receiver. Returns `true` if any knots were removed.
 
 - **Parameters:** `tolerance`, maximum allowed shape deviation after removal.
 - **Returns:** `true` if simplification occurred.
-- **OCCT:** `ShapeCustom_Curve2d::SimplifyBSpline`.
+- **OCCT:** `ShapeCustom_Curve2d::SimplifyBSpline2d`.
 - **Example:**
   ```swift
   if let bsp = someCurve.toBSpline() {

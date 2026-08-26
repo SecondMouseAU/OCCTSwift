@@ -44,7 +44,7 @@ Maximum number of alerts the report will collect before discarding further ones.
 public var limit: Int { get set }
 ```
 
-- **OCCT:** `Message_Report::GetLimit` / `Message_Report::SetLimit`.
+- **OCCT:** `Message_Report::Limit` / `Message_Report::SetLimit`.
 - **Example:**
   ```swift
   report.limit = 100
@@ -155,7 +155,7 @@ public func convertCoordinateSystem(
   - `outputSystem`: target coordinate system.
   - `outputUnit`: scale factor of the output unit.
 - **Returns:** Point expressed in the output system.
-- **OCCT:** `RWMesh_CoordinateSystemConverter::TransformPoint`.
+- **OCCT:** `RWMesh_CoordinateSystemConverter::TransformPosition`.
 - **Example:**
   ```swift
   let pt = convertCoordinateSystem(x: 0, y: 1, z: 0,
@@ -1327,7 +1327,7 @@ public func apply(x: Double, y: Double, z: Double) -> (x: Double, y: Double, z: 
 ```
 
 - **Returns:** Transformed point coordinates.
-- **OCCT:** `Geom_Transformation::TransformCoord` / `gp_Trsf::Transforms`.
+- **OCCT:** `gp_Trsf::Transforms` (via `Geom_Transformation`).
 - **Example:**
   ```swift
   let t = GeomTransformation()!

@@ -392,7 +392,7 @@ public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, nor
 
 - **Parameters:** `tolerance`, planarity tolerance.
 - **Returns:** Tuple of `(origin, normal, xDirection)` if planar, `nil` otherwise.
-- **OCCT:** `GeomLib_IsPlanarSurface::Plane` via `OCCTGeomLibPlanarSurfacePlane`.
+- **OCCT:** `GeomLib_IsPlanarSurface::Plan` via `OCCTGeomLibPlanarSurfacePlane`.
 - **Example:**
   ```swift
   if let plane = surface.planarPlane() {
@@ -1097,7 +1097,7 @@ public static func arePointsLinear(_ points: [SIMD3<Double>],
 
 - **Parameters:** `points`, array of 3D points; `tolerance`, collinearity tolerance.
 - **Returns:** `(isLinear, deviation)`, `isLinear` indicates collinearity; `deviation` is the maximum perpendicular distance from the best-fit line.
-- **OCCT:** `GeomConvert_ConvType::IsLinear` via `OCCTGeomConvertIsLinear`.
+- **OCCT:** `GeomConvert_CurveToAnaCurve::IsLinear` via `OCCTGeomConvertIsLinear`.
 - **Example:**
   ```swift
   let pts: [SIMD3<Double>] = [.zero, SIMD3(1,0,0), SIMD3(2,0,0)]
@@ -1174,7 +1174,7 @@ public var isCanonical: Bool { get }
 ```
 
 - **Returns:** `true` if the surface is a plane, sphere, cylinder, cone, or torus rather than a BSpline.
-- **OCCT:** `GeomConvert_ConvType::IsCanonical` via `OCCTGeomConvertIsCanonical`.
+- **OCCT:** `GeomConvert_SurfToAnaSurf::IsCanonical` via `OCCTGeomConvertIsCanonical`.
 
 ---
 
@@ -1460,7 +1460,7 @@ public func parameter(at index: Int) -> Double
 
 - **Parameters:** `index`, 0-based index.
 - **Returns:** The curve parameter value. Returns 0 if `hasParameters` is `false`.
-- **OCCT:** `Poly_Polygon3D::Parameter` via `OCCTPolyPolygon3DParameter`.
+- **OCCT:** `Poly_Polygon3D::Parameters` via `OCCTPolyPolygon3DParameter`.
 
 ---
 

@@ -536,7 +536,7 @@ public func knotsAndMults() -> (knots: [Double], mults: [Int])
 ```
 
 - **Returns:** A tuple of parallel arrays; empty arrays on failure or before `perform()`.
-- **OCCT:** `GeomFill_Profiler::Knots`, `GeomFill_Profiler::Mults`.
+- **OCCT:** `GeomFill_Profiler::KnotsAndMults`.
 - **Example:**
   ```swift
   let profiler = CurveProfiler.create()

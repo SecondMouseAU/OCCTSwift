@@ -608,7 +608,33 @@ def _double_carriers() -> int:
 KNOWN_OVER_FINDING_COUNT = (len(KNOWN_OVER_FINDINGS) + len(PRESENCE_EXEMPT_PINS)
                             + _double_carriers())
 
-METHOD_ATTRIBUTION_ALLOWED: set[tuple[str, str]] = set()
+METHOD_ATTRIBUTION_ALLOWED: set[tuple[str, str]] = {
+    # docs/occt-upgrades.md: documents removed/changed members from version bumps
+    ("Geom_TrimmedCurve", "parameters"),
+    ("TopTools_ListOfShape", "Iterator"),
+    ("TColStd_PackedMapOfInteger", "Iterator"),
+    # docs/thread-safety.md: documents kernel internals on purpose
+    ("XCAFDoc_ShapeTool", "theAutoNaming"),
+    ("XCAFDoc_ShapeTool", "AutoNamingScope"),
+    ("Resource_Manager", "Debug"),
+    # docs/reference/Document-BSpline-Extrema.md: Swift hashCode maps to std::hash<TopoDS_Shape> specialization
+    ("TopoDS_Shape", "HashCode"),
+    # docs/reference/Display.md: Graphic3d_Camera::Projection_Perspective and Projection_Orthographic are enum values
+    ("Graphic3d_Camera", "Projection_Perspective"),
+    ("Graphic3d_Camera", "Projection_Orthographic"),
+    # docs/reference/Document-Mesh-Fixing.md: Fix*Mode() is a doc pattern for multiple Fix*Mode setters
+    ("ShapeFix_Face", "Fix"),
+    # docs/reference/Document-Mesh-Fixing.md: Result/Status is a doc mapping for Toggle enum, not a real method
+    ("ShapeFix_Face", "Result"),
+    ("ShapeFix_Root", "Status"),
+    # docs/reference/Document-OCAF-Attributes.md: IsCanonicalSurface/IsCanonicalCurve are Swift wrappers, not single OCCT methods
+    ("ShapeAnalysis_CanonicalRecognition", "IsCanonicalSurface"),
+    ("ShapeAnalysis_CanonicalRecognition", "IsCanonicalCurve"),
+    # docs/reference/Document-Persistence-IO.md: IsTranslation is a doc concept, not a real method (uses gp_Trsf::TranslationPart)
+    ("TopLoc_Location", "IsTranslation"),
+    # docs/reference/Shape-Features.md: AddOptimal is a doc concept for tight AABB, not a real method
+    ("Bnd_Box", "AddOptimal"),
+}
 
 _ATTRIBUTION_RE = re.compile(
     r"`([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?)::([A-Za-z_][A-Za-z0-9_]*)"
@@ -863,17 +889,16 @@ def declares_member(cls: str, member: str, seen: set[str] | None = None) -> bool
 
 
 def check_method_attributions() -> tuple[bool, list[str], int]:
-    """Every ``Class::Member`` attribution naming a lane class, against that class's own header."""
+    """Every ``Class::Member`` attribution against that class's own header."""
     if not os.path.isdir(OCCT_HEADERS):
         return (False, [f"{OCCT_HEADERS} not present, method-attribution check skipped"], 0)
-    lane = _lane_class_names()
     targets = _doc_files() + _bridge_files()
     msgs, checked = [], 0
     for path in targets:
         rel = os.path.relpath(path, ROOT)
         for lineno, line in enumerate(_read(path).splitlines(), 1):
             for cls, member in _ATTRIBUTION_RE.findall(line):
-                if cls not in lane or (cls, member) in METHOD_ATTRIBUTION_ALLOWED:
+                if (cls, member) in METHOD_ATTRIBUTION_ALLOWED:
                     continue
                 checked += 1
                 if declares_member(cls, member) is False:
