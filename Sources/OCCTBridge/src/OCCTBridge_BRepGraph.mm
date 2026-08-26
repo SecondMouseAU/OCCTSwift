@@ -193,6 +193,11 @@ static BRepGraph_NodeId::Kind kindFromInt(int32_t k)
       return BRepGraph_NodeId::Kind::CompSolid;
     case 8:
       return BRepGraph_NodeId::Kind::CoEdge;
+    // 9 is reserved (BRepGraph_NodeId::Kind has no value there); falls through to default.
+    case 10:
+      return BRepGraph_NodeId::Kind::Product;
+    case 11:
+      return BRepGraph_NodeId::Kind::Occurrence;
     default:
       return BRepGraph_NodeId::Kind::Solid;
   }
@@ -4751,8 +4756,8 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
 }
 
 bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
-                                            int32_t          childRefIndex,
-                                            double*          outMatrix)
+                                           int32_t          childRefIndex,
+                                           double*          outMatrix)
 {
   if (!g || !outMatrix)
     return false;
@@ -4770,8 +4775,7 @@ bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
 
 // Find the occurrence reference index for a given occurrence definition index.
 // Returns -1 if not found.
-int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g,
-                                            int32_t          occurrenceDefIndex)
+int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g, int32_t occurrenceDefIndex)
 {
   if (!g)
     return -1;
@@ -4785,8 +4789,8 @@ int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g,
         continue;
       // Get the child node (occurrence definition) this ref points to
       BRepGraph_NodeId nid = g->graph.Refs().Gen().ChildNode(rid);
-      if (nid.IsValid() && nid.NodeKind == BRepGraph_NodeId::Kind::Occurrence &&
-          (int32_t)nid.Index == occurrenceDefIndex)
+      if (nid.IsValid() && nid.NodeKind == BRepGraph_NodeId::Kind::Occurrence
+          && (int32_t)nid.Index == occurrenceDefIndex)
         return i;
     }
     return -1;

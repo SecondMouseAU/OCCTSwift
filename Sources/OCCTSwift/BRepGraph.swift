@@ -361,7 +361,8 @@ public final class BRepGraph: @unchecked Sendable {
         if nodeKind == .occurrence {
             // Look up the occurrence reference index for this occurrence definition index
             if let occRefIndex = findOccurrenceRefIndex(for: nodeIndex),
-               let locMatrix = occurrenceRefLocalLocation(occRefIndex) {
+                let locMatrix = occurrenceRefLocalLocation(occRefIndex)
+            {
                 // Convert 3x4 matrix to 4x4 for Shape.located(matrix:)
                 var matrix4x4 = [Double](repeating: 0, count: 16)
                 // Row 0
