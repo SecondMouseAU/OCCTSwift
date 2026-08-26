@@ -784,7 +784,9 @@ extension Document {
             index: index)
     }
 
-    /// All dimensions in this document.
+    /// All dimensions in this document that can be decoded.
+    ///
+    /// Dimensions whose type code has no matching `DimensionType` case are omitted.
     ///
     /// ```swift
     /// let diameters = doc.dimensions.filter { $0.type == .sizeDiameter }
@@ -793,7 +795,9 @@ extension Document {
         (0..<dimensionCount).compactMap { dimension(at: $0) }
     }
 
-    /// All geometric tolerances in this document.
+    /// All geometric tolerances in this document that can be decoded.
+    ///
+    /// Tolerances whose type code has no matching `GeomToleranceType` case are omitted.
     ///
     /// ```swift
     /// let perpendicular = doc.geomTolerances.filter { $0.type == .perpendicularity }
