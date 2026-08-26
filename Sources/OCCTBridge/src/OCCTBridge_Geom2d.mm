@@ -31,6 +31,7 @@
 #include <Bisector_PolyBis.hxx>
 #include <IntRes2d_Domain.hxx>
 #include <IntRes2d_IntersectionPoint.hxx>
+#include <Geom2dInt_GInter.hxx>
 #include <Intf_InterferencePolygon2d.hxx>
 #include <ShapeConstruct_Curve.hxx>
 #include <Geom2dConvert_ApproxArcsSegments.hxx>
@@ -8922,14 +8923,14 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
     return 0;
   try
   {
-    Geom2dAdaptor_Curve          ac1(c1->curve), ac2(c2->curve);
-    IntAna2d_AnaIntersection     inter(ac1, ac2, tolerance);
+    Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
     if (!inter.IsDone() || inter.IsEmpty())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
+    const Geom2dInt_GInter& alg = inter.Intersector();
     for (int32_t i = 0; i < n; i++)
     {
-      const IntAna2d_IntPoint& pt = inter.Point(i + 1);
+      const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
       out[i].x  = pt.Value().X();
       out[i].y  = pt.Value().Y();
       out[i].u1 = pt.ParamOnFirst();
@@ -8952,14 +8953,14 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
     return 0;
   try
   {
-    Geom2dAdaptor_Curve      ac(c->curve);
-    IntAna2d_AnaIntersection inter(ac, tolerance);
+    Geom2dAPI_InterCurveCurve inter(c->curve, tolerance);
     if (!inter.IsDone() || inter.IsEmpty())
       return 0;
     int32_t n = std::min((int32_t)inter.NbPoints(), max);
+    const Geom2dInt_GInter& alg = inter.Intersector();
     for (int32_t i = 0; i < n; i++)
     {
-      const IntAna2d_IntPoint& pt = inter.Point(i + 1);
+      const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
       out[i].x  = pt.Value().X();
       out[i].y  = pt.Value().Y();
       out[i].u1 = pt.ParamOnFirst();
