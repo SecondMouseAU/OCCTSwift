@@ -45,6 +45,10 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### Fixed `Shape.isSelfIntersecting(hardTimeout:)` probe clones geometry, not just topology ([#1160](https://github.com/SecondMouseAU/OCCTSwift/issues/1160))
+
+`Shape.isSelfIntersecting(hardTimeout:)`'s background probe now clones geometry (`copyGeometry: true`), not just topology, removing a latent BSpline-adaptor-cache race with the caller's continued use of the original shape.
+
 ### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
 
 The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.
