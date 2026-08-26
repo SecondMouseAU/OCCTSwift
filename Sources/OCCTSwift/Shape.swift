@@ -1959,9 +1959,15 @@ public final class Shape: @unchecked Sendable {
         Shape.sew(self, with: other, tolerance: tolerance)
     }
 
-    // MARK: - Feature-Based Modeling (v0.12.0)
+    // MARK: - Extrusion-Based Features (v0.12.0)
 
-    /// Add a prismatic boss or pocket to the shape.
+    /// Add a prismatic boss or pocket to the shape via extrusion and boolean operation.
+    ///
+    /// This method creates a prism by extruding the profile wire, then fuses it with
+    /// (or cuts it from) the base shape. It uses `BRepPrimAPI_MakePrism` +
+    /// `BRepAlgoAPI_Fuse`/`Cut`, not OCCT's feature-based `BRepFeat_MakePrism`.
+    /// For true feature-based prisms that track history and support extent modes
+    /// (thru-next, until-face, etc.), see `prismUntilFace(profile:sketchFaceIndex:...)`.
     ///
     /// - Parameters:
     ///   - profile: Wire profile to extrude (should be on a face of this shape)
@@ -1992,7 +1998,10 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Add a boss (raised feature) to the shape.
+    /// Add a boss (raised feature) to the shape via extrusion and fuse.
+    ///
+    /// Convenience wrapper for `withPrism(..., fuse: true)`. Uses
+    /// `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse`.
     ///
     /// - Parameters:
     ///   - profile: Wire profile to extrude
@@ -2004,7 +2013,10 @@ public final class Shape: @unchecked Sendable {
         withPrism(profile: profile, direction: direction, height: height, fuse: true)
     }
 
-    /// Create a pocket (depression) in the shape.
+    /// Create a pocket (depression) in the shape via extrusion and cut.
+    ///
+    /// Convenience wrapper for `withPrism(..., fuse: false)`. Uses
+    /// `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Cut`.
     ///
     /// - Parameters:
     ///   - profile: Wire profile defining the pocket boundary

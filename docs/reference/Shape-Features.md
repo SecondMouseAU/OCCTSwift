@@ -1,7 +1,9 @@
 ---
+
 title: Shape. Features, Sweeps & Surface Building
 parent: API Reference
 ---
+
 
 # Shape. Features, Sweeps & Surface Building
 
@@ -12,6 +14,7 @@ This page documents the Shape API from **Geometry Construction** through **Plate
 - [Geometry Construction](#geometry-construction-v0110) · [Feature-Based Modeling](#feature-based-modeling-v0120) · [Shape Type](#shape-type) · [Sub-Shape Extraction](#sub-shape-extraction) · [Bounds](#bounds) · [Slicing](#slicing) · [Operators](#operators) · [Measurement & Analysis](#measurement--analysis-v070) · [Convenience Overloads](#wireenface-convenience-overloads) · [Selective Fillet / Draft / Defeaturing](#selective-fillet-draft--defeaturing) · [Advanced / Variable-Section Pipe Sweep](#advanced--variable-section-pipe-sweep) · [Surface Creation](#surface-creation-v090) · [Shape Healing / Analysis / Fixing / Unification](#shape-healing--analysis-v0130) · [Advanced Blends & Surface Filling](#advanced-blends--surface-filling-v0140) · [Variable Radius Fillet](#variable-radius-fillet-v0140) · [Multi-Edge Blend](#multi-edge-blend-v0140) · [Surface Filling](#surface-filling) · [Plate Surfaces](#plate-surfaces-v0140--v0230)
 
 ---
+
 
 ## Geometry Construction (v0.11.0)
 
@@ -34,6 +37,7 @@ public static func face(from wire: Wire, planar: Bool = true) -> Shape?
   ```
 
 ---
+
 
 ### `Shape.face(outer:holes:)`
 
@@ -58,6 +62,7 @@ public static func face(outer: Wire, holes: [Wire]) -> Shape?
   ```
 
 ---
+
 
 ### `Shape.solid(from:)`
 
@@ -88,6 +93,7 @@ One solid is built per **body-bounding** shell, not just the first shell found: 
 
 ---
 
+
 ### `Shape.sew(shapes:tolerance:)`
 
 Sews multiple shapes into a connected shell or solid.
@@ -108,6 +114,7 @@ Connects faces that share edges within `tolerance`. Useful for repairing importe
 
 ---
 
+
 ### `Shape.sew(_:with:tolerance:)`
 
 Sews exactly two shapes together.
@@ -121,6 +128,7 @@ public static func sew(_ shape: Shape, with other: Shape, tolerance: Double = 1e
 - **OCCT:** `BRepBuilderAPI_Sewing` (two-argument convenience).
 
 ---
+
 
 ### `sewn(with:tolerance:)`
 
@@ -138,15 +146,18 @@ Calls `Shape.sew(self, with: other, tolerance:)`.
 
 ---
 
-## Feature-Based Modeling (v0.12.0)
+
+## Extrusion-Based Features (v0.12.0)
 
 ### `withPrism(profile:direction:height:fuse:)`
 
-Adds or removes material via a prismatic extrusion feature.
+Adds or removes material via a prismatic extrusion and boolean operation.
 
 ```swift
 public func withPrism(profile: Wire, direction: SIMD3<Double>, height: Double, fuse: Bool) -> Shape?
 ```
+
+This method creates a prism by extruding the profile wire, then fuses it with (or cuts it from) the base shape. It uses `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse`/`Cut`, not OCCT's feature-based `BRepFeat_MakePrism`. For true feature-based prisms that track history and support extent modes (thru-next, until-face, etc.), see `prismUntilFace(profile:sketchFaceIndex:...)`.
 
 When `fuse` is `true`, material is added (boss); when `false`, material is removed (pocket). The profile should already be positioned on a face of the receiver.
 
@@ -162,9 +173,10 @@ When `fuse` is `true`, material is added (boss); when `false`, material is remov
 
 ---
 
+
 ### `withBoss(profile:direction:height:)`
 
-Adds a raised feature (boss) to the shape. Convenience wrapper for `withPrism(..., fuse: true)`.
+Adds a raised feature (boss) to the shape via extrusion and fuse. Convenience wrapper for `withPrism(..., fuse: true)`.
 
 ```swift
 public func withBoss(profile: Wire, direction: SIMD3<Double>, height: Double) -> Shape?
@@ -176,9 +188,10 @@ public func withBoss(profile: Wire, direction: SIMD3<Double>, height: Double) ->
 
 ---
 
+
 ### `withPocket(profile:direction:depth:)`
 
-Creates a depression (pocket) in the shape. Convenience wrapper for `withPrism(..., fuse: false)`.
+Creates a depression (pocket) in the shape via extrusion and cut. Convenience wrapper for `withPrism(..., fuse: false)`.
 
 ```swift
 public func withPocket(profile: Wire, direction: SIMD3<Double>, depth: Double) -> Shape?
@@ -235,6 +248,7 @@ The cutting cylinder **starts at `position`** and runs `depth` along `direction`
 
 ---
 
+
 ### `split(by:)`
 
 Splits the shape using a cutting tool shape.
@@ -258,6 +272,7 @@ public func split(by tool: Shape) -> [Shape]?
 
 ---
 
+
 ### `split(atPlane:normal:)`
 
 Splits the shape by an infinite plane.
@@ -277,6 +292,7 @@ public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape
 
 ---
 
+
 ### `Shape.glue(_:_:tolerance:)`
 
 Glues two shapes together at coincident faces.
@@ -293,6 +309,7 @@ More efficient than boolean union when the shapes have perfectly coincident face
 
 ---
 
+
 ### `Shape.evolved(spine:profile:)`
 
 Creates an evolved shape (profile swept along spine with orientation tracking).
@@ -308,6 +325,7 @@ The profile is swept along the spine and its orientation evolves to remain perpe
 - **OCCT:** `BRepOffsetAPI_MakeEvolved`.
 
 ---
+
 
 ### `Shape.evolvedAdvanced(spine:profile:joinType:axeProf:solid:volume:tolerance:)`
 
@@ -335,6 +353,7 @@ public static func evolvedAdvanced(spine: Shape, profile: Wire,
 
 ---
 
+
 ### `linearPattern(direction:spacing:count:)`
 
 Creates a linear array of this shape.
@@ -355,6 +374,7 @@ Returns a compound containing `count` copies of the shape, spaced `spacing` apar
   ```
 
 ---
+
 
 ### `circularPattern(axisPoint:axisDirection:count:angle:)`
 
@@ -378,6 +398,7 @@ Duplicates the **entire body** `count` times around `axisPoint`/`axisDirection` 
   ```
 
 ---
+
 
 ### `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)`
 
@@ -421,6 +442,7 @@ Combines `circularPattern` of `tool` with `subtracting` in a single call. The na
 
 ---
 
+
 ## Shape Type
 
 ### `ShapeType`
@@ -445,6 +467,7 @@ Used by `shapeType`, `subShapeCount(ofType:)`, `subShape(type:index:)`, and `sub
 
 ---
 
+
 #### `ShapeType.compSolid`
 
 A composite solid (`TopAbs_COMPSOLID`): several solids sharing faces, treated as one connected block.
@@ -454,6 +477,7 @@ A composite solid (`TopAbs_COMPSOLID`): several solids sharing faces, treated as
 No recognised topological type; matches no `TopAbs_ShapeEnum` value.
 
 ---
+
 
 ### `shapeType`
 
@@ -472,6 +496,7 @@ public var shapeType: ShapeType { get }
   ```
 
 ---
+
 
 ### `isValidSolid`
 
@@ -492,6 +517,7 @@ requirement of its own).
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTShapeIsValidSolid`).
 
 ---
+
 
 ### `isSelfIntersecting(timeout:)`
 
@@ -517,6 +543,7 @@ Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (second
 
 ---
 
+
 ### `isSelfIntersecting(hardTimeout:)`
 
 Checks whether the shape has overlapping or interfering sub-faces, with a true hard wall-clock deadline (#319): unlike `isSelfIntersecting(timeout:)`, this returns at `hardTimeout` even if OCCT never reaches a checkpoint to poll.
@@ -540,6 +567,7 @@ Runs the check on a detached background thread against a `deepCopy()` of this sh
   ```
 
 ---
+
 ### `ImportError`
 
 Error type for failed STEP/IGES/BREP imports.
@@ -565,11 +593,13 @@ public enum ImportError: Error, LocalizedError {
 
 ---
 
+
 ### `ShapeType` (companion enum to `Shape.shapeType`)
 
 *(See `ShapeType` entry above in this section.)*
 
 ---
+
 
 ### `ImportResult`
 
@@ -591,6 +621,7 @@ public struct ImportResult: Sendable {
 `summary` returns a human-readable description such as `"Shell → Solid (processing: sewing, solid creation)"`.
 
 ---
+
 
 #### `ImportResult.originalType`
 
@@ -621,6 +652,7 @@ How many shells were turned into solids. `> 1` means the file held several bodie
 Human-readable description such as `"Shell -> Solid (processing: sewing, solid creation)"`.
 
 ---
+
 
 ## Sub-Shape Extraction
 
@@ -654,6 +686,7 @@ public func subShapeCount(ofType type: ShapeType) -> Int
 
 ---
 
+
 ### `subShape(type:index:)`
 
 Returns a sub-shape by topological type and zero-based index.
@@ -670,6 +703,7 @@ Uses `TopExp::MapShapes` to enumerate sub-shapes of the given type.
 - **Note:** Edge indices are not guaranteed to be stable across calls or OCCT versions. Iterate to find a working index for edge-specific operations.
 
 ---
+
 
 ### `subShapes(ofType:)`
 
@@ -699,6 +733,7 @@ with no error and no diagnostic (#979).
 
 ---
 
+
 ## Bounds
 
 ### `bounds`
@@ -722,6 +757,7 @@ Uses OCCT's default `Bnd_Box`, which for B-spline and faceted surfaces is the **
 
 ---
 
+
 ### `size`
 
 Size of the bounding box (max − min).
@@ -734,6 +770,7 @@ public var size: SIMD3<Double>? { get }
 
 ---
 
+
 ### `center`
 
 Centre of the bounding box.
@@ -745,6 +782,7 @@ public var center: SIMD3<Double>? { get }
 - **Returns:** `(bounds.min + bounds.max) / 2`, or `nil` when `bounds` is `nil`. `.zero` here is a measurement of a point-like shape at the world origin, not a fallback (#943).
 
 ---
+
 
 ## Slicing
 
@@ -761,6 +799,7 @@ public func sliceAtZ(_ z: Double) -> Shape?
 - **OCCT:** `BRepAlgoAPI_Section`.
 
 ---
+
 
 ### `sectionWiresAtZ(_:tolerance:)`
 
@@ -787,6 +826,7 @@ Unlike `sliceAtZ`, this chains the section edges into wires (closed where the se
 
 ---
 
+
 ### `edgePoints(at:maxPoints:)`
 
 Returns sampled points along the edge at the given index.
@@ -802,6 +842,7 @@ Points are uniformly sampled from start to end of the edge curve.
 - **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
 
 ---
+
 
 ### `contourPoints(maxPoints:)`
 
@@ -819,6 +860,7 @@ Returns edge **start** vertices only, not intermediate curve samples. For curved
 
 ---
 
+
 ## Operators
 
 Boolean operator overloads on `Shape`. All return `Shape?`.
@@ -835,6 +877,7 @@ Union of two shapes. Calls `lhs.union(rhs)`.
 
 ---
 
+
 ### `-(lhs:rhs:)`
 
 ```swift
@@ -847,6 +890,7 @@ Subtraction. Calls `lhs.subtracting(rhs)`.
 
 ---
 
+
 ### `&(lhs:rhs:)`
 
 ```swift
@@ -858,6 +902,7 @@ Intersection. Calls `lhs.intersection(rhs)`.
 - **OCCT:** `BRepAlgoAPI_Common`.
 
 ---
+
 
 ## Measurement & Analysis (v0.7.0)
 
@@ -880,6 +925,7 @@ Returned by `properties(density:)`.
 
 ---
 
+
 ### `DistanceResult`
 
 Result of a minimum-distance measurement between two shapes.
@@ -896,6 +942,7 @@ public struct DistanceResult: Sendable, Equatable {
 Returned by `distance(to:deflection:)`.
 
 ---
+
 
 ### `properties(density:)`
 
@@ -925,6 +972,7 @@ public func properties(density: Double = 1.0) -> ShapeProperties?
 
 ---
 
+
 ### `volume`
 
 Volume of the shape in cubic units, or `nil` when the shape encloses no volume.
@@ -952,6 +1000,7 @@ public var volume: Double? { get }
 
 ---
 
+
 ### `signedVolume`
 
 The signed divergence integral over the shape's faces. **An orientation signal, not a measurement.**
@@ -971,6 +1020,7 @@ shell**, and normalising it (#170) depends on this sign.
 - **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed` left at its default.
 
 ---
+
 
 ### `orientedForward()`
 
@@ -995,6 +1045,7 @@ Reverses orientation only when `signedVolume < 0`. Already-correct solids, shell
   ```
 
 ---
+
 
 ### `surfaceArea`
 
@@ -1023,6 +1074,7 @@ public var surfaceArea: Double? { get }
   ```
 
 ---
+
 
 ### `centerOfMass`
 
@@ -1054,6 +1106,7 @@ public var centerOfMass: SIMD3<Double>? { get }
 
 ---
 
+
 ### `distance(to:deflection:)`
 
 Computes the minimum distance between this shape and another.
@@ -1074,6 +1127,7 @@ public func distance(to other: Shape, deflection: Double = 1e-6) -> DistanceResu
 
 ---
 
+
 ### `minDistance(to:)`
 
 Returns just the minimum distance scalar.
@@ -1086,6 +1140,7 @@ public func minDistance(to other: Shape) -> Double?
 - **OCCT:** `BRepExtrema_DistShapeShape` (via `distance(to:deflection:)`).
 
 ---
+
 
 ### `intersects(_:tolerance:)`
 
@@ -1101,6 +1156,7 @@ public func intersects(_ other: Shape, tolerance: Double = 1e-6) -> Bool
 
 ---
 
+
 ## Wire / Edge / Face Convenience Overloads
 
 The following overloads lift `Wire`, `Edge`, and `Face` into `Shape` before dispatching. They have the same semantics as their `Shape`-typed counterparts.
@@ -1115,6 +1171,7 @@ public func distance(to face: Face, deflection: Double = 1e-6) -> DistanceResult
 
 ---
 
+
 ### `intersects(_:tolerance:)`, Wire, Edge, Face
 
 ```swift
@@ -1124,6 +1181,7 @@ public func intersects(_ face: Face, tolerance: Double = 1e-6) -> Bool
 ```
 
 ---
+
 
 ### `vertexCount`
 
@@ -1140,6 +1198,7 @@ public var vertexCount: Int { get }
 
 ---
 
+
 ### `vertices()`
 
 Returns all vertex positions of the shape.
@@ -1154,6 +1213,7 @@ public func vertices() -> [SIMD3<Double>]
 
 ---
 
+
 ### `vertex(at:)`
 
 Returns the vertex at a specific zero-based index.
@@ -1167,6 +1227,7 @@ public func vertex(at index: Int) -> SIMD3<Double>?
 - **OCCT:** `TopExp::MapShapes` + `BRep_Tool::Pnt` (via `OCCTShapeGetVertexAt`).
 
 ---
+
 
 ## Selective Fillet / Draft / Defeaturing
 
@@ -1190,9 +1251,11 @@ public enum PipeSweepMode: Sendable {
 
 ---
 
+
 #### `auxiliary`
 
 ---
+
 
 ### `PipeTransitionMode`
 
@@ -1220,6 +1283,7 @@ The corner is filled by rotating the profile around an axis through the fracture
 
 ---
 
+
 ### `filleted(edges:radius:)`
 
 Fillets specific edges with a uniform radius.
@@ -1246,6 +1310,7 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
   ```
 
 ---
+
 
 ### `Shape.FilletResult`
 
@@ -1279,6 +1344,7 @@ public struct FilletResult: Sendable {
 
 ---
 
+
 #### `Shape.FilletResult.overwrittenDuplicateIndices`
 - **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
   nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
@@ -1292,6 +1358,7 @@ public struct FilletResult: Sendable {
   for distinct edges.
 
 ---
+
 
 ### `filletedWithReport(edges:radius:)`
 
@@ -1317,6 +1384,7 @@ public func filletedWithReport(edges: [Edge], radius: Double) -> FilletResult?
   ```
 
 ---
+
 
 ### `filleted(edges:startRadius:endRadius:)`
 
@@ -1346,6 +1414,7 @@ arc 10297.711861 (#612).
 
 ---
 
+
 ### `filletedWithReport(edges:startRadius:endRadius:)`
 
 `filleted(edges:startRadius:endRadius:)`, also reporting which requested edges OCCT declined
@@ -1362,6 +1431,7 @@ public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Do
 - **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`).
 
 ---
+
 
 ### `drafted(faces:direction:angle:neutralPlane:)`
 
@@ -1391,6 +1461,7 @@ public func drafted(
 
 ---
 
+
 ### `withoutFeatures(faces:)`
 
 Removes faces and heals the resulting gaps by extending adjacent faces.
@@ -1412,6 +1483,7 @@ Useful for simplifying imported geometry or removing small features before analy
   #578 it applies the same rule to a face this shape does not have: the whole call fails.
 
 ---
+
 
 ## Advanced / Variable-Section Pipe Sweep
 
@@ -1458,6 +1530,7 @@ used to be split across three other spellings.
 
 ---
 
+
 `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, deprecated since #503 and
 removed at v2.0.0 (#784), accepted a full `PipeSweepMode` but reached a bridge function that could
 only express `.frenet` and `.correctedFrenet`; `.fixed(binormal:)` and `.auxiliary(spine:)` were
@@ -1466,6 +1539,7 @@ swept as Frenet, a different solid from the one requested, returned as a success
 which takes the same `transition:` argument and honours every mode.
 
 ---
+
 
 ### `Shape.pipeShellWithLaw(spine:profile:law:solid:)`
 
@@ -1487,6 +1561,7 @@ The law value defines how the profile scales along the spine: 1.0 = no scaling, 
 - **OCCT:** `BRepOffsetAPI_MakePipeShell` with law function (via `OCCTShapeCreatePipeShellWithLaw`).
 
 ---
+
 
 ### `Shape.pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)`
 
@@ -1520,6 +1595,7 @@ Each profile is positioned in 3D at its station along the spine, and OCCT interp
 - **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 
 ---
+
 
 ### `Shape.helicalSweep(profiles:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)`
 
@@ -1561,6 +1637,7 @@ Builds the helix spine and an auxiliary spine that spans the full axial extent i
 
 ---
 
+
 ### `Shape.helicalSweep(profile:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)`
 
 Single-profile convenience overload for `helicalSweep(profiles:...)`.
@@ -1579,6 +1656,7 @@ public static func helicalSweep(profile: Wire,
 Calls `helicalSweep(profiles: [profile], ...)`.
 
 ---
+
 
 ## Surface Creation (v0.9.0)
 
@@ -1615,6 +1693,7 @@ public static func surface(
 
 ---
 
+
 ### `Shape.ruled(profile1:profile2:)`
 
 Creates a ruled surface between two wires.
@@ -1636,6 +1715,7 @@ Connects corresponding points on the two boundary wires with straight lines. Ret
   ```
 
 ---
+
 
 ### `shelled(thickness:openFaces:)`
 
@@ -1659,6 +1739,7 @@ public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
   ```
 
 ---
+
 
 ## Shape Healing / Analysis (v0.13.0)
 
@@ -1741,6 +1822,7 @@ public struct ShapeAnalysisResult {
 
 ---
 
+
 ### `analyze(tolerance:selfIntersectionTimeout:)`
 
 Analyzes a shape for problems such as small edges, gaps, and invalid topology.
@@ -1807,6 +1889,7 @@ public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? =
 
 ---
 
+
 ### `fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`
 
 Fixes shape problems with detailed control over what to repair.
@@ -1845,6 +1928,7 @@ public func fixed(tolerance: Double = 1e-6,
 
 ---
 
+
 ### `unified(unifyEdges:unifyFaces:concatBSplines:)`
 
 Merges faces and edges that lie on the same geometry after boolean operations.
@@ -1871,6 +1955,7 @@ public func unified(unifyEdges: Bool = true,
 
 ---
 
+
 ### `withoutSmallFaces(minArea:)`
 
 Removes faces smaller than the given area threshold.
@@ -1884,6 +1969,7 @@ public func withoutSmallFaces(minArea: Double) -> Shape?
 - **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveSmallFaces`), the small faces are collected by area and removed by defeaturing. (Corrected here: this row previously credited `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`, neither of which the implementation uses.)
 
 ---
+
 
 ### `simplified(tolerance:)`
 
@@ -1899,6 +1985,7 @@ public func simplified(tolerance: Double = 1e-6) -> Shape?
 - **The receiver is not modified**, and the result shares no sub-shapes with it, see `unified(...)` above (#446).
 
 ---
+
 
 ### `Wire.fixed(tolerance:)`
 
@@ -1918,6 +2005,7 @@ public func fixed(tolerance: Double = 1e-6) -> Wire?
 
 ---
 
+
 ### `Face.fixed(tolerance:)`
 
 Fixes face problems such as incorrect wire orientation, missing seams, and surface parameters.
@@ -1933,6 +2021,7 @@ Returns the fixed result as a `Shape` (not `Face`) because the repair can restru
 - **OCCT:** `ShapeFix_Face` (via `OCCTFaceFix`).
 
 ---
+
 
 ## Advanced Blends & Surface Filling (v0.14.0)
 
@@ -1966,6 +2055,7 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 
 ---
 
+
 #### `SurfaceContinuity.g2`
 
 ```swift
@@ -1982,6 +2072,7 @@ relying on OCCT's own throw being caught (#437). Curve constraints have no such 
 > removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
 > a different contract: see `docs/reference/Shape-Healing.md`.
 ---
+
 ### `FillingParameters`
 
 Parameters for N-sided surface filling.
@@ -2010,6 +2101,7 @@ public struct FillingParameters {
 #### `tolerance`
 
 ---
+
 ## Variable Radius Fillet (v0.14.0)
 
 ### `filletedVariable(edgeIndex:radiusProfile:)`
@@ -2059,6 +2151,7 @@ Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile po
 
 ---
 
+
 ## Multi-Edge Blend (v0.14.0)
 
 ### `blendedEdges(_:)`
@@ -2101,6 +2194,7 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 
 ---
 
+
 ### `blendedEdgesWithReport(_:)`
 
 `blendedEdges(_:)`, also reporting which requested edges OCCT declined to fillet, and which
@@ -2131,6 +2225,7 @@ public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double
   ```
 
 ---
+
 
 ## Surface Filling
 
@@ -2268,6 +2363,7 @@ public struct FillConstraint {
 
 ---
 
+
 #### `isBoundary`
 
 > **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
@@ -2276,6 +2372,7 @@ public struct FillConstraint {
 > throws, despite OCCT's own header docs naming it as the curvature-continuity value.
 
 ---
+
 
 ## Plate Surfaces (v0.14.0 / v0.23.0)
 
@@ -2305,6 +2402,7 @@ Requires at least 3 points.
 
 ---
 
+
 ### `Shape.plateSurface(constrainedBy:continuity:tolerance:)`
 
 Creates a plate surface constrained by boundary curves.
@@ -2322,6 +2420,7 @@ public static func plateSurface(
 - **OCCT:** `GeomPlate_BuildPlateSurface` with curve constraints (via `OCCTShapePlateCurves`).
 
 ---
+
 
 ### `Shape.plateSurface(through:orders:degree:pointsOnCurves:iterations:tolerance:)` (v0.23.0)
 
@@ -2354,6 +2453,7 @@ before any constraint is built, rather than relying on OCCT's own throw.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_PointConstraint` + `GeomPlate_MakeApprox` (via `OCCTShapePlatePointsAdvanced`).
 
 ---
+
 
 ### `Shape.plateSurface(pointConstraints:curveConstraints:degree:tolerance:)` (v0.23.0)
 
