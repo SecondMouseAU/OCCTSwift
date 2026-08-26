@@ -1002,7 +1002,7 @@ public static func lengthFactor(igesUnit: Int) -> Double
 ```
 
 - **Parameters:** `igesUnit`, IGES standard unit code.
-- **OCCT:** `OCCTUnitsGetLengthFactor` → `UnitsMethods::GetLengthFactor`.
+- **OCCT:** `OCCTUnitsGetLengthFactor` → `UnitsMethods::GetLengthFactorValue`.
 
 ---
 

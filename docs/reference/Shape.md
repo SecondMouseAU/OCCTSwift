@@ -1590,7 +1590,7 @@ public static func loadSTEPRoot(from url: URL, rootIndex: Int) throws -> Shape
 - **Parameters:** `url`, URL to the STEP file; `rootIndex`, 1-based root index.
 - **Returns:** The imported shape for that root.
 - **Throws:** `ImportError.importFailed` on failure.
-- **OCCT:** `STEPControl_Reader::Transfer` (via `OCCTImportSTEPRoot`).
+- **OCCT:** `STEPControl_Reader::TransferRoot` (via `OCCTImportSTEPRoot`).
 
 ---
 

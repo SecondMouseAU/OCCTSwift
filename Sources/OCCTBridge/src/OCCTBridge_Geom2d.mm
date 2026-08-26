@@ -31,6 +31,7 @@
 #include <Bisector_PolyBis.hxx>
 #include <IntRes2d_Domain.hxx>
 #include <IntRes2d_IntersectionPoint.hxx>
+#include <Geom2dInt_GInter.hxx>
 #include <Intf_InterferencePolygon2d.hxx>
 #include <ShapeConstruct_Curve.hxx>
 #include <Geom2dConvert_ApproxArcsSegments.hxx>
@@ -1150,11 +1151,13 @@ int32_t OCCTGccCircle2d2TanPt(OCCTCurve2DRef         c1,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Circ2d circ   = solver.ThisSolution(i + 1);
-      out[i].cx        = circ.Location().X();
-      out[i].cy        = circ.Location().Y();
-      out[i].radius    = circ.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d circ = solver.ThisSolution(i + 1);
+      out[i].cx      = circ.Location().X();
+      out[i].cy      = circ.Location().Y();
+      out[i].radius  = circ.Radius();
+      GccEnt_Position qq1, qq2, qq3;
+      solver.WhichQualifier(i + 1, qq1, qq2, qq3);
+      out[i].qualifier = (int32_t)qq1;
     }
     return n;
   }
@@ -1184,11 +1187,13 @@ int32_t OCCTGccCircle2dTanCen(OCCTCurve2DRef         curve,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Circ2d circ   = solver.ThisSolution(i + 1);
-      out[i].cx        = circ.Location().X();
-      out[i].cy        = circ.Location().Y();
-      out[i].radius    = circ.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d circ = solver.ThisSolution(i + 1);
+      out[i].cx      = circ.Location().X();
+      out[i].cy      = circ.Location().Y();
+      out[i].radius  = circ.Radius();
+      GccEnt_Position qq;
+      solver.WhichQualifier(i + 1, qq);
+      out[i].qualifier = (int32_t)qq;
     }
     return n;
   }
@@ -1223,11 +1228,13 @@ int32_t OCCTGccCircle2d2TanRad(OCCTCurve2DRef         c1,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Circ2d circ   = solver.ThisSolution(i + 1);
-      out[i].cx        = circ.Location().X();
-      out[i].cy        = circ.Location().Y();
-      out[i].radius    = circ.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d circ = solver.ThisSolution(i + 1);
+      out[i].cx      = circ.Location().X();
+      out[i].cy      = circ.Location().Y();
+      out[i].radius  = circ.Radius();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return n;
   }
@@ -1260,11 +1267,13 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef         curve,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Circ2d circ   = solver.ThisSolution(i + 1);
-      out[i].cx        = circ.Location().X();
-      out[i].cy        = circ.Location().Y();
-      out[i].radius    = circ.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d circ = solver.ThisSolution(i + 1);
+      out[i].cx      = circ.Location().X();
+      out[i].cy      = circ.Location().Y();
+      out[i].radius  = circ.Radius();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return n;
   }
@@ -1370,12 +1379,14 @@ int32_t OCCTGccLine2d2Tan(OCCTCurve2DRef       c1,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Lin2d lin     = solver.ThisSolution(i + 1);
-      out[i].px        = lin.Location().X();
-      out[i].py        = lin.Location().Y();
-      out[i].dx        = lin.Direction().X();
-      out[i].dy        = lin.Direction().Y();
-      out[i].qualifier = 0;
+      gp_Lin2d lin = solver.ThisSolution(i + 1);
+      out[i].px    = lin.Location().X();
+      out[i].py    = lin.Location().Y();
+      out[i].dx    = lin.Direction().X();
+      out[i].dy    = lin.Direction().Y();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return n;
   }
@@ -1405,12 +1416,14 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef       curve,
     int32_t n = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Lin2d lin     = solver.ThisSolution(i + 1);
-      out[i].px        = lin.Location().X();
-      out[i].py        = lin.Location().Y();
-      out[i].dx        = lin.Direction().X();
-      out[i].dy        = lin.Direction().Y();
-      out[i].qualifier = 0;
+      gp_Lin2d lin = solver.ThisSolution(i + 1);
+      out[i].px    = lin.Location().X();
+      out[i].py    = lin.Location().Y();
+      out[i].dx    = lin.Direction().X();
+      out[i].dy    = lin.Direction().Y();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return n;
   }
@@ -1980,11 +1993,13 @@ int32_t OCCTGccAnaCirc2d2TanOnLinLin(double                 l1px,
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < nb; i++)
     {
-      gp_Circ2d sol    = solver.ThisSolution(i + 1);
-      out[i].cx        = sol.Location().X();
-      out[i].cy        = sol.Location().Y();
-      out[i].radius    = sol.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d sol = solver.ThisSolution(i + 1);
+      out[i].cx     = sol.Location().X();
+      out[i].cy     = sol.Location().Y();
+      out[i].radius = sol.Radius();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return nb;
   }
@@ -2022,11 +2037,13 @@ int32_t OCCTGccAnaCirc2dTanOnRadLin(double                 lpx,
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < nb; i++)
     {
-      gp_Circ2d sol    = solver.ThisSolution(i + 1);
-      out[i].cx        = sol.Location().X();
-      out[i].cy        = sol.Location().Y();
-      out[i].radius    = sol.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d sol = solver.ThisSolution(i + 1);
+      out[i].cx     = sol.Location().X();
+      out[i].cy     = sol.Location().Y();
+      out[i].radius = sol.Radius();
+      GccEnt_Position qq;
+      solver.WhichQualifier(i + 1, qq);
+      out[i].qualifier = (int32_t)qq;
     }
     return nb;
   }
@@ -2064,11 +2081,13 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef         c1,
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < nb; i++)
     {
-      gp_Circ2d sol    = solver.ThisSolution(i + 1);
-      out[i].cx        = sol.Location().X();
-      out[i].cy        = sol.Location().Y();
-      out[i].radius    = sol.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d sol = solver.ThisSolution(i + 1);
+      out[i].cx     = sol.Location().X();
+      out[i].cy     = sol.Location().Y();
+      out[i].radius = sol.Radius();
+      GccEnt_Position qq1, qq2;
+      solver.WhichQualifier(i + 1, qq1, qq2);
+      out[i].qualifier = (int32_t)qq1;
     }
     return nb;
   }
@@ -2101,11 +2120,13 @@ int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef         curve,
     int32_t nb = std::min((int32_t)solver.NbSolutions(), max);
     for (int32_t i = 0; i < nb; i++)
     {
-      gp_Circ2d sol    = solver.ThisSolution(i + 1);
-      out[i].cx        = sol.Location().X();
-      out[i].cy        = sol.Location().Y();
-      out[i].radius    = sol.Radius();
-      out[i].qualifier = 0;
+      gp_Circ2d sol = solver.ThisSolution(i + 1);
+      out[i].cx     = sol.Location().X();
+      out[i].cy     = sol.Location().Y();
+      out[i].radius = sol.Radius();
+      GccEnt_Position qq;
+      solver.WhichQualifier(i + 1, qq);
+      out[i].qualifier = (int32_t)qq;
     }
     return nb;
   }
@@ -8903,15 +8924,17 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c1->curve, c2->curve, tolerance);
-    int32_t                   n = std::min((int32_t)inter.NbPoints(), max);
+    const Geom2dInt_GInter&   alg = inter.Intersector();
+    if (!alg.IsDone() || alg.IsEmpty())
+      return 0;
+    int32_t n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Pnt2d p = inter.Point(i + 1);
-      out[i].x   = p.X();
-      out[i].y   = p.Y();
-      // Parameters not directly available from this API for all intersection types
-      out[i].u1 = 0;
-      out[i].u2 = 0;
+      const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
+      out[i].x                             = pt.Value().X();
+      out[i].y                             = pt.Value().Y();
+      out[i].u1                            = pt.ParamOnFirst();
+      out[i].u2                            = pt.ParamOnSecond();
     }
     return n;
   }
@@ -8931,14 +8954,17 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
   try
   {
     Geom2dAPI_InterCurveCurve inter(c->curve, tolerance);
-    int32_t                   n = std::min((int32_t)inter.NbPoints(), max);
+    const Geom2dInt_GInter&   alg = inter.Intersector();
+    if (!alg.IsDone() || alg.IsEmpty())
+      return 0;
+    int32_t n = std::min((int32_t)inter.NbPoints(), max);
     for (int32_t i = 0; i < n; i++)
     {
-      gp_Pnt2d p = inter.Point(i + 1);
-      out[i].x   = p.X();
-      out[i].y   = p.Y();
-      out[i].u1  = 0;
-      out[i].u2  = 0;
+      const IntRes2d_IntersectionPoint& pt = alg.Point(i + 1);
+      out[i].x                             = pt.Value().X();
+      out[i].y                             = pt.Value().Y();
+      out[i].u1                            = pt.ParamOnFirst();
+      out[i].u2                            = pt.ParamOnSecond();
     }
     return n;
   }

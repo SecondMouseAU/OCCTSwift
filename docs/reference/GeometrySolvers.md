@@ -1058,7 +1058,7 @@ public func nearest(to point: SIMD3<Double>) -> (index: Int, distance: Double)?
 
 - **Parameters:** `point`, the query point.
 - **Returns:** A `(index, distance)` tuple where `index` is the 0-based index into the original `points` array and `distance` is the Euclidean distance, or `nil` on error.
-- **OCCT:** `NCollection_KDTree::FindNearest`.
+- **OCCT:** `NCollection_KDTree::NearestPoint`.
 - **Example:**
   ```swift
   if let (idx, dist) = tree.nearest(to: SIMD3(0.4, 0.4, 0)) {

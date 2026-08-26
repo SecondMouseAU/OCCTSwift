@@ -1323,11 +1323,20 @@ OCCTShapeRef OCCTImportOBJ(const char* path)
   }
 }
 
-bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
+// Shared XDE export pipeline for OBJ/PLY and similar formats.
+// Tessellates the shape, creates an XDE document, adds the shape, collects root labels,
+// and invokes the provided writer factory to perform the write.
+// The writerFactory is a callable taking (const char* path) and returning a writer
+// that has a Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange()) method.
+// Returns true on success, false on any error.
+template <typename WriterFactory>
+static bool occtExportCafImpl(OCCTShapeRef    shape,
+                              const char*     path,
+                              double          deflection,
+                              WriterFactory&& writerFactory)
 {
   if (!shape || !path)
     return false;
-
   try
   {
     // Tessellate the shape first
@@ -1343,8 +1352,7 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
 
     shapeTool->AddShape(shape->shape);
 
-    // Write OBJ
-    RWObj_CafWriter                 writer(path);
+    // Collect root labels
     NCollection_Sequence<TDF_Label> rootLabels;
     TDF_LabelSequence               freeShapes;
     shapeTool->GetFreeShapes(freeShapes);
@@ -1352,6 +1360,9 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
     {
       rootLabels.Append(freeShapes.Value(i));
     }
+
+    // Create and configure writer via factory, then perform write
+    auto writer = writerFactory(path);
     NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
     bool success = writer.Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange());
 
@@ -1362,6 +1373,13 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
   {
     return false;
   }
+}
+
+bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection)
+{
+  return occtExportCafImpl(shape, path, deflection, [](const char* p) {
+    return RWObj_CafWriter(p);
+  });
 }
 
 // MARK: - PLY Export (v0.17.0)
@@ -1954,6 +1972,7 @@ bool OCCTDocumentWritePLY(OCCTDocumentRef doc,
 #include <RWPly_CafWriter.hxx>
 
 // #794: shared helper for PLY Export (base vs WithOptions)
+// Uses the shared XDE export pipeline (occtExportCafImpl) with a PLY-specific writer factory.
 static bool occtExportPLYImpl(OCCTShapeRef shape,
                               const char*  path,
                               double       deflection,
@@ -1961,45 +1980,13 @@ static bool occtExportPLYImpl(OCCTShapeRef shape,
                               bool         colors,
                               bool         texCoords)
 {
-  if (!shape || !path)
-    return false;
-  try
-  {
-    // Tessellate the shape first
-    BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-    mesher.Perform();
-
-    // Create an XDE document
-    Handle(TDocStd_Document)    doc;
-    Handle(TDocStd_Application) app = new TDocStd_Application();
-    Handle(XCAFDoc_ShapeTool)   shapeTool;
-    if (!occtDocumentInit(app, doc, &shapeTool, nullptr, nullptr))
-      return false;
-
-    shapeTool->AddShape(shape->shape);
-
-    // Write PLY
-    RWPly_CafWriter writer(path);
-    writer.SetNormals(normals);
-    writer.SetColors(colors);
-    writer.SetTexCoords(texCoords);
-    NCollection_Sequence<TDF_Label> rootLabels;
-    TDF_LabelSequence               freeShapes;
-    shapeTool->GetFreeShapes(freeShapes);
-    for (int i = 1; i <= freeShapes.Length(); ++i)
-    {
-      rootLabels.Append(freeShapes.Value(i));
-    }
-    NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;
-    bool success = writer.Perform(doc, rootLabels, nullptr, fileInfo, Message_ProgressRange());
-
-    app->Close(doc);
-    return success;
-  }
-  catch (...)
-  {
-    return false;
-  }
+  return occtExportCafImpl(shape, path, deflection, [normals, colors, texCoords](const char* p) {
+    RWPly_CafWriter w(p);
+    w.SetNormals(normals);
+    w.SetColors(colors);
+    w.SetTexCoords(texCoords);
+    return w;
+  });
 }
 
 bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection)
