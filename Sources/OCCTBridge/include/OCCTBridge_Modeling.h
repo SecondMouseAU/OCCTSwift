@@ -2048,13 +2048,6 @@ OCCTWireRef _Nullable OCCTWireMakePolygonFromPoints(const double* coords,
 
 // --- BRepLib_MakeWire ---
 
-/// Create a wire from an array of edge shapes.
-/// @param edges Array of edge shapes
-/// @param count Number of edges
-/// @return Wire, or NULL on failure
-OCCTWireRef _Nullable OCCTWireMakeWireFromEdges(const OCCTShapeRef _Nonnull* _Nonnull edges,
-                                                int32_t count);
-
 /// Create a wire from an array of OCCTEdgeRef objects.
 /// @param edges Array of edge refs
 /// @param count Number of edges

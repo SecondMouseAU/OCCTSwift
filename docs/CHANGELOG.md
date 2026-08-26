@@ -59,6 +59,27 @@ out:
 `Curve3D.swift`. No public API changes: same types, same signatures, same module, just relocated.
 `BRepGraph.swift` and `Curve3D.swift` were re-measured and confirmed to need no split of their own.
 
+### Bridge surface Swift couldn't reach: BRepGraph occurrence placements now readable, two orphan functions resolved (#1010)
+
+Three pieces of bridge surface no Swift code could reach or observe:
+
+- `BRepGraph.shape(nodeKind: .occurrence, nodeIndex:)` now applies the occurrence's placement to
+  the returned shape. New readers `occurrenceRefLocalLocation(_:)` / `childRefLocalLocation(_:)`
+  (plus five sibling getters for vertex/coedge/wire/face/shell/solid refs, which OCCT 8.0.0p1 never
+  stores a location for and so always return `nil`) make the four previously write-only placement
+  setters testable at all.
+- `OCCTBRepExtremaExtCCEdges`, an orphaned bridge function with no Swift caller, is now exposed as
+  `Shape.edgeEdgeExtrema(edge1:edge2:)`: edge-edge distance extrema between two standalone edge
+  shapes, without needing indices into a parent shape.
+- `OCCTWireMakeWireFromEdges`, the other orphan, is removed: it overlapped `Wire.wireFromEdges(_:)`
+  and `Shape.wireFromEdges(_:)`, both already wrapped.
+
+Also fixed along the way: `kindFromInt()` (the bridge's `int32_t -> BRepGraph_NodeId::Kind`
+translator, shared by 22 call sites) never had cases for the `Product`/`Occurrence` node kinds added
+for the ProductOps assembly-building surface; both silently fell through to `Kind::Solid`. Nothing
+before this PR called it with those kinds from Swift, so the gap was latent until the new
+occurrence-shape reader exercised it.
+
 ### Fixed `Shape.isSelfIntersecting(hardTimeout:)` probe clones geometry, not just topology ([#1160](https://github.com/SecondMouseAU/OCCTSwift/issues/1160))
 
 `Shape.isSelfIntersecting(hardTimeout:)`'s background probe now clones geometry (`copyGeometry: true`), not just topology, removing a latent BSpline-adaptor-cache race with the caller's continued use of the original shape.

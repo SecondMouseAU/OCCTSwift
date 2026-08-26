@@ -193,6 +193,11 @@ static BRepGraph_NodeId::Kind kindFromInt(int32_t k)
       return BRepGraph_NodeId::Kind::CompSolid;
     case 8:
       return BRepGraph_NodeId::Kind::CoEdge;
+    // 9 is reserved (BRepGraph_NodeId::Kind has no value there); falls through to default.
+    case 10:
+      return BRepGraph_NodeId::Kind::Product;
+    case 11:
+      return BRepGraph_NodeId::Kind::Occurrence;
     default:
       return BRepGraph_NodeId::Kind::Solid;
   }
@@ -4689,6 +4694,110 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+  }
+}
+
+// MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
+
+bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: vertex refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: coedge refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: wire refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: face refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: shell refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: solid refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
+                                                int32_t          occurrenceRefIndex,
+                                                double*          outMatrix)
+{
+  if (!g || !outMatrix)
+    return false;
+  try
+  {
+    // OCCT 8.0.0p1: Use generic Refs().Gen() interface for cross-kind ref queries.
+    BRepGraph_RefId rid(BRepGraph_RefId::Kind::Occurrence, (uint32_t)occurrenceRefIndex);
+    TopLoc_Location loc = g->graph.Refs().Gen().LocalLocation(rid);
+    occtMatrix12FromLocation(loc, outMatrix);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
+                                           int32_t          childRefIndex,
+                                           double*          outMatrix)
+{
+  if (!g || !outMatrix)
+    return false;
+  try
+  {
+    TopLoc_Location loc = g->graph.Refs().Gen().LocalLocation(BRepGraph_ChildRefId(childRefIndex));
+    occtMatrix12FromLocation(loc, outMatrix);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+// Find the occurrence reference index for a given occurrence definition index.
+// Returns -1 if not found.
+int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g, int32_t occurrenceDefIndex)
+{
+  if (!g)
+    return -1;
+  try
+  {
+    int32_t nbRefs = g->graph.Refs().Occurrences().Nb();
+    for (int32_t i = 0; i < nbRefs; ++i)
+    {
+      BRepGraph_RefId rid(BRepGraph_RefId::Kind::Occurrence, (uint32_t)i);
+      if (g->graph.Refs().Gen().IsRemoved(rid))
+        continue;
+      // Get the child node (occurrence definition) this ref points to
+      BRepGraph_NodeId nid = g->graph.Refs().Gen().ChildNode(rid);
+      if (nid.IsValid() && nid.NodeKind == BRepGraph_NodeId::Kind::Occurrence
+          && (int32_t)nid.Index == occurrenceDefIndex)
+        return i;
+    }
+    return -1;
+  }
+  catch (...)
+  {
+    return -1;
   }
 }
 

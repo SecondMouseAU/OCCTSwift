@@ -2999,6 +2999,13 @@ inline void occtMatrix12InterleavedFromTrsf(const gp_Trsf& t, double* m)
   m[11] = t.Value(3, 4);
 }
 
+/// Convert a TopLoc_Location to twelve INTERLEAVED doubles (row-major 3x4 matrix).
+/// Inverse of occtLocationFromMatrix12Interleaved.
+inline void occtMatrix12FromLocation(const TopLoc_Location& loc, double* m)
+{
+  occtMatrix12InterleavedFromTrsf(loc.Transformation(), m);
+}
+
 /// The location described by the twelve INTERLEAVED doubles at `m`. The composite both callers
 /// wanted: a gp_Trsf built as above and wrapped, which is what a placement or a shape location is.
 inline TopLoc_Location occtLocationFromMatrix12Interleaved(const double* m)
