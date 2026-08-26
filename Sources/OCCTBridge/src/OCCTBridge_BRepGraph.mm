@@ -4731,7 +4731,7 @@ bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
 }
 
 bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
-                                                int32_t          occurrenceDefIndex,
+                                                int32_t          occurrenceRefIndex,
                                                 double*          outMatrix)
 {
   if (!g || !outMatrix)
@@ -4739,7 +4739,7 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
   try
   {
     TopLoc_Location loc =
-      g->graph.Topo().Occurrences().OccurrenceLocation(BRepGraph_OccurrenceId(occurrenceDefIndex));
+      g->graph.Refs().Occurrences().RefLocalLocation(BRepGraph_OccurrenceRefId(occurrenceRefIndex));
     occtMatrix12FromLocation(loc, outMatrix);
     return true;
   }
@@ -4750,8 +4750,8 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
 }
 
 bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
-                                           int32_t          childRefIndex,
-                                           double*          outMatrix)
+                                            int32_t          childRefIndex,
+                                            double*          outMatrix)
 {
   if (!g || !outMatrix)
     return false;
@@ -4764,6 +4764,33 @@ bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
   catch (...)
   {
     return false;
+  }
+}
+
+// Find the occurrence reference index for a given occurrence definition index.
+// Returns -1 if not found.
+int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g,
+                                            int32_t          occurrenceDefIndex)
+{
+  if (!g)
+    return -1;
+  try
+  {
+    int32_t nbRefs = g->graph.Refs().Occurrences().Nb();
+    for (int32_t i = 0; i < nbRefs; ++i)
+    {
+      BRepGraph_OccurrenceRefId refId(i);
+      if (!g->graph.Refs().Occurrences().IsActive(refId))
+        continue;
+      BRepGraph_OccurrenceId occDefId = g->graph.Refs().Occurrences().Occurrence(refId);
+      if (occDefId.IsValid() && (int32_t)occDefId.Index == occurrenceDefIndex)
+        return i;
+    }
+    return -1;
+  }
+  catch (...)
+  {
+    return -1;
   }
 }
 
