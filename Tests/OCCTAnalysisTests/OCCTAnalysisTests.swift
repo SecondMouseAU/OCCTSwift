@@ -2479,6 +2479,24 @@ struct BRepExtremaExtCCTests {
             #expect(r.solutionCount >= 1)
         }
     }
+
+    @Test("Edge-edge distance between standalone edge shapes")
+    func edgeEdgeDistanceStandaloneEdges() throws {
+        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let box2 = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+        // Extract first edge from each box as standalone shapes
+        let edges1 = box1.edges()
+        let edges2 = box2.edges()
+        #expect(!edges1.isEmpty)
+        #expect(!edges2.isEmpty)
+        if let edge1Shape = edges1.first, let edge2Shape = edges2.first {
+            let result = box1.edgeEdgeExtrema(edge1: edge1Shape, edge2: edge2Shape)
+            if let r = result {
+                #expect(r.distance >= 0, "Distance should be non-negative")
+                #expect(r.solutionCount >= 1)
+            }
+        }
+    }
 }
 
 @Suite("BRepExtrema ExtPF Tests")

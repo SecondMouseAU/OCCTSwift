@@ -4692,6 +4692,82 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
   }
 }
 
+// MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
+
+bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: vertex refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: coedge refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: wire refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: face refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: shell refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
+{
+  // OCCT 8.0.0p1: solid refs do not store a local location
+  return false;
+}
+
+bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
+                                                int32_t occurrenceRefIndex,
+                                                double* outMatrix)
+{
+  if (!g || !outMatrix)
+    return false;
+  try
+  {
+    TopLoc_Location loc = g->graph.Editor().Occurrences().RefLocalLocation(
+      BRepGraph_OccurrenceRefId(occurrenceRefIndex));
+    occtMatrix12FromLocation(loc, outMatrix);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
+                                           int32_t childRefIndex,
+                                           double* outMatrix)
+{
+  if (!g || !outMatrix)
+    return false;
+  try
+  {
+    TopLoc_Location loc = g->graph.Editor().Gen().ChildRefLocalLocation(
+      BRepGraph_ChildRefId(childRefIndex));
+    occtMatrix12FromLocation(loc, outMatrix);
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
 // MARK: - BRepGraph EditorView v0.163.0. ProductOps assembly building
 
 int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,

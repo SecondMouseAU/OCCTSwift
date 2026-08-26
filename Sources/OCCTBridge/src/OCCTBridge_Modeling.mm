@@ -6169,40 +6169,8 @@ OCCTWireRef _Nullable OCCTWireMakePolygonFromPoints(const double* coords,
 
 // --- BRepLib_MakeWire ---
 
-OCCTWireRef _Nullable OCCTWireMakeWireFromEdges(const OCCTShapeRef _Nonnull* _Nonnull edges,
-                                                int32_t count)
-{
-  if (!edges || count < 1)
-    return nullptr;
-  try
-  {
-    BRepLib_MakeWire mw;
-    for (int32_t i = 0; i < count; i++)
-    {
-      if (!edges[i])
-        return nullptr;
-      // #975: occtEdgeAt(shape, 0) is this bridge's one spelling of "the first edge of this
-      // shape", and takes a bare edge as readily as a wire, face, solid or compound holding one.
-      // See OCCTBridge_Internal.h.
-      TopoDS_Edge edge = occtEdgeAt(edges[i]->shape, 0);
-      if (edge.IsNull())
-        return nullptr;
-      mw.Add(edge);
-    }
-    if (!mw.IsDone())
-      return nullptr;
-    auto* wire = new OCCTWire();
-    wire->wire = mw.Wire();
-    return wire;
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 OCCTWireRef _Nullable OCCTWireMakeWireFromEdgeRefs(const OCCTEdgeRef _Nonnull* _Nonnull edges,
-                                                   int32_t count)
+                                                 int32_t count)
 {
   if (!edges || count < 1)
     return nullptr;

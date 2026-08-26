@@ -988,6 +988,31 @@ extension Shape {
         )
     }
 
+    /// Compute distance extrema between two standalone edge shapes.
+    ///
+    /// Uses BRepExtrema_ExtCCEdges for edge-edge distance computation between
+    /// two shapes that each contain a single edge (e.g., wire shapes).
+    /// This is useful when you have extracted edge shapes and want to compute
+    /// their distance without needing indices into a parent shape.
+    ///
+    /// - Parameters:
+    ///   - edge1: First edge shape (must contain an edge topology)
+    ///   - edge2: Second edge shape (must contain an edge topology)
+    /// - Returns: Edge-edge extrema result, or nil on failure
+    public func edgeEdgeExtrema(edge1: Shape, edge2: Shape) -> EdgeEdgeExtrema? {
+        let result = OCCTBRepExtremaExtCCEdges(edge1.handle, edge2.handle)
+        guard result.solutionCount > 0 else { return nil }
+        return EdgeEdgeExtrema(
+            distance: result.distance,
+            paramOnEdge1: result.paramOnE1,
+            paramOnEdge2: result.paramOnE2,
+            pointOnEdge1: SIMD3(result.pt1x, result.pt1y, result.pt1z),
+            pointOnEdge2: SIMD3(result.pt2x, result.pt2y, result.pt2z),
+            isParallel: result.isParallel,
+            solutionCount: Int(result.solutionCount)
+        )
+    }
+
     // MARK: - BRepExtrema_ExtPF (Point-Face Extrema)
 
     /// Result of point-face distance extrema computation.
