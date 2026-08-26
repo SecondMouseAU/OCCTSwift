@@ -1170,11 +1170,15 @@ def ocaf_findattribute_sites(body, decls_by_var):
         label_var, handle_var = m.group(1), m.group(2)
         # Check if handle_var is declared as an OCAF handle
         if handle_var in decls_by_var:
-            # Get the attribute type from the declaration
-            for decl_start, decl_o, decl_c, attr_type in decls_by_var[handle_var]:
-                if decl_o < m.start() < decl_c:
-                    sites.append((handle_var, attr_type, decl_start, decl_c, m.end(), label_var))
-                    break
+            decls = decls_by_var[handle_var]
+            # Use ocaf_binds_to to correctly resolve shadowing: picks the innermost declaration
+            decl_start = ocaf_binds_to(decls, m.start())
+            if decl_start is not None:
+                # Find the declaration tuple to get attr_type and decl_end
+                for d_start, decl_o, decl_c, attr_type in decls:
+                    if d_start == decl_start:
+                        sites.append((handle_var, attr_type, decl_start, decl_c, m.end(), label_var))
+                        break
     return sites
 
 
