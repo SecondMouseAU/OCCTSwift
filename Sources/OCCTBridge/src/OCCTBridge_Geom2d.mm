@@ -8975,10 +8975,6 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
 
 // Projection
 
-// Projection
-
-// Projection
-
 // Failure contract: distance < 0. The point/parameter fields are left zeroed and must not be
 // read when it is negative.
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef c, double px, double py)
