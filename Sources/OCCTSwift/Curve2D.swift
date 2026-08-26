@@ -1131,7 +1131,7 @@ public final class Curve2D: @unchecked Sendable {
         case quasiAngular = 5
         /// Rational, with a C1-continuous denominator across spans.
         case rationalC1 = 6
-        /// Non-rational, eight poles, and the only approximate option.
+        /// Non-rational, seven poles, and the only approximate option.
         case polynomial = 7
     }
 
