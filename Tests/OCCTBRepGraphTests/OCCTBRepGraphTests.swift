@@ -447,13 +447,14 @@ struct BRepGraphShapeReconstructionTests {
                 if let occShape {
                     // The occurrence shape should be the box translated by (5, 6, 7)
                     // Box originally spans -5..5, so translated box spans 0..10, 1..11, 2..12
-                    let bbox = occShape.boundingBox()
-                    #expect(abs(bbox.min.x - 0.0) < 1e-6)
-                    #expect(abs(bbox.min.y - 1.0) < 1e-6)
-                    #expect(abs(bbox.min.z - 2.0) < 1e-6)
-                    #expect(abs(bbox.max.x - 10.0) < 1e-6)
-                    #expect(abs(bbox.max.y - 11.0) < 1e-6)
-                    #expect(abs(bbox.max.z - 12.0) < 1e-6)
+                    if let bbox = occShape.boundingBox {
+                        #expect(abs(bbox.min.x - 0.0) < 1e-6)
+                        #expect(abs(bbox.min.y - 1.0) < 1e-6)
+                        #expect(abs(bbox.min.z - 2.0) < 1e-6)
+                        #expect(abs(bbox.max.x - 10.0) < 1e-6)
+                        #expect(abs(bbox.max.y - 11.0) < 1e-6)
+                        #expect(abs(bbox.max.z - 12.0) < 1e-6)
+                    }
                 }
             }
         }
