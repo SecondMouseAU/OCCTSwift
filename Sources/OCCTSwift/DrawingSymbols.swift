@@ -327,7 +327,7 @@ extension DrawingAnnotation {
     ) -> [DrawingAnnotation] {
         let mid = (from + to) / 2
         let dir = simd_normalize(to - from)
-        let perp = SIMD2(-dir.y, dir.x)
+        let perp = leftPerpendicular2D(of: dir)
         let step = 2.0
         let p1 = mid - step * dir
         let p2 = mid - 0.5 * step * dir + amplitude * perp

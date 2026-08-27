@@ -69,6 +69,33 @@ public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
     }
 }
 
+/// The 2D left-perpendicular of `direction`: rotate 90° counter-clockwise.
+///
+/// For a unit direction `(cosθ, sinθ)` this is the trig identity `(-sinθ, cosθ)`; for a named
+/// vector `d` it's `(-d.y, d.x)`. The two spellings are the same computation, and this file's
+/// drawing/annotation layer had **six** independent hand-derivations of it with no shared home
+/// (#1182, Pass 4b duplication audit, #386): `arrowheadBasePoints` below, plus
+/// `DrawingDispatch.swift`'s `emitLinear`/`emitRadial`/`emitDiameter`, `DrawingSymbols.swift`'s
+/// `breakLine`, and `DrawingThreadAnnotation.swift`'s `cosmeticThreadSideView` — the trig-form
+/// sites (`emitRadial`/`emitDiameter`) are why a naive grep for `SIMD2(-x.y, x.x)` missed two of
+/// the seven sites the original audit finding named.
+///
+/// A wrong sign here is not always a visual no-op: `breakLine`'s zigzag kink direction and the
+/// upper/lower stacking order of a toleranced dimension's text (`emitTolerancedText`'s
+/// `stackOffset`) both depend on which way this rotates.
+///
+/// Distinct from `perpendicularBasis(to:)` (`PerpendicularBasis.swift`): that one builds a full
+/// 3D orthonormal basis for a view/projection axis (`gp_Ax2`-style, two output vectors), used by
+/// HLR projection elsewhere in this module; this is a single 2D vector rotation for annotation
+/// layout math and never crosses into 3D or into OCCT.
+///
+/// ```swift
+/// leftPerpendicular2D(of: SIMD2(1, 0))  // == SIMD2(0, 1)
+/// ```
+internal func leftPerpendicular2D(of direction: SIMD2<Double>) -> SIMD2<Double> {
+    SIMD2(-direction.y, direction.x)
+}
+
 /// The two base points of an arrowhead or triangle pointer.
 ///
 /// Given the point the shape points at (`apex`), the unit `direction` it points along (base →
@@ -99,7 +126,7 @@ internal func arrowheadBasePoints(
     backset: Double,
     halfWidth: Double
 ) -> (left: SIMD2<Double>, right: SIMD2<Double>) {
-    let perp = SIMD2(-direction.y, direction.x)
+    let perp = leftPerpendicular2D(of: direction)
     let baseMid = apex - direction * backset
     return (baseMid + perp * halfWidth, baseMid - perp * halfWidth)
 }
