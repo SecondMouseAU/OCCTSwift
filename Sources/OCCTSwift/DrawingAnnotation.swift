@@ -89,7 +89,18 @@ public enum DrawingDimension: Sendable, Hashable {
         public var value: Double { simd_distance(from, to) }
     }
 
-    public struct Radial: Sendable, Hashable {
+    /// Shared field set for `.radial` and `.diameter` dimensions: a circle (or arc)
+    /// defined by `centre` + `radius`, with a leader line exiting at `leaderAngle`.
+    ///
+    /// `Radial` and `Diameter` (#1185) are both aliases of this one type — the two enum
+    /// cases differ only in how `DrawingDimension.value` reads `radius` (`radius` for
+    /// `.radial`, `2 * radius` for `.diameter`) and in how `DrawingDispatch`'s
+    /// `emitRadial`/`emitDiameter` render the leader (a radius leader to the rim vs. a
+    /// line straight through the circle); that divergence is legitimate and stays
+    /// per-case. Before #1185 `Radial` and `Diameter` were two field-for-field-identical
+    /// struct declarations kept in sync by hand, and `leaderAngle`'s doc comment had
+    /// already drifted (present on `Radial`, missing on `Diameter`) as a result.
+    public struct Circular: Sendable, Hashable {
         public var centre: SIMD2<Double>
         public var radius: Double
         /// Angle (radians) at which the leader line exits the circle.
@@ -114,37 +125,15 @@ public enum DrawingDimension: Sendable, Hashable {
             self.id = id
             self.tolerance = tolerance
         }
-
-        public var value: Double { radius }
     }
 
-    public struct Diameter: Sendable, Hashable {
-        public var centre: SIMD2<Double>
-        public var radius: Double
-        public var leaderAngle: Double
-        public var label: String?
-        public var style: DrawingLineStyle
-        public var id: String?
-        public var tolerance: DrawingTolerance
+    /// A radius dimension callout on a circle or arc. `DrawingDimension.value` for a
+    /// `.radial(Radial)` case reports `radius` unchanged.
+    public typealias Radial = Circular
 
-        public init(
-            centre: SIMD2<Double>, radius: Double,
-            leaderAngle: Double = .pi / 4,
-            label: String? = nil,
-            style: DrawingLineStyle = .solid, id: String? = nil,
-            tolerance: DrawingTolerance = .none
-        ) {
-            self.centre = centre
-            self.radius = radius
-            self.leaderAngle = leaderAngle
-            self.label = label
-            self.style = style
-            self.id = id
-            self.tolerance = tolerance
-        }
-
-        public var value: Double { 2 * radius }
-    }
+    /// A diameter dimension callout on a circle, typically prefixed `⌀` in output.
+    /// `DrawingDimension.value` for a `.diameter(Diameter)` case reports `2 * radius`.
+    public typealias Diameter = Circular
 
     public struct Angular: Sendable, Hashable {
         /// Vertex at which the two rays meet.
@@ -222,8 +211,8 @@ public enum DrawingDimension: Sendable, Hashable {
     public var id: String? {
         switch self {
         case .linear(let d): return d.id
-        case .radial(let d): return d.id
-        case .diameter(let d): return d.id
+        // .radial and .diameter share `Circular` (#1185): same field, one arm.
+        case .radial(let d), .diameter(let d): return d.id
         case .angular(let d): return d.id
         case .ordinate(let d): return d.id
         }
@@ -232,8 +221,7 @@ public enum DrawingDimension: Sendable, Hashable {
     public var label: String? {
         switch self {
         case .linear(let d): return d.label
-        case .radial(let d): return d.label
-        case .diameter(let d): return d.label
+        case .radial(let d), .diameter(let d): return d.label
         case .angular(let d): return d.label
         // Ordinate has per-feature labels; no single dimension-level label.
         case .ordinate: return nil
@@ -243,8 +231,10 @@ public enum DrawingDimension: Sendable, Hashable {
     public var value: Double {
         switch self {
         case .linear(let d): return d.value
-        case .radial(let d): return d.value
-        case .diameter(let d): return d.value
+        // The one legitimate divergence between .radial and .diameter (#1185):
+        // a radial dimension reports its radius, a diameter dimension its full width.
+        case .radial(let d): return d.radius
+        case .diameter(let d): return 2 * d.radius
         case .angular(let d): return d.value
         // Ordinate has no single scalar measurement; callers should read
         // `features` instead.

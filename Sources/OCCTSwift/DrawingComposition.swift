@@ -107,14 +107,13 @@ extension DrawingDimension {
             d.to = t(d.to)
             d.offset *= scale
             return .linear(d)
-        case .radial(var d):
-            d.centre = t(d.centre)
-            d.radius *= scale
-            return .radial(d)
-        case .diameter(var d):
-            d.centre = t(d.centre)
-            d.radius *= scale
-            return .diameter(d)
+        // .radial and .diameter share `Circular` (#1185): the field-level transform
+        // lives once on `Circular.transformed`, only the re-wrap into the right case
+        // still needs its own arm.
+        case .radial(let d):
+            return .radial(d.transformed(translate: translate, scale: scale))
+        case .diameter(let d):
+            return .diameter(d.transformed(translate: translate, scale: scale))
         case .angular(var d):
             d.vertex = t(d.vertex)
             d.ray1 = t(d.ray1)
@@ -135,21 +134,31 @@ extension DrawingDimension {
     internal var keyPoints: [SIMD2<Double>] {
         switch self {
         case .linear(let d): return [d.from, d.to]
-        case .radial(let d):
-            return [
-                d.centre,
-                SIMD2(d.centre.x + d.radius, d.centre.y),
-                SIMD2(d.centre.x - d.radius, d.centre.y),
-            ]
-        case .diameter(let d):
-            return [
-                d.centre,
-                SIMD2(d.centre.x + d.radius, d.centre.y),
-                SIMD2(d.centre.x - d.radius, d.centre.y),
-            ]
+        // .radial and .diameter share `Circular` (#1185): same three-point
+        // construction from `centre`/`radius`, one arm.
+        case .radial(let d), .diameter(let d): return d.keyPoints
         case .angular(let d): return [d.vertex, d.ray1, d.ray2]
         case .ordinate(let d): return [d.origin] + d.features.map { $0.position }
         }
+    }
+}
+
+extension DrawingDimension.Circular {
+    /// Applies the shared `scale * p + translate` transform (#1183) to `centre`/`radius`.
+    /// Shared by `.radial`/`.diameter`'s `DrawingDimension.transformed` arms (#1185).
+    fileprivate func transformed(translate: SIMD2<Double>, scale: Double) -> Self {
+        var d = self
+        d.centre = TransformedDrawing.apply(centre, translate: translate, scale: scale)
+        d.radius *= scale
+        return d
+    }
+
+    /// The three points `DrawingDimension.keyPoints` reports for a circular dimension.
+    ///
+    /// The centre plus the two points where the circle crosses its horizontal diameter.
+    /// Shared by `.radial`/`.diameter` (#1185).
+    fileprivate var keyPoints: [SIMD2<Double>] {
+        [centre, SIMD2(centre.x + radius, centre.y), SIMD2(centre.x - radius, centre.y)]
     }
 }
 

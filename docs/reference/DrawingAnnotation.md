@@ -18,7 +18,7 @@ The file contains four public types at the top level and their associated nested
 
 ## Topics
 
-- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.DrawingTextLabel](#drawingannotationdrawingtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotation.Arc](#drawingannotationarc) · [DrawingAnnotationStore](#drawingannotationstore)
+- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Circular](#drawingdimensioncircular) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.DrawingTextLabel](#drawingannotationdrawingtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotation.Arc](#drawingannotationarc) · [DrawingAnnotationStore](#drawingannotationstore)
 
 ---
 
@@ -280,14 +280,19 @@ Pure-Swift: `simd_distance(from, to)`.
 
 ---
 
-## DrawingDimension.Radial
+## DrawingDimension.Circular
 
-### `DrawingDimension.Radial`
+### `DrawingDimension.Circular`
 
-A radius dimension callout on a circle or arc.
+Shared field set for `.radial` and `.diameter` dimensions (#1185): a circle or arc defined by
+`centre` + `radius`, with a leader line exiting at `leaderAngle`. `Radial` and `Diameter` (below)
+are both public typealiases of this one type — the two enum cases differ only in how
+`DrawingDimension.value` reads `radius` (`radius` for `.radial`, `2 * radius` for `.diameter`) and
+in how the writers render the leader and label prefix (`R` vs `⌀`); everything else is one shared
+declaration.
 
 ```swift
-public struct Radial: Sendable, Hashable {
+public struct Circular: Sendable, Hashable {
     public var centre: SIMD2<Double>
     public var radius: Double
     public var leaderAngle: Double
@@ -299,34 +304,35 @@ public struct Radial: Sendable, Hashable {
 ```
 
 - `centre`: centre of the circle or arc.
-- `radius`: radius of the circle or arc (drawing units).
+- `radius`: radius of the circle or arc (drawing units). For a `.diameter` dimension this is still
+  the stored *radius* — `DrawingDimension.value` reports `2 * radius` for that case.
 - `leaderAngle`: angle in radians at which the leader line exits the circle (measured from positive X axis).
-- `label`: optional override text (writers typically prefix with `R`).
+- `label`: optional override text (writers prefix `.radial` with `R`, `.diameter` with `⌀`).
 - `id`: same semantics as `Linear`.
 
 ---
 
-#### `DrawingDimension.Radial.centre`
+#### `DrawingDimension.Circular.centre`
 
 Centre of the circle or arc.
 
-#### `DrawingDimension.Radial.leaderAngle`
+#### `DrawingDimension.Circular.leaderAngle`
 
 Angle in radians at which the leader line exits the circle, measured from the positive X axis.
 
-#### `DrawingDimension.Radial.style`
+#### `DrawingDimension.Circular.style`
 
 Line style for the leader and dimension line; same `DrawingLineStyle` semantics as `Linear`.
 
-#### `DrawingDimension.Radial.tolerance`
+#### `DrawingDimension.Circular.tolerance`
 
 Tolerance annotation for the radius value; same `DrawingTolerance` semantics as `Linear`.
 
 ---
 
-### `DrawingDimension.Radial.init(centre:radius:leaderAngle:label:style:id:tolerance:)`
+### `DrawingDimension.Circular.init(centre:radius:leaderAngle:label:style:id:tolerance:)`
 
-Creates a radial dimension.
+Creates a circular-dimension payload, shared by both `.radial` and `.diameter`.
 
 ```swift
 public init(centre: SIMD2<Double>, radius: Double,
@@ -338,37 +344,35 @@ public init(centre: SIMD2<Double>, radius: Double,
 
 - **Parameters:**
   - `centre`: centre of the circle.
-  - `radius`: radius value.
+  - `radius`: radius value (for `.diameter`, `DrawingDimension.value` doubles this).
   - `leaderAngle`: leader exit angle in radians (default `π/4` = 45°).
-  - `label`: override text; `nil` means auto-format as `R<value>`.
+  - `label`: override text; `nil` means auto-format from the wrapping case's own value
+    (`R<radius>` for `.radial`, `⌀<2*radius>` for `.diameter`).
   - `style`, `id`, `tolerance`, standard dimension fields.
 - **Example:**
   ```swift
-  let rad = DrawingDimension.Radial(
-      centre: SIMD2(50, 50),
-      radius: 20,
-      leaderAngle: .pi / 3
-  )
+  let radial = DrawingDimension.radial(
+      .init(centre: SIMD2(50, 50), radius: 20, leaderAngle: .pi / 3))
+  let diameter = DrawingDimension.diameter(
+      .init(centre: SIMD2(30, 30), radius: 10, tolerance: .fitClass("H7")))
+  print(radial.value)    // 20.0  (radius)
+  print(diameter.value)  // 20.0  (2 * radius)
   ```
 
 ---
 
-### `DrawingDimension.Radial.value`
+## DrawingDimension.Radial
 
-The radius value.
+### `DrawingDimension.Radial`
+
+A radius dimension callout on a circle or arc (`DrawingDimension.value` reports `radius`
+unchanged; writers prefix the label with `R`). Public typealias of
+[`DrawingDimension.Circular`](#drawingdimensioncircular), which documents the fields and
+initializer shared with `.diameter`.
 
 ```swift
-public var value: Double { get }
+public typealias Radial = Circular
 ```
-
-Pure-Swift: returns `radius`.
-
-- **Returns:** The `radius` stored in the struct.
-- **Example:**
-  ```swift
-  let rad = DrawingDimension.Radial(centre: .zero, radius: 15)
-  print(rad.value)  // 15.0
-  ```
 
 ---
 
@@ -376,84 +380,14 @@ Pure-Swift: returns `radius`.
 
 ### `DrawingDimension.Diameter`
 
-A diameter dimension callout on a circle, typically prefixed `⌀` in output.
+A diameter dimension callout on a circle, typically prefixed `⌀` in output
+(`DrawingDimension.value` reports `2 * radius`). Public typealias of
+[`DrawingDimension.Circular`](#drawingdimensioncircular), which documents the fields and
+initializer shared with `.radial`.
 
 ```swift
-public struct Diameter: Sendable, Hashable {
-    public var centre: SIMD2<Double>
-    public var radius: Double
-    public var leaderAngle: Double
-    public var label: String?
-    public var style: DrawingLineStyle
-    public var id: String?
-    public var tolerance: DrawingTolerance
-}
+public typealias Diameter = Circular
 ```
-
-Stored as `radius`; `value` returns `2 * radius`. Fields have identical semantics to `Radial`.
-
-| Field | Meaning |
-|---|---|
-| `centre` | Centre of the circle. |
-| `radius` | Actual radius (stored); `value` returns `2 * radius`. |
-| `leaderAngle` | Angle in radians at which the leader line exits the circle. |
-| `label` | Optional override text; `nil` means auto-format as `⌀<2*radius>`. |
-| `style` | Linestyle for the dimension and leader lines. |
-| `id` | Optional identifier for round-tripping through DXF entity handles. |
-| `tolerance` | Structured tolerance; see `DrawingTolerance`. |
-
-#### `DrawingDimension.Diameter.tolerance`
-
-Structured tolerance; see `DrawingTolerance`.
-
----
-
-### `DrawingDimension.Diameter.init(centre:radius:leaderAngle:label:style:id:tolerance:)`
-
-Creates a diameter dimension.
-
-```swift
-public init(centre: SIMD2<Double>, radius: Double,
-            leaderAngle: Double = .pi / 4,
-            label: String? = nil,
-            style: DrawingLineStyle = .solid, id: String? = nil,
-            tolerance: DrawingTolerance = .none)
-```
-
-- **Parameters:**
-  - `centre`: centre of the circle.
-  - `radius`: actual radius (stored; `value` = `2 * radius`).
-  - `leaderAngle`: leader exit angle in radians (default `π/4`).
-  - `label`: override text; `nil` means auto-format as `⌀<2*radius>`.
-  - `style`, `id`, `tolerance`, standard dimension fields.
-- **Example:**
-  ```swift
-  let diam = DrawingDimension.Diameter(
-      centre: SIMD2(30, 30),
-      radius: 10,
-      tolerance: .fitClass("H7")
-  )
-  print(diam.value)  // 20.0
-  ```
-
----
-
-### `DrawingDimension.Diameter.value`
-
-The full diameter (twice the stored radius).
-
-```swift
-public var value: Double { get }
-```
-
-Pure-Swift: returns `2 * radius`.
-
-- **Returns:** Diameter in drawing units.
-- **Example:**
-  ```swift
-  let d = DrawingDimension.Diameter(centre: .zero, radius: 8)
-  print(d.value)  // 16.0
-  ```
 
 ---
 
@@ -702,7 +636,7 @@ The scalar measured value of the wrapped dimension case.
 public var value: Double { get }
 ```
 
-Pure-Swift dispatch: returns `Linear.value` (distance), `Radial.value` (radius), `Diameter.value` (2 × radius), `Angular.value` (radians), or `0` for `.ordinate` (which has no single scalar measurement, read `.ordinate` features directly).
+Pure-Swift dispatch: returns `Linear.value` (distance), `radius` for `.radial`, `2 * radius` for `.diameter` (#1185: both cases share `Circular`, which has no `value` member of its own — that differing formula lives here, not on the struct), `Angular.value` (radians), or `0` for `.ordinate` (which has no single scalar measurement, read `.ordinate` features directly).
 
 - **Returns:** The measurement value in drawing units (or radians for angular); `0` for ordinate.
 - **Example:**
