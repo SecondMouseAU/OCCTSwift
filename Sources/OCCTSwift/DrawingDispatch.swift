@@ -392,7 +392,9 @@ private func emitRadial(_ d: DrawingDimension.Radial, into ops: DrawingPrimitive
         d.centre.y + (d.radius + 10) * sin(d.leaderAngle))
     ops.addCircle(d.centre, d.radius, "DIMENSION")
     ops.addLine(endOnCircle, leaderTip, "DIMENSION")
-    let base = d.label ?? String(format: "R%.2f", d.value)
+    // .radial reports its raw radius (DrawingDimension.value does the same; #1185
+    // moved that formula off the now-shared `Circular` struct, which has no `.value`).
+    let base = d.label ?? String(format: "R%.2f", d.radius)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     let perp = leftPerpendicular2D(of: SIMD2(cos(d.leaderAngle), sin(d.leaderAngle)))
     emitTolerancedText(
@@ -407,7 +409,9 @@ private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimi
     let pB = SIMD2(d.centre.x + d.radius * cos, d.centre.y + d.radius * sin)
     ops.addLine(pA, pB, "DIMENSION")
     let tip = SIMD2(pB.x + 5 * cos, pB.y + 5 * sin)
-    let base = d.label ?? String(format: "⌀%.2f", d.value)
+    // .diameter reports 2 * radius (DrawingDimension.value does the same; #1185
+    // moved that formula off the now-shared `Circular` struct, which has no `.value`).
+    let base = d.label ?? String(format: "⌀%.2f", 2 * d.radius)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
     let perp = leftPerpendicular2D(of: SIMD2(cos, sin))
     emitTolerancedText(

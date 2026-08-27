@@ -88,6 +88,28 @@ public final class Drawing: @unchecked Sendable {
         return d
     }
 
+    /// Shared by `addRadialDimension`/`addDiameterDimension` (#1185): builds the common
+    /// `DrawingDimension.Circular` payload and appends it, wrapped in whichever enum
+    /// case `wrap` supplies (`DrawingDimension.radial`/`.diameter`, passed as the case's
+    /// own function value).
+    @discardableResult
+    private func addCircularDimension(
+        centre: SIMD2<Double>, radius: Double,
+        leaderAngle: Double,
+        label: String?,
+        style: DrawingLineStyle,
+        id: String?,
+        wrap: (DrawingDimension.Circular) -> DrawingDimension
+    ) -> DrawingDimension {
+        let d = wrap(
+            .init(
+                centre: centre, radius: radius,
+                leaderAngle: leaderAngle,
+                label: label, style: style, id: id))
+        annotationStore.appendDimension(d)
+        return d
+    }
+
     @discardableResult
     public func addRadialDimension(
         centre: SIMD2<Double>, radius: Double,
@@ -96,13 +118,9 @@ public final class Drawing: @unchecked Sendable {
         style: DrawingLineStyle = .solid,
         id: String? = nil
     ) -> DrawingDimension {
-        let d = DrawingDimension.radial(
-            .init(
-                centre: centre, radius: radius,
-                leaderAngle: leaderAngle,
-                label: label, style: style, id: id))
-        annotationStore.appendDimension(d)
-        return d
+        addCircularDimension(
+            centre: centre, radius: radius, leaderAngle: leaderAngle,
+            label: label, style: style, id: id, wrap: DrawingDimension.radial)
     }
 
     @discardableResult
@@ -113,13 +131,9 @@ public final class Drawing: @unchecked Sendable {
         style: DrawingLineStyle = .solid,
         id: String? = nil
     ) -> DrawingDimension {
-        let d = DrawingDimension.diameter(
-            .init(
-                centre: centre, radius: radius,
-                leaderAngle: leaderAngle,
-                label: label, style: style, id: id))
-        annotationStore.appendDimension(d)
-        return d
+        addCircularDimension(
+            centre: centre, radius: radius, leaderAngle: leaderAngle,
+            label: label, style: style, id: id, wrap: DrawingDimension.diameter)
     }
 
     @discardableResult
