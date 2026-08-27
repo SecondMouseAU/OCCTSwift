@@ -1,6 +1,23 @@
 import Foundation
 import simd
 
+// MARK: - Shared rectangle helper
+
+/// Returns the four corners of an axis-aligned rectangle in CCW winding order.
+///
+/// - Parameters:
+///   - min: Bottom-left corner.
+///   - max: Top-right corner.
+/// - Returns: Array of 4 points: [min, (max.x, min.y), max, (min.x, max.y)].
+public func rectanglePoints(min: SIMD2<Double>, max: SIMD2<Double>) -> [SIMD2<Double>] {
+    [
+        min,
+        SIMD2(max.x, min.y),
+        max,
+        SIMD2(min.x, max.y),
+    ]
+}
+
 // MARK: - ISO 5457 / 7200 / 5456-2 drawing sheet scaffolding (#76, v0.145)
 //
 // Every technical drawing has the same structural boilerplate: a trimmed-sheet
@@ -163,19 +180,12 @@ public struct Sheet: Sendable, Hashable {
     public func render(into writer: DXFWriter) {
         let d = dimensions
         // Outer trimmed sheet edge
-        let outer: [SIMD2<Double>] = [
-            SIMD2(0, 0), SIMD2(d.x, 0), SIMD2(d.x, d.y), SIMD2(0, d.y),
-        ]
+        let outer = rectanglePoints(min: .zero, max: d)
         writer.addPolyline(outer, closed: true, layer: "BORDER")
 
         // Inner frame (drawable area)
         let frame = innerFrame
-        let inner: [SIMD2<Double>] = [
-            SIMD2(frame.min.x, frame.min.y),
-            SIMD2(frame.max.x, frame.min.y),
-            SIMD2(frame.max.x, frame.max.y),
-            SIMD2(frame.min.x, frame.max.y),
-        ]
+        let inner = rectanglePoints(min: frame.min, max: frame.max)
         writer.addPolyline(inner, closed: true, layer: "BORDER")
 
         // Centring marks at the midpoints of each inner-frame edge — short
@@ -218,12 +228,8 @@ public struct Sheet: Sendable, Hashable {
         let tbWidth = 170.0
         let tbHeight = 55.0
         let origin = SIMD2(frame.max.x - tbWidth, frame.min.y)
-        let outer: [SIMD2<Double>] = [
-            origin,
-            SIMD2(origin.x + tbWidth, origin.y),
-            SIMD2(origin.x + tbWidth, origin.y + tbHeight),
-            SIMD2(origin.x, origin.y + tbHeight),
-        ]
+        let outer = rectanglePoints(
+            min: origin, max: SIMD2(origin.x + tbWidth, origin.y + tbHeight))
         writer.addPolyline(outer, closed: true, layer: "TITLE")
 
         // Field labels and values. Simplified two-column layout: labels left

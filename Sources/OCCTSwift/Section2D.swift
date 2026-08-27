@@ -139,12 +139,7 @@ extension Shape {
         // as the boundary polygon for now; full contour-based hatching comes
         // when we have polygon identification of section interiors).
         if let bounds = drawing.bounds() {
-            let boundary = [
-                SIMD2(bounds.min.x, bounds.min.y),
-                SIMD2(bounds.max.x, bounds.min.y),
-                SIMD2(bounds.max.x, bounds.max.y),
-                SIMD2(bounds.min.x, bounds.max.y),
-            ]
+            let boundary = rectanglePoints(min: bounds.min, max: bounds.max)
             drawing.addHatch(boundary: boundary, angle: hatchAngle, spacing: hatchSpacing)
         }
         if let label = label, let bounds = drawing.bounds() {
