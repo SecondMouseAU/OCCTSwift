@@ -20,6 +20,19 @@
 #include <BRep_Builder.hxx>
 #include <TopoDS_Compound.hxx>
 
+// Helper: populate an OCCTDrawing from a shapes extractor (HLRBRep_HLRToShape or HLRBRep_PolyHLRToShape).
+// Both types expose the same six accessor methods (non-const on PolyHLRToShape).
+template <class ShapesExtractor>
+static void occtDrawingPopulate(OCCTDrawing* drawing, ShapesExtractor& shapes)
+{
+  drawing->visibleSharp   = shapes.VCompound();
+  drawing->visibleSmooth  = shapes.Rg1LineVCompound();
+  drawing->visibleOutline = shapes.OutLineVCompound();
+  drawing->hiddenSharp    = shapes.HCompound();
+  drawing->hiddenSmooth   = shapes.Rg1LineHCompound();
+  drawing->hiddenOutline  = shapes.OutLineHCompound();
+}
+
 // Helper: compute how far a shape reaches along a view direction from the world origin.
 // Returns false for a shape with no bounds. Used by OCCTDrawingCreate for perspective guard
 // (#1036).
@@ -103,12 +116,7 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
     HLRBRep_HLRToShape shapes(hlrAlgo);
 
     OCCTDrawing* drawing    = new OCCTDrawing();
-    drawing->visibleSharp   = shapes.VCompound();
-    drawing->visibleSmooth  = shapes.Rg1LineVCompound();
-    drawing->visibleOutline = shapes.OutLineVCompound();
-    drawing->hiddenSharp    = shapes.HCompound();
-    drawing->hiddenSmooth   = shapes.Rg1LineHCompound();
-    drawing->hiddenOutline  = shapes.OutLineHCompound();
+    occtDrawingPopulate(drawing, shapes);
 
     return drawing;
   }
@@ -218,12 +226,7 @@ OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
     shapes.Update(polyAlgo);
 
     OCCTDrawing* drawing    = new OCCTDrawing();
-    drawing->visibleSharp   = shapes.VCompound();
-    drawing->visibleSmooth  = shapes.Rg1LineVCompound();
-    drawing->visibleOutline = shapes.OutLineVCompound();
-    drawing->hiddenSharp    = shapes.HCompound();
-    drawing->hiddenSmooth   = shapes.Rg1LineHCompound();
-    drawing->hiddenOutline  = shapes.OutLineHCompound();
+    occtDrawingPopulate(drawing, shapes);
 
     return drawing;
   }
