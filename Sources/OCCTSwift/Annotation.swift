@@ -24,38 +24,23 @@ public struct DimensionGeometry: Sendable {
     public let isValid: Bool
 }
 
-// MARK: - Length Dimension
+// MARK: - DimensionMeasurement (shared base)
 
-/// Measures distance between two points, along an edge, or between two faces.
-public final class LengthDimension: @unchecked Sendable {
+/// Common base for all dimension measurement types, holding the OCCT handle
+/// and the five shared members (deinit, value, isValid, setCustomValue, geometry).
+///
+/// Each concrete dimension type (Length, Radius, Angle, Diameter) supplies only
+/// its own initializers.
+public class DimensionMeasurement: @unchecked Sendable {
     internal let handle: OCCTDimensionRef
 
-    /// Create a length dimension between two 3D points.
-    public init?(from p1: SIMD3<Double>, to p2: SIMD3<Double>) {
-        guard
-            let h = OCCTDimensionCreateLengthFromPoints(
-                p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
-        else { return nil }
-        self.handle = h
-    }
-
-    /// Create a length dimension measuring a linear edge.
-    public init?(edge: Shape) {
-        guard let h = OCCTDimensionCreateLengthFromEdge(edge.handle) else { return nil }
-        self.handle = h
-    }
-
-    /// Create a length dimension between two parallel faces.
-    public init?(face1: Shape, face2: Shape) {
-        guard let h = OCCTDimensionCreateLengthFromFaces(face1.handle, face2.handle) else {
-            return nil
-        }
-        self.handle = h
+    internal init(handle: OCCTDimensionRef) {
+        self.handle = handle
     }
 
     deinit { OCCTDimensionRelease(handle) }
 
-    /// The measured distance.
+    /// The measured value (distance in model units, angle in radians).
     public var value: Double { OCCTDimensionGetValue(handle) }
 
     /// Whether the dimension geometry is valid.
@@ -74,51 +59,58 @@ public final class LengthDimension: @unchecked Sendable {
     }
 }
 
+// MARK: - Length Dimension
+
+/// Measures distance between two points, along an edge, or between two faces.
+public final class LengthDimension: DimensionMeasurement, @unchecked Sendable {
+
+    /// Create a length dimension between two 3D points.
+    public init?(from p1: SIMD3<Double>, to p2: SIMD3<Double>) {
+        guard
+            let h = OCCTDimensionCreateLengthFromPoints(
+                p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
+        else { return nil }
+        super.init(handle: h)
+    }
+
+    /// Create a length dimension measuring a linear edge.
+    public init?(edge: Shape) {
+        guard let h = OCCTDimensionCreateLengthFromEdge(edge.handle) else { return nil }
+        super.init(handle: h)
+    }
+
+    /// Create a length dimension between two parallel faces.
+    public init?(face1: Shape, face2: Shape) {
+        guard let h = OCCTDimensionCreateLengthFromFaces(face1.handle, face2.handle) else {
+            return nil
+        }
+        super.init(handle: h)
+    }
+}
+
 // MARK: - Radius Dimension
 
 /// Measures the radius of circular geometry (circle, arc, cylindrical face).
-public final class RadiusDimension: @unchecked Sendable {
-    internal let handle: OCCTDimensionRef
+public final class RadiusDimension: DimensionMeasurement, @unchecked Sendable {
 
     /// Create a radius dimension from a shape with circular geometry.
     public init?(shape: Shape) {
         guard let h = OCCTDimensionCreateRadiusFromShape(shape.handle) else { return nil }
-        self.handle = h
-    }
-
-    deinit { OCCTDimensionRelease(handle) }
-
-    /// The measured radius.
-    public var value: Double { OCCTDimensionGetValue(handle) }
-
-    /// Whether the dimension geometry is valid.
-    public var isValid: Bool { OCCTDimensionIsValid(handle) }
-
-    /// Set a custom display value.
-    public func setCustomValue(_ value: Double) {
-        OCCTDimensionSetCustomValue(handle, value)
-    }
-
-    /// Get dimension geometry for Metal rendering.
-    public var geometry: DimensionGeometry? {
-        var g = OCCTDimensionGeometry()
-        guard OCCTDimensionGetGeometry(handle, &g) else { return nil }
-        return makeDimensionGeometry(g)
+        super.init(handle: h)
     }
 }
 
 // MARK: - Angle Dimension
 
 /// Measures angles between edges, faces, or three points.
-public final class AngleDimension: @unchecked Sendable {
-    internal let handle: OCCTDimensionRef
+public final class AngleDimension: DimensionMeasurement, @unchecked Sendable {
 
     /// Create an angle dimension between two edges.
     public init?(edge1: Shape, edge2: Shape) {
         guard let h = OCCTDimensionCreateAngleFromEdges(edge1.handle, edge2.handle) else {
             return nil
         }
-        self.handle = h
+        super.init(handle: h)
     }
 
     /// Create an angle dimension from three points (first, vertex, second).
@@ -129,7 +121,7 @@ public final class AngleDimension: @unchecked Sendable {
                 vertex.x, vertex.y, vertex.z,
                 second.x, second.y, second.z)
         else { return nil }
-        self.handle = h
+        super.init(handle: h)
     }
 
     /// Create an angle dimension between two planar faces.
@@ -137,63 +129,22 @@ public final class AngleDimension: @unchecked Sendable {
         guard let h = OCCTDimensionCreateAngleFromFaces(face1.handle, face2.handle) else {
             return nil
         }
-        self.handle = h
+        super.init(handle: h)
     }
 
-    deinit { OCCTDimensionRelease(handle) }
-
-    /// The measured angle in radians.
-    public var value: Double { OCCTDimensionGetValue(handle) }
-
-    /// The measured angle in degrees.
+    /// The measured angle in degrees (convenience).
     public var degrees: Double { value * 180.0 / .pi }
-
-    /// Whether the dimension geometry is valid.
-    public var isValid: Bool { OCCTDimensionIsValid(handle) }
-
-    /// Set a custom display value (in radians).
-    public func setCustomValue(_ value: Double) {
-        OCCTDimensionSetCustomValue(handle, value)
-    }
-
-    /// Get dimension geometry for Metal rendering.
-    public var geometry: DimensionGeometry? {
-        var g = OCCTDimensionGeometry()
-        guard OCCTDimensionGetGeometry(handle, &g) else { return nil }
-        return makeDimensionGeometry(g)
-    }
 }
 
 // MARK: - Diameter Dimension
 
 /// Measures the diameter of circular geometry.
-public final class DiameterDimension: @unchecked Sendable {
-    internal let handle: OCCTDimensionRef
+public final class DiameterDimension: DimensionMeasurement, @unchecked Sendable {
 
     /// Create a diameter dimension from a shape with circular geometry.
     public init?(shape: Shape) {
         guard let h = OCCTDimensionCreateDiameterFromShape(shape.handle) else { return nil }
-        self.handle = h
-    }
-
-    deinit { OCCTDimensionRelease(handle) }
-
-    /// The measured diameter.
-    public var value: Double { OCCTDimensionGetValue(handle) }
-
-    /// Whether the dimension geometry is valid.
-    public var isValid: Bool { OCCTDimensionIsValid(handle) }
-
-    /// Set a custom display value.
-    public func setCustomValue(_ value: Double) {
-        OCCTDimensionSetCustomValue(handle, value)
-    }
-
-    /// Get dimension geometry for Metal rendering.
-    public var geometry: DimensionGeometry? {
-        var g = OCCTDimensionGeometry()
-        guard OCCTDimensionGetGeometry(handle, &g) else { return nil }
-        return makeDimensionGeometry(g)
+        super.init(handle: h)
     }
 }
 
