@@ -1401,6 +1401,18 @@ struct SheetRenderingTests {
         #expect(frame.max.y == 297 - 10)
     }
 
+    // #1168: `.a4`'s margins are 7/7/7/10, distinct from A0-A3's 20/10/10/10 per the sheet's own
+    // ISO 5457 doc comment; the `.a4` switch arm used to be a copy-paste of the `.a0...a3` arm.
+    @Test("Sheet innerFrame uses A4's distinct ISO 5457 margins, not A0-A3's")
+    func innerFrameInsetsA4() {
+        let sheet = Sheet(size: .a4, orientation: .landscape)
+        let frame = sheet.innerFrame
+        #expect(frame.min.x == 7)  // 7 mm left, not the 20 mm A0-A3 binding margin
+        #expect(frame.min.y == 10)  // 10 mm bottom
+        #expect(frame.max.x == 297 - 7)  // 7 mm right
+        #expect(frame.max.y == 210 - 7)  // 7 mm top
+    }
+
     @Test("Projection symbol renders two circles for both conventions")
     func projectionSymbolCircles() {
         let writer = DXFWriter()
