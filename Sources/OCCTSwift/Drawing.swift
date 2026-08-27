@@ -250,9 +250,7 @@ public final class Drawing: @unchecked Sendable {
         if simd_length(traceDir3D) < 1e-9 { return nil }
         let traceDirUnit = simd_normalize(traceDir3D)
         let originInView = projectPointToPlane(cuttingPlaneOrigin, viewDirection: viewDirection)
-        let traceDir2D =
-            projectPointToPlane(traceDirUnit, viewDirection: viewDirection)
-            - projectPointToPlane(.zero, viewDirection: viewDirection)
+        let traceDir2D = projectDirectionToPlane(traceDirUnit, viewDirection: viewDirection)
         let traceDir2Dn =
             simd_length(traceDir2D) > 1e-9
             ? simd_normalize(traceDir2D) : SIMD2(1, 0)
@@ -261,9 +259,7 @@ public final class Drawing: @unchecked Sendable {
         let end = originInView + half * traceDir2Dn
         // Arrow direction in the view 2D, project section view direction.
         let arrowDir3D = simd_normalize(sectionViewDirection)
-        let arrowDir2D =
-            projectPointToPlane(arrowDir3D, viewDirection: viewDirection)
-            - projectPointToPlane(.zero, viewDirection: viewDirection)
+        let arrowDir2D = projectDirectionToPlane(arrowDir3D, viewDirection: viewDirection)
         let arrowDir2Dn =
             simd_length(arrowDir2D) > 1e-9
             ? simd_normalize(arrowDir2D) : SIMD2(0, 1)

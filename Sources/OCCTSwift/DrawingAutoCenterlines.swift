@@ -126,6 +126,24 @@ internal func projectPointToPlane(
     return SIMD2(simd_dot(p, right), simd_dot(p, up))
 }
 
+/// Project a 3D *direction* (not a point) onto the 2D plane perpendicular to `viewDirection`,
+/// using `perpendicularBasis(to:)` directly.
+///
+/// A direction has no position to translate, so this is a plain `simd_dot` against `(right, up)`,
+/// never `projectPointToPlane(direction, ...) - projectPointToPlane(.zero, ...)`: that roundabout
+/// point-difference idiom only produces the right answer today because `projectPointToPlane` has
+/// no translation term of its own, and would silently start leaking an origin term into every
+/// caller if `projectPointToPlane`/`perpendicularBasis` ever grew one (#1193). Shared by every
+/// OCCTSwift site that needs "project a direction into the view plane": `projectAxisToPlane`
+/// below and `Drawing.addCuttingPlaneLine`'s trace/arrow directions.
+internal func projectDirectionToPlane(
+    _ direction: SIMD3<Double>,
+    viewDirection: SIMD3<Double>
+) -> SIMD2<Double> {
+    let (right, up) = perpendicularBasis(to: viewDirection)
+    return SIMD2(simd_dot(direction, right), simd_dot(direction, up))
+}
+
 // MARK: - Shared circle-visibility test
 
 /// Result of the shared circle-visibility test used by both `addAutoDimensions`
@@ -189,14 +207,11 @@ internal func projectAxisToPlane(
     bounds: (min: SIMD2<Double>, max: SIMD2<Double>),
     overshoot: Double
 ) -> (SIMD2<Double>, SIMD2<Double>)? {
-    // Build a basis (right, up) perpendicular to viewDirection.
-    let (right, up) = perpendicularBasis(to: viewDirection)
-
     // Project axis direction onto view plane. If it collapses to a point, skip.
-    let dir2 = SIMD2(simd_dot(direction, right), simd_dot(direction, up))
+    let dir2 = projectDirectionToPlane(direction, viewDirection: viewDirection)
     if simd_length(dir2) < 1e-9 { return nil }
     let dir2n = simd_normalize(dir2)
-    let origin2 = SIMD2(simd_dot(origin, right), simd_dot(origin, up))
+    let origin2 = projectPointToPlane(origin, viewDirection: viewDirection)
 
     // Parameterise the line as origin2 + t * dir2n and clip to bounds.
     var tMin = -Double.infinity
