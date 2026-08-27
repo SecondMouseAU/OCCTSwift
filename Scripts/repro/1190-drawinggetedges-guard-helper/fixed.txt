@@ -1,0 +1,18 @@
+ok:   helper: adds a non-null shape
+ok:   helper: added shape is the one supplied
+ok:   helper: a null shape is a no-op, not added
+ok:   visible: non-null result
+ok:   visible: includes visibleSharp
+ok:   visible: includes visibleOutline
+ok:   visible: excludes visibleSmooth (null) -- exactly 2 vertices
+ok:   hidden: non-null result
+ok:   hidden: includes hiddenSmooth
+ok:   hidden: includes hiddenOutline
+ok:   hidden: excludes hiddenSharp (null) -- exactly 2 vertices
+ok:   outline: non-null result
+ok:   outline: includes visibleOutline
+ok:   outline: includes hiddenOutline
+ok:   outline: exactly the two outline fields
+ok:   null drawing: refused
+
+ALL PASS (0 failures)

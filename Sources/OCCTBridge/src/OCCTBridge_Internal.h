@@ -60,6 +60,7 @@
 // occtBRepFeatCylindricalHole) rather than the
 // structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
+#include <BRep_Builder.hxx> // #1190: occtAddShapeIfPresent's guard-then-add helper
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepCheck_Result.hxx>
 #include <BRepCheck_ListOfStatus.hxx>
@@ -3169,6 +3170,24 @@ inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const Topo
   catch (...)
   {
     return -1;
+  }
+}
+
+// === #1190: one guard for "fold this shape into a compound if it isn't null" ===
+//
+// OCCTDrawingGetEdges (OCCTBridge_HLR.mm) reimplemented `if (!x.IsNull()) { builder.Add(compound,
+// x); }` eight times, once per TopoDS_Shape drawing field its three switch cases might contribute.
+// All eight blocks were byte-identical apart from which field they read, so a change to the
+// guard/add logic applied to fewer than all eight would have no compiler or test signal. This
+// helper collapses each to one call; placed here (rather than as a static helper local to
+// OCCTBridge_HLR.mm) so any other bridge site with the same idiom can share it too.
+inline void occtAddShapeIfPresent(BRep_Builder&       builder,
+                                  TopoDS_Shape&       compound,
+                                  const TopoDS_Shape& shape)
+{
+  if (!shape.IsNull())
+  {
+    builder.Add(compound, shape);
   }
 }
 
