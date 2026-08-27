@@ -202,12 +202,7 @@ public final class PointCloud: @unchecked Sendable {
 
     /// Create a point cloud from an array of 3D points.
     public init?(points: [SIMD3<Double>]) {
-        var coords = [Double](repeating: 0, count: points.count * 3)
-        for (i, p) in points.enumerated() {
-            coords[i * 3] = p.x
-            coords[i * 3 + 1] = p.y
-            coords[i * 3 + 2] = p.z
-        }
+        let coords = packSIMD3(points)
         guard let h = OCCTPointCloudCreate(coords, Int32(points.count)) else { return nil }
         self.handle = h
     }
@@ -218,18 +213,8 @@ public final class PointCloud: @unchecked Sendable {
     ///   - colors: Array of RGB colors (same count as points, components in [0,1])
     public init?(points: [SIMD3<Double>], colors: [SIMD3<Float>]) {
         guard points.count == colors.count else { return nil }
-        var coords = [Double](repeating: 0, count: points.count * 3)
-        var cols = [Float](repeating: 0, count: colors.count * 3)
-        for (i, p) in points.enumerated() {
-            coords[i * 3] = p.x
-            coords[i * 3 + 1] = p.y
-            coords[i * 3 + 2] = p.z
-        }
-        for (i, c) in colors.enumerated() {
-            cols[i * 3] = c.x
-            cols[i * 3 + 1] = c.y
-            cols[i * 3 + 2] = c.z
-        }
+        let coords = packSIMD3(points)
+        let cols = packSIMD3(colors)
         guard let h = OCCTPointCloudCreateColored(coords, cols, Int32(points.count)) else {
             return nil
         }

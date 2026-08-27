@@ -42,6 +42,26 @@ internal func unpackSIMD3<Buffer: RandomAccessCollection, Scalar>(
     return result
 }
 
+/// Packs `[SIMD3<Scalar>]` into a flat, tightly-packed `(x0,y0,z0, x1,y1,z1, ...)` array, the
+/// `unpackSIMD3(_:count:)` sibling for the write direction (#1186): every bridge call that takes
+/// a flat position/normal/pole/point buffer expects this exact layout.
+///
+/// ```swift
+/// let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
+/// let flat = packSIMD3(points)
+/// #expect(flat == [1, 2, 3, 4, 5, 6])
+/// ```
+internal func packSIMD3<Scalar: SIMDScalar>(_ values: [SIMD3<Scalar>]) -> [Scalar] {
+    var result = [Scalar]()
+    result.reserveCapacity(values.count * 3)
+    for v in values {
+        result.append(v.x)
+        result.append(v.y)
+        result.append(v.z)
+    }
+    return result
+}
+
 // MARK: - Single-vector/axis out-param unwrap (#899/#902, moved here from ShapeAxis.swift by
 // the #914 review, finding 11, module-wide, not ShapeAxis-specific, and this is this project's
 // designated home for exactly this duplication class, #419)
