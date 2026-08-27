@@ -23,8 +23,6 @@ public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
     public static let thick: DrawingLineWidth = .w050
 }
 
-
-
 /// ISO 3098 text height series in mm.
 ///
 /// Picking the right height scales dimension text and title-block text to the sheet size. Each tier is ~1.4× the
