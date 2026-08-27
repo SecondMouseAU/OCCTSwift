@@ -42,7 +42,7 @@ OCCTDrawingRef _Nullable OCCTDrawingCreate(OCCTShapeRef       shape,
 /// Create an HLR drawing using polygonal (triangulation-based) algorithm.
 /// @param shape The shape to project
 /// @param dirX, dirY, dirZ View direction vector
-/// @param deflection Deflection for triangulation
+/// @param deflection Deflection for triangulation (must be > 0)
 /// @return Drawing reference, or NULL on failure. Caller must release with OCCTDrawingRelease.
 OCCTDrawingRef _Nullable OCCTDrawingCreatePoly(OCCTShapeRef shape,
                                                double       dirX,
