@@ -6081,6 +6081,27 @@ struct DrawingSymbolsTests {
         #expect(required.count > any.count)
     }
 
+    @Test("Surface finish .machiningProhibited emits circle as centreline segments")
+    func surfaceFinishMachiningProhibited() {
+        let anns = DrawingAnnotation.surfaceFinish(
+            at: SIMD2(10, 10),
+            leaderTo: SIMD2(20, 5),
+            ra: 1.6,
+            symbol: .machiningProhibited)
+        // 2 arms + 24 circle segments + Ra text + leader = 28 annotations.
+        #expect(anns.count == 28)
+        let lineCount = anns.filter {
+            if case .centreline = $0 { return true } else { return false }
+        }.count
+        // 2 arms + 24 circle segments + 1 leader = 27 lines
+        #expect(lineCount == 27)
+        let textCount = anns.filter {
+            if case .textLabel = $0 { return true } else { return false }
+        }.count
+        // 1 Ra text label
+        #expect(textCount == 1)
+    }
+
     @Test("Feature control frame produces rectangle + dividers + symbol + tolerance")
     func featureControlFrame() {
         let anns = DrawingAnnotation.featureControlFrame(
