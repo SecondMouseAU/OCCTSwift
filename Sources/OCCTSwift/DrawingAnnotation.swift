@@ -258,7 +258,7 @@ public enum DrawingDimension: Sendable, Hashable {
 public enum DrawingAnnotation: Sendable, Hashable {
     case centreline(Centreline)
     case centermark(Centermark)
-    case textLabel(TextLabel)
+    case textLabel(DrawingTextLabel)
     case hatch(Hatch)
     case cuttingPlaneLine(CuttingPlaneLine)
     case balloon(Balloon)
@@ -300,7 +300,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
         }
     }
 
-    public struct TextLabel: Sendable, Hashable {
+    public struct DrawingTextLabel: Sendable, Hashable {
         public var position: SIMD2<Double>
         public var text: String
         public var height: Double
