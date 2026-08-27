@@ -88,29 +88,23 @@ extension Drawing {
         var added: [DrawingAnnotation] = []
         var skipped: [Edge] = []
         for edge in shape.edges() where edge.curveType == .circle {
-            guard let curve = edge.curve3D else { continue }
-            let props = curve.circleProperties
-            guard props.radius >= minRadius else { continue }
-            // Circle normal = X axis × Y axis of the circle's local frame.
-            let normal = simd_cross(props.xAxis.direction, props.yAxis.direction)
-            // If the circle's plane is parallel to the view direction, the
-            // circle projects to a line segment (edge-on). Skip.
-            let dot = abs(simd_dot(simd_normalize(normal), viewZ))
-            if dot < 0.1 {
-                skipped.append(edge)
-                continue
+            if let vis = testCircleVisibility(
+                edge: edge,
+                viewZ: viewZ,
+                minRadius: minRadius,
+                bounds: bounds,
+                onSkip: { reason in
+                    // Only record edge-on skips to match existing behavior
+                    if reason == "circle edge-on in view" {
+                        skipped.append(edge)
+                    }
+                }
+            ) {
+                let ann = addCentermark(
+                    centre: vis.centre2D, extent: extent,
+                    id: "auto-mark-\(added.count)")
+                added.append(ann)
             }
-            let centre2D = projectPointToPlane(props.center, viewDirection: viewZ)
-            if let bb = bounds,
-                centre2D.x < bb.min.x || centre2D.x > bb.max.x || centre2D.y < bb.min.y
-                    || centre2D.y > bb.max.y
-            {
-                continue
-            }
-            let ann = addCentermark(
-                centre: centre2D, extent: extent,
-                id: "auto-mark-\(added.count)")
-            added.append(ann)
         }
         return AutoCentermarkResult(added: added, skipped: skipped)
     }
@@ -130,6 +124,55 @@ internal func projectPointToPlane(
 ) -> SIMD2<Double> {
     let (right, up) = perpendicularBasis(to: viewDirection)
     return SIMD2(simd_dot(p, right), simd_dot(p, up))
+}
+
+// MARK: - Shared circle-visibility test
+
+/// Result of the shared circle-visibility test used by both `addAutoDimensions`
+/// and `addAutoCentermarks`.
+internal struct CircleVisibilityResult {
+    let centre2D: SIMD2<Double>
+    let radius: Double
+}
+
+/// Shared circle-visibility test: edge-on cutoff + bounds clip.
+/// Returns `nil` if the circle should be skipped (no curve3D, below minRadius,
+/// edge-on, or outside bounds). The `onSkip` closure is called with a reason
+/// string for each skip path, allowing callers to record skipped reasons differently.
+internal func testCircleVisibility(
+    edge: Edge,
+    viewZ: SIMD3<Double>,
+    minRadius: Double,
+    bounds: (min: SIMD2<Double>, max: SIMD2<Double>)?,
+    onSkip: (String) -> Void
+) -> CircleVisibilityResult? {
+    guard let curve = edge.curve3D else {
+        onSkip("circle edge has no curve3D")
+        return nil
+    }
+    let props = curve.circleProperties
+    guard props.radius >= minRadius else {
+        onSkip("circle radius \(props.radius) < minRadius")
+        return nil
+    }
+    // Edge-on test: if the circle's plane normal is perpendicular to
+    // the view direction (dot ≈ 0), the circle projects to a line
+    // segment, not a circle. Skip.
+    let normal = simd_cross(props.xAxis.direction, props.yAxis.direction)
+    let dotAxis = abs(simd_dot(simd_normalize(normal), viewZ))
+    if dotAxis < 0.1 {
+        onSkip("circle edge-on in view")
+        return nil
+    }
+    let centre2D = projectPointToPlane(props.center, viewDirection: viewZ)
+    if let bb = bounds,
+        centre2D.x < bb.min.x || centre2D.x > bb.max.x || centre2D.y < bb.min.y
+            || centre2D.y > bb.max.y
+    {
+        onSkip("circle outside bounds")
+        return nil
+    }
+    return CircleVisibilityResult(centre2D: centre2D, radius: props.radius)
 }
 
 /// Project a 3D axis (origin + direction) into the 2D plane perpendicular to

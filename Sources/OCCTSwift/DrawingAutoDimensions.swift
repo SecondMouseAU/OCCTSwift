@@ -102,39 +102,21 @@ extension Drawing {
         // --- 2. Diameter dimensions on visible circular edges ---
         var diameterIndex = 0
         for edge in shape.edges() where edge.curveType == .circle {
-            guard let curve = edge.curve3D else {
-                skipped.append("circle edge has no curve3D")
-                continue
+            if let vis = testCircleVisibility(
+                edge: edge,
+                viewZ: viewZ,
+                minRadius: minRadius,
+                bounds: bounds,
+                onSkip: { skipped.append($0) }
+            ) {
+                let dim = addDiameterDimension(
+                    centre: vis.centre2D,
+                    radius: vis.radius,
+                    leaderAngle: .pi / 4,
+                    id: "auto-dia-\(diameterIndex)")
+                added.append(dim)
+                diameterIndex += 1
             }
-            let props = curve.circleProperties
-            guard props.radius >= minRadius else {
-                skipped.append("circle radius \(props.radius) < minRadius")
-                continue
-            }
-            // Edge-on test: if the circle's plane normal is perpendicular to
-            // the view direction (dot ≈ 0), the circle projects to a line
-            // segment, not a circle, skip. Mirrors addAutoCentermarks.
-            let normal = simd_cross(props.xAxis.direction, props.yAxis.direction)
-            let dotAxis = abs(simd_dot(simd_normalize(normal), viewZ))
-            if dotAxis < 0.1 {
-                skipped.append("circle edge-on in view")
-                continue
-            }
-            let centre2D = projectPointToPlane(props.center, viewDirection: viewZ)
-            if let bb = bounds,
-                centre2D.x < bb.min.x || centre2D.x > bb.max.x || centre2D.y < bb.min.y
-                    || centre2D.y > bb.max.y
-            {
-                skipped.append("circle outside bounds")
-                continue
-            }
-            let dim = addDiameterDimension(
-                centre: centre2D,
-                radius: props.radius,
-                leaderAngle: .pi / 4,
-                id: "auto-dia-\(diameterIndex)")
-            added.append(dim)
-            diameterIndex += 1
         }
 
         return AutoDimensionResult(added: added, skipped: skipped)
