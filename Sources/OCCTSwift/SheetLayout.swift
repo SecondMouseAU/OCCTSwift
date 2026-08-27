@@ -157,4 +157,18 @@ public struct StandardLayout: Sendable {
             writer.collectFromDrawing(p.drawing, translate: p.offset, scale: p.scale)
         }
     }
+
+    /// Emit every view onto a writer via its `TransformedDrawing`.
+    public func render(into writer: PDFWriter) {
+        for p in placed {
+            writer.collectFromDrawing(p.drawing, translate: p.offset, scale: p.scale)
+        }
+    }
+
+    /// Emit every view onto a writer via its `TransformedDrawing`.
+    public func render(into writer: SVGWriter) {
+        for p in placed {
+            writer.collectFromDrawing(p.drawing, translate: p.offset, scale: p.scale)
+        }
+    }
 }

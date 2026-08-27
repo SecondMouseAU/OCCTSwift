@@ -484,15 +484,21 @@ Pure-Swift. Useful for iterating all views uniformly.
 
 ### `StandardLayout.render(into:)`
 
-Emits every placed view onto a `DXFWriter` via its scaled/translated transform.
+Emits every placed view onto a `DXFWriter`, `PDFWriter`, or `SVGWriter` via its scaled/translated transform.
 
 ```swift
 public func render(into writer: DXFWriter)
+public func render(into writer: PDFWriter)
+public func render(into writer: SVGWriter)
 ```
 
-Calls `writer.collectFromDrawing(_:translate:scale:)` for each view in `placed` order. The writer accumulates all geometry; call its output method after `render` to produce the DXF bytes.
+Calls `writer.collectFromDrawing(_:translate:scale:)` for each view in `placed` order. The writer accumulates all geometry; call its output method after `render` to produce the output bytes.
 
-- **Parameters:** `writer`, `DXFWriter` to receive the drawing entities.
+Three overloads, one per writer type (#1180) -- previously `DXFWriter`-only, so a `standardLayout(of:)`
+result could not be rendered onto a PDF or SVG sheet at all; a caller had to re-derive this loop
+inline against `layout.placed` instead of calling `render(into:)`.
+
+- **Parameters:** `writer`, `DXFWriter`, `PDFWriter`, or `SVGWriter` to receive the drawing entities.
 - **Example:**
   ```swift
   let writer = DXFWriter()

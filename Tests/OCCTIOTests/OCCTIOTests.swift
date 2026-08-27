@@ -2140,11 +2140,13 @@ struct PDFWriterTests {
         try Exporter.writePDF(
             sheet: sheet,
             body: { pdf in
-                for placed in layout.placed {
-                    pdf.collectFromDrawing(
-                        placed.drawing,
-                        translate: placed.offset, scale: placed.scale)
-                }
+                // #1180: `Sheet.render`/`StandardLayout.render` used to only accept `DXFWriter`,
+                // so this test had to re-derive `StandardLayout.render`'s own body inline
+                // instead of calling it, and could draw no sheet border, ISO 7200 title block,
+                // or ISO 5456-2 projection symbol at all onto the PDF. Both now accept
+                // `PDFWriter` directly.
+                sheet.render(into: pdf)
+                layout.render(into: pdf)
             }, to: url)
         let size = try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int ?? 0
         #expect(size > 400)  // header + xref + at least one object
