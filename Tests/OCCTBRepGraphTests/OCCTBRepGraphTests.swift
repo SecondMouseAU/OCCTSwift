@@ -1932,12 +1932,12 @@ struct PackSIMD3Tests {
         #expect(flat == [1, 2, 3, 4, 5, 6])
     }
 
-    @Test("packSIMD3(into:) returns 0 when buffer is too small")
-    func packIntoTooSmallBufferReturnsZero() {
+    @Test("packSIMD3(into:) returns -1 when buffer is too small")
+    func packIntoTooSmallBufferReturnsNegative() {
         let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
         var flat = [Double](repeating: 0, count: 3) // too small
         let written = packSIMD3(points, into: &flat)
-        #expect(written == 0)
+        #expect(written == -1)
     }
 }
 

@@ -68,8 +68,8 @@ internal func packSIMD3<Scalar: SIMDScalar>(_ vectors: [SIMD3<Scalar>]) -> [Scal
 /// Packs an array of `SIMD3<Scalar>` into a pre-allocated flat `[Scalar]` buffer
 /// with stride 3 (x, y, z, x, y, z, ...).
 ///
-/// The buffer must have at least `vectors.count * 3` capacity. Returns the number
-/// of scalars written (always `vectors.count * 3` on success, 0 if buffer is too small).
+/// The buffer must have at least `vectors.count * 3` count. Returns the number
+/// of scalars written (always `vectors.count * 3` on success, -1 if buffer is too small).
 ///
 /// ```swift
 /// let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
@@ -83,7 +83,7 @@ internal func packSIMD3<Scalar: SIMDScalar>(
     _ vectors: [SIMD3<Scalar>], into buffer: inout [Scalar]
 ) -> Int {
     let needed = vectors.count * 3
-    guard buffer.count >= needed else { return 0 }
+    guard buffer.count >= needed else { return -1 }
     for (i, v) in vectors.enumerated() {
         let base = i * 3
         buffer[base] = v.x
