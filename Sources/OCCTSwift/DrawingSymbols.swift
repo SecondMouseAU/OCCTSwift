@@ -106,9 +106,11 @@ extension DrawingAnnotation {
 
 // MARK: - GD&T symbols (ISO 1101)
 
-/// ISO 1101 geometric characteristic symbol.
+/// ISO 1101 geometric characteristic symbol vocabulary for drawing annotations.
 ///
-/// Matches `Document.GeomToleranceType` raw values for easy round-trip from XDE into drawings.
+/// Unrelated to `Document.GeomToleranceType` (Int32-backed, numeric tolerance data from XCAF);
+/// the two vocabularies serve different purposes and their case names diverged (e.g.
+/// `.circularity` here vs `.circularityOrRoundness` there). No conversion exists.
 public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case straightness, flatness, circularity, cylindricity
     case profileOfLine, profileOfSurface
