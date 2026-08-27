@@ -1176,15 +1176,22 @@ public var innerFrame: (min: SIMD2<Double>, max: SIMD2<Double>) { get }
 
 ### `Sheet.render(into:)`
 
-Renders the sheet border, centring marks, title block, and projection symbol into a `DXFWriter`.
+Renders the sheet border, centring marks, title block, and projection symbol into a `DXFWriter`, `PDFWriter`, or `SVGWriter`.
 
 ```swift
 public func render(into writer: DXFWriter)
+public func render(into writer: PDFWriter)
+public func render(into writer: SVGWriter)
 ```
 
 Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet edge and inner frame are polylines; centring marks are short lines at midpoints of each frame edge; the title block is a 170 × 55 mm rectangle in the bottom-right with ISO 7200 fields; the projection symbol is rendered by `ProjectionSymbol.render(_:at:into:)` above the title block.
 
-- **Parameters:** `writer`, a `DXFWriter` that accumulates geometry for eventual file output.
+Three overloads, one per writer type, sharing one internal implementation (#1180) -- before this
+the scaffolding only rendered onto a `DXFWriter`, so a `PDFWriter`/`SVGWriter` sheet got no border,
+title block, or projection symbol at all, even though the body only calls the five primitives every
+writer implements identically.
+
+- **Parameters:** `writer`, a `DXFWriter`, `PDFWriter`, or `SVGWriter` that accumulates geometry for eventual file output.
 - **Note:** Pure-Swift; no OCCT bridge call.
 - **Example:**
   ```swift
@@ -1192,6 +1199,11 @@ Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet ed
   let writer = DXFWriter()
   sheet.render(into: writer)
   // Now add view geometry into writer, then call writer.write(to:)
+
+  // Or, composing a PDF the same way:
+  try Exporter.writePDF(sheet: sheet, to: URL(fileURLWithPath: "/tmp/part-a.pdf")) { pdf in
+      sheet.render(into: pdf)
+  }
   ```
 
 ---
@@ -1201,7 +1213,7 @@ Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet ed
 ---
 ## ProjectionSymbol
 
-Namespace for rendering ISO 5456-2 first/third-angle projection symbols into a `DXFWriter`.
+Namespace for rendering ISO 5456-2 first/third-angle projection symbols into a `DXFWriter`, `PDFWriter`, or `SVGWriter`.
 
 ```swift
 public enum ProjectionSymbol
@@ -1215,14 +1227,24 @@ Renders a projection-angle symbol at a 2D origin.
 public static func render(_ angle: ProjectionAngle,
                           at origin: SIMD2<Double>,
                           into writer: DXFWriter)
+public static func render(_ angle: ProjectionAngle,
+                          at origin: SIMD2<Double>,
+                          into writer: PDFWriter)
+public static func render(_ angle: ProjectionAngle,
+                          at origin: SIMD2<Double>,
+                          into writer: SVGWriter)
 ```
 
 The symbol is approximately 30 × 15 mm. First-angle: truncated-cone view on the left, circle on the right. Third-angle: circle on the left, truncated-cone on the right.
 
+Three overloads, one per writer type, sharing one internal implementation (#1180) -- previously
+`DXFWriter`-only, so `Sheet.render(into:)` could emit the symbol onto a PDF/SVG sheet's DXF writer
+but not onto the PDF/SVG writer it was actually building.
+
 - **Parameters:**
   - `angle`: `.first` (ISO) or `.third` (ANSI).
   - `origin`: bottom-left origin of the symbol bounding box in drawing coordinates.
-  - `writer`: the `DXFWriter` to emit lines and circles into (layer `"TEXT"`).
+  - `writer`: the `DXFWriter`, `PDFWriter`, or `SVGWriter` to emit lines and circles into (layer `"TEXT"`).
 - **Note:** Pure-Swift; no OCCT bridge call. Called automatically by `Sheet.render(into:)`.
 - **Example:**
   ```swift

@@ -1616,6 +1616,39 @@ struct SheetStandardLayoutTests {
         let counts = writer.entityCounts
         #expect(counts.lines + counts.polylines > 0)
     }
+
+    // #1180: `StandardLayout.render(into:)` used to accept only `DXFWriter`, even though its
+    // whole body is one call into `writer.collectFromDrawing(_:translate:scale:)`, which
+    // `PDFWriter`/`SVGWriter` already implement identically -- mirrors the DXFWriter case above.
+    @Test("render(into:) emits geometry for every placed view onto a PDFWriter")
+    func renderEmitsEveryViewPDF() {
+        let sheet = Sheet(size: .a3)
+        guard let box = Shape.box(width: 20, height: 15, depth: 10),
+            let layout = sheet.standardLayout(of: box)
+        else {
+            Issue.record("setup nil")
+            return
+        }
+        let writer = PDFWriter()
+        layout.render(into: writer)
+        let counts = writer.entityCounts
+        #expect(counts.lines + counts.polylines > 0)
+    }
+
+    @Test("render(into:) emits geometry for every placed view onto an SVGWriter")
+    func renderEmitsEveryViewSVG() {
+        let sheet = Sheet(size: .a3)
+        guard let box = Shape.box(width: 20, height: 15, depth: 10),
+            let layout = sheet.standardLayout(of: box)
+        else {
+            Issue.record("setup nil")
+            return
+        }
+        let writer = SVGWriter()
+        layout.render(into: writer)
+        let counts = writer.entityCounts
+        #expect(counts.lines + counts.polylines > 0)
+    }
 }
 
 // MARK: - v0.150 #87: BillOfMaterials

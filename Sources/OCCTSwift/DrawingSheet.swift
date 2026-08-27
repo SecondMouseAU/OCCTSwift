@@ -177,7 +177,30 @@ public struct Sheet: Sendable, Hashable {
     /// onto the writer.
     ///
     /// Uses BORDER, TITLE, TEXT, and CENTER layers.
-    public func render(into writer: DXFWriter) {
+    public func render(into writer: DXFWriter) { renderScaffolding(into: writer) }
+
+    /// Render the border + centring marks + title block + projection symbol
+    /// onto the writer.
+    ///
+    /// Uses BORDER, TITLE, TEXT, and CENTER layers.
+    public func render(into writer: PDFWriter) { renderScaffolding(into: writer) }
+
+    /// Render the border + centring marks + title block + projection symbol
+    /// onto the writer.
+    ///
+    /// Uses BORDER, TITLE, TEXT, and CENTER layers.
+    public func render(into writer: SVGWriter) { renderScaffolding(into: writer) }
+
+    /// Shared body for the three `render(into:)` overloads above (#1180).
+    ///
+    /// `DrawingPrimitiveSink` (`DrawingDispatch.swift`) is `internal`, so it can't be the type of
+    /// a `public` parameter itself -- each writer keeps its own explicit `public` overload, and
+    /// this one function supplies all three bodies, the same split `collectFromDrawing` uses
+    /// (#795). Before this, `render(into:)` only accepted `DXFWriter`, so a `Sheet`'s border,
+    /// ISO 7200 title block and ISO 5456-2 projection symbol could not be emitted onto a
+    /// `PDFWriter`/`SVGWriter` at all, even though every call in this body is one of the five
+    /// writer-agnostic primitives every conformer implements identically.
+    private func renderScaffolding(into writer: DrawingPrimitiveSink) {
         let d = dimensions
         // Outer trimmed sheet edge
         let outer = rectanglePoints(min: .zero, max: d)
@@ -215,12 +238,12 @@ public struct Sheet: Sendable, Hashable {
 
         // Projection symbol above the title block.
         let symbolOrigin = SIMD2(frame.max.x - 40, frame.min.y + 65)
-        ProjectionSymbol.render(projection, at: symbolOrigin, into: writer)
+        ProjectionSymbol.renderSymbol(projection, at: symbolOrigin, into: writer)
     }
 
     private func renderTitleBlock(
         _ tb: TitleBlock,
-        into writer: DXFWriter,
+        into writer: DrawingPrimitiveSink,
         frame: (min: SIMD2<Double>, max: SIMD2<Double>)
     ) {
         // Simplified ISO 7200 title block: a 170x55 mm rectangle in the
@@ -241,9 +264,11 @@ public struct Sheet: Sendable, Hashable {
         func addField(row: Int, col: Int, label: String, value: String?) {
             let x = origin.x + 5 + Double(col) * (tbWidth / 2)
             let y = origin.y + tbHeight - rowH * Double(row + 1) + 2
-            writer.addText(label, at: SIMD2(x, y + 5), height: labelH, layer: "TEXT")
+            writer.addText(
+                label, at: SIMD2(x, y + 5), height: labelH, rotationDeg: 0, layer: "TEXT")
             if let value = value {
-                writer.addText(value, at: SIMD2(x, y), height: valueH, layer: "TEXT")
+                writer.addText(
+                    value, at: SIMD2(x, y), height: valueH, rotationDeg: 0, layer: "TEXT")
             }
         }
 
@@ -271,6 +296,41 @@ public enum ProjectionSymbol {
         _ angle: ProjectionAngle,
         at origin: SIMD2<Double>,
         into writer: DXFWriter
+    ) { renderSymbol(angle, at: origin, into: writer) }
+
+    /// Render a projection-angle symbol at the given 2D origin.
+    ///
+    /// First-angle symbol: truncated-cone front view on the left, circle side
+    ///                     view on the right.
+    /// Third-angle symbol: circle side view on the left, truncated-cone front
+    ///                     view on the right.
+    public static func render(
+        _ angle: ProjectionAngle,
+        at origin: SIMD2<Double>,
+        into writer: PDFWriter
+    ) { renderSymbol(angle, at: origin, into: writer) }
+
+    /// Render a projection-angle symbol at the given 2D origin.
+    ///
+    /// First-angle symbol: truncated-cone front view on the left, circle side
+    ///                     view on the right.
+    /// Third-angle symbol: circle side view on the left, truncated-cone front
+    ///                     view on the right.
+    public static func render(
+        _ angle: ProjectionAngle,
+        at origin: SIMD2<Double>,
+        into writer: SVGWriter
+    ) { renderSymbol(angle, at: origin, into: writer) }
+
+    /// Shared body for the three `render(into:)` overloads above (#1180); see
+    /// `Sheet.renderScaffolding` for why this isn't the public declaration itself.
+    ///
+    /// `internal` (not `private`) because `Sheet.renderScaffolding` -- a different type -- also
+    /// calls it, over the writer-agnostic `DrawingPrimitiveSink` both already hold.
+    static func renderSymbol(
+        _ angle: ProjectionAngle,
+        at origin: SIMD2<Double>,
+        into writer: DrawingPrimitiveSink
     ) {
         // Symbol is 30mm wide, 15mm tall — two shapes separated by a gap.
         let frontFaceW = 12.0

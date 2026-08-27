@@ -138,8 +138,12 @@ the caller stage arbitrary entities before writing.
 - **OCCT:** Pure-Swift.
 - **Example:**
   ```swift
-  let sheet = Sheet(paperSize: .a4, orientation: .landscape)
+  let sheet = Sheet(size: .a4, orientation: .landscape,
+                    title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
   try Exporter.writePDF(sheet: sheet, to: URL(fileURLWithPath: "/tmp/manual.pdf")) { writer in
+      // Sheet.render(into:) accepts PDFWriter directly (#1180): the border, ISO 7200 title
+      // block, and ISO 5456-2 projection symbol are staged the same way they are for DXF.
+      sheet.render(into: writer)
       writer.addLine(from: SIMD2(10, 10), to: SIMD2(200, 10))
       writer.addText("Title", at: SIMD2(10, 5), height: 5)
   }
@@ -459,8 +463,12 @@ arbitrary entities.
 - **OCCT:** Pure-Swift.
 - **Example:**
   ```swift
-  let sheet = Sheet(paperSize: .a4, orientation: .landscape)
+  let sheet = Sheet(size: .a4, orientation: .landscape,
+                    title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
   try Exporter.writeSVG(sheet: sheet, to: URL(fileURLWithPath: "/tmp/manual.svg")) { writer in
+      // Sheet.render(into:) accepts SVGWriter directly (#1180): the border, ISO 7200 title
+      // block, and ISO 5456-2 projection symbol are staged the same way they are for DXF.
+      sheet.render(into: writer)
       writer.addCircle(centre: SIMD2(50, 50), radius: 20)
       writer.addText("ø40", at: SIMD2(55, 50))
   }
