@@ -428,7 +428,7 @@ public final class Drawing: @unchecked Sendable {
     ///   - shape: The 3D shape to project
     ///   - direction: View direction
     ///   - deflection: Mesh deflection (smaller = more accurate, default 0.01)
-    /// - Returns: Drawing containing the projected edges, or nil if projection fails
+    /// - Returns: Drawing containing the projected edges, or nil if projection fails or deflection is not positive
     public static func projectFast(
         _ shape: Shape,
         direction: SIMD3<Double>,
