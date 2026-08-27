@@ -18,7 +18,7 @@ The file contains four public types at the top level and their associated nested
 
 ## Topics
 
-- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.TextLabel](#drawingannotationtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotationStore](#drawingannotationstore)
+- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.DrawingTextLabel](#drawingannotationdrawingtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotationStore](#drawingannotationstore)
 
 ---
 
@@ -728,7 +728,7 @@ Non-dimensional 2D annotations attached to a `Drawing`, centrelines, centremarks
 public enum DrawingAnnotation: Sendable, Hashable {
     case centreline(Centreline)
     case centermark(Centermark)
-    case textLabel(TextLabel)
+    case textLabel(DrawingTextLabel)
     case hatch(Hatch)
     case cuttingPlaneLine(CuttingPlaneLine)
     case balloon(Balloon)
@@ -866,14 +866,14 @@ public init(centre: SIMD2<Double>, extent: Double = 8,
 
 ---
 
-## DrawingAnnotation.TextLabel
+## DrawingAnnotation.DrawingTextLabel
 
-### `DrawingAnnotation.TextLabel`
+### `DrawingAnnotation.DrawingTextLabel`
 
 Free-form text placed at a 2D position, with optional rotation.
 
 ```swift
-public struct TextLabel: Sendable, Hashable {
+public struct DrawingTextLabel: Sendable, Hashable {
     public var position: SIMD2<Double>
     public var text: String
     public var height: Double
@@ -890,7 +890,7 @@ public struct TextLabel: Sendable, Hashable {
 
 ---
 
-### `DrawingAnnotation.TextLabel.init(position:text:height:rotation:id:)`
+### `DrawingAnnotation.DrawingTextLabel.init(position:text:height:rotation:id:)`
 
 Creates a text label annotation.
 
@@ -909,7 +909,7 @@ public init(position: SIMD2<Double>, text: String,
 - **Example:**
   ```swift
   let note = DrawingAnnotation.textLabel(
-      DrawingAnnotation.TextLabel(
+      DrawingAnnotation.DrawingTextLabel(
           position: SIMD2(10, 200),
           text: "SECTION A-A",
           height: 5.0
@@ -921,7 +921,11 @@ public init(position: SIMD2<Double>, text: String,
 
 ## TextLabel (OCCT-backed class)
 
-Not to be confused with `DrawingAnnotation.TextLabel` above, a pure-Swift 2D annotation struct for `Drawing` output: `TextLabel` (declared with no enclosing type, in `Annotation.swift`) is a separate, OCCT-backed 3D text label used for viewport/Metal-rendered scene labels. See [Annotation](Annotation.md) for its public surface (`text`, `position`, `setHeight(_:)`).
+Renamed from `DrawingAnnotation.TextLabel` to `DrawingAnnotation.DrawingTextLabel` (#1175), to stop
+colliding by bare name with this unrelated type: `TextLabel` (declared with no enclosing type, in
+`Annotation.swift`) is an OCCT-backed 3D text label used for viewport/Metal-rendered scene labels,
+not the pure-Swift 2D annotation struct above. See [Annotation](Annotation.md) for its public
+surface (`text`, `position`, `setHeight(_:)`).
 
 *(Internal, not public API: `TextLabel.handle` is an `internal let handle: OCCTTextLabelRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
