@@ -1,6 +1,79 @@
 import Foundation
 import simd
 
+// MARK: - Shared rectangle helper
+
+extension DrawingAnnotation {
+    /// Returns four `Centreline`s forming an axis-aligned rectangle in CCW winding order.
+    ///
+    /// - Parameters:
+    ///   - min: Bottom-left corner.
+    ///   - max: Top-right corner.
+    ///   - style: Line style for all four edges (default `.solid`).
+    ///   - idPrefix: Optional prefix for edge IDs. If provided, edges receive IDs
+    ///     `"\(idPrefix)-bottom"`, `"\(idPrefix)-right"`, `"\(idPrefix)-top"`, `"\(idPrefix)-left"`.
+    /// - Returns: Array of 4 `Centreline`s: [bottom, right, top, left] in CCW order.
+    public static func rectangle(
+        min: SIMD2<Double>,
+        max: SIMD2<Double>,
+        style: DrawingLineStyle = .solid,
+        idPrefix: String? = nil
+    ) -> [Centreline] {
+        let bottom = Centreline(
+            from: min,
+            to: SIMD2(max.x, min.y),
+            style: style,
+            id: idPrefix.map { "\($0)-bottom" }
+        )
+        let right = Centreline(
+            from: SIMD2(max.x, min.y),
+            to: max,
+            style: style,
+            id: idPrefix.map { "\($0)-right" }
+        )
+        let top = Centreline(
+            from: max,
+            to: SIMD2(min.x, max.y),
+            style: style,
+            id: idPrefix.map { "\($0)-top" }
+        )
+        let left = Centreline(
+            from: SIMD2(min.x, max.y),
+            to: min,
+            style: style,
+            id: idPrefix.map { "\($0)-left" }
+        )
+        return [bottom, right, top, left]
+    }
+
+    /// Returns `Centreline`s for vertical divider lines at the given x positions.
+    ///
+    /// - Parameters:
+    ///   - xPositions: Array of x coordinates for the dividers.
+    ///   - from: Y coordinate of the bottom of the dividers.
+    ///   - to: Y coordinate of the top of the dividers.
+    ///   - style: Line style for all dividers (default `.solid`).
+    ///   - idPrefix: Optional prefix for divider IDs. If provided, dividers receive IDs
+    ///     `"\(idPrefix)-divider-0"`, `"\(idPrefix)-divider-1"`, etc.
+    /// - Returns: Array of `Centreline`s, one per x position.
+    public static func verticalDividers(
+        at xPositions: [Double],
+        from: Double,
+        to: Double,
+        style: DrawingLineStyle = .solid,
+        idPrefix: String? = nil
+    ) -> [Centreline] {
+        xPositions.enumerated().map { index, x in
+            Centreline(
+                from: SIMD2(x, from),
+                to: SIMD2(x, to),
+                style: style,
+                id: idPrefix.map { "\($0)-divider-\(index)" }
+            )
+        }
+    }
+}
+
 // MARK: - ISO 1302 surface finish + ISO 1101 GD&T + detail views + break lines (v0.146)
 
 // MARK: - Surface finish (ISO 1302)
@@ -166,45 +239,23 @@ extension DrawingAnnotation {
         // Outer rectangle
         let bottomLeft = position
         let topRight = SIMD2(position.x + totalW, position.y + cellH)
-        // Represent as 4 lines forming the outer box
-        result.append(
-            .centreline(
-                .init(
-                    from: bottomLeft,
-                    to: SIMD2(topRight.x, bottomLeft.y),
-                    style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(topRight.x, bottomLeft.y),
-                    to: topRight, style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: topRight,
-                    to: SIMD2(bottomLeft.x, topRight.y),
-                    style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(bottomLeft.x, topRight.y),
-                    to: bottomLeft, style: .solid)))
+        result.append(contentsOf: rectangle(
+            min: bottomLeft,
+            max: topRight,
+            style: .solid,
+            idPrefix: "fcf"
+        ).map { .centreline($0) })
 
         // Vertical dividers
         let divX1 = bottomLeft.x + symbolW
         let divX2 = divX1 + toleranceW
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(divX1, bottomLeft.y),
-                    to: SIMD2(divX1, topRight.y),
-                    style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(divX2, bottomLeft.y),
-                    to: SIMD2(divX2, topRight.y),
-                    style: .solid)))
+        result.append(contentsOf: verticalDividers(
+            at: [divX1, divX2],
+            from: bottomLeft.y,
+            to: topRight.y,
+            style: .solid,
+            idPrefix: "fcf"
+        ).map { .centreline($0) })
 
         // Symbol glyph in first cell
         result.append(
@@ -223,16 +274,18 @@ extension DrawingAnnotation {
                     text: tolerance, height: 3.5)))
 
         // Datum cells
+        if !datums.isEmpty {
+            let datumDividerXs = (1..<datums.count).map { i in divX2 + Double(i) * datumW }
+            result.append(contentsOf: verticalDividers(
+                at: datumDividerXs,
+                from: bottomLeft.y,
+                to: topRight.y,
+                style: .solid,
+                idPrefix: "fcf"
+            ).map { .centreline($0) })
+        }
         for (i, datum) in datums.enumerated() {
             let cellX = divX2 + Double(i) * datumW
-            if i > 0 {
-                result.append(
-                    .centreline(
-                        .init(
-                            from: SIMD2(cellX, bottomLeft.y),
-                            to: SIMD2(cellX, topRight.y),
-                            style: .solid)))
-            }
             result.append(
                 .textLabel(
                     .init(
@@ -262,16 +315,17 @@ extension DrawingAnnotation {
         // Box
         let bl = position
         let tr = SIMD2(position.x + boxSize, position.y + boxSize)
-        var result: [DrawingAnnotation] = [
-            .centreline(.init(from: bl, to: SIMD2(tr.x, bl.y), style: .solid)),
-            .centreline(.init(from: SIMD2(tr.x, bl.y), to: tr, style: .solid)),
-            .centreline(.init(from: tr, to: SIMD2(bl.x, tr.y), style: .solid)),
-            .centreline(.init(from: SIMD2(bl.x, tr.y), to: bl, style: .solid)),
+        var result: [DrawingAnnotation] = rectangle(
+            min: bl,
+            max: tr,
+            style: .solid,
+            idPrefix: "datum"
+        ).map { .centreline($0) }
+        result.append(
             .textLabel(
                 .init(
                     position: SIMD2(bl.x + boxSize / 3, bl.y + boxSize / 3),
-                    text: label, height: 4)),
-        ]
+                    text: label, height: 4)))
 
         // Triangle pointing at target
         let dir = target - position
