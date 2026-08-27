@@ -532,23 +532,34 @@ int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
 
 // MARK: - Hatch Patterns (v0.29.0)
 
-/// Generate hatch line segments within a 2D polygon boundary.
+/// Generate hatch line segments within a 2D polygon boundary, optionally excluding one or
+/// more island (hole) polygons via the same `Hatch_Hatcher::Trim` even/odd rule used for
+/// the outer boundary (#1172).
 /// @param boundaryXY Flat array of (x,y) pairs defining the boundary polygon
 /// @param boundaryCount Number of boundary points
+/// @param islandsXY Flat array of (x,y) pairs for every island polygon, concatenated in
+///   order; may be NULL when islandCount is 0. Any island with fewer than 3 points is
+///   skipped.
+/// @param islandPointCounts Vertex count of each island polygon, in the same order as
+///   islandsXY; may be NULL when islandCount is 0
+/// @param islandCount Number of island polygons
 /// @param dirX, dirY Hatch line direction
 /// @param spacing Distance between hatch lines
 /// @param offset Offset of the first hatch line from origin
 /// @param outSegments Output buffer: pairs of (x1,y1,x2,y2) per segment (4 doubles each)
 /// @param maxSegments Maximum number of output segments
 /// @return Number of segments written
-int32_t OCCTHatchLines(const double* boundaryXY,
-                       int32_t       boundaryCount,
-                       double        dirX,
-                       double        dirY,
-                       double        spacing,
-                       double        offset,
-                       double*       outSegments,
-                       int32_t       maxSegments);
+int32_t OCCTHatchLines(const double*  boundaryXY,
+                       int32_t        boundaryCount,
+                       const double*  islandsXY,
+                       const int32_t* islandPointCounts,
+                       int32_t        islandCount,
+                       double         dirX,
+                       double         dirY,
+                       double         spacing,
+                       double         offset,
+                       double*        outSegments,
+                       int32_t        maxSegments);
 
 // --- GC_MakeLine2d ---
 

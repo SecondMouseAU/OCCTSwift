@@ -814,7 +814,7 @@ public struct HatchSegment: Sendable {
 
 Caseless enum with a single static factory that generates 2D hatch fill segments within a polygon boundary.
 
-### `HatchPattern.generate(boundary:direction:spacing:offset:maxSegments:)`
+### `HatchPattern.generate(boundary:direction:spacing:offset:islands:maxSegments:)`
 
 Generates hatch line segments within a 2D polygon boundary.
 
@@ -824,6 +824,7 @@ public static func generate(
     direction: SIMD2<Double>,
     spacing: Double,
     offset: Double = 0,
+    islands: [[SIMD2<Double>]] = [],
     maxSegments: Int = 10000
 ) -> [HatchSegment]
 ```
@@ -835,9 +836,10 @@ Clips an infinite family of parallel lines at the given `spacing` against the bo
   - `direction`: direction of the hatch lines (need not be unit-length).
   - `spacing`: perpendicular distance between consecutive hatch lines.
   - `offset`: offset of the first hatch line from the origin along the perpendicular axis (default `0`).
+  - `islands`: closed inner-hole polygons excluded from the fill, via the same `Hatch_Hatcher` even/odd trim rule as `boundary` (default: none). An island with fewer than 3 vertices is ignored (#1172).
   - `maxSegments`: output *capacity* (default `10000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
-- **Returns:** Array of `HatchSegment` values clipped inside `boundary`.
-- **OCCT:** `Hatch_Hatcher::AddLine` + `Hatch_Hatcher::Trim`, adds one directed line per spacing interval, then trims against each boundary edge.
+- **Returns:** Array of `HatchSegment` values clipped inside `boundary` and outside every `islands` polygon.
+- **OCCT:** `Hatch_Hatcher::AddLine` + `Hatch_Hatcher::Trim`, adds one directed line per spacing interval, then trims against each boundary edge and each island edge.
 - **Example:**
   ```swift
   // Cross-hatch a rectangle at 45° with 2mm spacing

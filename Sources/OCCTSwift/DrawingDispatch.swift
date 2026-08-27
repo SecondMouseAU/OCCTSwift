@@ -272,55 +272,17 @@ private func emitCuttingPlaneLine(
 
 private func emitHatch(_ h: DrawingAnnotation.Hatch, into ops: DrawingPrimitiveOps) {
     guard h.boundary.count >= 3, h.spacing > 0 else { return }
-    let cosA = cos(-h.angle)
-    let sinA = sin(-h.angle)
-    func rotateForward(_ p: SIMD2<Double>) -> SIMD2<Double> {
-        SIMD2(cosA * p.x - sinA * p.y, sinA * p.x + cosA * p.y)
-    }
-    let cosB = cos(h.angle)
-    let sinB = sin(h.angle)
-    func rotateBack(_ p: SIMD2<Double>) -> SIMD2<Double> {
-        SIMD2(cosB * p.x - sinB * p.y, sinB * p.x + cosB * p.y)
-    }
-    var segments: [(SIMD2<Double>, SIMD2<Double>)] = []
-    func addPolygonSegments(_ poly: [SIMD2<Double>]) {
-        guard poly.count >= 2 else { return }
-        let rotated = poly.map(rotateForward)
-        for i in 0..<rotated.count {
-            let j = (i + 1) % rotated.count
-            segments.append((rotated[i], rotated[j]))
-        }
-    }
-    addPolygonSegments(h.boundary)
-    for island in h.islands { addPolygonSegments(island) }
-    var minY = Double.infinity
-    var maxY = -Double.infinity
-    for s in segments {
-        minY = min(minY, s.0.y, s.1.y)
-        maxY = max(maxY, s.0.y, s.1.y)
-    }
-    guard minY.isFinite else { return }
-    var y = ceil(minY / h.spacing) * h.spacing
-    while y < maxY {
-        var xs: [Double] = []
-        for s in segments {
-            let (p, q) = s
-            if abs(p.y - q.y) < 1e-12 { continue }
-            let minSeg = min(p.y, q.y)
-            let maxSeg = max(p.y, q.y)
-            if y < minSeg || y >= maxSeg { continue }
-            let t = (y - p.y) / (q.y - p.y)
-            xs.append(p.x + t * (q.x - p.x))
-        }
-        xs.sort()
-        var i = 0
-        while i + 1 < xs.count {
-            let p0 = rotateBack(SIMD2(xs[i], y))
-            let p1 = rotateBack(SIMD2(xs[i + 1], y))
-            ops.addLine(p0, p1, h.layer)
-            i += 2
-        }
-        y += h.spacing
+    // #1172: was a hand-rolled rotate/scanline/intersect duplicate of HatchPattern.generate's
+    // OCCT-native Hatch_Hatcher call; unified onto it so both callers share one tolerance
+    // (Hatch_Hatcher's own 1e-7), one island/hole implementation, and one allocation bound.
+    let direction = SIMD2(cos(h.angle), sin(h.angle))
+    let segments = HatchPattern.generate(
+        boundary: h.boundary,
+        direction: direction,
+        spacing: h.spacing,
+        islands: h.islands)
+    for seg in segments {
+        ops.addLine(seg.start, seg.end, h.layer)
     }
 }
 
