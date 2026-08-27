@@ -1338,10 +1338,11 @@ struct EditorViewProductOpsTests {
                     0, 1, 0, 6,
                     0, 0, 1, 7,
                 ]
-                guard let linked = graph.linkProducts(
-                    parentProductIndex: parentProduct,
-                    referencedProductIndex: childProduct,
-                    placement: translationMatrix)
+                guard
+                    let linked = graph.linkProducts(
+                        parentProductIndex: parentProduct,
+                        referencedProductIndex: childProduct,
+                        placement: translationMatrix)
                 else {
                     Issue.record("linkProducts nil")
                     return

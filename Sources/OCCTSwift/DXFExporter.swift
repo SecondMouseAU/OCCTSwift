@@ -303,8 +303,9 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         (lines.count, polylines.count, circles.count, arcs.count, texts.count)
     }
 
-    /// The staged arcs' start/end angles, in the order added. Lets a test check the actual sweep
-    /// an annotation drew, not just that some arc was drawn.
+    /// The staged arcs' start/end angles, in the order added.
+    ///
+    /// Lets a test check the actual sweep an annotation drew, not just that some arc was drawn.
     public var arcSweeps: [(startAngleDeg: Double, endAngleDeg: Double)] {
         arcs.map { ($0.startAngleDeg, $0.endAngleDeg) }
     }
