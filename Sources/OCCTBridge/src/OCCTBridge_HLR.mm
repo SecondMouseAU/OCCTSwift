@@ -198,7 +198,7 @@ OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
 {
   if (!shape)
     return nullptr;
-  if (deflection <= 0)
+  if (!(deflection > 0))
     return nullptr;
   try
   {
