@@ -239,23 +239,25 @@ extension DrawingAnnotation {
         // Outer rectangle
         let bottomLeft = position
         let topRight = SIMD2(position.x + totalW, position.y + cellH)
-        result.append(contentsOf: rectangle(
-            min: bottomLeft,
-            max: topRight,
-            style: .solid,
-            idPrefix: "fcf"
-        ).map { .centreline($0) })
+        result.append(
+            contentsOf: rectangle(
+                min: bottomLeft,
+                max: topRight,
+                style: .solid,
+                idPrefix: "fcf"
+            ).map { .centreline($0) })
 
         // Vertical dividers
         let divX1 = bottomLeft.x + symbolW
         let divX2 = divX1 + toleranceW
-        result.append(contentsOf: verticalDividers(
-            at: [divX1, divX2],
-            from: bottomLeft.y,
-            to: topRight.y,
-            style: .solid,
-            idPrefix: "fcf"
-        ).map { .centreline($0) })
+        result.append(
+            contentsOf: verticalDividers(
+                at: [divX1, divX2],
+                from: bottomLeft.y,
+                to: topRight.y,
+                style: .solid,
+                idPrefix: "fcf"
+            ).map { .centreline($0) })
 
         // Symbol glyph in first cell
         result.append(
@@ -276,13 +278,14 @@ extension DrawingAnnotation {
         // Datum cells
         if !datums.isEmpty {
             let datumDividerXs = (1..<datums.count).map { i in divX2 + Double(i) * datumW }
-            result.append(contentsOf: verticalDividers(
-                at: datumDividerXs,
-                from: bottomLeft.y,
-                to: topRight.y,
-                style: .solid,
-                idPrefix: "fcf"
-            ).map { .centreline($0) })
+            result.append(
+                contentsOf: verticalDividers(
+                    at: datumDividerXs,
+                    from: bottomLeft.y,
+                    to: topRight.y,
+                    style: .solid,
+                    idPrefix: "fcf"
+                ).map { .centreline($0) })
         }
         for (i, datum) in datums.enumerated() {
             let cellX = divX2 + Double(i) * datumW
