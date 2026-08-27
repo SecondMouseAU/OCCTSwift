@@ -74,7 +74,7 @@ extension Shape {
         guard !wires.isEmpty else { return nil }
 
         // Compose wires into a single compound for projection.
-        let compoundShape = Shape.compound(from: wires.compactMap { Shape.shape(from: $0) })
+        let compoundShape = Shape.compound(wires.compactMap { Shape.shape(from: $0) })
         // Project along Z to get a Drawing whose visibleEdges are our 2D contour.
         guard let compoundShape,
             let drawing = Drawing.project(compoundShape, direction: SIMD3(0, 0, 1))
@@ -106,20 +106,6 @@ extension Shape {
         return (u, v)
     }
 
-    /// Compound a list of shapes into one.
-    ///
-    /// Convenience for Section2D assembly; returns nil on empty input.
-    internal static func compound(from shapes: [Shape]) -> Shape? {
-        guard !shapes.isEmpty else { return nil }
-        if shapes.count == 1 { return shapes[0] }
-        // Fuse sequentially using union; adequate for edge compounds where the
-        // pieces don't truly intersect as solids.
-        var result: Shape = shapes[0]
-        for s in shapes.dropFirst() {
-            if let u = result.union(s) { result = u }
-        }
-        return result
-    }
 }
 
 /// A section view spec, contour + optional hatch + optional label, bundled
