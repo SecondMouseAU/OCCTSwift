@@ -1178,7 +1178,9 @@ inline bool occtValidParameterRange(double u1, double u2)
 /// Add `shape` to `compound` via `builder` if `shape` is not null.
 /// Helper to deduplicate the null-check + Add pattern used in OCCTDrawingGetEdges
 /// and OCCTBridge_Healing.mm (occtSolidBodiesToShape).
-inline void occtAddIfNotNull(BRep_Builder& builder, TopoDS_Compound& compound, const TopoDS_Shape& shape)
+inline void occtAddIfNotNull(BRep_Builder&       builder,
+                             TopoDS_Compound&    compound,
+                             const TopoDS_Shape& shape)
 {
   if (!shape.IsNull())
     builder.Add(compound, shape);
