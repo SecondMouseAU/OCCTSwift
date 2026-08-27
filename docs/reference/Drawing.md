@@ -1306,47 +1306,9 @@ public static let thick: DrawingLineWidth = .w050
 
 ---
 
-## DrawingLineStyle extension
-
-Extension on `DrawingLineStyle` (defined in `DrawingAnnotation.swift`) adding ISO 128-20 default widths.
-
-### `DrawingLineStyle.defaultWidth`
-
-ISO 128-20 default line width for each style.
-
-```swift
-public var defaultWidth: DrawingLineWidth { get }
-```
-
-| Style | ISO usage | Default width |
-|---|---|---|
-| `.solid` | Visible edges, extension lines | `.thin` (0.25 mm) |
-| `.dashed` | Hidden edges | `.thin` |
-| `.chain` | Centrelines, axes, pitch lines | `.thin` |
-| `.phantom` | Alternative / adjacent positions | `.thin` |
-| `.dotted` | Bend lines, construction | `.thin` |
-
-- **Example:**
-  ```swift
-  let w = DrawingLineStyle.solid.defaultWidth  // .w025
-  ```
-
----
-
-### `DrawingLineStyle.boldWidth`
-
-The bold (thick) counterpart for cutting-plane lines and section identifiers.
-
-```swift
-public var boldWidth: DrawingLineWidth { .thick }
-```
-
-Returns `.thick` (0.50 mm) regardless of style. ISO 128-24 recommends thick lines for cutting-plane annotations.
-
-- **Example:**
-  ```swift
-  let bold = DrawingLineStyle.chain.boldWidth  // .w050
-  ```
+`DrawingLineStyle.defaultWidth` / `.boldWidth` *(removed, #1170)*: a second, disagreeing ISO 128-20
+width table. The line width a rendered drawing actually uses is the internal `strokeWidthMM(for:)`
+table in `DrawingDispatch.swift`; these two computed properties were dead code nothing called.
 
 ---
 
