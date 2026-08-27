@@ -253,11 +253,12 @@ private func emitCuttingPlaneLine(
     let a = cpl.arrowDirection
     let arrowLen = 8.0
     let arrowWidth = 3.0
-    let perp = SIMD2(-a.y, a.x)
     func arrow(at p: SIMD2<Double>) {
         let tip = p + a * arrowLen
-        let base1 = tip - a * arrowLen * 0.4 + perp * arrowWidth / 2
-        let base2 = tip - a * arrowLen * 0.4 - perp * arrowWidth / 2
+        // Shouldered arrowhead: base sits 40% of the way back from the tip (#1173, shares its
+        // point-computation with `datumFeature`'s triangle pointer via `arrowheadBasePoints`).
+        let (base1, base2) = arrowheadBasePoints(
+            apex: tip, direction: a, backset: arrowLen * 0.4, halfWidth: arrowWidth / 2)
         ops.addLine(p, tip, "TEXT")
         ops.addLine(tip, base1, "TEXT")
         ops.addLine(tip, base2, "TEXT")

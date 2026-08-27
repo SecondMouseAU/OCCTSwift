@@ -69,6 +69,41 @@ public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
     }
 }
 
+/// The two base points of an arrowhead or triangle pointer.
+///
+/// Given the point the shape points at (`apex`), the unit `direction` it points along (base →
+/// apex), how far back from the apex the base sits (`backset`), and half the base width
+/// (`halfWidth`), returns the two points the base spans, offset ±`halfWidth` along `direction`'s
+/// perpendicular from the point `backset` behind the apex.
+///
+/// The one vector-geometry computation shared by every "unit direction, its perpendicular, two
+/// base points offset from a point set back along that direction" arrowhead/triangle site in
+/// this file's drawing/annotation layer (#1173) — previously reimplemented independently at
+/// `DrawingDispatch.swift`'s `emitCuttingPlaneLine`/`arrow(at:)` (an open, two-legged arrowhead,
+/// `backset` a fraction of its own length) and `DrawingSymbols.swift`'s `datumFeature` (a closed
+/// triangle, `backset` equal to its own full size), each with its own independently-derived
+/// `backset`/`halfWidth`. Those two proportion rules are legitimately different symbols (an ISO
+/// 129 arrowhead vs. an ISO 5459 datum triangle) and this helper does not reconcile them into
+/// one; it gives the shared math a single, named home so a future reconciliation (or wiring in
+/// `DrawingArrowStyle.length(forLineWidth:)` above, which neither site reads today) only has to
+/// happen once, instead of being re-derived by hand at every site that draws a pointer shape.
+///
+/// ```swift
+/// let (left, right) = arrowheadBasePoints(
+///     apex: SIMD2(10, 0), direction: SIMD2(1, 0), backset: 3, halfWidth: 1.5)
+/// // left == SIMD2(7, 1.5), right == SIMD2(7, -1.5)
+/// ```
+internal func arrowheadBasePoints(
+    apex: SIMD2<Double>,
+    direction: SIMD2<Double>,
+    backset: Double,
+    halfWidth: Double
+) -> (left: SIMD2<Double>, right: SIMD2<Double>) {
+    let perp = SIMD2(-direction.y, direction.x)
+    let baseMid = apex - direction * backset
+    return (baseMid + perp * halfWidth, baseMid - perp * halfWidth)
+}
+
 // MARK: - ISO 5455 standard scales
 
 /// ISO 5455 preferred drawing scales.

@@ -283,11 +283,13 @@ extension DrawingAnnotation {
         let len = simd_length(dir)
         if len > 1e-6 {
             let u = dir / len
-            let perp = SIMD2(-u.y, u.x)
             let apex = target
+            // Full isosceles wedge: base sits back from the apex by the whole `triangleSize`
+            // (#1173, shares its point-computation with `emitCuttingPlaneLine`'s arrowhead via
+            // `arrowheadBasePoints`).
+            let (baseL, baseR) = arrowheadBasePoints(
+                apex: apex, direction: u, backset: triangleSize, halfWidth: triangleSize / 2)
             let baseMid = target - u * triangleSize
-            let baseL = baseMid + perp * (triangleSize / 2)
-            let baseR = baseMid - perp * (triangleSize / 2)
             result.append(.centreline(.init(from: apex, to: baseL, style: .solid)))
             result.append(.centreline(.init(from: apex, to: baseR, style: .solid)))
             result.append(.centreline(.init(from: baseL, to: baseR, style: .solid)))
