@@ -170,6 +170,10 @@ extension DrawingAnnotation {
             b.radius *= scale
             if let leader = b.leaderTo { b.leaderTo = t(leader) }
             return .balloon(b)
+        case .arc(var a):
+            a.centre = t(a.centre)
+            a.radius *= scale
+            return .arc(a)
         }
     }
 
@@ -184,6 +188,16 @@ extension DrawingAnnotation {
             var pts = [b.centre]
             if let leader = b.leaderTo { pts.append(leader) }
             return pts
+        case .arc(let a):
+            return [
+                a.centre,
+                SIMD2(
+                    a.centre.x + a.radius * cos(a.startAngle),
+                    a.centre.y + a.radius * sin(a.startAngle)),
+                SIMD2(
+                    a.centre.x + a.radius * cos(a.endAngle),
+                    a.centre.y + a.radius * sin(a.endAngle)),
+            ]
         }
     }
 }

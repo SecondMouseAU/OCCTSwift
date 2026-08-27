@@ -216,6 +216,11 @@ internal func emitAnnotation(_ a: DrawingAnnotation, into ops: DrawingPrimitiveO
         emitCuttingPlaneLine(cpl, into: ops)
     case .balloon(let b):
         emitBalloon(b, into: ops)
+    case .arc(let arc):
+        ops.addArc(
+            arc.centre, arc.radius,
+            arc.startAngle * 180 / .pi, arc.endAngle * 180 / .pi,
+            arc.layer)
     }
 }
 
