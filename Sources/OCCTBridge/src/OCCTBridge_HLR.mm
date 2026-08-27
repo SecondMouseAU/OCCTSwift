@@ -147,44 +147,20 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType)
     switch (edgeType)
     {
       case OCCTEdgeTypeVisible:
-        if (!drawing->visibleSharp.IsNull())
-        {
-          builder.Add(compound, drawing->visibleSharp);
-        }
-        if (!drawing->visibleSmooth.IsNull())
-        {
-          builder.Add(compound, drawing->visibleSmooth);
-        }
-        if (!drawing->visibleOutline.IsNull())
-        {
-          builder.Add(compound, drawing->visibleOutline);
-        }
+        occtAddIfNotNull(builder, compound, drawing->visibleSharp);
+        occtAddIfNotNull(builder, compound, drawing->visibleSmooth);
+        occtAddIfNotNull(builder, compound, drawing->visibleOutline);
         break;
 
       case OCCTEdgeTypeHidden:
-        if (!drawing->hiddenSharp.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenSharp);
-        }
-        if (!drawing->hiddenSmooth.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenSmooth);
-        }
-        if (!drawing->hiddenOutline.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenOutline);
-        }
+        occtAddIfNotNull(builder, compound, drawing->hiddenSharp);
+        occtAddIfNotNull(builder, compound, drawing->hiddenSmooth);
+        occtAddIfNotNull(builder, compound, drawing->hiddenOutline);
         break;
 
       case OCCTEdgeTypeOutline:
-        if (!drawing->visibleOutline.IsNull())
-        {
-          builder.Add(compound, drawing->visibleOutline);
-        }
-        if (!drawing->hiddenOutline.IsNull())
-        {
-          builder.Add(compound, drawing->hiddenOutline);
-        }
+        occtAddIfNotNull(builder, compound, drawing->visibleOutline);
+        occtAddIfNotNull(builder, compound, drawing->hiddenOutline);
         break;
     }
 

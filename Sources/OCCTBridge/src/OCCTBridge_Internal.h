@@ -37,6 +37,8 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Shell.hxx>
+#include <TopoDS_Compound.hxx>
+#include <BRep_Builder.hxx>
 #include <Geom_Curve.hxx>
 #include <Geom2d_Curve.hxx>
 #include <Geom_Surface.hxx>
@@ -1171,6 +1173,15 @@ inline bool occtValidSampleCount(int32_t nbPoints)
 inline bool occtValidParameterRange(double u1, double u2)
 {
   return std::isfinite(u1) && std::isfinite(u2);
+}
+
+/// Add `shape` to `compound` via `builder` if `shape` is not null.
+/// Helper to deduplicate the null-check + Add pattern used in OCCTDrawingGetEdges
+/// and OCCTBridge_Healing.mm (occtSolidBodiesToShape).
+inline void occtAddIfNotNull(BRep_Builder& builder, TopoDS_Compound& compound, const TopoDS_Shape& shape)
+{
+  if (!shape.IsNull())
+    builder.Add(compound, shape);
 }
 
 // === #603: one Gauss quadrature is not enough to measure an arc ===
