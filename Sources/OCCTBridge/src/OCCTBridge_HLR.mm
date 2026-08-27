@@ -20,8 +20,9 @@
 #include <BRep_Builder.hxx>
 #include <TopoDS_Compound.hxx>
 
-// Helper: populate an OCCTDrawing from a shapes extractor (HLRBRep_HLRToShape or HLRBRep_PolyHLRToShape).
-// Both types expose the same six accessor methods (non-const on PolyHLRToShape).
+// Helper: populate an OCCTDrawing from a shapes extractor (HLRBRep_HLRToShape or
+// HLRBRep_PolyHLRToShape). Both types expose the same six accessor methods (non-const on
+// PolyHLRToShape).
 template <class ShapesExtractor>
 static void occtDrawingPopulate(OCCTDrawing* drawing, ShapesExtractor& shapes)
 {
@@ -115,7 +116,7 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
     // Extract edges
     HLRBRep_HLRToShape shapes(hlrAlgo);
 
-    OCCTDrawing* drawing    = new OCCTDrawing();
+    OCCTDrawing* drawing = new OCCTDrawing();
     occtDrawingPopulate(drawing, shapes);
 
     return drawing;
@@ -225,7 +226,7 @@ OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
     HLRBRep_PolyHLRToShape shapes;
     shapes.Update(polyAlgo);
 
-    OCCTDrawing* drawing    = new OCCTDrawing();
+    OCCTDrawing* drawing = new OCCTDrawing();
     occtDrawingPopulate(drawing, shapes);
 
     return drawing;
