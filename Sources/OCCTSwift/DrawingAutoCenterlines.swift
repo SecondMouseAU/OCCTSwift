@@ -136,6 +136,7 @@ internal struct CircleVisibilityResult {
 }
 
 /// Shared circle-visibility test: edge-on cutoff + bounds clip.
+///
 /// Returns `nil` if the circle should be skipped (no curve3D, below minRadius,
 /// edge-on, or outside bounds). The `onSkip` closure is called with a reason
 /// string for each skip path, allowing callers to record skipped reasons differently.
