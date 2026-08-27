@@ -1889,6 +1889,58 @@ struct UnpackSIMD3Tests {
     }
 }
 
+// MARK: - packSIMD3 shared helper (#1186)
+
+@Suite("packSIMD3 shared helper")
+struct PackSIMD3Tests {
+    @Test("Exact component-to-index mapping for a known vector array")
+    func exactMapping() {
+        let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6), SIMD3(7, 8, 9)]
+        let flat = packSIMD3(points)
+        #expect(flat.count == 9)
+        #expect(flat == [1, 2, 3, 4, 5, 6, 7, 8, 9])
+    }
+
+    @Test("Empty array returns empty buffer")
+    func emptyArrayIsEmpty() {
+        let points: [SIMD3<Double>] = []
+        let flat = packSIMD3(points)
+        #expect(flat.isEmpty)
+    }
+
+    @Test("Works generically for a Float scalar buffer")
+    func floatScalarBuffer() {
+        let points: [SIMD3<Float>] = [SIMD3<Float>(1, 2, 3), SIMD3<Float>(4, 5, 6)]
+        let flat = packSIMD3(points)
+        #expect(flat == [1, 2, 3, 4, 5, 6] as [Float])
+    }
+
+    @Test("Round-trip with unpackSIMD3 preserves values")
+    func roundTripWithUnpack() {
+        let original: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6), SIMD3(7, 8, 9)]
+        let flat = packSIMD3(original)
+        let unpacked = unpackSIMD3(flat, count: original.count)
+        #expect(unpacked == original)
+    }
+
+    @Test("packSIMD3(into:) writes to pre-allocated buffer")
+    func packIntoPreallocatedBuffer() {
+        let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
+        var flat = [Double](repeating: 0, count: 6)
+        let written = packSIMD3(points, into: &flat)
+        #expect(written == 6)
+        #expect(flat == [1, 2, 3, 4, 5, 6])
+    }
+
+    @Test("packSIMD3(into:) returns 0 when buffer is too small")
+    func packIntoTooSmallBufferReturnsZero() {
+        let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
+        var flat = [Double](repeating: 0, count: 3) // too small
+        let written = packSIMD3(points, into: &flat)
+        #expect(written == 0)
+    }
+}
+
 // MARK: - v0.141 / #72 Phase 0: BRepGraph history record readback
 
 @Suite("v0.141 BRepGraph history record readback")

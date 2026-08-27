@@ -42,6 +42,55 @@ internal func unpackSIMD3<Buffer: RandomAccessCollection, Scalar>(
     return result
 }
 
+/// Packs an array of `SIMD3<Scalar>` into a flat, tightly-packed `[Scalar]` buffer
+/// with stride 3 (x, y, z, x, y, z, ...).
+///
+/// The inverse of `unpackSIMD3`. Useful when preparing point/color arrays for bridge calls
+/// that expect a flat buffer.
+///
+/// ```swift
+/// let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
+/// let flat = packSIMD3(points)
+/// #expect(flat == [1, 2, 3, 4, 5, 6])
+/// ```
+internal func packSIMD3<Scalar: SIMDScalar>(_ vectors: [SIMD3<Scalar>]) -> [Scalar] {
+    guard !vectors.isEmpty else { return [] }
+    var result = [Scalar]()
+    result.reserveCapacity(vectors.count * 3)
+    for v in vectors {
+        result.append(v.x)
+        result.append(v.y)
+        result.append(v.z)
+    }
+    return result
+}
+
+/// Packs an array of `SIMD3<Scalar>` into a pre-allocated flat `[Scalar]` buffer
+/// with stride 3 (x, y, z, x, y, z, ...).
+///
+/// The buffer must have at least `vectors.count * 3` capacity. Returns the number
+/// of scalars written (always `vectors.count * 3` on success, 0 if buffer is too small).
+///
+/// ```swift
+/// let points: [SIMD3<Double>] = [SIMD3(1, 2, 3), SIMD3(4, 5, 6)]
+/// var flat = [Double](repeating: 0, count: 6)
+/// let written = packSIMD3(points, into: &flat)
+/// #expect(written == 6)
+/// #expect(flat == [1, 2, 3, 4, 5, 6])
+/// ```
+@discardableResult
+internal func packSIMD3<Scalar: SIMDScalar>(_ vectors: [SIMD3<Scalar>], into buffer: inout [Scalar]) -> Int {
+    let needed = vectors.count * 3
+    guard buffer.count >= needed else { return 0 }
+    for (i, v) in vectors.enumerated() {
+        let base = i * 3
+        buffer[base] = v.x
+        buffer[base + 1] = v.y
+        buffer[base + 2] = v.z
+    }
+    return needed
+}
+
 // MARK: - Single-vector/axis out-param unwrap (#899/#902, moved here from ShapeAxis.swift by
 // the #914 review, finding 11, module-wide, not ShapeAxis-specific, and this is this project's
 // designated home for exactly this duplication class, #419)
