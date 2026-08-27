@@ -21,6 +21,18 @@ public struct TransformedDrawing: @unchecked Sendable {
     }
 
     public func apply(_ p: SIMD2<Double>) -> SIMD2<Double> {
+        Self.apply(p, translate: translate, scale: scale)
+    }
+
+    /// The 2D affine transform every drawing-transform site shares: `scale * p + translate`.
+    ///
+    /// Kept as one `internal` implementation, called by the instance method above and by
+    /// `DrawingDimension.transformed`/`DrawingAnnotation.transformed` (`DrawingComposition.swift`)
+    /// and `collectProjectedEdges` (`DrawingDispatch.swift`), instead of re-derived at each site,
+    /// so a future change to the formula (e.g. adding rotation) is made once. #1183.
+    internal static func apply(_ p: SIMD2<Double>, translate: SIMD2<Double>, scale: Double)
+        -> SIMD2<Double>
+    {
         scale * p + translate
     }
 }
@@ -86,7 +98,9 @@ extension Drawing {
 
 extension DrawingDimension {
     internal func transformed(translate: SIMD2<Double>, scale: Double) -> DrawingDimension {
-        func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
+        func t(_ p: SIMD2<Double>) -> SIMD2<Double> {
+            TransformedDrawing.apply(p, translate: translate, scale: scale)
+        }
         switch self {
         case .linear(var d):
             d.from = t(d.from)
@@ -141,7 +155,9 @@ extension DrawingDimension {
 
 extension DrawingAnnotation {
     internal func transformed(translate: SIMD2<Double>, scale: Double) -> DrawingAnnotation {
-        func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
+        func t(_ p: SIMD2<Double>) -> SIMD2<Double> {
+            TransformedDrawing.apply(p, translate: translate, scale: scale)
+        }
         switch self {
         case .centreline(var c):
             c.from = t(c.from)
