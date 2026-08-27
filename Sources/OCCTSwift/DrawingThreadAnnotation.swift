@@ -20,6 +20,12 @@ import simd
 //   - Optional callout text with a leader line (e.g. "M10×1.5")
 
 extension DrawingAnnotation {
+    /// Minor diameter per ISO 68 metric V thread: D - 1.0825*P, floored at 0.8*D.
+    /// Returns Double; shared by side-view and end-view builders.
+    static func minorDiameter(majorDiameter: Double, pitch: Double) -> Double {
+        max(majorDiameter - 1.0825 * pitch, majorDiameter * 0.8)
+    }
+
     /// ISO 6410 cosmetic thread — side view pattern.
     ///
     /// Produces two parallel lines on the CENTER layer spanning the thread
@@ -39,7 +45,7 @@ extension DrawingAnnotation {
         let perp = SIMD2(-axisUnit.y, axisUnit.x)
         // Minor diameter per ISO 68 (metric V thread): D_minor = D - 1.0825·P.
         // We draw at +/- minor/2 perpendicular to the axis.
-        let minorDiameter = max(majorDiameter - 1.0825 * pitch, majorDiameter * 0.8)
+        let minorDiameter = Self.minorDiameter(majorDiameter: majorDiameter, pitch: pitch)
         let halfMinor = minorDiameter / 2
 
         let topStart = axisStart + halfMinor * perp
@@ -84,7 +90,7 @@ extension DrawingAnnotation {
         majorDiameter: Double,
         pitch: Double
     ) -> [ArcSegment] {
-        let minorDiameter = max(majorDiameter - 1.0825 * pitch, majorDiameter * 0.8)
+        let minorDiameter = Self.minorDiameter(majorDiameter: majorDiameter, pitch: pitch)
         let r = minorDiameter / 2
         // Three arcs: 0→90, 90→180, 180→315 (with a 45° gap at 315-360)
         return [
