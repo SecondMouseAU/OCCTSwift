@@ -452,6 +452,15 @@ private func emitAngular(_ d: DrawingDimension.Angular, into ops: DrawingPrimiti
     var start = a1
     var end = a2
     if end < start { swap(&start, &end) }
+    var sweep = end - start
+    if sweep > .pi {
+        // Reflex arc (> π) diverges from Angular.value (acos, always ≤ π).
+        // Take the shorter counter-clockwise arc (≤ π) by swapping direction.
+        let temp = start
+        start = end
+        end = temp + 2 * .pi
+        sweep = 2 * .pi - sweep
+    }
     ops.addArc(d.vertex, d.arcRadius, start * 180 / .pi, end * 180 / .pi, "DIMENSION")
     let midAngle = (start + end) / 2
     let textPos = SIMD2(
