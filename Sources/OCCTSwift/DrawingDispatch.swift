@@ -365,7 +365,7 @@ private func emitTolerancedText(
 
 private func emitLinear(_ d: DrawingDimension.Linear, into ops: DrawingPrimitiveOps) {
     let dir = simd_normalize(d.to - d.from)
-    let perp = SIMD2<Double>(-dir.y, dir.x)
+    let perp = leftPerpendicular2D(of: dir)
     let from2 = d.from + perp * d.offset
     let to2 = d.to + perp * d.offset
     ops.addLine(d.from, from2, "DIMENSION")
@@ -391,7 +391,7 @@ private func emitRadial(_ d: DrawingDimension.Radial, into ops: DrawingPrimitive
     ops.addLine(endOnCircle, leaderTip, "DIMENSION")
     let base = d.label ?? String(format: "R%.2f", d.value)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
-    let perp = SIMD2(-sin(d.leaderAngle), cos(d.leaderAngle))
+    let perp = leftPerpendicular2D(of: SIMD2(cos(d.leaderAngle), sin(d.leaderAngle)))
     emitTolerancedText(
         parts, at: leaderTip, height: 3.5, rotationDeg: 0,
         stackOffset: perp * 2.0, into: ops)
@@ -406,7 +406,7 @@ private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimi
     let tip = SIMD2(pB.x + 5 * cos, pB.y + 5 * sin)
     let base = d.label ?? String(format: "⌀%.2f", d.value)
     let parts = formatTolerance(base: base, tolerance: d.tolerance)
-    let perp = SIMD2(-sin, cos)
+    let perp = leftPerpendicular2D(of: SIMD2(cos, sin))
     emitTolerancedText(
         parts, at: tip, height: 3.5, rotationDeg: 0,
         stackOffset: perp * 2.0, into: ops)

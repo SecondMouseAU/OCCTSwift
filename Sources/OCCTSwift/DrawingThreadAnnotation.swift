@@ -42,7 +42,7 @@ extension DrawingAnnotation {
         let len = simd_length(axis)
         guard len > 1e-6 else { return [] }
         let axisUnit = axis / len
-        let perp = SIMD2(-axisUnit.y, axisUnit.x)
+        let perp = leftPerpendicular2D(of: axisUnit)
         // Minor diameter per ISO 68 (metric V thread): D_minor = D - 1.0825·P.
         // We draw at +/- minor/2 perpendicular to the axis.
         let minorDiameter = Self.minorDiameter(majorDiameter: majorDiameter, pitch: pitch)
