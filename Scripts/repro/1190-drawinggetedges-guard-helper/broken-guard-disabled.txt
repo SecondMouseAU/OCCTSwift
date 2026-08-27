@@ -1,0 +1,1 @@
+/Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-a2acdfe4569af032e/Scripts/repro/1190-drawinggetedges-guard-helper/run.sh: line 29: 74875 Segmentation fault: 11     "$OUT"
