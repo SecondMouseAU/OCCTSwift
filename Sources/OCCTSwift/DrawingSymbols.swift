@@ -143,6 +143,36 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
 }
 
 extension DrawingAnnotation {
+    /// Four solid-line `.centreline` segments tracing an axis-aligned
+    /// rectangle from two opposite corners, in the same counter-clockwise
+    /// winding used throughout this file: bottom (left to right), right
+    /// (bottom to top), top (right to left), left (top to bottom).
+    ///
+    /// Built on the shared `rectanglePoints(min:max:)` corner helper so the
+    /// winding stays in one place. `featureControlFrame`'s outer box and
+    /// `datumFeature`'s label box both use this rather than hand-rolling the
+    /// same four `.centreline` appends (#1188).
+    ///
+    /// ```swift
+    /// let box = DrawingAnnotation.rectangleCentrelines(
+    ///     min: SIMD2(0, 0), max: SIMD2(20, 8))
+    /// // box.count == 4
+    /// ```
+    public static func rectangleCentrelines(
+        min: SIMD2<Double>,
+        max: SIMD2<Double>,
+        style: DrawingLineStyle = .solid
+    ) -> [DrawingAnnotation] {
+        let corners = rectanglePoints(min: min, max: max)
+        return (0..<corners.count).map { i in
+            .centreline(
+                .init(
+                    from: corners[i],
+                    to: corners[(i + 1) % corners.count],
+                    style: style))
+        }
+    }
+
     /// ISO 1101 feature control frame — the classic rectangular box with
     /// symbol | tolerance | datum references.
     ///
@@ -166,29 +196,8 @@ extension DrawingAnnotation {
         // Outer rectangle
         let bottomLeft = position
         let topRight = SIMD2(position.x + totalW, position.y + cellH)
-        // Represent as 4 lines forming the outer box
         result.append(
-            .centreline(
-                .init(
-                    from: bottomLeft,
-                    to: SIMD2(topRight.x, bottomLeft.y),
-                    style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(topRight.x, bottomLeft.y),
-                    to: topRight, style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: topRight,
-                    to: SIMD2(bottomLeft.x, topRight.y),
-                    style: .solid)))
-        result.append(
-            .centreline(
-                .init(
-                    from: SIMD2(bottomLeft.x, topRight.y),
-                    to: bottomLeft, style: .solid)))
+            contentsOf: DrawingAnnotation.rectangleCentrelines(min: bottomLeft, max: topRight))
 
         // Vertical dividers
         let divX1 = bottomLeft.x + symbolW
@@ -262,16 +271,12 @@ extension DrawingAnnotation {
         // Box
         let bl = position
         let tr = SIMD2(position.x + boxSize, position.y + boxSize)
-        var result: [DrawingAnnotation] = [
-            .centreline(.init(from: bl, to: SIMD2(tr.x, bl.y), style: .solid)),
-            .centreline(.init(from: SIMD2(tr.x, bl.y), to: tr, style: .solid)),
-            .centreline(.init(from: tr, to: SIMD2(bl.x, tr.y), style: .solid)),
-            .centreline(.init(from: SIMD2(bl.x, tr.y), to: bl, style: .solid)),
+        var result: [DrawingAnnotation] = DrawingAnnotation.rectangleCentrelines(min: bl, max: tr)
+        result.append(
             .textLabel(
                 .init(
                     position: SIMD2(bl.x + boxSize / 3, bl.y + boxSize / 3),
-                    text: label, height: 4)),
-        ]
+                    text: label, height: 4)))
 
         // Triangle pointing at target
         let dir = target - position
