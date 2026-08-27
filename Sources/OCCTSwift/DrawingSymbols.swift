@@ -62,19 +62,17 @@ extension DrawingAnnotation {
         case .machiningProhibited:
             // Circle in apex
             let r = 2.0
-            // Render as a polyline approximation
+            // Render as a polyline approximation using centreline segments
             let segments = 24
             var pts: [SIMD2<Double>] = []
             for i in 0...segments {
                 let t = Double(i) * 2 * .pi / Double(segments)
                 pts.append(SIMD2(apex.x + r * cos(t), apex.y + r + r * sin(t)))
             }
-            // Emit as text label for simplicity (consumers can swap for a real arc)
-            result.append(
-                .textLabel(
-                    .init(
-                        position: SIMD2(apex.x, apex.y + r),
-                        text: "O", height: 3)))
+            // Emit as connected centreline segments (like datumFeature/breakLine)
+            for i in 0..<pts.count - 1 {
+                result.append(.centreline(.init(from: pts[i], to: pts[i + 1], style: .solid)))
+            }
         }
 
         // Ra value above the bar
