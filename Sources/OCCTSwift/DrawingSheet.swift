@@ -228,7 +228,8 @@ public struct Sheet: Sendable, Hashable {
         let tbWidth = 170.0
         let tbHeight = 55.0
         let origin = SIMD2(frame.max.x - tbWidth, frame.min.y)
-        let outer = rectanglePoints(min: origin, max: SIMD2(origin.x + tbWidth, origin.y + tbHeight))
+        let outer = rectanglePoints(
+            min: origin, max: SIMD2(origin.x + tbWidth, origin.y + tbHeight))
         writer.addPolyline(outer, closed: true, layer: "TITLE")
 
         // Field labels and values. Simplified two-column layout: labels left
