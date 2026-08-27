@@ -158,7 +158,10 @@ private func collectProjectedEdges(
 ) {
     guard let compound else { return }
     let polys = compound.allEdgePolylines(deflection: deflection)
-    func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
+    // Shares TransformedDrawing's own formula rather than re-deriving it. #1183.
+    func t(_ p: SIMD2<Double>) -> SIMD2<Double> {
+        TransformedDrawing.apply(p, translate: translate, scale: scale)
+    }
     for poly in polys {
         guard poly.count >= 2 else { continue }
         let points2D = poly.map { t(SIMD2($0.x, $0.y)) }
