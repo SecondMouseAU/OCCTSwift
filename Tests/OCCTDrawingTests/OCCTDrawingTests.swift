@@ -1717,11 +1717,12 @@ struct DrawingStyleTests {
         #expect(DrawingScale.enlargement(2).label == "2:1")
     }
 
-    @Test("DrawingLineStyle.defaultWidth and boldWidth")
-    func lineStyleDefaults() {
-        #expect(DrawingLineStyle.solid.defaultWidth == .thin)
-        #expect(DrawingLineStyle.dashed.defaultWidth == .thin)
-        #expect(DrawingLineStyle.chain.boldWidth == .thick)
+    @Test("strokeWidthMM returns ISO 128-20 line widths")
+    func strokeWidthMMLayers() {
+        #expect(strokeWidthMM(for: "VISIBLE") == 0.5)
+        #expect(strokeWidthMM(for: "HIDDEN") == 0.25)
+        #expect(strokeWidthMM(for: "CENTER") == 0.25)
+        #expect(strokeWidthMM(for: "HATCH") == 0.18)
     }
 
     @Test("ArrowStyle length scales with line width")

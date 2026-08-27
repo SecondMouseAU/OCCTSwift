@@ -23,25 +23,7 @@ public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
     public static let thick: DrawingLineWidth = .w050
 }
 
-extension DrawingLineStyle {
-    /// ISO 128-20 default width for each line style.
-    ///
-    /// Consumers can override per-entity by setting `width` explicitly on the dimension/annotation.
-    public var defaultWidth: DrawingLineWidth {
-        switch self {
-        case .solid: return .thin  // continuous thin (visible edges, extension lines)
-        case .dashed: return .thin  // hidden edges
-        case .chain: return .thin  // centerlines, axes, pitch lines
-        case .phantom: return .thin  // alternative / adjacent positions
-        case .dotted: return .thin  // bend lines, construction
-        }
-    }
 
-    /// The bold counterpart (0.50 mm) for cutting-plane lines, section
-    /// identifiers, and the visible-edge thickening that ISO 128 recommends
-    /// for certain sheet sizes.
-    public var boldWidth: DrawingLineWidth { .thick }
-}
 
 /// ISO 3098 text height series in mm.
 ///
