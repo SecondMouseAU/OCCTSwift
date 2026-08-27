@@ -296,17 +296,30 @@ int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
 
 #include <Hatch_Hatcher.hxx>
 
-int32_t OCCTHatchLines(const double* boundaryXY,
-                       int32_t       boundaryCount,
-                       double        dirX,
-                       double        dirY,
-                       double        spacing,
-                       double        offset,
-                       double*       outSegments,
-                       int32_t       maxSegments)
+int32_t OCCTHatchLines(const double*  boundaryXY,
+                       int32_t        boundaryCount,
+                       const double*  islandsXY,
+                       const int32_t* islandPointCounts,
+                       int32_t        islandCount,
+                       double         dirX,
+                       double         dirY,
+                       double         spacing,
+                       double         offset,
+                       double*        outSegments,
+                       int32_t        maxSegments)
 {
   if (!boundaryXY || boundaryCount < 3 || !outSegments || maxSegments <= 0 || spacing <= 0.0)
     return 0;
+  if (islandCount < 0 || (islandCount > 0 && (!islandsXY || !islandPointCounts)))
+    return 0;
+  // Validate island counts up front so a negative entry can't walk islandsXY out of bounds
+  // below; a valid island polygon needs at least 3 points, fewer are skipped rather than
+  // rejecting the whole call.
+  for (int32_t isl = 0; isl < islandCount; isl++)
+  {
+    if (islandPointCounts[isl] < 0)
+      return 0;
+  }
   try
   {
     double tolerance = 1.0e-7;
@@ -323,17 +336,30 @@ int32_t OCCTHatchLines(const double* boundaryXY,
     double perpX = -ndy;
     double perpY = ndx;
 
-    // Compute bounding range along perpendicular direction
+    // Compute bounding range along perpendicular direction, boundary and islands alike
     double minDist = 1.0e30, maxDist = -1.0e30;
-    for (int32_t i = 0; i < boundaryCount; i++)
+    auto   trackRange = [&](const double* xy, int32_t count) {
+      for (int32_t i = 0; i < count; i++)
+      {
+        double px   = xy[i * 2];
+        double py   = xy[i * 2 + 1];
+        double dist = px * perpX + py * perpY;
+        if (dist < minDist)
+          minDist = dist;
+        if (dist > maxDist)
+          maxDist = dist;
+      }
+    };
+    trackRange(boundaryXY, boundaryCount);
     {
-      double px   = boundaryXY[i * 2];
-      double py   = boundaryXY[i * 2 + 1];
-      double dist = px * perpX + py * perpY;
-      if (dist < minDist)
-        minDist = dist;
-      if (dist > maxDist)
-        maxDist = dist;
+      int32_t islandOffset = 0;
+      for (int32_t isl = 0; isl < islandCount; isl++)
+      {
+        int32_t count = islandPointCounts[isl];
+        if (count >= 3)
+          trackRange(islandsXY + islandOffset * 2, count);
+        islandOffset += count;
+      }
     }
 
     // Add hatch lines using direction + distance form
@@ -344,13 +370,28 @@ int32_t OCCTHatchLines(const double* boundaryXY,
       hatcher.AddLine(hatchDir, dist);
     }
 
-    // Trim hatch lines with boundary segments
-    for (int32_t i = 0; i < boundaryCount; i++)
+    // Trim hatch lines with boundary segments, then with each island's segments (same
+    // even/odd Trim() rule, so an island carves a hole out of the fill rather than adding
+    // more filled area, #1172)
+    auto trimPolygon = [&](const double* xy, int32_t count) {
+      for (int32_t i = 0; i < count; i++)
+      {
+        int32_t  j = (i + 1) % count;
+        gp_Pnt2d p1(xy[i * 2], xy[i * 2 + 1]);
+        gp_Pnt2d p2(xy[j * 2], xy[j * 2 + 1]);
+        hatcher.Trim(p1, p2);
+      }
+    };
+    trimPolygon(boundaryXY, boundaryCount);
     {
-      int32_t  j = (i + 1) % boundaryCount;
-      gp_Pnt2d p1(boundaryXY[i * 2], boundaryXY[i * 2 + 1]);
-      gp_Pnt2d p2(boundaryXY[j * 2], boundaryXY[j * 2 + 1]);
-      hatcher.Trim(p1, p2);
+      int32_t islandOffset = 0;
+      for (int32_t isl = 0; isl < islandCount; isl++)
+      {
+        int32_t count = islandPointCounts[isl];
+        if (count >= 3)
+          trimPolygon(islandsXY + islandOffset * 2, count);
+        islandOffset += count;
+      }
     }
 
     // Extract hatch segments

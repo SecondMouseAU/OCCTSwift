@@ -230,7 +230,7 @@ public struct Curve2DHatchSegment: Sendable {
 
 ### `HatchSegment`
 
-A line segment in the general-purpose 2D hatch pattern generator, `HatchPattern.generate(boundary:direction:spacing:offset:maxSegments:)` (`Sources/OCCTSwift/HatchPattern.swift`). Structurally identical to `Curve2DHatchSegment` above but produced by the polygon-boundary hatcher rather than the `Geom2dHatch_Hatcher`-backed `Curve2DGcc.hatch(boundaries:...)`.
+A line segment in the general-purpose 2D hatch pattern generator, `HatchPattern.generate(boundary:direction:spacing:offset:islands:maxSegments:)` (`Sources/OCCTSwift/HatchPattern.swift`). Structurally identical to `Curve2DHatchSegment` above but produced by the polygon-boundary hatcher rather than the `Geom2dHatch_Hatcher`-backed `Curve2DGcc.hatch(boundaries:...)`.
 
 ```swift
 public struct HatchSegment: Sendable {
