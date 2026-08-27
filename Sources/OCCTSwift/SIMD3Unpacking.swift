@@ -79,7 +79,9 @@ internal func packSIMD3<Scalar: SIMDScalar>(_ vectors: [SIMD3<Scalar>]) -> [Scal
 /// #expect(flat == [1, 2, 3, 4, 5, 6])
 /// ```
 @discardableResult
-internal func packSIMD3<Scalar: SIMDScalar>(_ vectors: [SIMD3<Scalar>], into buffer: inout [Scalar]) -> Int {
+internal func packSIMD3<Scalar: SIMDScalar>(
+    _ vectors: [SIMD3<Scalar>], into buffer: inout [Scalar]
+) -> Int {
     let needed = vectors.count * 3
     guard buffer.count >= needed else { return 0 }
     for (i, v) in vectors.enumerated() {
