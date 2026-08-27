@@ -18,7 +18,7 @@ The file contains four public types at the top level and their associated nested
 
 ## Topics
 
-- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.DrawingTextLabel](#drawingannotationdrawingtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotationStore](#drawingannotationstore)
+- [DrawingLineStyle](#drawinglinestyle) · [DrawingTolerance](#drawingtolerance) · [DrawingDimension](#drawingdimension) · [DrawingDimension.Linear](#drawingdimensionlinear) · [DrawingDimension.Radial](#drawingdimensionradial) · [DrawingDimension.Diameter](#drawingdimensiondiameter) · [DrawingDimension.Angular](#drawingdimensionangular) · [DrawingDimension.Ordinate](#drawingdimensionordinate) · [DrawingDimension.Ordinate.Feature](#drawingdimensionordinatefeature) · [DrawingDimension computed properties](#drawingdimension-computed-properties) · [DrawingAnnotation](#drawingannotation-1) · [DrawingAnnotation.Centreline](#drawingannotationcentreline) · [DrawingAnnotation.Centermark](#drawingannotationcentermark) · [DrawingAnnotation.DrawingTextLabel](#drawingannotationdrawingtextlabel) · [DrawingAnnotation.CuttingPlaneLine](#drawingannotationcuttingplaneline) · [DrawingAnnotation.Hatch](#drawingannotationhatch) · [DrawingAnnotation.Balloon](#drawingannotationballoon) · [DrawingAnnotation.Arc](#drawingannotationarc) · [DrawingAnnotationStore](#drawingannotationstore)
 
 ---
 
@@ -732,6 +732,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
     case hatch(Hatch)
     case cuttingPlaneLine(CuttingPlaneLine)
     case balloon(Balloon)
+    case arc(Arc)
 }
 ```
 
@@ -741,6 +742,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
 - `hatch`: ISO 128-50 section-view hatching fill within a polygon boundary.
 - `cuttingPlaneLine`: ISO 128-40 section mark indicating where a section view was cut.
 - `balloon`: assembly-drawing numbered callout balloon, optionally with a leader line.
+- `arc`: a single 2D arc primitive (centre, radius, start/end angle, layer) — e.g. ISO 6410's cosmetic-thread end-view broken arc (#1179).
 
 Pure-Swift; no OCCT mapping.
 
@@ -1122,6 +1124,64 @@ public init(itemNumber: Int,
           radius: 6,
           leaderTo: SIMD2(85, 60)
       )
+  )
+  ```
+
+---
+
+## DrawingAnnotation.Arc
+
+### `DrawingAnnotation.Arc`
+
+A single 2D arc primitive: centre, radius, start angle, end angle (radians), plus the DXF/PDF/SVG layer it renders to. General-purpose, unlike `centreline`/`centermark` (always the fixed `"CENTER"` layer); an arc's layer is caller-supplied. Used by `DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)` (`DrawingThreadAnnotation.swift`) for the ISO 6410 3/4 broken-arc thread end view (#1179).
+
+```swift
+public struct Arc: Sendable, Hashable {
+    public var centre: SIMD2<Double>
+    public var radius: Double
+    public var startAngle: Double    // radians
+    public var endAngle: Double      // radians
+    public var layer: String
+    public var id: String?
+}
+```
+
+- `centre`: 2D arc centre.
+- `radius`: arc radius.
+- `startAngle`: start angle in radians.
+- `endAngle`: end angle in radians.
+- `layer`: DXF/PDF/SVG layer (default `"VISIBLE"`, matching `DrawingPrimitiveSink.addArc`'s own default).
+- `id`: optional identifier.
+
+---
+
+### `DrawingAnnotation.Arc.init(centre:radius:startAngle:endAngle:layer:id:)`
+
+Creates an arc annotation.
+
+```swift
+public init(centre: SIMD2<Double>,
+            radius: Double,
+            startAngle: Double,
+            endAngle: Double,
+            layer: String = "VISIBLE",
+            id: String? = nil)
+```
+
+- **Parameters:**
+  - `centre`: 2D arc centre.
+  - `radius`: arc radius.
+  - `startAngle`: start angle in radians.
+  - `endAngle`: end angle in radians.
+  - `layer`: DXF/PDF/SVG layer (default `"VISIBLE"`).
+  - `id`: optional identifier.
+- **Example:**
+  ```swift
+  let arc = DrawingAnnotation.arc(
+      DrawingAnnotation.Arc(
+          centre: SIMD2(30, 30), radius: 4,
+          startAngle: 0, endAngle: .pi / 2,
+          layer: "CENTER")
   )
   ```
 

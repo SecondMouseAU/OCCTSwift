@@ -283,18 +283,20 @@ A circle is considered edge-on (and is skipped) when `abs(dot(circleNormal, view
 
 ## DrawingAnnotation (thread)
 
-Static factory methods on `DrawingAnnotation` in `DrawingThreadAnnotation.swift` for ISO 6410 cosmetic thread representations. These produce annotation primitives; add them to a `Drawing` via `Drawing.addCosmeticThreadSide` or insert them directly into `annotationStore`.
+Static factory methods on `DrawingAnnotation` in `DrawingThreadAnnotation.swift` for ISO 6410 cosmetic thread representations. These produce annotation primitives; add them to a `Drawing` via `Drawing.addCosmeticThreadSide`/`Drawing.addCosmeticThreadEndView` or insert them directly into `annotationStore`.
 
-### `DrawingAnnotation.ArcSegment`
+### `DrawingAnnotation.Arc`
 
-A 2D arc defined by centre, radius, start angle, and end angle (all in radians).
+A single 2D arc annotation: centre, radius, start angle, end angle (all in radians), plus the DXF/PDF/SVG layer it renders to. Dispatches through the shared `emitAnnotation`/`transformed`/`keyPoints` machinery like every other `DrawingAnnotation` case, so it renders identically to DXF, PDF and SVG and participates in `Drawing.bounds()` (#1179 — previously `cosmeticThreadEndView` returned a bespoke, non-`DrawingAnnotation` `ArcSegment` type reachable only via a `DXFWriter`-only extension).
 
 ```swift
-public struct ArcSegment: Sendable, Hashable {
-    public let centre: SIMD2<Double>
-    public let radius: Double
-    public let startAngle: Double    // radians
-    public let endAngle: Double      // radians
+public struct Arc: Sendable, Hashable {
+    public var centre: SIMD2<Double>
+    public var radius: Double
+    public var startAngle: Double    // radians
+    public var endAngle: Double      // radians
+    public var layer: String
+    public var id: String?
 }
 ```
 
@@ -304,14 +306,8 @@ public struct ArcSegment: Sendable, Hashable {
 | `radius` | Arc radius |
 | `startAngle` | Start angle in radians |
 | `endAngle` | End angle in radians |
-
----
-
-#### `DrawingAnnotation.ArcSegment.endAngle`
-
-End angle in radians.
-
-Returned by `cosmeticThreadEndView(centre:majorDiameter:pitch:)`.
+| `layer` | DXF/PDF/SVG layer (default `"VISIBLE"`) |
+| `id` | Optional identifier |
 
 ---
 
@@ -353,35 +349,30 @@ Generates two parallel solid centrelines at the minor diameter (computed as `max
 
 ### `DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)`
 
-Produces an ISO 6410 cosmetic thread end-view pattern as three `ArcSegment` values.
+Produces an ISO 6410 cosmetic thread end-view pattern as an array of `DrawingAnnotation` values (three `.arc` cases) — a full `DrawingAnnotation` factory, matching `cosmeticThreadSideView` above.
 
 ```swift
 public static func cosmeticThreadEndView(
     centre: SIMD2<Double>,
     majorDiameter: Double,
     pitch: Double
-) -> [ArcSegment]
+) -> [DrawingAnnotation]
 ```
 
-Returns a 3/4 broken arc at the minor diameter: three arcs covering 0–90°, 90–180°, and 180–315°, leaving a 45° gap in the last quadrant per the ISO convention.
+Returns a 3/4 broken arc at the minor diameter: three `.arc` annotations on the `"CENTER"` layer, covering 0–90°, 90–180°, and 180–315°, leaving a 45° gap in the last quadrant per the ISO convention.
 
 - **Parameters:**
   - `centre`: projected 2D centre of the threaded hole or shaft.
   - `majorDiameter`: nominal (major) thread diameter.
   - `pitch`: thread pitch; used to compute minor diameter.
-- **Returns:** Array of three `ArcSegment` values ready to pass to `DXFWriter.addArc`.
+- **Returns:** Array of three `.arc(DrawingAnnotation.Arc)` values, ready to `append(contentsOf:)` onto a `Drawing` (or pass to `Drawing.addCosmeticThreadEndView` below).
 - **Example:**
   ```swift
-  let arcs = DrawingAnnotation.cosmeticThreadEndView(
+  let anns = DrawingAnnotation.cosmeticThreadEndView(
       centre: SIMD2(30, 30),
       majorDiameter: 10,
       pitch: 1.5)
-  for arc in arcs {
-      writer.addArc(centre: arc.centre, radius: arc.radius,
-                    startAngleDeg: arc.startAngle * 180 / .pi,
-                    endAngleDeg:   arc.endAngle   * 180 / .pi,
-                    layer: "CENTER")
-  }
+  drawing.append(contentsOf: anns)
   ```
 
 ---
@@ -419,11 +410,38 @@ Delegates to `DrawingAnnotation.cosmeticThreadSideView` and appends each annotat
 
 ---
 
+### `Drawing.addCosmeticThreadEndView(centre:majorDiameter:pitch:)`
+
+Adds an ISO 6410 cosmetic thread end-view 3/4-broken-arc pattern to this drawing and returns the appended annotations. Unlike `DXFWriter.addCosmeticThreadEndView` below, the arcs land on the `Drawing`'s own `annotationStore`, so they render identically whether the drawing is later exported to DXF, PDF or SVG, and participate in `Drawing.bounds()`/`detailView()` like every other annotation (#1179).
+
+```swift
+@discardableResult
+public func addCosmeticThreadEndView(
+    centre: SIMD2<Double>,
+    majorDiameter: Double,
+    pitch: Double
+) -> [DrawingAnnotation]
+```
+
+Delegates to `DrawingAnnotation.cosmeticThreadEndView` and appends each `.arc` annotation to `annotationStore`.
+
+- **Parameters:** Same as `DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)`.
+- **Returns:** The annotations that were appended.
+- **Example:**
+  ```swift
+  drawing.addCosmeticThreadEndView(
+      centre: SIMD2(30, 30),
+      majorDiameter: 10,
+      pitch: 1.5)
+  ```
+
+---
+
 ## DXFWriter (thread)
 
 ### `DXFWriter.addCosmeticThreadEndView(centre:majorDiameter:pitch:)`
 
-Writes an ISO 6410 cosmetic thread end-view 3/4-arc set directly onto the DXF writer on the `CENTER` layer.
+Writes an ISO 6410 cosmetic thread end-view 3/4-arc set directly onto the DXF writer, on the `CENTER` layer, with no `Drawing` in the loop.
 
 ```swift
 public func addCosmeticThreadEndView(centre: SIMD2<Double>,
@@ -431,7 +449,7 @@ public func addCosmeticThreadEndView(centre: SIMD2<Double>,
                                       pitch: Double)
 ```
 
-Delegates to `DrawingAnnotation.cosmeticThreadEndView` and writes each arc via `DXFWriter.addArc`.
+Delegates to `DrawingAnnotation.cosmeticThreadEndView` and stages each `.arc` annotation through the same shared `emitAnnotation` dispatch every other annotation renders through — behaviourally identical to before (three arcs on the `CENTER` layer), just no longer hand-rolling its own radians→degrees `addArc` calls (#1179). For a drawing that should also be exportable to PDF/SVG, or that should participate in `bounds()`, prefer `Drawing.addCosmeticThreadEndView` above.
 
 - **Parameters:**
   - `centre`: 2D centre of the threaded hole or shaft in drawing coordinates.

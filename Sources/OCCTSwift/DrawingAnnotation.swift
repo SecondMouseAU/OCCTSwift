@@ -262,6 +262,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
     case hatch(Hatch)
     case cuttingPlaneLine(CuttingPlaneLine)
     case balloon(Balloon)
+    case arc(Arc)
 
     public struct Centreline: Sendable, Hashable {
         public var from: SIMD2<Double>
@@ -402,6 +403,39 @@ public enum DrawingAnnotation: Sendable, Hashable {
             self.centre = centre
             self.radius = radius
             self.leaderTo = leaderTo
+            self.id = id
+        }
+    }
+
+    /// A single 2D arc primitive: `centre`/`radius`/`startAngle`/`endAngle` (radians) plus the
+    /// DXF/PDF/SVG layer it renders to.
+    ///
+    /// General-purpose, unlike `centreline`/`centermark`, which always render on a fixed
+    /// "CENTER" layer, an arc's layer is caller-supplied (default `"VISIBLE"`, matching
+    /// `DrawingPrimitiveSink.addArc`'s own default) — a broken-arc pattern like ISO 6410's
+    /// cosmetic-thread end view wants "CENTER", but a general partial-circle annotation might
+    /// not. See `DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)`
+    /// (`DrawingThreadAnnotation.swift`) for the ISO 6410 3/4 broken-arc factory built on this
+    /// case (#1179: previously a bespoke, non-`DrawingAnnotation` `ArcSegment` type that could
+    /// only reach `DXFWriter`, invisible to `Drawing`/PDF/SVG/`bounds()`).
+    public struct Arc: Sendable, Hashable {
+        public var centre: SIMD2<Double>
+        public var radius: Double
+        public var startAngle: Double  // radians
+        public var endAngle: Double  // radians
+        public var layer: String
+        public var id: String?
+
+        public init(
+            centre: SIMD2<Double>, radius: Double,
+            startAngle: Double, endAngle: Double,
+            layer: String = "VISIBLE", id: String? = nil
+        ) {
+            self.centre = centre
+            self.radius = radius
+            self.startAngle = startAngle
+            self.endAngle = endAngle
+            self.layer = layer
             self.id = id
         }
     }
