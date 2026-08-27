@@ -84,6 +84,10 @@ occurrence-shape reader exercised it.
 
 `Shape.isSelfIntersecting(hardTimeout:)`'s background probe now clones geometry (`copyGeometry: true`), not just topology, removing a latent BSpline-adaptor-cache race with the caller's continued use of the original shape.
 
+### Fixed `Sheet.inset` A4 margins to match ISO 5457 doc comment ([#1168](https://github.com/SecondMouseAU/OCCTSwift/issues/1168))
+
+The `.a4` arm was returning `(20, 10, 10, 10)` instead of `(7, 7, 7, 10)` per the doc comment.
+
 ### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
 
 The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.

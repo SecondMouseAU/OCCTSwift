@@ -142,7 +142,7 @@ public struct Sheet: Sendable, Hashable {
         case .a0, .a1, .a2, .a3:
             return (left: 20, right: 10, top: 10, bottom: 10)
         case .a4:
-            return (left: 20, right: 10, top: 10, bottom: 10)
+            return (left: 7, right: 7, top: 7, bottom: 10)
         }
     }
 
