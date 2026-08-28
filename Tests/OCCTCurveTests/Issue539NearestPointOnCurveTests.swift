@@ -30,22 +30,11 @@ import simd
 @Suite("The nearest point is on the curve, not on its basis (#539)")
 struct Issue539NearestPointOnCurveTests {
 
-    /// Domain `[3, 8]` along +X: the point at parameter `t` is `(t, 0, 0)`. The basis is an
-    /// unbounded `Geom_Line`, which is what the old implementation answered about.
-    private static func trimmedSegment() -> Curve3D? {
-        Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))?.trimmed(from: 3, to: 8)
-    }
-
-    /// Half of a circle of radius 5 in the XY plane, domain `[0, pi]`.
-    private static func halfArc() -> Curve3D? {
-        Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)?.trimmed(from: 0, to: .pi)
-    }
-
     // MARK: The trimmed-range defect the issue was filed on
 
     @Test("A point past the end projects to the end, not onto the basis line")
     func pastTheEndProjectsToTheEnd() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         #expect(curve.domain == 3...8)
 
         // Was: parameter 100, distance 0.
@@ -71,7 +60,7 @@ struct Issue539NearestPointOnCurveTests {
     /// on the curve, which is the reading a proximity test acts on.
     @Test("A point just past the end is that far past it, not on the curve")
     func justPastTheEnd() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         let projected = curve.projectPoint(SIMD3(8.001, 0, 0))
         #expect(abs(projected.distance - 0.001) < 1e-9)  // was 0
         #expect(abs(projected.parameter - 8) < 1e-9)
@@ -81,7 +70,7 @@ struct Issue539NearestPointOnCurveTests {
     /// point on the underlying circle but outside the arc's own span read as distance 0.
     @Test("A point on the circle but off the arc is not on the arc")
     func onTheCircleButOffTheArc() throws {
-        let arc = try #require(Self.halfArc())
+        let arc = try #require(halfCircle())
 
         // (3, -4, 0) is exactly on the radius-5 circle, and exactly not on the upper half of it.
         // Was: distance 1.6e-15, i.e. reported as lying on the arc.
@@ -129,13 +118,13 @@ struct Issue539NearestPointOnCurveTests {
     /// case every pre-#539 test used, and it answers exactly as it did.
     @Test("An ordinary in-range projection is unchanged")
     func ordinaryProjectionUnchanged() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         let projected = curve.projectPoint(SIMD3(5, 2, 0))
         #expect(abs(projected.parameter - 5) < 1e-9)
         #expect(abs(projected.distance - 2) < 1e-9)
         #expect(simd_distance(projected.point, SIMD3(5, 0, 0)) < 1e-9)
 
-        let arc = try #require(Self.halfArc())
+        let arc = try #require(halfCircle())
         let above = arc.projectPoint(SIMD3(0, 6, 0))
         #expect(abs(above.distance - 1) < 1e-6)
         #expect(abs(above.parameter - .pi / 2) < 1e-6)
@@ -175,7 +164,7 @@ struct Issue539NearestPointOnCurveTests {
     /// needing one of its own. Pinned because it is the spelling a proximity test reaches for.
     @Test("Curve3D.distance inherits the corrected projection")
     func curveDistanceInheritsTheFix() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         #expect(abs(curve.distance(to: SIMD3(100, 0, 0)) - 92) < 1e-9)  // was 0
         #expect(abs(curve.distance(to: .zero) - 3) < 1e-9)  // was 0
         #expect(abs(curve.distance(to: SIMD3(5, 2, 0)) - 2) < 1e-9)  // unchanged
@@ -233,7 +222,7 @@ struct Issue539NearestPointOnCurveTests {
     @Test("Curve3D and Edge agree on the same geometry")
     func curveAndEdgeAgree() throws {
         let edge = try Self.arcEdge()
-        let arc = try #require(Self.halfArc())
+        let arc = try #require(halfCircle())
 
         for point in [
             SIMD3<Double>(0, -6, 0), SIMD3(0, 6, 0), SIMD3(3, -4, 0),

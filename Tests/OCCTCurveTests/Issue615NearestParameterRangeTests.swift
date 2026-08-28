@@ -26,17 +26,10 @@ import Testing
 @Suite("nearestParameter reports the nearest point over the range (#615)")
 struct Issue615NearestParameterRangeTests {
 
-    /// #539's own repro geometry: a half circle of radius 5 over `[0, π]`, so parameter `t` is the
-    /// point `(5 cos t, 5 sin t, 0)`. The arc lies in the upper half plane; a query from below has
-    /// its nearest point at an end, and its only extremum at the far side.
-    private static func halfCircle() -> Curve3D? {
-        Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)?.trimmed(from: 0, to: .pi)
-    }
-
-    /// Domain `[3, 8]` along +X: the point at parameter `t` is `(t, 0, 0)`.
-    private static func trimmedSegment() -> Curve3D? {
-        Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))?.trimmed(from: 3, to: 8)
-    }
+    // MARK: #539's own repro geometry: a half circle of radius 5 over `[0, π]`, so parameter `t` is
+    // the point `(5 cos t, 5 sin t, 0)`. The arc lies in the upper half plane; a query from below
+    // has its nearest point at an end, and its only extremum at the far side. Shared as
+    // `halfCircle()` in CurveTestFixtures.swift (#1261).
 
     private static func distance(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
         let d = a - b
@@ -50,7 +43,7 @@ struct Issue615NearestParameterRangeTests {
     /// it is an end.
     @Test("A half circle queried from below answers with the near end, not the far side")
     func halfCircleFromBelowAnswersTheNearEnd() throws {
-        let arc = try #require(Self.halfCircle())
+        let arc = try #require(halfCircle())
         let query = SIMD3<Double>(0, -6, 0)
         let truth = 61.0.squareRoot()  // hypot(5, 6) = 7.810249675906654
 
@@ -67,7 +60,7 @@ struct Issue615NearestParameterRangeTests {
     /// full circle but not on this half of it. The extremum is the mirrored point at distance 10.
     @Test("A point on the circle but off the arc answers with the arc's end")
     func pointOnTheCircleButOffTheArc() throws {
-        let arc = try #require(Self.halfCircle())
+        let arc = try #require(halfCircle())
         let query = SIMD3<Double>(3, -4, 0)
 
         let parameter = try #require(arc.nearestParameter(to: query))
@@ -80,7 +73,7 @@ struct Issue615NearestParameterRangeTests {
     /// does have a nearest point, and `projectPoint` has reported it since #539.
     @Test("A point past the end is answered, not refused")
     func pastTheEndIsAnswered() throws {
-        let segment = try #require(Self.trimmedSegment())
+        let segment = try #require(trimmedSegment())
 
         #expect(segment.nearestParameter(to: SIMD3(100, 0, 0)) == 8)
         #expect(segment.nearestParameter(to: SIMD3(0, 0, 0)) == 3)
@@ -92,8 +85,8 @@ struct Issue615NearestParameterRangeTests {
     /// circle, so a future change that fixes one entry point and not the other fails here.
     @Test("nearestParameter and projectPoint agree on every query")
     func theTwoSpellingsAgree() throws {
-        let arc = try #require(Self.halfCircle())
-        let segment = try #require(Self.trimmedSegment())
+        let arc = try #require(halfCircle())
+        let segment = try #require(trimmedSegment())
         let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let line = try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))
 
@@ -132,7 +125,7 @@ struct Issue615NearestParameterRangeTests {
     /// opposite it.
     @Test("The locate-from-a-guess fallback answers over the whole curve, correctly")
     func locateFallbackIsCorrect() throws {
-        let arc = try #require(Self.halfCircle())
+        let arc = try #require(halfCircle())
         let query = SIMD3<Double>(0, -6, 0)
         let truth = 61.0.squareRoot()
 
@@ -143,7 +136,7 @@ struct Issue615NearestParameterRangeTests {
 
         // A bounded segment queried past its end has no extremum anywhere, so every guess falls
         // back. Before #615 the fallback found none either and the whole call returned nil.
-        let segment = try #require(Self.trimmedSegment())
+        let segment = try #require(trimmedSegment())
         for guess in [3.0, 5.5, 8.0] {
             let located = try #require(
                 segment.locateNearestPoint(SIMD3(100, 0, 0), initParam: guess),
@@ -167,7 +160,7 @@ struct Issue615NearestParameterRangeTests {
     /// `nearestParameter(to:)`.
     @Test("The locate-from-a-guess primary search stays local, maxima included")
     func locatePrimarySearchStaysLocal() throws {
-        let arc = try #require(Self.halfCircle())
+        let arc = try #require(halfCircle())
 
         let atFarSide = try #require(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: .pi / 2))
         #expect(abs(atFarSide.parameter - .pi / 2) < 1e-9)
