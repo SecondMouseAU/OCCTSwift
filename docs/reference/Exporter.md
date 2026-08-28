@@ -224,7 +224,7 @@ Use `modelType` to control how geometry is encoded in the STEP file. See
 
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, STEP representation type.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer::Transfer` with the given `STEPControl_StepModelType`.
 - **Example:**
   ```swift
@@ -244,7 +244,7 @@ public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type;
   `tolerance`: geometric tolerance written into the STEP file header.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer::Transfer` with explicit tolerance.
 - **Example:**
   ```swift
@@ -267,7 +267,7 @@ assemblies or swept shapes where many faces share the same underlying geometry.
 
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type (default `.asIs`).
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `STEPControl_Writer` with a pre-transfer deduplication pass.
 - **Example:**
   ```swift
@@ -376,7 +376,7 @@ public static func writeIGES(shape: Shape, to url: URL, unit: String) throws
 - **Parameters:** `shape`, shape; `url`, output URL; `unit`, unit identifier, e.g. `"MM"`,
   `"IN"`, `"M"`, `"FT"`.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `IGESControl_Writer(unit, 0)`, Faces mode with the specified unit.
 - **Example:**
   ```swift
@@ -398,7 +398,7 @@ tessellated face entities.
 
 - **Parameters:** `shape`, shape; `url`, output URL.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `IGESControl_Writer("MM", 1)`, BRep mode.
 - **Example:**
   ```swift
@@ -415,14 +415,17 @@ Writes multiple shapes to a single IGES file.
 public static func writeIGES(shapes: [Shape], to url: URL) throws
 ```
 
-Iterates `shapes`, validates each with `BRepCheck_Analyzer`, and adds valid shapes to one
-`IGESControl_Writer`. Shapes that fail validation are silently skipped. Throws
-`ExportError.exportFailed` if no shapes were successfully added.
+Requires every shape in `shapes` to be valid before writing anything: an invalid shape throws
+`ExportError.invalidShape` and no file is produced, the same fail-fast contract every other
+`Exporter` write method uses (#1226; before that fix this overload instead relied on the bridge's
+own per-shape `BRepCheck_Analyzer` check, which silently dropped an invalid shape from the file
+rather than rejecting the call, so a batch with one bad shape among many good ones used to export
+just the valid subset). Once validated, adds each shape to one `IGESControl_Writer`.
 
 - **Parameters:** `shapes`, array of shapes; `url`, output URL.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
-- **OCCT:** `IGESControl_Writer::AddShape` called per valid shape.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **OCCT:** `IGESControl_Writer::AddShape` called per shape.
 - **Example:**
   ```swift
   try Exporter.writeIGES(shapes: [rail, sleeper, ballast], to: trackURL)
@@ -592,7 +595,7 @@ public static func writePLY(shape: Shape, to url: URL, deflection: Double,
   `colors`: include per-vertex colour (default `false`);
   `texCoords`: include UV texture coordinates (default `false`).
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
 - **OCCT:** `RWPly_CafWriter` with attribute flags.
 - **Example:**
   ```swift
@@ -623,7 +626,8 @@ instead.
   `binary`: `true` for GLB, `false` for text GLTF (default `true`);
   `deflection`: tessellation quality (default 0.1).
 - **Returns:** `Void`.
-- **Throws:** `ExportError.exportFailed` if `RWGltf_CafWriter` fails.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
+  `ExportError.exportFailed` if `RWGltf_CafWriter` fails.
 - **OCCT:** `RWGltf_CafWriter(path, isBinary)`.
 - **Example:**
   ```swift
