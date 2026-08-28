@@ -121,5 +121,10 @@ struct Issue655SectionWiresOrientationTests {
         }
         let wires = shape.sectionWiresAtZ(3.0, tolerance: 1e-6)
         #expect(wires.count == 1, "expected 1 wire (the square only), got \(wires.count)")
+        if let only = wires.first {
+            #expect(
+                only.edges().count == 4, "expected the square's 4 edges, got \(only.edges().count)")
+            #expect(only.curveInfo?.isClosed == true, "expected the surviving wire to be closed")
+        }
     }
 }

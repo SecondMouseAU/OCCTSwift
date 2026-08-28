@@ -1260,6 +1260,12 @@ struct EdgePolylineTests {
         let edgeCount = shape.edges().count
         #expect(edgeCount > 0)
 
+        // A loft that silently used only `bottom` (ignoring `top`) would still be a valid
+        // 4-edge, 1-face shape and would pass every check below: a genuine loft between two
+        // differently-sized closed wires has more than one face (the lateral faces), a
+        // single-profile fallback has exactly one (#764).
+        #expect(shape.subShapes(ofType: .face).count > 1)
+
         let polylines = shape.allEdgePolylines()
         // Should return polylines for most/all edges
         #expect(polylines.count > 0)
@@ -3193,7 +3199,13 @@ struct BOPAlgoShellSplitterTests {
                 let result = shell.splitShell()
                 #expect(result != nil)
                 if let r = result {
-                    #expect(r.count >= 1)
+                    // A single connected box shell has nothing to split apart: over-splitting
+                    // (e.g. one piece per face) would still satisfy `>= 1` and hide the defect
+                    // (#764).
+                    #expect(r.count == 1)
+                    if let first = r.first {
+                        #expect(first.subShapes(ofType: .face).count == 6)
+                    }
                 }
             }
         }
@@ -5326,9 +5338,12 @@ struct FilletBuilderHistoryTests {
             if builder.build() != nil {
                 let faces = box.subShapes(ofType: .face)
                 if !faces.isEmpty {
-                    let mod = builder.modified(from: faces[0])
-                    // May or may not have modified faces depending on which face
-                    #expect(mod.count >= 0)
+                    // `mod.count >= 0` can never fail (a count is never negative), so it never
+                    // measured anything (#764): any single face may or may not be one the
+                    // fillet touches, but at least one of the box's own faces must be, since
+                    // the fillet replaces material on both faces adjacent to the filleted edge.
+                    let anyModified = faces.contains { builder.modified(from: $0).count > 0 }
+                    #expect(anyModified)
                 }
             }
         }

@@ -122,6 +122,7 @@ struct Issue762ChamferedPocketDetectionTests {
         }
         #expect(chamferSpecs.count == 4)
         let chamfered = try #require(cut.chamferedTwoDistances(chamferSpecs))
+        expectShapeChanged(cut, chamfered, "chamfered on cut")
 
         let pockets = chamfered.detectPocketsAAG()
         #expect(pockets.count == 1)

@@ -321,6 +321,15 @@ struct Issue753FilletedJunctionDetectedTests {
         })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))
+        // A no-op fillet would leave `filleted` geometrically identical to the sharp `cut`
+        // above, which `prePockets` already proves reports wallFaceIndices.count == 4 and
+        // !isOpen on its own: the two counts below would then match by coincidence, not by
+        // seeing through the fillet. A real fillet replaces each target edge with at least one
+        // new face, so the face count must rise (#764).
+        #expect(
+            filleted.faces().count > cut.faces().count,
+            "face count did not rise, so the fillet added no geometry and this fixture is still the sharp one"
+        )
 
         let postPockets = filleted.detectPocketsAAG()
         #expect(postPockets.count == 1)

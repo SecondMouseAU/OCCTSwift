@@ -73,7 +73,13 @@ struct Issue724PocketGroupingFloorTests {
         )
         let cut = try #require(box.subtracting(tool))
 
-        #expect(cut.detectPocketsAAG().count == 1, "height=\(height)")
+        let pockets = cut.detectPocketsAAG()
+        #expect(pockets.count == 1, "height=\(height)")
+        // Not just the count: a fix that kept the WRONG one of the two candidate floors (the
+        // false z=10-region opening rather than the real z=0 bore bottom) could still report
+        // exactly one pocket, matching the pinned count for the wrong reason. See :53's
+        // identical check on the headline fixture.
+        #expect(abs((pockets.first?.zLevel ?? .nan) - 0.0) < 1e-6, "height=\(height)")
     }
 
     // MARK: - Non-regression: a genuine multi-wall pocket keeps every wall
@@ -110,7 +116,12 @@ struct Issue724PocketGroupingFloorTests {
                 origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
         let pocketed = try #require(box.subtracting(pocket))
 
-        #expect(pocketed.detectPocketsAAG().count == 1, "depth=\(depth)")
+        let pockets = pocketed.detectPocketsAAG()
+        #expect(pockets.count == 1, "depth=\(depth)")
+        // Not just the pocket count: #724's wall-bottom filter must not quietly drop one of
+        // this fixture's four already-correctly-grouped walls while the pocket count itself
+        // stays unchanged at 1. See `genuineFourWalledPocketKeepsAllWalls`'s identical check.
+        #expect(pockets.first?.wallFaceIndices.count == 4, "depth=\(depth)")
     }
 
     /// A plain box has no concave edges at all (#703), so there is no floor candidate in the first

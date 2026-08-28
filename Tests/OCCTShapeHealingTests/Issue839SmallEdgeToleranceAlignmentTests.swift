@@ -56,6 +56,21 @@ struct Issue839SmallEdgeToleranceAlignmentTests {
         #expect(
             dropped.edges().count == 6,
             "a 3e-7 edge should NOT be dropped at the aligned 1e-7 default")
+
+        // Proves the drop path itself actually fires on this fixture, not merely that "6" is
+        // the answer at the aligned default (#764): at the OLD outlier tolerance (1e-6) the
+        // same 3e-7 edge SHOULD be removed by both. Without this, a droppingSmallEdges()/
+        // fixSmallEdges() that silently never dropped anything (regardless of tolerance) would
+        // still pass both assertions above, since "not dropped" also happens to be this test's
+        // expected default-tolerance answer.
+        let droppedAtOldDefault = try #require(face.droppingSmallEdges(tolerance: 1e-6))
+        let fixedAtOldDefault = try #require(face.fixSmallEdges(tolerance: 1e-6, dropSmall: true))
+        #expect(
+            droppedAtOldDefault.edges().count == 5,
+            "a 3e-7 edge SHOULD be dropped at the old outlier 1e-6 tolerance")
+        #expect(
+            fixedAtOldDefault.edges().count == 5,
+            "a 3e-7 edge SHOULD be dropped at the old outlier 1e-6 tolerance")
     }
 
     /// At a shared EXPLICIT tolerance well above either historical default, both must actually

@@ -5949,6 +5949,17 @@ struct ShapeRevolutionAxesTests {
             Issue.record("union nil")
             return
         }
+        // Proves the union actually kept both bodies rather than silently returning just one
+        // operand (#764): the cylinder (r=5) and the torus (major 10, minor 2, tube spans
+        // radius 8..12) never overlap, so a real union's volume is exactly their sum. Without
+        // this, a union that quietly dropped the torus would leave `combined` with the
+        // cylinder's own single axis, and axes.count below would still read 1, passing without
+        // ever exercising dedup.
+        if let cylVol = cyl.volume, let torusVol = torus.volume,
+            let combinedVol = combined.volume
+        {
+            #expect(abs(combinedVol - (cylVol + torusVol)) < 1e-3)
+        }
         let axes = combined.revolutionAxes()
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)
