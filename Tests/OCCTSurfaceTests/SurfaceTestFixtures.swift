@@ -76,3 +76,29 @@ func assertMatchesQuarterCylinder(_ surface: Surface, tolerance: Double = 1e-6) 
     }
 }
 
+// MARK: - #1253: shared measured-continuity BSpline surface fixture
+//
+// `Issue485SurfaceContinuityTests` and `Issue619SurfaceContinuityEncodingTests` each
+// independently reimplemented the identical fixture: a bicubic BSpline surface whose
+// interior U knot multiplicity drives the measured continuity down (mult 1 -> C2, mult 2
+// -> C1, mult 3 == degree -> C0). Both suites are legitimate, separate regression tests
+// (#485 is the continuity/surfaceContinuityOrder encoding mismatch fix; #619 is the later
+// retirement of surfaceContinuityOrder), so only the fixture moved here, not the suites
+// or their assertions.
+
+/// A bicubic BSpline surface whose interior U knot carries `multiplicity`, driving the
+/// measured continuity down: mult 1 -> C2, mult 2 -> C1, mult 3 (== degree) -> C0.
+func makeContinuityBSplineSurface(interiorMultiplicityU multiplicity: Int32) -> Surface? {
+    let uCount = 4 + Int(multiplicity)
+    let poles: [[SIMD3<Double>]] = (1...uCount).map { i in
+        (1...4).map { j in
+            SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2))
+        }
+    }
+    return Surface.bspline(
+        poles: poles,
+        knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
+        knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
+        degreeU: 3, degreeV: 3)
+}
+

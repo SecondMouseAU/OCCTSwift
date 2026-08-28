@@ -10,21 +10,10 @@ import simd
 @Suite("Surface measured continuity encoding after the retirement (#619)")
 struct Issue619SurfaceContinuityEncodingTests {
 
-    /// A bicubic BSpline surface whose interior U knot multiplicity drives the measured
-    /// continuity: mult 1 -> C2, mult 2 -> C1, mult 3 (== degree) -> C0.
-    static func bsplineSurface(interiorMultiplicityU multiplicity: Int32) -> Surface? {
-        let uCount = 4 + Int(multiplicity)
-        let poles: [[SIMD3<Double>]] = (1...uCount).map { i in
-            (1...4).map { j in
-                SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2))
-            }
-        }
-        return Surface.bspline(
-            poles: poles,
-            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
-            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-            degreeU: 3, degreeV: 3)
-    }
+    // The fixture (a bicubic BSpline surface whose interior U knot multiplicity drives the
+    // measured continuity: mult 1 -> C2, mult 2 -> C1, mult 3 == degree -> C0) lives in
+    // `SurfaceTestFixtures.swift` as `makeContinuityBSplineSurface(interiorMultiplicityU:)`,
+    // shared with `Issue485SurfaceContinuityTests`; see #1253.
 
     @Test("An analytic surface reports CN as ordinal 6, the old encoding's 99 is unreachable")
     func analyticSurfaceReportsCN() {
@@ -43,8 +32,8 @@ struct Issue619SurfaceContinuityEncodingTests {
 
     @Test("A C1 surface reports C1 as ordinal 2, not 1")
     func c1SurfaceReportsOrdinalTwo() {
-        guard let c1 = Self.bsplineSurface(interiorMultiplicityU: 2),
-            let c2 = Self.bsplineSurface(interiorMultiplicityU: 1)
+        guard let c1 = makeContinuityBSplineSurface(interiorMultiplicityU: 2),
+            let c2 = makeContinuityBSplineSurface(interiorMultiplicityU: 1)
         else {
             Issue.record("could not build the BSpline surface fixtures")
             return
@@ -73,7 +62,7 @@ struct Issue619SurfaceContinuityEncodingTests {
 
     @Test("A raw threshold of 2 now admits a merely-C1 surface; satisfies(.c2) still refuses it")
     func rawThresholdAdmitsC1WhereSatisfiesRefuses() {
-        guard let c1 = Self.bsplineSurface(interiorMultiplicityU: 2) else {
+        guard let c1 = makeContinuityBSplineSurface(interiorMultiplicityU: 2) else {
             Issue.record("could not build the C1 BSpline surface fixture")
             return
         }

@@ -14,21 +14,10 @@ import simd
 @Suite("Surface measured continuity (#485)")
 struct Issue485SurfaceContinuityTests {
 
-    /// A bicubic BSpline surface whose interior U knot carries `multiplicity`, driving the
-    /// measured continuity down: mult 1 -> C2, mult 2 -> C1, mult 3 (== degree) -> C0.
-    static func bsplineSurface(interiorMultiplicityU multiplicity: Int32) -> Surface? {
-        let uCount = 4 + Int(multiplicity)
-        let poles: [[SIMD3<Double>]] = (1...uCount).map { i in
-            (1...4).map { j in
-                SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2))
-            }
-        }
-        return Surface.bspline(
-            poles: poles,
-            knotsU: [0.0, 0.5, 1.0], multiplicitiesU: [4, multiplicity, 4],
-            knotsV: [0.0, 1.0], multiplicitiesV: [4, 4],
-            degreeU: 3, degreeV: 3)
-    }
+    // The fixture (a bicubic BSpline surface whose interior U knot multiplicity drives the
+    // measured continuity: mult 1 -> C2, mult 2 -> C1, mult 3 == degree -> C0) lives in
+    // `SurfaceTestFixtures.swift` as `makeContinuityBSplineSurface(interiorMultiplicityU:)`,
+    // shared with `Issue619SurfaceContinuityEncodingTests`; see #1253.
 
     // MARK: - The shared result vocabulary
 
@@ -94,15 +83,15 @@ struct Issue485SurfaceContinuityTests {
 
     @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals")
     func knotMultiplicityDrivesMeasuredClass() {
-        if let c2 = Self.bsplineSurface(interiorMultiplicityU: 1) {
+        if let c2 = makeContinuityBSplineSurface(interiorMultiplicityU: 1) {
             #expect(c2.continuityClass == .c2)
             #expect(c2.continuity == 4)  // the old encoding said 2
         }
-        if let c1 = Self.bsplineSurface(interiorMultiplicityU: 2) {
+        if let c1 = makeContinuityBSplineSurface(interiorMultiplicityU: 2) {
             #expect(c1.continuityClass == .c1)
             #expect(c1.continuity == 2)  // the old encoding said 1
         }
-        if let c0 = Self.bsplineSurface(interiorMultiplicityU: 3) {
+        if let c0 = makeContinuityBSplineSurface(interiorMultiplicityU: 3) {
             #expect(c0.continuityClass == .c0)
             #expect(c0.continuity == 0)
         }
@@ -128,9 +117,9 @@ struct Issue485SurfaceContinuityTests {
     func bothPropertiesAgree() {
         var checked = 0
         for surface in [
-            Self.bsplineSurface(interiorMultiplicityU: 1),
-            Self.bsplineSurface(interiorMultiplicityU: 2),
-            Self.bsplineSurface(interiorMultiplicityU: 3),
+            makeContinuityBSplineSurface(interiorMultiplicityU: 1),
+            makeContinuityBSplineSurface(interiorMultiplicityU: 2),
+            makeContinuityBSplineSurface(interiorMultiplicityU: 3),
             Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
         ].compactMap({ $0 }) {
             #expect(surface.continuity == Int(surface.continuityClass.rawValue))
