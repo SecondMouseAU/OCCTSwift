@@ -6,6 +6,23 @@ import simd
 
 @Suite("v0.142 ConstructionAxis resolution")
 struct ConstructionAxisTests {
+    /// Finds the index of the first edge in `graph` whose curve type is `curveType`, or nil if
+    /// none exists. Shared by the two "straight seam reparameterized as a BSpline" fixtures below
+    /// (cylinder and cone), which each searched for the synthetic BSpline seam edge with a
+    /// byte-identical inline loop (#1252).
+    private func firstEdgeIndex(in graph: BRepGraph, curveType: Edge.CurveType) -> Int? {
+        for edgeIndex in 0..<graph.edgeCount {
+            guard
+                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
+                let edge = eShape.edges().first
+            else { continue }
+            if edge.curveType == curveType {
+                return edgeIndex
+            }
+        }
+        return nil
+    }
+
     @Test("alongEdge produces edge start + unit direction")
     func alongEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -304,19 +321,7 @@ struct ConstructionAxisTests {
 
         // Confirm the fixture matches the intended scenario, then find that edge by its (unique)
         // BSpline curveType rather than assuming an index.
-        var seamNodeIndex: Int?
-        for edgeIndex in 0..<graph.edgeCount {
-            guard
-                let eShape = graph.shape(
-                    nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
-                let edge = eShape.edges().first
-            else { continue }
-            if edge.curveType == .bsplineCurve {
-                seamNodeIndex = edgeIndex
-                break
-            }
-        }
-        guard let seamNodeIndex else {
+        guard let seamNodeIndex = firstEdgeIndex(in: graph, curveType: .bsplineCurve) else {
             Issue.record("no BSpline-curveType edge found in fixture")
             return
         }
@@ -514,18 +519,7 @@ struct ConstructionAxisTests {
             return
         }
 
-        var seamNodeIndex: Int?
-        for edgeIndex in 0..<graph.edgeCount {
-            guard
-                let eShape = graph.shape(nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
-                let edge = eShape.edges().first
-            else { continue }
-            if edge.curveType == .bsplineCurve {
-                seamNodeIndex = edgeIndex
-                break
-            }
-        }
-        guard let seamNodeIndex else {
+        guard let seamNodeIndex = firstEdgeIndex(in: graph, curveType: .bsplineCurve) else {
             Issue.record("no BSpline-curveType edge found in cone fixture")
             return
         }
