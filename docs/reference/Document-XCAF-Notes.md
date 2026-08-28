@@ -2094,7 +2094,9 @@ public static var localSystem: SystemType { get }
 
 ## BinTools Shape I/O
 
-Binary serialisation for `Shape` using OCCT's `BinTools` format (compact, version-stable).
+Binary serialisation for `Shape` using OCCT's `BinTools` format (compact, version-stable), via
+the object-oriented `BinTools_ShapeWriter`/`BinTools_ShapeReader` classes rather than the bare
+`BinTools` package's own static `Write`/`Read` methods.
 
 ### `Shape.toBinaryData()`
 
@@ -2105,7 +2107,7 @@ public func toBinaryData() -> Data?
 ```
 
 - **Returns:** `Data` containing the binary shape representation, or `nil` if serialisation fails.
-- **OCCT:** `BinTools::Write`
+- **OCCT:** `BinTools_ShapeWriter::Write`
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -2126,7 +2128,7 @@ public static func fromBinaryData(_ data: Data) -> Shape?
 
 - **Parameters:** `data`, binary data previously produced by `toBinaryData()`.
 - **Returns:** The restored `Shape`, or `nil` if the data is invalid.
-- **OCCT:** `BinTools::Read`
+- **OCCT:** `BinTools_ShapeReader::Read`
 
 ---
 
@@ -2141,7 +2143,7 @@ public func writeBinary(to url: URL) -> Bool
 
 - **Parameters:** `url`, destination file URL.
 - **Returns:** `true` on success.
-- **OCCT:** `BinTools::Write` (file overload)
+- **OCCT:** `BinTools_ShapeWriter::Write` (file overload)
 - **Example:**
   ```swift
   if let box = Shape.box(width: 5, height: 5, depth: 5) {
@@ -2161,7 +2163,7 @@ public static func loadBinary(from url: URL) -> Shape?
 
 - **Parameters:** `url`, source file URL.
 - **Returns:** The restored `Shape`, or `nil` if the file is missing or invalid.
-- **OCCT:** `BinTools::Read` (file overload)
+- **OCCT:** `BinTools_ShapeReader::Read` (file overload)
 - **Example:**
   ```swift
   if let shape = Shape.loadBinary(from: URL(fileURLWithPath: "/tmp/box.bin")) {

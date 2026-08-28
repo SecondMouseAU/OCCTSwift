@@ -1620,7 +1620,7 @@ public static func loadSTEP(from url: URL, unitInMeters: Double, progress: Impor
   - `progress`: optional progress/cancellation channel.
 - **Returns:** The imported shape in the specified unit system.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
-- **OCCT:** `STEPControl_Reader` with `Interface_Static` unit setting (via `OCCTImportSTEPWithUnitProgress`).
+- **OCCT:** `STEPControl_Reader::SetSystemLengthUnit` (via `OCCTImportSTEPWithUnitProgress`).
 
 ---
 
@@ -1882,7 +1882,7 @@ public static func loadIGESRoot(from url: URL, rootIndex: Int) throws -> Shape
 
 - **Parameters:** `url`, URL to the IGES file; `rootIndex`, 1-based root index.
 - **Throws:** `ImportError.importFailed` on failure.
-- **OCCT:** `IGESControl_Reader::Transfer` (via `OCCTImportIGESRoot`).
+- **OCCT:** `IGESControl_Reader::TransferOneRoot` (via `OCCTImportIGESRoot`).
 
 ---
 
