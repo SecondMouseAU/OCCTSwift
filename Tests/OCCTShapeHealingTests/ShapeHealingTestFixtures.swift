@@ -7,6 +7,19 @@ import OCCTSwift
 import Testing
 import simd
 
+// The one shared helper CLAUDE.md's Test Layout section documents across every per-domain target
+// ("the only shared helper is SIMD3.normalized"). Moved here verbatim from the top of
+// OCCTShapeHealingTests.swift when that file was split by @Suite (#1301); no suite in this
+// directory currently calls it, the same as before the split, since it's declared for whichever
+// suite in the module needs it next rather than for a specific caller today.
+extension SIMD3 where Scalar == Double {
+    var normalized: SIMD3<Double> {
+        let len = sqrt(x * x + y * y + z * z)
+        guard len > 0 else { return self }
+        return SIMD3(x / len, y / len, z / len)
+    }
+}
+
 /// Drops one face from `box` and sews the remaining five: the smallest recipe that reaches an
 /// open shell with exactly 4 free edges ringing the missing face, whatever the box's own size or
 /// origin. Shared by `Issue442FixSolidMultiBodyTests` and `Issue702SolidDemotionTests`, both of
