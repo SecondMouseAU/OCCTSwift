@@ -562,6 +562,120 @@ and found it reached; it is kept, marked, because it is the reason the other num
   named the no-G0 classes as the ones backing those three methods, which was wrong in the opposite
   direction and is corrected in the same PR.
 
+### Drawing / 2D-annotation lane, every unwrapped class recorded (#812)
+
+#812 is #807's Pass 4b: the Drawing/2D-annotation lane audited against the pinned refman
+(`occt-refman@8.0.1` through the `context` MCP) in both directions. The lane's own `## Lane` text
+names `HLRBRep_*`, `HLRAlgo_*`, `Prs3d_* where it backs 2D output`, and the
+`Drawing`/`DrawingAnnotation`/`DrawingSheet` Swift surface; re-derived by call
+(`Scripts/repro/812-refman-coverage-drawing/derive_lane.py`) it is **three** packages and **93**
+classes, not the two the issue text names: `HLRAlgo_` (29, including the bare `HLRAlgo.hxx`
+package-utility header), `HLRBRep_` (63, including the bare `HLRBRep.hxx`), and `HLRAppli_` (1,
+`HLRAppli_ReflectLines`, reached two functions below `OCCTHLRCompoundOfEdges` in the same
+`OCCTBridge_Modeling.mm` block that `Shape+Topology.swift`'s HLR calls reach, and named by no pass
+of #807). `Prs3d_` contributes **zero** classes: the only two `Prs3d_*` construction sites in the
+whole bridge (`Prs3d_Drawer`, `Prs3d_Presentation`) sit behind `DisplayDrawer.swift`, which is Metal
+tessellation-quality control for 3D display, exactly what the lane's own "where it backs 2D output"
+qualifier excludes.
+
+**7 of the 93 are wrapped, 86 were neither wrapped nor documented before this entry.** The five
+public entry points a CAD consumer actually calls are `HLRBRep_Algo`/`HLRBRep_HLRToShape` (exact
+HLR), `HLRBRep_PolyAlgo`/`HLRBRep_PolyHLRToShape` (poly/triangulation HLR), `HLRAlgo_Projector`
+(shared by both), plus `HLRAppli_ReflectLines` and the `HLRBRep_TypeOfResultingEdge` enum (read by
+value, not by name, in `OCCTBridge_Modeling.mm`). Unlike #811's lane, almost none of the remaining
+86 is a real capability gap: hidden-line removal is one nontrivial geometric algorithm with those
+five classes as its public surface and roughly sixty classes of its own internal machinery
+underneath (a curve/curve and curve/surface intersection engine, a triangulation-internal polygon
+data structure, template-policy "Tool" adaptors, deprecated collection typedefs, alias templates to
+`GeomLProp_*Base` template instantiations). The census is committed and re-runnable at
+[`Scripts/repro/812-refman-coverage-drawing/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/812-refman-coverage-drawing);
+it exits 1 if any class below loses its reason here.
+
+**Package-utility classes (2).** The bare `<Package>.hxx` headers are all-static-method classes
+(`DEFINE_STANDARD_ALLOC`, no instance state) serving their own package's public algorithm classes,
+not something a caller instantiates: `HLRAlgo` (packed min/max-box arithmetic --
+`UpdateMinMax`/`EnlargeMinMax`/`EncodeMinMax`/`DecodeMinMax`/`SizeBox`/`AddMinMax` -- for
+`HLRAlgo_EdgesBlock`'s internal state) and `HLRBRep` (`MakeEdge`/`MakeEdge3d`, HLR-curve-to-
+`TopoDS_Edge` construction for `HLRBRep_Algo`'s own internal use, and
+`PolyHLRAngleAndDeflection` for `HLRBRep_PolyAlgo`'s).
+
+**Deprecated collection aliases (15).** Each header carries `Standard_HEADER_DEPRECATED` at file
+scope saying the alias is deprecated since OCCT 8.0.0 and to use the `NCollection_*` template
+directly, the same "NCollection containers" line the summary table at the top of this file already
+gives: `HLRAlgo_Array1OfPHDat`, `HLRAlgo_Array1OfPINod`, `HLRAlgo_Array1OfPISeg`,
+`HLRAlgo_Array1OfTData`, `HLRAlgo_HArray1OfPHDat`, `HLRAlgo_HArray1OfPINod`,
+`HLRAlgo_HArray1OfPISeg`, `HLRAlgo_HArray1OfTData`, `HLRAlgo_InterferenceList`,
+`HLRAlgo_ListOfBPoint`, `HLRBRep_Array1OfEData`, `HLRBRep_Array1OfFData`, `HLRBRep_ListOfBPnt2D`,
+`HLRBRep_ListOfBPoint`, `HLRBRep_SeqOfShapeBounds`.
+
+**Alias templates (5).** A `using X = Template<...>;` header, declaring no `class`/`struct` of its
+own name, each one an internal local-properties or extremum/locator evaluator the HLR curve-tool
+engine builds for itself, the same shape #811's `declares_member` needed a "cannot say" answer for
+at the method level, here at the lane-membership level instead: `HLRBRep_CLProps` (`using
+HLRBRep_CLProps = GeomLProp_CLPropsBase<gp_Pnt2d, gp_Vec2d, gp_Dir2d, const HLRBRep_Curve*,
+LProp_CurveUtils::ToolAccess<HLRBRep_CLPropsATool>>`, 2D curve local-property evaluation for edge
+sampling), `HLRBRep_SLProps` (the surface sibling), and the three-class family
+`HLRBRep_PCLocFOfTheLocateExtPCOfTheProjPCurOfCInter` / `HLRBRep_TheCurveLocatorOfTheProjPCurOfCInter`
+/ `HLRBRep_TheLocateExtPCOfTheProjPCurOfCInter`, the extremum-locator machinery
+`HLRBRep_CInter.hxx` includes as one internal group.
+
+**Not a class (1).** `HLRBRep_TypeDef.hxx` declares no class of its own name: two `typedef void*`
+aliases (`HLRBRep_CurvePtr`, `HLRBRep_SurfacePtr`) for the generic template-instantiation interface,
+nothing to wrap.
+
+**An enum, unread (1).** `HLRAlgo_PolyMask`'s 13 bit-flag values
+(`EMskOutLin1`...`FMskFrBack`) are packed into `HLRAlgo_EdgesBlock`'s internal per-edge state;
+nothing outside `HLRAlgo` itself reads them, by value or by name.
+
+**Internal engine helpers (62), four measured sub-mechanisms.** Each concrete class serves the
+algorithm engine behind an already-wrapped entry point, with no independent capability a CAD
+consumer could reach; confirmed against `occt-refman@8.0.1`'s own class pages rather than inferred
+from the name (`HLRAlgo_PolyInternalData`'s own summary is "to Update OutLines", `HLRBRep_Data`'s
+public methods are `AboveInterference`/`HidingTheFace`/`InitInterference`/`RejectedInterference`/
+`SimpleHidingFace`/`Edge`/`Tolerance`, an edge-hiding cursor with no capability beyond it).
+
+- *Poly (triangulation) HLR engine's own internal data (16)*, the mesh-internal state
+  `HLRBRep_PolyAlgo` drives through `HLRAlgo_PolyAlgo`: `HLRAlgo_PolyAlgo`, `HLRAlgo_BiPoint`,
+  `HLRAlgo_Coincidence`, `HLRAlgo_EdgeIterator`, `HLRAlgo_EdgeStatus`, `HLRAlgo_EdgesBlock`,
+  `HLRAlgo_Interference`, `HLRAlgo_Intersection`, `HLRAlgo_PolyData`, `HLRAlgo_PolyHidingData`,
+  `HLRAlgo_PolyInternalData`, `HLRAlgo_PolyInternalNode`, `HLRAlgo_PolyInternalSegment`,
+  `HLRAlgo_PolyShellData`, `HLRAlgo_TriangleData`, `HLRAlgo_WiresBlock`.
+- *Exact HLR engine's own internal state (21)*, the edge/face/interference cursor state
+  `HLRBRep_Algo` drives through `HLRBRep_Data`: `HLRBRep_AreaLimit`, `HLRBRep_BiPnt2D`,
+  `HLRBRep_BiPoint`, `HLRBRep_CInter`, `HLRBRep_Curve`, `HLRBRep_Data`, `HLRBRep_EdgeBuilder`,
+  `HLRBRep_EdgeData`, `HLRBRep_EdgeFaceTool`, `HLRBRep_EdgeIList`, `HLRBRep_EdgeInterferenceTool`,
+  `HLRBRep_FaceData`, `HLRBRep_FaceIterator`, `HLRBRep_Hider`, `HLRBRep_InterCSurf`,
+  `HLRBRep_InternalAlgo`, `HLRBRep_Intersector`, `HLRBRep_ShapeBounds`, `HLRBRep_ShapeToHLR`,
+  `HLRBRep_Surface`, `HLRBRep_VertexList`.
+- *Template-policy "Tool" adaptors (7)*, static geometric-evaluator methods the two engines above
+  are instantiated over, not classes a caller constructs: `HLRBRep_BCurveTool`,
+  `HLRBRep_BSurfaceTool`, `HLRBRep_CLPropsATool`, `HLRBRep_CurveTool`, `HLRBRep_LineTool`,
+  `HLRBRep_SLPropsATool`, `HLRBRep_SurfaceTool`.
+- *`HLRBRep_CInter`'s/`HLRBRep_InterCSurf`'s own intersection-engine template instantiations (18)*,
+  OCCT's generic-intersection-macro naming for this toolkit ("The\<X\>Of\<Y\>"/"My\<X\>Of\<Y\>"),
+  macro-generated 2D curve/curve or curve/surface intersection internals with no independent use
+  outside that engine: `HLRBRep_ExactIntersectionPointOfTheIntPCurvePCurveOfCInter`,
+  `HLRBRep_IntConicCurveOfCInter`,
+  `HLRBRep_MyImpParToolOfTheIntersectorOfTheIntConicCurveOfCInter`,
+  `HLRBRep_TheCSFunctionOfInterCSurf`, `HLRBRep_TheDistBetweenPCurvesOfTheIntPCurvePCurveOfCInter`,
+  `HLRBRep_TheExactInterCSurf`, `HLRBRep_TheIntConicCurveOfCInter`,
+  `HLRBRep_TheInterferenceOfInterCSurf`, `HLRBRep_TheIntersectorOfTheIntConicCurveOfCInter`,
+  `HLRBRep_TheIntPCurvePCurveOfCInter`, `HLRBRep_ThePolygon2dOfTheIntPCurvePCurveOfCInter`,
+  `HLRBRep_ThePolygonOfInterCSurf`, `HLRBRep_ThePolygonToolOfInterCSurf`,
+  `HLRBRep_ThePolyhedronOfInterCSurf`, `HLRBRep_ThePolyhedronToolOfInterCSurf`,
+  `HLRBRep_TheProjPCurOfCInter`, `HLRBRep_TheQuadCurvExactInterCSurf`,
+  `HLRBRep_TheQuadCurvFuncOfTheQuadCurvExactInterCSurf`.
+
+**Adjacent, not in this lane, worth recording so a future pass does not re-derive it.**
+`HatchPattern.swift`'s `OCCTHatchLines` builds a `Hatch_Hatcher` (package `Hatch_`, not named by
+#812's own lane text and not audited here). `Annotation.swift`'s `OCCTDimensionCreate*`/
+`OCCTTextLabelCreate`/`OCCTPointCloudCreate` all reach `OCCTBridge_AIS.mm` (`AIS_*`/`PrsDim_*`),
+3D-interactive/Metal per its own doc comments ("for Metal rendering"), not the 2D drawing-sheet
+surface; nothing under `Drawing*.swift` uses its types. `TopCnx_`, named in the very doc section
+heading `HLRAppli_` was justified from ("Extended HLR, ReflectLines, TopCnx, Intrv"), is edge-face
+transition classification for BOP/healing, a different capability that shipped in the same v0.73.0
+release batch, not a hidden-line-removal one, and is not added to this lane.
+
 ### GD&T dimension accessors left unwrapped (#1004)
 
 #1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what
