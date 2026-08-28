@@ -403,6 +403,61 @@ struct DrawerMeshTests {
     }
 }
 
+// MARK: - Overload-Pair Deinterleave Parity Tests (#1224)
+
+/// Proves the shaded/edge mesh overload pairs still share their deinterleave logic (#1224).
+///
+/// `PresentationMesh.swift`'s `shadedMesh(deflection:)`/`shadedMesh(drawer:)` and
+/// `edgeMesh(deflection:)`/`edgeMesh(drawer:)` overload pairs used to independently
+/// reimplement the same deinterleave-and-build post-processing (#1224, elevated from #796's
+/// census, itself part of the #388/#377 duplication audit). That duplication was invisible
+/// to the existing coverage above: nothing compared a pair's two overloads against each
+/// other, so a future fix to the deinterleave math applied to only one copy of a pair would
+/// pass every test above unchanged. These tests close that gap by asserting the two
+/// overloads of each pair agree exactly, on a shape whose flat/straight geometry makes the
+/// drawer's differing default angular deflection a non-confound (angle only affects
+/// tessellation of curved geometry).
+@Suite("Issue1224 Presentation Mesh Overload Parity")
+struct Issue1224PresentationMeshParityTests {
+
+    @Test("shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically")
+    func shadedMeshOverloadsAgree() {
+        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let drawer = DisplayDrawer()
+        drawer.deflectionType = .absolute
+        drawer.maximalChordialDeviation = 0.1
+
+        let byDeflection = box.shadedMesh(deflection: 0.1)
+        let byDrawer = box.shadedMesh(drawer: drawer)
+
+        #expect(byDeflection != nil)
+        #expect(byDrawer != nil)
+        guard let a = byDeflection, let b = byDrawer else { return }
+
+        #expect(a.vertices == b.vertices)
+        #expect(a.normals == b.normals)
+        #expect(a.indices == b.indices)
+    }
+
+    @Test("edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically")
+    func edgeMeshOverloadsAgree() {
+        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let drawer = DisplayDrawer()
+        drawer.deflectionType = .absolute
+        drawer.maximalChordialDeviation = 0.1
+
+        let byDeflection = box.edgeMesh(deflection: 0.1)
+        let byDrawer = box.edgeMesh(drawer: drawer)
+
+        #expect(byDeflection != nil)
+        #expect(byDrawer != nil)
+        guard let a = byDeflection, let b = byDrawer else { return }
+
+        #expect(a.vertices == b.vertices)
+        #expect(a.segmentStarts == b.segmentStarts)
+    }
+}
+
 // MARK: - Mesh Coordinate System Enum Tests (v0.59.0)
 
 @Suite("MeshCoordinateSystem Enum")
