@@ -15,18 +15,20 @@ struct ElCLibTests {
         #expect(abs(p.y) < 1e-10)
     }
 
-    @Test func valueOnCircle() {
+    // #1249: valueOnCircle() and valueOnCircleAtPiOver2() were a clean @Test(arguments:)
+    // collapse candidate, identical center/normal/radius, differing only in u and the
+    // correspondingly swapped expected x/y.
+    @Test(
+        "valueOnCircle",
+        arguments: [
+            (0.0, 10.0, 0.0),
+            (Double.pi / 2, 0.0, 10.0),
+        ] as [(Double, Double, Double)])
+    func valueOnCircle(u: Double, expectedX: Double, expectedY: Double) {
         let p = ElCLib.valueOnCircle(
-            u: 0.0, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
-        #expect(abs(p.x - 10.0) < 1e-10)
-        #expect(abs(p.y) < 1e-10)
-    }
-
-    @Test func valueOnCircleAtPiOver2() {
-        let p = ElCLib.valueOnCircle(
-            u: .pi / 2, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
-        #expect(abs(p.x) < 1e-10)
-        #expect(abs(p.y - 10.0) < 1e-10)
+            u: u, center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
+        #expect(abs(p.x - expectedX) < 1e-10)
+        #expect(abs(p.y - expectedY) < 1e-10)
     }
 
     @Test func valueOnEllipse() {
