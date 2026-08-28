@@ -38,6 +38,70 @@ internal struct DrawingPrimitiveOps {
     let addText: (String, SIMD2<Double>, Double, Double, String) -> Void
 }
 
+/// Shared entity storage for the five 2D drawing primitives DXF, PDF and SVG all stage
+/// identically. #1227: `DXFWriter`/`PDFWriter`/`SVGWriter` each independently declared these
+/// same five stored-property arrays and the same append-only staging logic (`addLine`/
+/// `addPolyline`/`addCircle`/`addArc`/`addText`), byte-for-byte identical apart from the arc
+/// tuple's field names -- `startAngleDeg`/`endAngleDeg` in DXF, `startDeg`/`endDeg` in PDF and
+/// SVG, a cosmetic difference this type resolves by standardizing on the public `addArc(...)`
+/// parameter spelling.
+///
+/// Each writer keeps its own `entityBuffer: DrawingEntityBuffer` (a `DrawingPrimitiveSink`
+/// requirement, mirroring `cachedPrimitiveOps` immediately below) and forwards its own public
+/// `addLine`/etc. declarations into this type's mutating methods -- the forwarding stays an
+/// explicit per-writer declaration rather than a protocol-extension default for the same
+/// reason `collectFromDrawing` does (see `DrawingPrimitiveSink` below): an `internal`
+/// protocol's extension methods are not reliably part of a conforming `public` type's visible
+/// API from outside the module, and these five methods (unlike `primitiveOps()`) ARE public
+/// API, documented once per writer in `docs/reference/Export-Vector.md`.
+internal struct DrawingEntityBuffer {
+    var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
+    var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
+    var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
+    var arcs:
+        [(
+            centre: SIMD2<Double>, radius: Double, startAngleDeg: Double, endAngleDeg: Double,
+            layer: String
+        )] = []
+    var texts:
+        [(
+            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
+            layer: String
+        )] = []
+
+    mutating func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String) {
+        lines.append((a, b, layer))
+    }
+
+    mutating func addPolyline(_ points: [SIMD2<Double>], closed: Bool, layer: String) {
+        guard points.count >= 2 else { return }
+        polylines.append((points, closed, layer))
+    }
+
+    mutating func addCircle(centre: SIMD2<Double>, radius: Double, layer: String) {
+        circles.append((centre, radius, layer))
+    }
+
+    mutating func addArc(
+        centre: SIMD2<Double>, radius: Double,
+        startAngleDeg: Double, endAngleDeg: Double,
+        layer: String
+    ) {
+        arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
+    }
+
+    mutating func addText(
+        _ text: String, at position: SIMD2<Double>,
+        height: Double, rotationDeg: Double, layer: String
+    ) {
+        texts.append((position, text, height, rotationDeg, layer))
+    }
+
+    var entityCounts: (lines: Int, polylines: Int, circles: Int, arcs: Int, texts: Int) {
+        (lines.count, polylines.count, circles.count, arcs.count, texts.count)
+    }
+}
+
 /// A writer that can stage the five 2D drawing primitives PDF, SVG and DXF all
 /// understand.
 ///
@@ -54,6 +118,9 @@ internal protocol DrawingPrimitiveSink: AnyObject {
     /// `DrawingPrimitiveOps`, which matters for `addDimension`'s documented loop-of-many-calls
     /// use case (composing a DXF from dimension values without going through a `Drawing`).
     var cachedPrimitiveOps: DrawingPrimitiveOps? { get set }
+    /// Shared entity storage backing this sink's `addLine`/`addPolyline`/`addCircle`/`addArc`/
+    /// `addText`/`entityCounts`. #1227.
+    var entityBuffer: DrawingEntityBuffer { get set }
     func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String)
     func addPolyline(_ points: [SIMD2<Double>], closed: Bool, layer: String)
     func addCircle(centre: SIMD2<Double>, radius: Double, layer: String)

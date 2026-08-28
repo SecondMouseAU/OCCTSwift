@@ -54,17 +54,10 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public var viewBox: (min: SIMD2<Double>, size: SIMD2<Double>)?
     public let deflection: Double
 
-    private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
-    private var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
-    private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
-    private var arcs:
-        [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] =
-            []
-    private var texts:
-        [(
-            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
-            layer: String
-        )] = []
+    /// DrawingPrimitiveSink's shared entity storage -- see DrawingDispatch.swift.
+    ///
+    /// #1227.
+    internal var entityBuffer = DrawingEntityBuffer()
     /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
     ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
@@ -78,20 +71,24 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     // MARK: - Entity staging
+    //
+    // Each method forwards to `DrawingEntityBuffer`'s own staging logic (shared with
+    // DXFWriter/PDFWriter, #1227); kept as an explicit per-writer `public func` rather than a
+    // `DrawingPrimitiveSink` protocol-extension default for the same reason
+    // `collectFromDrawing` below is -- see `DrawingEntityBuffer`'s own doc comment.
 
     public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = "VISIBLE") {
-        lines.append((a, b, layer))
+        entityBuffer.addLine(from: a, to: b, layer: layer)
     }
 
     public func addPolyline(
         _ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE"
     ) {
-        guard points.count >= 2 else { return }
-        polylines.append((points, closed, layer))
+        entityBuffer.addPolyline(points, closed: closed, layer: layer)
     }
 
     public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VISIBLE") {
-        circles.append((centre, radius, layer))
+        entityBuffer.addCircle(centre: centre, radius: radius, layer: layer)
     }
 
     public func addArc(
@@ -99,7 +96,9 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
         startAngleDeg: Double, endAngleDeg: Double,
         layer: String = "VISIBLE"
     ) {
-        arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
+        entityBuffer.addArc(
+            centre: centre, radius: radius,
+            startAngleDeg: startAngleDeg, endAngleDeg: endAngleDeg, layer: layer)
     }
 
     public func addText(
@@ -107,7 +106,8 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
         height: Double = 3.5, rotationDeg: Double = 0,
         layer: String = "TEXT"
     ) {
-        texts.append((position, text, height, rotationDeg, layer))
+        entityBuffer.addText(
+            text, at: position, height: height, rotationDeg: rotationDeg, layer: layer)
     }
 
     public func addDimension(_ d: DrawingDimension) {
@@ -115,7 +115,7 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     public var entityCounts: (lines: Int, polylines: Int, circles: Int, arcs: Int, texts: Int) {
-        (lines.count, polylines.count, circles.count, arcs.count, texts.count)
+        entityBuffer.entityCounts
     }
 
     // MARK: - Collection from Drawing
@@ -183,20 +183,20 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
             maxX = max(maxX, p.x)
             maxY = max(maxY, p.y)
         }
-        for l in lines {
+        for l in entityBuffer.lines {
             extend(l.a)
             extend(l.b)
         }
-        for p in polylines { for pt in p.points { extend(pt) } }
-        for c in circles {
+        for p in entityBuffer.polylines { for pt in p.points { extend(pt) } }
+        for c in entityBuffer.circles {
             extend(SIMD2(c.centre.x - c.radius, c.centre.y - c.radius))
             extend(SIMD2(c.centre.x + c.radius, c.centre.y + c.radius))
         }
-        for a in arcs {
+        for a in entityBuffer.arcs {
             extend(SIMD2(a.centre.x - a.radius, a.centre.y - a.radius))
             extend(SIMD2(a.centre.x + a.radius, a.centre.y + a.radius))
         }
-        for t in texts { extend(t.position) }
+        for t in entityBuffer.texts { extend(t.position) }
         guard minX.isFinite else { return (min: .zero, size: SIMD2(100, 100)) }
         let pad = 5.0
         return (
@@ -207,11 +207,11 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
     private func emitLayerGeometry(layer: String) -> String {
         var s = ""
-        for l in lines where l.layer == layer {
+        for l in entityBuffer.lines where l.layer == layer {
             s +=
                 "<line x1=\"\(formatMM(l.a.x))\" y1=\"\(formatMM(l.a.y))\" x2=\"\(formatMM(l.b.x))\" y2=\"\(formatMM(l.b.y))\"/>\n"
         }
-        for p in polylines where p.layer == layer {
+        for p in entityBuffer.polylines where p.layer == layer {
             let pts = p.points.map { "\(formatMM($0.x)),\(formatMM($0.y))" }.joined(separator: " ")
             if p.closed {
                 s += "<polygon points=\"\(pts)\"/>\n"
@@ -219,21 +219,21 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
                 s += "<polyline points=\"\(pts)\"/>\n"
             }
         }
-        for c in circles where c.layer == layer {
+        for c in entityBuffer.circles where c.layer == layer {
             s +=
                 "<circle cx=\"\(formatMM(c.centre.x))\" cy=\"\(formatMM(c.centre.y))\" r=\"\(formatMM(c.radius))\"/>\n"
         }
-        for a in arcs where a.layer == layer {
+        for a in entityBuffer.arcs where a.layer == layer {
             s += svgArcPath(
                 centre: a.centre, radius: a.radius,
-                startDeg: a.startDeg, endDeg: a.endDeg)
+                startDeg: a.startAngleDeg, endDeg: a.endAngleDeg)
         }
         return s
     }
 
     private func emitLayerText(layer: String) -> String {
         var s = ""
-        for t in texts where t.layer == layer {
+        for t in entityBuffer.texts where t.layer == layer {
             // Counter-flip the group's Y-flip so text reads right-side up.
             let rot = formatMM(-t.rotationDeg)
             let x = formatMM(t.position.x)
