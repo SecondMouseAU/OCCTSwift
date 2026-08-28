@@ -8,21 +8,21 @@ import simd
 
 @Suite("MathSolver FunctionRoot v0.110")
 struct MathSolverFunctionRootTests {
-    @Test func findRootNewton() {
-        // f(x) = x^2 - 4, root at x=2
-        if let root = MathSolver.findRoot(near: 3.0) { x in
+    // #1250: findRootNewton()/findRootNegative() were a clean @Test(arguments:) collapse
+    // candidate, identical closure body `x*x - 4`/`2*x`, differing only in the `near:`
+    // starting literal and the expected root's sign.
+    @Test(
+        "findRoot(near:) finds both roots of x^2 - 4",
+        arguments: [
+            (3.0, 2.0),
+            (-3.0, -2.0),
+        ] as [(Double, Double)])
+    func findRootNewton(near: Double, expected: Double) {
+        // f(x) = x^2 - 4, roots at x=+-2
+        if let root = MathSolver.findRoot(near: near) { x in
             (value: x * x - 4, derivative: 2 * x)
         } {
-            #expect(abs(root - 2.0) < 1e-6)
-        }
-    }
-
-    @Test func findRootNegative() {
-        // f(x) = x^2 - 4, root at x=-2
-        if let root = MathSolver.findRoot(near: -3.0) { x in
-            (value: x * x - 4, derivative: 2 * x)
-        } {
-            #expect(abs(root + 2.0) < 1e-6)
+            #expect(abs(root - expected) < 1e-6)
         }
     }
 
