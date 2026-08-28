@@ -1,4 +1,3 @@
-import Foundation
 import Testing
 import simd
 
@@ -7,15 +6,10 @@ import simd
 @Suite("BSpline Surface RemoveVKnot v0.120.0")
 struct BSplineSurfaceRemoveVKnotTests {
 
+    // The fixture (a 4x4 point-grid fit, z = sin(u*0.5) * cos(v*0.5)) lives in
+    // `SurfaceTestFixtures.swift` as `makeSinCosGridBSplineSurface()`; see #1254.
     func makeBSplineSurface() -> Surface? {
-        var points = [SIMD3<Double>]()
-        for v in 0..<4 {
-            for u in 0..<4 {
-                points.append(
-                    SIMD3(Double(u), Double(v), sin(Double(u) * 0.5) * cos(Double(v) * 0.5)))
-            }
-        }
-        return Surface.fromPointGrid(points: points, uCount: 4, vCount: 4)
+        makeSinCosGridBSplineSurface()
     }
 
     @Test func removeVKnot() {

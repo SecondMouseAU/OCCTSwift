@@ -10,19 +10,10 @@ import simd
 @Suite("BSplineSurface Completions v121")
 struct BSplineSurfaceCompletionsV121Tests {
 
-    /// Helper: create a simple 4x4 BSpline surface
+    // The fixture (an explicit, hand-written 4x4 pole grid) lives in
+    // `SurfaceTestFixtures.swift` as `makeExplicitPoleBSplineSurface()`; see #1254.
     private func makeBSplineSurface() -> Surface? {
-        let poles: [[SIMD3<Double>]] = [
-            [SIMD3(0, 0, 0), SIMD3(3, 0, 0), SIMD3(7, 0, 0), SIMD3(10, 0, 0)],
-            [SIMD3(0, 3, 1), SIMD3(3, 3, 2), SIMD3(7, 3, 2), SIMD3(10, 3, 1)],
-            [SIMD3(0, 7, 1), SIMD3(3, 7, 2), SIMD3(7, 7, 2), SIMD3(10, 7, 1)],
-            [SIMD3(0, 10, 0), SIMD3(3, 10, 0), SIMD3(7, 10, 0), SIMD3(10, 10, 0)],
-        ]
-        return Surface.bspline(
-            poles: poles,
-            knotsU: [0, 1], multiplicitiesU: [4, 4],
-            knotsV: [0, 1], multiplicitiesV: [4, 4],
-            degreeU: 3, degreeV: 3)
+        makeExplicitPoleBSplineSurface()
     }
 
     @Test("SetUNotPeriodic / SetVNotPeriodic")

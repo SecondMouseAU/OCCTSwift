@@ -6,12 +6,10 @@ import simd
 @Suite("BSpline Surface Manipulation Tests")
 struct BSplineSurfaceManipulationTests {
 
+    // The fixture (a cylinder converted to BSpline form) lives in
+    // `SurfaceTestFixtures.swift` as `makeCylinderDerivedBSplineSurface(radius:)`; see #1254.
     private func makeBSplineSurface() -> Surface? {
-        // Use a cylinder surface converted to BSpline
-        if let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
-            return cyl.toBSpline()
-        }
-        return nil
+        makeCylinderDerivedBSplineSurface()
     }
 
     @Test func nbKnots() {
