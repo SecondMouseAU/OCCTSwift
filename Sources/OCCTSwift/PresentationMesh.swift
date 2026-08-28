@@ -36,6 +36,86 @@ public struct EdgeMeshData: Sendable {
     public var segmentCount: Int { segmentStarts.count }
 }
 
+/// Deinterleaves a populated `OCCTShadedMeshData` buffer into a ``ShadedMeshData``,
+/// then frees the buffer.
+///
+/// Shared by every ``Shape`` overload that populates an `OCCTShadedMeshData` (currently
+/// `shadedMesh(deflection:)` and `shadedMesh(drawer:)`), so a future change to this
+/// extraction (e.g. a winding or normal-sign correction) only needs to be made once (#1224).
+///
+/// - Parameter data: An already-populated bridge struct. Consumed and freed by this call.
+/// - Returns: The deinterleaved shaded mesh data.
+private func buildShadedMeshData(from data: inout OCCTShadedMeshData) -> ShadedMeshData {
+    defer { OCCTShadedMeshDataFree(&data) }
+
+    let vertCount = Int(data.vertexCount)
+    let triCount = Int(data.triangleCount)
+
+    // Deinterleave positions and normals from the packed buffer
+    var positions = [SIMD3<Float>]()
+    var normals = [SIMD3<Float>]()
+    positions.reserveCapacity(vertCount)
+    normals.reserveCapacity(vertCount)
+
+    for i in 0..<vertCount {
+        let base = i * 6
+        positions.append(
+            SIMD3(
+                data.vertices[base],
+                data.vertices[base + 1],
+                data.vertices[base + 2]))
+        normals.append(
+            SIMD3(
+                data.vertices[base + 3],
+                data.vertices[base + 4],
+                data.vertices[base + 5]))
+    }
+
+    // Copy indices
+    var indices = [UInt32]()
+    indices.reserveCapacity(triCount * 3)
+    for i in 0..<(triCount * 3) {
+        indices.append(UInt32(data.indices[i]))
+    }
+
+    return ShadedMeshData(vertices: positions, normals: normals, indices: indices)
+}
+
+/// Deinterleaves a populated `OCCTEdgeMeshData` buffer into an ``EdgeMeshData``,
+/// then frees the buffer.
+///
+/// Shared by every ``Shape`` overload that populates an `OCCTEdgeMeshData` (currently
+/// `edgeMesh(deflection:)` and `edgeMesh(drawer:)`), so a future change to this
+/// extraction only needs to be made once (#1224).
+///
+/// - Parameter data: An already-populated bridge struct. Consumed and freed by this call.
+/// - Returns: The deinterleaved edge mesh data.
+private func buildEdgeMeshData(from data: inout OCCTEdgeMeshData) -> EdgeMeshData {
+    defer { OCCTEdgeMeshDataFree(&data) }
+
+    let vertCount = Int(data.vertexCount)
+    let segCount = Int(data.segmentCount)
+
+    var positions = [SIMD3<Float>]()
+    positions.reserveCapacity(vertCount)
+    for i in 0..<vertCount {
+        let base = i * 3
+        positions.append(
+            SIMD3(
+                data.vertices[base],
+                data.vertices[base + 1],
+                data.vertices[base + 2]))
+    }
+
+    var starts = [Int]()
+    starts.reserveCapacity(segCount)
+    for i in 0..<segCount {
+        starts.append(Int(data.segmentStarts[i]))
+    }
+
+    return EdgeMeshData(vertices: positions, segmentStarts: starts)
+}
+
 extension Shape {
     /// Extract a triangulated mesh from the shape for shaded rendering.
     ///
@@ -47,39 +127,7 @@ extension Shape {
         guard OCCTShapeGetShadedMesh(handle, deflection, &data) else {
             return nil
         }
-        defer { OCCTShadedMeshDataFree(&data) }
-
-        let vertCount = Int(data.vertexCount)
-        let triCount = Int(data.triangleCount)
-
-        // Deinterleave positions and normals from the packed buffer
-        var positions = [SIMD3<Float>]()
-        var normals = [SIMD3<Float>]()
-        positions.reserveCapacity(vertCount)
-        normals.reserveCapacity(vertCount)
-
-        for i in 0..<vertCount {
-            let base = i * 6
-            positions.append(
-                SIMD3(
-                    data.vertices[base],
-                    data.vertices[base + 1],
-                    data.vertices[base + 2]))
-            normals.append(
-                SIMD3(
-                    data.vertices[base + 3],
-                    data.vertices[base + 4],
-                    data.vertices[base + 5]))
-        }
-
-        // Copy indices
-        var indices = [UInt32]()
-        indices.reserveCapacity(triCount * 3)
-        for i in 0..<(triCount * 3) {
-            indices.append(UInt32(data.indices[i]))
-        }
-
-        return ShadedMeshData(vertices: positions, normals: normals, indices: indices)
+        return buildShadedMeshData(from: &data)
     }
 
     /// Extract edge wireframe polylines from the shape.
@@ -91,29 +139,7 @@ extension Shape {
         guard OCCTShapeGetEdgeMesh(handle, deflection, &data) else {
             return nil
         }
-        defer { OCCTEdgeMeshDataFree(&data) }
-
-        let vertCount = Int(data.vertexCount)
-        let segCount = Int(data.segmentCount)
-
-        var positions = [SIMD3<Float>]()
-        positions.reserveCapacity(vertCount)
-        for i in 0..<vertCount {
-            let base = i * 3
-            positions.append(
-                SIMD3(
-                    data.vertices[base],
-                    data.vertices[base + 1],
-                    data.vertices[base + 2]))
-        }
-
-        var starts = [Int]()
-        starts.reserveCapacity(segCount)
-        for i in 0..<segCount {
-            starts.append(Int(data.segmentStarts[i]))
-        }
-
-        return EdgeMeshData(vertices: positions, segmentStarts: starts)
+        return buildEdgeMeshData(from: &data)
     }
 
     /// Extract a triangulated mesh using a ``DisplayDrawer`` for tessellation control.
@@ -128,37 +154,7 @@ extension Shape {
         guard OCCTShapeGetShadedMeshWithDrawer(handle, drawer.handle, &data) else {
             return nil
         }
-        defer { OCCTShadedMeshDataFree(&data) }
-
-        let vertCount = Int(data.vertexCount)
-        let triCount = Int(data.triangleCount)
-
-        var positions = [SIMD3<Float>]()
-        var normals = [SIMD3<Float>]()
-        positions.reserveCapacity(vertCount)
-        normals.reserveCapacity(vertCount)
-
-        for i in 0..<vertCount {
-            let base = i * 6
-            positions.append(
-                SIMD3(
-                    data.vertices[base],
-                    data.vertices[base + 1],
-                    data.vertices[base + 2]))
-            normals.append(
-                SIMD3(
-                    data.vertices[base + 3],
-                    data.vertices[base + 4],
-                    data.vertices[base + 5]))
-        }
-
-        var indices = [UInt32]()
-        indices.reserveCapacity(triCount * 3)
-        for i in 0..<(triCount * 3) {
-            indices.append(UInt32(data.indices[i]))
-        }
-
-        return ShadedMeshData(vertices: positions, normals: normals, indices: indices)
+        return buildShadedMeshData(from: &data)
     }
 
     /// Extract edge wireframe polylines using a ``DisplayDrawer`` for tessellation control.
@@ -170,28 +166,6 @@ extension Shape {
         guard OCCTShapeGetEdgeMeshWithDrawer(handle, drawer.handle, &data) else {
             return nil
         }
-        defer { OCCTEdgeMeshDataFree(&data) }
-
-        let vertCount = Int(data.vertexCount)
-        let segCount = Int(data.segmentCount)
-
-        var positions = [SIMD3<Float>]()
-        positions.reserveCapacity(vertCount)
-        for i in 0..<vertCount {
-            let base = i * 3
-            positions.append(
-                SIMD3(
-                    data.vertices[base],
-                    data.vertices[base + 1],
-                    data.vertices[base + 2]))
-        }
-
-        var starts = [Int]()
-        starts.reserveCapacity(segCount)
-        for i in 0..<segCount {
-            starts.append(Int(data.segmentStarts[i]))
-        }
-
-        return EdgeMeshData(vertices: positions, segmentStarts: starts)
+        return buildEdgeMeshData(from: &data)
     }
 }
