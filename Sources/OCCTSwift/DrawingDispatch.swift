@@ -256,6 +256,27 @@ internal func strokeWidthMM(for layer: String) -> Double {
     }
 }
 
+/// Per-layer dash pattern (mm dash/gap lengths), shared by PDF and SVG: the two formats
+/// whose dash arrays are specified in the same physical unit `strokeWidthMM` above already
+/// shares between them. Values are `Int` because every entry today is a whole mm count and
+/// each writer's own syntax (PDF's `[d g] 0` operator, SVG's `stroke-dasharray`) renders them
+/// undecorated (`3 2`, `3,2`), not through `formatMM`'s 4-decimal mm formatting; `nil` means
+/// solid (no dash array at all).
+///
+/// HIDDEN: 3 mm dash / 2 mm gap
+/// CENTER: 8 mm dash / 2 mm gap / 2 mm dash / 2 mm gap (chain)
+///
+/// DXF has no equivalent concept (a named linetype per layer, `DASHED`/`CHAIN`, not
+/// explicit lengths), so it is not part of this table, matching `strokeWidthMM`'s own DXF
+/// exclusion above. #1228.
+internal func dashLengths(for layer: String) -> [Int]? {
+    switch layer {
+    case "HIDDEN": return [3, 2]
+    case "CENTER": return [8, 2, 2, 2]
+    default: return nil
+    }
+}
+
 /// Shared PDF/SVG coordinate/length formatting (4 decimal places).
 ///
 /// DXF formats numbers separately (`%.6f`, via its own `pair(_:_:)` helper) so is not

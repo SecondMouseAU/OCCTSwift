@@ -261,11 +261,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     private static func dashPattern(for layer: String) -> String {
-        switch layer {
-        case "HIDDEN": return "[3 2] 0"
-        case "CENTER": return "[8 2 2 2] 0"
-        default: return "[] 0"
-        }
+        guard let lengths = dashLengths(for: layer) else { return "[] 0" }
+        return "[\(lengths.map(String.init).joined(separator: " "))] 0"
     }
 
     /// Emit all non-text geometry on a layer (lines + polylines + circles + arcs).
