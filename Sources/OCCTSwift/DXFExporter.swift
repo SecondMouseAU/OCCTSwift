@@ -63,19 +63,10 @@ extension Exporter {
 /// Public so callers can stage entities manually (useful for tests and for scripts that compose DXFs from mixed sources).
 public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public let deflection: Double
-    private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
-    private var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
-    private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
-    private var arcs:
-        [(
-            centre: SIMD2<Double>, radius: Double, startAngleDeg: Double, endAngleDeg: Double,
-            layer: String
-        )] = []
-    private var texts:
-        [(
-            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
-            layer: String
-        )] = []
+    /// DrawingPrimitiveSink's shared entity storage -- see DrawingDispatch.swift.
+    ///
+    /// #1227.
+    internal var entityBuffer = DrawingEntityBuffer()
     /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
     ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
@@ -85,20 +76,24 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     // MARK: - Entity staging
+    //
+    // Each method forwards to `DrawingEntityBuffer`'s own staging logic (shared with
+    // PDFWriter/SVGWriter, #1227); kept as an explicit per-writer `public func` rather than a
+    // `DrawingPrimitiveSink` protocol-extension default for the same reason
+    // `collectFromDrawing` below is -- see `DrawingEntityBuffer`'s own doc comment.
 
     public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = "VISIBLE") {
-        lines.append((a, b, layer))
+        entityBuffer.addLine(from: a, to: b, layer: layer)
     }
 
     public func addPolyline(
         _ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE"
     ) {
-        guard points.count >= 2 else { return }
-        polylines.append((points, closed, layer))
+        entityBuffer.addPolyline(points, closed: closed, layer: layer)
     }
 
     public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VISIBLE") {
-        circles.append((centre, radius, layer))
+        entityBuffer.addCircle(centre: centre, radius: radius, layer: layer)
     }
 
     public func addArc(
@@ -106,7 +101,9 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         startAngleDeg: Double, endAngleDeg: Double,
         layer: String = "VISIBLE"
     ) {
-        arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
+        entityBuffer.addArc(
+            centre: centre, radius: radius,
+            startAngleDeg: startAngleDeg, endAngleDeg: endAngleDeg, layer: layer)
     }
 
     public func addText(
@@ -114,7 +111,8 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         height: Double = 3.5, rotationDeg: Double = 0,
         layer: String = "TEXT"
     ) {
-        texts.append((position, text, height, rotationDeg, layer))
+        entityBuffer.addText(
+            text, at: position, height: height, rotationDeg: rotationDeg, layer: layer)
     }
 
     /// Emit a single pre-built dimension as exploded LINE + TEXT entities.
@@ -254,13 +252,13 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
 
     private func entities() -> String {
         var s = pair(0, "SECTION") + pair(2, "ENTITIES")
-        for l in lines {
+        for l in entityBuffer.lines {
             s +=
                 pair(0, "LINE") + pair(8, l.layer)
                 + pair(10, l.a.x) + pair(20, l.a.y) + pair(30, 0.0)
                 + pair(11, l.b.x) + pair(21, l.b.y) + pair(31, 0.0)
         }
-        for p in polylines {
+        for p in entityBuffer.polylines {
             s +=
                 pair(0, "LWPOLYLINE") + pair(8, p.layer)
                 + pair(90, p.points.count) + pair(70, p.closed ? 1 : 0)
@@ -268,20 +266,20 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
                 s += pair(10, pt.x) + pair(20, pt.y)
             }
         }
-        for c in circles {
+        for c in entityBuffer.circles {
             s +=
                 pair(0, "CIRCLE") + pair(8, c.layer)
                 + pair(10, c.centre.x) + pair(20, c.centre.y) + pair(30, 0.0)
                 + pair(40, c.radius)
         }
-        for a in arcs {
+        for a in entityBuffer.arcs {
             s +=
                 pair(0, "ARC") + pair(8, a.layer)
                 + pair(10, a.centre.x) + pair(20, a.centre.y) + pair(30, 0.0)
                 + pair(40, a.radius)
                 + pair(50, a.startAngleDeg) + pair(51, a.endAngleDeg)
         }
-        for t in texts {
+        for t in entityBuffer.texts {
             s +=
                 pair(0, "TEXT") + pair(8, t.layer)
                 + pair(10, t.position.x) + pair(20, t.position.y) + pair(30, 0.0)
@@ -300,13 +298,13 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     // MARK: - Introspection (used by tests)
 
     public var entityCounts: (lines: Int, polylines: Int, circles: Int, arcs: Int, texts: Int) {
-        (lines.count, polylines.count, circles.count, arcs.count, texts.count)
+        entityBuffer.entityCounts
     }
 
     /// The staged arcs' start/end angles, in the order added.
     ///
     /// Lets a test check the actual sweep an annotation drew, not just that some arc was drawn.
     public var arcSweeps: [(startAngleDeg: Double, endAngleDeg: Double)] {
-        arcs.map { ($0.startAngleDeg, $0.endAngleDeg) }
+        entityBuffer.arcs.map { ($0.startAngleDeg, $0.endAngleDeg) }
     }
 }

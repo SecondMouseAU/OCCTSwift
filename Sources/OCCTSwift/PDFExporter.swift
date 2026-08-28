@@ -71,17 +71,10 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public let pageSize: SIMD2<Double>
     public let deflection: Double
 
-    private var lines: [(a: SIMD2<Double>, b: SIMD2<Double>, layer: String)] = []
-    private var polylines: [(points: [SIMD2<Double>], closed: Bool, layer: String)] = []
-    private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
-    private var arcs:
-        [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] =
-            []
-    private var texts:
-        [(
-            position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double,
-            layer: String
-        )] = []
+    /// DrawingPrimitiveSink's shared entity storage -- see DrawingDispatch.swift.
+    ///
+    /// #1227.
+    internal var entityBuffer = DrawingEntityBuffer()
     /// DrawingPrimitiveSink.primitiveOps()'s cache -- see DrawingDispatch.swift.
     ///
     internal var cachedPrimitiveOps: DrawingPrimitiveOps?
@@ -92,20 +85,24 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     // MARK: - Entity staging
+    //
+    // Each method forwards to `DrawingEntityBuffer`'s own staging logic (shared with
+    // DXFWriter/SVGWriter, #1227); kept as an explicit per-writer `public func` rather than a
+    // `DrawingPrimitiveSink` protocol-extension default for the same reason
+    // `collectFromDrawing` below is -- see `DrawingEntityBuffer`'s own doc comment.
 
     public func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String = "VISIBLE") {
-        lines.append((a, b, layer))
+        entityBuffer.addLine(from: a, to: b, layer: layer)
     }
 
     public func addPolyline(
         _ points: [SIMD2<Double>], closed: Bool = false, layer: String = "VISIBLE"
     ) {
-        guard points.count >= 2 else { return }
-        polylines.append((points, closed, layer))
+        entityBuffer.addPolyline(points, closed: closed, layer: layer)
     }
 
     public func addCircle(centre: SIMD2<Double>, radius: Double, layer: String = "VISIBLE") {
-        circles.append((centre, radius, layer))
+        entityBuffer.addCircle(centre: centre, radius: radius, layer: layer)
     }
 
     public func addArc(
@@ -113,7 +110,9 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         startAngleDeg: Double, endAngleDeg: Double,
         layer: String = "VISIBLE"
     ) {
-        arcs.append((centre, radius, startAngleDeg, endAngleDeg, layer))
+        entityBuffer.addArc(
+            centre: centre, radius: radius,
+            startAngleDeg: startAngleDeg, endAngleDeg: endAngleDeg, layer: layer)
     }
 
     public func addText(
@@ -121,7 +120,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
         height: Double = 3.5, rotationDeg: Double = 0,
         layer: String = "TEXT"
     ) {
-        texts.append((position, text, height, rotationDeg, layer))
+        entityBuffer.addText(
+            text, at: position, height: height, rotationDeg: rotationDeg, layer: layer)
     }
 
     public func addDimension(_ d: DrawingDimension) {
@@ -129,7 +129,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     }
 
     public var entityCounts: (lines: Int, polylines: Int, circles: Int, arcs: Int, texts: Int) {
-        (lines.count, polylines.count, circles.count, arcs.count, texts.count)
+        entityBuffer.entityCounts
     }
 
     // MARK: - Collection from Drawing
@@ -271,11 +271,11 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     /// Emit all non-text geometry on a layer (lines + polylines + circles + arcs).
     private func emitLayerGeometry(layer: String) -> String {
         var s = ""
-        for l in lines where l.layer == layer {
+        for l in entityBuffer.lines where l.layer == layer {
             s +=
                 "\(formatMM(l.a.x)) \(formatMM(l.a.y)) m \(formatMM(l.b.x)) \(formatMM(l.b.y)) l S\n"
         }
-        for p in polylines where p.layer == layer {
+        for p in entityBuffer.polylines where p.layer == layer {
             guard let first = p.points.first else { continue }
             s += "\(formatMM(first.x)) \(formatMM(first.y)) m\n"
             for pt in p.points.dropFirst() {
@@ -284,13 +284,13 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
             if p.closed { s += "h " }
             s += "S\n"
         }
-        for c in circles where c.layer == layer {
+        for c in entityBuffer.circles where c.layer == layer {
             s += PDFWriter.circlePath(centre: c.centre, radius: c.radius)
         }
-        for a in arcs where a.layer == layer {
+        for a in entityBuffer.arcs where a.layer == layer {
             s += PDFWriter.arcPath(
                 centre: a.centre, radius: a.radius,
-                startDeg: a.startDeg, endDeg: a.endDeg)
+                startDeg: a.startAngleDeg, endDeg: a.endAngleDeg)
         }
         return s
     }
@@ -298,7 +298,7 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     /// Text emission is separate because text uses the BT/ET operators.
     private func emitLayerText(layer: String) -> String {
         var s = ""
-        for t in texts where t.layer == layer {
+        for t in entityBuffer.texts where t.layer == layer {
             let rad = t.rotationDeg * .pi / 180
             let cosR = cos(rad)
             let sinR = sin(rad)

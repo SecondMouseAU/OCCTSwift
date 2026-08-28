@@ -2577,6 +2577,7 @@ struct BalloonTests {
 private final class RecordingSink: DrawingPrimitiveSink {
     var deflection: Double = 0.1
     var cachedPrimitiveOps: DrawingPrimitiveOps?
+    var entityBuffer = DrawingEntityBuffer()
     var linePoints: [SIMD2<Double>] = []
 
     func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String) {
