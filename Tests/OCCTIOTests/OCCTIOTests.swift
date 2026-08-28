@@ -12,6 +12,16 @@ extension SIMD3 where Scalar == Double {
     }
 }
 
+/// A deterministically invalid `Shape`: a bowtie (self-intersecting) polygon face.
+///
+/// Same construction as `BREPTests.writeBREPAllowInvalid`, reused here for the export-guard
+/// regression tests added for #1226.
+func invalidBowtieShape() -> Shape {
+    let bowtie = Wire.polygon(
+        [SIMD2(0, 0), SIMD2(1, 1), SIMD2(1, 0), SIMD2(0, 1)], closed: true)!
+    return Shape.face(from: bowtie)!
+}
+
 // MARK: - File Format Tests (v0.10.0)
 
 @Suite("IGES Import/Export Tests")
@@ -466,18 +476,27 @@ struct PLYExportTests {
 
     @Test("Export PLY with invalid shape throws")
     func exportPLYInvalidShape() throws {
-        // Create an empty compound shape (invalid for export)
-        let shapes: [Shape] = []
-        // An empty compound won't be created, so test with a nil-returning operation
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        // The previous version of this test never built an invalid shape at all (an empty
+        // `[Shape]` array went unused, and the export it actually ran was a valid box), so it
+        // passed without exercising the guard its name claims (#1226). A bowtie (self-intersecting)
+        // polygon face is deterministically invalid instead.
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("ply")
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        // Verify the method works for valid shapes
-        try Exporter.writePLY(shape: box, to: tempURL, deflection: 0.5)
-        #expect(FileManager.default.fileExists(atPath: tempURL.path))
+        do {
+            try Exporter.writePLY(shape: invalid, to: tempURL, deflection: 0.5)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tempURL.path))
     }
 }
 
@@ -610,6 +629,67 @@ struct STEPWriterExportTests {
         try Exporter.writeSTEP(shape: box, to: url, modelType: .asIs)
         #expect(FileManager.default.fileExists(atPath: tmpPath))
         try? FileManager.default.removeItem(atPath: tmpPath)
+    }
+
+    // MARK: - #1226 regression: STEP had no validity check anywhere in the chain, so an invalid
+    // shape used to export successfully on these three overloads (unlike IGES, where the bridge's
+    // own BRepCheck_Analyzer still rejected it, just under a different error case).
+
+    @Test("Export with model type rejects an invalid shape (#1226)")
+    func exportModelTypeInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_modeltype_invalid.step"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try invalid.writeSTEP(to: url, modelType: .asIs)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
+    }
+
+    @Test("Export with model type and tolerance rejects an invalid shape (#1226)")
+    func exportModelTypeToleranceInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_tolerance_invalid.step"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try invalid.writeSTEP(to: url, modelType: .asIs, tolerance: 0.01)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
+    }
+
+    @Test("Export with clean duplicates rejects an invalid shape (#1226)")
+    func exportCleanDuplicatesInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_clean_invalid.step"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try invalid.writeSTEPCleanDuplicates(to: url)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
     }
 }
 
@@ -987,6 +1067,72 @@ struct IGESWriterExpansionTests {
         #expect(roots > 0)
         try? FileManager.default.removeItem(atPath: tmpPath)
     }
+
+    // MARK: - #1226 regression: these three overloads used to reach the bridge with no Swift-side
+    // isValid guard at all, unlike writeIGES(shape:to:) and writeIGES(shape:to:progress:).
+
+    @Test("Export with unit rejects an invalid shape (#1226)")
+    func exportWithUnitInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_unit_invalid.iges"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try invalid.writeIGES(to: url, unit: "MM")
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
+    }
+
+    @Test("Export in BRep mode rejects an invalid shape (#1226)")
+    func exportBRepModeInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_brep_invalid.iges"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try invalid.writeIGESBRep(to: url)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
+    }
+
+    @Test(
+        """
+        Export multiple shapes rejects the whole batch when one shape is invalid (#1226). Before \
+        the fix the bridge silently dropped the invalid shape and exported the rest; this function \
+        now fails fast like every other writer in the file instead of partially succeeding.
+        """)
+    func exportMultiShapeInvalidShape() throws {
+        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_multi_invalid.iges"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try Exporter.writeIGES(shapes: [box, invalid], to: url)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
+    }
 }
 
 // MARK: - PLY Export Options Tests (v0.59.0)
@@ -1037,6 +1183,32 @@ struct PLYExportOptionsTests {
             shape: box, to: url, deflection: 1.0, normals: true, colors: false, texCoords: false)
         #expect(FileManager.default.fileExists(atPath: tmpPath))
         try? FileManager.default.removeItem(atPath: tmpPath)
+    }
+
+    @Test(
+        """
+        Export with options rejects an invalid shape, matching the deflection-only overload \
+        (#1226). Both overloads funnel into the same bridge helper (occtExportPLYImpl), but only \
+        the deflection-only one had a Swift-side isValid guard before the fix.
+        """)
+    func exporterPLYWithOptionsInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_1226_ply_options_invalid.ply"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+
+        do {
+            try Exporter.writePLY(
+                shape: invalid, to: url, deflection: 1.0, normals: true, colors: false,
+                texCoords: false)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
     }
 }
 
@@ -1637,6 +1809,26 @@ struct GLTFTests {
             #expect(doc != nil)
             try? FileManager.default.removeItem(at: url)
         }
+    }
+
+    // #1226 regression: writeGLTF had no guard of any kind, Swift-side or bridge-side, unlike
+    // every other exporter in this file.
+    @Test func exportGLTFRejectsInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        #expect(!invalid.isValid)
+        let tmpPath = NSTemporaryDirectory() + "test_v121_invalid.glb"
+        let url = URL(fileURLWithPath: tmpPath)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            try Exporter.writeGLTF(shape: invalid, to: url, binary: true, deflection: 0.5)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
+        }
+        #expect(!FileManager.default.fileExists(atPath: tmpPath))
     }
 }
 

@@ -54,6 +54,22 @@ public enum Exporter {
         }
     }
 
+    /// Enforce the validity precondition every `Shape`-taking writer in this file shares.
+    ///
+    /// The shape must be a topologically valid `TopoDS_Shape`, and the destination path must be
+    /// non-empty. Centralizing the two-line check stops a new overload from silently dropping it
+    /// the way eight of fifteen did (#1226). `writeBREP(allowInvalid:)` is the one deliberate
+    /// exception and does not call this, since BREP is OCCT's lossless native format and does not
+    /// require a valid shape to serialize.
+    private static func validateExportInputs(shape: Shape, url: URL) throws {
+        guard shape.isValid else {
+            throw ExportError.invalidShape
+        }
+        guard !url.path.isEmpty else {
+            throw ExportError.invalidPath
+        }
+    }
+
     /// Export a shape to STL format for 3D printing.
     ///
     /// - Parameters:
@@ -91,15 +107,9 @@ public enum Exporter {
         deflection: Double = 0.1,
         ascii: Bool = false
     ) throws {
-        guard shape.isValid else {
-            throw ExportError.invalidShape
-        }
+        try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
-        guard !path.isEmpty else {
-            throw ExportError.invalidPath
-        }
-
         let success = OCCTExportSTLWithMode(shape.handle, path, deflection, ascii)
         if !success {
             throw ExportError.exportFailed("STL export to \(url.lastPathComponent) failed")
@@ -180,15 +190,9 @@ public enum Exporter {
         to url: URL,
         name: String? = nil
     ) throws {
-        guard shape.isValid else {
-            throw ExportError.invalidShape
-        }
+        try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
-        guard !path.isEmpty else {
-            throw ExportError.invalidPath
-        }
-
         let success: Bool
         if let name = name {
             success = OCCTExportSTEPWithName(shape.handle, path, name)
@@ -210,9 +214,8 @@ public enum Exporter {
         to url: URL,
         progress: ImportProgress?
     ) throws {
-        guard shape.isValid else { throw ExportError.invalidShape }
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
 
         var cancelled: Bool = false
         let success: Bool = withImportProgress(progress) { ctx in
@@ -230,9 +233,8 @@ public enum Exporter {
         to url: URL,
         progress: ImportProgress?
     ) throws {
-        guard shape.isValid else { throw ExportError.invalidShape }
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
 
         var cancelled: Bool = false
         let success: Bool = withImportProgress(progress) { ctx in
@@ -290,15 +292,9 @@ public enum Exporter {
         shape: Shape,
         to url: URL
     ) throws {
-        guard shape.isValid else {
-            throw ExportError.invalidShape
-        }
+        try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
-        guard !path.isEmpty else {
-            throw ExportError.invalidPath
-        }
-
         let success = OCCTExportIGES(shape.handle, path)
         if !success {
             throw ExportError.exportFailed("IGES export to \(url.lastPathComponent) failed")
@@ -329,8 +325,8 @@ public enum Exporter {
     ///   - unit: Unit string ("MM", "IN", "M", "FT", etc.)
     /// - Throws: `ExportError` if export fails
     public static func writeIGES(shape: Shape, to url: URL, unit: String) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportIGESWithUnit(shape.handle, path, unit) {
             throw ExportError.exportFailed("IGES export with unit \(unit) failed")
         }
@@ -340,8 +336,8 @@ public enum Exporter {
     ///
     /// - Throws: `ExportError` if export fails
     public static func writeIGESBRep(shape: Shape, to url: URL) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportIGESBRepMode(shape.handle, path) {
             throw ExportError.exportFailed("IGES BRep export failed")
         }
@@ -349,8 +345,18 @@ public enum Exporter {
 
     /// Export multiple shapes to a single IGES file.
     ///
+    /// Every shape must be valid, matching the single-shape `writeIGES` overloads: this function
+    /// used to rely on the bridge's own per-shape `BRepCheck_Analyzer` check, which silently
+    /// dropped an invalid shape from the file rather than rejecting the call (#1226). Filtering
+    /// out bad geometry client-side, rather than failing fast, is not a contract this file uses
+    /// anywhere else, so an invalid shape here now throws `.invalidShape` before anything is
+    /// written, the same as every other overload.
+    ///
     /// - Throws: `ExportError` if export fails
     public static func writeIGES(shapes: [Shape], to url: URL) throws {
+        guard shapes.allSatisfy({ $0.isValid }) else {
+            throw ExportError.invalidShape
+        }
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
         var handles: [OCCTShapeRef?] = shapes.map { $0.handle }
@@ -371,8 +377,8 @@ public enum Exporter {
         shape: Shape, to url: URL, deflection: Double,
         normals: Bool = true, colors: Bool = false, texCoords: Bool = false
     ) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportPLYWithOptions(shape.handle, path, deflection, normals, colors, texCoords) {
             throw ExportError.exportFailed("PLY export with options failed")
         }
@@ -477,15 +483,9 @@ public enum Exporter {
         to url: URL,
         deflection: Double = 0.1
     ) throws {
-        guard shape.isValid else {
-            throw ExportError.invalidShape
-        }
+        try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
-        guard !path.isEmpty else {
-            throw ExportError.invalidPath
-        }
-
         let success = OCCTExportOBJ(shape.handle, path, deflection)
         if !success {
             throw ExportError.exportFailed("OBJ export to \(url.lastPathComponent) failed")
@@ -510,15 +510,9 @@ public enum Exporter {
         to url: URL,
         deflection: Double = 0.1
     ) throws {
-        guard shape.isValid else {
-            throw ExportError.invalidShape
-        }
+        try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
-        guard !path.isEmpty else {
-            throw ExportError.invalidPath
-        }
-
         let success = OCCTExportPLY(shape.handle, path, deflection)
         if !success {
             throw ExportError.exportFailed("PLY export to \(url.lastPathComponent) failed")
@@ -535,8 +529,8 @@ public enum Exporter {
     ///   - modelType: STEP representation type
     /// - Throws: `ExportError` if export fails
     public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportSTEPWithMode(shape.handle, path, modelType.rawValue) {
             throw ExportError.exportFailed("STEP export with mode \(modelType) failed")
         }
@@ -553,8 +547,8 @@ public enum Exporter {
     public static func writeSTEP(
         shape: Shape, to url: URL, modelType: StepModelType, tolerance: Double
     ) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportSTEPWithModeAndTolerance(shape.handle, path, modelType.rawValue, tolerance) {
             throw ExportError.exportFailed("STEP export with mode and tolerance failed")
         }
@@ -572,8 +566,8 @@ public enum Exporter {
     public static func writeSTEPCleanDuplicates(
         shape: Shape, to url: URL, modelType: StepModelType = .asIs
     ) throws {
+        try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        guard !path.isEmpty else { throw ExportError.invalidPath }
         if !OCCTExportSTEPCleanDuplicates(shape.handle, path, modelType.rawValue) {
             throw ExportError.exportFailed("STEP export with clean duplicates failed")
         }
@@ -822,6 +816,8 @@ extension Exporter {
     public static func writeGLTF(
         shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1
     ) throws {
+        try Exporter.validateExportInputs(shape: shape, url: url)
+
         let ok = OCCTExportGLTF(shape.handle, url.path, binary, deflection)
         if !ok {
             throw Exporter.ExportError.exportFailed(
