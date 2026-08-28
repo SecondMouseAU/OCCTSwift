@@ -2323,6 +2323,81 @@ struct OrdinateDimensionTests {
         let back = try JSONDecoder().decode(DrawingDimension.Ordinate.self, from: data)
         #expect(back == ord)
     }
+
+    // MARK: - #1192: emitOrdinate's dx/dy blocks unified into one axis-generic helper
+    //
+    // Neither pre-existing fixture above isolates `dy != 0` with `dx == 0` (a feature directly
+    // above/below the origin): `threeFeatureEmits`' own inline comment says so. That is exactly
+    // the axis the refactor's `alongIsX: false` call site is responsible for, so a regression
+    // confined to it (e.g. `alongIsX` flipped, or the `rotationDeg`/`stackOffset` pair swapped
+    // between the two call sites in `emitOrdinate`) would pass every test above unnoticed.
+
+    @Test("Y-only feature (dx == 0) draws only the Y leader/tick/text, isolated from the X block")
+    func dyOnlyFeatureEmits() {
+        let writer = DXFWriter()
+        writer.addDimension(
+            .ordinate(
+                .init(
+                    origin: SIMD2(100, 50),
+                    features: [.init(position: SIMD2(100, 70))]
+                )))
+        // Origin cross = 2 lines. Feature (100, 70): dx == 0 (block skipped), dy == 20 ->
+        // 2 lines (leader + tick), 1 text. Total: 4 lines, 1 text.
+        #expect(writer.entityCounts.lines == 4)
+        #expect(writer.entityCounts.texts == 1)
+    }
+
+    @Test("Feature exactly at the origin draws neither axis block")
+    func featureAtOriginEmitsNeither() {
+        let writer = DXFWriter()
+        writer.addDimension(
+            .ordinate(
+                .init(
+                    origin: SIMD2(10, 10),
+                    features: [.init(position: SIMD2(10, 10))]
+                )))
+        #expect(writer.entityCounts.lines == 2)
+        #expect(writer.entityCounts.texts == 0)
+    }
+
+    @Test("X and Y axis blocks draw exact, independently-verified geometry")
+    func axisGeometryIsExact() throws {
+        let writer = DXFWriter()
+        // origin (100, 50), feature (130, 70) -> dx = 30, dy = 20, asymmetric on both axes so
+        // a transposed coordinate (an `alongIsX` mixup) cannot coincidentally match.
+        writer.addDimension(
+            .ordinate(
+                .init(
+                    origin: SIMD2(100, 50),
+                    features: [.init(position: SIMD2(130, 70))]
+                )))
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("ord_1192_axis_geometry.dxf")
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+
+        func fmt(_ v: Double) -> String { String(format: "%.6f", v) }
+        func linePair(_ a: SIMD2<Double>, _ b: SIMD2<Double>) -> String {
+            "10\n\(fmt(a.x))\n20\n\(fmt(a.y))\n30\n0.000000\n"
+                + "11\n\(fmt(b.x))\n21\n\(fmt(b.y))\n31\n0.000000\n"
+        }
+        func textPair(_ p: SIMD2<Double>, label: String, rotationDeg: Double) -> String {
+            "10\n\(fmt(p.x))\n20\n\(fmt(p.y))\n30\n0.000000\n40\n3.500000\n"
+                + "1\n\(label)\n50\n\(fmt(rotationDeg))\n"
+        }
+
+        // X block (dx = 30, alongIsX: true): leader (130, 50)->(130, 70); tick (130, 48)->
+        // (130, 52); text "30.00" at (130, 45), rotated 90.
+        #expect(content.contains(linePair(SIMD2(130, 50), SIMD2(130, 70))))
+        #expect(content.contains(linePair(SIMD2(130, 48), SIMD2(130, 52))))
+        #expect(content.contains(textPair(SIMD2(130, 45), label: "30.00", rotationDeg: 90)))
+
+        // Y block (dy = 20, alongIsX: false): leader (100, 70)->(130, 70); tick (98, 70)->
+        // (102, 70); text "20.00" at (95, 70), rotated 0.
+        #expect(content.contains(linePair(SIMD2(100, 70), SIMD2(130, 70))))
+        #expect(content.contains(linePair(SIMD2(98, 70), SIMD2(102, 70))))
+        #expect(content.contains(textPair(SIMD2(95, 70), label: "20.00", rotationDeg: 0)))
+    }
 }
 
 // MARK: - v0.149 #83: Drawing.addAutoDimensions

@@ -449,6 +449,54 @@ private func emitAngular(_ d: DrawingDimension.Angular, into ops: DrawingPrimiti
         stackOffset: radial * 2.0, into: ops)
 }
 
+/// The leader/tick/tolerance-text recipe `emitOrdinate` draws once per axis per feature: an
+/// extension leader from the origin's cross-axis baseline to the feature, a tick crossing that
+/// baseline at the feature's along-axis coordinate, and a toleranced text label. `alongIsX`
+/// selects which world axis is "along" (`true` for the X/dx case, `false` for Y/dy); `point(_:_:)`
+/// then maps (along, across) back to world coordinates, so the two call sites in `emitOrdinate`
+/// differ only in which axis they name, not in a second copy of this geometry. #1192: this used
+/// to be two independent `if dx != 0`/`if dy != 0` blocks in `emitOrdinate`, an axis-swapped
+/// mirror of each other with the four magic constants (`tickLen`, the `-5` label offset, the
+/// `2.0` stack offset, `height: 3.5`) each written twice.
+///
+/// `rotationDeg`/`stackOffset` are passed in rather than derived from `alongIsX`: the rotation
+/// asymmetry (dx labels vertical, dy labels horizontal) is deliberate ISO 129-1 §9.3 style, not
+/// something the axis swap determines, so it stays an explicit choice at each call site.
+private func emitOrdinateAxisFeature(
+    origin: SIMD2<Double>,
+    featurePosition: SIMD2<Double>,
+    offset: Double,
+    label: String?,
+    tolerance: DrawingTolerance,
+    tickLen: Double,
+    alongIsX: Bool,
+    rotationDeg: Double,
+    stackOffset: SIMD2<Double>,
+    into ops: DrawingPrimitiveOps
+) {
+    func point(_ along: Double, _ across: Double) -> SIMD2<Double> {
+        alongIsX ? SIMD2(along, across) : SIMD2(across, along)
+    }
+    let featureAlong = alongIsX ? featurePosition.x : featurePosition.y
+    let featureAcross = alongIsX ? featurePosition.y : featurePosition.x
+    let originAcross = alongIsX ? origin.y : origin.x
+
+    ops.addLine(
+        point(featureAlong, originAcross),
+        point(featureAlong, featureAcross), "DIMENSION")
+    ops.addLine(
+        point(featureAlong, originAcross - tickLen),
+        point(featureAlong, originAcross + tickLen), "DIMENSION")
+
+    let base = label ?? String(format: "%.2f", offset)
+    let parts = formatTolerance(base: base, tolerance: tolerance)
+    emitTolerancedText(
+        parts,
+        at: point(featureAlong, originAcross - 5),
+        height: 3.5, rotationDeg: rotationDeg,
+        stackOffset: stackOffset, into: ops)
+}
+
 private func emitOrdinate(_ d: DrawingDimension.Ordinate, into ops: DrawingPrimitiveOps) {
     let crossExtent = 3.0
     ops.addLine(
@@ -464,34 +512,16 @@ private func emitOrdinate(_ d: DrawingDimension.Ordinate, into ops: DrawingPrimi
         let dy = feature.position.y - d.origin.y
 
         if dx != 0 {
-            ops.addLine(
-                SIMD2(feature.position.x, d.origin.y),
-                SIMD2(feature.position.x, feature.position.y), "DIMENSION")
-            ops.addLine(
-                SIMD2(feature.position.x, d.origin.y - tickLen),
-                SIMD2(feature.position.x, d.origin.y + tickLen), "DIMENSION")
-            let xBase = feature.label ?? String(format: "%.2f", dx)
-            let xParts = formatTolerance(base: xBase, tolerance: d.tolerance)
-            emitTolerancedText(
-                xParts,
-                at: SIMD2(feature.position.x, d.origin.y - 5),
-                height: 3.5, rotationDeg: 90,
-                stackOffset: SIMD2(2.0, 0), into: ops)
+            emitOrdinateAxisFeature(
+                origin: d.origin, featurePosition: feature.position, offset: dx,
+                label: feature.label, tolerance: d.tolerance, tickLen: tickLen,
+                alongIsX: true, rotationDeg: 90, stackOffset: SIMD2(2.0, 0), into: ops)
         }
         if dy != 0 {
-            ops.addLine(
-                SIMD2(d.origin.x, feature.position.y),
-                SIMD2(feature.position.x, feature.position.y), "DIMENSION")
-            ops.addLine(
-                SIMD2(d.origin.x - tickLen, feature.position.y),
-                SIMD2(d.origin.x + tickLen, feature.position.y), "DIMENSION")
-            let yBase = feature.label ?? String(format: "%.2f", dy)
-            let yParts = formatTolerance(base: yBase, tolerance: d.tolerance)
-            emitTolerancedText(
-                yParts,
-                at: SIMD2(d.origin.x - 5, feature.position.y),
-                height: 3.5, rotationDeg: 0,
-                stackOffset: SIMD2(0, 2.0), into: ops)
+            emitOrdinateAxisFeature(
+                origin: d.origin, featurePosition: feature.position, offset: dy,
+                label: feature.label, tolerance: d.tolerance, tickLen: tickLen,
+                alongIsX: false, rotationDeg: 0, stackOffset: SIMD2(0, 2.0), into: ops)
         }
     }
 }
