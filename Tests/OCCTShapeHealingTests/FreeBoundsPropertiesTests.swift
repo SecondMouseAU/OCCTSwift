@@ -9,19 +9,7 @@ struct FreeBoundsPropertiesTests {
     @Test("Free bounds analysis on face compound")
     func freeBoundsOnFaces() throws {
         // Two separate faces form a compound with free bounds
-        let face1 = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
-                ])!)!
-        let face2 = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
-                ])!)!
-        let compound = Shape.compound([face1, face2])!
+        let compound = twoFaces()
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
         #expect(analysis.totalCount > 0)
@@ -30,19 +18,7 @@ struct FreeBoundsPropertiesTests {
 
     @Test("Closed free bound info, area and perimeter")
     func closedBoundInfo() throws {
-        let face = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
-                ])!)!
-        let face2 = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
-                ])!)!
-        let compound = Shape.compound([face, face2])!
+        let compound = twoFaces()
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
         if analysis.closedCount > 0 {
@@ -57,19 +33,7 @@ struct FreeBoundsPropertiesTests {
 
     @Test("Free bound wire extraction")
     func freeBoundWire() throws {
-        let face = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                    SIMD3(10, 10, 0), SIMD3(0, 10, 0),
-                ])!)!
-        let face2 = Shape.face(
-            from:
-                Wire.polygon3D([
-                    SIMD3(0, 0, 5), SIMD3(10, 0, 5),
-                    SIMD3(10, 10, 5), SIMD3(0, 10, 5),
-                ])!)!
-        let compound = Shape.compound([face, face2])!
+        let compound = twoFaces()
 
         let analysis = compound.freeBoundsAnalysis(tolerance: 0.01)
         if analysis.closedCount > 0 {
