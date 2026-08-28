@@ -25,12 +25,10 @@ import simd
 
 public enum PDFError: Error, LocalizedError {
     case writeFailed(String)
-    case drawingEmpty
 
     public var errorDescription: String? {
         switch self {
         case .writeFailed(let msg): return "PDF write failed: \(msg)"
-        case .drawingEmpty: return "Drawing contains no edges or annotations"
         }
     }
 }

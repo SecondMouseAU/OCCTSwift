@@ -32,7 +32,6 @@ Error type thrown by `PDFWriter.write(to:)` and `Exporter.writePDF` variants.
 ```swift
 public enum PDFError: Error, LocalizedError {
     case writeFailed(String)
-    case drawingEmpty
     public var errorDescription: String? { get }
 }
 ```
@@ -40,8 +39,12 @@ public enum PDFError: Error, LocalizedError {
 | Case / property | Meaning |
 |---|---|
 | `writeFailed(String)` | `Data.write(to:)` failed; the associated string is the underlying error description. |
-| `drawingEmpty` | The `PDFWriter` had no staged entities when `write(to:)` was called. |
-| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for `.writeFailed`. |
+
+A `PDFWriter` with no staged entities writes a minimum-valid, empty PDF rather than throwing --
+`write(to:)` never checks whether anything was staged, matching `SVGWriter`'s behavior. A
+`.drawingEmpty` case existed here but was never thrown by anything; removed in #1229 along with
+`DXFError`'s identical dead case.
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -703,16 +706,19 @@ Error type thrown by `DXFWriter.write(to:)` and `Exporter.writeDXF` variants.
 ```swift
 public enum DXFError: Error, LocalizedError {
     case writeFailed(String)
-    case drawingEmpty
     public var errorDescription: String? { get }
 }
 ```
 
 | Case / property | Meaning |
 |---|---|
-| `writeFailed(String)` | `String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description. |
-| `drawingEmpty` | The projection passed to `Exporter.writeDXF(shape:to:viewDirection:)` failed (returned `nil` from `Drawing.project`). |
-| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+| `writeFailed(String)` | `String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description. A failed HLR projection in `Exporter.writeDXF(shape:to:viewDirection:)` throws `.writeFailed("projection failed")`, not a distinct case. |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for `.writeFailed`. |
+
+A `DXFWriter` with no staged entities writes a minimum-valid, empty DXF rather than throwing --
+`write(to:)` never checks whether anything was staged, matching `SVGWriter`'s behavior. A
+`.drawingEmpty` case existed here but was never thrown by anything; removed in #1229 along with
+`PDFError`'s identical dead case.
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
