@@ -70,6 +70,35 @@ public enum Exporter {
         }
     }
 
+    /// Write via a UUID-named temporary file, read the result back, then remove it.
+    ///
+    /// OCCT's writers take a file path, not an in-memory buffer, so every `*Data` convenience
+    /// (`stlData`, `stepData`, `igesData`, `brepData`) needs this same "write to a temp file, read
+    /// it back as `Data`, clean up" round trip. Centralizing it stops a new `*Data` overload from
+    /// reimplementing the same five statements with its own extension and write call (#1230).
+    ///
+    /// - Parameters:
+    ///   - ext: File extension for the temp file, no leading dot (e.g. `"stl"`).
+    ///   - write: Writes the shape to the given temp URL. Any error propagates; the temp file is
+    ///     always removed afterward regardless of whether `write` succeeds.
+    /// - Returns: The written file's contents.
+    /// - Throws: Whatever `write` throws, or a file-system error if the temp file cannot be read
+    ///   back after `write` succeeds.
+    private static func dataViaTempFile(
+        extension ext: String, write: (URL) throws -> Void
+    ) throws -> Data {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+
+        defer {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+
+        try write(tempURL)
+        return try Data(contentsOf: tempURL)
+    }
+
     /// Export a shape to STL format for 3D printing.
     ///
     /// - Parameters:
@@ -135,17 +164,9 @@ public enum Exporter {
         shape: Shape,
         deflection: Double = 0.1
     ) throws -> Data {
-        // Create temporary file
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("stl")
-
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
+        try dataViaTempFile(extension: "stl") { tempURL in
+            try writeSTL(shape: shape, to: tempURL, deflection: deflection)
         }
-
-        try writeSTL(shape: shape, to: tempURL, deflection: deflection)
-        return try Data(contentsOf: tempURL)
     }
 
     // MARK: - STEP Export
@@ -258,16 +279,9 @@ public enum Exporter {
         shape: Shape,
         name: String? = nil
     ) throws -> Data {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("step")
-
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
+        try dataViaTempFile(extension: "step") { tempURL in
+            try writeSTEP(shape: shape, to: tempURL, name: name)
         }
-
-        try writeSTEP(shape: shape, to: tempURL, name: name)
-        return try Data(contentsOf: tempURL)
     }
 
     // MARK: - IGES Export (v0.10.0)
@@ -303,16 +317,9 @@ public enum Exporter {
 
     /// Export a shape to IGES and return the data.
     public static func igesData(shape: Shape) throws -> Data {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("igs")
-
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
+        try dataViaTempFile(extension: "igs") { tempURL in
+            try writeIGES(shape: shape, to: tempURL)
         }
-
-        try writeIGES(shape: shape, to: tempURL)
-        return try Data(contentsOf: tempURL)
     }
 
     // MARK: - IGES Export Expansion (v0.59.0)
@@ -452,17 +459,10 @@ public enum Exporter {
         withTriangles: Bool = true,
         withNormals: Bool = false
     ) throws -> Data {
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("brep")
-
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
+        try dataViaTempFile(extension: "brep") { tempURL in
+            try writeBREP(
+                shape: shape, to: tempURL, withTriangles: withTriangles, withNormals: withNormals)
         }
-
-        try writeBREP(
-            shape: shape, to: tempURL, withTriangles: withTriangles, withNormals: withNormals)
-        return try Data(contentsOf: tempURL)
     }
 
     // MARK: - OBJ Export (v0.17.0)
