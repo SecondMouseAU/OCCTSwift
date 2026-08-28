@@ -40,7 +40,6 @@
 #include <RWMesh_FaceIterator.hxx>
 #include <RWMesh_VertexIterator.hxx>
 #include <RWStl.hxx>
-#include <OSD_Path.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <Standard_ErrorHandler.hxx> // OCC_CATCH_SIGNALS (issue #175)
 #include <BRep_Tool.hxx>
@@ -1998,58 +1997,19 @@ OCCTPoint3D OCCTCoordSystemUpDirection(int system)
 
 bool OCCTShapeWriteSTLBinary(OCCTShapeRef shape, const char* filePath, double deflection)
 {
-  if (!shape || !filePath)
-    return false;
-  try
-  {
-    // Mesh the shape
-    BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-
-    // Collect first non-null triangulation
-    TopExp_Explorer ex(shape->shape, TopAbs_FACE);
-    for (; ex.More(); ex.Next())
-    {
-      TopLoc_Location            loc;
-      Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(TopoDS::Face(ex.Current()), loc);
-      if (!tri.IsNull())
-      {
-        OSD_Path path(filePath);
-        return RWStl::WriteBinary(tri, path);
-      }
-    }
-    return false;
-  }
-  catch (...)
-  {
-    return false;
-  }
+  // #1225: this used to walk the face explorer and `return` on the first face with a non-null
+  // triangulation, discarding every other face while still reporting success. RWStl::WriteBinary
+  // writes exactly one Poly_Triangulation and has no shape-wide overload, so rather than hand-roll
+  // the vertex-offset stitching OCCTShapeCreateMesh already does, delegate to the already-correct,
+  // already-tested whole-shape writer (StlAPI_Writer, via OCCTExportSTLWithMode) that
+  // Exporter.writeSTL/Exporter.stlData already use.
+  return OCCTExportSTLWithMode(shape, filePath, deflection, /*ascii=*/false);
 }
 
 bool OCCTShapeWriteSTLAscii(OCCTShapeRef shape, const char* filePath, double deflection)
 {
-  if (!shape || !filePath)
-    return false;
-  try
-  {
-    BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-
-    TopExp_Explorer ex(shape->shape, TopAbs_FACE);
-    for (; ex.More(); ex.Next())
-    {
-      TopLoc_Location            loc;
-      Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(TopoDS::Face(ex.Current()), loc);
-      if (!tri.IsNull())
-      {
-        OSD_Path path(filePath);
-        return RWStl::WriteAscii(tri, path);
-      }
-    }
-    return false;
-  }
-  catch (...)
-  {
-    return false;
-  }
+  // #1225: see OCCTShapeWriteSTLBinary above.
+  return OCCTExportSTLWithMode(shape, filePath, deflection, /*ascii=*/true);
 }
 
 OCCTShapeRef OCCTShapeReadSTL(const char* filePath)

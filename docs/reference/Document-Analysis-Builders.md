@@ -286,7 +286,10 @@ public func writeSTLBinary(to filePath: String, deflection: Double = 0.1) -> Boo
   - `filePath`: output file path.
   - `deflection`: linear mesh deflection in mm for auto-triangulation (default `0.1`).
 - **Returns:** `true` on success.
-- **OCCT:** `RWStl::WriteBinary` via `OCCTShapeWriteSTLBinary`.
+- **OCCT:** `StlAPI_Writer::Write` via `OCCTShapeWriteSTLBinary`, which delegates to
+  `OCCTExportSTLWithMode` (`ascii: false`). Fixed in #1225: this bridge function used to call
+  OCCT's single-triangulation STL writer directly on the first face found by a face-explorer walk,
+  silently discarding the shape's other faces while still returning `true`.
 
 ---
 
@@ -302,7 +305,10 @@ public func writeSTLAscii(to filePath: String, deflection: Double = 0.1) -> Bool
   - `filePath`: output file path.
   - `deflection`: linear mesh deflection in mm for auto-triangulation (default `0.1`).
 - **Returns:** `true` on success.
-- **OCCT:** `RWStl::WriteAscii` via `OCCTShapeWriteSTLAscii`.
+- **OCCT:** `StlAPI_Writer::Write` via `OCCTShapeWriteSTLAscii`, which delegates to
+  `OCCTExportSTLWithMode` (`ascii: true`). Fixed in #1225: this bridge function used to call
+  OCCT's single-triangulation STL writer directly on the first face found by a face-explorer walk,
+  silently discarding the shape's other faces while still returning `true`.
 
 ---
 
