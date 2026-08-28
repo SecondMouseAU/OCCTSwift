@@ -676,6 +676,117 @@ heading `HLRAppli_` was justified from ("Extended HLR, ReflectLines, TopCnx, Int
 transition classification for BOP/healing, a different capability that shipped in the same v0.73.0
 release batch, not a hidden-line-removal one, and is not added to this lane.
 
+### OCAF framework layer, every unwrapped class recorded (#982)
+
+#982 is #807's Pass 3b: the OCAF framework layer above the document API (#810) and below the
+persistence drivers (#983, not audited here) audited against the pinned refman (`occt-refman@8.0.1`
+through the `context` MCP) in both directions. The lane is five packages the issue text names
+directly, consumed from `Scripts/repro/973-ocaf-package-partition/partition_census.py --pass 982`
+rather than re-derived by grep: `TFunction_` (14 headers), `TPrsStd_` (12), `TObj_` (23), `AppStd_`
+(1), `AppStdL_` (1) -- **51 classes total**, all in one bridge file
+(`Sources/OCCTBridge/src/OCCTBridge_Document.mm`) and four Swift files (`DriverTable.swift`,
+`TObjApplication.swift`, and the TFunction-prefixed sections of `Document.swift` and
+`AssemblyNode.swift`; `Scripts/repro/982-refman-coverage-ocaf-framework/derive_lane.py` walks the
+exact call surface, including two nearby, same-file, differently-packaged attribute families that
+are NOT this lane: `Document.swift`'s `TDataXtd_Presentation` section and `AssemblyNode.swift`'s
+`XCAFDoc_GraphNode` section, both confirmed via their own bridge `#include`s).
+
+**9 of the 51 are wrapped, 42 were neither wrapped nor documented before this entry.** The census is
+committed and re-runnable at
+[`Scripts/repro/982-refman-coverage-ocaf-framework/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/982-refman-coverage-ocaf-framework);
+it exits 1 if any class below loses its reason here. Six curated categories cover all 42, each
+measured against the pinned header rather than guessed from the name:
+
+**Deprecated collection aliases (8).** Each header carries `Standard_HEADER_DEPRECATED` at file
+scope saying the alias is deprecated since OCCT 8.0.0 and to use the `NCollection_*` template
+directly, the same "NCollection containers" line the summary table at the top of this file already
+gives: `TFunction_Array1OfDataMapOfGUIDDriver`, `TFunction_DataMapOfGUIDDriver`,
+`TFunction_DataMapOfLabelListOfLabel`, `TFunction_DoubleMapOfIntegerLabel`,
+`TFunction_HArray1OfDataMapOfGUIDDriver`, `TObj_Container`, `TObj_SequenceOfIterator` (both declare
+no class of their own header-basename name, only deprecated typedefs, the same "not a class" shape
+as `HLRBRep_TypeDef` in the Drawing lane section above), `TPrsStd_DataMapOfGUIDDriver`.
+
+**Requires an application-specific subclass (4).** A protected constructor, or a pure-virtual
+method with no default body, each confirmed directly at the class's own header rather than assumed
+from "abstract-sounding": `TFunction_Driver` (pure-virtual `Execute()`, `= 0` at
+`TFunction_Driver.hxx:68`, the regeneration logic every driver must implement -- the bridge
+registers drivers by GUID, `TFunction_DriverTable::HasDriver`/`Clear`, wrapped, but never subclasses
+this itself), `TObj_Object` (protected constructor, `TObj_Object.hxx:99`, "the base class for OCAF
+based TObj models"), `TObj_Model` (protected constructor, same pattern one level up the framework),
+`TObj_Partition` (protected constructor, `TObj_Partition.hxx:46`, same pattern). Same limitation
+this file's own "Classes Not Wrapped (require abstract subclass implementations)" section above
+already names for `ChFi3d_FilBuilder`/`Approx_FitAndDivide`/`BRepBlend_AppSurface`: the bridge
+architecture doesn't support implementing a C++ abstract class or a protected-constructor base.
+
+**TObj object-model internal machinery (17).** A concrete `TObj_` class that takes or returns a
+`Handle(TObj_Object)`/`Handle(TObj_Model)`/`TDF_Label` under that framework's own tree structure, or
+walks one, with no capability independent of an application's own subclass of the framework root
+(the four classes immediately above), which nothing in this bridge provides -- only
+`TObj_Application`, the already-wrapped singleton entry point, is reached. Six iterator classes
+(`TObj_LabelIterator`, `TObj_ModelIterator`, `TObj_ObjectIterator`, `TObj_OcafObjectIterator`,
+`TObj_ReferenceIterator`, `TObj_SequenceIterator`), six label-attribute storage classes
+`TObj_Object`'s own persistence writes (`TObj_TObject`, `TObj_TReference`, `TObj_TXYZ`,
+`TObj_TNameContainer`, `TObj_TModel`, `TObj_TIntSparseArray`), four model-registry/checker/
+root-partition helpers (`TObj_Assistant`, a static save/load bookkeeping interface keyed by
+`Handle(TObj_Model)`; `TObj_CheckModel`, a consistency checker constructed from a
+`Handle(TObj_Model)`; `TObj_Persistence`, "a root of tools ... to manage persistence of objects
+inherited from TObj_Object"; `TObj_HiddenPartition`, a `TObj_Partition` subclass), and one enum
+parameter of `TObj_Object`'s own delete-family methods, `TObj_DeletingMode`.
+
+**OCCT's own live-viewer presentation pipeline, not ours (10).** Populates, or is reached only
+through, `AIS_InteractiveContext`/`V3d_Viewer` (confirmed: neither type is referenced anywhere in
+`Sources/OCCTBridge` or `docs/`) -- OCCTSwift's display layer is Metal via OCCTSwiftViewport, the
+same fact the Drawing lane section above rests its `Prs3d_` finding on, confirmed independently
+here rather than inherited. `TPrsStd_AISPresentation` (its own header: "associate an
+AIS_InteractiveObject to a label in an AIS viewer... works in collaboration with
+TPrsStd_AISViewer") and `TPrsStd_AISViewer` ("stores an interactive context at the root label")
+both directly `#include <AIS_InteractiveContext.hxx>`/take a `Handle(AIS_InteractiveContext)`. The
+six standard `TPrsStd_Driver` subclasses `TPrsStd_DriverTable::InitStandardDrivers()` registers by
+GUID (`TPrsStd_AxisDriver`, `TPrsStd_ConstraintDriver`, `TPrsStd_GeometryDriver`,
+`TPrsStd_NamedShapeDriver`, `TPrsStd_PlaneDriver`, `TPrsStd_PointDriver`), the abstract
+`TPrsStd_Driver` interface they implement (`virtual bool Update(const
+TDF_Label&, Handle(AIS_InteractiveObject)&)`), and its static helper `TPrsStd_ConstraintTools`
+(builds an `AIS_InteractiveObject` for constraint display) are none of them named directly by the
+bridge, even though `DriverTable.initStandard()` activates all six by GUID registration -- the same
+"reached, but never named, by an already-wrapped entry point" shape the Drawing lane's internal HLR
+engine classes have.
+
+**Legacy resource-name subclasses (2).** `AppStd_Application` and `AppStdL_Application`, whose own
+header doc comments read, verbatim, "Legacy class defining resources name for standard/lite OCAF
+documents" -- each a `TDocStd_Application` subclass overriding only `ResourcesName()` to point at a
+different resource file. Since #371 this bridge already constructs `TDocStd_Application` directly
+(`new TDocStd_Application()`) rather than any subclass singleton; neither legacy subclass adds a
+capability that direct instantiation lacks.
+
+**A real capability gap, recorded as one rather than folded into a curated excuse it doesn't fit
+(1).** `TFunction_Iterator` -- "Iterator of the graph of functions" per its own header doc comment,
+the class that actually WALKS the regeneration dependency graph in execution order
+(`More`/`Next`/`Current`, `GetMaxNbThreads` for parallel batches) -- has a public constructor
+(`TFunction_Iterator(const TDF_Label&)`, no subclassing needed) and is `#include`d at
+`OCCTBridge_Document.mm:10324` and never constructed: `OCCTDocumentFunctionScopeCount` reads
+`scope->GetFunctions().Extent()` directly instead. This bridge wraps every OTHER piece of the
+regeneration mechanism (`TFunction_Function` to mark a label driven, `TFunction_DriverTable` to
+register a driver by GUID, `TFunction_GraphNode` for dependency edges, `TFunction_Logbook` for
+change tracking) but not the class that would let a caller actually walk them in dependency order.
+An earlier hand read of this bridge during #982 assumed the `#include` meant the class was wrapped;
+the census script's own `named_in_bridge` test caught that assumption wrong, which is the point of
+running one. Recording it here rather than wrapping it, since #982 is a coverage audit, not a
+wrapping pass (`docs/v2.0.0-plan.md`'s own scope note); a future wrapping-focused release is where
+`Document`/`AssemblyNode` would gain a `functionIterator()`-shaped entry point.
+
+**Two over-coverage findings, both fixed in this same PR (docs-only, no Swift/bridge/kernel
+change).** `docs/reference/Document-XCAF-Notes.md` attributed `TObjApplication.createDocument()` to
+`TObj_Application::NewDocument`, a real method -- but the wrong one: it is inherited, unused, from
+`TDocStd_Application`, while the bridge (`OCCTTObjApplicationCreateDocument`) calls
+`TObj_Application`'s own `CreateNewDocument` override. Neither `census-doc-occt-attribution.py`
+(the class `TObj_Application` genuinely is named in that bridge function's body) nor this pass's own
+`check_method_attributions()` (the cited method genuinely IS declared, on the base class) can catch
+a wrong-attribution-between-two-real-methods shape; it was found reading the header directly. The
+same doc also attributed `DriverTable.initStandard()` to `TPrsStd_DriverTable::Get` +
+"`TPrsStd_AISPresentation` standard driver registration"; `InitStandardDrivers()`'s own body binds
+the six driver classes named above and never touches `TPrsStd_AISPresentation` at all, the textbook
+shape `census-doc-occt-attribution.py --lane` is built to catch, and did.
+
 ### GD&T dimension accessors left unwrapped (#1004)
 
 #1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what

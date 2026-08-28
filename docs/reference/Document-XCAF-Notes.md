@@ -1860,7 +1860,11 @@ Populate the global driver table with the standard set of OCAF presentation driv
 public static func initStandard()
 ```
 
-- **OCCT:** `TPrsStd_DriverTable::Get` + `TPrsStd_AISPresentation` standard driver registration
+- **OCCT:** `TPrsStd_DriverTable::Get().InitStandardDrivers()`, which registers the six standard
+  `TPrsStd_Driver` subclasses (`TPrsStd_AxisDriver`, `ConstraintDriver`, `GeometryDriver`,
+  `NamedShapeDriver`, `PlaneDriver`, `PointDriver`), not `TPrsStd_AISPresentation` (#982 measured
+  `InitStandardDrivers()`'s own body: it binds those six GUIDs and never touches
+  `TPrsStd_AISPresentation`, which is a separate attribute class this bridge does not construct).
 - **Example:**
   ```swift
   DriverTable.initStandard()
@@ -1942,7 +1946,9 @@ public func createDocument() -> Document?
 ```
 
 - **Returns:** A new document, or `nil` if the OCAF framework could not allocate one.
-- **OCCT:** `TObj_Application::NewDocument`
+- **OCCT:** `TObj_Application::CreateNewDocument` (not `TDocStd_Application::NewDocument`, which
+  `TObj_Application` inherits but never overrides and this call never reaches; #982 measured the
+  divergence).
 - **Example:**
   ```swift
   if let app = TObjApplication.shared, let doc = app.createDocument() {
