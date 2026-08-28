@@ -11,7 +11,9 @@ struct TDFLabelPropertyTests {
     @Test("Label tag")
     func labelTag() {
         let doc = Document.create()!
-        if let main = doc.mainLabel {
+        let main = doc.mainLabel
+        #expect(main != nil, "Should get main label")
+        if let main = main {
             #expect(main.tag == 1, "Main label tag should be 1")
         }
     }
