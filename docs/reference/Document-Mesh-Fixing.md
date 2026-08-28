@@ -91,7 +91,7 @@ Number of nodes in the current face triangulation.
 public var nodeCount: Int { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::NbNodes`.
+- **OCCT:** `RWMesh_FaceIterator::NbNodes` (thin wrapper over `Poly_Triangulation::NbNodes`).
 
 ---
 
@@ -103,7 +103,7 @@ Number of triangles in the current face triangulation.
 public var triangleCount: Int { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::NbTriangles`.
+- **OCCT:** `RWMesh_FaceIterator::NbTriangles` (thin wrapper over `Poly_Triangulation::NbTriangles`).
 
 ---
 
@@ -117,7 +117,7 @@ public func node(at index: Int) -> SIMD3<Double>
 
 - **Parameters:** `index`, 1-based node index (1 … `nodeCount`).
 - **Returns:** Node position in model space.
-- **OCCT:** `Poly_Triangulation::Node`.
+- **OCCT:** `RWMesh_FaceIterator::NodeTransformed` (declared on the base `RWMesh_ShapeIterator`; applies the shape's location to the underlying `Poly_Triangulation` node, unlike a bare `Poly_Triangulation::Node` read).
 
 ---
 
@@ -129,7 +129,7 @@ Whether the current face has per-node normals.
 public var hasNormals: Bool { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::HasNormals`.
+- **OCCT:** `RWMesh_FaceIterator::HasNormals` (its own `myHasNormals` flag, not a `Poly_Triangulation::HasNormals` read).
 
 ---
 
@@ -143,7 +143,7 @@ public func normal(at index: Int) -> SIMD3<Double>
 
 - **Parameters:** `index`, 1-based node index.
 - **Returns:** Normal vector (not guaranteed to be unit length if the mesh was built without normals).
-- **OCCT:** `Poly_Triangulation::Normal`.
+- **OCCT:** `RWMesh_FaceIterator::NormalTransformed` (applies the shape's location; not the same call as the class's own protected `normal()`, which `Poly_Triangulation::Normal` backs).
 
 ---
 
@@ -157,7 +157,7 @@ public func triangle(at index: Int) -> (n1: Int, n2: Int, n3: Int)
 
 - **Parameters:** `index`, 1-based triangle index (1 … `triangleCount`).
 - **Returns:** A tuple of three 1-based node indices.
-- **OCCT:** `Poly_Triangulation::Triangle`.
+- **OCCT:** `RWMesh_FaceIterator::TriangleOriented` (re-orients the underlying `Poly_Triangulation::Triangle` to match the face's own orientation).
 - **Example:**
   ```swift
   if let iter = MeshFaceIterator(shape: box) {

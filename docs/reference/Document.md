@@ -1929,7 +1929,7 @@ Get the number of nodes in the triangulation attribute.
 public var triangulationNodeCount: Int32 { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::NbNodes` (via `OCCTDocumentTriangulationNbNodes`).
+- **OCCT:** `TDataXtd_Triangulation::NbNodes` (via `OCCTDocumentTriangulationNbNodes`); the OCAF attribute, not `Poly_Triangulation`, which this attribute does not wrap or inherit.
 
 ---
 
@@ -1941,7 +1941,7 @@ Get the number of triangles in the triangulation attribute.
 public var triangulationTriangleCount: Int32 { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::NbTriangles` (via `OCCTDocumentTriangulationNbTriangles`).
+- **OCCT:** `TDataXtd_Triangulation::NbTriangles` (via `OCCTDocumentTriangulationNbTriangles`); the OCAF attribute, not `Poly_Triangulation`.
 
 ---
 
@@ -1957,7 +1957,7 @@ Nodes are numbered from 1, as `Poly_Triangulation` numbers them. Before this exi
 
 - **Parameters:** `index`, 1-based node index.
 - **Returns:** The node position, or `nil` if the label has no triangulation attribute or `index` is out of range.
-- **OCCT:** `Poly_Triangulation::Node` (via `OCCTDocumentTriangulationNode`).
+- **OCCT:** `TDataXtd_Triangulation::Node` (via `OCCTDocumentTriangulationNode`); the OCAF attribute's own accessor, not `Poly_Triangulation`.
 - **Example:**
   ```swift
   let moved = Shape.box(width: 10, height: 10, depth: 10)!.moved(dx: 100, dy: 200, dz: 300)!
@@ -1979,7 +1979,7 @@ Node normals exist only when the meshed faces carried them. `BRepMesh_Incrementa
 
 - **Parameters:** `index`, 1-based node index.
 - **Returns:** The unit normal, or `nil` if there is no attribute, the stored triangulation has no node normals, or `index` is out of range.
-- **OCCT:** `Poly_Triangulation::Normal` guarded by `HasNormals` (via `OCCTDocumentTriangulationNormal`).
+- **OCCT:** `TDataXtd_Triangulation::Normal` guarded by `TDataXtd_Triangulation::HasNormals` (via `OCCTDocumentTriangulationNormal`); the OCAF attribute's own accessors, not `Poly_Triangulation`.
 - **Example:**
   ```swift
   let imported = Shape.loadGLTF(from: url)!    // glTF meshes carry vertex normals
@@ -1997,7 +1997,7 @@ Get the deflection of the triangulation attribute.
 public var triangulationDeflection: Double { get }
 ```
 
-- **OCCT:** `Poly_Triangulation::Deflection` (via `OCCTDocumentTriangulationDeflection`).
+- **OCCT:** `TDataXtd_Triangulation::Deflection` (via `OCCTDocumentTriangulationDeflection`); the OCAF attribute, not `Poly_Triangulation`.
 
 ---
 
