@@ -47,7 +47,7 @@ extension Exporter {
     }
 }
 
-public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
+public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink, DrawingWriter {
     /// Explicit viewBox override.
     ///
     /// When nil, the writer computes the viewBox from the staged content's bounding box at `write(to:)` time.

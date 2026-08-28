@@ -191,6 +191,28 @@ public struct Sheet: Sendable, Hashable {
     /// Uses BORDER, TITLE, TEXT, and CENTER layers.
     public func render(into writer: SVGWriter) { renderScaffolding(into: writer) }
 
+    /// Render onto a writer known only as `DrawingWriter` (e.g. picked at runtime), rather than
+    /// one of the three concrete types above.
+    ///
+    /// `DrawingWriter` (`DrawingDispatch.swift`) and `DrawingPrimitiveSink` are two separately
+    /// declared protocols with identical requirements, not one refining the other — the same
+    /// visibility constraint #1180's comment on `renderScaffolding` documents means
+    /// `DrawingPrimitiveSink` can't be widened to `public` itself, and a `public` protocol can't
+    /// inherit an `internal` one either. So a `DrawingWriter` value has no static conformance to
+    /// `DrawingPrimitiveSink` to hand `renderScaffolding`, even though every conformer of one
+    /// conforms to the other. `DXFWriter`/`PDFWriter`/`SVGWriter` are `DrawingWriter`'s only
+    /// conformers, so a runtime type switch onto the three existing overloads is exact, not a
+    /// fallback guess, and needs no second copy of the render body.
+    public func render(into writer: DrawingWriter) {
+        switch writer {
+        case let w as DXFWriter: render(into: w)
+        case let w as PDFWriter: render(into: w)
+        case let w as SVGWriter: render(into: w)
+        default:
+            assertionFailure("DrawingWriter has no conformer besides DXFWriter/PDFWriter/SVGWriter")
+        }
+    }
+
     /// Shared body for the three `render(into:)` overloads above (#1180).
     ///
     /// `DrawingPrimitiveSink` (`DrawingDispatch.swift`) is `internal`, so it can't be the type of
@@ -321,6 +343,22 @@ public enum ProjectionSymbol {
         at origin: SIMD2<Double>,
         into writer: SVGWriter
     ) { renderSymbol(angle, at: origin, into: writer) }
+
+    /// Render onto a writer known only as `DrawingWriter`; see `Sheet.render(into: DrawingWriter)`
+    /// for why this is a type switch onto the three overloads above rather than a second body.
+    public static func render(
+        _ angle: ProjectionAngle,
+        at origin: SIMD2<Double>,
+        into writer: DrawingWriter
+    ) {
+        switch writer {
+        case let w as DXFWriter: render(angle, at: origin, into: w)
+        case let w as PDFWriter: render(angle, at: origin, into: w)
+        case let w as SVGWriter: render(angle, at: origin, into: w)
+        default:
+            assertionFailure("DrawingWriter has no conformer besides DXFWriter/PDFWriter/SVGWriter")
+        }
+    }
 
     /// Shared body for the three `render(into:)` overloads above (#1180); see
     /// `Sheet.renderScaffolding` for why this isn't the public declaration itself.

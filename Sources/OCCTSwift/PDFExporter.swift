@@ -65,7 +65,7 @@ extension Exporter {
     }
 }
 
-public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
+public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink, DrawingWriter {
     public let pageSize: SIMD2<Double>
     public let deflection: Double
 
