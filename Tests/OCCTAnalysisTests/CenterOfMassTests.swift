@@ -121,27 +121,25 @@ struct CenterOfMassTests {
     /// writer, and leaves closing the shape to the caller.
     @Test("an open shell has no centre of mass until it is closed")
     func openShellIsRefused() throws {
-        let box = try #require(
-            Shape.box(width: 10, height: 20, depth: 30)?
-                .translated(by: SIMD3(100, 200, 300)))
-        let faces = box.faces()
-        #expect(faces.count == 6)
-
-        let fiveFaces = faces.dropLast().compactMap { Shape.fromFace($0) }
-        let open = try #require(Shape.sew(shapes: Array(fiveFaces), tolerance: 1e-6))
+        let origin = SIMD3<Double>(100, 200, 300)
+        let open = try makeOpenShellFromBox(origin: origin)
 
         #expect(open.centerOfMass == nil, "an open shell encloses no volume")
         #expect(open.properties() == nil)
 
         // Closing it makes the answer available, and correct.
+        let box = try #require(
+            Shape.box(width: 10, height: 20, depth: 30)?
+                .translated(by: origin))
+        let faces = box.faces()
         let closed = try #require(
             Shape.sew(
                 shapes: faces.compactMap { Shape.fromFace($0) },
                 tolerance: 1e-6))
         let com = try #require(closed.centerOfMass)
-        #expect(abs(com.x - 100.0) < 1e-6)
-        #expect(abs(com.y - 200.0) < 1e-6)
-        #expect(abs(com.z - 300.0) < 1e-6)
+        #expect(abs(com.x - origin.x) < 1e-6)
+        #expect(abs(com.y - origin.y) < 1e-6)
+        #expect(abs(com.z - origin.z) < 1e-6)
     }
 
     /// A closed shell that was never wrapped in a solid still has a volume: the dispatch key is
