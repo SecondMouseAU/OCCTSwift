@@ -1087,32 +1087,13 @@ struct OSDEnvironmentTests {
     }
 }
 
-@Suite("OSD Path Tests")
-struct OSDPathTests {
-
-    @Test func parseName() {
-        #expect(OSDPath.name("/home/user/model.step") == "model")
-    }
-
-    @Test func parseExtension() {
-        #expect(OSDPath.fileExtension("/home/user/model.step") == ".step")
-    }
-
-    @Test func folderAndFile() {
-        if let result = OSDPath.folderAndFile("/home/user/model.step") {
-            #expect(result.file == "model.step")
-        }
-    }
-
-    @Test func isValid() {
-        #expect(OSDPath.isValid("/tmp/test.txt"))
-    }
-
-    @Test func isAbsoluteAndRelative() {
-        #expect(OSDPath.isAbsolute("/absolute/path"))
-        #expect(OSDPath.isRelative("relative/path"))
-    }
-}
+// `OSDPathTests` (5 tests: parseName, parseExtension, folderAndFile, isValid,
+// isAbsoluteAndRelative) removed here: fully subsumed by `PathParsingContractTests`
+// (PathParsingContractTests.swift), which was added by #499's path-parsing unification without
+// ever removing this predecessor. Every assertion here is already made, with equal or greater
+// strength, in that suite: nameDropsBothDirectoryAndExtension, extensionKeepsItsLeadingDot,
+// folderAndFileSplitOnTheLastSeparator, validityCheckAcceptsAnythingParsable and
+// absoluteAndRelativeAreSyntaxOnly. #1286.
 
 @Suite("OSD Chronometer Tests")
 struct OSDChronometerTests {
