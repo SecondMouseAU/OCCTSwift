@@ -693,7 +693,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | `AngleDimension(face1:face2:)` | `PrsDim_AngleDimension` |
 | `DiameterDimension(shape:)` | `PrsDim_DiameterDimension` |
 | `TextLabel(text:position:)` | `AIS_TextLabel` |
-| `PointCloud(points:)` / `PointCloud(points:colors:)` | `AIS_PointCloud` |
+| `PointCloud(points:)` / `PointCloud(points:colors:)` | Bridge-internal `OCCTPointCloud` struct, not `AIS_PointCloud` (no OCCT class backing; plain coordinate/color arrays with bridge-computed bounds) |
 | `dimension.geometry` → `DimensionGeometry` | Extracted line segments + text position for Metal |
 
 #### Import

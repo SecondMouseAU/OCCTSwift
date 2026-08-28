@@ -1023,6 +1023,639 @@ suppression was removed in v1.15.11 once patch `0015` landed, and `0015` is in f
 #1232 for the full detail, including the exact stale text quoted and what the correction should
 say.
 
+### Export/interop lane, every unwrapped class recorded (#813)
+
+#813 is #807's Pass 4c: the export/interop lane audited against the pinned refman
+(`occt-refman@8.0.1` through the `context` MCP) in both directions. The lane is #813's own eleven
+package prefixes -- `STEPControl_`, `IGESControl_`, `StlAPI_`, `RWObj_`, `RWGltf_`, `RWPly_`,
+`RWMesh_`, `Interface_`, `Transfer_`, `BinTools_`, `Resource_` -- confirmed at **192 classes**
+(`Scripts/repro/813-refman-coverage-export-interop/derive_lane.py`; a naive prefix match without an
+optional bare-header suffix undercounts at 190, missing `BinTools.hxx`/`RWMesh.hxx`/`RWObj.hxx`/
+`StlAPI.hxx`, the same bare-package-header shape #812 found for `HLRAlgo.hxx`/`HLRBRep.hxx`).
+`BinTools_`/`Resource_` are in this lane on #973's own measurement, not on their toolkit placement
+(see #813's issue body); OCAF's own persistence formats (`PCDM_`/`Storage_`/etc.) are #983's, Pass
+3c, not re-litigated here.
+
+**22 of the 192 are wrapped, 170 were neither wrapped nor documented before this entry.** The four
+public facades a CAD consumer actually calls are `STEPControl_Reader`/`Writer`,
+`IGESControl_Reader`/`Writer`, `StlAPI_Reader`/`Writer`, `RWObj_CafReader`/`CafWriter`,
+`RWGltf_CafReader`/`CafWriter`, `RWPly_CafWriter`, plus `BinTools_ShapeReader`/`ShapeWriter`,
+`Resource_Manager`, `Resource_Unicode`, `Resource_FormatType`, `RWMesh_CoordinateSystem`,
+`RWMesh_CoordinateSystemConverter`, `RWMesh_FaceIterator`/`VertexIterator`,
+`STEPControl_StepModelType` and `Interface_Static`. Unlike #811's lane (real capability gaps
+throughout) and closer to #812's, this lane is almost entirely the generic OCCT data-exchange
+(XSTEP) framework: `Interface_*`/`Transfer_*` are a ~100-class generic entity/model/check/transfer-
+process framework the four reader/writer facades are thin wrappers over, the same shape #812 found
+for hidden-line removal's own ~60 internal engine classes. The census is committed and re-runnable
+at
+[`Scripts/repro/813-refman-coverage-export-interop/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/813-refman-coverage-export-interop);
+it exits 1 if any class below loses its reason here.
+
+**Package-utility classes (4).** The bare `<Package>.hxx` headers are all-static-method classes
+providing an OLDER, one-shot form of a capability this bridge already wraps via the newer,
+object-oriented sibling class: `BinTools` (`Write`/`Read`/`PutReal`/`GetReal`/...) superseded by
+`BinTools_ShapeReader`/`ShapeWriter`; `StlAPI` (`Write`/`Read`) superseded by
+`StlAPI_Reader`/`StlAPI_Writer`; `RWObj` (`ReadFile`, returning a raw `Poly_Triangulation` with no
+document/material support) superseded by the document-aware `RWObj_CafReader`; `RWMesh`
+(`ReadNameAttribute`/`FormatName`, XCAF shape-label formatting helpers, unrelated to the
+`RWMesh_FaceIterator`/`VertexIterator` classes this bridge actually wraps from the same package).
+`BinTools`'s docs hit (`docs/API_REFERENCE.md`, `docs/reference/Document-XCAF-Notes.md`) and
+`RWMesh`'s (`docs/API_REFERENCE.md`, `docs/reference/Document-Mesh-Fixing.md`) are both real
+non-gaps.md doc mentions, and both are the same "toolkit-name mention counts as a false 'documented'
+hit" trap #812 found for `HLRAlgo`/`HLRBRep`: `BinTools`'s hit WAS this issue's own over-coverage
+finding (docs attributed `Shape.toBinaryData()`/`fromBinaryData()`/`writeBinary()`/`loadBinary()` to
+`BinTools::Write`/`Read`, the bare class's static methods, when the bridge actually constructs
+`BinTools_ShapeWriter`/`ShapeReader`; fixed in the same PR). Both are classified via the curated
+table (checked before the docs test) rather than via the accidental hit, matching #811/#812's own
+ordering discipline.
+
+**Deprecated collection aliases (16).** Each header carries `Standard_HEADER_DEPRECATED` at file
+scope saying the alias is deprecated since OCCT 8.0.0 and to use the `NCollection_*` template
+directly, the same "NCollection containers" line the summary table at the top of this file already
+gives: `Interface_Array1OfFileParameter`, `Interface_Array1OfHAsciiString`,
+`Interface_DataMapOfTransientInteger`, `Interface_HArray1OfHAsciiString`,
+`Interface_HSequenceOfCheck`, `Interface_IndexedMapOfAsciiString`, `Interface_SequenceOfCheck`,
+`Interface_VectorOfFileParameter`, `Transfer_HSequenceOfBinder`, `Transfer_HSequenceOfFinder`,
+`Transfer_SequenceOfBinder`, `Transfer_SequenceOfFinder`, `Transfer_TransferMapOfProcessForFinder`,
+`Transfer_TransferMapOfProcessForTransient`, `Resource_DataMapOfAsciiStringAsciiString`,
+`Resource_DataMapOfAsciiStringExtendedString`.
+
+**Not a class (5).** `Interface_Statics.hxx` and `Interface_Translates.hxx` declare no class of
+their own name: pure C-preprocessor macro headers (pre-C++11 static-`Handle` initialisation
+idioms, and `Sequence`<->`Array` conversion boilerplate, respectively). `Interface_Version.hxx` is
+four `#define` version-string macros. `BinTools_LocationSetPtr` is `typedef BinTools_LocationSet*
+BinTools_LocationSetPtr`, a raw-pointer alias. `Resource_ConvertUnicode.hxx` declares six
+`extern "C"` free functions (`Resource_sjis_to_unicode` and siblings), the low-level codec routines
+`Resource_Unicode`'s (wrapped) static methods call internally.
+
+**Callback function-pointer typedefs (3).** Not classes: `Interface_StaticSatisfies`,
+`Interface_ValueInterpret`, `Interface_ValueSatisfies`, three callback signatures
+`Interface_TypedValue`'s validation hook takes.
+
+**Exception types (6).** `DEFINE_STANDARD_EXCEPTION` classes, not constructed by a caller:
+`Interface_InterfaceError`, `Interface_InterfaceMismatch`, `Interface_CheckFailure`,
+`Transfer_TransferFailure`, `Resource_NoSuchResource` (the bridge's `ResourceManager.swift` uses
+`Resource_Manager`'s bool-returning `Find()`/accessor overloads instead of catching this).
+`Transfer_TransferDeadLoop` is additionally class-level `Standard_DEPRECATED` since OCCT 7.9.0:
+"this exception is deprecated and no longer thrown."
+
+**Enums, unread (6).** Nothing in the tree reads any of these by value or by name (confirmed: zero
+occurrences in `Sources/OCCTBridge`): `Interface_CheckStatus`, `Interface_DataState`,
+`Interface_ParamType`, `Transfer_StatusExec`, `Transfer_StatusResult`, `Transfer_UndefMode`.
+
+**STEP/IGES actor and controller plumbing (8).** Internal Transfer-framework registration/actor
+classes `STEPControl_Reader`/`Writer` and `IGESControl_Reader`/`Writer` (all four wrapped) set up
+for themselves via `STEPControl_Controller::Init()`/`IGESControl_Controller::Init()`, called from
+the reader/writer's own constructor; a caller never constructs one directly to use STEP or IGES
+import/export: `STEPControl_ActorRead`, `STEPControl_ActorWrite`, `STEPControl_Controller`,
+`IGESControl_ActorWrite`, `IGESControl_Controller`, `IGESControl_AlgoContainer`,
+`IGESControl_ToolContainer`, `IGESControl_IGESBoundary`.
+
+**OBJ-format internal machinery (9).** Material/MTL parsing, sub-mesh grouping, low-level file
+tokenising, or the abstract `Poly_Triangulation`-only reader `RWObj_CafReader`/`CafWriter` (both
+wrapped) drive internally: `RWObj_Material`, `RWObj_MtlReader`, `RWObj_ObjMaterialMap`,
+`RWObj_ObjWriterContext`, `RWObj_Reader`, `RWObj_SubMesh`, `RWObj_SubMeshReason`, `RWObj_Tools`,
+`RWObj_TriangulationReader`.
+
+**glTF-format internal machinery (20).** Low-level glTF-spec data structures and enums (accessor/
+buffer-view/primitive/material JSON shape) or the internal JSON parser/writer
+`RWGltf_CafReader`/`CafWriter` (both wrapped) build and consume internally; a CAD consumer reads or
+writes a glTF file through the `CafReader`/`CafWriter` facade, never these: `RWGltf_GltfAccessor`,
+`RWGltf_GltfAccessorCompType`, `RWGltf_GltfAccessorLayout`, `RWGltf_GltfAlphaMode`,
+`RWGltf_GltfArrayType`, `RWGltf_GltfBufferView`, `RWGltf_GltfBufferViewTarget`, `RWGltf_GltfFace`,
+`RWGltf_GltfJsonParser`, `RWGltf_GltfLatePrimitiveArray`, `RWGltf_GltfMaterialMap`,
+`RWGltf_GltfOStreamWriter`, `RWGltf_GltfPrimArrayData`, `RWGltf_GltfPrimitiveMode`,
+`RWGltf_GltfRootElement`, `RWGltf_GltfSceneNodeMap`, `RWGltf_MaterialCommon`,
+`RWGltf_MaterialMetallicRoughness`, `RWGltf_TriangulationReader`, `RWGltf_WriterTrsfFormat`.
+`RWGltf_DracoParameters` is NOT in this bucket, see "Real capability gaps" below.
+
+**PLY-format internal machinery (1).** `RWPly_PlyWriterContext`: low-level PLY-file writer scratch
+state `RWPly_CafWriter` (wrapped) drives; not constructed by a caller.
+
+**Mesh-format abstract bases (3).** Not separately constructed, the concrete subclasses are
+wrapped: `RWMesh_CafReader` (the base `RWObj_CafReader` and `RWGltf_CafReader` both inherit),
+`RWMesh_ShapeIterator` (the pure-virtual base `RWMesh_FaceIterator` and `RWMesh_VertexIterator`
+both inherit, declaring `More()`/`Next()`), `RWMesh_MaterialMap` (the abstract base
+`RWObj_ObjMaterialMap`/`RWGltf_GltfMaterialMap`, both internal to their own package above, inherit).
+
+**Mesh-format internal machinery (4).** `RWMesh_NameFormat` (an unread enum backing the bare
+`RWMesh` package's own `FormatName()`, itself unwrapped, see "Package-utility classes" above),
+`RWMesh_NodeAttributes` (internal per-node attribute struct `RWMesh_CafReader`'s implementation
+builds while walking a mesh file into the XDE document tree), `RWMesh_TriangulationReader`
+(internal interface `RWObj_TriangulationReader`/`RWGltf_TriangulationReader` implement),
+`RWMesh_TriangulationSource` (internal delayed-triangulation data wrapper).
+
+**Generic XSTEP entity/model framework (41).** Internal machinery of the generic model framework
+`STEPControl_Reader`/`Writer` and `IGESControl_Reader`/`Writer` are thin facades over: file-record
+parsing, entity graph/dependency tracking, deep-copy/transfer bookkeeping, model-container storage.
+A CAD consumer reaches STEP/IGES data through the Reader/Writer facade, never these directly, the
+same shape #812 found for hidden-line removal's own ~60 internal engine classes: `Interface_BitMap`,
+`Interface_Category`, `Interface_CheckTool`, `Interface_CopyControl`, `Interface_CopyMap`,
+`Interface_CopyTool`, `Interface_EntityCluster`, `Interface_EntityIterator`, `Interface_EntityList`,
+`Interface_FileParameter`, `Interface_FileReaderData`, `Interface_FileReaderTool`,
+`Interface_FloatWriter`, `Interface_GTool`, `Interface_GeneralLib`, `Interface_GeneralModule`,
+`Interface_GlobalNodeOfGeneralLib`, `Interface_GlobalNodeOfReaderLib`, `Interface_Graph`,
+`Interface_GraphContent`, `Interface_HGraph`, `Interface_IntList`, `Interface_IntVal`,
+`Interface_InterfaceModel`, `Interface_LineBuffer`, `Interface_MSG`, `Interface_NodeOfGeneralLib`,
+`Interface_NodeOfReaderLib`, `Interface_ParamList`, `Interface_ParamSet`, `Interface_Protocol`,
+`Interface_ReaderLib`, `Interface_ReaderModule`, `Interface_ReportEntity`, `Interface_STAT`,
+`Interface_ShareFlags`, `Interface_ShareTool`, `Interface_SignLabel`, `Interface_SignType`,
+`Interface_TypedValue`, `Interface_UndefinedContent`.
+
+**Generic transfer-process framework (29).** Sibling of the bucket above, split into its own
+package: internal `Binder`/`Finder`/`ActorOf...`/`ProcessFor...` result-mapping and dispatch
+machinery the XSTEP readers/writers drive to move entities between a file model and application
+objects: `Transfer_ActorDispatch`, `Transfer_ActorOfFinderProcess`,
+`Transfer_ActorOfProcessForFinder`, `Transfer_ActorOfProcessForTransient`,
+`Transfer_ActorOfTransientProcess`, `Transfer_Binder`, `Transfer_BinderOfTransientInteger`,
+`Transfer_DataInfo`, `Transfer_DispatchControl`, `Transfer_FindHasher`, `Transfer_Finder`,
+`Transfer_FinderProcess`, `Transfer_IteratorOfProcessForFinder`,
+`Transfer_IteratorOfProcessForTransient`, `Transfer_MapContainer`, `Transfer_MultipleBinder`,
+`Transfer_ProcessForFinder`, `Transfer_ProcessForTransient`, `Transfer_SimpleBinderOfTransient`,
+`Transfer_TransferDispatch`, `Transfer_TransferInput`, `Transfer_TransferIterator`,
+`Transfer_TransferOutput`, `Transfer_TransientListBinder`, `Transfer_TransientMapper`,
+`Transfer_TransientProcess`, `Transfer_VoidBinder`, plus `Transfer_ResultFromModel` and
+`Transfer_ResultFromTransient` (passive scope-structured storage of a `TransientProcess`'s result).
+
+**BinTools internal serialisation building blocks (10).** `BinTools_ShapeReader`/`ShapeWriter`
+(both wrapped) use these to store curves/surfaces/locations, or share this low-level typed
+stream/format-version machinery; not constructed by a caller reading or writing a shape:
+`BinTools_Curve2dSet`, `BinTools_CurveSet`, `BinTools_FormatVersion`, `BinTools_IStream`,
+`BinTools_LocationSet`, `BinTools_OStream`, `BinTools_ObjectType`, `BinTools_ShapeSet`
+(the base class both wrapped classes derive from via `BinTools_ShapeSetBase`),
+`BinTools_ShapeSetBase`, `BinTools_SurfaceSet`.
+
+**Resource internal helper (1).** `Resource_LexicalCompare`: the comparator functor
+`Resource_Manager` (wrapped) uses to order its own resource-name map; not constructed by a caller.
+
+**Real capability gaps, recorded as such (4 classes).** Small, genuine, unaddressed gaps, each
+measured rather than assumed. None is large enough to justify a same-PR fix or its own follow-up
+issue; each is an optional enhancement, not a defect, so #813's own done-when criteria (a recorded
+reason) are satisfied by naming them here:
+
+- `RWMesh_EdgeIterator`: sibling of the wrapped `RWMesh_FaceIterator`/`RWMesh_VertexIterator` (all
+  three inherit `RWMesh_ShapeIterator`), not wrapped. No design reason found; confirmed zero
+  references anywhere in `Sources/` or `docs/`.
+- `RWGltf_DracoParameters`: Draco mesh-compression settings for glTF export. `RWGltf_CafWriter`
+  (wrapped) exposes no compression control of any kind.
+- `Interface_Check`/`Interface_CheckIterator`: per-entity fail/warning messages from a STEP or IGES
+  read. `OCCTImportSTEPWithDiagnostics` (the one bridge function whose name suggests this) reports
+  shape-type info, not check messages; nothing in the tree surfaces read diagnostics at the entity
+  level. The two are always consumed together (`Interface_CheckIterator` iterates a model's
+  `Interface_Check` results, its own header's doc comment: "especially from InterfaceModel").
+
+**Over-coverage, three findings, all fixed in this same PR.** `docs/reference/Document-XCAF-Notes.md`
+attributed `Shape.toBinaryData()`/`fromBinaryData()`/`writeBinary()`/`loadBinary()` to the bare
+`BinTools` class's static `Write`/`Read` methods; the bridge actually constructs
+`BinTools_ShapeWriter`/`BinTools_ShapeReader` and calls their instance methods
+(`OCCTBridge_IO.mm:2448-2522`), never the bare class's statics (confirmed: zero `BinTools::` call
+sites tree-wide). `docs/reference/Shape.md:1885` attributed `OCCTImportIGESRoot` to
+`IGESControl_Reader::Transfer`, a method that does not exist anywhere (not on `IGESControl_Reader`,
+not on its base `XSControl_Reader`) -- the header's own doc comment says `reader.Transfer(num)` in
+prose, a stale OCCT-side comment never updated to match the real API; the bridge calls
+`reader.TransferOneRoot(rootIndex)`, confirmed real at `XSControl_Reader.hxx:169`.
+`docs/reference/Shape.md:1623` attributed `Shape.loadSTEP(from:unitInMeters:progress:)`'s unit
+handling to "`STEPControl_Reader` with `Interface_Static` unit setting"; the bridge calls
+`reader.SetSystemLengthUnit(unitInMeters)` directly (`STEPControl_Reader.hxx:125`), never touching
+`Interface_Static` for this specific call. All three fixed by naming the real class/method.
+
+**What found the over-coverage.** `Scripts/census-doc-occt-attribution.py --lane STEPControl_,...`
+(#928) surfaced 3 candidates: 1 true (the `Interface_Static` misattribution above), 2 false
+positives, both shapes this project has already catalogued -- a heading-level "load" match picking
+up unrelated bridge functions (`OCCTImageLoad`/`OCCTSewingLoad`, neither STEP-related, while the
+real function correctly constructs `STEPControl_Reader`), and a cross-function hidden-member case
+(`RWMesh_CoordinateSystemConverter` is a private member set via `RWObj_CafReader`'s inherited public
+setters rather than constructed by name in the named function's own body, the exact shape #812's
+`HLRBRep_HLRToShape` false positive was). The `BinTools` and `IGESControl_Reader::Transfer` findings
+were found by hand, reading every remaining `- **OCCT:**` bullet touching this lane's 22 wrapped
+classes against the pinned headers, the same discipline #811/#812 applied.
+
+### Mesh/presentation/misc lane, family-level (#814)
+
+#814 is #807's Pass 4d: the largest lane in the whole programme, nine packages, **368 headers/
+classes** -- `BRepMesh_`, `Poly_`, `IMeshData_`, `IMeshTools_`, `AIS_`, `Graphic3d_`, `Image_`,
+`StdPrs_`, `StdSelect_` -- against the `Mesh`/`Display`/`PixMap` Swift surface (re-derived by call
+at [`Scripts/repro/814-refman-coverage-mesh-presentation-misc/derive_lane.py`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/814-refman-coverage-mesh-presentation-misc):
+nine Swift files, `Mesh.swift`/`MeshCoordinateSystem.swift`/`MeshIterators.swift`/`MeshTypes.swift`/
+`PixMap.swift`/`PresentationMesh.swift`/`Shape+Mesh.swift`/`DisplayDrawer.swift`/`Annotation.swift`,
+the last of these because `AIS_` is this lane's own package unlike #812's HLR lane, where the
+identical file's AIS_ calls were adjacent-not-in-lane). Following #983's own precedent (a lane whose
+own body predicted "expect this to be answered once for the whole driver family rather than per
+class") rather than #811's/#812's mostly-per-class tables: of 368 classes, **45 are directly wrapped
+or documented**, 3 more are already recorded elsewhere in this file for an unrelated, pre-existing
+reason (`AIS_ColoredShape`/`AIS_InteractiveObject`/`Graphic3d_Texture2D`, via the #810
+`XCAFPrs_AISObject`/`XCAFPrs_Texture` entry above and the #982 `TPrsStd_` entry), and the remaining
+**320 are curated below in 32 family-level buckets**. The census is committed and re-runnable at
+[`Scripts/repro/814-refman-coverage-mesh-presentation-misc/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/814-refman-coverage-mesh-presentation-misc);
+it exits 1 if any class below loses its reason here.
+
+**Two boundary questions #814 flags explicitly, both confirmed by measurement:**
+
+- **`StdPrs_` (28 headers): confirmed zero wrapped, zero documented before this PR** (`grep -rn
+  StdPrs Sources/OCCTBridge/ docs/`, excluding this pass's own new section below, returned nothing
+  at all), exactly as #814's own body predicts -- "the largest single block of unrecorded omission
+  in the lane." Recorded as ONE family-level entry, matching #983's precedent for a large, uniform,
+  unwrapped family rather than 28 individual reasons.
+- **`StdSelect_` (11 headers, 2 wrapped) is audited here for its OCCT-CLASS coverage only.**
+  `StdSelect_BRepSelectionTool`/`StdSelect_BRepOwner` are both named in
+  `docs/reference/Selection.md`, #809's own Swift surface; this pass does not re-derive
+  `Selection.swift`'s API, that is #809's territory (#814's own text warns re-treading it would be
+  the cross-lane double-count #928/#1044 already flagged once). The other 9 `StdSelect_` classes are
+  curated below by OCCT-class reasoning alone.
+- **`SelectMgr_` is out of scope entirely**, per #814's own text (Phase 6's, #820, unless claimed
+  first) and #973's original partition. Not one `SelectMgr_` class appears in the lane; it is named
+  in prose below only to explain why an unused `StdSelect_`/`AIS_` class sits on top of it.
+
+**The over-coverage lead #814 flags** (8.0.1's `BRepMesh_BaseMeshAlgo` periodic-seam change, #654):
+checked, not a finding. `docs/occt-upgrades.md` already carries an accurate entry ("`BRepMesh_
+BaseMeshAlgo` creates seam constraints only for the current wire occurrence's pcurve | meshing at
+periodic seams", OCCT#1338), and no hardcoded node/triangle count elsewhere in this lane's docs has
+gone stale from it.
+
+**Over-coverage found by other means: 12 confirmed findings, all fixed in this PR (docs-only).**
+`Scripts/census-doc-occt-attribution.py --lane BRepMesh_,Poly_,IMeshData_,IMeshTools_,AIS_,
+Graphic3d_,Image_,StdPrs_,StdSelect_` surfaced 11 candidates, 5 confirmed true, 6 rejected as false
+positives (the checker's `reachable()` walker requiring the cited class inside the named function's
+own body, the same shape #811's/#812's own rejected candidates were -- see the census script's own
+docstring for each). All 5 true candidates, plus 6 more found by hand reading the same doc section,
+are one shape: a line citing `Poly_Triangulation` for a method actually declared and called on a
+DIFFERENT class the bridge reaches through it. `docs/reference/Document-Mesh-Fixing.md`'s six
+`MeshFaceIterator` accessors (`nodeCount`/`triangleCount`/`node(at:)`/`hasNormals`/`normal(at:)`/
+`triangle(at:)`) all wrap `RWMesh_FaceIterator` (confirmed: `struct OCCTMeshFaceIter { RWMesh_
+FaceIterator iter; }`), not `Poly_Triangulation` directly, fixed to cite the real methods
+(`NbNodes`/`NbTriangles`/`NodeTransformed`/`HasNormals`/`NormalTransformed`/`TriangleOriented`).
+`docs/reference/Document.md`'s five `triangulation*` accessors on `Document` all wrap `TDataXtd_
+Triangulation` (a `TDF_Attribute`, confirmed at the pinned header to have its own complete
+`NbNodes`/`NbTriangles`/`Node`/`Normal`/`HasNormals`/`Deflection` method set, no relation to
+`Poly_Triangulation` at all), fixed the same way. A twelfth, found by hand rather than by the
+detector, `docs/API_REFERENCE.md`'s `PointCloud` row attributed `AIS_PointCloud`: confirmed
+`OCCTPointCloudCreate` builds a bridge-internal `OCCTPointCloud` struct and never touches
+`AIS_PointCloud` anywhere in the tree (`docs/visualization-research.md`'s own "No standard OCCT
+widgets ... `AIS_PointCloud` ... none of these exist as ready-made objects" already said as much,
+directly contradicting the API_REFERENCE.md row this PR fixes). One further finding, not about this
+lane's own claims but caught by this pass's own method-attribution checker while verifying the
+fixes above: `docs/reference/Display.md`'s `Graphic3d_Camera::Projection_Perspective` citation is
+genuinely correct (`Projection_Perspective` is a real value of `Graphic3d_Camera::Projection`, an
+unscoped nested enum) but was reported as a false failure because the checker's `declares_member`
+had no shape for "member is an enum VALUE," only for a declared name; fixed by adding that fifth
+shape (`_is_enum_value`) to the census script itself, proven load-bearing by
+`selftest_removal_matrix.py`.
+
+The 32 buckets below, in lane (package) order:
+
+**Range splitters (10).** A per-surface-type UV-range-parameterization helper `BRepMesh_FaceDiscret`
+(wrapped via `BRepMesh_IncrementalMesh`, documented) selects internally by the face's own surface
+type (plane/cone/cylinder/sphere/torus/NURBS/extrusion); a caller tunes the *outcome* through
+`IMeshTools_Parameters` (wrapped: deflection, angle, minSize), never picks the range-splitter class
+directly: `BRepMesh_BoundaryParamsRangeSplitter`, `BRepMesh_ConeRangeSplitter`,
+`BRepMesh_CylinderRangeSplitter`, `BRepMesh_DefaultRangeSplitter`, `BRepMesh_ExtrusionRangeSplitter`,
+`BRepMesh_NURBSRangeSplitter`, `BRepMesh_SphereRangeSplitter`, `BRepMesh_TorusRangeSplitter`,
+`BRepMesh_UVParamRangeSplitter`, `BRepMesh_UndefinedRangeSplitter`.
+
+**Delaunay triangulation data structures (13).** A light-weight internal data structure of the
+Delaunay triangulation engine `BRepMesh_Delaun` (documented) drives; a caller reaches meshing
+results through `Poly_Triangulation` (wrapped), never through the engine's own working structures:
+`BRepMesh_Circle`, `BRepMesh_CircleInspector`, `BRepMesh_CircleTool`,
+`BRepMesh_DataStructureOfDelaun`, `BRepMesh_DegreeOfFreedom`, `BRepMesh_Edge`,
+`BRepMesh_OrientedEdge`, `BRepMesh_PairOfIndex`, `BRepMesh_SelectorOfDataStructureOfDelaun`,
+`BRepMesh_Triangle`, `BRepMesh_Vertex`, `BRepMesh_VertexInspector`, `BRepMesh_VertexTool`.
+
+**Tessellation pipeline internals (15).** An internal pipeline stage `BRepMesh_IncrementalMesh`
+(wrapped) drives on a caller's behalf (classification, curve tessellation, edge/face
+discretization, model build/heal/pre-/post-process passes); none is independently constructed by
+this bridge, and none exposes a capability `IMeshTools_Parameters` doesn't already control:
+`BRepMesh_Classifier`, `BRepMesh_Context`, `BRepMesh_CurveTessellator`, `BRepMesh_EdgeDiscret`,
+`BRepMesh_EdgeParameterProvider`, `BRepMesh_EdgeTessellationExtractor`, `BRepMesh_FaceChecker`,
+`BRepMesh_GeomTool`, `BRepMesh_MeshTool`, `BRepMesh_ModelBuilder`, `BRepMesh_ModelHealer`,
+`BRepMesh_ModelPostProcessor`, `BRepMesh_ModelPreProcessor`, `BRepMesh_ShapeVisitor`,
+`BRepMesh_Triangulator`.
+
+**Mesh-algorithm selection infrastructure (13).** Algorithm-selection/factory machinery
+`BRepMesh_IncrementalMesh` (wrapped) drives internally to pick a meshing algorithm by surface type
+and complexity; `IMeshTools_Parameters` (wrapped) is the only tuning surface exposed, selecting a
+factory or algorithm class by name is not: `BRepMesh_ConstrainedBaseMeshAlgo`,
+`BRepMesh_CustomBaseMeshAlgo`, `BRepMesh_CustomDelaunayBaseMeshAlgo`,
+`BRepMesh_DelabellaBaseMeshAlgo`, `BRepMesh_DelabellaMeshAlgoFactory`,
+`BRepMesh_DelaunayBaseMeshAlgo`, `BRepMesh_DelaunayNodeInsertionMeshAlgo`,
+`BRepMesh_DiscretAlgoFactory`, `BRepMesh_DiscretFactory`, `BRepMesh_DiscretRoot`,
+`BRepMesh_IncrementalMeshFactory`, `BRepMesh_MeshAlgoFactory`, `BRepMesh_NodeInsertionMeshAlgo`.
+
+**Deprecated compatibility header (1).** File-scope `Standard_HEADER_DEPRECATED` compatibility
+header; the class it once declared is gone, superseded by `BRepMesh_IncrementalMesh` (wrapped):
+`BRepMesh_FastDiscret`.
+
+**Node-storage internals (2).**
+
+- `Poly_ArrayOfNodes`: `Poly_Triangulation`'s (wrapped) own internal node-storage array
+  (`NCollection_AliasedArray`-based, single/double precision configurable at construction); a
+  caller reads nodes through `Poly_Triangulation::Node`/`OCCTPolyTriangulationNode`, never
+  constructs this array directly.
+- `Poly_ArrayOfUVNodes`: the 2D sibling of `Poly_ArrayOfNodes`, `Poly_Triangulation`'s own internal
+  UV-node storage array; same reason.
+
+**Coherent-mesh internals (3).** An internal link/node/pointer primitive of
+`Poly_CoherentTriangulation` (wrapped), the mesh-editing utility class `MeshTypes.swift` constructs
+via `OCCTCoherentTriangulationCreate*`; not separately constructed: `Poly_CoherentLink`,
+`Poly_CoherentNode`, `Poly_CoherentTriPtr`.
+
+**Deprecated collection aliases (Poly_) (2).**
+
+- `Poly_HArray1OfTriangle`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0, use `NCollection_Array1<Poly_Triangle>` directly.
+- `Poly_ListOfTriangulation`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0, use `NCollection_List<occ::handle<Poly_Triangulation>>` directly.
+
+**Topology and tagging utilities (2).**
+
+- `Poly_MakeLoops`: a topology-reconstruction utility that assembles closed loops from a set of
+  disconnected link indices (e.g. for cross-section/cutting-plane polygon assembly); no call site in
+  this bridge builds one, and no Swift API exposes raw link-index loop assembly.
+- `Poly_MeshPurpose`: a bit-flag typedef (`typedef unsigned int`) tagging a stored triangulation's
+  purpose (calculation/presentation/LOD/active/loaded); `Poly_Triangulation`'s own multi-purpose-
+  triangulation storage (added the same OCCT release) is not exposed, this bridge reads a shape's
+  single active triangulation only.
+
+**Real capability gap, recorded as such (1).** Not curated away, a genuine narrow gap per #983's
+own precedent for how a lane audit should treat one when it finds one: `Poly_TriangulationParameters`
+records the deflection/angle/minSize a triangulation was built with (constructor
+`Poly_TriangulationParameters(deflection, angle, minSize)`, confirmed at the pinned header), so a
+caller could ask an already-meshed shape "what tolerance produced this mesh" instead of tracking it
+separately. `Poly_Triangulation` itself has a matching `Parameters()`/`SetParameters()` pair (added
+the same OCCT release as `Poly_MeshPurpose` above) that this bridge never reads or writes; every
+meshing entry point (`OCCTShapeCreateMesh`, `OCCTShapeCreateMeshWithParams`,
+`OCCTMeshFaceIterCreate`'s RWMesh path) takes deflection/angle as bare doubles and returns
+nodes/triangles with no way to recover them from the result later. Narrow (nothing consumes it once
+meshing is done) but real; not scheduled for wrapping here, #814 is a coverage audit.
+
+**IMeshData_ interface layer (13).** The abstract discrete-model data interface `IMeshData_`'s
+package defines (curve/edge/face/wire/model, each mostly pure-virtual per the pinned header);
+`BRepMesh_`'s own concrete classes (wrapped via `BRepMesh_IncrementalMesh`) implement these
+interfaces internally while building a mesh, and once built, a caller reads the result through
+`Poly_Triangulation` (wrapped), never through this intermediate interface layer: `IMeshData_Curve`,
+`IMeshData_Edge`, `IMeshData_Face`, `IMeshData_Model`, `IMeshData_PCurve`,
+`IMeshData_ParametersList`, `IMeshData_ParametersListArrayAdaptor`, `IMeshData_Shape`,
+`IMeshData_Status`, `IMeshData_StatusOwner`, `IMeshData_TessellatedShape`, `IMeshData_Types`,
+`IMeshData_Wire`.
+
+**IMeshTools_ interface layer (10).** The abstract algorithm/factory/context interface
+`IMeshTools_`'s package defines, one level above `IMeshData_`'s data interfaces;
+`BRepMesh_Context`/`BRepMesh_ModelBuilder`/`BRepMesh_`'s own mesh-algo classes (all curated above)
+implement these interfaces, and a caller configures the whole pipeline through
+`IMeshTools_Parameters` (wrapped) alone, never through this interface layer directly:
+`IMeshTools_Context`, `IMeshTools_CurveTessellator`, `IMeshTools_MeshAlgo`,
+`IMeshTools_MeshAlgoFactory`, `IMeshTools_MeshAlgoType`, `IMeshTools_MeshBuilder`,
+`IMeshTools_ModelAlgo`, `IMeshTools_ModelBuilder`, `IMeshTools_ShapeExplorer`,
+`IMeshTools_ShapeVisitor`.
+
+**AIS live-viewer animation framework (6).** OCCT's own `AIS_InteractiveContext`-driven
+fly-through/object animation framework, operating on a live `Graphic3d_Camera` through an
+`AIS_InteractiveContext` this bridge never builds (see the OpenGl-viewer-pipeline entry below for
+why); this bridge's Metal renderer drives any animation from the Swift/host side directly:
+`AIS_Animation`, `AIS_AnimationAxisRotation`, `AIS_AnimationCamera`, `AIS_AnimationObject`,
+`AIS_AnimationTimer`, `AIS_BaseAnimationObject`.
+
+**AIS live-viewer selection filters (6).** A `SelectMgr_Filter` subclass for OCCT's own
+`AIS_InteractiveContext`-level live-viewer selection filtering (`SelectMgr_` itself is out of this
+lane's scope per #814's own text, Phase 6's/#820); this bridge does shape/edge/vertex-type
+discrimination directly through `StdSelect_BRepSelectionTool`/`StdSelect_BRepOwner` (both wrapped)
+into `Selection.swift`'s own model (#809), not through an AIS-level filter object:
+`AIS_AttributeFilter`, `AIS_BadEdgeFilter`, `AIS_C0RegularityFilter`, `AIS_ExclusionFilter`,
+`AIS_SignatureFilter`, `AIS_TypeFilter`.
+
+**AIS_InteractiveObject subclasses (16).** A concrete `AIS_InteractiveObject` subclass for OCCT's
+own live 3D viewer, requiring an `AIS_InteractiveContext` plus a `Graphic3d_GraphicDriver`-backed
+view this bridge never builds; the sole `AIS_InteractiveObject` subclass this bridge does
+construct is `AIS_TextLabel` (wrapped, via `Annotation.swift`), used only as a lightweight
+geometry/attribute carrier read into Metal, never displayed through a live `AIS_InteractiveContext`:
+`AIS_CameraFrustum`, `AIS_Circle`, `AIS_ColorScale`, `AIS_ColoredDrawer`, `AIS_ConnectedInteractive`,
+`AIS_LightSource`, `AIS_Line`, `AIS_MediaPlayer`, `AIS_MultipleConnectedInteractive`,
+`AIS_PlaneTrihedron`, `AIS_Point`, `AIS_RubberBand`, `AIS_TexturedShape`, `AIS_Triangulation`,
+`AIS_ViewCube`, `AIS_XRTrackedDevice`.
+
+**Deprecated collection aliases (AIS_) (5).**
+
+- `AIS_DataMapOfIOStatus`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0, use `NCollection_DataMap` directly.
+- `AIS_DataMapOfShapeDrawer`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+- `AIS_ListOfInteractive`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0, use `NCollection_List` directly.
+- `AIS_NArray1OfEntityOwner`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+- `AIS_NListOfEntityOwner`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+
+**AIS mode/status enums, unread (18).** A mode/status enum for the unused
+`AIS_InteractiveContext`-level interaction/selection/animation/manipulator pipeline above; nothing
+in this tree reads it by value or by name: `AIS_DisplayMode`, `AIS_DisplayStatus`, `AIS_DragAction`,
+`AIS_KindOfInteractive`, `AIS_ManipulatorMode`, `AIS_MouseGesture`, `AIS_NavigationMode`,
+`AIS_RotationMode`, `AIS_SelectStatus`, `AIS_SelectionModesConcurrency`, `AIS_SelectionScheme`,
+`AIS_StatusOfDetection`, `AIS_StatusOfPick`, `AIS_TrihedronSelectionMode`, `AIS_TypeOfAttribute`,
+`AIS_TypeOfAxis`, `AIS_TypeOfIso`, `AIS_TypeOfPlane`.
+
+**AIS live-viewer infrastructure (6).**
+
+- `AIS_GlobalStatus`: per-object bookkeeping (display mode, active selection modes, highlight/hide
+  state) an `AIS_InteractiveContext` keeps for each `AIS_InteractiveObject` it manages; no context,
+  no bookkeeping to read.
+- `AIS_GraphicTool`: a static-helper class extracting `Graphic3d_` aspect values from an
+  already-built `AIS_InteractiveObject`/`Graphic3d_Group`; nothing to extract without either.
+- `AIS_Selection`: the list of selected owners `AIS_InteractiveContext`-level selection keeps; this
+  bridge's `Selection.swift` (#809) implements its own selection state directly over `StdSelect_`'s
+  picking primitives, not through this class.
+- `AIS_ViewController`: auxiliary GUI/rendering-thread event-handling structure for OCCT's own
+  windowing integration (`Aspect_WindowInputListener`); this project's host apps drive input through
+  their own platform event loop into the Swift API directly.
+- `AIS_ViewInputBuffer`: the event-queue structure `AIS_ViewController` (above) buffers into; same
+  reason.
+- `AIS_WalkDelta`: per-frame walking/movement delta values `AIS_ViewController` computes for
+  first-person navigation; same unused pipeline.
+
+**AIS selection entity owners (2).** A `SelectMgr_EntityOwner` subclass tying one
+`AIS_InteractiveObject` subclass (`AIS_Manipulator`/`AIS_Trihedron`, both curated above, neither
+constructed) to the same unused `AIS_InteractiveContext` selection pipeline as the filters above:
+`AIS_ManipulatorOwner`, `AIS_TrihedronOwner`.
+
+**Graphic3d mode/format/type enums, unread (41).** A mode/format/type enum for the same unused
+OpenGl-driver pipeline (see the next entry); nothing in this tree reads it by value or by name:
+`Graphic3d_AlphaMode`, `Graphic3d_BufferType`, `Graphic3d_CappingFlags`, `Graphic3d_CubeMapSide`,
+`Graphic3d_DiagnosticInfo`, `Graphic3d_DisplayPriority`, `Graphic3d_FrameStatsCounter`,
+`Graphic3d_FrameStatsTimer`, `Graphic3d_GroupAspect`, `Graphic3d_HorizontalTextAlignment`,
+`Graphic3d_LevelOfTextureAnisotropy`, `Graphic3d_NameOfTexture1D`, `Graphic3d_NameOfTexture2D`,
+`Graphic3d_NameOfTextureEnv`, `Graphic3d_NameOfTexturePlane`, `Graphic3d_RenderTransparentMethod`,
+`Graphic3d_RenderingMode`, `Graphic3d_ShaderFlags`, `Graphic3d_StereoMode`, `Graphic3d_TextPath`,
+`Graphic3d_TextureSetBits`, `Graphic3d_TextureUnit`, `Graphic3d_ToneMappingMethod`,
+`Graphic3d_TransModeFlags`, `Graphic3d_TypeOfAnswer`, `Graphic3d_TypeOfBackfacingModel`,
+`Graphic3d_TypeOfBackground`, `Graphic3d_TypeOfConnection`, `Graphic3d_TypeOfLightSource`,
+`Graphic3d_TypeOfLimit`, `Graphic3d_TypeOfMaterial`, `Graphic3d_TypeOfPrimitiveArray`,
+`Graphic3d_TypeOfReflection`, `Graphic3d_TypeOfShaderObject`, `Graphic3d_TypeOfShadingModel`,
+`Graphic3d_TypeOfStructure`, `Graphic3d_TypeOfTexture`, `Graphic3d_TypeOfTextureFilter`,
+`Graphic3d_TypeOfTextureMode`, `Graphic3d_TypeOfVisualization`, `Graphic3d_VerticalTextAlignment`.
+
+**Graphic3d value-type aliases (4).**
+
+- `Graphic3d_ArrayFlags`: a bit-flag alias (`using ... = unsigned int`) for
+  `Graphic3d_ArrayOfPrimitives`' (curated below, unused) own vertex-attribute flags.
+- `Graphic3d_BndBox4d`: a homogeneous (4-component) bounding-box alias sibling of the wrapped
+  `Graphic3d_BndBox3d`; this bridge reads only the 3-component form.
+- `Graphic3d_BndBox4f`: single-precision sibling of `Graphic3d_BndBox4d`; same reason.
+- `Graphic3d_TransformUtils`: a bare, all-static matrix/transform-utility header (no instance type
+  of its own name) serving the OpenGl-driver pipeline's own matrix math; this bridge does its own
+  transform math over `gp_Trsf`/SIMD types.
+
+**Graphic3d OpenGl-based live-viewer pipeline (72).** Part of OCCT's own OpenGl-based
+`Graphic3d_GraphicDriver` live-viewer pipeline (scene graph: structures/groups/layers/culling; GPU
+buffers; fixed-function vertex primitive arrays and aspects; the texture and shader subsystems;
+camera tiling and lighting; frame statistics; text layout). This bridge implements a custom Metal
+renderer instead, the same fact #812's own entry above establishes for `Prs3d_` (0 classes reached)
+and #982's for `TPrsStd_`: `DisplayDrawer.swift` wraps only `Prs3d_Drawer`'s tessellation-quality
+settings, never a `Prs3d_Presentation` these classes would draw into; `PresentationMesh.swift`
+builds Metal vertex buffers directly from `Poly_Triangulation` mesh data (`BRepMesh_`, wrapped)
+rather than through any `Graphic3d_ArrayOfPrimitives`/`Group`/`Structure`; and
+`Graphic3d_GraphicDriver` itself is only ever discussed in `docs/visualization-research.md` as a
+future direction ("No standard OCCT widgets ... none of these exist as ready-made objects"), never
+instantiated, confirmed: zero call sites for `GraphicDriver`, `CView`, `Structure`, `Group`, or any
+class in this bucket across `Sources/OCCTBridge/`. The 13 value types this bridge does read directly
+(`BndBox3d`, `Camera`, `ClipPlane`, `Mat4`, `MaterialAspect`, `NameOfMaterial`, `PBRMaterial`,
+`PolygonOffset`, `Vec3`, `ZLayerSettings`, plus `GraphicDriver`/`ZLayerId` documented as research)
+are read as plain data into `DisplayDrawer`'s own Metal-facing structures, never through this
+pipeline's own structure/group/buffer machinery: `Graphic3d_ArrayOfPoints`,
+`Graphic3d_ArrayOfPolygons`, `Graphic3d_ArrayOfPolylines`, `Graphic3d_ArrayOfPrimitives`,
+`Graphic3d_ArrayOfQuadrangleStrips`, `Graphic3d_ArrayOfQuadrangles`, `Graphic3d_ArrayOfSegments`,
+`Graphic3d_ArrayOfTriangleFans`, `Graphic3d_ArrayOfTriangleStrips`, `Graphic3d_ArrayOfTriangles`,
+`Graphic3d_AspectFillArea3d`, `Graphic3d_AspectLine3d`, `Graphic3d_AspectMarker3d`,
+`Graphic3d_AspectText3d`, `Graphic3d_Aspects`, `Graphic3d_AttribBuffer`, `Graphic3d_BSDF`,
+`Graphic3d_BoundBuffer`, `Graphic3d_Buffer`, `Graphic3d_BufferRange`, `Graphic3d_BvhCStructureSet`,
+`Graphic3d_BvhCStructureSetTrsfPers`, `Graphic3d_CLight`, `Graphic3d_CStructure`, `Graphic3d_CView`,
+`Graphic3d_CameraTile`, `Graphic3d_CubeMap`, `Graphic3d_CubeMapOrder`, `Graphic3d_CubeMapPacked`,
+`Graphic3d_CubeMapSeparate`, `Graphic3d_CullingTool`, `Graphic3d_DataStructureManager`,
+`Graphic3d_Flipper`, `Graphic3d_FrameStats`, `Graphic3d_FrameStatsData`,
+`Graphic3d_GraduatedTrihedron`, `Graphic3d_GraphicDriverFactory`, `Graphic3d_Group`,
+`Graphic3d_HatchStyle`, `Graphic3d_IndexBuffer`, `Graphic3d_Layer`, `Graphic3d_LightSet`,
+`Graphic3d_MarkerImage`, `Graphic3d_MediaTexture`, `Graphic3d_MediaTextureSet`,
+`Graphic3d_MutableIndexBuffer`, `Graphic3d_PresentationAttributes`, `Graphic3d_RenderingParams`,
+`Graphic3d_SequenceOfHClipPlane`, `Graphic3d_ShaderAttribute`, `Graphic3d_ShaderManager`,
+`Graphic3d_ShaderObject`, `Graphic3d_ShaderProgram`, `Graphic3d_ShaderVariable`,
+`Graphic3d_Structure`, `Graphic3d_StructureManager`, `Graphic3d_Text`, `Graphic3d_Texture1D`,
+`Graphic3d_Texture1Dmanual`, `Graphic3d_Texture1Dsegment`, `Graphic3d_Texture2Dplane`,
+`Graphic3d_Texture3D`, `Graphic3d_TextureEnv`, `Graphic3d_TextureMap`, `Graphic3d_TextureParams`,
+`Graphic3d_TextureRoot`, `Graphic3d_TextureSet`, `Graphic3d_TransformPers`,
+`Graphic3d_TransformPersScaledAbove`, `Graphic3d_Vertex`, `Graphic3d_ViewAffinity`,
+`Graphic3d_WorldViewProjState`.
+
+**Graphic3d exception typedefs (4).** A `DEFINE_STANDARD_EXCEPTION`-generated exception type raised
+internally by the OpenGl-driver scene-graph classes just above; this bridge's own try/catch boundary
+converts every OCCT exception to a Swift-level failure without inspecting its concrete type, and the
+classes that would throw this one are themselves never constructed: `Graphic3d_GroupDefinitionError`,
+`Graphic3d_MaterialDefinitionError`, `Graphic3d_PriorityDefinitionError`,
+`Graphic3d_StructureDefinitionError`.
+
+**Deprecated collection aliases (Graphic3d_) (8).**
+
+- `Graphic3d_MapIteratorOfMapOfStructure`: file-scope `Standard_HEADER_DEPRECATED` collection alias,
+  deprecated since OCCT 8.0.0.
+- `Graphic3d_MapOfObject`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+- `Graphic3d_Mat4d`: file-scope `Standard_HEADER_DEPRECATED` alias (`using ... =
+  NCollection_Mat4<double>`); the wrapped `Graphic3d_Mat4` (float) is the one this bridge reads,
+  itself also deprecated at this pin but still the one `OCCTBridge_Visualization.mm` constructs.
+- `Graphic3d_NMapOfTransient`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+- `Graphic3d_SequenceOfGroup`: file-scope `Standard_HEADER_DEPRECATED` collection alias, deprecated
+  since OCCT 8.0.0.
+- `Graphic3d_SequenceOfStructure`: file-scope `Standard_HEADER_DEPRECATED` collection alias,
+  deprecated since OCCT 8.0.0.
+- `Graphic3d_Vec2`: file-scope `Standard_HEADER_DEPRECATED` alias (`using ... =
+  NCollection_Vec2<double>`); nothing in this bridge constructs one (2D vectors go through
+  `gp_Pnt2d`/`gp_Vec2d` or bare doubles).
+- `Graphic3d_Vec4`: file-scope `Standard_HEADER_DEPRECATED` alias; nothing in this bridge constructs
+  one.
+
+**Image misc (3).**
+
+- `Image_Color`: an alternative pixel-color value type `Image_PixMap` could use; this bridge's
+  `OCCTImageGetPixel`/`SetPixel` go through `Quantity_ColorRGBA` instead (`PixelColor`/
+  `SetPixelColor`'s actual parameter type, confirmed at the call site), never `Image_Color`.
+- `Image_Diff`: OCCT's own pixel-by-pixel image-comparison tool, used internally by OCCT's Draw
+  test harness for image regression testing; no image-diff capability is exposed by this bridge.
+- `Image_VideoRecorder`: an FFmpeg-based tool for capturing a live OCCT 3D view (`Graphic3d_CView`)
+  to video; no live OCCT view exists in this bridge's Metal-renderer architecture to capture.
+
+**Image compressed-texture pipeline (3).** The compressed-texture (DXT/BC/DDS) pipeline for the
+unused `Graphic3d_` OpenGl texture pipeline; this bridge's `PixMap` wraps only the raw, uncompressed
+`Image_AlienPixMap`/`Image_PixMap` path (file load/save via `OCCTImageLoad`/`OCCTImageSave`, get/set
+pixel via `Quantity_ColorRGBA`): `Image_CompressedFormat`, `Image_CompressedPixMap`,
+`Image_DDSParser`.
+
+**Image_PixMap storage internals (2).**
+
+- `Image_PixMapData`: `Image_PixMap`'s (wrapped) own internal pixel-buffer base class
+  (`NCollection_Buffer`-derived storage); a caller reads/writes pixels through
+  `OCCTImageGetPixel`/`SetPixel`, never this storage layer directly.
+- `Image_PixMapTypedData`: the typed sibling of `Image_PixMapData`; same reason.
+
+**Image live-viewer texture support (2).**
+
+- `Image_SupportedFormats`: a texture-format-capability query structure for the unused `Graphic3d_`
+  texture pipeline.
+- `Image_Texture`: a texture-image descriptor (path + byte offset) for the same unused `Graphic3d_`
+  texture pipeline.
+
+**StdPrs_ presentation-builder family (28).** OCCT's own default presentation-builder toolkit, the
+reference implementation `Prs3d_Presentation`/`AIS_InteractiveObject::Compute()` calls to build
+wireframe, shaded, isoline, and boundary-box presentations of shapes/curves/surfaces/planes/points
+for the live OCCT viewer (`StdPrs_ShadedShape`, `StdPrs_WFShape`, `StdPrs_Curve`, `StdPrs_Isolines`,
+`StdPrs_Plane`, `StdPrs_HLRShape`/`HLRPolyShape` and the rest of the `Prs3d_Root`-derived siblings
+all take a `Handle(Prs3d_Presentation)` and add graphic groups to it). Confirmed, not assumed from
+the issue text: nothing under `Sources/OCCTBridge/` or `docs/` named `StdPrs` at all before this
+PR, so all 28 are the largest single block of unrecorded omission in the lane, exactly as #814's own
+body says. This bridge builds a custom Metal renderer instead, the same fact established for
+`Graphic3d_`'s OpenGl-viewer-pipeline entry above and #812's `Prs3d_` finding (0 classes reached
+there too): `DisplayDrawer.swift` wraps only `Prs3d_Drawer`'s tessellation-quality settings, never a
+`Prs3d_Presentation` object any `StdPrs_` builder would draw into, and `PresentationMesh.swift`
+builds Metal vertex buffers directly from `Poly_Triangulation` mesh data rather than through any
+`StdPrs_` builder. **One exception worth naming rather than folding in silently**:
+`StdPrs_BRepFont`/`StdPrs_BRepTextBuilder` are not presentation-pipeline glue at all, they convert a
+font glyph to real B-Rep face geometry (extrudable text-as-solid outlines), a capability with no
+`Prs3d_Presentation` dependency whatsoever. Nothing in this bridge builds text as geometry
+(`AIS_TextLabel`, this lane's other text-related wrap, is a flat label position/string/height
+carrier read into Metal, not a font-to-BRep path, confirmed at `OCCTBridge_AIS.mm`'s `new
+AIS_TextLabel()` construction, no font/glyph handling anywhere near it), so this is a real, if
+narrow, additional gap distinct from the rest of the family, recorded by name here rather than
+anonymously: `StdPrs_BRepFont`, `StdPrs_BRepTextBuilder`, `StdPrs_BndBox`, `StdPrs_Curve`,
+`StdPrs_DeflectionCurve`, `StdPrs_HLRPolyShape`, `StdPrs_HLRShape`, `StdPrs_HLRShapeI`,
+`StdPrs_HLRToolShape`, `StdPrs_Isolines`, `StdPrs_Plane`, `StdPrs_Point`, `StdPrs_PoleCurve`,
+`StdPrs_ShadedShape`, `StdPrs_ShadedSurface`, `StdPrs_ShapeTool`, `StdPrs_ToolPoint`,
+`StdPrs_ToolRFace`, `StdPrs_ToolTriangulatedShape`, `StdPrs_ToolVertex`, `StdPrs_Vertex`,
+`StdPrs_Volume`, `StdPrs_WFDeflectionRestrictedFace`, `StdPrs_WFDeflectionSurface`,
+`StdPrs_WFPoleSurface`, `StdPrs_WFRestrictedFace`, `StdPrs_WFShape`, `StdPrs_WFSurface`.
+
+**StdSelect package utility (1).** Bare package header, an all-static-method class
+(`DEFINE_STANDARD_ALLOC`) providing `StdSelect_BRepSelectionTool`'s own construction helpers; no
+instance, nothing a caller constructs directly: `StdSelect`.
+
+**StdSelect live-viewer filters (3).** A `SelectMgr_Filter` subclass for OCCT's own live-viewer
+selection filtering by edge/face type (`SelectMgr_` itself is out of this lane's scope per #814's
+own text); this bridge discriminates shape/edge/face type directly in Swift over
+`StdSelect_BRepOwner`'s own owner-type accessor (wrapped), not through a filter object:
+`StdSelect_EdgeFilter`, `StdSelect_FaceFilter`, `StdSelect_ShapeTypeFilter`.
+
+**StdSelect misc (5).**
+
+- `StdSelect_Shape`: a `PrsMgr_PresentableObject` display proxy `StdSelect_BRepOwner`'s own
+  sensitive-primitive presentation uses within a live AIS/SelectMgr viewer (per its own header:
+  "Presentable shape only for purpose of display for BRepOwner"); this bridge's picking never
+  displays through a live `PrsMgr`-managed presentation.
+- `StdSelect_TypeOfEdge`: mode enum for `StdSelect_EdgeFilter` (curated above, unused).
+- `StdSelect_TypeOfFace`: mode enum for `StdSelect_FaceFilter` (curated above, unused).
+- `StdSelect_TypeOfSelectionImage`: mode enum for OCCT's own selection-buffer visualization
+  debugging aid; no such debug view exists in this bridge.
+- `StdSelect_ViewerSelector3d`: a `using StdSelect_ViewerSelector3d = SelectMgr_ViewerSelector`
+  alias; `docs/reference/Selection.md`'s own description confirms this bridge instead subclasses
+  `SelectMgr_ViewerSelector` directly as its own `OCCTHeadlessSelector` ("a subclass of OCCT's
+  `SelectMgr_ViewerSelector`"), never through this alias. Named here only to explain why the alias
+  is unused; `SelectMgr_ViewerSelector` itself is out of this lane's scope per #814's own text.
+
 ### GD&T dimension accessors left unwrapped (#1004)
 
 #1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what
