@@ -2147,6 +2147,76 @@ struct MeshAndExportProgressTests {
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
 
+    // MARK: - #1231: writeSTEP(progress:)/writeIGES(progress:) shared dispatch
+
+    // Neither progress-taking overload had invalid-shape coverage before this issue: both
+    // reimplemented the identical validate/dispatch/translate body, differing only in the
+    // bridge symbol and the format name embedded in the failure message. Consolidating them
+    // into one shared helper, parametrized on both, is exactly the kind of change where a
+    // copy-paste mistake (the wrong bridge call, or the wrong format name, wired to the wrong
+    // overload) would be invisible to the existing round-trip-only tests above.
+
+    @Test("Exporter.writeSTEP(progress:) rejects an invalid shape, matching every other STEP overload")
+    func exportSTEPWithProgressInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("export_step_progress_invalid_\(UUID()).step")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            try Exporter.writeSTEP(shape: invalid, to: url, progress: nil as ImportProgress?)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        }
+    }
+
+    @Test("Exporter.writeIGES(progress:) rejects an invalid shape, matching every other IGES overload")
+    func exportIGESWithProgressInvalidShape() throws {
+        let invalid = invalidBowtieShape()
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("export_iges_progress_invalid_\(UUID()).iges")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        do {
+            try Exporter.writeIGES(shape: invalid, to: url, progress: nil as ImportProgress?)
+            Issue.record("Expected ExportError.invalidShape to be thrown")
+        } catch Exporter.ExportError.invalidShape {
+            // expected
+        }
+    }
+
+    @Test(
+        "writeSTEP(progress:) and writeIGES(progress:) each dispatch to their OWN bridge call, not the other's"
+    )
+    func exportProgressOverloadsDispatchToCorrectFormat() throws {
+        // #1231's shared `writeWithProgress` helper takes the bridge call and format name as
+        // parameters. A copy-paste mistake wiring STEP's call site to IGES's bridge call (or
+        // vice versa) would be invisible to a plain "does a file get written" round-trip test,
+        // since both bridge calls succeed and write a real file -- just the wrong format's
+        // content. Check the actual bytes instead.
+        guard let box = Shape.box(width: 4, height: 4, depth: 4) else {
+            Issue.record("box construction failed")
+            return
+        }
+
+        let stepURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("export_step_progress_content_\(UUID()).step")
+        defer { try? FileManager.default.removeItem(at: stepURL) }
+        try Exporter.writeSTEP(shape: box, to: stepURL, progress: nil as ImportProgress?)
+        let stepContent = try String(contentsOf: stepURL, encoding: .ascii)
+        #expect(stepContent.contains("ISO-10303"), "STEP output should carry the ISO-10303 header")
+
+        let igesURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("export_iges_progress_content_\(UUID()).iges")
+        defer { try? FileManager.default.removeItem(at: igesURL) }
+        try Exporter.writeIGES(shape: box, to: igesURL, progress: nil as ImportProgress?)
+        let igesContent = try String(contentsOf: igesURL, encoding: .ascii)
+        #expect(
+            !igesContent.contains("ISO-10303"),
+            "IGES output should never carry STEP's ISO-10303 header")
+    }
+
     @Test("Document.writeSTEP(to:progress:) round-trips")
     func documentWriteSTEPProgress() throws {
         guard let doc = Document.create() else {

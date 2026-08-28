@@ -235,17 +235,15 @@ public enum Exporter {
         to url: URL,
         progress: ImportProgress?
     ) throws {
-        try validateExportInputs(shape: shape, url: url)
-        let path = url.path
-
-        var cancelled: Bool = false
-        let success: Bool = withImportProgress(progress) { ctx in
-            OCCTExportSTEPProgress(shape.handle, path, ctx, &cancelled)
-        }
-        if cancelled { throw ExportError.cancelled }
-        if !success {
-            throw ExportError.exportFailed("STEP export to \(url.lastPathComponent) failed")
-        }
+        try writeWithProgress(
+            shape: shape,
+            to: url,
+            progress: progress,
+            formatName: "STEP",
+            bridgeCall: { handle, path, ctx, cancelled in
+                OCCTExportSTEPProgress(handle, path, ctx, &cancelled)
+            }
+        )
     }
 
     /// Export a shape to IGES with progress + cancellation.
@@ -254,16 +252,41 @@ public enum Exporter {
         to url: URL,
         progress: ImportProgress?
     ) throws {
+        try writeWithProgress(
+            shape: shape,
+            to: url,
+            progress: progress,
+            formatName: "IGES",
+            bridgeCall: { handle, path, ctx, cancelled in
+                OCCTExportIGESProgress(handle, path, ctx, &cancelled)
+            }
+        )
+    }
+
+    /// Shared dispatch for progress-enabled exporters.
+    ///
+    /// Validates inputs, invokes the OCCT bridge with an optional `ImportProgress` callback,
+    /// then translates the `cancelled` flag and `Bool` result into the standard three
+    /// `ExportError` cases. The two public overloads (`writeSTEP` / `writeIGES` with progress)
+    /// only differ in the bridge symbol and the format name embedded in the failure message.
+    private static func writeWithProgress(
+        shape: Shape,
+        to url: URL,
+        progress: ImportProgress?,
+        formatName: String,
+        bridgeCall: (OCCTShapeRef, String, UnsafePointer<OCCTImportProgress>?, inout Bool) -> Bool
+    ) throws {
         try validateExportInputs(shape: shape, url: url)
         let path = url.path
 
         var cancelled: Bool = false
         let success: Bool = withImportProgress(progress) { ctx in
-            OCCTExportIGESProgress(shape.handle, path, ctx, &cancelled)
+            bridgeCall(shape.handle, path, ctx, &cancelled)
         }
         if cancelled { throw ExportError.cancelled }
         if !success {
-            throw ExportError.exportFailed("IGES export to \(url.lastPathComponent) failed")
+            throw ExportError.exportFailed(
+                "\(formatName) export to \(url.lastPathComponent) failed")
         }
     }
 
