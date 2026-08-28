@@ -19,9 +19,13 @@ struct Issue979SubShapeIndexIdentity {
     // MARK: - Fixtures
 
     /// A box cut into two solids that share the cut face: 12 face occurrences over 11 distinct
-    /// faces, and the duplicate is not last. #541's own fixture, where a shifted array and a
-    /// correct one are actually distinguishable.
-    static func splitBoxCompound() -> Shape? {
+    /// faces, and the duplicate is not last, where a shifted array and a correct one are actually
+    /// distinguishable. Named `planeSplitBoxCompound` (not `splitBoxCompound`) because
+    /// `Issue614FaceOrientationTests.splitBoxCompound()` is a different fixture under the name
+    /// this file used to share with it (#1255): that one is a 20×10×10 box split by a rotated
+    /// knife *face* via `split(by:)`, this one a 10×10×10 box split by the z=4 *plane* via
+    /// `split(atPlane:normal:)`.
+    static func planeSplitBoxCompound() -> Shape? {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))
         else { return nil }
@@ -46,7 +50,7 @@ struct Issue979SubShapeIndexIdentity {
         if let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10) {
             shapes.append(("coneToApex", cone))
         }
-        if let split = splitBoxCompound() { shapes.append(("splitBoxCompound", split)) }
+        if let split = planeSplitBoxCompound() { shapes.append(("planeSplitBoxCompound", split)) }
         if let empty = Shape.compound([]) { shapes.append(("emptyCompound", empty)) }
         return shapes
     }
@@ -175,7 +179,7 @@ struct Issue979SubShapeIndexIdentity {
 
     @Test("Every array position addresses the sub-shape its ordinal names")
     func everyArrayPositionAddressesItsOwnSubShape() {
-        guard let split = Self.splitBoxCompound() else {
+        guard let split = Self.planeSplitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -208,7 +212,7 @@ struct Issue979SubShapeIndexIdentity {
 
     @Test("orientedFaces() returns every occurrence, so a position is a whole occurrence number")
     func orientedFacesKeepsEveryOccurrence() {
-        guard let split = Self.splitBoxCompound() else {
+        guard let split = Self.planeSplitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
