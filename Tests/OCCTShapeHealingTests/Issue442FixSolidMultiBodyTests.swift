@@ -334,6 +334,12 @@ struct Issue442FixSolidMultiBody {
         // Rejected: maps at every depth, so healthy output reports one shell per solid.
         #expect(healed.subShapeCount(ofType: .shell) == 2)
 
+        // `twoBoxes()` is already two valid, disjoint solids compounded together, so every
+        // count above would read identically if fixSolid() did nothing at all to this input.
+        // The volume check is what actually proves it ran, matching fixSolidMultiBody's own
+        // idiom on the same fixture (#764).
+        expectVolume(healed, 2000.0, "fixSolid(two-box compound, documented check)")
+
         // Single-body input returns the body itself, so shapeType answers it directly.
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let single = box.fixSolid()
