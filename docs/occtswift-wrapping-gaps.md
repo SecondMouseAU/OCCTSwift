@@ -787,6 +787,242 @@ same doc also attributed `DriverTable.initStandard()` to `TPrsStd_DriverTable::G
 the six driver classes named above and never touches `TPrsStd_AISPresentation` at all, the textbook
 shape `census-doc-occt-attribution.py --lane` is built to catch, and did.
 
+### OCAF persistence and format drivers lane, family-level (#983)
+
+#983 is #807's Pass 3c: the storage/retrieval drivers, persistent object model, schema/stream
+layer and plugin loader underneath the OCAF document API, one driver package per attribute family
+per format. The lane is **38 packages, 342 headers/classes** (already derived and committed by
+#973's `Scripts/repro/973-ocaf-package-partition/partition_census.py --pass 983`, consumed rather
+than re-derived here): `BinDrivers_`, `BinLDrivers_`, `BinMDF_`, `BinMDataStd_`, `BinMDataXtd_`,
+`BinMDocStd_`, `BinMFunction_`, `BinMNaming_`, `BinObjMgt_`, `BinTObjDrivers_`, `BinMXCAFDoc_`,
+`BinXCAFDrivers_`, `XmlDrivers_`, `XmlLDrivers_`, `XmlMDF_`, `XmlMDataStd_`, `XmlMDataXtd_`,
+`XmlMDocStd_`, `XmlMFunction_`, `XmlMNaming_`, `XmlObjMgt_`, `XmlTObjDrivers_`, `XmlMXCAFDoc_`,
+`XmlXCAFDrivers_`, `StdDrivers_`, `StdLDrivers_`, `PCDM_`, `Storage_`, `StdStorage_`, `StdObjMgt_`,
+`StdObject_`, `StdPersistent_`, `StdLPersistent_`, `ShapePersistent_`, `FSD_`, `LDOM_`, `Plugin_`,
+`UTL_`.
+
+**This lane's own shape is different from #811's and #812's, deliberately.** #983's own body says
+so: "expect this to be answered once for the whole driver family rather than per class, and expect
+that to be the correct answer: an attribute driver is not a callable capability, it is what makes
+an attribute survive a round trip." Measured against that prediction: **9 of the 342 are wrapped or
+documented** (the eight classes the bridge actually names -- `BinDrivers`, `BinLDrivers`,
+`XmlDrivers`, `XmlLDrivers`, `BinXCAFDrivers`, `XmlXCAFDrivers`, `PCDM_ReaderStatus`,
+`PCDM_StoreStatus` -- plus the bare `PCDM` package header, incidentally named by the
+"PCDM Status Enums" section heading in `docs/reference/Document-Persistence-IO.md`), and every one
+of the other 333 is machinery those eight plus the six `OCCTDocumentDefineFormat*` functions and
+the `OCCTDocumentSaveOCAF*`/`OCCTDocumentLoadOCAF` entry points configure, curated below in
+thirteen family-level buckets rather than 333 individual reasons. The census is committed and
+re-runnable at
+[`Scripts/repro/983-ocaf-persistence-drivers/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/983-ocaf-persistence-drivers);
+it exits 1 if any class below loses its reason here.
+
+**Driver-table subclasses (18).** The concrete `PCDM_StorageDriver`/`PCDM_Reader` subclass each
+already-wrapped format's own `DefineFormat` registers with the target application; reached on every
+save/load without ever being constructed by name in the bridge, one level down from the
+package-utility class that names it: `BinDrivers_DocumentRetrievalDriver`,
+`BinDrivers_DocumentStorageDriver`, `BinDrivers_Marker`, `BinLDrivers_DocumentRetrievalDriver`,
+`BinLDrivers_DocumentSection`, `BinLDrivers_DocumentStorageDriver`, `BinLDrivers_Marker`,
+`BinLDrivers_VectorOfDocumentSection`, `BinXCAFDrivers_DocumentRetrievalDriver`,
+`BinXCAFDrivers_DocumentStorageDriver`, `XmlDrivers_DocumentRetrievalDriver`,
+`XmlDrivers_DocumentStorageDriver`, `XmlLDrivers_DocumentRetrievalDriver`,
+`XmlLDrivers_DocumentStorageDriver`, `XmlLDrivers_NamespaceDef`,
+`XmlLDrivers_SequenceOfNamespaceDef`, `XmlXCAFDrivers_DocumentRetrievalDriver`,
+`XmlXCAFDrivers_DocumentStorageDriver`.
+
+**Attribute drivers (109).** One driver class per already-wrapped OCAF attribute type for one
+format; `AddDrivers` (called from that format's own `DocumentStorageDriver`/
+`DocumentRetrievalDriver` above, itself reached only through the wrapped `DefineFormat`) registers
+the whole table at once, so the bridge reaches every class in these twelve packages without ever
+naming one. Existence, not being called by name, is what lets the attribute survive a save/load
+round trip, #983's own framing for this lane. `BinMDataStd`, `BinMDataStd_AsciiStringDriver`,
+`BinMDataStd_BooleanArrayDriver`, `BinMDataStd_BooleanListDriver`, `BinMDataStd_ByteArrayDriver`,
+`BinMDataStd_ExpressionDriver`, `BinMDataStd_ExtStringArrayDriver`,
+`BinMDataStd_ExtStringListDriver`, `BinMDataStd_GenericEmptyDriver`,
+`BinMDataStd_GenericExtStringDriver`, `BinMDataStd_IntPackedMapDriver`,
+`BinMDataStd_IntegerArrayDriver`, `BinMDataStd_IntegerDriver`, `BinMDataStd_IntegerListDriver`,
+`BinMDataStd_NamedDataDriver`, `BinMDataStd_RealArrayDriver`, `BinMDataStd_RealDriver`,
+`BinMDataStd_RealListDriver`, `BinMDataStd_ReferenceArrayDriver`,
+`BinMDataStd_ReferenceListDriver`, `BinMDataStd_TreeNodeDriver`, `BinMDataStd_UAttributeDriver`,
+`BinMDataStd_VariableDriver`; `BinMDataXtd`, `BinMDataXtd_ConstraintDriver`,
+`BinMDataXtd_GeometryDriver`, `BinMDataXtd_PatternStdDriver`, `BinMDataXtd_PositionDriver`,
+`BinMDataXtd_PresentationDriver`, `BinMDataXtd_TriangulationDriver`; `BinMDocStd`,
+`BinMDocStd_XLinkDriver`; `BinMFunction`, `BinMFunction_FunctionDriver`,
+`BinMFunction_GraphNodeDriver`, `BinMFunction_ScopeDriver`; `BinMNaming`,
+`BinMNaming_NamedShapeDriver`, `BinMNaming_NamingDriver`; `BinMXCAFDoc`,
+`BinMXCAFDoc_AssemblyItemRefDriver`, `BinMXCAFDoc_CentroidDriver`, `BinMXCAFDoc_ColorDriver`,
+`BinMXCAFDoc_DatumDriver`, `BinMXCAFDoc_DimTolDriver`, `BinMXCAFDoc_GraphNodeDriver`,
+`BinMXCAFDoc_LengthUnitDriver`, `BinMXCAFDoc_LocationDriver`, `BinMXCAFDoc_MaterialDriver`,
+`BinMXCAFDoc_NoteBinDataDriver`, `BinMXCAFDoc_NoteCommentDriver`, `BinMXCAFDoc_NoteDriver`,
+`BinMXCAFDoc_VisMaterialDriver`, `BinMXCAFDoc_VisMaterialToolDriver`; and the ten identical Xml
+siblings, each with the same per-attribute `*Driver` set as its Bin twin above (`XmlMNaming`
+additionally carries `XmlMNaming_Shape1`, an XML-only helper with no Bin counterpart):
+`XmlMDataStd`, `XmlMDataStd_AsciiStringDriver`, `XmlMDataStd_BooleanArrayDriver`,
+`XmlMDataStd_BooleanListDriver`, `XmlMDataStd_ByteArrayDriver`, `XmlMDataStd_ExpressionDriver`,
+`XmlMDataStd_ExtStringArrayDriver`, `XmlMDataStd_ExtStringListDriver`,
+`XmlMDataStd_GenericEmptyDriver`, `XmlMDataStd_GenericExtStringDriver`,
+`XmlMDataStd_IntPackedMapDriver`, `XmlMDataStd_IntegerArrayDriver`, `XmlMDataStd_IntegerDriver`,
+`XmlMDataStd_IntegerListDriver`, `XmlMDataStd_NamedDataDriver`, `XmlMDataStd_RealArrayDriver`,
+`XmlMDataStd_RealDriver`, `XmlMDataStd_RealListDriver`, `XmlMDataStd_ReferenceArrayDriver`,
+`XmlMDataStd_ReferenceListDriver`, `XmlMDataStd_TreeNodeDriver`, `XmlMDataStd_UAttributeDriver`,
+`XmlMDataStd_VariableDriver`; `XmlMDataXtd`, `XmlMDataXtd_ConstraintDriver`,
+`XmlMDataXtd_GeometryDriver`, `XmlMDataXtd_PatternStdDriver`, `XmlMDataXtd_PositionDriver`,
+`XmlMDataXtd_PresentationDriver`, `XmlMDataXtd_TriangulationDriver`; `XmlMDocStd`,
+`XmlMDocStd_XLinkDriver`; `XmlMFunction`, `XmlMFunction_FunctionDriver`,
+`XmlMFunction_GraphNodeDriver`, `XmlMFunction_ScopeDriver`; `XmlMNaming`,
+`XmlMNaming_NamedShapeDriver`, `XmlMNaming_NamingDriver`, `XmlMNaming_Shape1`; `XmlMXCAFDoc`,
+`XmlMXCAFDoc_AssemblyItemRefDriver`, `XmlMXCAFDoc_CentroidDriver`, `XmlMXCAFDoc_ColorDriver`,
+`XmlMXCAFDoc_DatumDriver`, `XmlMXCAFDoc_DimTolDriver`, `XmlMXCAFDoc_GraphNodeDriver`,
+`XmlMXCAFDoc_LengthUnitDriver`, `XmlMXCAFDoc_LocationDriver`, `XmlMXCAFDoc_MaterialDriver`,
+`XmlMXCAFDoc_NoteBinDataDriver`, `XmlMXCAFDoc_NoteCommentDriver`, `XmlMXCAFDoc_NoteDriver`,
+`XmlMXCAFDoc_VisMaterialDriver`, `XmlMXCAFDoc_VisMaterialToolDriver`.
+
+**TObj_-based format drivers (16).** The driver-per-attribute-type family for the `TObj_`-based
+custom document format. Each package's own `DefineFormat` has the same shape as bucket one above and
+registers a distinct `BinTObj`/`XmlTObj` format GUID, but `TObj_` itself is barely wrapped (only
+`TObj_Application`, #982's lane) and no bridge function ever builds a `TObj_`-based document, so
+there is nothing this format's own storage/retrieval driver is ever asked to persist:
+`BinTObjDrivers`, `BinTObjDrivers_DocumentRetrievalDriver`, `BinTObjDrivers_DocumentStorageDriver`,
+`BinTObjDrivers_IntSparseArrayDriver`, `BinTObjDrivers_ModelDriver`, `BinTObjDrivers_ObjectDriver`,
+`BinTObjDrivers_ReferenceDriver`, `BinTObjDrivers_XYZDriver`, `XmlTObjDrivers`,
+`XmlTObjDrivers_DocumentRetrievalDriver`, `XmlTObjDrivers_DocumentStorageDriver`,
+`XmlTObjDrivers_IntSparseArrayDriver`, `XmlTObjDrivers_ModelDriver`, `XmlTObjDrivers_ObjectDriver`,
+`XmlTObjDrivers_ReferenceDriver`, `XmlTObjDrivers_XYZDriver`.
+
+**Driver-table infrastructure (17).** The driver-table container (`ADriverTable`) and its own
+bootstrap drivers (`TagSourceDriver`, `ReferenceDriver`, `DerivedDriver`) that every attribute-driver
+package above registers into via `AddDrivers`; internal registration machinery for the driver
+table, not a capability of its own: `BinMDF` and `BinMDF_ADriver`, `BinMDF_ADriverTable`,
+`BinMDF_DerivedDriver`, `BinMDF_ReferenceDriver`, `BinMDF_StringIdMap`, `BinMDF_TagSourceDriver`,
+`BinMDF_TypeADriverMap`, `BinMDF_TypeIdMap`; and `XmlMDF` and `XmlMDF_ADriver`,
+`XmlMDF_ADriverTable`, `XmlMDF_DerivedDriver`, `XmlMDF_MapOfDriver`, `XmlMDF_ReferenceDriver`,
+`XmlMDF_TagSourceDriver`, `XmlMDF_TypeADriverMap`.
+
+**Stream primitives (19).** The low-level scalar/array/relocation-table read-write primitives
+(ints, reals, strings, byte arrays, cross-reference relocation) every attribute driver above calls
+to serialize its own attribute's fields; internal implementation of the wire format, not a
+capability a caller reaches directly: `BinObjMgt_PByte`, `BinObjMgt_PChar`, `BinObjMgt_PExtChar`,
+`BinObjMgt_PInteger`, `BinObjMgt_PReal`, `BinObjMgt_PShortReal`, `BinObjMgt_Persistent`,
+`BinObjMgt_Position`, `BinObjMgt_RRelocationTable`, `BinObjMgt_SRelocationTable`, `XmlObjMgt`,
+`XmlObjMgt_Array1`, `XmlObjMgt_DOMString`, `XmlObjMgt_Document`, `XmlObjMgt_Element`,
+`XmlObjMgt_GP`, `XmlObjMgt_Persistent`, `XmlObjMgt_RRelocationTable`,
+`XmlObjMgt_SRelocationTable`.
+
+**Persistent schema and stream layer (98).** The persistent-object schema and type-binding layer
+`TDocStd_Application::SaveAs`/`Open` (already wrapped, see the format-registration surface above)
+walk internally to convert the OCAF label tree to and from a `Storage_Data`; never named or
+configured by a caller. `Storage_` itself is the base this whole tier and `PCDM_`'s own drivers are
+defined in terms of, #973's own reason for filing it in this lane. `ShapePersistent`,
+`ShapePersistent_BRep`, `ShapePersistent_Geom`, `ShapePersistent_Geom2d`,
+`ShapePersistent_Geom2d_Curve`, `ShapePersistent_Geom_Curve`, `ShapePersistent_Geom_Surface`,
+`ShapePersistent_HArray1`, `ShapePersistent_HArray2`, `ShapePersistent_HSequence`,
+`ShapePersistent_Poly`, `ShapePersistent_TopoDS`, `ShapePersistent_TriangleMode`;
+`StdLPersistent`, `StdLPersistent_Collection`, `StdLPersistent_Data`, `StdLPersistent_Dependency`,
+`StdLPersistent_Document`, `StdLPersistent_Function`, `StdLPersistent_HArray1`,
+`StdLPersistent_HArray2`, `StdLPersistent_HString`, `StdLPersistent_NamedData`,
+`StdLPersistent_Real`, `StdLPersistent_TreeNode`, `StdLPersistent_Value`,
+`StdLPersistent_Variable`, `StdLPersistent_Void`, `StdLPersistent_XLink`;
+`StdObjMgt_Attribute`, `StdObjMgt_MapOfInstantiators`, `StdObjMgt_Persistent`,
+`StdObjMgt_ReadData`, `StdObjMgt_SharedObject`, `StdObjMgt_WriteData`; `StdObject_Location`,
+`StdObject_Shape`, `StdObject_gp_Axes`, `StdObject_gp_Curves`, `StdObject_gp_Surfaces`,
+`StdObject_gp_Trsfs`, `StdObject_gp_Vectors`; `StdPersistent`, `StdPersistent_DataXtd`,
+`StdPersistent_DataXtd_Constraint`, `StdPersistent_DataXtd_PatternStd`, `StdPersistent_HArray1`,
+`StdPersistent_Naming`, `StdPersistent_PPrsStd`, `StdPersistent_TopLoc`, `StdPersistent_TopoDS`;
+`StdStorage`, `StdStorage_BacketOfPersistent`, `StdStorage_Data`, `StdStorage_HSequenceOfRoots`,
+`StdStorage_HeaderData`, `StdStorage_MapOfRoots`, `StdStorage_MapOfTypes`, `StdStorage_Root`,
+`StdStorage_RootData`, `StdStorage_SequenceOfRoots`, `StdStorage_TypeData`; and `Storage`,
+`Storage_ArrayOfCallBack`, `Storage_ArrayOfSchema`, `Storage_BaseDriver`,
+`Storage_BucketOfPersistent`, `Storage_CallBack`, `Storage_Data`, `Storage_DefaultCallBack`,
+`Storage_Error`, `Storage_HArrayOfCallBack`, `Storage_HArrayOfSchema`, `Storage_HPArray`,
+`Storage_HSeqOfRoot`, `Storage_HeaderData`, `Storage_InternalData`, `Storage_Macros`,
+`Storage_MapOfCallBack`, `Storage_MapOfPers`, `Storage_OpenMode`, `Storage_PArray`,
+`Storage_PType`, `Storage_Position`, `Storage_Root`, `Storage_RootData`, `Storage_Schema`,
+`Storage_SeqOfRoot`, `Storage_SolveMode`, `Storage_StreamExtCharParityError`,
+`Storage_StreamFormatError`, `Storage_StreamModeError`, `Storage_StreamReadError`,
+`Storage_StreamTypeMismatchError`, `Storage_StreamUnknownTypeError`, `Storage_StreamWriteError`,
+`Storage_TypeData`, `Storage_TypedCallBack`. `Storage_Schema` is worth naming individually: it is
+the class behind `docs/thread-safety.md`'s #374 writeup (`Storage_Schema::ICurrentData`), recorded
+there, not re-litigated here; see the carve-out entry below for the one respect in which that
+writeup is now stale.
+
+**Physical file layer (7).** The physical file open/read/write/seek primitives `Storage_`'s and
+`PCDM_`'s own drivers open through to reach disk; selected by the format's own driver, never by the
+caller: `FSD_BStream`, `FSD_Base64`, `FSD_BinaryFile`, `FSD_CmpFile`, `FSD_FStream`, `FSD_File`,
+`FSD_FileHeader`.
+
+**Plugin loader (4).** The GUID-to-factory resolver `CDF_Application` and every `*Drivers` package's
+own `Factory()` static call internally to instantiate the right driver by format GUID; never
+invoked by name from the bridge, which selects a format by calling `DefineFormat` directly instead
+of through the plugin registry: `Plugin`, `Plugin_Failure`, `Plugin_Macro`,
+`Plugin_MapOfFunctions`.
+
+**XML DOM (24).** The XML DOM implementation the `Xml*` driver families and `XmlObjMgt_` parse and
+write the on-disk XML persistence format through; internal implementation detail of the XML format,
+not a capability a caller configures: `LDOMBasicString`, `LDOMParser`, `LDOMString`, `LDOM_Attr`,
+`LDOM_BasicAttribute`, `LDOM_BasicElement`, `LDOM_BasicNode`, `LDOM_BasicText`,
+`LDOM_CDATASection`, `LDOM_CharReference`, `LDOM_CharacterData`, `LDOM_Comment`,
+`LDOM_DeclareSequence`, `LDOM_Document`, `LDOM_DocumentType`, `LDOM_Element`,
+`LDOM_LDOMImplementation`, `LDOM_MemManager`, `LDOM_Node`, `LDOM_NodeList`, `LDOM_OSStream`,
+`LDOM_Text`, `LDOM_XmlReader`, `LDOM_XmlWriter`.
+
+**Package utility (1).** `UTL`: a bare package header, an all-static string/name utility class
+OCCT's own OCAF persistence machinery calls internally; no instance, nothing a caller constructs.
+
+**Cross-document reference bookkeeping (2).** `PCDM_Reference`, `PCDM_ReferenceIterator`: the
+on-disk file-reference bookkeeping behind a cross-document `TDocStd_XLink`, the persistence-layer
+counterpart of `CDM_Reference`/`CDM_ReferenceIterator`, which this file's Pass 3 section (#810)
+already records as unexposed ("cross-document reference resolution is not exposed at all, only the
+`TDocStd_XLink` attribute that records a link"). The same recorded gap, extended to its file-level
+twin, not re-litigated here.
+
+**Driver abstract bases and plumbing (14).** Abstract driver base classes and internal read/write
+plumbing `TDocStd_Application::SaveAs`/`Open` (already wrapped) drives on the caller's behalf, the
+same "abstract base"/"internal plumbing of an already-wrapped entry point" shape this file's Pass 3
+section (#810) already uses throughout for `CDF_`/`CDM_`/`TDF_`'s own equivalents:
+`PCDM_BaseDriverPointer`, `PCDM_DOMHeaderParser`, `PCDM_Document`, `PCDM_DriverError`,
+`PCDM_ReadWriter`, `PCDM_ReadWriter_1`, `PCDM_Reader` (the abstract base every concrete
+`*Drivers_DocumentRetrievalDriver` above subclasses), `PCDM_ReaderFilter`, `PCDM_RetrievalDriver`,
+`PCDM_SequenceOfDocument`, `PCDM_SequenceOfReference`, `PCDM_StorageDriver` (the abstract base
+every concrete `*Drivers_DocumentStorageDriver` above subclasses), `PCDM_TypeOfFileDriver`,
+`PCDM_Writer`.
+
+**Real capability gap, recorded as such (4 classes, a family-level gap, per #983's own framing).**
+`StdDrivers`/`StdDrivers_DocumentRetrievalDriver` and `StdLDrivers`/
+`StdLDrivers_DocumentRetrievalDriver`: `StdDrivers::DefineFormat`/`StdLDrivers::DefineFormat` have
+the identical shape as the six format-registration entry points already wrapped, registering the
+legacy `"MDTV-Standard"` and `"OCC-StdLite"` OCAF formats respectively (per their own header
+comments), and neither is called anywhere in the bridge. Both are **read-only** at the OCCT level:
+each package ships only a `*_DocumentRetrievalDriver`, no `*_DocumentStorageDriver` (confirmed
+against the pinned headers), so even a caller who registered them could open an old-format document
+but never save one in that format. This is the finding #983's own body asks this lane to look for:
+a gap in the **format-registration surface**, not a per-driver gap. Narrow in practice, since
+`"MDTV-Standard"`/`"OCC-StdLite"` predate the `Bin`/`Xml` (and their `L`ite successors) formats this
+project already wraps, but real: importing an OCAF document written by pre-"lite" (pre-6.3-era)
+OCCT-based software is not supported by `Document.defineFormat*()`/`loadOCAF(from:)`. Not scheduled
+for wrapping here (a genuine but low-value, low-demand format most consumers will never meet, and
+neither format can round-trip a document it opens, since neither ships a storage driver); recorded
+so a future pass does not have to re-derive it.
+
+**Over-coverage: two stale claims found and NOT fixed here, per this task's own carve-out.**
+`Scripts/census-doc-occt-attribution.py --lane <this lane's 38 packages>` found 0 candidates (this
+lane is barely documented outside the classes above, so the detector's `Class::Method` attribution
+shape has almost nothing to check). The real finding came from reading `docs/thread-safety.md` by
+hand, per #983's own pointer at the `#349`/`#353`/`#374` cluster it describes "in terms of carried
+kernel patches." Both are genuine, and both are **filed rather than fixed**
+([#1232](https://github.com/SecondMouseAU/OCCTSwift/issues/1232)), because a human is concurrently
+building reproducers for open thread-safety issues in this exact file and touching it here would
+collide with that work. Summarized: (1) the `### Resource_Manager::Debug /
+Storage_Schema::ICurrentData() races, fixed (issue #374)` section, about `Storage_Schema`, a class
+in this lane, still describes the FIRST, superseded version of that fix (an `ICurrentDataMutex()`
+mutex), which `Scripts/patches/README.md`'s own `0016` entry and issue #518 (closed) record was
+revised on upstream review to a `myCurrentData` per-instance field with no mutex at all, confirmed
+directly against `Scripts/patches/0016-*.patch`'s current contents; (2) the `Scripts/tsan.supp`
+suppression-policy paragraph, about `CDM_Application`/`CDM_MetaData` (Pass 3's lane, #810, not this
+one, named here only because #983's own body points at the same three-issue cluster), cites the
+`#353` metadata-map suppression as a "current example," but `tsan.supp` itself says that
+suppression was removed in v1.15.11 once patch `0015` landed, and `0015` is in fact carried. See
+#1232 for the full detail, including the exact stale text quoted and what the correction should
+say.
+
 ### GD&T dimension accessors left unwrapped (#1004)
 
 #1004 measured `XCAFDimTolObjects_DimensionObject`'s 42 public accessors against what
