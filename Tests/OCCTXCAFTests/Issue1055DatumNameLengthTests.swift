@@ -75,11 +75,7 @@ struct Issue1055DatumNameLengthTests {
         let reported = OCCTDocumentGetDatumName(
             doc.handle, Int32(index), &small, Int32(small.count))
         #expect(reported == 100)
-        let prefix = small.withUnsafeBufferPointer { ptr in
-            String(
-                decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
-                as: UTF8.self)
-        }
+        let prefix = Document.string(fromCString: small)
         #expect(prefix == String(repeating: "A", count: 7))
         #expect(small[7] == 0)
     }
