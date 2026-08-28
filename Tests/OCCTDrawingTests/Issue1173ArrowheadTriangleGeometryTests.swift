@@ -23,6 +23,10 @@ import simd
 // arrowhead vs. an ISO 5459 datum triangle) instead of independently re-deriving the perpendicular
 // offset by hand.
 //
+// (#1299: the split of `OCCTDrawingTests.swift` by `@Suite` moved `cuttingPlaneRoundtrip` onto
+// `DrawingAppendTests.swift`, referenced above by its pre-split filename; the same file/suite,
+// just relocated.)
+//
 // Every expected value below is derived independently with plain vector algebra (verified in
 // Python before writing this file), never by calling `arrowheadBasePoints` itself except in the
 // one test that directly probes it against that ground truth.
