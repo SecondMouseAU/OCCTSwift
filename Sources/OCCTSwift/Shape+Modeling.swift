@@ -1133,17 +1133,27 @@ extension Shape {
 
     /// Check whether this shape is valid for boolean operations.
     ///
+    /// A convenience spelling of `isBooleanValid()` at its defaults (both small-edge and
+    /// self-interference testing on), which also exposes `testSmallEdges`/`testSelfInterference`
+    /// directly for a caller who wants to opt out of either. Both forward onto the same
+    /// `BRepAlgoAPI_Check` bridge call (#1297: this method and `isBooleanValid()` used to wrap it
+    /// twice, independently).
+    ///
     /// - Returns: true if the shape is suitable for boolean operations
     public var isValidForBoolean: Bool {
-        OCCTShapeBooleanCheck(handle, nil)
+        isBooleanValid()
     }
 
     /// Check whether two shapes are valid for boolean operations with each other.
     ///
+    /// A convenience spelling of `isBooleanValidWith(_:operation:)` at its defaults (operation
+    /// unknown, both small-edge and self-interference testing on); see `isBooleanValidWith` for a
+    /// version that can target a specific `BOPAlgo_Operation` or opt out of either test.
+    ///
     /// - Parameter other: The other shape to check compatibility with
     /// - Returns: true if both shapes are suitable for boolean operations together
     public func isValidForBoolean(with other: Shape) -> Bool {
-        OCCTShapeBooleanCheck(handle, other.handle)
+        isBooleanValidWith(other)
     }
     /// Split a face by imprinting a wire onto it.
     ///
@@ -3425,6 +3435,16 @@ extension Shape {
 
 extension Shape {
     /// Check shape validity for boolean operations (small edges, self-interference).
+    ///
+    /// `isValidForBoolean` is the same check at these defaults (#1297: the two used to reach
+    /// independent bridge implementations; `isValidForBoolean` now forwards here).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if box.isBooleanValid(testSmallEdges: false) {
+    ///     // proceed with a boolean op
+    /// }
+    /// ```
     public func isBooleanValid(testSmallEdges: Bool = true, testSelfInterference: Bool = true)
         -> Bool
     {
@@ -3434,6 +3454,9 @@ extension Shape {
     /// Check if two shapes are valid for a boolean operation.
     ///
     /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
+    ///
+    /// `isValidForBoolean(with:)` is the same check at these defaults (#1297: the two used to
+    /// reach independent bridge implementations; `isValidForBoolean(with:)` now forwards here).
     public func isBooleanValidWith(
         _ other: Shape, operation: Int32 = 0,
         testSmallEdges: Bool = true,
