@@ -3,6 +3,23 @@ import simd
 
 @testable import OCCTSwift
 
+/// Shared test fixtures for void shapes and zero-size shapes.
+/// These are internal so they can be used across test files in the OCCTAnalysisTests module.
+internal func makeVoidShape() -> Shape? {
+    guard let b1 = Shape.box(width: 10, height: 10, depth: 10),
+        let b2 = Shape.box(origin: SIMD3(1000, 1000, 1000), width: 10, height: 10, depth: 10)
+    else { return nil }
+    return b1.intersection(b2)
+}
+
+internal func makePointVertexAtOrigin() -> Shape? {
+    Shape.vertex(at: .zero)
+}
+
+internal func isNearZero(_ v: SIMD3<Double>, _ tol: Double = 1e-6) -> Bool {
+    abs(v.x) <= tol && abs(v.y) <= tol && abs(v.z) <= tol
+}
+
 /// #943: `bounds`, `size` and `center` became Optional so a shape with no bounding box stops
 /// reporting a fabricated `(0,0,0)-(0,0,0)`. The contract these tests pin is that "no box" and
 /// "a box that measures zero" are different answers, and that the difference comes from OCCT's own
@@ -17,23 +34,8 @@ import simd
 @Suite("Issue943 bounds: void versus zero-size")
 struct Issue943BoundsVoid {
 
-    /// True when every component of `v` is within `tol` of zero.
-    private func isNearZero(_ v: SIMD3<Double>, _ tol: Double = 1e-6) -> Bool {
-        abs(v.x) <= tol && abs(v.y) <= tol && abs(v.z) <= tol
-    }
-
-    /// A genuinely void shape. `Shape.compound([])` cannot be built (the bridge requires at least
-    /// one member), so a far-disjoint intersection is the reachable void fixture, the same one
-    /// `BRepBndLibTests` uses.
-    private func voidShape() -> Shape? {
-        guard let b1 = Shape.box(width: 10, height: 10, depth: 10),
-            let b2 = Shape.box(origin: SIMD3(1000, 1000, 1000), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return b1.intersection(b2)
-    }
-
     @Test func voidShapeHasNoBoundsSizeOrCenter() throws {
-        let shape = try #require(voidShape(), "a disjoint intersection should still build a shape")
+        let shape = try #require(makeVoidShape(), "a disjoint intersection should still build a shape")
         #expect(shape.bounds == nil)
         #expect(shape.size == nil)
         #expect(shape.center == nil)
@@ -47,7 +49,7 @@ struct Issue943BoundsVoid {
     /// within `Precision::Confusion()` of it on the paths that add the shape tolerance. Every
     /// accessor must report that measurement, not `nil`.
     @Test func pointVertexAtOriginReportsAMeasuredBox() throws {
-        let origin = try #require(Shape.vertex(at: .zero))
+        let origin = try #require(makePointVertexAtOrigin())
 
         let bounds = try #require(origin.bounds, "a vertex has a box; only a void shape has none")
         #expect(isNearZero(bounds.min))
