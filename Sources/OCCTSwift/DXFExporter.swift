@@ -59,7 +59,7 @@ extension Exporter {
 /// Pure-Swift DXF R12 ASCII writer.
 ///
 /// Public so callers can stage entities manually (useful for tests and for scripts that compose DXFs from mixed sources).
-public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
+public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink, DrawingWriter {
     public let deflection: Double
     /// DrawingPrimitiveSink's shared entity storage -- see DrawingDispatch.swift.
     ///

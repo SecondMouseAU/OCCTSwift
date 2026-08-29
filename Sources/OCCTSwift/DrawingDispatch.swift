@@ -132,6 +132,26 @@ internal protocol DrawingPrimitiveSink: AnyObject {
         height: Double, rotationDeg: Double, layer: String)
 }
 
+/// Public protocol for the common 2D drawing writer interface shared by
+/// `DXFWriter`, `PDFWriter`, and `SVGWriter`.
+///
+/// This protocol exposes the subset of `DrawingPrimitiveSink` needed by
+/// `Sheet.render(into:)` and `ProjectionSymbol.render(_:at:into:)`, plus
+/// the `entityCounts` property for test assertions.
+public protocol DrawingWriter: AnyObject {
+    var deflection: Double { get }
+    var entityCounts: (lines: Int, polylines: Int, circles: Int, arcs: Int, texts: Int) { get }
+    func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String)
+    func addPolyline(_ points: [SIMD2<Double>], closed: Bool, layer: String)
+    func addCircle(centre: SIMD2<Double>, radius: Double, layer: String)
+    func addArc(
+        centre: SIMD2<Double>, radius: Double,
+        startAngleDeg: Double, endAngleDeg: Double, layer: String)
+    func addText(
+        _ text: String, at position: SIMD2<Double>,
+        height: Double, rotationDeg: Double, layer: String)
+}
+
 extension DrawingPrimitiveSink {
     /// Ops closure bundle wrapping this sink's own staging methods, for the shared
     /// annotation/dimension dispatchers below.

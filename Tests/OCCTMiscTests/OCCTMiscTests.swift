@@ -1374,15 +1374,27 @@ struct PaperSizeTests {
 
 @Suite("v0.145 Sheet rendering")
 struct SheetRenderingTests {
-    @Test("Sheet render emits border + inner frame polylines")
-    func sheetEmitsBorders() {
+    enum WriterKind: CaseIterable, Sendable {
+        case dxf, pdf, svg
+        
+        func makeWriter() -> DrawingWriter {
+            switch self {
+            case .dxf: return DXFWriter()
+            case .pdf: return PDFWriter()
+            case .svg: return SVGWriter()
+            }
+        }
+    }
+
+    @Test("Sheet render emits border + inner frame polylines", arguments: WriterKind.allCases)
+    func sheetEmitsBorders(kind: WriterKind) {
         let sheet = Sheet(
             size: .a3, orientation: .landscape, projection: .first,
             title: TitleBlock(
                 title: "Test Drawing",
                 drawingNumber: "T-001",
                 owner: "ACME Co"))
-        let writer = DXFWriter()
+        let writer = kind.makeWriter()
         sheet.render(into: writer)
         // Should have at least 2 polylines (outer border + inner frame) plus some tick lines.
         let counts = writer.entityCounts
@@ -1413,20 +1425,20 @@ struct SheetRenderingTests {
         #expect(frame.max.y == 210 - 7)  // 7 mm top
     }
 
-    @Test("Projection symbol renders two circles for both conventions")
-    func projectionSymbolCircles() {
-        let writer = DXFWriter()
+    @Test("Projection symbol renders two circles for both conventions", arguments: WriterKind.allCases)
+    func projectionSymbolCircles(kind: WriterKind) {
+        let writer = kind.makeWriter()
         ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: writer)
         let firstCount = writer.entityCounts.circles
         #expect(firstCount == 2)
 
-        let writer2 = DXFWriter()
+        let writer2 = kind.makeWriter()
         ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: writer2)
         #expect(writer2.entityCounts.circles == 2)
     }
 
-    @Test("TitleBlock fields are emitted as text")
-    func titleBlockFields() {
+    @Test("TitleBlock fields are emitted as text", arguments: WriterKind.allCases)
+    func titleBlockFields(kind: WriterKind) {
         let tb = TitleBlock(
             title: "Test Part",
             drawingNumber: "ABC-123",
@@ -1434,7 +1446,7 @@ struct SheetRenderingTests {
             creator: "Jane Engineer",
             dateOfIssue: "2026-04-22")
         let sheet = Sheet(size: .a3, title: tb)
-        let writer = DXFWriter()
+        let writer = kind.makeWriter()
         sheet.render(into: writer)
         #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
     }
