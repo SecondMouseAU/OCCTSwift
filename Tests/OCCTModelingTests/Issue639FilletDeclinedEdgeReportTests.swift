@@ -21,25 +21,15 @@ import Testing
 @Suite("Fillet family reports declined edges (#639)")
 struct Issue639FilletDeclinedEdgeReport {
 
-    static let declinedIndices = [6, 9, 10, 11]
+    /// Uses `FilletTestFixtures.openShell()` and `FilletTestFixtures.declinedIndices` for the
+    /// open-shell fixture with known declined edges.
     static let acceptedIndices = [0, 1, 2, 3, 4, 5, 7, 8]
-
-    /// A 10mm box with one face dropped and the rest sewn back together: an open shell whose free
-    /// boundary edges `BRepFilletAPI_MakeFillet::Add` declines. Identical construction to
-    /// `Issue612FilletContourSelectionTests.openShell()` and the census's own fixture, reused
-    /// rather than rebuilt.
-    static func openShell() -> Shape? {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
-        let faces = box.faces().compactMap { Shape.fromFace($0) }
-        guard faces.count == 6 else { return nil }
-        return Shape.sew(shapes: Array(faces.dropFirst()))
-    }
 
     // MARK: - filletedWithReport(edges:radius:)
 
     @Test("filletedWithReport(edges:radius:) names exactly the census's declined set")
     func filletedWithReportNamesDeclinedEdges() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -50,7 +40,7 @@ struct Issue639FilletDeclinedEdgeReport {
             Issue.record("filletedWithReport unexpectedly returned nil")
             return
         }
-        #expect(Set(report.declinedEdgeIndices) == Set(Self.declinedIndices))
+        #expect(Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices))
         // Reporting must not change the built geometry: same skip-not-reject answer as the
         // non-reporting sibling.
         guard let plain = shell.filleted(edges: edges, radius: 1.0) else {
@@ -77,7 +67,7 @@ struct Issue639FilletDeclinedEdgeReport {
 
     @Test("filletedWithReport(edges:startRadius:endRadius:) names the same declined set")
     func filletedLinearWithReportNamesDeclinedEdges() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -87,14 +77,14 @@ struct Issue639FilletDeclinedEdgeReport {
             Issue.record("filletedWithReport(startRadius:endRadius:) unexpectedly returned nil")
             return
         }
-        #expect(Set(report.declinedEdgeIndices) == Set(Self.declinedIndices))
+        #expect(Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices))
     }
 
     // MARK: - filletEvolvingWithReport(_:)
 
     @Test("filletEvolvingWithReport(_:) names the same declined set -- the #639 gap named directly")
     func filletEvolvingWithReportNamesDeclinedEdges() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -106,7 +96,7 @@ struct Issue639FilletDeclinedEdgeReport {
             Issue.record("filletEvolvingWithReport unexpectedly returned nil")
             return
         }
-        #expect(Set(report.declinedEdgeIndices) == Set(Self.declinedIndices))
+        #expect(Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices))
     }
 
     @Test("filletEvolvingWithReport(_:) reports no declines on a closed solid")
@@ -129,7 +119,7 @@ struct Issue639FilletDeclinedEdgeReport {
 
     @Test("FilletBuilder.contour(for:) == 0 already names the declined set")
     func filletBuilderContourNamesDeclinedEdges() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -142,11 +132,11 @@ struct Issue639FilletDeclinedEdgeReport {
 
         // Contour(E) is populated by Add(), not Build(): readable before build() is called.
         let declinedBeforeBuild = edges.filter { builder.contour(for: $0) == 0 }.map(\.index)
-        #expect(Set(declinedBeforeBuild) == Set(Self.declinedIndices))
+        #expect(Set(declinedBeforeBuild) == Set(FilletTestFixtures.declinedIndices))
 
         #expect(builder.build() != nil)
         let declinedAfterBuild = edges.filter { builder.contour(for: $0) == 0 }.map(\.index)
-        #expect(Set(declinedAfterBuild) == Set(Self.declinedIndices))
+        #expect(Set(declinedAfterBuild) == Set(FilletTestFixtures.declinedIndices))
     }
 
     // MARK: - ShapeHistoryRecord already answers this (documented, not new code)
@@ -155,7 +145,7 @@ struct Issue639FilletDeclinedEdgeReport {
         "filletedWithFullHistory's ShapeHistoryRecord names the declined set via generated/isDeleted"
     )
     func historyRecordNamesDeclinedEdges() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -174,13 +164,13 @@ struct Issue639FilletDeclinedEdgeReport {
             let record = history.record(of: edgeShapes[$0])
             return !record.isDeleted && record.generated.isEmpty
         }
-        #expect(Set(declined) == Set(Self.declinedIndices))
+        #expect(Set(declined) == Set(FilletTestFixtures.declinedIndices))
 
         // The reliable signal is generated/isDeleted, not modified.isEmpty: a declined edge can
         // still carry one `modified` entry when an accepted neighbour's fillet trims its shared
         // endpoint. At least one declined edge in this fixture demonstrates that -- if none did,
         // the note above would be untested, not merely unnecessary.
-        let declinedWithNonEmptyModified = Self.declinedIndices.filter {
+        let declinedWithNonEmptyModified = FilletTestFixtures.declinedIndices.filter {
             !history.record(of: edgeShapes[$0]).modified.isEmpty
         }
         #expect(
@@ -205,19 +195,19 @@ struct Issue639FilletDeclinedEdgeReport {
     /// were refused.
     @Test("A declined edge named twice is reported twice, matching the request list")
     func declinedEdgeNamedTwiceIsReportedTwice() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("could not build the open-shell fixture")
             return
         }
         let edges = shell.edges()
-        guard let declined = Self.declinedIndices.first, declined < edges.count else {
+        guard let declined = FilletTestFixtures.declinedIndices.first, declined < edges.count else {
             Issue.record("fixture has no declined edge to duplicate")
             return
         }
         // An accepted edge has to be in the list too. Requesting only declined edges leaves
         // nothing to fillet, so Build() fails and the call returns nil with no report to read,
         // which is a different behaviour and not the one under test here.
-        guard let accepted = (0..<edges.count).first(where: { !Self.declinedIndices.contains($0) })
+        guard let accepted = (0..<edges.count).first(where: { !FilletTestFixtures.declinedIndices.contains($0) })
         else {
             Issue.record("fixture has no accepted edge")
             return
