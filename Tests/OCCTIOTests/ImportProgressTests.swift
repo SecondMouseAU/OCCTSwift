@@ -6,36 +6,8 @@ import simd
 
 @Suite("v0.168 Import progress + cancellation (issue #98)")
 struct ImportProgressTests {
-    /// Captures progress callbacks from a STEP / IGES import.
-    final class ProgressRecorder: ImportProgress, @unchecked Sendable {
-        private let lock = NSLock()
-        private var _events: [(fraction: Double, step: String)] = []
-        private var _cancel: Bool = false
-
-        var events: [(fraction: Double, step: String)] {
-            lock.lock()
-            defer { lock.unlock() }
-            return _events
-        }
-
-        func setCancel(_ value: Bool) {
-            lock.lock()
-            _cancel = value
-            lock.unlock()
-        }
-
-        func progress(fraction: Double, step: String) {
-            lock.lock()
-            _events.append((fraction, step))
-            lock.unlock()
-        }
-
-        func shouldCancel() -> Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return _cancel
-        }
-    }
+    // `ProgressRecorder` (a lock-guarded ImportProgress recorder) lives in IOTestFixtures.swift,
+    // shared with MeshAndExportProgressTests (#1282).
 
     @Test("STEP import calls progress callback at least once")
     func stepProgressCallbackFires() throws {

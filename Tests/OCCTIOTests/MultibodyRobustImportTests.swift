@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -14,19 +13,9 @@ import simd
 @Suite("v1.11.3 Multibody robust import (issue #302)")
 struct MultibodyRobustImportTests {
 
-    /// 10 separate solid bodies, the ordinary multibody assembly.
-    private func tenBoxes() -> Shape? {
-        let boxes = (0..<10).compactMap { i in
-            Shape.box(width: 10, height: 10, depth: 10)?
-                .translated(by: SIMD3(Double(i) * 30, 0, 0))
-        }
-        guard boxes.count == 10 else { return nil }
-        return Shape.compound(boxes)
-    }
-
     @Test("Shape.loadRobust keeps every body of a multibody STEP (#302)")
     func stepRobustKeepsAllBodies() throws {
-        guard let compound = tenBoxes() else {
+        guard let compound = boxRow(count: 10) else {
             Issue.record("compound construction failed")
             return
         }
@@ -49,7 +38,7 @@ struct MultibodyRobustImportTests {
 
     @Test("Shape.loadSTLRobust keeps every body of a multibody STL (#302)")
     func stlRobustKeepsAllBodies() throws {
-        guard let compound = tenBoxes() else {
+        guard let compound = boxRow(count: 10) else {
             Issue.record("compound construction failed")
             return
         }
@@ -69,7 +58,7 @@ struct MultibodyRobustImportTests {
 
     @Test("Shape.loadWithDiagnostics keeps every body and reports the count (#302)")
     func diagnosticsKeepsAllBodiesAndCounts() throws {
-        guard let compound = tenBoxes() else {
+        guard let compound = boxRow(count: 10) else {
             Issue.record("compound construction failed")
             return
         }

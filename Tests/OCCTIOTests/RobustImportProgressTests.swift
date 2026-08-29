@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -147,11 +146,7 @@ struct RobustImportProgressTests {
     func igesRobustHealCancellation() throws {
         // Healing's share of the import is largest for many-faced solids; 400 boxes makes the
         // import measurable without making the fixture slow to write.
-        let boxes = (0..<400).compactMap { i in
-            Shape.box(width: 10, height: 10, depth: 10)?
-                .translated(by: SIMD3(Double(i) * 30, 0, 0))
-        }
-        guard boxes.count == 400, let subject = Shape.compound(boxes) else {
+        guard let subject = boxRow(count: 400) else {
             Issue.record("compound construction failed")
             return
         }
@@ -207,14 +202,7 @@ struct RobustImportProgressTests {
     /// keeps clear of #263 (ShapeFix heap-corrupts healing a self-intersecting-wire prism).
     @Test("Shape.loadRobust interrupts repair, not just the transfer (#300)")
     func stepRobustRepairCancellation() throws {
-        let sides = 1200
-        let points = (0..<sides).map { i -> SIMD2<Double> in
-            let a = 2 * Double.pi * Double(i) / Double(sides)
-            return SIMD2(1000 * cos(a), 1000 * sin(a))
-        }
-        guard let profile = Wire.polygon(points),
-            let subject = Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 50)
-        else {
+        guard let subject = ngonPrism(sides: 1200, radius: 1000, height: 50) else {
             Issue.record("prism construction failed")
             return
         }
