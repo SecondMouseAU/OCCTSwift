@@ -41,7 +41,7 @@ struct Issue702SolidDemotion {
     /// A box with one face dropped, sewn into an open shell: the smallest input that reaches
     /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face. Delegates to
     /// `sewnBoxMissingOneFace(_:tolerance:)` (`ShapeHealingTestFixtures.swift`), shared with
-    /// `Issue442FixSolidMultiBodyTests` (#717 review, the duplicated open-shell fixture).
+    /// `Issue442FixSolidMultiBody` (#717 review, the duplicated open-shell fixture).
     private func openShellMissingOneFace() -> Shape? {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
         return sewnBoxMissingOneFace(box)
@@ -240,9 +240,57 @@ struct Issue702SolidDemotion {
     /// rather than an independent defect. Recomputed here instead of assumed, so the tests above
     /// measure the real fields (including this fixture's own nonzero `gapCount`) rather than a
     /// guessed total.
+    ///
+    /// #1288 review: this used to omit the `hasSelfIntersection` term the real contract has (see
+    /// `ShapeAnalysisTests.analysisResultProperties`'s `expectedTotal`, the sibling mirror of the
+    /// same contract, which never dropped it). It went unnoticed because every call site above
+    /// passes no `selfIntersectionTimeout`, so `hasSelfIntersection` is always `nil` and the
+    /// missing term always contributed 0 either way;
+    /// `totalProblemsExcludingFreeFaceIncludesSelfIntersection` below is what actually exercises
+    /// the non-`nil` case.
     private static func totalProblemsExcludingFreeFace(_ analysis: ShapeAnalysisResult) -> Int {
         analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount
             + analysis.freeEdgeCount + (analysis.hasInvalidTopology ? 1 : 0)
+            + (analysis.hasSelfIntersection == true ? 1 : 0)
+    }
+
+    // MARK: - totalProblems includes self-intersection when checked (#1288 review)
+
+    /// Two boxes offset so their faces genuinely interfere, in one compound: the same fast,
+    /// deterministic fixture `Issue772SelfIntersectionAnalysisTests.overlappingCompound()` uses.
+    /// Rebuilt locally rather than shared, since this file's #1287 sharing pass is specifically
+    /// the `expectVolume`/`twoBoxes`/`hollowBox`/`multiconnexSolid` cluster with
+    /// `Issue442FixSolidMultiBody`/`Issue443FirstOfN`, a different pair of files.
+    private func selfIntersectingCompound() -> Shape? {
+        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
+        else { return nil }
+        return Shape.compound([a, b])
+    }
+
+    /// #1288: `totalProblemsExcludingFreeFace` omitted the `hasSelfIntersection` term
+    /// `ShapeAnalysisResult.totalProblems` itself includes, so it silently under-asserted whenever
+    /// self-intersection was actually checked and found. No test in this file exercised that
+    /// before this one: every other call site passes no `selfIntersectionTimeout`, so the missing
+    /// term never showed up as a discrepancy. This fixture genuinely self-intersects (two
+    /// overlapping boxes, not just a wide bounding box), so `hasSelfIntersection` resolves `true`
+    /// and the missing term would have made `analysis.totalProblems` and the recomputed `expected`
+    /// disagree by exactly 1, which is what this test proved before the fix (see the PR for the
+    /// failing run) and no longer does after it.
+    @Test("totalProblemsExcludingFreeFace tracks totalProblems even with self-intersection checked")
+    func totalProblemsExcludingFreeFaceIncludesSelfIntersection() {
+        guard let overlapping = selfIntersectingCompound() else {
+            Issue.record("could not build the self-intersecting compound")
+            return
+        }
+        guard let analysis = overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30)
+        else {
+            Issue.record("analyze returned nil")
+            return
+        }
+        #expect(analysis.hasSelfIntersection == true, "fixture must actually self-intersect")
+        let expected = Self.totalProblemsExcludingFreeFace(analysis)
+        #expect(analysis.totalProblems == expected)
     }
 
     // MARK: - checkinternaledges must match between analyze() and analyzeShell() (#717 review, the checkinternaledges divergence)
