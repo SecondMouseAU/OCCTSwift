@@ -10,7 +10,7 @@ struct Curve3DContinuityTests {
     @Test func lineContinuity() {
         if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
             let c = line.continuity
-            // Lines have infinite continuity (CN = 4)
+            // Lines have infinite continuity (CN = 6 in GeomAbs_Shape)
             #expect(c >= 0)
         }
     }
