@@ -1,0 +1,567 @@
+scenario=shared_adaptor_surface threads=8 iterations=2000
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Write of size 8 at 0x00016f3edd80 by thread T2:
+    #0 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c670)
+    #1 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #2 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #3 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous read of size 8 at 0x00016f3edd80 by thread T1:
+    #0 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d1fc)
+    #1 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #2 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is stack of main thread.
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T1 (tid=15769737, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race GeomAdaptor_Surface.cxx:1007 in GeomAdaptor_Surface::RebuildCache(double, double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 1 at 0x00010a606824 by thread T3:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:83 (tsan_stress_before_v2:arm64+0x100006014)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092c0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 1 at 0x00010a606824 by thread T1:
+    #0 BSplCLib_CacheParams::BSplCLib_CacheParams(int, bool, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:47 (tsan_stress_before_v2:arm64+0x100008ac0)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:240 (tsan_stress_before_v2:arm64+0x100008ee8)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a606810 allocated by thread T1:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T3 (tid=15769739, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T1 (tid=15769737, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:83 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a608b20 by thread T4:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:84 (tsan_stress_before_v2:arm64+0x100006070)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092c0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a608b20 by thread T2:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:114 (tsan_stress_before_v2:arm64+0x100006524)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:270 (tsan_stress_before_v2:arm64+0x1000094a8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T4 (tid=15769740, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:84 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a606848 by thread T3:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:86 (tsan_stress_before_v2:arm64+0x1000060a8)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092c0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a606848 by thread T1:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:115 (tsan_stress_before_v2:arm64+0x100006554)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:270 (tsan_stress_before_v2:arm64+0x1000094a8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a606810 allocated by thread T1:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T3 (tid=15769739, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T1 (tid=15769737, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:86 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 4 at 0x00010a608b30 by thread T5:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:91 (tsan_stress_before_v2:arm64+0x1000060dc)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092c0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 4 at 0x00010a608b30 by thread T2:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:106 (tsan_stress_before_v2:arm64+0x100006488)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:270 (tsan_stress_before_v2:arm64+0x1000094a8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T5 (tid=15769748, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:91 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 4 at 0x00010a60683c by thread T3:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:91 (tsan_stress_before_v2:arm64+0x1000060e8)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092c0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 4 at 0x00010a60683c by thread T1:
+    #0 BSplCLib_CacheParams::BSplCLib_CacheParams(int, bool, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:51 (tsan_stress_before_v2:arm64+0x100008b64)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:240 (tsan_stress_before_v2:arm64+0x100008ee8)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a606810 allocated by thread T1:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T3 (tid=15769739, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T1 (tid=15769737, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:91 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a608b58 by thread T4:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:84 (tsan_stress_before_v2:arm64+0x100006070)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092d0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a608b58 by thread T2:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:114 (tsan_stress_before_v2:arm64+0x100006524)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:271 (tsan_stress_before_v2:arm64+0x1000094b8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T4 (tid=15769740, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:84 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a608b60 by thread T5:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:86 (tsan_stress_before_v2:arm64+0x1000060a8)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092d0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a608b60 by thread T2:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:115 (tsan_stress_before_v2:arm64+0x100006554)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:271 (tsan_stress_before_v2:arm64+0x1000094b8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T5 (tid=15769748, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:86 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a608b70 by thread T3:
+    #0 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:311 (tsan_stress_before_v2:arm64+0x10000982c)
+    #1 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:310 (tsan_stress_before_v2:arm64+0x1000097f4)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1072 (tsan_stress_before_v2:arm64+0x10001d258)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a608b70 by thread T2:
+    #0 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:232 (tsan_stress_before_v2:arm64+0x100008f18)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T3 (tid=15769739, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplSLib_Cache.cxx:311 in BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 4 at 0x00010a608b68 by thread T4:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:91 (tsan_stress_before_v2:arm64+0x1000060dc)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092d0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 4 at 0x00010a608b68 by thread T2:
+    #0 BSplCLib_CacheParams::LocateParameter(double&, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:106 (tsan_stress_before_v2:arm64+0x100006488)
+    #1 BSplSLib_Cache::BuildCache(double const&, double const&, NCollection_Array1<double> const&, NCollection_Array1<double> const&, NCollection_Array2<gp_Pnt> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:271 (tsan_stress_before_v2:arm64+0x1000094b8)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1015 (tsan_stress_before_v2:arm64+0x10001c378)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T4 (tid=15769740, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:91 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a5039e8 by thread T3:
+    #0 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:311 (tsan_stress_before_v2:arm64+0x100009848)
+    #1 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:310 (tsan_stress_before_v2:arm64+0x1000097f4)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1072 (tsan_stress_before_v2:arm64+0x10001d258)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a5039e8 by thread T2:
+    #0 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:247 (tsan_stress_before_v2:arm64+0x100008fb4)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 80 at 0x00010a5039d0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T3 (tid=15769739, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplSLib_Cache.cxx:311 in BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a5039e0 by thread T5:
+    #0 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:311 (tsan_stress_before_v2:arm64+0x100009838)
+    #1 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:310 (tsan_stress_before_v2:arm64+0x1000097f4)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1072 (tsan_stress_before_v2:arm64+0x10001d258)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a5039e0 by thread T2:
+    #0 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:247 (tsan_stress_before_v2:arm64+0x100008fa8)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 80 at 0x00010a5039d0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T5 (tid=15769748, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplSLib_Cache.cxx:311 in BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 8 at 0x00010a503a08 by thread T4:
+    #0 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:315 (tsan_stress_before_v2:arm64+0x10000987c)
+    #1 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:310 (tsan_stress_before_v2:arm64+0x1000097f4)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1072 (tsan_stress_before_v2:arm64+0x10001d258)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 8 at 0x00010a503a08 by thread T2:
+    #0 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:247 (tsan_stress_before_v2:arm64+0x100009044)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 80 at 0x00010a5039d0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T4 (tid=15769740, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplSLib_Cache.cxx:315 in BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 4 at 0x00010a608b54 by thread T6:
+    #0 BSplCLib_CacheParams::IsCacheValid(double) const BSplCLib_CacheParams.hxx:91 (tsan_stress_before_v2:arm64+0x1000060e8)
+    #1 BSplSLib_Cache::IsCacheValid(double, double) const BSplSLib_Cache.cxx:254 (tsan_stress_before_v2:arm64+0x1000092d0)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1068 (tsan_stress_before_v2:arm64+0x10001d210)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 4 at 0x00010a608b54 by thread T2:
+    #0 BSplCLib_CacheParams::BSplCLib_CacheParams(int, bool, NCollection_Array1<double> const&) BSplCLib_CacheParams.hxx:51 (tsan_stress_before_v2:arm64+0x100008b64)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:241 (tsan_stress_before_v2:arm64+0x100008f10)
+    #2 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #3 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #4 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #5 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #6 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T6 (tid=15769749, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplCLib_CacheParams.hxx:91 in BSplCLib_CacheParams::IsCacheValid(double) const
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=80004)
+  Read of size 1 at 0x00010a608afc by thread T7:
+    #0 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:314 (tsan_stress_before_v2:arm64+0x100009864)
+    #1 BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const BSplSLib_Cache.cxx:310 (tsan_stress_before_v2:arm64+0x1000097f4)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1072 (tsan_stress_before_v2:arm64+0x10001d258)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Previous write of size 1 at 0x00010a608afc by thread T2:
+    #0 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:239 (tsan_stress_before_v2:arm64+0x100008ebc)
+    #1 BSplSLib_Cache::BSplSLib_Cache(int const&, bool const&, NCollection_Array1<double> const&, int const&, bool const&, NCollection_Array1<double> const&, NCollection_Array2<double> const*) BSplSLib_Cache.cxx:242 (tsan_stress_before_v2:arm64+0x100009260)
+    #2 GeomAdaptor_Surface::RebuildCache(double, double) const GeomAdaptor_Surface.cxx:1007 (tsan_stress_before_v2:arm64+0x10001c608)
+    #3 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #4 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #5 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Location is heap block of size 136 at 0x00010a608af0 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (tsan_stress_before_v2:arm64+0x10002e788)
+    #2 GeomAdaptor_Surface::EvalD0(double, double) const GeomAdaptor_Surface.cxx:1070 (tsan_stress_before_v2:arm64+0x10001d238)
+    #3 runSharedAdaptorSurface(int, int, GeomAdaptor_Surface*, double, double, double, double) occt_1153_stress.cpp:151 (tsan_stress_before_v2:arm64+0x100000ec4)
+    #4 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, GeomAdaptor_Surface*, double, double, double, double), int, int, GeomAdaptor_Surface*, double, double, double, double>>(void*) thread.h:168 (tsan_stress_before_v2:arm64+0x10000598c)
+
+  Thread T7 (tid=15769750, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002088)
+
+  Thread T2 (tid=15769738, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&, 0>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) thread.h:216 (tsan_stress_before_v2:arm64+0x1000057ec)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*, double&, double&, double&, double&>(void (&)(int, int, GeomAdaptor_Surface*, double, double, double, double), int&, int&, GeomAdaptor_Surface*&&, double&, double&, double&, double&) vector.h:1130 (tsan_stress_before_v2:arm64+0x100005514)
+    #3 main occt_1153_stress.cpp:215 (tsan_stress_before_v2:arm64+0x100002008)
+
+SUMMARY: ThreadSanitizer: data race BSplSLib_Cache.cxx:314 in BSplSLib_Cache::D0Local(double, double, gp_Pnt&) const
+==================
+done: ops=16000 errors=0 elapsed=0.11s
+ThreadSanitizer: reported 15 warnings
