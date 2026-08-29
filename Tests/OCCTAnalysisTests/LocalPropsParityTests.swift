@@ -137,8 +137,7 @@ struct LocalPropsParityTests {
         // spellings had become one call once #494 gave them the same resolution, so it deprecated
         // localCurvature(at:) onto curvature(at:) and deleted OCCTCurve3DLocalCurvature -- which
         // makes `localCurvature == curvature` true by construction and an assertion about nothing.
-        // The forwarding itself is covered by Issue595DeprecatedLocalCurvatureTests; the three pairs
-        // below are still two bridge functions each, so they still say something.
+        // The three pairs below are still two bridge functions each, so they still say something.
 
         let localTangent = curve.localTangent(at: u)
         let tangent = curve.tangentDirection(at: u)
