@@ -192,3 +192,22 @@ used, just currently unreachable from this bridge's own call surface. Worth a ke
 (`thread_local`, matching #298's own fix for the sibling statics in the same toolkit) the next
 time anything in this tree (or upstream) starts driving `TopOpeBRepBuild_HBuilder`'s two-argument
 `Perform`/two-solid path, so the fix lands before the reachability, not after.
+
+**Fixed**: `Scripts/patches/0032-TopOpeBRepBuild-KPart-merge-globals-thread-local-1371.patch`
+converts all twelve statics (the cluster above turned out to be twelve, not eleven; this survey's
+own count missed `stabuild_IMEF`) to `thread_local`, plus a thirteenth file
+(`TopOpeBRepBuild_GridFF.cxx`, which holds `GLOBAL_classifysplitedge`'s one true definition and
+wasn't named in the original cluster list above). Compiles and links cleanly across all three
+xcframework slices, with `nm -C` confirming a genuine TLV wrapper routine generated for each of the
+five extern-linked globals. A live functional/TSan re-run against the patched kernel was attempted
+and abandoned: the local `occt-build-macos` incremental build tree had drifted into this repo's own
+documented "stale SDK sysroot, can no longer incrementally compile" failure, producing a binary
+that crashes on an unrelated, unmodified test identically whether this patch is applied or
+reverted (A/B'd both ways), and not at all against the pinned release kernel. So this patch's
+functional correctness rests on the reachability/TSan evidence already gathered above for the
+*unpatched* code (0 races because the code is unreached), not a fresh green run against the
+*patched* binary; that needs a full `Scripts/build-occt.sh` reconfigure, not attempted here. See
+`Scripts/patches/README.md`'s `0032` entry for the full writeup, and CLAUDE.md's Known OCCT Bugs.
+`GLOBAL_faces2d` (`TopOpeBRepBuild_GridFF.cxx`, two lines from `GLOBAL_classifysplitedge`, same
+unsynchronized shape but reachable from three more files this pass did not check) is noted, not
+fixed, and not yet its own issue.
