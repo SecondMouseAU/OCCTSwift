@@ -3,13 +3,7 @@ import simd
 
 @testable import OCCTSwift
 
-fileprivate extension SIMD3 where Scalar == Double {
-    var normalized: SIMD3<Double> {
-        let len = sqrt(x * x + y * y + z * z)
-        guard len > 0 else { return self }
-        return SIMD3(x / len, y / len, z / len)
-    }
-}
+// Uses ModelingTestExtensions.SIMD3.normalized (epsilon 1e-10)
 
 @Suite("Shape Splitting Tests")
 struct ShapeSplittingTests {
