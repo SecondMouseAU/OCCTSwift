@@ -136,4 +136,37 @@ struct Issue497DefeaturingTests {
             }
         }
     }
+
+    // MARK: - Tests merged from BOPAlgoRemoveTests (formerly removeFeatures(faces:))
+
+    @Test("Remove fillet from box via defeature")
+    func removeFilletFromBox() {
+        guard let box = Shape.box(width: 20, height: 20, depth: 20) else { return }
+        if let filleted = box.filleted(radius: 2.0) {
+            let filletedFaces = filleted.subShapes(ofType: .face)
+            guard filletedFaces.count > 6 else { return }
+            let lastFace = filletedFaces[filletedFaces.count - 1]
+            if let result = filleted.defeature(faces: [lastFace]) {
+                #expect(result.isValid)
+                let resultFaces = result.subShapes(ofType: .face)
+                #expect(resultFaces.count <= filletedFaces.count)
+            }
+        }
+    }
+
+    @Test("defeature returns nil for empty faces")
+    func defeatureEmptyFaces() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+        let result = box.defeature(faces: [])
+        #expect(result == nil)
+    }
+
+    @Test("Remove face from box via defeature")
+    func removeFaceFromBox() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
+        let faces = box.subShapes(ofType: .face)
+        guard !faces.isEmpty else { return }
+        let _ = box.defeature(faces: [faces[0]])
+    }
 }
+
