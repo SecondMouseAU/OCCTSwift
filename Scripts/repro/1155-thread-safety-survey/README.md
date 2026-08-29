@@ -185,7 +185,8 @@ always is by the real gate.
 
 ## New follow-up
 
-Filed as a follow-up issue: the `TopOpeBRepBuild_ffsfs.cxx`/`TopOpeBRepBuild_GridSS.cxx`
+Filed as [#1371](https://github.com/SecondMouseAU/OCCTSwift/issues/1371): the
+`TopOpeBRepBuild_ffsfs.cxx`/`TopOpeBRepBuild_GridSS.cxx`
 `GLOBAL_*` cluster is a real, live, unguarded file-scope-static defect by the same measure #298
 used, just currently unreachable from this bridge's own call surface. Worth a kernel patch
 (`thread_local`, matching #298's own fix for the sibling statics in the same toolkit) the next
