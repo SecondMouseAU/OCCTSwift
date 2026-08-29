@@ -714,6 +714,19 @@ struct MergeNodesToolTests {
 
 @Suite("Poly_CoherentTriangulation")
 struct CoherentTriangulationTests {
+    /// The 4-node/2-triangle fixture shared by `addTriangles`, `removeTriangle` and
+    /// `computeLinks` (#1268: those three built this inline, identically, with no drift).
+    private static func twoTriangleMesh() -> CoherentTriangulation {
+        let ct = CoherentTriangulation.create()
+        let _ = ct.setNode(x: 0, y: 0, z: 0)
+        let _ = ct.setNode(x: 1, y: 0, z: 0)
+        let _ = ct.setNode(x: 0, y: 1, z: 0)
+        let _ = ct.setNode(x: 1, y: 1, z: 0)
+        ct.addTriangle(0, 1, 2)
+        ct.addTriangle(1, 3, 2)
+        return ct
+    }
+
     @Test("create empty and add nodes")
     func createAndAddNodes() {
         let ct = CoherentTriangulation.create()
@@ -727,38 +740,20 @@ struct CoherentTriangulationTests {
 
     @Test("add and count triangles")
     func addTriangles() {
-        let ct = CoherentTriangulation.create()
-        let _ = ct.setNode(x: 0, y: 0, z: 0)
-        let _ = ct.setNode(x: 1, y: 0, z: 0)
-        let _ = ct.setNode(x: 0, y: 1, z: 0)
-        let _ = ct.setNode(x: 1, y: 1, z: 0)
-        ct.addTriangle(0, 1, 2)
-        ct.addTriangle(1, 3, 2)
+        let ct = Self.twoTriangleMesh()
         #expect(ct.triangleCount == 2)
     }
 
     @Test("remove triangle")
     func removeTriangle() {
-        let ct = CoherentTriangulation.create()
-        let _ = ct.setNode(x: 0, y: 0, z: 0)
-        let _ = ct.setNode(x: 1, y: 0, z: 0)
-        let _ = ct.setNode(x: 0, y: 1, z: 0)
-        let _ = ct.setNode(x: 1, y: 1, z: 0)
-        ct.addTriangle(0, 1, 2)
-        ct.addTriangle(1, 3, 2)
+        let ct = Self.twoTriangleMesh()
         ct.removeTriangle(at: 0)
         #expect(ct.triangleCount == 1)
     }
 
     @Test("compute links")
     func computeLinks() {
-        let ct = CoherentTriangulation.create()
-        let _ = ct.setNode(x: 0, y: 0, z: 0)
-        let _ = ct.setNode(x: 1, y: 0, z: 0)
-        let _ = ct.setNode(x: 0, y: 1, z: 0)
-        let _ = ct.setNode(x: 1, y: 1, z: 0)
-        ct.addTriangle(0, 1, 2)
-        ct.addTriangle(1, 3, 2)
+        let ct = Self.twoTriangleMesh()
         let nLinks = ct.computeLinks()
         #expect(nLinks > 0)
         #expect(ct.linkCount > 0)
