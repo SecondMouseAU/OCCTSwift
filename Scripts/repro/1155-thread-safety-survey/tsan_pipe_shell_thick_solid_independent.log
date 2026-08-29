@@ -1,0 +1,48 @@
+==================
+WARNING: ThreadSanitizer: data race (pid=89050)
+  Read of size 1 at 0x0001023ddc01 by thread T7:
+    #0 BOPAlgo_Options::BOPAlgo_Options(opencascade::handle<NCollection_BaseAllocator> const&) BOPAlgo_Options.cxx:68 (occt_1155_tsan:arm64+0x100135458)
+    #1 BOPAlgo_Algo::BOPAlgo_Algo() BOPAlgo_Algo.cxx:26 (occt_1155_tsan:arm64+0x1000bf610)
+    #2 BOPAlgo_PaveFiller::BOPAlgo_PaveFiller() BOPAlgo_PaveFiller.cxx:56 (occt_1155_tsan:arm64+0x100135d00)
+    #3 BOPAlgo_PaveFiller::BOPAlgo_PaveFiller() BOPAlgo_PaveFiller.cxx:58 (occt_1155_tsan:arm64+0x1001361b4)
+    #4 BRepOffset_Tool::Inter3D(TopoDS_Face const&, TopoDS_Face const&, NCollection_List<TopoDS_Shape>&, NCollection_List<TopoDS_Shape>&, TopAbs_State, TopoDS_Edge const&, TopoDS_Face const&, TopoDS_Face const&) BRepOffset_Tool.cxx:1475 (occt_1155_tsan:arm64+0x1011f8334)
+    #5 BRepOffset_Tool::Inter3D(TopoDS_Face const&, TopoDS_Face const&, NCollection_List<TopoDS_Shape>&, NCollection_List<TopoDS_Shape>&, TopAbs_State, TopoDS_Edge const&, TopoDS_Face const&, TopoDS_Face const&) BRepOffset_Tool.cxx:1449 (occt_1155_tsan:arm64+0x1011f81c0)
+    #6 BRepOffset_MakeOffset::Intersection3D(BRepOffset_Inter3d&, Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:2926 (occt_1155_tsan:arm64+0x1011432cc)
+    #7 BRepOffset_MakeOffset::MakeOffsetShape(Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:943 (occt_1155_tsan:arm64+0x10112e550)
+    #8 BRepOffset_MakeOffset::MakeThickSolid(Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:1088 (occt_1155_tsan:arm64+0x101161f2c)
+    #9 BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape const&, NCollection_List<TopoDS_Shape> const&, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool, Message_ProgressRange const&) BRepOffsetAPI_MakeThickSolid.cxx:54 (occt_1155_tsan:arm64+0x1010db26c)
+    #10 runPipeShellThickSolidIndependent(int, int) occt_1155_stress.cpp:208 (occt_1155_tsan:arm64+0x100002eb0)
+    #11 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:168 (occt_1155_tsan:arm64+0x10000d9f4)
+
+  Previous write of size 1 at 0x0001023ddc01 by thread T4:
+    #0 BOPAlgo_Options::BOPAlgo_Options(opencascade::handle<NCollection_BaseAllocator> const&) BOPAlgo_Options.cxx:68 (occt_1155_tsan:arm64+0x100135468)
+    #1 BOPAlgo_Algo::BOPAlgo_Algo() BOPAlgo_Algo.cxx:26 (occt_1155_tsan:arm64+0x1000bf610)
+    #2 BOPAlgo_PaveFiller::BOPAlgo_PaveFiller() BOPAlgo_PaveFiller.cxx:56 (occt_1155_tsan:arm64+0x100135d00)
+    #3 BOPAlgo_PaveFiller::BOPAlgo_PaveFiller() BOPAlgo_PaveFiller.cxx:58 (occt_1155_tsan:arm64+0x1001361b4)
+    #4 BRepOffset_Tool::Inter3D(TopoDS_Face const&, TopoDS_Face const&, NCollection_List<TopoDS_Shape>&, NCollection_List<TopoDS_Shape>&, TopAbs_State, TopoDS_Edge const&, TopoDS_Face const&, TopoDS_Face const&) BRepOffset_Tool.cxx:1475 (occt_1155_tsan:arm64+0x1011f8334)
+    #5 BRepOffset_Tool::Inter3D(TopoDS_Face const&, TopoDS_Face const&, NCollection_List<TopoDS_Shape>&, NCollection_List<TopoDS_Shape>&, TopAbs_State, TopoDS_Edge const&, TopoDS_Face const&, TopoDS_Face const&) BRepOffset_Tool.cxx:1449 (occt_1155_tsan:arm64+0x1011f81c0)
+    #6 BRepOffset_MakeOffset::Intersection3D(BRepOffset_Inter3d&, Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:2926 (occt_1155_tsan:arm64+0x1011432cc)
+    #7 BRepOffset_MakeOffset::MakeOffsetShape(Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:943 (occt_1155_tsan:arm64+0x10112e550)
+    #8 BRepOffset_MakeOffset::MakeThickSolid(Message_ProgressRange const&) BRepOffset_MakeOffset.cxx:1088 (occt_1155_tsan:arm64+0x101161f2c)
+    #9 BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin(TopoDS_Shape const&, NCollection_List<TopoDS_Shape> const&, double, double, BRepOffset_Mode, bool, bool, GeomAbs_JoinType, bool, Message_ProgressRange const&) BRepOffsetAPI_MakeThickSolid.cxx:54 (occt_1155_tsan:arm64+0x1010db26c)
+    #10 runPipeShellThickSolidIndependent(int, int) occt_1155_stress.cpp:208 (occt_1155_tsan:arm64+0x100002eb0)
+    #11 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:168 (occt_1155_tsan:arm64+0x10000d9f4)
+
+  Location is global '(anonymous namespace)::BOPAlgo_InitMessages' at 0x0001023ddc01 (occt_1155_tsan+0x101c11c01)
+
+  Thread T7 (tid=16782254, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:216 (occt_1155_tsan:arm64+0x10000d8bc)
+    #2 runOne(char const*, int, int) occt_1155_stress.cpp:323 (occt_1155_tsan:arm64+0x10000621c)
+    #3 main occt_1155_stress.cpp:350 (occt_1155_tsan:arm64+0x100005f80)
+
+  Thread T4 (tid=16782251, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:216 (occt_1155_tsan:arm64+0x10000d8bc)
+    #2 runOne(char const*, int, int) occt_1155_stress.cpp:323 (occt_1155_tsan:arm64+0x10000621c)
+    #3 main occt_1155_stress.cpp:350 (occt_1155_tsan:arm64+0x100005f80)
+
+SUMMARY: ThreadSanitizer: data race BOPAlgo_Options.cxx:68 in BOPAlgo_Options::BOPAlgo_Options(opencascade::handle<NCollection_BaseAllocator> const&)
+==================
+ops=240 errors=0
+ThreadSanitizer: reported 1 warnings

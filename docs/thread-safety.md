@@ -17,7 +17,7 @@ OCCT has several thread-unsafe patterns:
 
 2. **Topology flag mutations**: `TopoDS_TShape::myState` uses non-atomic `uint16_t` with bitwise operations. Concurrent flag modification on shared TShapes is a data race.
 
-3. **Various algorithms**: `BRepBuilderAPI_Transform`, `BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`, and others have internal mutable state.
+3. **Various algorithms**: `BRepBuilderAPI_Transform`, `BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`, and others have internal mutable state. **Surveyed and confirmed clean (issue #1155)**: this item as originally written was a hypothesis, not a finding, unlike items 1/2/4 above. All eight candidate classes named in #1155 (this item's three plus `BRepBuilderAPI_MakeEdge`/`MakeWire`/`MakeFace`, `BRepOffsetAPI_MakePipeShell`/`MakeThickSolid`, `BRepFilletAPI_MakeFillet`/`MakeChamfer`, `ShapeFix_Face`/`Wire`/`Shape`, `BRepCheck_Analyzer`) hold only instance state; see "Algorithm instance-state survey" below for the one near-miss (a live but currently-unreachable file-scope-static cluster in the legacy fillet-reconstruction engine) and the follow-up issue tracking it.
 
 4. **Shared geometry after booleans**: Boolean operations can produce result shapes that share edge/face geometry with input shapes via the same `TopoDS_TShape` handles. Subsequent operations on both the original and result can race on shared adaptors.
 
