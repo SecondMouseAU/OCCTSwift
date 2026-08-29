@@ -6966,6 +6966,8 @@ int32_t OCCTShapeToleranceInRangeCount(OCCTShapeRef shape,
 // === BRepAlgoAPI_Check ===
 bool OCCTShapeBooleanCheckSingle(OCCTShapeRef shape, bool testSmallEdges, bool testSelfInterference)
 {
+  if (!shape)
+    return false;
   try
   {
     auto*             s = static_cast<OCCTShape*>(shape);
@@ -6984,6 +6986,8 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef shape1,
                                bool         testSmallEdges,
                                bool         testSelfInterference)
 {
+  if (!shape1 || !shape2)
+    return false;
   try
   {
     auto*             s1 = static_cast<OCCTShape*>(shape1);

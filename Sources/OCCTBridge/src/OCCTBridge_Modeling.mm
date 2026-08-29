@@ -1304,33 +1304,6 @@ OCCTShapeRef OCCTShapeSection(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
 }
 
-// MARK: - Boolean Pre-Validation (v0.34.0)
-
-#include <BRepAlgoAPI_Check.hxx>
-
-bool OCCTShapeBooleanCheck(OCCTShapeRef shape1, OCCTShapeRef shape2)
-{
-  if (!shape1)
-    return false;
-  try
-  {
-    if (shape2)
-    {
-      BRepAlgoAPI_Check checker(shape1->shape, shape2->shape);
-      return checker.IsValid();
-    }
-    else
-    {
-      BRepAlgoAPI_Check checker(shape1->shape);
-      return checker.IsValid();
-    }
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
-
 // MARK: - Split Shape by Wire (v0.34.0)
 
 #include <BRepFeat_SplitShape.hxx>

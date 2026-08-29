@@ -1135,7 +1135,7 @@ extension Shape {
     ///
     /// - Returns: true if the shape is suitable for boolean operations
     public var isValidForBoolean: Bool {
-        OCCTShapeBooleanCheck(handle, nil)
+        OCCTShapeBooleanCheckSingle(handle, true, true)
     }
 
     /// Check whether two shapes are valid for boolean operations with each other.
@@ -1143,7 +1143,7 @@ extension Shape {
     /// - Parameter other: The other shape to check compatibility with
     /// - Returns: true if both shapes are suitable for boolean operations together
     public func isValidForBoolean(with other: Shape) -> Bool {
-        OCCTShapeBooleanCheck(handle, other.handle)
+        OCCTShapeBooleanCheckPair(handle, other.handle, 0, true, true)
     }
     /// Split a face by imprinting a wire onto it.
     ///

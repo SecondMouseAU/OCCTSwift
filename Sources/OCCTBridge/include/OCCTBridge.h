@@ -99,7 +99,7 @@
 // OCCTBOPToolsIsEmptyShape
 //
 // --- BRepAlgoAPI ---
-// BRepAlgoAPI_Check                   → OCCTShapeBooleanCheck
+// BRepAlgoAPI_Check                   → OCCTShapeBooleanCheckSingle, OCCTShapeBooleanCheckPair
 // BRepAlgoAPI_Common                  → OCCTShapeIntersect
 // BRepAlgoAPI_Cut                     → OCCTShapeSubtract, OCCTShapeDrillHole
 // BRepAlgoAPI_Defeaturing             → OCCTShapeRemoveFeatures, OCCTShapeDefeature,
