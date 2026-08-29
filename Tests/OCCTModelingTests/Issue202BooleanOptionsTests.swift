@@ -9,7 +9,7 @@ import simd
 struct Issue202BooleanOptions {
 
     /// Two unit cubes stacked along Z, sharing the coincident face at z = 10.
-    /// Uses `BooleanTestFixtures.BooleanTestFixtures.stackedBoxes()` for the stacked box pair.
+    /// Uses `BooleanTestFixtures.stackedBoxes()` for the stacked box pair.
 
     @Test("default parameters preserve existing behavior")
     func defaultParity() {

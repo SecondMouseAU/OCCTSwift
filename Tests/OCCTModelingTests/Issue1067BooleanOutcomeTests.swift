@@ -28,7 +28,7 @@ struct Issue1067BooleanOutcome {
     /// See the suite comment for why this is deterministic rather than a race.
     private static let pastDeadline = 1e-9
 
-    /// Uses `BooleanTestFixtures.BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
+    /// Uses `BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
 
     /// Readable failure text: `#expect` on the enum itself would print nothing useful, since
     /// `BooleanOutcome` carries a `Shape` and is deliberately not `Equatable`.
