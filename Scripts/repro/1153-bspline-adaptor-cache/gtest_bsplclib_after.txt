@@ -1,0 +1,27 @@
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from BSplCLib_CacheTest
+[ RUN      ] BSplCLib_CacheTest.D0_NonRationalCurve3D
+[       OK ] BSplCLib_CacheTest.D0_NonRationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D1_NonRationalCurve3D
+[       OK ] BSplCLib_CacheTest.D1_NonRationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D2_NonRationalCurve3D
+[       OK ] BSplCLib_CacheTest.D2_NonRationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D0_RationalCurve3D
+[       OK ] BSplCLib_CacheTest.D0_RationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D1_RationalCurve3D
+[       OK ] BSplCLib_CacheTest.D1_RationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D2_RationalCurve3D
+[       OK ] BSplCLib_CacheTest.D2_RationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.D3_NonRationalCurve3D
+[       OK ] BSplCLib_CacheTest.D3_NonRationalCurve3D (0 ms)
+[ RUN      ] BSplCLib_CacheTest.DerivativeMethodsDoNotDeadlock
+[       OK ] BSplCLib_CacheTest.DerivativeMethodsDoNotDeadlock (0 ms)
+[ RUN      ] BSplCLib_CacheTest.ConcurrentRebuildAndEvaluationMatchesReference
+[       OK ] BSplCLib_CacheTest.ConcurrentRebuildAndEvaluationMatchesReference (29 ms)
+[----------] 9 tests from BSplCLib_CacheTest (29 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (29 ms total)
+[  PASSED  ] 9 tests.

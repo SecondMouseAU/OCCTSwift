@@ -1,0 +1,29 @@
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from BSplSLib_CacheTest
+[ RUN      ] BSplSLib_CacheTest.D0_NonRationalSurface
+[       OK ] BSplSLib_CacheTest.D0_NonRationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D1_NonRationalSurface
+[       OK ] BSplSLib_CacheTest.D1_NonRationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D2_NonRationalSurface
+[       OK ] BSplSLib_CacheTest.D2_NonRationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D0_RationalSurface
+[       OK ] BSplSLib_CacheTest.D0_RationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D1_RationalSurface
+[       OK ] BSplSLib_CacheTest.D1_RationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D2_RationalSurface
+[       OK ] BSplSLib_CacheTest.D2_RationalSurface (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D1_DifferentDegrees_UGreaterV
+[       OK ] BSplSLib_CacheTest.D1_DifferentDegrees_UGreaterV (0 ms)
+[ RUN      ] BSplSLib_CacheTest.D1_DifferentDegrees_VGreaterU
+[       OK ] BSplSLib_CacheTest.D1_DifferentDegrees_VGreaterU (0 ms)
+[ RUN      ] BSplSLib_CacheTest.DerivativeMethodsDoNotDeadlock
+[       OK ] BSplSLib_CacheTest.DerivativeMethodsDoNotDeadlock (0 ms)
+[ RUN      ] BSplSLib_CacheTest.ConcurrentRebuildAndEvaluationMatchesReference
+[       OK ] BSplSLib_CacheTest.ConcurrentRebuildAndEvaluationMatchesReference (47 ms)
+[----------] 10 tests from BSplSLib_CacheTest (48 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (48 ms total)
+[  PASSED  ] 10 tests.

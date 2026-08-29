@@ -10,7 +10,7 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 the **`v3.0.0` release asset**, which is that same `V8_0_1` plus seventeen patches, `0010`-`0012`
 and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the right kernel, and
 `ci.yml`'s macOS job is a real signal again. Seventeen is what the **asset** holds;
-`Scripts/patches/` holds twenty, and the next paragraph is about the difference.
+`Scripts/patches/` holds twenty-one, and the next paragraph is about the difference.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
@@ -25,29 +25,36 @@ on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen whil
 `0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
 through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
 
-**As of #1018, #1022 and #1154 the counts diverge again, deliberately and with the reason written
-down.** `Scripts/patches/` holds twenty; the pinned asset holds seventeen. The three are `0028`
-(#1018), `0029` (#1022) and `0030` (#1154), and `ci.yml`'s `build-and-test` never sees any of them,
-which is exactly what the paragraph above says a divergence means. One narrowing, measured on PR
-#1032 rather than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that
-**adds** a patch does get `V8_0_1` plus every carried patch built from source and the full suite run
-against it. That proves the patch applies, compiles and regresses nothing. It cannot prove any of
-the three fixes works, since none has a Swift-reachable assertion (`0030` is a data race, so even a
-Swift-level assertion would only catch it by luck without TSan instrumentation the built asset
-doesn't carry), and it does not run on any later PR that leaves `Scripts/patches/` alone. None of
-that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is
-what discredited that. They are not equally urgent. `0028` is the one carried patch a
-rebuild would give no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge reader
-of the three accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are its only coverage
-anywhere. `0029` is an uncatchable SIGSEGV on `Document.datums` for any OCAF document
-whose datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
-protects a consumer. `0030` is a data race on `TopoDS_TShape::myState`, live in ordinary concurrent
-use of a boolean-operation result (which shares TShapes with its inputs) and invisible to every
-`swift test` run today since none of them run under ThreadSanitizer against the released kernel;
-`Scripts/tsan.supp` suppresses it so the TSan gate stays green until a rebuilt asset ships, per that
-file's own "remove when the fix lands" policy. Do not read this note as permission to skip the
-check; read it as the answer the check should produce today, so a twenty-first patch appearing
-without a note is still a finding.
+**As of #1018, #1022, #1154 and #1153 the counts diverge again, deliberately and with the reason
+written down.** `Scripts/patches/` holds twenty-one; the pinned asset holds seventeen. The four are
+`0028` (#1018), `0029` (#1022), `0030` (#1154) and `0031` (#1153), and `ci.yml`'s `build-and-test`
+never sees any of them, which is exactly what the paragraph above says a divergence means. One
+narrowing, measured on PR #1032 rather than assumed: `kernel-integration.yml` triggers on
+`Scripts/patches/**`, so the PR that **adds** a patch does get `V8_0_1` plus every carried patch
+built from source and the full suite run against it. That proves the patch applies, compiles and
+regresses nothing. It cannot prove any of the four fixes works, since none has a Swift-reachable
+assertion (`0030` and `0031` are both data races, so even a Swift-level assertion would only catch
+either by luck without TSan instrumentation the built asset doesn't carry), and it does not run on
+any later PR that leaves `Scripts/patches/` alone. None of that makes "read
+`kernel-integration.yml` instead of `ci.yml`" good advice; #585 is what discredited that. They are
+not equally urgent. `0028` is the one carried patch a rebuild would give no Swift-side coverage to
+at all: `OCCTGeomPlateErrors`, the only bridge reader of the three accessors it fixes, was deleted
+by #999 (PR #1015), so the upstream GTests are its only coverage anywhere. `0029` is an uncatchable
+SIGSEGV on `Document.datums` for any OCAF document whose datum carries a point without an
+annotation plane, so until a rebuilt asset ships it nothing protects a consumer. `0030` is a data
+race on `TopoDS_TShape::myState`, live in ordinary concurrent use of a boolean-operation result
+(which shares TShapes with its inputs) and invisible to every `swift test` run today since none of
+them run under ThreadSanitizer against the released kernel; `Scripts/tsan.supp` suppresses it so
+the TSan gate stays green until a rebuilt asset ships, per that file's own "remove when the fix
+lands" policy. `0031` is the same shape as `0030`, unsynchronized mutable evaluation state in
+`BSplCLib_Cache`/`BSplSLib_Cache` and the `GeomAdaptor_Curve`/`GeomAdaptor_Surface` Cache-handle
+check-then-act that creates and replaces them, live for any consumer sharing one adaptor (or one
+cache) across threads; unlike `0030`, `Scripts/tsan.supp` carries **no** suppression for it at all,
+since the earlier, rejected attempt at this fix (PR #1322, reviewed and rewritten from scratch, see
+the `#1153` Known OCCT Bugs entry below) never merged its own suppression lines to `main`, so there
+is nothing to retire once a rebuild ships. Do not read this note as permission to skip the check;
+read it as the answer the check should produce today, so a twenty-second patch appearing without a
+note is still a finding.
 
 **The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
 (fifteen on disk, "fifteen" in the prose) while the enumeration immediately beside it in
@@ -607,6 +614,59 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   20000 iterations) independently confirms the same lost-update mechanism without needing TSan: 1,
   2, 4 and 6 lost updates across four unpatched runs, 0 across six patched ones. See
   [`Scripts/repro/1154-topology-flag-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1154-topology-flag-race)
+  for the full writeup. Not yet filed upstream.
+- `BSplCLib_Cache`/`BSplSLib_Cache` (backing `GeomAdaptor_Curve`/`GeomAdaptor_Surface` for BSpline
+  and Bezier evaluation) cache polynomial coefficients per span with zero synchronization on the
+  mutable state (`myParams`/`myPolesWeightsBuffer`, curve; `myParamsU`/`myParamsV`/`myPolesWeights`,
+  surface), and a *second*, independent race sits one layer up: `GeomAdaptor_Curve`/
+  `GeomAdaptor_Surface`'s `EvalD0`-`EvalD3`/`D0`-`D2` do an unsynchronized check-then-act on the
+  `Cache` handle (`if (Cache.IsNull() || !IsCacheValid(u)) RebuildCache(u);`), so two threads
+  sharing one adaptor can both replace the handle, racing on it and potentially destroying an
+  object a third thread is still evaluating. **#1153, first attempted in PR #1322 and rejected on
+  six review findings**, the most serious being a genuine self-deadlock: the rejected patch wrapped
+  every `BSplCLib_Cache` method in a non-recursive `std::mutex`, but `D1()`/`D2()`/`D3()` (and the
+  protected `calculateDerivative()`) each lock once and then call a `*Local`/`calculateDerivativeLocal`
+  overload that is itself a public entry point and locks the *same* mutex again on the same thread,
+  undefined behavior that hangs forever on the very first derivative call, single-threaded, no
+  concurrency needed to observe it. The rejected patch also touched only `BSplCLib_Cache`, despite
+  claiming all four classes; the reproducer it shipped only ever called `D0`, so it never exercised
+  the deadlocking path; and it landed as `Scripts/patches/0028-*`, colliding with the already-carried
+  `0028` for #1018. **Fixed for real** (`Scripts/patches/0031-*`, override-link validated, not in a
+  rebuilt xcframework): `std::recursive_mutex`, not the lock-once refactor the review also offered,
+  chosen because `D0Local`/`D1Local`/`D2Local`/`D3Local` are genuinely dual-role in this API (each
+  is both a public entry point a caller with a pre-computed local parameter is meant to call
+  directly, and an internal helper the flat-parameter overloads call into), so splitting every such
+  method into a locking wrapper plus an unlocked twin would double the method count across two
+  classes for a change whose only goal is correctness; this project has precedent for the same
+  tradeoff (`Storage_Schema`, the `#374` entry above). `BSplSLib_Cache` is fixed the same way, for
+  real this time, confirmed by reading its actual structure rather than assuming symmetry (its
+  `D1()`/`D2()` don't themselves nest into `D1Local()`/`D2Local()` the way the curve side's do; only
+  `D0()`→`D0Local()` does, a narrower exposure the recursive mutex still covers correctly).
+  `GeomAdaptor_Curve`/`GeomAdaptor_Surface` get a second, independent `mutable std::mutex` each,
+  guarding the whole check-rebuild-evaluate sequence; adding it required a real fix to their copy
+  semantics too, not just a deleted-copy-constructor guess, since `GeomAdaptor_TransformedCurve::ShallowCopy()`
+  and its surface twin both copy-assign a `GeomAdaptor_Curve`/`GeomAdaptor_Surface` value in real,
+  load-bearing code (`aCopy->myCurve = aGeomCurve;`), confirmed by a real compile break when copy
+  was deleted outright; fixed with a hand-written copy constructor/assignment that copies every
+  field except the mutex, verified clean by compiling 8 real consumer files including both
+  `GeomAdaptor_Surface` subclasses and the by-value-holding `BRepAdaptor_Curve`/`BRepAdaptor_Surface`.
+  **Verified via TSan**: the reproducer (rewritten to cycle `D0`/`D1`/`D2`/`D3` every iteration
+  instead of only ever calling `D0`, the exact gap the review found) shows 42 races on the curve
+  scenario and 15 on the surface scenario against stock sources at 16 threads × 3000 iterations,
+  including a genuine SIGSEGV inside `Geom_BSplineCurve::Weights()` reached through a torn
+  `GeomAdaptor_Curve::EvalD3`, and 0 races, 48000 clean operations, confirmed across repeated runs,
+  against the real fix. A second, real bug was found and fixed along the way, independent of #1153:
+  the reproducer's own `main()` declared the shared adaptor *inside* the `if` block spawning worker
+  threads while the `pool`/join loop lived outside that block, so the adaptor was destroyed the
+  instant thread-spawning finished, well before any thread had joined, producing a false, unrelated
+  `pthread_mutex_lock` SIGSEGV that had nothing to do with the fix; fixed by giving each scenario
+  its own pool and join loop in the same scope as its adaptor. GTests added to both classes'
+  existing `*_Cache_Test.cxx` files: a single-threaded deadlock proof (hangs against the original
+  rejected patch / a hand-built naive non-recursive variant, passes in milliseconds against the
+  fix) and a concurrent `BuildCache`-plus-evaluate stress test against a single-threaded reference.
+  `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s own layer has no GTest in this PR, a real gap noted
+  rather than hidden; the TSan transcripts are its evidence instead. See
+  [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
   for the full writeup. Not yet filed upstream.
 
 ### Carrying OCCT source patches

@@ -1,0 +1,165 @@
+--- Scripts/repro/1153-bspline-adaptor-cache/BSplSLib_Cache_Test.cxx.orig	2026-08-29 14:31:58
++++ Scripts/repro/1153-bspline-adaptor-cache/BSplSLib_Cache_Test.cxx.new	2026-08-29 14:36:02
+@@ -20,6 +20,10 @@
+ #include <NCollection_Array2.hxx>
+ #include <Standard_Integer.hxx>
+ #include <NCollection_Array1.hxx>
++
++#include <atomic>
++#include <thread>
++#include <vector>
+ 
+ #include <gtest/gtest.h>
+ 
+@@ -974,5 +978,151 @@
+       EXPECT_NEAR(aCacheTanV.X(), aDirectTanV.X(), THE_TOLERANCE)
+         << "DifferentDeg V>U D1 tanV X mismatch at u=" << u << ", v=" << v;
+     }
++  }
++}
++
++//=================================================================================================
++// Thread-safety tests (issue #1153)
++//=================================================================================================
++
++// Single-threaded proof that D0/D1/D2's internal locking does not nest incorrectly: D0() locks
++// myMutex and calls D0Local(), itself a public entry point that also locks myMutex. Under the
++// shape of #1322's original (rejected) patch -- a non-recursive std::mutex used the same way --
++// this would hang forever on the very first call. See
++// Scripts/repro/1153-bspline-adaptor-cache/gtest_deadlock_before.txt for the same proof taken
++// from the BSplCLib_Cache sibling (BSplSLib_Cache's D1()/D2() do not themselves nest into
++// D1Local()/D2Local(), so D0 is the only method here that can exhibit this particular shape, but
++// the fix locks all six methods uniformly and this case exercises all three).
++TEST_F(BSplSLib_CacheTest, DerivativeMethodsDoNotDeadlock)
++{
++  NCollection_Array2<gp_Pnt> aPoles(1, 3, 1, 3);
++  aPoles(1, 1) = gp_Pnt(0, 0, 0);
++  aPoles(2, 1) = gp_Pnt(1, 0, 1);
++  aPoles(3, 1) = gp_Pnt(2, 0, 0);
++  aPoles(1, 2) = gp_Pnt(0, 1, 1);
++  aPoles(2, 2) = gp_Pnt(1, 1, 2);
++  aPoles(3, 2) = gp_Pnt(2, 1, 1);
++  aPoles(1, 3) = gp_Pnt(0, 2, 0);
++  aPoles(2, 3) = gp_Pnt(1, 2, 1);
++  aPoles(3, 3) = gp_Pnt(2, 2, 0);
++
++  NCollection_Array1<double> aKnotsU(1, 2);
++  aKnotsU(1) = 0.0;
++  aKnotsU(2) = 1.0;
++  NCollection_Array1<double> aKnotsV(1, 2);
++  aKnotsV(1) = 0.0;
++  aKnotsV(2) = 1.0;
++  NCollection_Array1<int> aMultsU(1, 2);
++  aMultsU(1) = 3;
++  aMultsU(2) = 3;
++  NCollection_Array1<int> aMultsV(1, 2);
++  aMultsV(1) = 3;
++  aMultsV(2) = 3;
++
++  NCollection_Array1<double> aFlatKnotsU(1, 6);
++  createFlatKnots(aKnotsU, aMultsU, aFlatKnotsU);
++  NCollection_Array1<double> aFlatKnotsV(1, 6);
++  createFlatKnots(aKnotsV, aMultsV, aFlatKnotsV);
++
++  occ::handle<BSplSLib_Cache> aCache =
++    new BSplSLib_Cache(2, false, aFlatKnotsU, 2, false, aFlatKnotsV, nullptr);
++  aCache->BuildCache(0.5, 0.5, aFlatKnotsU, aFlatKnotsV, aPoles, nullptr);
++
++  gp_Pnt aPoint;
++  gp_Vec aTanU, aTanV, aCurvU, aCurvV, aCurvUV;
++  aCache->D0(0.5, 0.5, aPoint);
++  EXPECT_TRUE(std::isfinite(aPoint.X()));
++  aCache->D1(0.5, 0.5, aPoint, aTanU, aTanV);
++  EXPECT_TRUE(std::isfinite(aTanU.X()));
++  aCache->D2(0.5, 0.5, aPoint, aTanU, aTanV, aCurvU, aCurvV, aCurvUV);
++  EXPECT_TRUE(std::isfinite(aCurvUV.X()));
++}
++
++// Concurrent variant, matching the BSplCLib_Cache sibling: N threads share ONE cache and each
++// iteration re-runs BuildCache() (a genuine concurrent write) immediately followed by D0/D1/D2
++// (cycling per iteration). Rebuilding every iteration is required for the same reason noted on
++// the BSplCLib_Cache sibling test: a cache that is only ever read after being built once shows no
++// observable difference under a plain data race, since every thread would be reading the same,
++// already-settled bytes.
++TEST_F(BSplSLib_CacheTest, ConcurrentRebuildAndEvaluationMatchesReference)
++{
++  NCollection_Array2<gp_Pnt> aPoles(1, 3, 1, 3);
++  aPoles(1, 1) = gp_Pnt(0, 0, 0);
++  aPoles(2, 1) = gp_Pnt(1, 0, 1);
++  aPoles(3, 1) = gp_Pnt(2, 0, 0);
++  aPoles(1, 2) = gp_Pnt(0, 1, 1);
++  aPoles(2, 2) = gp_Pnt(1, 1, 2);
++  aPoles(3, 2) = gp_Pnt(2, 1, 1);
++  aPoles(1, 3) = gp_Pnt(0, 2, 0);
++  aPoles(2, 3) = gp_Pnt(1, 2, 1);
++  aPoles(3, 3) = gp_Pnt(2, 2, 0);
++
++  NCollection_Array1<double> aKnotsU(1, 2);
++  aKnotsU(1) = 0.0;
++  aKnotsU(2) = 1.0;
++  NCollection_Array1<double> aKnotsV(1, 2);
++  aKnotsV(1) = 0.0;
++  aKnotsV(2) = 1.0;
++  NCollection_Array1<int> aMultsU(1, 2);
++  aMultsU(1) = 3;
++  aMultsU(2) = 3;
++  NCollection_Array1<int> aMultsV(1, 2);
++  aMultsV(1) = 3;
++  aMultsV(2) = 3;
++
++  NCollection_Array1<double> aFlatKnotsU(1, 6);
++  createFlatKnots(aKnotsU, aMultsU, aFlatKnotsU);
++  NCollection_Array1<double> aFlatKnotsV(1, 6);
++  createFlatKnots(aKnotsV, aMultsV, aFlatKnotsV);
++
++  const double aU = 0.5, aV = 0.5;
++
++  occ::handle<BSplSLib_Cache> aCache =
++    new BSplSLib_Cache(2, false, aFlatKnotsU, 2, false, aFlatKnotsV, nullptr);
++  aCache->BuildCache(aU, aV, aFlatKnotsU, aFlatKnotsV, aPoles, nullptr);
++
++  gp_Pnt aRefPoint;
++  gp_Vec aRefTanU, aRefTanV;
++  aCache->D1(aU, aV, aRefPoint, aRefTanU, aRefTanV);
++
++  const int                aThreadCount = 16;
++  const int                anIterations = 3000;
++  std::atomic<long>        aMismatches{0};
++  std::vector<std::thread> aPool;
++  for (int t = 0; t < aThreadCount; ++t)
++  {
++    aPool.emplace_back([&]() {
++      for (int it = 0; it < anIterations; ++it)
++      {
++        aCache->BuildCache(aU, aV, aFlatKnotsU, aFlatKnotsV, aPoles, nullptr);
++
++        gp_Pnt aPoint;
++        gp_Vec aTanU, aTanV, aCurvU, aCurvV, aCurvUV;
++        switch (it % 3)
++        {
++          case 0:
++            aCache->D0(aU, aV, aPoint);
++            break;
++          case 1:
++            aCache->D1(aU, aV, aPoint, aTanU, aTanV);
++            break;
++          default:
++            aCache->D2(aU, aV, aPoint, aTanU, aTanV, aCurvU, aCurvV, aCurvUV);
++            break;
++        }
++        if (!std::isfinite(aPoint.X()) || (aPoint.Distance(aRefPoint) > THE_TOLERANCE))
++        {
++          aMismatches++;
++        }
++      }
++    });
+   }
++  for (auto& t : aPool)
++  {
++    t.join();
++  }
++  EXPECT_EQ(aMismatches.load(), 0)
++    << "concurrent BuildCache+D0-D2 on one shared cache disagreed with the single-threaded "
++       "reference "
++    << aMismatches.load() << " times out of " << (aThreadCount * anIterations);
+ }

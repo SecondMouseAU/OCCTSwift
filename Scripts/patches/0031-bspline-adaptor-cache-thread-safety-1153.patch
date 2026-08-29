@@ -1,0 +1,1558 @@
+diff --git a/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.cxx b/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.cxx
+index 14b8904..f113d64 100644
+--- a/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.cxx
++++ b/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.cxx
+@@ -10,11 +10,13 @@
+ //
+ // Alternatively, this file may be used under the terms of Open CASCADE
+ // commercial license or contractual agreement.
++// Thread-safety fix (#1153): every method locks myMutex around its own body.
+ 
+ #include <BSplCLib_Cache.hxx>
+ #include <BSplCLib.hxx>
+ 
+ #include <NCollection_LocalArray.hxx>
++#include <mutex>
+ 
+ #include <gp_Pnt.hxx>
+ #include <NCollection_Array1.hxx>
+@@ -23,6 +25,16 @@
+ 
+ IMPLEMENT_STANDARD_RTTIEXT(BSplCLib_Cache, Standard_Transient)
+ 
++namespace
++{
++template <typename F>
++auto Locked(std::recursive_mutex& m, F&& f) -> decltype(f())
++{
++  std::lock_guard<std::recursive_mutex> lock(m);
++  return f();
++}
++} // namespace
++
+ //=================================================================================================
+ 
+ BSplCLib_Cache::BSplCLib_Cache(
+@@ -55,7 +67,7 @@ BSplCLib_Cache::BSplCLib_Cache(
+ 
+ bool BSplCLib_Cache::IsCacheValid(double theParameter) const
+ {
+-  return myParams.IsCacheValid(theParameter);
++  return Locked(myMutex, [&]() { return myParams.IsCacheValid(theParameter); });
+ }
+ 
+ //=================================================================================================
+@@ -65,27 +77,29 @@ void BSplCLib_Cache::BuildCache(const double&                       theParameter
+                                 const NCollection_Array1<gp_Pnt2d>& thePoles2d,
+                                 const NCollection_Array1<double>*   theWeights)
+ {
+-  // Normalize theParameter for periodical B-splines
+-  double aNewParam = myParams.PeriodicNormalization(theParameter);
+-  myParams.LocateParameter(aNewParam, theFlatKnots);
+-
+-  // Create array wrapper referencing the stack buffer
+-  NCollection_Array2<double> aPolesWeights(myPolesWeightsBuffer[0],
+-                                           1,
+-                                           myParams.Degree + 1,
+-                                           1,
+-                                           myRowLength);
+-
+-  // Calculate new cache data
+-  BSplCLib::BuildCache(myParams.SpanStart,
+-                       myParams.SpanLength,
+-                       myParams.IsPeriodic,
+-                       myParams.Degree,
+-                       myParams.SpanIndex,
+-                       theFlatKnots,
+-                       thePoles2d,
+-                       theWeights,
+-                       aPolesWeights);
++  Locked(myMutex, [&]() {
++    // Normalize theParameter for periodical B-splines
++    double aNewParam = myParams.PeriodicNormalization(theParameter);
++    myParams.LocateParameter(aNewParam, theFlatKnots);
++
++    // Create array wrapper referencing the stack buffer
++    NCollection_Array2<double> aPolesWeights(myPolesWeightsBuffer[0],
++                                             1,
++                                             myParams.Degree + 1,
++                                             1,
++                                             myRowLength);
++
++    // Calculate new cache data
++    BSplCLib::BuildCache(myParams.SpanStart,
++                         myParams.SpanLength,
++                         myParams.IsPeriodic,
++                         myParams.Degree,
++                         myParams.SpanIndex,
++                         theFlatKnots,
++                         thePoles2d,
++                         theWeights,
++                         aPolesWeights);
++  });
+ }
+ 
+ void BSplCLib_Cache::BuildCache(const double&                     theParameter,
+@@ -93,27 +107,29 @@ void BSplCLib_Cache::BuildCache(const double&                     theParameter,
+                                 const NCollection_Array1<gp_Pnt>& thePoles,
+                                 const NCollection_Array1<double>* theWeights)
+ {
+-  // Create list of knots with repetitions and normalize theParameter for periodical B-splines
+-  double aNewParam = myParams.PeriodicNormalization(theParameter);
+-  myParams.LocateParameter(aNewParam, theFlatKnots);
+-
+-  // Create array wrapper referencing the stack buffer
+-  NCollection_Array2<double> aPolesWeights(myPolesWeightsBuffer[0],
+-                                           1,
+-                                           myParams.Degree + 1,
+-                                           1,
+-                                           myRowLength);
+-
+-  // Calculate new cache data
+-  BSplCLib::BuildCache(myParams.SpanStart,
+-                       myParams.SpanLength,
+-                       myParams.IsPeriodic,
+-                       myParams.Degree,
+-                       myParams.SpanIndex,
+-                       theFlatKnots,
+-                       thePoles,
+-                       theWeights,
+-                       aPolesWeights);
++  Locked(myMutex, [&]() {
++    // Create list of knots with repetitions and normalize theParameter for periodical B-splines
++    double aNewParam = myParams.PeriodicNormalization(theParameter);
++    myParams.LocateParameter(aNewParam, theFlatKnots);
++
++    // Create array wrapper referencing the stack buffer
++    NCollection_Array2<double> aPolesWeights(myPolesWeightsBuffer[0],
++                                             1,
++                                             myParams.Degree + 1,
++                                             1,
++                                             myRowLength);
++
++    // Calculate new cache data
++    BSplCLib::BuildCache(myParams.SpanStart,
++                         myParams.SpanLength,
++                         myParams.IsPeriodic,
++                         myParams.Degree,
++                         myParams.SpanIndex,
++                         theFlatKnots,
++                         thePoles,
++                         theWeights,
++                         aPolesWeights);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -122,9 +138,11 @@ void BSplCLib_Cache::calculateDerivative(double  theParameter,
+                                          int     theDerivative,
+                                          double* theDerivArray) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  calculateDerivativeLocal(aLocalParam, theDerivative, theDerivArray);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    calculateDerivativeLocal(aLocalParam, theDerivative, theDerivArray);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -133,121 +151,135 @@ void BSplCLib_Cache::calculateDerivativeLocal(double  theLocalParam,
+                                               int     theDerivative,
+                                               double* theDerivArray) const
+ {
+-  const int aDimension = myRowLength;
+-
+-  // Temporary container. The maximal size of this container is defined by:
+-  //    1) maximal derivative for cache evaluation, which is 3, plus one row for function values,
+-  //    2) and maximal dimension of the point, which is 3, plus one column for weights.
+-  double aTmpContainer[16];
+-
+-  // When the PLib::RationalDerivative needs to be called, use temporary container
+-  double* aPntDeriv = myIsRational ? aTmpContainer : theDerivArray;
+-
+-  // When the degree of curve is lesser than the requested derivative,
+-  // nullify array cells corresponding to greater derivatives
+-  int aDerivative = theDerivative;
+-  if (!myIsRational && myParams.Degree < theDerivative)
+-  {
+-    aDerivative = myParams.Degree;
+-    for (int ind = myParams.Degree * aDimension; ind < (theDerivative + 1) * aDimension; ind++)
++  Locked(myMutex, [&]() {
++    const int aDimension = myRowLength;
++
++    // Temporary container. The maximal size of this container is defined by:
++    //    1) maximal derivative for cache evaluation, which is 3, plus one row for function values,
++    //    2) and maximal dimension of the point, which is 3, plus one column for weights.
++    double aTmpContainer[16];
++
++    // When the PLib::RationalDerivative needs to be called, use temporary container
++    double* aPntDeriv = myIsRational ? aTmpContainer : theDerivArray;
++
++    // When the degree of curve is lesser than the requested derivative,
++    // nullify array cells corresponding to greater derivatives
++    int aDerivative = theDerivative;
++    if (!myIsRational && myParams.Degree < theDerivative)
+     {
+-      aPntDeriv[ind] = 0.0;
++      aDerivative = myParams.Degree;
++      for (int ind = myParams.Degree * aDimension; ind < (theDerivative + 1) * aDimension; ind++)
++      {
++        aPntDeriv[ind] = 0.0;
++      }
+     }
+-  }
+-
+-  PLib::EvalPolynomial(theLocalParam,
+-                       aDerivative,
+-                       myParams.Degree,
+-                       aDimension,
+-                       myPolesWeightsBuffer[0],
+-                       aPntDeriv[0]);
+-
+-  // Unnormalize derivatives since those are computed normalized
+-  // Use division by SpanLength instead of multiplication by precomputed inverse
+-  // for better numerical stability with very small span lengths
+-  double aFactor = 1.0;
+-  for (int deriv = 1; deriv <= aDerivative; deriv++)
+-  {
+-    aFactor /= myParams.SpanLength;
+-    for (int ind = 0; ind < aDimension; ind++)
++
++    PLib::EvalPolynomial(theLocalParam,
++                         aDerivative,
++                         myParams.Degree,
++                         aDimension,
++                         myPolesWeightsBuffer[0],
++                         aPntDeriv[0]);
++
++    // Unnormalize derivatives since those are computed normalized
++    // Use division by SpanLength instead of multiplication by precomputed inverse
++    // for better numerical stability with very small span lengths
++    double aFactor = 1.0;
++    for (int deriv = 1; deriv <= aDerivative; deriv++)
+     {
+-      aPntDeriv[aDimension * deriv + ind] *= aFactor;
++      aFactor /= myParams.SpanLength;
++      for (int ind = 0; ind < aDimension; ind++)
++      {
++        aPntDeriv[aDimension * deriv + ind] *= aFactor;
++      }
+     }
+-  }
+-
+-  if (myIsRational)
+-  {
+-    PLib::RationalDerivative(aDerivative,
+-                             aDerivative,
+-                             aDimension - 1,
+-                             aPntDeriv[0],
+-                             theDerivArray[0]);
+-  }
++
++    if (myIsRational)
++    {
++      PLib::RationalDerivative(aDerivative,
++                               aDerivative,
++                               aDimension - 1,
++                               aPntDeriv[0],
++                               theDerivArray[0]);
++    }
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D0(const double& theParameter, gp_Pnt2d& thePoint) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D0Local(aLocalParam, thePoint);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D0Local(aLocalParam, thePoint);
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D0(const double& theParameter, gp_Pnt& thePoint) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D0Local(aLocalParam, thePoint);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D0Local(aLocalParam, thePoint);
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D0Local(double theLocalParam, gp_Pnt& thePoint) const
+ {
+-  // theLocalParam is already computed as (param - SpanStart) / SpanLength
+-  double aPoint[4];
+-
+-  PLib::NoDerivativeEvalPolynomial(theLocalParam,
+-                                   myParams.Degree,
+-                                   myRowLength,
+-                                   myParams.Degree * myRowLength,
+-                                   myPolesWeightsBuffer[0],
+-                                   aPoint[0]);
+-
+-  thePoint.SetCoord(aPoint[0], aPoint[1], aPoint[2]);
+-  if (myIsRational)
+-  {
+-    thePoint.ChangeCoord().Divide(aPoint[3]);
+-  }
++  Locked(myMutex, [&]() {
++    // theLocalParam is already computed as (param - SpanStart) / SpanLength
++    double aPoint[4];
++
++    PLib::NoDerivativeEvalPolynomial(theLocalParam,
++                                     myParams.Degree,
++                                     myRowLength,
++                                     myParams.Degree * myRowLength,
++                                     myPolesWeightsBuffer[0],
++                                     aPoint[0]);
++
++    thePoint.SetCoord(aPoint[0], aPoint[1], aPoint[2]);
++    if (myIsRational)
++    {
++      thePoint.ChangeCoord().Divide(aPoint[3]);
++    }
++  });
+ }
+ 
+ void BSplCLib_Cache::D1(const double& theParameter, gp_Pnt2d& thePoint, gp_Vec2d& theTangent) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D1Local(aLocalParam, thePoint, theTangent);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D1Local(aLocalParam, thePoint, theTangent);
++  });
+ }
+ 
+ void BSplCLib_Cache::D1(const double& theParameter, gp_Pnt& thePoint, gp_Vec& theTangent) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D1Local(aLocalParam, thePoint, theTangent);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D1Local(aLocalParam, thePoint, theTangent);
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D1Local(double theLocalParam, gp_Pnt& thePoint, gp_Vec& theTangent) const
+ {
+-  double aDerivArray[8];
+-  calculateDerivativeLocal(theLocalParam, 1, aDerivArray);
+-
+-  const int aDim = myIsRational ? myRowLength - 1 : myRowLength;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[8];
++    calculateDerivativeLocal(theLocalParam, 1, aDerivArray);
++
++    const int aDim = myIsRational ? myRowLength - 1 : myRowLength;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
++  });
+ }
+ 
+ void BSplCLib_Cache::D2(const double& theParameter,
+@@ -255,9 +287,11 @@ void BSplCLib_Cache::D2(const double& theParameter,
+                         gp_Vec2d&     theTangent,
+                         gp_Vec2d&     theCurvature) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D2Local(aLocalParam, thePoint, theTangent, theCurvature);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D2Local(aLocalParam, thePoint, theTangent, theCurvature);
++  });
+ }
+ 
+ void BSplCLib_Cache::D2(const double& theParameter,
+@@ -265,9 +299,11 @@ void BSplCLib_Cache::D2(const double& theParameter,
+                         gp_Vec&       theTangent,
+                         gp_Vec&       theCurvature) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D2Local(aLocalParam, thePoint, theTangent, theCurvature);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D2Local(aLocalParam, thePoint, theTangent, theCurvature);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -277,14 +313,16 @@ void BSplCLib_Cache::D2Local(double  theLocalParam,
+                              gp_Vec& theTangent,
+                              gp_Vec& theCurvature) const
+ {
+-  double aDerivArray[12];
+-  calculateDerivativeLocal(theLocalParam, 2, aDerivArray);
+-
+-  const int aDim   = myIsRational ? myRowLength - 1 : myRowLength;
+-  const int aShift = aDim << 1;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
+-  theCurvature.SetCoord(aDerivArray[aShift], aDerivArray[aShift + 1], aDerivArray[aShift + 2]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[12];
++    calculateDerivativeLocal(theLocalParam, 2, aDerivArray);
++
++    const int aDim   = myIsRational ? myRowLength - 1 : myRowLength;
++    const int aShift = aDim << 1;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
++    theCurvature.SetCoord(aDerivArray[aShift], aDerivArray[aShift + 1], aDerivArray[aShift + 2]);
++  });
+ }
+ 
+ void BSplCLib_Cache::D3(const double& theParameter,
+@@ -293,9 +331,11 @@ void BSplCLib_Cache::D3(const double& theParameter,
+                         gp_Vec2d&     theCurvature,
+                         gp_Vec2d&     theTorsion) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D3Local(aLocalParam, thePoint, theTangent, theCurvature, theTorsion);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D3Local(aLocalParam, thePoint, theTangent, theCurvature, theTorsion);
++  });
+ }
+ 
+ void BSplCLib_Cache::D3(const double& theParameter,
+@@ -304,9 +344,11 @@ void BSplCLib_Cache::D3(const double& theParameter,
+                         gp_Vec&       theCurvature,
+                         gp_Vec&       theTorsion) const
+ {
+-  double aLocalParam = myParams.PeriodicNormalization(theParameter);
+-  aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
+-  D3Local(aLocalParam, thePoint, theTangent, theCurvature, theTorsion);
++  Locked(myMutex, [&]() {
++    double aLocalParam = myParams.PeriodicNormalization(theParameter);
++    aLocalParam        = (aLocalParam - myParams.SpanStart) / myParams.SpanLength;
++    D3Local(aLocalParam, thePoint, theTangent, theCurvature, theTorsion);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -317,48 +359,54 @@ void BSplCLib_Cache::D3Local(double  theLocalParam,
+                              gp_Vec& theCurvature,
+                              gp_Vec& theTorsion) const
+ {
+-  double aDerivArray[16];
+-  calculateDerivativeLocal(theLocalParam, 3, aDerivArray);
+-
+-  const int aDim    = myIsRational ? myRowLength - 1 : myRowLength;
+-  const int aShift2 = aDim << 1;
+-  const int aShift3 = aShift2 + aDim;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
+-  theCurvature.SetCoord(aDerivArray[aShift2], aDerivArray[aShift2 + 1], aDerivArray[aShift2 + 2]);
+-  theTorsion.SetCoord(aDerivArray[aShift3], aDerivArray[aShift3 + 1], aDerivArray[aShift3 + 2]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[16];
++    calculateDerivativeLocal(theLocalParam, 3, aDerivArray);
++
++    const int aDim    = myIsRational ? myRowLength - 1 : myRowLength;
++    const int aShift2 = aDim << 1;
++    const int aShift3 = aShift2 + aDim;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1], aDerivArray[2]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1], aDerivArray[aDim + 2]);
++    theCurvature.SetCoord(aDerivArray[aShift2], aDerivArray[aShift2 + 1], aDerivArray[aShift2 + 2]);
++    theTorsion.SetCoord(aDerivArray[aShift3], aDerivArray[aShift3 + 1], aDerivArray[aShift3 + 2]);
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D0Local(double theLocalParam, gp_Pnt2d& thePoint) const
+ {
+-  double aPoint[4];
+-
+-  PLib::NoDerivativeEvalPolynomial(theLocalParam,
+-                                   myParams.Degree,
+-                                   myRowLength,
+-                                   myParams.Degree * myRowLength,
+-                                   myPolesWeightsBuffer[0],
+-                                   aPoint[0]);
+-
+-  thePoint.SetCoord(aPoint[0], aPoint[1]);
+-  if (myIsRational)
+-  {
+-    thePoint.ChangeCoord().Divide(aPoint[2]);
+-  }
++  Locked(myMutex, [&]() {
++    double aPoint[4];
++
++    PLib::NoDerivativeEvalPolynomial(theLocalParam,
++                                     myParams.Degree,
++                                     myRowLength,
++                                     myParams.Degree * myRowLength,
++                                     myPolesWeightsBuffer[0],
++                                     aPoint[0]);
++
++    thePoint.SetCoord(aPoint[0], aPoint[1]);
++    if (myIsRational)
++    {
++      thePoint.ChangeCoord().Divide(aPoint[2]);
++    }
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplCLib_Cache::D1Local(double theLocalParam, gp_Pnt2d& thePoint, gp_Vec2d& theTangent) const
+ {
+-  double aDerivArray[8];
+-  calculateDerivativeLocal(theLocalParam, 1, aDerivArray);
+-
+-  const int aDim = myIsRational ? myRowLength - 1 : myRowLength;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[8];
++    calculateDerivativeLocal(theLocalParam, 1, aDerivArray);
++
++    const int aDim = myIsRational ? myRowLength - 1 : myRowLength;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -368,14 +416,16 @@ void BSplCLib_Cache::D2Local(double    theLocalParam,
+                              gp_Vec2d& theTangent,
+                              gp_Vec2d& theCurvature) const
+ {
+-  double aDerivArray[12];
+-  calculateDerivativeLocal(theLocalParam, 2, aDerivArray);
+-
+-  const int aDim   = myIsRational ? myRowLength - 1 : myRowLength;
+-  const int aShift = aDim << 1;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
+-  theCurvature.SetCoord(aDerivArray[aShift], aDerivArray[aShift + 1]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[12];
++    calculateDerivativeLocal(theLocalParam, 2, aDerivArray);
++
++    const int aDim   = myIsRational ? myRowLength - 1 : myRowLength;
++    const int aShift = aDim << 1;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
++    theCurvature.SetCoord(aDerivArray[aShift], aDerivArray[aShift + 1]);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -386,14 +436,16 @@ void BSplCLib_Cache::D3Local(double    theLocalParam,
+                              gp_Vec2d& theCurvature,
+                              gp_Vec2d& theTorsion) const
+ {
+-  double aDerivArray[16];
+-  calculateDerivativeLocal(theLocalParam, 3, aDerivArray);
+-
+-  const int aDim    = myIsRational ? myRowLength - 1 : myRowLength;
+-  const int aShift2 = aDim << 1;
+-  const int aShift3 = aShift2 + aDim;
+-  thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
+-  theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
+-  theCurvature.SetCoord(aDerivArray[aShift2], aDerivArray[aShift2 + 1]);
+-  theTorsion.SetCoord(aDerivArray[aShift3], aDerivArray[aShift3 + 1]);
++  Locked(myMutex, [&]() {
++    double aDerivArray[16];
++    calculateDerivativeLocal(theLocalParam, 3, aDerivArray);
++
++    const int aDim    = myIsRational ? myRowLength - 1 : myRowLength;
++    const int aShift2 = aDim << 1;
++    const int aShift3 = aShift2 + aDim;
++    thePoint.SetCoord(aDerivArray[0], aDerivArray[1]);
++    theTangent.SetCoord(aDerivArray[aDim], aDerivArray[aDim + 1]);
++    theCurvature.SetCoord(aDerivArray[aShift2], aDerivArray[aShift2 + 1]);
++    theTorsion.SetCoord(aDerivArray[aShift3], aDerivArray[aShift3 + 1]);
++  });
+ }
+diff --git a/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.hxx b/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.hxx
+index 56c95f3..2d4cfd1 100644
+--- a/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.hxx
++++ b/src/FoundationClasses/TKMath/BSplCLib/BSplCLib_Cache.hxx
+@@ -15,11 +15,14 @@
+ #define _BSplCLib_Cache_Headerfile
+ 
+ #include <BSplCLib_CacheParams.hxx>
++#include <mutex>
+ 
+ //! \brief A cache class for Bezier and B-spline curves.
+ //!
+ //! Defines all data, that can be cached on a span of a curve.
+ //! The data should be recalculated in going from span to span.
++//! Thread-safe: every method locks an internal mutex before touching the mutable cache state,
++//! so one instance may be evaluated concurrently from multiple threads (issue #1153).
+ class BSplCLib_Cache : public Standard_Transient
+ {
+ public:
+@@ -228,6 +231,11 @@ private:
+                                            //!< For 2D-curves: no z component
+                                            //!< For non-rational curves: no weight
+   // clang-format on
++
++  //! Guards all mutable state above. Recursive because a public entry point taking a flat
++  //! parameter (D0/D1/D2/D3, calculateDerivative) locks once and then calls the corresponding
++  //! *Local overload, which is itself a public entry point and locks again on the same thread.
++  mutable std::recursive_mutex myMutex;
+ };
+ 
+ #endif
+diff --git a/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.cxx b/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.cxx
+index dd51d48..e870910 100644
+--- a/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.cxx
++++ b/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.cxx
+@@ -15,6 +15,7 @@
+ #include <BSplSLib.hxx>
+ 
+ #include <NCollection_LocalArray.hxx>
++#include <mutex>
+ 
+ #include <gp_Pnt.hxx>
+ #include <NCollection_Array2.hxx>
+@@ -26,6 +27,12 @@ IMPLEMENT_STANDARD_RTTIEXT(BSplSLib_Cache, Standard_Transient)
+ 
+ namespace
+ {
++template <typename F>
++auto Locked(std::recursive_mutex& m, F&& f) -> decltype(f())
++{
++  std::lock_guard<std::recursive_mutex> lock(m);
++  return f();
++}
+ 
+ //! Converts handle of array of double into the pointer to double
+ double* ConvertArray(const occ::handle<NCollection_HArray2<double>>& theHArray)
+@@ -251,7 +258,9 @@ BSplSLib_Cache::BSplSLib_Cache(const int&                        theDegreeU,
+ 
+ bool BSplSLib_Cache::IsCacheValid(double theParameterU, double theParameterV) const
+ {
+-  return myParamsU.IsCacheValid(theParameterU) && myParamsV.IsCacheValid(theParameterV);
++  return Locked(myMutex, [&]() {
++    return myParamsU.IsCacheValid(theParameterU) && myParamsV.IsCacheValid(theParameterV);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -263,85 +272,91 @@ void BSplSLib_Cache::BuildCache(const double&                     theParameterU,
+                                 const NCollection_Array2<gp_Pnt>& thePoles,
+                                 const NCollection_Array2<double>* theWeights)
+ {
+-  // Normalize the parameters for periodical B-splines
+-  double aNewParamU = myParamsU.PeriodicNormalization(theParameterU);
+-  double aNewParamV = myParamsV.PeriodicNormalization(theParameterV);
+-
+-  myParamsU.LocateParameter(aNewParamU, theFlatKnotsU);
+-  myParamsV.LocateParameter(aNewParamV, theFlatKnotsV);
+-
+-  // BSplSLib uses different convention for span parameters than BSplCLib
+-  // (Start is in the middle of the span and length is half-span),
+-  // thus we need to amend them here
+-  double aSpanLengthU = 0.5 * myParamsU.SpanLength;
+-  double aSpanStartU  = myParamsU.SpanStart + aSpanLengthU;
+-  double aSpanLengthV = 0.5 * myParamsV.SpanLength;
+-  double aSpanStartV  = myParamsV.SpanStart + aSpanLengthV;
+-
+-  // Calculate new cache data
+-  BSplSLib::BuildCache(aSpanStartU,
+-                       aSpanStartV,
+-                       aSpanLengthU,
+-                       aSpanLengthV,
+-                       myParamsU.IsPeriodic,
+-                       myParamsV.IsPeriodic,
+-                       myParamsU.Degree,
+-                       myParamsV.Degree,
+-                       myParamsU.SpanIndex,
+-                       myParamsV.SpanIndex,
+-                       theFlatKnotsU,
+-                       theFlatKnotsV,
+-                       thePoles,
+-                       theWeights,
+-                       myPolesWeights->ChangeArray2());
++  Locked(myMutex, [&]() {
++    // Normalize the parameters for periodical B-splines
++    double aNewParamU = myParamsU.PeriodicNormalization(theParameterU);
++    double aNewParamV = myParamsV.PeriodicNormalization(theParameterV);
++
++    myParamsU.LocateParameter(aNewParamU, theFlatKnotsU);
++    myParamsV.LocateParameter(aNewParamV, theFlatKnotsV);
++
++    // BSplSLib uses different convention for span parameters than BSplCLib
++    // (Start is in the middle of the span and length is half-span),
++    // thus we need to amend them here
++    double aSpanLengthU = 0.5 * myParamsU.SpanLength;
++    double aSpanStartU  = myParamsU.SpanStart + aSpanLengthU;
++    double aSpanLengthV = 0.5 * myParamsV.SpanLength;
++    double aSpanStartV  = myParamsV.SpanStart + aSpanLengthV;
++
++    // Calculate new cache data
++    BSplSLib::BuildCache(aSpanStartU,
++                         aSpanStartV,
++                         aSpanLengthU,
++                         aSpanLengthV,
++                         myParamsU.IsPeriodic,
++                         myParamsV.IsPeriodic,
++                         myParamsU.Degree,
++                         myParamsV.Degree,
++                         myParamsU.SpanIndex,
++                         myParamsV.SpanIndex,
++                         theFlatKnotsU,
++                         theFlatKnotsV,
++                         thePoles,
++                         theWeights,
++                         myPolesWeights->ChangeArray2());
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplSLib_Cache::D0(const double& theU, const double& theV, gp_Pnt& thePoint) const
+ {
+-  const auto [aLocalU, aLocalV] = toLocalParamsD0(theU, theV, myParamsU, myParamsV);
+-  D0Local(aLocalU, aLocalV, thePoint);
++  Locked(myMutex, [&]() {
++    const auto [aLocalU, aLocalV] = toLocalParamsD0(theU, theV, myParamsU, myParamsV);
++    D0Local(aLocalU, aLocalV, thePoint);
++  });
+ }
+ 
+ //=================================================================================================
+ 
+ void BSplSLib_Cache::D0Local(double theLocalU, double theLocalV, gp_Pnt& thePoint) const
+ {
+-  double* aPolesArray = ConvertArray(myPolesWeights);
+-  double  aPoint[4]   = {};
+-
+-  const int  aDimension               = myIsRational ? 4 : 3;
+-  const int  aCacheCols               = myPolesWeights->RowLength();
+-  const bool isMaxU                   = (myParamsU.Degree > myParamsV.Degree);
+-  const auto [aMinDegree, aMaxDegree] = std::minmax(myParamsU.Degree, myParamsV.Degree);
+-  const auto [aMinParam, aMaxParam] =
+-    isMaxU ? std::make_pair(theLocalV, theLocalU) : std::make_pair(theLocalU, theLocalV);
+-
+-  // Array for intermediate results
+-  NCollection_LocalArray<double> aTransientCoeffs(aCacheCols);
+-
+-  // Calculate intermediate value of cached polynomial along variable with maximal degree
+-  PLib::NoDerivativeEvalPolynomial(aMaxParam,
+-                                   aMaxDegree,
+-                                   aCacheCols,
+-                                   aMaxDegree * aCacheCols,
+-                                   aPolesArray[0],
+-                                   aTransientCoeffs[0]);
+-
+-  // Calculate total value along variable with minimal degree
+-  PLib::NoDerivativeEvalPolynomial(aMinParam,
+-                                   aMinDegree,
+-                                   aDimension,
+-                                   aDimension * aMinDegree,
+-                                   aTransientCoeffs[0],
+-                                   aPoint[0]);
+-
+-  thePoint.SetCoord(aPoint[0], aPoint[1], aPoint[2]);
+-  if (myIsRational)
+-  {
+-    thePoint.ChangeCoord().Divide(aPoint[3]);
+-  }
++  Locked(myMutex, [&]() {
++    double* aPolesArray = ConvertArray(myPolesWeights);
++    double  aPoint[4]   = {};
++
++    const int  aDimension               = myIsRational ? 4 : 3;
++    const int  aCacheCols               = myPolesWeights->RowLength();
++    const bool isMaxU                   = (myParamsU.Degree > myParamsV.Degree);
++    const auto [aMinDegree, aMaxDegree] = std::minmax(myParamsU.Degree, myParamsV.Degree);
++    const auto [aMinParam, aMaxParam] =
++      isMaxU ? std::make_pair(theLocalV, theLocalU) : std::make_pair(theLocalU, theLocalV);
++
++    // Array for intermediate results
++    NCollection_LocalArray<double> aTransientCoeffs(aCacheCols);
++
++    // Calculate intermediate value of cached polynomial along variable with maximal degree
++    PLib::NoDerivativeEvalPolynomial(aMaxParam,
++                                     aMaxDegree,
++                                     aCacheCols,
++                                     aMaxDegree * aCacheCols,
++                                     aPolesArray[0],
++                                     aTransientCoeffs[0]);
++
++    // Calculate total value along variable with minimal degree
++    PLib::NoDerivativeEvalPolynomial(aMinParam,
++                                     aMinDegree,
++                                     aDimension,
++                                     aDimension * aMinDegree,
++                                     aTransientCoeffs[0],
++                                     aPoint[0]);
++
++    thePoint.SetCoord(aPoint[0], aPoint[1], aPoint[2]);
++    if (myIsRational)
++    {
++      thePoint.ChangeCoord().Divide(aPoint[3]);
++    }
++  });
+ }
+ 
+ //=================================================================================================
+@@ -352,51 +367,53 @@ void BSplSLib_Cache::D1Local(double  theLocalU,
+                              gp_Vec& theTangentU,
+                              gp_Vec& theTangentV) const
+ {
+-  double aPntDeriv[16] = {}; // Result storage for D1, zero-initialized
+-  EvaluatePolynomials(myPolesWeights,
+-                      myParamsU,
+-                      myParamsV,
+-                      myIsRational,
+-                      theLocalU,
+-                      theLocalV,
+-                      1,
+-                      1,
+-                      aPntDeriv);
+-
+-  // After RationalDerivative (for rational surfaces), the output dimension is 3 (not 4)
+-  // because weights have been processed out
+-  const int aDimension = 3;
+-
+-  thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
+-
+-  // Tangents are stored after the point coordinates
+-  // Order depends on which parameter has higher degree
+-  // If U degree > V degree: layout is [P, DV, DU, ...]
+-  // If V degree >= U degree: layout is [P, DU, DV, ...]
+-  if (myParamsU.Degree > myParamsV.Degree)
+-  {
+-    theTangentV.SetCoord(aPntDeriv[aDimension],
+-                         aPntDeriv[aDimension + 1],
+-                         aPntDeriv[aDimension + 2]);
+-    theTangentU.SetCoord(aPntDeriv[aDimension << 1],
+-                         aPntDeriv[(aDimension << 1) + 1],
+-                         aPntDeriv[(aDimension << 1) + 2]);
+-  }
+-  else
+-  {
+-    theTangentU.SetCoord(aPntDeriv[aDimension],
+-                         aPntDeriv[aDimension + 1],
+-                         aPntDeriv[aDimension + 2]);
+-    theTangentV.SetCoord(aPntDeriv[aDimension << 1],
+-                         aPntDeriv[(aDimension << 1) + 1],
+-                         aPntDeriv[(aDimension << 1) + 2]);
+-  }
++  Locked(myMutex, [&]() {
++    double aPntDeriv[16] = {}; // Result storage for D1, zero-initialized
++    EvaluatePolynomials(myPolesWeights,
++                        myParamsU,
++                        myParamsV,
++                        myIsRational,
++                        theLocalU,
++                        theLocalV,
++                        1,
++                        1,
++                        aPntDeriv);
++
++    // After RationalDerivative (for rational surfaces), the output dimension is 3 (not 4)
++    // because weights have been processed out
++    const int aDimension = 3;
++
++    thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
++
++    // Tangents are stored after the point coordinates
++    // Order depends on which parameter has higher degree
++    // If U degree > V degree: layout is [P, DV, DU, ...]
++    // If V degree >= U degree: layout is [P, DU, DV, ...]
++    if (myParamsU.Degree > myParamsV.Degree)
++    {
++      theTangentV.SetCoord(aPntDeriv[aDimension],
++                           aPntDeriv[aDimension + 1],
++                           aPntDeriv[aDimension + 2]);
++      theTangentU.SetCoord(aPntDeriv[aDimension << 1],
++                           aPntDeriv[(aDimension << 1) + 1],
++                           aPntDeriv[(aDimension << 1) + 2]);
++    }
++    else
++    {
++      theTangentU.SetCoord(aPntDeriv[aDimension],
++                           aPntDeriv[aDimension + 1],
++                           aPntDeriv[aDimension + 2]);
++      theTangentV.SetCoord(aPntDeriv[aDimension << 1],
++                           aPntDeriv[(aDimension << 1) + 1],
++                           aPntDeriv[(aDimension << 1) + 2]);
++    }
+ 
+-  // Use direct division for better numerical stability with very small span lengths
+-  const double aSpanLengthU = 0.5 * myParamsU.SpanLength;
+-  const double aSpanLengthV = 0.5 * myParamsV.SpanLength;
+-  theTangentU.Divide(aSpanLengthU);
+-  theTangentV.Divide(aSpanLengthV);
++    // Use direct division for better numerical stability with very small span lengths
++    const double aSpanLengthU = 0.5 * myParamsU.SpanLength;
++    const double aSpanLengthV = 0.5 * myParamsV.SpanLength;
++    theTangentU.Divide(aSpanLengthU);
++    theTangentV.Divide(aSpanLengthV);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -410,64 +427,66 @@ void BSplSLib_Cache::D2Local(double  theLocalU,
+                              gp_Vec& theCurvatureV,
+                              gp_Vec& theCurvatureUV) const
+ {
+-  double aPntDeriv[36] = {}; // Result storage for D2, zero-initialized
+-  EvaluatePolynomials(myPolesWeights,
+-                      myParamsU,
+-                      myParamsV,
+-                      myIsRational,
+-                      theLocalU,
+-                      theLocalV,
+-                      2,
+-                      2,
+-                      aPntDeriv);
+-
+-  // After RationalDerivative (for rational surfaces), the output dimension is 3 (not 4)
+-  // because weights have been processed out
+-  const int aDimension = 3;
+-  const int aShift     = aDimension; // Shift for first derivatives
+-  const int aShift2    = aDimension << 1;
+-  const int aShift3    = aShift2 + aDimension;
+-  const int aShift4    = aShift3 + aDimension;
+-  const int aShift6    = 6 * aDimension;
+-
+-  thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
+-
+-  // Derivatives are stored consecutively
+-  // If Max=U (U degree > V degree):
+-  // [0]=P, [Dim]=DV, [2Dim]=DVV
+-  // [3Dim]=DU, [4Dim]=DUV
+-  // [6Dim]=DUU
+-  if (myParamsU.Degree > myParamsV.Degree)
+-  {
+-    theTangentV.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
+-    theCurvatureV.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
+-    theTangentU.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
+-    theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
+-    theCurvatureU.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
+-  }
+-  else
+-  {
+-    // If Max=V (V degree >= U degree):
+-    // [0]=P, [Dim]=DU, [2Dim]=DUU
+-    // [3Dim]=DV, [4Dim]=DUV (DVU is symmetric)
+-    // [6Dim]=DVV
+-    theTangentU.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
+-    theCurvatureU.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
+-    theTangentV.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
+-    theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
+-    theCurvatureV.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
+-  }
++  Locked(myMutex, [&]() {
++    double aPntDeriv[36] = {}; // Result storage for D2, zero-initialized
++    EvaluatePolynomials(myPolesWeights,
++                        myParamsU,
++                        myParamsV,
++                        myIsRational,
++                        theLocalU,
++                        theLocalV,
++                        2,
++                        2,
++                        aPntDeriv);
++
++    // After RationalDerivative (for rational surfaces), the output dimension is 3 (not 4)
++    // because weights have been processed out
++    const int aDimension = 3;
++    const int aShift     = aDimension; // Shift for first derivatives
++    const int aShift2    = aDimension << 1;
++    const int aShift3    = aShift2 + aDimension;
++    const int aShift4    = aShift3 + aDimension;
++    const int aShift6    = 6 * aDimension;
++
++    thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
++
++    // Derivatives are stored consecutively
++    // If Max=U (U degree > V degree):
++    // [0]=P, [Dim]=DV, [2Dim]=DVV
++    // [3Dim]=DU, [4Dim]=DUV
++    // [6Dim]=DUU
++    if (myParamsU.Degree > myParamsV.Degree)
++    {
++      theTangentV.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
++      theCurvatureV.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
++      theTangentU.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
++      theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
++      theCurvatureU.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
++    }
++    else
++    {
++      // If Max=V (V degree >= U degree):
++      // [0]=P, [Dim]=DU, [2Dim]=DUU
++      // [3Dim]=DV, [4Dim]=DUV (DVU is symmetric)
++      // [6Dim]=DVV
++      theTangentU.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
++      theCurvatureU.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
++      theTangentV.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
++      theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
++      theCurvatureV.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
++    }
+ 
+-  // Use direct division for better numerical stability with very small span lengths
+-  const double aSpanLengthU  = 0.5 * myParamsU.SpanLength;
+-  const double aSpanLengthV  = 0.5 * myParamsV.SpanLength;
+-  const double aSpanLengthU2 = aSpanLengthU * aSpanLengthU;
+-  const double aSpanLengthV2 = aSpanLengthV * aSpanLengthV;
+-  theTangentU.Divide(aSpanLengthU);
+-  theTangentV.Divide(aSpanLengthV);
+-  theCurvatureU.Divide(aSpanLengthU2);
+-  theCurvatureV.Divide(aSpanLengthV2);
+-  theCurvatureUV.Divide(aSpanLengthU * aSpanLengthV);
++    // Use direct division for better numerical stability with very small span lengths
++    const double aSpanLengthU  = 0.5 * myParamsU.SpanLength;
++    const double aSpanLengthV  = 0.5 * myParamsV.SpanLength;
++    const double aSpanLengthU2 = aSpanLengthU * aSpanLengthU;
++    const double aSpanLengthV2 = aSpanLengthV * aSpanLengthV;
++    theTangentU.Divide(aSpanLengthU);
++    theTangentV.Divide(aSpanLengthV);
++    theCurvatureU.Divide(aSpanLengthU2);
++    theCurvatureV.Divide(aSpanLengthV2);
++    theCurvatureUV.Divide(aSpanLengthU * aSpanLengthV);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -478,47 +497,49 @@ void BSplSLib_Cache::D1(const double& theU,
+                         gp_Vec&       theTangentU,
+                         gp_Vec&       theTangentV) const
+ {
+-  // Use the same inverse values for both parameter transformation and derivative scaling
+-  // to maintain numerical consistency with the original implementation
+-  double anInvU = 0.0, anInvV = 0.0;
+-  const auto [aLocalU, aLocalV] = toLocalParams(theU, theV, myParamsU, myParamsV, anInvU, anInvV);
+-
+-  double aPntDeriv[16] = {};
+-  EvaluatePolynomials(myPolesWeights,
+-                      myParamsU,
+-                      myParamsV,
+-                      myIsRational,
+-                      aLocalU,
+-                      aLocalV,
+-                      1,
+-                      1,
+-                      aPntDeriv);
+-
+-  const int aDimension = 3;
+-  thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
+-
+-  if (myParamsU.Degree > myParamsV.Degree)
+-  {
+-    theTangentV.SetCoord(aPntDeriv[aDimension],
+-                         aPntDeriv[aDimension + 1],
+-                         aPntDeriv[aDimension + 2]);
+-    theTangentU.SetCoord(aPntDeriv[aDimension << 1],
+-                         aPntDeriv[(aDimension << 1) + 1],
+-                         aPntDeriv[(aDimension << 1) + 2]);
+-  }
+-  else
+-  {
+-    theTangentU.SetCoord(aPntDeriv[aDimension],
+-                         aPntDeriv[aDimension + 1],
+-                         aPntDeriv[aDimension + 2]);
+-    theTangentV.SetCoord(aPntDeriv[aDimension << 1],
+-                         aPntDeriv[(aDimension << 1) + 1],
+-                         aPntDeriv[(aDimension << 1) + 2]);
+-  }
++  Locked(myMutex, [&]() {
++    // Use the same inverse values for both parameter transformation and derivative scaling
++    // to maintain numerical consistency with the original implementation
++    double anInvU = 0.0, anInvV = 0.0;
++    const auto [aLocalU, aLocalV] = toLocalParams(theU, theV, myParamsU, myParamsV, anInvU, anInvV);
++
++    double aPntDeriv[16] = {};
++    EvaluatePolynomials(myPolesWeights,
++                        myParamsU,
++                        myParamsV,
++                        myIsRational,
++                        aLocalU,
++                        aLocalV,
++                        1,
++                        1,
++                        aPntDeriv);
++
++    const int aDimension = 3;
++    thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
++
++    if (myParamsU.Degree > myParamsV.Degree)
++    {
++      theTangentV.SetCoord(aPntDeriv[aDimension],
++                           aPntDeriv[aDimension + 1],
++                           aPntDeriv[aDimension + 2]);
++      theTangentU.SetCoord(aPntDeriv[aDimension << 1],
++                           aPntDeriv[(aDimension << 1) + 1],
++                           aPntDeriv[(aDimension << 1) + 2]);
++    }
++    else
++    {
++      theTangentU.SetCoord(aPntDeriv[aDimension],
++                           aPntDeriv[aDimension + 1],
++                           aPntDeriv[aDimension + 2]);
++      theTangentV.SetCoord(aPntDeriv[aDimension << 1],
++                           aPntDeriv[(aDimension << 1) + 1],
++                           aPntDeriv[(aDimension << 1) + 2]);
++    }
+ 
+-  // Scale derivatives using the same inverse values used for parameter transformation
+-  theTangentU.Multiply(anInvU);
+-  theTangentV.Multiply(anInvV);
++    // Scale derivatives using the same inverse values used for parameter transformation
++    theTangentU.Multiply(anInvU);
++    theTangentV.Multiply(anInvV);
++  });
+ }
+ 
+ //=================================================================================================
+@@ -532,52 +553,54 @@ void BSplSLib_Cache::D2(const double& theU,
+                         gp_Vec&       theCurvatureV,
+                         gp_Vec&       theCurvatureUV) const
+ {
+-  // Use the same inverse values for both parameter transformation and derivative scaling
+-  // to maintain numerical consistency with the original implementation
+-  double anInvU = 0.0, anInvV = 0.0;
+-  const auto [aLocalU, aLocalV] = toLocalParams(theU, theV, myParamsU, myParamsV, anInvU, anInvV);
+-
+-  double aPntDeriv[36] = {};
+-  EvaluatePolynomials(myPolesWeights,
+-                      myParamsU,
+-                      myParamsV,
+-                      myIsRational,
+-                      aLocalU,
+-                      aLocalV,
+-                      2,
+-                      2,
+-                      aPntDeriv);
+-
+-  const int aDimension = 3;
+-  const int aShift     = aDimension;
+-  const int aShift2    = aDimension << 1;
+-  const int aShift3    = aShift2 + aDimension;
+-  const int aShift4    = aShift3 + aDimension;
+-  const int aShift6    = 6 * aDimension;
+-
+-  thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
+-
+-  if (myParamsU.Degree > myParamsV.Degree)
+-  {
+-    theTangentV.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
+-    theCurvatureV.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
+-    theTangentU.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
+-    theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
+-    theCurvatureU.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
+-  }
+-  else
+-  {
+-    theTangentU.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
+-    theCurvatureU.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
+-    theTangentV.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
+-    theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
+-    theCurvatureV.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
+-  }
++  Locked(myMutex, [&]() {
++    // Use the same inverse values for both parameter transformation and derivative scaling
++    // to maintain numerical consistency with the original implementation
++    double anInvU = 0.0, anInvV = 0.0;
++    const auto [aLocalU, aLocalV] = toLocalParams(theU, theV, myParamsU, myParamsV, anInvU, anInvV);
++
++    double aPntDeriv[36] = {};
++    EvaluatePolynomials(myPolesWeights,
++                        myParamsU,
++                        myParamsV,
++                        myIsRational,
++                        aLocalU,
++                        aLocalV,
++                        2,
++                        2,
++                        aPntDeriv);
++
++    const int aDimension = 3;
++    const int aShift     = aDimension;
++    const int aShift2    = aDimension << 1;
++    const int aShift3    = aShift2 + aDimension;
++    const int aShift4    = aShift3 + aDimension;
++    const int aShift6    = 6 * aDimension;
++
++    thePoint.SetCoord(aPntDeriv[0], aPntDeriv[1], aPntDeriv[2]);
++
++    if (myParamsU.Degree > myParamsV.Degree)
++    {
++      theTangentV.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
++      theCurvatureV.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
++      theTangentU.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
++      theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
++      theCurvatureU.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
++    }
++    else
++    {
++      theTangentU.SetCoord(aPntDeriv[aShift], aPntDeriv[aShift + 1], aPntDeriv[aShift + 2]);
++      theCurvatureU.SetCoord(aPntDeriv[aShift2], aPntDeriv[aShift2 + 1], aPntDeriv[aShift2 + 2]);
++      theTangentV.SetCoord(aPntDeriv[aShift3], aPntDeriv[aShift3 + 1], aPntDeriv[aShift3 + 2]);
++      theCurvatureUV.SetCoord(aPntDeriv[aShift4], aPntDeriv[aShift4 + 1], aPntDeriv[aShift4 + 2]);
++      theCurvatureV.SetCoord(aPntDeriv[aShift6], aPntDeriv[aShift6 + 1], aPntDeriv[aShift6 + 2]);
++    }
+ 
+-  // Scale derivatives using the same inverse values used for parameter transformation
+-  theTangentU.Multiply(anInvU);
+-  theTangentV.Multiply(anInvV);
+-  theCurvatureU.Multiply(anInvU * anInvU);
+-  theCurvatureV.Multiply(anInvV * anInvV);
+-  theCurvatureUV.Multiply(anInvU * anInvV);
++    // Scale derivatives using the same inverse values used for parameter transformation
++    theTangentU.Multiply(anInvU);
++    theTangentV.Multiply(anInvV);
++    theCurvatureU.Multiply(anInvU * anInvU);
++    theCurvatureV.Multiply(anInvV * anInvV);
++    theCurvatureUV.Multiply(anInvU * anInvV);
++  });
+ }
+diff --git a/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.hxx b/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.hxx
+index 15cf581..0188671 100644
+--- a/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.hxx
++++ b/src/FoundationClasses/TKMath/BSplSLib/BSplSLib_Cache.hxx
+@@ -18,11 +18,14 @@
+ #include <NCollection_HArray2.hxx>
+ 
+ #include <BSplCLib_CacheParams.hxx>
++#include <mutex>
+ 
+ //! \brief A cache class for Bezier and B-spline surfaces.
+ //!
+ //! Defines all data, that can be cached on a span of the surface.
+ //! The data should be recalculated in going from span to span.
++//! Thread-safe: every method locks an internal mutex before touching the mutable cache state,
++//! so one instance may be evaluated concurrently from multiple threads (issue #1153).
+ class BSplSLib_Cache : public Standard_Transient
+ {
+ public:
+@@ -158,6 +161,10 @@ private:
+                                                 // for non-rational surfaces there is no weight;
+                                                 // size of array: (max(myDegree)+1) * A*(min(myDegree)+1), where A = 4 or 3
+   // clang-format on
++
++  //! Guards all mutable state above. Recursive because D0() locks once and then calls the
++  //! also-public D0Local() overload, which locks again on the same thread.
++  mutable std::recursive_mutex myMutex;
+ };
+ 
+ #endif
+diff --git a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.cxx b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.cxx
+index 664ab4f..56fb40c 100644
+--- a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.cxx
++++ b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.cxx
+@@ -707,7 +707,8 @@ gp_Pnt GeomAdaptor_Curve::EvalD0(const double theU) const
+       {
+         return myCurve->EvalD0(U);
+       }
+-      auto& aCache = std::get<BezierData>(myCurveData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(myCurveData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U);
+@@ -729,6 +730,7 @@ gp_Pnt GeomAdaptor_Curve::EvalD0(const double theU) const
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U))
+         {
+           RebuildCache(U);
+@@ -793,7 +795,8 @@ Geom_Curve::ResD1 GeomAdaptor_Curve::EvalD1(const double theU) const
+       {
+         return myCurve->EvalD1(U);
+       }
+-      auto& aCache = std::get<BezierData>(myCurveData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(myCurveData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U);
+@@ -815,6 +818,7 @@ Geom_Curve::ResD1 GeomAdaptor_Curve::EvalD1(const double theU) const
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U))
+         {
+           RebuildCache(U);
+@@ -881,7 +885,8 @@ Geom_Curve::ResD2 GeomAdaptor_Curve::EvalD2(const double theU) const
+       {
+         return myCurve->EvalD2(U);
+       }
+-      auto& aCache = std::get<BezierData>(myCurveData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(myCurveData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U);
+@@ -903,6 +908,7 @@ Geom_Curve::ResD2 GeomAdaptor_Curve::EvalD2(const double theU) const
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U))
+         {
+           RebuildCache(U);
+@@ -987,7 +993,8 @@ Geom_Curve::ResD3 GeomAdaptor_Curve::EvalD3(const double theU) const
+       {
+         return myCurve->EvalD3(U);
+       }
+-      auto& aCache = std::get<BezierData>(myCurveData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(myCurveData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U);
+@@ -1010,6 +1017,7 @@ Geom_Curve::ResD3 GeomAdaptor_Curve::EvalD3(const double theU) const
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U))
+         {
+           RebuildCache(U);
+diff --git a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.hxx b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.hxx
+index a76c5eb..57a607d 100644
+--- a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.hxx
++++ b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Curve.hxx
+@@ -31,6 +31,7 @@
+ #include <Standard_NullObject.hxx>
+ #include <Standard_ConstructionError.hxx>
+ 
++#include <mutex>
+ #include <variant>
+ 
+ class Geom_BSplineCurve;
+@@ -45,9 +46,10 @@ class Base;
+ //! curve from the package Geom and those required of the curve by algorithms which use it.
+ //! Creation of the loaded curve the curve is C1 by piece.
+ //!
+-//! Polynomial coefficients of BSpline curves used for their evaluation are
+-//! cached for better performance. Therefore these evaluations are not
+-//! thread-safe and parallel evaluations need to be prevented.
++//! Polynomial coefficients of BSpline curves used for their evaluation are cached for better
++//! performance. The Bezier/BSpline cache (BSplCLib_Cache) and the check-rebuild-evaluate
++//! sequence that creates and replaces it are both internally synchronized (issue #1153), so one
++//! adaptor instance may be evaluated concurrently from multiple threads.
+ class GeomAdaptor_Curve : public Adaptor3d_Curve
+ {
+   DEFINE_STANDARD_RTTIEXT(GeomAdaptor_Curve, Adaptor3d_Curve)
+@@ -100,6 +102,32 @@ public:
+ 
+   GeomAdaptor_Curve(const occ::handle<Geom_Curve>& theCurve) { Load(theCurve); }
+ 
++  //! Copies every field except myCacheMutex: each instance's mutex is its own and is never
++  //! shared or duplicated, so the copy default-constructs a fresh one (issue #1153). Needed
++  //! because GeomAdaptor_TransformedCurve::ShallowCopy() copy-assigns a GeomAdaptor_Curve value.
++  GeomAdaptor_Curve(const GeomAdaptor_Curve& theOther)
++      : myCurve(theOther.myCurve),
++        myTypeCurve(theOther.myTypeCurve),
++        myFirst(theOther.myFirst),
++        myLast(theOther.myLast),
++        myCurveData(theOther.myCurveData)
++  {
++  }
++
++  //! See the copy constructor: myCacheMutex is deliberately left untouched.
++  GeomAdaptor_Curve& operator=(const GeomAdaptor_Curve& theOther)
++  {
++    if (this != &theOther)
++    {
++      myCurve     = theOther.myCurve;
++      myTypeCurve = theOther.myTypeCurve;
++      myFirst     = theOther.myFirst;
++      myLast      = theOther.myLast;
++      myCurveData = theOther.myCurveData;
++    }
++    return *this;
++  }
++
+   //! Standard_ConstructionError is raised if theUFirst > theULast + Precision::PConfusion()
+   GeomAdaptor_Curve(const occ::handle<Geom_Curve>& theCurve,
+                     const double                   theUFirst,
+@@ -262,6 +290,12 @@ private:
+   double                  myFirst;
+   double                  myLast;
+   CurveDataVariant myCurveData; ///< Curve-specific evaluation data (BSpline, Bezier, offset, etc.)
++
++  //! Guards the Cache handle's check-IsCacheValid/RebuildCache/evaluate sequence in EvalD0-EvalD3
++  //! (issue #1153): without it, two threads sharing this adaptor can both see an invalid cache and
++  //! both replace it, racing on the Cache handle itself and destroying the instance the other is
++  //! mid-evaluation on. Never copied or moved with the adaptor; see the copy constructor above.
++  mutable std::mutex myCacheMutex;
+ };
+ 
+ #endif // _GeomAdaptor_Curve_HeaderFile
+diff --git a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.cxx b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.cxx
+index 3918f55..75d1d76 100644
+--- a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.cxx
++++ b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.cxx
+@@ -1051,7 +1051,8 @@ gp_Pnt GeomAdaptor_Surface::EvalD0(const double theU, const double theV) const
+       {
+         return mySurface->EvalD0(U, V);
+       }
+-      auto& aCache = std::get<BezierData>(mySurfaceData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(mySurfaceData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U, V);
+@@ -1064,7 +1065,8 @@ gp_Pnt GeomAdaptor_Surface::EvalD0(const double theU, const double theV) const
+       {
+         return mySurface->EvalD0(U, V);
+       }
+-      auto& aCache = std::get<BSplineData>(mySurfaceData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BSplineData>(mySurfaceData).Cache;
+       if (aCache.IsNull() || !aCache->IsCacheValid(U, V))
+       {
+         RebuildCache(U, V);
+@@ -1175,7 +1177,8 @@ Geom_Surface::ResD1 GeomAdaptor_Surface::EvalD1(const double theU, const double
+       {
+         return mySurface->EvalD1(U, V);
+       }
+-      auto& aCache = std::get<BezierData>(mySurfaceData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(mySurfaceData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U, V);
+@@ -1196,6 +1199,7 @@ Geom_Surface::ResD1 GeomAdaptor_Surface::EvalD1(const double theU, const double
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U, V))
+         {
+           RebuildCache(U, V);
+@@ -1349,7 +1353,8 @@ Geom_Surface::ResD2 GeomAdaptor_Surface::EvalD2(const double theU, const double
+       {
+         return mySurface->EvalD2(U, V);
+       }
+-      auto& aCache = std::get<BezierData>(mySurfaceData).Cache;
++      std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
++      auto&                       aCache = std::get<BezierData>(mySurfaceData).Cache;
+       if (aCache.IsNull())
+       {
+         RebuildCache(U, V);
+@@ -1382,6 +1387,7 @@ Geom_Surface::ResD2 GeomAdaptor_Surface::EvalD2(const double theU, const double
+       }
+       else
+       {
++        std::lock_guard<std::mutex> aCacheLock(myCacheMutex);
+         if (aBSplData.Cache.IsNull() || !aBSplData.Cache->IsCacheValid(U, V))
+         {
+           RebuildCache(U, V);
+diff --git a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.hxx b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.hxx
+index 29a9361..dba76db 100644
+--- a/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.hxx
++++ b/src/ModelingData/TKG3d/GeomAdaptor/GeomAdaptor_Surface.hxx
+@@ -33,6 +33,7 @@
+ #include <Standard_NullObject.hxx>
+ #include <NCollection_Array1.hxx>
+ 
++#include <mutex>
+ #include <variant>
+ 
+ class GeomAdaptor_Curve;
+@@ -49,9 +50,10 @@ class Base;
+ //! of the surface by algorithms which use it.
+ //! Creation of the loaded surface the surface is C1 by piece
+ //!
+-//! Polynomial coefficients of BSpline surfaces used for their evaluation are
+-//! cached for better performance. Therefore these evaluations are not
+-//! thread-safe and parallel evaluations need to be prevented.
++//! Polynomial coefficients of BSpline surfaces used for their evaluation are cached for better
++//! performance. The Bezier/BSpline cache (BSplSLib_Cache) and the check-rebuild-evaluate
++//! sequence that creates and replaces it are both internally synchronized (issue #1153), so one
++//! adaptor instance may be evaluated concurrently from multiple threads.
+ class GeomAdaptor_Surface : public Adaptor3d_Surface
+ {
+   DEFINE_STANDARD_RTTIEXT(GeomAdaptor_Surface, Adaptor3d_Surface)
+@@ -144,6 +146,41 @@ public:
+     Load(theSurf, theUFirst, theULast, theVFirst, theVLast, theTolU, theTolV);
+   }
+ 
++  //! Copies every field except myCacheMutex: each instance's mutex is its own and is never
++  //! shared or duplicated, so the copy default-constructs a fresh one (issue #1153). Needed
++  //! because GeomAdaptor_TransformedSurface::ShallowCopy() copy-assigns a GeomAdaptor_Surface
++  //! value the same way GeomAdaptor_TransformedCurve does for GeomAdaptor_Curve.
++  GeomAdaptor_Surface(const GeomAdaptor_Surface& theOther)
++      : mySurface(theOther.mySurface),
++        myUFirst(theOther.myUFirst),
++        myULast(theOther.myULast),
++        myVFirst(theOther.myVFirst),
++        myVLast(theOther.myVLast),
++        myTolU(theOther.myTolU),
++        myTolV(theOther.myTolV),
++        mySurfaceType(theOther.mySurfaceType),
++        mySurfaceData(theOther.mySurfaceData)
++  {
++  }
++
++  //! See the copy constructor: myCacheMutex is deliberately left untouched.
++  GeomAdaptor_Surface& operator=(const GeomAdaptor_Surface& theOther)
++  {
++    if (this != &theOther)
++    {
++      mySurface     = theOther.mySurface;
++      myUFirst      = theOther.myUFirst;
++      myULast       = theOther.myULast;
++      myVFirst      = theOther.myVFirst;
++      myVLast       = theOther.myVLast;
++      myTolU        = theOther.myTolU;
++      myTolV        = theOther.myTolV;
++      mySurfaceType = theOther.mySurfaceType;
++      mySurfaceData = theOther.mySurfaceData;
++    }
++    return *this;
++  }
++
+   //! Shallow copy of adaptor
+   Standard_EXPORT occ::handle<Adaptor3d_Surface> ShallowCopy() const override;
+ 
+@@ -386,6 +423,13 @@ protected:
+   double                    myTolV;
+   GeomAbs_SurfaceType       mySurfaceType;
+   SurfaceDataVariant        mySurfaceData; ///< Surface-specific evaluation data
++
++  //! Guards the Cache handle's check-IsCacheValid/RebuildCache/evaluate sequence in D0/D1/D2
++  //! (issue #1153): without it, two threads sharing this adaptor can both see an invalid cache
++  //! and both replace it, racing on the Cache handle itself and destroying the instance the
++  //! other is mid-evaluation on. Never copied or moved with the adaptor; see the copy
++  //! constructor above.
++  mutable std::mutex myCacheMutex;
+ };
+ 
+ #endif // _GeomAdaptor_Surface_HeaderFile

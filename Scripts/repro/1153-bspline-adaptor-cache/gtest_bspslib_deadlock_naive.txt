@@ -1,0 +1,6 @@
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+Note: Google Test filter = *DerivativeMethodsDoNotDeadlock*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from BSplSLib_CacheTest
+[ RUN      ] BSplSLib_CacheTest.DerivativeMethodsDoNotDeadlock

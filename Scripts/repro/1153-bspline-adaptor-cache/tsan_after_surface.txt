@@ -1,0 +1,2 @@
+scenario=shared_adaptor_surface threads=16 iterations=3000
+done: ops=48000 errors=0 elapsed=0.14s
