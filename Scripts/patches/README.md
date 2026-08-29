@@ -1293,6 +1293,77 @@ Not yet filed upstream (override-link validated, not yet in a rebuilt xcframewor
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0032-TopOpeBRepBuild-KPart-merge-globals-thread-local-1371.patch
+
+**Fixes the upstream OCCT thread-safety defect filed as
+[#1371](https://github.com/SecondMouseAU/OCCTSwift/issues/1371)**, the one near-miss the #1155
+survey ([`Scripts/repro/1155-thread-safety-survey/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1155-thread-safety-survey))
+turned up: twelve unsynchronized file-scope statics in the legacy `TopOpeBRepBuild_Builder` engine
+`BRepFilletAPI_MakeFillet`/`MakeChamfer` drive through `ChFi3d_Builder` → `TopOpeBRepBuild_HBuilder`.
+
+`TopOpeBRepBuild_ffsfs.cxx` and `TopOpeBRepBuild_GridSS.cxx` (plus `TopOpeBRepBuild_GridFF.cxx`,
+which turned out to hold `GLOBAL_classifysplitedge`'s one true definition, a file the issue's own
+scope didn't name) pass state between `TopOpeBRepBuild_Builder::GFillFaceSFS` and its callers
+(`GFillShellSFS`, `GFillSolidSFS`/`GFillSolidsSFS`, `GMergeSolids`) through: `GLOBAL_classifysplitedge`,
+`GLOBAL_revownsplfacori`, `GLOBAL_SplitAnc`, `GLOBAL_lfr1`, `GLOBAL_lfrtoprocess` (extern-linked
+across the three files), and `static_CONF1`/`static_CONF2`, `stabuild_IMELF1`/`IMELF2`,
+`stabuild_IDMEALF1`/`IDMEALF2`, `stabuild_IMEF` (file-local to `GridSS.cxx`), twelve in total (the
+issue's own tally said eleven, undercounting `stabuild_IMEF`; corrected here, not inherited). Same
+shape as `0003`'s retired `STATIC_SOLIDINDEX`/`STATIC_Gmotherope`/`STATIC_motheropedef` fix in the
+same toolkit (file-scope statics carrying state between methods within one logical operation, zero
+synchronization), a different pair of globals that fix did not reach.
+
+**Confirmed unreachable today, filed and fixed anyway.** The #1155 survey proved, by two independent
+methods (a static call-graph read: `TopOpeBRepBuild_HBuilder::Perform(HDS)`, the only overload
+`ChFi3d_Builder.cxx` calls, never computes `myIsKPart`, which only the unused two-argument
+`Perform(HDS, S1, S2)` does; and an empirical `fprintf`-probe override-link driven through
+`BRepFilletAPI_MakeFillet`/`MakeChamfer` on five SameDomain-merge-prone geometries, zero hits) that
+this bridge's own call surface never reaches `MergeKPart`/`GMergeSolids`/the `GFill*SFS` family, so
+nothing races on these twelve today. Fixed ahead of the reachability anyway, on this project's own
+established precedent for exactly this shape (#298/#341/#344/#349/#353/#374/#1154/#1153): a live,
+unsynchronized file-scope static is a defect the day something starts driving the two-argument
+`Perform`/two-solid path, not the day someone notices.
+
+**Fix:** all twelve converted to `thread_local`, the same idiom `0003`/`checkcurve`
+(`ChFi3d_Builder_6.cxx`) already established in this toolkit. The five extern-linked globals need
+`thread_local` on both their one true definition *and* every `extern` declaration referencing them,
+not just the definition, since C++ requires storage duration to agree across every declaration of
+the same variable; verified directly rather than assumed, by `nm -C` on the linked archive, which
+shows a genuine TLV (thread-local variable) wrapper routine generated for each of the five, not a
+plain data symbol. No public API change, no signature change to any function in any of the three
+files.
+
+**Verification, and its real limit.** All three files compile and link cleanly across all three
+xcframework slices (macOS, iOS device, iOS simulator) via the by-hand incremental `TKBool` rebuild.
+A genuine functional (swift test / TSan) run against the freshly-rebuilt local kernel was attempted
+and abandoned: this session's `Libraries/occt-build-macos` incremental build tree had drifted into
+the exact failure this repo's own `Scripts/patches/README.md` header already documents ("Existing
+build trees pin a stale macOS SDK sysroot and can no longer incrementally compile"), producing a
+binary that SIGBUS-crashes on an unrelated, unmodified test (`Issue298FilletThreadSafetyTests`)
+identically whether this patch is applied or reverted, proven by A/B rebuilding both ways and
+confirming the crash is unchanged; the crash does not reproduce against the pinned *release* kernel
+(fetched fresh via SwiftPM, no local override) at all. That isolates the crash to this session's
+stale local build tree, not to this patch, but it also means the patch's functional correctness
+rests on the same reachability probe/TSan evidence #1371 already gathered for the unpatched code
+(showing 0 races because the code is unreached) rather than on a fresh green run against the patched
+binary. A full `Scripts/build-occt.sh` reconfigure (clean build dir, not attempted here, an
+hours-long job) is needed before this can be validated the way `0026`-`0031` were. The local
+`Libraries/OCCT.xcframework` binaries were restored to their pre-session state
+(`Libraries/OCCT.xcframework.zip`, byte-identical, `md5` confirmed) before this PR was opened, so
+this repro leaves no trace in the checkout.
+
+**Not fixed:** `GLOBAL_faces2d`, declared two lines above `GLOBAL_classifysplitedge` in
+`TopOpeBRepBuild_GridFF.cxx` with the identical unsynchronized-file-scope-static shape, but a wider
+reach (also read/written from `TopOpeBRepBuild_GridEE.cxx`, `TopOpeBRepBuild_on.cxx` and
+`TopOpeBRepBuild_Builder1_1.cxx`, none of which #1371's reachability probe instrumented). Left
+un-investigated and un-fixed rather than guessed at; a candidate for a future pass, not filed as its
+own issue yet since nothing has actually measured its reachability the way #1371 measured these
+twelve.
+
+Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so

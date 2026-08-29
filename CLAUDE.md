@@ -668,6 +668,48 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   rather than hidden; the TSan transcripts are its evidence instead. See
   [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
   for the full writeup. Not yet filed upstream.
+- `TopOpeBRepBuild_ffsfs.cxx`/`GridSS.cxx`/`GridFF.cxx`'s `GLOBAL_*`/`stabuild_*`/`static_CONF*`
+  cluster, twelve unsynchronized file-scope statics passing state between
+  `TopOpeBRepBuild_Builder::GFillFaceSFS` and its callers (`GFillShellSFS`,
+  `GFillSolidSFS`/`GFillSolidsSFS`, `GMergeSolids`), the near-miss the #1155 thread-safety survey
+  found while auditing `BRepFilletAPI_MakeFillet`/`MakeChamfer`'s underlying `TopOpeBRepBuild`
+  engine (reached via `ChFi3d_Builder` → `TopOpeBRepBuild_HBuilder`). Same shape as `0003`'s
+  retired `STATIC_SOLIDINDEX`/`STATIC_Gmotherope`/`STATIC_motheropedef` fix in the same toolkit, a
+  different pair of globals that fix did not touch. **Confirmed unreachable from this bridge's own
+  call surface, by two independent methods**: `TopOpeBRepBuild_HBuilder::Perform(HDS)`, the only
+  overload `ChFi3d_Builder.cxx` calls, forwards to the single-argument base `Perform`, which never
+  computes `myIsKPart`; only the unused two-argument `Perform(HDS, S1, S2)` does, so
+  `MergeKPart`/`GMergeSolids`/the `GFill*SFS` family (and their globals) are called from nowhere in
+  this tree. A reachability probe (`fprintf` in `FindIsKPart()`/`KPreturn()`/`GMergeSolids()`/
+  `GFillFaceSFS()`, override-linked ahead of the production archive, driven through
+  `BRepFilletAPI_MakeFillet`/`MakeChamfer` on five SameDomain-merge-prone geometries: a
+  12-edge-filleted box, a fused-then-filleted box+sphere, two boxes sharing a coincident face
+  fused then filleted, a chamfered box, a filleted cylinder) confirms it: zero hits. TSan
+  (`fillet_chamfer_all_edges_independent`, 8×30) is clean, consistent with the code never being
+  reached. **Filed and fixed anyway** (`Scripts/patches/0032-*`, override-link validated, not yet
+  in a rebuilt xcframework), on this project's own precedent for exactly this shape: unreachable
+  today is a fact about the current call graph, not a property of the classes, and every kernel
+  thread-safety defect here (#298, #341, #344, #349, #353, #374, #1154, #1153) was found only after
+  the fact. All twelve converted to `thread_local`, mirroring `checkcurve`
+  (`ChFi3d_Builder_6.cxx`, `0003`'s own precedent in this toolkit); the five extern-linked globals
+  need `thread_local` on both their one true definition and every `extern` declaration (one of
+  which turned out to live in `TopOpeBRepBuild_GridFF.cxx`, a file the original issue's own file
+  list didn't name), confirmed via `nm -C` on the linked archive generating a genuine TLV
+  (thread-local variable) wrapper routine for each rather than a plain data symbol. **A live
+  functional/TSan proof against a freshly-rebuilt local kernel was attempted and abandoned**: this
+  session's `occt-build-macos` incremental build tree had drifted into the "existing build trees
+  pin a stale macOS SDK sysroot and can no longer incrementally compile" failure this same section
+  already documents below, producing a binary that SIGBUS-crashes on an unrelated, unmodified test
+  identically with the patch applied or reverted (proven by A/B rebuild), and not at all against
+  the pinned release kernel with no local override. Verification is therefore compile-and-link
+  correctness plus the #1371 survey's own reachability/TSan evidence for the unpatched code, not a
+  fresh green run against the patched binary; a full `Scripts/build-occt.sh` reconfigure would be
+  needed for that. **Not fixed**: `GLOBAL_faces2d`, the same shape one file over in
+  `TopOpeBRepBuild_GridFF.cxx`, with a wider reach (`GridEE.cxx`, `on.cxx`, `Builder1_1.cxx` too)
+  that this pass did not investigate. See
+  [`Scripts/repro/1155-thread-safety-survey/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1155-thread-safety-survey)
+  for the survey and [`Scripts/patches/README.md`](Scripts/patches/README.md)'s `0032` entry for
+  the fix writeup. #1371.
 
 ### Carrying OCCT source patches
 

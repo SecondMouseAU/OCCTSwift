@@ -17,7 +17,7 @@ OCCT has several thread-unsafe patterns:
 
 2. **Topology flag mutations**: `TopoDS_TShape::myState` uses non-atomic `uint16_t` with bitwise operations. Concurrent flag modification on shared TShapes is a data race.
 
-3. **Various algorithms**: `BRepBuilderAPI_Transform`, `BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`, and others have internal mutable state. **Surveyed and confirmed clean (issue #1155)**: this item as originally written was a hypothesis, not a finding, unlike items 1/2/4 above. All eight candidate classes named in #1155 (this item's three plus `BRepBuilderAPI_MakeEdge`/`MakeWire`/`MakeFace`, `BRepOffsetAPI_MakePipeShell`/`MakeThickSolid`, `BRepFilletAPI_MakeFillet`/`MakeChamfer`, `ShapeFix_Face`/`Wire`/`Shape`, `BRepCheck_Analyzer`) hold only instance state; see "Algorithm instance-state survey" below for the one near-miss (a live but currently-unreachable file-scope-static cluster in the legacy fillet-reconstruction engine) and the follow-up issue tracking it.
+3. **Various algorithms**: `BRepBuilderAPI_Transform`, `BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`, and others have internal mutable state. **Surveyed and confirmed clean (issue #1155)**: this item as originally written was a hypothesis, not a finding, unlike items 1/2/4 above. All eight candidate classes named in #1155 (this item's three plus `BRepBuilderAPI_MakeEdge`/`MakeWire`/`MakeFace`, `BRepOffsetAPI_MakePipeShell`/`MakeThickSolid`, `BRepFilletAPI_MakeFillet`/`MakeChamfer`, `ShapeFix_Face`/`Wire`/`Shape`, `BRepCheck_Analyzer`) hold only instance state; see "Algorithm instance-state survey" below for the one near-miss (a live but currently-unreachable file-scope-static cluster in the legacy fillet-reconstruction engine), fixed as #1371.
 
 4. **Shared geometry after booleans**: Boolean operations can produce result shapes that share edge/face geometry with input shapes via the same `TopoDS_TShape` handles. Subsequent operations on both the original and result can race on shared adaptors.
 
@@ -132,6 +132,29 @@ history:
 
 2D fillets/chamfers (`BRepFilletAPI_MakeFillet2d`) were never affected, they use the
 separate analytic `ChFi2d` toolkit with no such statics.
+
+### Algorithm instance-state survey (issue #1155)
+
+Item 3 above named eight candidate classes as a hypothesis, not a finding: `BRepBuilderAPI_Transform`,
+`BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`, `BRepBuilderAPI_MakeEdge`/`MakeWire`/`MakeFace`,
+`BRepOffsetAPI_MakePipeShell`/`MakeThickSolid`, `BRepFilletAPI_MakeFillet`/`MakeChamfer`,
+`ShapeFix_Face`/`Wire`/`Shape`, `BRepCheck_Analyzer`. Each candidate's full call chain (not just its
+own `.cxx`) was read for file-scope/static mutable state, then checked against a real TSan
+reproducer. **All eight confirmed clean**: every candidate either has no static mutable state in its
+reachable call chain, or the state that exists is dead code (an `#ifdef` this project's Release
+build never defines), already `thread_local`/mutex-protected, or a function-local static that is
+read-only after one-time construction. Full per-class characterization, the repro, and the TSan
+transcripts are in
+[`Scripts/repro/1155-thread-safety-survey/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1155-thread-safety-survey).
+
+**One near-miss**: `BRepFilletAPI_MakeFillet`/`MakeChamfer`'s underlying legacy
+`TopOpeBRepBuild_Builder` engine had a second cluster of unsynchronized file-scope statics (in
+`TopOpeBRepBuild_ffsfs.cxx`/`GridSS.cxx`/`GridFF.cxx`) that #298's fix (above) did not reach, the
+same failure shape in the same toolkit. Confirmed unreachable from this bridge's own call surface
+by two independent methods (a static call-graph read and an empirical reachability probe), so it
+does not race in practice today, but filed and fixed anyway (`Scripts/patches/0032`, see CLAUDE.md's
+Known OCCT Bugs, #1371) on this project's precedent that a live unsynchronized global is worth
+fixing before something starts reaching it, not after.
 
 ### Document creation thread safety (issues #341, #344)
 
