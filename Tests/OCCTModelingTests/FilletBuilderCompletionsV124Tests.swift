@@ -60,9 +60,9 @@ struct FilletBuilderCompletionsV124Tests {
                     let ci = fb.contour(for: e)
                     if ci >= 1 {
                         let closed = fb.isClosed(contour: ci)
-                    #expect(!closed)  // single-edge fillet contour is not closed (one edge)
-                    let cat = fb.isClosedAndTangent(contour: ci)
-                    #expect(!cat)  // single-edge contour is not closed-and-tangent
+                        #expect(!closed)  // single-edge fillet contour is not closed (one edge)
+                        let cat = fb.isClosedAndTangent(contour: ci)
+                        #expect(!cat)  // single-edge contour is not closed-and-tangent
                     }
                 }
             }
