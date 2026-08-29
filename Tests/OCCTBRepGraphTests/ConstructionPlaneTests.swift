@@ -8,6 +8,21 @@ import simd
 
 @Suite("v0.142 ConstructionPlane resolution")
 struct ConstructionPlaneTests {
+    /// Finds the index of the first vertex in `graph` within `tolerance` of the origin, or nil
+    /// if none exists. Shared by the two fallback fixtures below (cone-apex, sphere-center),
+    /// which each searched for their target placeholder vertex with an identical inline loop
+    /// that had drifted to two different tolerances (1e-6 vs 1e-9) despite every surrounding
+    /// assertion at both call sites checking against 1e-6 -- 1e-6 is what's kept here (#1251).
+    private func firstVertexAtOrigin(in graph: BRepGraph, tolerance: Double = 1e-6) -> Int? {
+        for i in 0..<graph.vertexCount {
+            let p = graph.vertexPoint(i)
+            if abs(p.x) < tolerance, abs(p.y) < tolerance, abs(p.z) < tolerance {
+                return i
+            }
+        }
+        return nil
+    }
+
     @Test("Absolute plane resolves to specified origin+normal")
     func absolutePlane() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -166,15 +181,7 @@ struct ConstructionPlaneTests {
             Issue.record("face0 unavailable")
             return
         }
-        var apexIndex: Int?
-        for i in 0..<graph.vertexCount {
-            let p = graph.vertexPoint(i)
-            if abs(p.x) < 1e-6, abs(p.y) < 1e-6, abs(p.z) < 1e-6 {
-                apexIndex = i
-                break
-            }
-        }
-        guard let apexIndex else {
+        guard let apexIndex = firstVertexAtOrigin(in: graph) else {
             Issue.record("no vertex at the cone apex")
             return
         }
@@ -254,15 +261,7 @@ struct ConstructionPlaneTests {
 
         // The standalone vertex, wherever BRepGraph placed it -- found by position, not assumed
         // to be a specific index (CLAUDE.md Test Conventions).
-        var centerIndex: Int?
-        for i in 0..<graph.vertexCount {
-            let p = graph.vertexPoint(i)
-            if abs(p.x) < 1e-9, abs(p.y) < 1e-9, abs(p.z) < 1e-9 {
-                centerIndex = i
-                break
-            }
-        }
-        guard let centerIndex else {
+        guard let centerIndex = firstVertexAtOrigin(in: graph) else {
             Issue.record("no vertex at the sphere center")
             return
         }
