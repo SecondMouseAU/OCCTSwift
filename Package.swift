@@ -101,30 +101,37 @@ let occtTarget: Target = useLocalBinary
     // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
     // and it is why the count check at the top of this comment is worth the ten seconds.
     //
-    // IT IS TRUE AGAIN RIGHT NOW, DELIBERATELY. Scripts/patches/ holds NINETEEN patches; the pinned
-    // asset holds the seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 19
-    // against a list of 17, and those two are the difference:
+    // IT IS TRUE AGAIN RIGHT NOW, DELIBERATELY. Scripts/patches/ holds TWENTY patches; the pinned
+    // asset holds the seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 20
+    // against a list of 17, and those three are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
+    //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
     //
     // What that difference means is narrower than "untested", and the narrowing is worth having.
-    // ci.yml's build-and-test resolves this asset, so it never sees either patch. But
+    // ci.yml's build-and-test resolves this asset, so it never sees any of the three. But
     // kernel-integration.yml triggers on `Scripts/patches/**`, builds V8_0_1 plus every carried
     // patch from source, and runs the full swift test against that binary, so the PR that ADDS a
     // patch does get it built and the suite run against it. What that proves is that the patch
-    // applies, compiles, and regresses nothing; it cannot prove either fix works, because neither
-    // has a Swift-reachable assertion. And it does not run on any later PR that leaves
+    // applies, compiles, and regresses nothing; it cannot prove any of the three fixes works,
+    // because none has a Swift-reachable assertion (0030 is a data race, not a wrong answer, so
+    // even a Swift-level assertion wouldn't reliably catch it without TSan instrumentation the
+    // shipped xcframework doesn't carry). And it does not run on any later PR that leaves
     // Scripts/patches/ alone, which is nearly all of them. Do not read this as "check
     // kernel-integration.yml instead of ci.yml": that advice is what #585 discredited.
     //
     // They differ in what a rebuild would buy. 0028 fixes nothing observable in this repo:
     // OCCTGeomPlateErrors, the one bridge reader of those three accessors, was deleted by #999 (PR #1015),
     // and BRepFill_Filling's own forwarding of them is unreachable on the affected branch, so only
-    // the upstream GTests cover it either way. 0029 is the opposite: it is an uncatchable SIGSEGV
+    // the upstream GTests cover it either way. 0029 is an uncatchable SIGSEGV
     // on OCCTDocumentGetDatumInfo, reachable through Document.datums for any OCAF document whose
     // datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
-    // protects a consumer. See Scripts/patches/README.md's 0028 and 0029 entries.
+    // protects a consumer. 0030 is a data race, not a crash or a wrong single-threaded answer: any
+    // consumer sharing a TShape across threads (the common case after a boolean operation) is
+    // exposed today, silently, and neither the released kernel nor Scripts/tsan.supp's suppression
+    // (kept until a rebuild ships) makes it visible without deliberately running under TSan. See
+    // Scripts/patches/README.md's 0028, 0029 and 0030 entries.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
     // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its

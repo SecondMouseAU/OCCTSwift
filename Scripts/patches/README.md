@@ -8,7 +8,7 @@ until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building
 for what that takes.
 
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, so the
-carried sequence now reads 0010–0012, 0014–0029. The gaps are the retirements, not missing files:
+carried sequence now reads 0010–0012, 0014–0030. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1090,6 +1090,60 @@ reach the defect without a new write path. Unlike `0028`, that gap matters, beca
 uncatchable crash a consumer can reach through an OCAF load. That is what #1030 is for.
 
 Filed upstream as [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0030-TopoDS_TShape-myState-atomic-1154.patch
+
+**Fixes the upstream OCCT data race behind
+[#1154](https://github.com/SecondMouseAU/OCCTSwift/issues/1154)**: `TopoDS_TShape::myState` packs
+the shape type and eight boolean flags (Free, Modified, Checked, Orientable, Closed, Infinite,
+Convex, Locked) into one plain `uint16_t`, and every getter/setter reads or read-modify-writes it
+with ordinary, non-atomic bitwise operations.
+
+A `TopoDS_TShape` is not private to one `TopoDS_Shape`: boolean operations (`BRepAlgoAPI_Fuse` and
+siblings) routinely produce a result that shares edge/face TShapes with its inputs, so the same
+instance is reachable from several `TopoDS_Shape` handles at once, in ordinary concurrent use, not
+a misuse. Two threads mutating two different flags on the same instance race on the same 16-bit
+word: both can read the same stale value before either writes back, and whichever write lands last
+silently discards the other thread's update, a non-atomic read-modify-write lost update.
+
+**Fix.** `myState` becomes `std::atomic<uint16_t>`. Every getter loads with
+`std::memory_order_acquire`; `setBit()` becomes a `compare_exchange_weak` retry loop releasing on
+success. Confirmed, not assumed, that `std::atomic<uint16_t>` is the same size and alignment as the
+`uint16_t` it replaces on this platform and always lock-free (`sizeof`/`alignof` both 2,
+`is_always_lock_free` 1), so no other member's layout changes, since `myState` is the class's last
+data member. No public signature changes.
+
+**Copy-constructibility, checked rather than assumed.** `std::atomic<uint16_t>` has no copy
+constructor, so `TopoDS_TShape`'s implicitly-generated copy constructor and copy-assignment operator
+become implicitly deleted; `Standard_Transient` (the base) *does* define a working public copy
+constructor, so the design does not rule out by-value copies elsewhere in the hierarchy on its face.
+Checked two ways: an exhaustive grep across the entire `Libraries/occt-src/src` tree for
+`TopoDS_TShape` and each of its eight concrete subclasses, filtered to exclude
+`occ::handle<...>`/`Handle(...)`/pointer/reference/declaration/RTTI-macro occurrences, found zero
+by-value uses anywhere; and a real compile check, 22 `.cxx` files (all nine in `TKBRep/TopoDS/` plus
+`TopExp.cxx`, `TopExp_Explorer.cxx`, `BRepTools.cxx`, `BRep_Builder.cxx`,
+`BRepAlgoAPI_BooleanOperation.cxx`, `BRepBuilderAPI_MakeShape.cxx`, `ShapeFix_Shape.cxx`) compiled
+cleanly against the patched header placed ahead of the xcframework's own copy. Nothing in the tree
+copies a `TopoDS_TShape` by value.
+
+**Validation.** `Scripts/repro/1154-topology-flag-race/occt_1154_stress.cpp`, under ThreadSanitizer,
+two scenarios: a hand-picked shared `TShape*` with direct flag calls, and a real `BRepAlgoAPI_Fuse`
+result sharing TShapes with its inputs. Unpatched, both race on every run (`run.sh before`), at both
+light and heavy thread/iteration counts; patched, both are clean across multiple separate runs at
+higher load than the failing ones (`run.sh after`; 0/2 and 0/2, all exit 0). A GTest,
+`TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost` (added to the existing
+`TopoDS_TShape_Test.cxx`; `gtest-addition.diff` in the repro directory is the exact addition, not
+carried here since GTest source never is), stresses one shared TShape from seven threads each owning
+one flag: unpatched it fails intermittently (1, 2, 4, 6 lost updates observed across four runs, never
+0); patched, always 0 across six runs. All eight pre-existing cases in the file pass on both sides.
+`clang-format --dry-run --Werror -style=file:Libraries/occt-src/.clang-format` against both the
+patched header and the modified test file reports zero violations. See
+[`Scripts/repro/1154-topology-flag-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1154-topology-flag-race)
+for the full writeup, transcripts and reproducer.
+
+Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
 
 **Retire** once the bundled OCCT includes this fix.
 

@@ -22,6 +22,19 @@ race:Message_PrinterOStream
 
 # --- 2. Open kernel findings, filed and tracked -----------------------------
 #
-# (none currently, #353's CDM_Application:myMetaDataLookUpTable suppression
-# was removed in v1.15.11 once Scripts/patches/0015 carried the kernel fix;
-# see Scripts/repro/353-cdm-metadata-lookup-table/README.md.)
+# #1154: TopoDS_TShape::myState is a uint16_t bitfield modified via non-atomic
+# bitwise operations (|=, &= ~) in setBit()/Free()/Modified()/Checked() etc.
+# Concurrent flag mutations on shared TShapes (e.g., after boolean operations
+# where result shares TShapes with inputs) constitute a data race. Fixed by
+# making myState std::atomic<uint16_t> (Scripts/patches/0030-*). Remove once
+# a rebuilt xcframework carries the patch; see
+# Scripts/repro/1154-topology-flag-race/README.md.
+race:TopoDS_TShape::setBit
+race:TopoDS_TShape::Free
+race:TopoDS_TShape::Modified
+race:TopoDS_TShape::Checked
+race:TopoDS_TShape::Orientable
+race:TopoDS_TShape::Closed
+race:TopoDS_TShape::Infinite
+race:TopoDS_TShape::Convex
+race:TopoDS_TShape::Locked

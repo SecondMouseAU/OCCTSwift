@@ -1,0 +1,87 @@
+########## BEFORE: pinned kernel, no override ##########
+--- scenario=tshape_myState_race threads=8 iterations=2000 ---
+scenario=tshape_myState_race threads=8 iterations=2000
+Using TShape at 0x10aa04020
+==================
+WARNING: ThreadSanitizer: data race (pid=76836)
+  Write of size 2 at 0x00010aa04058 by thread T2:
+    #0 runTShapeMyStateRace(int, int, TopoDS_TShape*) occt_1154_stress.cpp:85 (stress_before:arm64+0x100000a2c)
+    #1 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, TopoDS_TShape*), int, int, TopoDS_TShape*>>(void*) thread.h:168 (stress_before:arm64+0x1000071a8)
+
+  Previous write of size 2 at 0x00010aa04058 by thread T1:
+    #0 runTShapeMyStateRace(int, int, TopoDS_TShape*) occt_1154_stress.cpp:85 (stress_before:arm64+0x100000a2c)
+    #1 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int, TopoDS_TShape*), int, int, TopoDS_TShape*>>(void*) thread.h:168 (stress_before:arm64+0x1000071a8)
+
+  Location is heap block of size 144 at 0x00010aa04020 allocated by main thread:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (stress_before:arm64+0x1001af690)
+    #2 start <null> (dyld:arm64e+0x204e0)
+
+  Thread T2 (tid=15218698, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*, 0>(void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*&&) thread.h:216 (stress_before:arm64+0x10000705c)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*>(void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*&&) vector.h:1130 (stress_before:arm64+0x100006e04)
+    #3 main occt_1154_stress.cpp:253 (stress_before:arm64+0x1000035cc)
+
+  Thread T1 (tid=15218697, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*, 0>(void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*&&) thread.h:216 (stress_before:arm64+0x10000705c)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*>(void (&)(int, int, TopoDS_TShape*), int&, int&, TopoDS_TShape*&&) vector.h:1130 (stress_before:arm64+0x100006e04)
+    #3 main occt_1154_stress.cpp:253 (stress_before:arm64+0x1000035cc)
+
+SUMMARY: ThreadSanitizer: data race occt_1154_stress.cpp:85 in runTShapeMyStateRace(int, int, TopoDS_TShape*)
+==================
+done: ops=16000 errors=0 elapsed=0.10s
+ThreadSanitizer: reported 1 warnings
+./run.sh: line 35: 76836 Abort trap: 6              TSAN_OPTIONS="halt_on_error=0" "$aBin" "$aScenario" "$aThreads" "$aIterations"
+exit status 134 (134 is 128+SIGABRT, TSan's default when it finds a race)
+--- scenario=boolean_shared_topology threads=8 iterations=3 ---
+scenario=boolean_shared_topology threads=8 iterations=3
+==================
+WARNING: ThreadSanitizer: data race (pid=76838)
+  Write of size 2 at 0x00010ad07bb8 by thread T10:
+    #0 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, runBooleanSharedTopology(int, int)::$_0, int>>(void*) thread.h:168 (stress_before:arm64+0x100004cbc)
+
+  Previous write of size 2 at 0x00010ad07bb8 by thread T9:
+    #0 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, runBooleanSharedTopology(int, int)::$_0, int>>(void*) thread.h:168 (stress_before:arm64+0x100004cbc)
+
+  Location is heap block of size 120 at 0x00010ad07b80 allocated by thread T2:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67c40)
+    #1 Standard::Allocate(unsigned long) <null> (stress_before:arm64+0x1001af690)
+    #2 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:168 (stress_before:arm64+0x100007714)
+
+  Thread T10 (tid=15218737, running) created by thread T2 at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe210106]<std::__1::thread, runBooleanSharedTopology(int, int)::$_0&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, runBooleanSharedTopology(int, int)::$_0&, int&) allocator_traits.h:296 (stress_before:arm64+0x100004b50)
+    #2 runBooleanSharedTopology(int, int) occt_1154_stress.cpp:175 (stress_before:arm64+0x100001798)
+    #3 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:168 (stress_before:arm64+0x100007714)
+
+  Thread T9 (tid=15218736, finished) created by thread T2 at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe210106]<std::__1::thread, runBooleanSharedTopology(int, int)::$_0&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, runBooleanSharedTopology(int, int)::$_0&, int&) allocator_traits.h:296 (stress_before:arm64+0x100004b50)
+    #2 runBooleanSharedTopology(int, int) occt_1154_stress.cpp:175 (stress_before:arm64+0x100001798)
+    #3 void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:168 (stress_before:arm64+0x100007714)
+
+  Thread T2 (tid=15218729, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33834)
+    #1 std::__1::thread::thread[abi:nqe210106]<void (&)(int, int), int&, int&, 0>(void (&)(int, int), int&, int&) thread.h:216 (stress_before:arm64+0x1000075dc)
+    #2 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (&)(int, int), int&, int&>(void (&)(int, int), int&, int&) vector.h:1130 (stress_before:arm64+0x1000073a4)
+    #3 main occt_1154_stress.cpp:256 (stress_before:arm64+0x100003338)
+
+SUMMARY: ThreadSanitizer: data race thread.h:168 in void* std::__1::__thread_proxy[abi:nqe210106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, runBooleanSharedTopology(int, int)::$_0, int>>(void*)
+==================
+done: ops=24 errors=0 elapsed=0.28s
+ThreadSanitizer: reported 1 warnings
+./run.sh: line 35: 76838 Abort trap: 6              TSAN_OPTIONS="halt_on_error=0" "$aBin" "$aScenario" "$aThreads" "$aIterations"
+exit status 134 (134 is 128+SIGABRT, TSan's default when it finds a race)
+
+########## AFTER: patch 0030 override-linked ##########
+--- scenario=tshape_myState_race threads=16 iterations=3000 ---
+scenario=tshape_myState_race threads=16 iterations=3000
+Using TShape at 0x10f204020
+done: ops=48000 errors=0 elapsed=0.22s
+exit status 0 (134 is 128+SIGABRT, TSan's default when it finds a race)
+--- scenario=boolean_shared_topology threads=12 iterations=5 ---
+scenario=boolean_shared_topology threads=12 iterations=5
+done: ops=60 errors=0 elapsed=0.56s
+exit status 0 (134 is 128+SIGABRT, TSan's default when it finds a race)

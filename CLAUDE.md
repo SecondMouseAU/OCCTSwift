@@ -10,7 +10,7 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 the **`v3.0.0` release asset**, which is that same `V8_0_1` plus seventeen patches, `0010`-`0012`
 and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the right kernel, and
 `ci.yml`'s macOS job is a real signal again. Seventeen is what the **asset** holds;
-`Scripts/patches/` holds nineteen, and the next paragraph is about the difference.
+`Scripts/patches/` holds twenty, and the next paragraph is about the difference.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
@@ -25,22 +25,29 @@ on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen whil
 `0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
 through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
 
-**As of #1018 and #1022 the counts diverge again, deliberately and with the reason written down.**
-`Scripts/patches/` holds nineteen; the pinned asset holds seventeen. The two are `0028` (#1018) and
-`0029` (#1022), and `ci.yml`'s `build-and-test` never sees either, which is exactly what the
-paragraph above says a divergence means. One narrowing, measured on PR #1032 rather than assumed:
-`kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that **adds** a patch does get
-`V8_0_1` plus every carried patch built from source and the full suite run against it. That proves
-the patch applies, compiles and regresses nothing. It cannot prove either fix works, since neither
-has a Swift-reachable assertion, and it does not run on any later PR that leaves `Scripts/patches/`
-alone. None of that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is
+**As of #1018, #1022 and #1154 the counts diverge again, deliberately and with the reason written
+down.** `Scripts/patches/` holds twenty; the pinned asset holds seventeen. The three are `0028`
+(#1018), `0029` (#1022) and `0030` (#1154), and `ci.yml`'s `build-and-test` never sees any of them,
+which is exactly what the paragraph above says a divergence means. One narrowing, measured on PR
+#1032 rather than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that
+**adds** a patch does get `V8_0_1` plus every carried patch built from source and the full suite run
+against it. That proves the patch applies, compiles and regresses nothing. It cannot prove any of
+the three fixes works, since none has a Swift-reachable assertion (`0030` is a data race, so even a
+Swift-level assertion would only catch it by luck without TSan instrumentation the built asset
+doesn't carry), and it does not run on any later PR that leaves `Scripts/patches/` alone. None of
+that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is
 what discredited that. They are not equally urgent. `0028` is the one carried patch a
 rebuild would give no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge reader
 of the three accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are its only coverage
-anywhere. `0029` is the opposite, an uncatchable SIGSEGV on `Document.datums` for any OCAF document
+anywhere. `0029` is an uncatchable SIGSEGV on `Document.datums` for any OCAF document
 whose datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
-protects a consumer. Do not read this note as permission to skip the check; read it as the answer
-the check should produce today, so a twentieth patch appearing without a note is still a finding.
+protects a consumer. `0030` is a data race on `TopoDS_TShape::myState`, live in ordinary concurrent
+use of a boolean-operation result (which shares TShapes with its inputs) and invisible to every
+`swift test` run today since none of them run under ThreadSanitizer against the released kernel;
+`Scripts/tsan.supp` suppresses it so the TSan gate stays green until a rebuilt asset ships, per that
+file's own "remove when the fix lands" policy. Do not read this note as permission to skip the
+check; read it as the answer the check should produce today, so a twenty-first patch appearing
+without a note is still a finding.
 
 **The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
 (fifteen on disk, "fifteen" in the prose) while the enumeration immediately beside it in
@@ -573,6 +580,34 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   [`Scripts/repro/1022-datum-point-from-plane-array/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1022-datum-point-from-plane-array)
   for the reproducer and the full reachability walk. Filed upstream as
   [OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483).
+- `TopoDS_TShape::myState` mutated via non-atomic bitwise operations races under ordinary concurrent
+  use: **#1154**. `myState` (the shape type plus eight boolean flags: Free, Modified, Checked,
+  Orientable, Closed, Infinite, Convex, Locked) is a plain `uint16_t`, and every getter/setter reads
+  or read-modify-writes it with `myState & Bit_X` / `myState |= theBit` / `myState &= ~theBit`, none
+  synchronized. A `TopoDS_TShape` is not private to one `TopoDS_Shape`: `BRepAlgoAPI_Fuse` and
+  siblings routinely produce a result that shares edge/face TShapes with its inputs, so the same
+  instance is reachable from several `TopoDS_Shape` handles at once, and two threads mutating two
+  different flags on that instance race on the same 16-bit word, a non-atomic read-modify-write lost
+  update, not merely a theoretical race. **Fixed** (`Scripts/patches/0030-*`, override-link
+  validated, not yet in a rebuilt xcframework): `myState` becomes `std::atomic<uint16_t>`, every
+  getter loads with `std::memory_order_acquire`, `setBit()` becomes a `compare_exchange_weak` retry
+  loop releasing on success; confirmed `sizeof`/`alignof` unchanged and always lock-free on this
+  platform, so no layout change. **Copy-constructibility checked, not assumed**: `std::atomic` has
+  no copy constructor so `TopoDS_TShape`'s implicit one becomes deleted, and `Standard_Transient`
+  (the base) has a working user-defined one, so by-value copies elsewhere in the hierarchy were not
+  ruled out on the design alone; an exhaustive grep of the entire `Libraries/occt-src/src` tree for
+  `TopoDS_TShape` and all eight concrete subclasses found zero by-value uses, and 22 representative
+  `.cxx` files (the whole `TKBRep/TopoDS/` class hierarchy plus heavy `TopoDS_Shape` consumers in
+  other toolkits) compiled cleanly against the patched header. **Verified via TSan**: the reproducer
+  (a hand-picked shared `TShape*` with direct flag calls, and a real `BRepAlgoAPI_Fuse` result
+  sharing TShapes with its inputs) races on every unpatched run at both light and heavy load, and is
+  clean across multiple patched runs at higher load than the failing ones, 0/2 and 0/2, matching this
+  project's established protocol for every prior kernel thread-safety patch. A functional GTest
+  (`TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost`, seven threads each owning one flag,
+  20000 iterations) independently confirms the same lost-update mechanism without needing TSan: 1,
+  2, 4 and 6 lost updates across four unpatched runs, 0 across six patched ones. See
+  [`Scripts/repro/1154-topology-flag-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1154-topology-flag-race)
+  for the full writeup. Not yet filed upstream.
 
 ### Carrying OCCT source patches
 
