@@ -5,10 +5,14 @@ import simd
 
 @Suite("Constrained Fill Tests")
 struct ConstrainedFillTests {
-    // Helper: get 4 edges from a box's top face
+    // Helper: get 4 edges from a box's top face (Z+)
     private func boxTopEdges() -> [Edge] {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
-        return box.edges()
+        return box.edges().filter { edge in
+            let (start, end) = edge.endpoints
+            // Box centered at origin: top face at Z = 5 (depth/2)
+            return abs(start.z - 5) < 1e-7 && abs(end.z - 5) < 1e-7
+        }
     }
 
     @Test("Fill with box edges")
