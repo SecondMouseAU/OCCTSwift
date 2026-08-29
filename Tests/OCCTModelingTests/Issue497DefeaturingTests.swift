@@ -137,7 +137,7 @@ struct Issue497DefeaturingTests {
         }
     }
 
-    // MARK: - Tests merged from BOPAlgoRemoveTests (formerly removeFeatures(faces:))
+    // MARK: - Tests merged from BOPAlgoRemoveFeaturesTests (formerly removeFeatures(faces:))
 
     @Test("Remove fillet from box via defeature")
     func removeFilletFromBox() {
@@ -145,8 +145,9 @@ struct Issue497DefeaturingTests {
         if let filleted = box.filleted(radius: 2.0) {
             let filletedFaces = filleted.subShapes(ofType: .face)
             guard filletedFaces.count > 6 else { return }
-            let lastFace = filletedFaces[filletedFaces.count - 1]
-            if let result = filleted.defeature(faces: [lastFace]) {
+            // Use the first fillet face (index 6, after the original 6 box faces) for determinism
+            let firstFilletFace = filletedFaces[6]
+            if let result = filleted.defeature(faces: [firstFilletFace]) {
                 #expect(result.isValid)
                 let resultFaces = result.subShapes(ofType: .face)
                 #expect(resultFaces.count <= filletedFaces.count)
@@ -166,7 +167,13 @@ struct Issue497DefeaturingTests {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         let faces = box.subShapes(ofType: .face)
         guard !faces.isEmpty else { return }
-        let _ = box.defeature(faces: [faces[0]])
+        let result = box.defeature(faces: [faces[0]])
+        #expect(result != nil)
+        if let r = result {
+            #expect(r.isValid)
+            let resultFaces = r.subShapes(ofType: .face)
+            #expect(resultFaces.count == 5) // removed one face from 6
+        }
     }
 }
 
