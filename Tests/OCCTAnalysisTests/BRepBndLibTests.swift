@@ -98,15 +98,10 @@ struct BRepBndLibTests {
     // shape at the origin. #943 converged them, so all four accessors answer nil here and the
     // test name says so. The zero-size half of the same contract is
     // pointVertexAtOriginBoundingBoxIsNotNil below, and Issue943BoundsVoid covers both.
-    @Test func voidShapeReportsNoBoxFromAnyAccessor() {
+    @Test func voidShapeReportsNoBoxFromAnyAccessor() throws {
         // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
         // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(1000, 1000, 1000), width: 10, height: 10, depth: 10)!
-        guard let voidShape = b1.intersection(b2) else {
-            #expect(Bool(false), "disjoint intersection should still construct a (void) shape")
-            return
-        }
+        let voidShape = try #require(makeVoidShape(), "disjoint intersection should still construct a (void) shape")
         #expect(voidShape.boundingBox == nil)
         #expect(voidShape.bounds == nil)
         #expect(voidShape.size == nil)
@@ -122,8 +117,8 @@ struct BRepBndLibTests {
     // `BRep_Builder::MakeVertex` floors the vertex tolerance at `Precision::Confusion()`, so
     // `Add`'s enlargement never lands on exact zero, but it shares the same fixed bridge
     // contract, so this test still pins the non-regression on the ordinary path.
-    @Test func pointVertexAtOriginBoundingBoxIsNotNil() {
-        let origin = Shape.vertex(at: .zero)!
+    @Test func pointVertexAtOriginBoundingBoxIsNotNil() throws {
+        let origin = try #require(makePointVertexAtOrigin())
 
         let optimal = origin.boundingBoxOptimal()
         #expect(optimal != nil)
