@@ -21,13 +21,6 @@ struct Issue257MultiStartTests {
             length: len, starts: starts, runout: .none, build: .direct)
     }
 
-    private func meshCrestRadius(_ s: Shape) -> Double {
-        guard let m = s.mesh(linearDeflection: 0.03) else { return -1 }
-        return m.vertices.reduce(0.0) {
-            max($0, Double((($1.x * $1.x) + ($1.y * $1.y)).squareRoot()))
-        }
-    }
-
     /// Full-length 2- and 3-start rods: valid solids, smooth (low face count, not the ~hundreds-of-
     /// faces faceted fallback), crest in-envelope at the nominal major radius.
     @Test("Full-length multi-start is a smooth, in-envelope, valid solid")
@@ -43,9 +36,11 @@ struct Issue257MultiStartTests {
                 faces < 40,
                 "starts=\(n) face count \(faces) suggests the faceted cut fallback, not the smooth build"
             )
-            #expect(
-                meshCrestRadius(s) <= 5.0 * 1.005,
-                "starts=\(n) crest \(meshCrestRadius(s)) bulges past nominal 5.0")
+            if let crest = meshMaxRadialExtent(s, deflection: 0.03) {
+                #expect(crest <= 5.0 * 1.005, "starts=\(n) crest \(crest) bulges past nominal 5.0")
+            } else {
+                Issue.record("starts=\(n) mesh failed, cannot measure crest radius")
+            }
         }
     }
 
@@ -58,7 +53,11 @@ struct Issue257MultiStartTests {
         }
         #expect(s.isValidSolid)
         #expect(s.subShapes(ofType: .face).count < 40)
-        #expect(meshCrestRadius(s) <= 5.0 * 1.005)
+        if let crest = meshMaxRadialExtent(s, deflection: 0.03) {
+            #expect(crest <= 5.0 * 1.005)
+        } else {
+            Issue.record("partial starts=2 mesh failed, cannot measure crest radius")
+        }
     }
 
     /// A trapezoidal 2-start lead screw (the classic multi-start use) also builds smooth.
@@ -109,6 +108,10 @@ struct Issue257MultiStartTests {
         }
         #expect(s.isValidSolid)
         #expect(s.subShapes(ofType: .face).count == 7)
-        #expect(meshCrestRadius(s) <= 5.0 * 1.005)
+        if let crest = meshMaxRadialExtent(s, deflection: 0.03) {
+            #expect(crest <= 5.0 * 1.005)
+        } else {
+            Issue.record("single-start mesh failed, cannot measure crest radius")
+        }
     }
 }
