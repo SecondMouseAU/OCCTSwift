@@ -137,7 +137,7 @@ struct Issue497DefeaturingTests {
         }
     }
 
-    // MARK: - Tests merged from BOPAlgoRemoveTests (formerly removeFeatures(faces:))
+    // MARK: - Tests merged from BOPAlgoRemoveFeaturesTests (formerly removeFeatures(faces:))
 
     @Test("Remove fillet from box via defeature")
     func removeFilletFromBox() {
@@ -166,7 +166,12 @@ struct Issue497DefeaturingTests {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         let faces = box.subShapes(ofType: .face)
         guard !faces.isEmpty else { return }
-        let _ = box.defeature(faces: [faces[0]])
+        // A box face isn't a removable "feature"; when defeature doesn't refuse it outright,
+        // it leaves the box unchanged rather than actually deleting the face.
+        if let result = box.defeature(faces: [faces[0]]) {
+            #expect(result.isValid)
+            #expect(result.subShapes(ofType: .face).count == faces.count)
+        }
     }
 }
 
