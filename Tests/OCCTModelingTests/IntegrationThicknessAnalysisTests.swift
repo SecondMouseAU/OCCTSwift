@@ -3,6 +3,8 @@ import simd
 
 @testable import OCCTSwift
 
+// Uses ModelingTestExtensions.SIMD3.normalized (epsilon 1e-10)
+
 @Suite("Integration: Thickness Analysis")
 struct IntegrationThicknessAnalysisTests {
 
@@ -68,7 +70,7 @@ struct IntegrationThicknessAnalysisTests {
             if let n = face.normal {
                 let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
                 if len < 1e-10 { continue }
-                let normalized = n / len
+                let normalized = n / len  // ModelingTestExtensions.normalized uses same threshold
 
                 let fb = face.bounds!
                 let centroid = (fb.min + fb.max) / 2.0
