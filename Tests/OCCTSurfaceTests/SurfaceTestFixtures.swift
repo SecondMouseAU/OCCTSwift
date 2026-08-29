@@ -102,3 +102,63 @@ func makeContinuityBSplineSurface(interiorMultiplicityU multiplicity: Int32) -> 
         degreeU: 3, degreeV: 3)
 }
 
+// MARK: - #1254: shared BSpline-manipulation fixtures
+//
+// `makeBSplineSurface()` was independently reimplemented four times across the
+// BSpline-manipulation suites (each a `private`/scoped helper of the same name in a
+// different file). Each is a genuinely different fixture -- there is no shared source of
+// truth to drift from, and no bug or bug-fix asymmetry between the copies -- so moving
+// them here is purely for discoverability: distinct names under one shared roof rather
+// than the same name reused four times. Each keeps its exact prior construction.
+
+/// A 4x4-pole rational BSpline surface obtained by converting a cylinder to BSpline form
+/// via `toBSpline()`. Used by `BSplineSurfaceManipulationTests` as a generic rational
+/// surface to poke at.
+func makeCylinderDerivedBSplineSurface(radius: Double = 5) -> Surface? {
+    guard let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius) else {
+        return nil
+    }
+    return cyl.toBSpline()
+}
+
+/// A 4x4 BSpline surface fit through a point grid spaced 3 units apart, `z = (u+v) % 3`.
+/// Used by `BSplineSurfaceExtrasTests`.
+func makeModThreeGridBSplineSurface() -> Surface? {
+    var pts = [SIMD3<Double>]()
+    for v in 0..<4 {
+        for u in 0..<4 {
+            pts.append(SIMD3(Double(u) * 3, Double(v) * 3, Double((u + v) % 3)))
+        }
+    }
+    return Surface.fromPointGrid(points: pts, uCount: 4, vCount: 4)
+}
+
+/// A 4x4 BSpline surface fit through a point grid, `z = sin(u*0.5) * cos(v*0.5)`. Used by
+/// `BSplineSurfaceRemoveVKnotTests`.
+func makeSinCosGridBSplineSurface() -> Surface? {
+    var points = [SIMD3<Double>]()
+    for v in 0..<4 {
+        for u in 0..<4 {
+            points.append(
+                SIMD3(Double(u), Double(v), sin(Double(u) * 0.5) * cos(Double(v) * 0.5)))
+        }
+    }
+    return Surface.fromPointGrid(points: points, uCount: 4, vCount: 4)
+}
+
+/// A 4x4 non-periodic degree-3x3 BSpline surface built from an explicit, hand-written pole
+/// grid (single knot span each direction, full multiplicity). Used by
+/// `BSplineSurfaceCompletionsV121Tests`.
+func makeExplicitPoleBSplineSurface() -> Surface? {
+    let poles: [[SIMD3<Double>]] = [
+        [SIMD3(0, 0, 0), SIMD3(3, 0, 0), SIMD3(7, 0, 0), SIMD3(10, 0, 0)],
+        [SIMD3(0, 3, 1), SIMD3(3, 3, 2), SIMD3(7, 3, 2), SIMD3(10, 3, 1)],
+        [SIMD3(0, 7, 1), SIMD3(3, 7, 2), SIMD3(7, 7, 2), SIMD3(10, 7, 1)],
+        [SIMD3(0, 10, 0), SIMD3(3, 10, 0), SIMD3(7, 10, 0), SIMD3(10, 10, 0)],
+    ]
+    return Surface.bspline(
+        poles: poles,
+        knotsU: [0, 1], multiplicitiesU: [4, 4],
+        knotsV: [0, 1], multiplicitiesV: [4, 4],
+        degreeU: 3, degreeV: 3)
+}

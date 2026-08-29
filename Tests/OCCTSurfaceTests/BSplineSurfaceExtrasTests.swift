@@ -5,14 +5,10 @@ import simd
 
 @Suite("BSplineSurface_Extras")
 struct BSplineSurfaceExtrasTests {
+    // The fixture (a 4x4 point-grid fit, z = (u+v) % 3) lives in `SurfaceTestFixtures.swift`
+    // as `makeModThreeGridBSplineSurface()`; see #1254.
     func makeBSplineSurface() -> Surface? {
-        var pts = [SIMD3<Double>]()
-        for v in 0..<4 {
-            for u in 0..<4 {
-                pts.append(SIMD3(Double(u) * 3, Double(v) * 3, Double((u + v) % 3)))
-            }
-        }
-        return Surface.fromPointGrid(points: pts, uCount: 4, vCount: 4)
+        makeModThreeGridBSplineSurface()
     }
 
     @Test func resolution() {
