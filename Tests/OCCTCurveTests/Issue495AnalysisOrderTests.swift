@@ -18,21 +18,10 @@ import Testing
 @Suite("Issue #495: analysis order selects what is measured")
 struct Issue495CurveAnalysisOrderTests {
 
-    /// Two arcs meeting at (5,0,0) at a sharp angle. Only C0 holds.
-    private func sharpCorner() -> (Curve3D, Curve3D)? {
-        guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
-        else { return nil }
-        return (c1, c2)
-    }
-
-    /// Two arcs meeting smoothly at (5,0,0).
-    private func smoothJunction() -> (Curve3D, Curve3D)? {
-        guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 1, 0), SIMD3(5, 0, 0)]),
-            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)])
-        else { return nil }
-        return (c1, c2)
-    }
+    // The old private `sharpCorner()`/`smoothJunction()` moved to `CurveTestFixtures.swift` as
+    // `sharpCornerCurves()`/`smoothJunctionCurves()` (#1263): this file's copies were the only
+    // "properly factored" ones among five reimplementations of the same fixture geometry across
+    // three files.
 
     private func analyse(
         _ pair: (Curve3D, Curve3D),
@@ -45,7 +34,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("each order measures exactly its own branch, and no order measures all five")
     func measuredSetPerOrder() throws {
-        let pair = try #require(sharpCorner())
+        let pair = try #require(sharpCornerCurves())
         let expected: [ContinuityClass: Set<ContinuityClass>] = [
             .c0: [.c0],
             .g1: [.c0, .g1],
@@ -62,7 +51,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("a class the order never computed reports nil, not a false positive")
     func unmeasuredClassesReportNil() throws {
-        let pair = try #require(sharpCorner())
+        let pair = try #require(sharpCornerCurves())
 
         // The regression. At order .c0 the analyser computes the C0 distance and nothing else,
         // so IsG1()/IsC1()/IsG2()/IsC2() all answered true off their 0.0 initialisers.
@@ -86,7 +75,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("the default order does not measure tangency")
     func defaultOrderDoesNotMeasureG1() throws {
-        let pair = try #require(smoothJunction())
+        let pair = try #require(smoothJunctionCurves())
         let atDefault = try #require(analyse(pair, .c2))
         #expect(atDefault.measured == [.c0, .c1, .c2])
         #expect(
@@ -101,7 +90,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("metrics for an unmeasured class are withheld, not reported as a perfect match")
     func unmeasuredMetricsAreWithheld() throws {
-        let pair = try #require(sharpCorner())
+        let pair = try #require(sharpCornerCurves())
         let atC0 = try #require(analyse(pair, .c0))
 
         // These read straight off the uninitialised members before the fix: 0.0 radians of
@@ -120,7 +109,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("the flags bitmask never claims a bit outside the measured set")
     func flagsStayInsideMeasured() throws {
-        let pair = try #require(smoothJunction())
+        let pair = try #require(smoothJunctionCurves())
         for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
             guard let a = analyse(pair, order) else { continue }
             var measuredMask = 0
@@ -133,7 +122,7 @@ struct Issue495CurveAnalysisOrderTests {
 
     @Test("order reports the request after saturation, not a measurement")
     func orderReportsTheEffectiveRequest() throws {
-        let pair = try #require(sharpCorner())
+        let pair = try #require(sharpCornerCurves())
 
         for order in [ContinuityClass.c0, .g1, .c1] {
             let a = try #require(analyse(pair, order))
