@@ -133,9 +133,6 @@ struct Issue1173ArrowheadTriangleGeometryTests {
 /// Builds the exact substring `DXFExporter.entities()` emits for one `LINE` entity, so a test can
 /// assert precise coordinates by containment rather than parsing the whole DXF text. Mirrors
 /// `DXFExporter.swift`'s own `pair(_:)` helper and `entities()`'s per-`LINE` layout exactly.
-/// Builds the exact substring `DXFExporter.entities()` emits for one `LINE` entity, so a test can
-/// assert precise coordinates by containment rather than parsing the whole DXF text. Mirrors
-/// `DXFExporter.swift`'s own `pair(_:)` helper and `entities()`'s per-`LINE` layout exactly.
 /// Now uses the shared `DXFTestFormat.lineEntity` from DrawingTestFixtures.swift.
 private func dxfLineBlock(_ a: SIMD2<Double>, _ b: SIMD2<Double>, layer: String) -> String {
     DXFTestFormat.lineEntity(from: a, to: b, layer: layer)
