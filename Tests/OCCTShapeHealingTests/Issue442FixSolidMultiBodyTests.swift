@@ -16,52 +16,12 @@ import simd
 /// and orientation is the whole job of `SolidFromShell`. An `if let volume` with no
 /// `else` would let that regression pass silently, which is the failure mode this issue
 /// is about.
+///
+/// `expectVolume`/`twoBoxes`/`hollowBox`/`multiconnexSolid` live in
+/// `ShapeHealingTestFixtures.swift`, shared with `Issue443FirstOfN` (#1287 review; they used to be
+/// duplicated byte-for-byte between the two files, bypassing that fixtures file).
 @Suite("Issue 442: fixSolid/solidFromShellFixed cover every body")
 struct Issue442FixSolidMultiBody {
-
-    /// Volume, asserted rather than optionally-bound: a `nil` here means the solid is
-    /// inverted, which must fail the test rather than skip it.
-    private func expectVolume(
-        _ shape: Shape, _ expected: Double,
-        _ what: String, sourceLocation: SourceLocation = #_sourceLocation
-    ) {
-        guard let volume = shape.volume else {
-            Issue.record(
-                "\(what): volume is nil, the solid came back inverted",
-                sourceLocation: sourceLocation)
-            return
-        }
-        #expect(
-            abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
-            sourceLocation: sourceLocation)
-    }
-
-    /// Two disjoint 10mm boxes, 2000mm³ total, the issue's own reproducer.
-    private func twoBoxes() -> Shape? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return Shape.compound([a, b])
-    }
-
-    /// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
-    private func hollowBox() -> Shape? {
-        guard let outer = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-            let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return outer.subtracting(cavity)
-    }
-
-    /// One solid holding two disjoint closed shells. Pathological but real, and the case
-    /// that rules out the naive "outer shell per solid" selection rule, so it is the one
-    /// most likely to regress unnoticed.
-    private func multiconnexSolid() -> Shape? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-            let shellA = a.shells.first, let shellB = b.shells.first
-        else { return nil }
-        return Shape.solidFromShells([shellA, shellB])
-    }
 
     // MARK: - fixSolid
 
@@ -367,7 +327,7 @@ struct Issue442FixSolidMultiBody {
         }
         // An open shell that wraps the hollow body: the big box's faces minus one, sewn.
         // (`sewnBoxMissingOneFace`, `ShapeHealingTestFixtures.swift`, shared with
-        // Issue702SolidDemotionTests, #717 review, the duplicated open-shell fixture.)
+        // Issue702SolidDemotion, #717 review, the duplicated open-shell fixture.)
         guard let openQuilt = sewnBoxMissingOneFace(bigBox),
             let openShell = openQuilt.shells.first
         else {

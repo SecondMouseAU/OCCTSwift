@@ -19,39 +19,14 @@ import simd
 /// Volumes are asserted rather than optionally bound, following #442: `Shape.volume` is
 /// `v >= 0 ? v : nil`, so `nil` means the solid came back inverted, and an `if let` with no
 /// `else` would let that regression pass silently.
+///
+/// `expectVolume`/`twoBoxes`/`hollowBox` and the multiconnex-solid fixture (`multiconnexSolid()`)
+/// live in `ShapeHealingTestFixtures.swift`, shared with `Issue442FixSolidMultiBody` (#1287
+/// review; `expectVolume`/`twoBoxes`/`hollowBox` used to be duplicated byte-for-byte between the
+/// two files, and `solidFromMulticonnex` below used to inline the identical construction
+/// `multiconnexSolid()` already named, bypassing that fixtures file).
 @Suite("Issue 443: solid(from:) and upgraded() cover every body")
 struct Issue443FirstOfN {
-
-    private func expectVolume(
-        _ shape: Shape, _ expected: Double,
-        _ what: String, sourceLocation: SourceLocation = #_sourceLocation
-    ) {
-        guard let volume = shape.volume else {
-            Issue.record(
-                "\(what): volume is nil, the solid came back inverted",
-                sourceLocation: sourceLocation)
-            return
-        }
-        #expect(
-            abs(volume - expected) < 1e-6, "\(what): volume \(volume), expected \(expected)",
-            sourceLocation: sourceLocation)
-    }
-
-    /// Two disjoint 10mm boxes, 2000mm³ total: the issue's own reproducer.
-    private func twoBoxes() -> Shape? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return Shape.compound([a, b])
-    }
-
-    /// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
-    private func hollowBox() -> Shape? {
-        guard let outer = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
-            let cavity = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return outer.subtracting(cavity)
-    }
 
     /// One closed 10mm-cube shell, and a disjoint 5-of-6-face shell that cannot close
     /// (`BRep_Tool::IsClosed` false, `BRepCheck_Analyzer` invalid): 11 faces, 2 bodies.
@@ -170,14 +145,12 @@ struct Issue443FirstOfN {
     }
 
     /// One solid holding two disjoint closed shells: the case that rules out the naive
-    /// "outer shell per solid" rule, so the one most likely to regress unnoticed.
+    /// "outer shell per solid" rule, so the one most likely to regress unnoticed. Uses the shared
+    /// `multiconnexSolid()` fixture (`ShapeHealingTestFixtures.swift`); this test used to inline
+    /// the identical construction directly (#1287 review).
     @Test("solid(from:) keeps both shells of a multiconnex solid")
     func solidFromMulticonnex() {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
-            let shellA = a.shells.first, let shellB = b.shells.first,
-            let solid = Shape.solidFromShells([shellA, shellB])
-        else {
+        guard let solid = multiconnexSolid() else {
             Issue.record("could not build the multiconnex solid")
             return
         }
