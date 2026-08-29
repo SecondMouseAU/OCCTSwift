@@ -25,22 +25,10 @@ struct Issue541FaceIndexContractTests {
 
     // MARK: - Fixtures
 
-    /// Two solids that share one face, from one ordinary modelling operation.
-    ///
-    /// `split(by:)` hands back the pieces separately; re-compounding them preserves the sharing,
-    /// because both came out of the same BOP and reference the same cut face. Returns nil rather
-    /// than recording an issue so callers can skip cleanly if the kernel stops sharing.
-    static func splitBoxCompound() -> Shape? {
-        guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
-            let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
-            let knife = upright.translated(by: SIMD3(10, 0, 0)),
-            let pieces = block.split(by: knife),
-            pieces.count == 2,
-            let compound = Shape.compound(pieces)
-        else { return nil }
-        return compound
-    }
+    // The split-box-compound fixture (two solids sharing one cut face) lived here byte-identical
+    // to `Issue614FaceOrientationTests.splitBoxCompound()`, #541 predates #614 but #614's copy is
+    // the one three other files already call into (#638, #859), so this file now calls that one
+    // too rather than keeping a second definition (#1255).
 
     /// #541's stated minimal reproduction: the same face handed to `compound` twice.
     static func doubledFaceCompound() -> Shape? {
@@ -72,7 +60,7 @@ struct Issue541FaceIndexContractTests {
     /// not the last occurrence, the two schemes named *different* faces at the same index.
     @Test("faces() and face(at:) name the same face at every index")
     func facesArrayAndIndexedAccessNameTheSameFace() {
-        guard let split = Self.splitBoxCompound() else {
+        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -98,7 +86,7 @@ struct Issue541FaceIndexContractTests {
     /// fourth answer.
     @Test("The generic sub-shape spelling agrees with the face spellings")
     func genericSpellingAgrees() {
-        guard let split = Self.splitBoxCompound() else {
+        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -252,7 +240,7 @@ struct Issue541FaceIndexContractTests {
     /// very edges of the face at that index.
     @Test("Index consumers answer about the face face(at:) names")
     func indexConsumersAgreeWithFaceAt() {
-        guard let split = Self.splitBoxCompound() else {
+        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
