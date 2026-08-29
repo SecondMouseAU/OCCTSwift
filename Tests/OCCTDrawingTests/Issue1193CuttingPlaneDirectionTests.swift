@@ -31,22 +31,15 @@ import simd
 // different spelling.
 @Suite("#1193: addCuttingPlaneLine direction projection")
 struct Issue1193CuttingPlaneDirectionTests {
-    private static let deg15 = 15.0 * Double.pi / 180.0
-    private static let nearDegenerate = SIMD3<Double>(
-        sin(deg15) * 0.6, sin(deg15) * 0.8, cos(deg15))
-    private static let expectedRight = SIMD3<Double>(
-        0.0, 0.9777876596251666, -0.20959793101254465)
-    private static let expectedUp = SIMD3<Double>(
-        -0.987868702146798, 0.03254876181607849, 0.1518420410263285)
 
     @Test("projectDirectionToPlane matches OCCT's gp_Ax2 canonical basis")
     func projectDirectionToPlaneMatchesGpAx2() {
         // A direction, not a point: projecting the basis vectors themselves back through the same
         // basis must recover the canonical axes exactly, with no origin term to leak in.
         let projectedRight = projectDirectionToPlane(
-            Self.expectedRight, viewDirection: Self.nearDegenerate)
+            PerpendicularBasisGroundTruth.expectedRight, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
         let projectedUp = projectDirectionToPlane(
-            Self.expectedUp, viewDirection: Self.nearDegenerate)
+            PerpendicularBasisGroundTruth.expectedUp, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
         #expect(abs(projectedRight.x - 1.0) < 1e-9)
         #expect(abs(projectedRight.y) < 1e-9)
         #expect(abs(projectedUp.x) < 1e-9)
@@ -77,9 +70,9 @@ struct Issue1193CuttingPlaneDirectionTests {
         let ann = drawing.addCuttingPlaneLine(
             label: "A",
             cuttingPlaneOrigin: .zero,
-            cuttingPlaneNormal: Self.expectedUp,
-            sectionViewDirection: Self.expectedUp,
-            viewDirection: Self.nearDegenerate,
+            cuttingPlaneNormal: PerpendicularBasisGroundTruth.expectedUp,
+            sectionViewDirection: PerpendicularBasisGroundTruth.expectedUp,
+            viewDirection: PerpendicularBasisGroundTruth.nearDegenerate,
             traceLength: 60)
 
         guard case .cuttingPlaneLine(let cpl)? = ann else {
