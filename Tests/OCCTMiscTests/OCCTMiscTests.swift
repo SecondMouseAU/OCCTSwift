@@ -1382,13 +1382,21 @@ struct SheetRenderingTests {
                 title: "Test Drawing",
                 drawingNumber: "T-001",
                 owner: "ACME Co"))
-        let writer = DXFWriter()
-        sheet.render(into: writer)
-        // Should have at least 2 polylines (outer border + inner frame) plus some tick lines.
-        let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
+        let dxf = DXFWriter()
+        sheet.render(into: dxf)
+        #expect(dxf.entityCounts.polylines >= 2)
+        #expect(dxf.entityCounts.lines >= 4)  // centring ticks
+        #expect(dxf.entityCounts.texts >= 1)  // title block field labels
+        let pdf = PDFWriter()
+        sheet.render(into: pdf)
+        #expect(pdf.entityCounts.polylines >= 2)
+        #expect(pdf.entityCounts.lines >= 4)
+        #expect(pdf.entityCounts.texts >= 1)
+        let svg = SVGWriter()
+        sheet.render(into: svg)
+        #expect(svg.entityCounts.polylines >= 2)
+        #expect(svg.entityCounts.lines >= 4)
+        #expect(svg.entityCounts.texts >= 1)
     }
 
     @Test("Sheet innerFrame respects ISO 5457 margins")
@@ -1415,14 +1423,26 @@ struct SheetRenderingTests {
 
     @Test("Projection symbol renders two circles for both conventions")
     func projectionSymbolCircles() {
-        let writer = DXFWriter()
-        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: writer)
-        let firstCount = writer.entityCounts.circles
-        #expect(firstCount == 2)
+        let dxf1 = DXFWriter()
+        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: dxf1)
+        #expect(dxf1.entityCounts.circles == 2)
+        let dxf2 = DXFWriter()
+        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: dxf2)
+        #expect(dxf2.entityCounts.circles == 2)
 
-        let writer2 = DXFWriter()
-        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: writer2)
-        #expect(writer2.entityCounts.circles == 2)
+        let pdf1 = PDFWriter()
+        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: pdf1)
+        #expect(pdf1.entityCounts.circles == 2)
+        let pdf2 = PDFWriter()
+        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: pdf2)
+        #expect(pdf2.entityCounts.circles == 2)
+
+        let svg1 = SVGWriter()
+        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: svg1)
+        #expect(svg1.entityCounts.circles == 2)
+        let svg2 = SVGWriter()
+        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: svg2)
+        #expect(svg2.entityCounts.circles == 2)
     }
 
     @Test("TitleBlock fields are emitted as text")
@@ -1434,96 +1454,15 @@ struct SheetRenderingTests {
             creator: "Jane Engineer",
             dateOfIssue: "2026-04-22")
         let sheet = Sheet(size: .a3, title: tb)
-        let writer = DXFWriter()
-        sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
-    }
-
-    // #1180: `Sheet.render`/`renderTitleBlock`/`ProjectionSymbol.render` used to be hardcoded to
-    // `DXFWriter` even though every call in their bodies is one of the five writer-agnostic
-    // `DrawingPrimitiveSink` primitives every conformer (DXF/PDF/SVG) implements identically --
-    // these mirror the three DXFWriter cases above against `PDFWriter` and `SVGWriter` to prove
-    // the same scaffolding is now emitted onto all three.
-    @Test("Sheet render emits border + inner frame polylines onto a PDFWriter")
-    func sheetEmitsBordersPDF() {
-        let sheet = Sheet(
-            size: .a3, orientation: .landscape, projection: .first,
-            title: TitleBlock(
-                title: "Test Drawing",
-                drawingNumber: "T-001",
-                owner: "ACME Co"))
-        let writer = PDFWriter()
-        sheet.render(into: writer)
-        let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
-    }
-
-    @Test("Sheet render emits border + inner frame polylines onto an SVGWriter")
-    func sheetEmitsBordersSVG() {
-        let sheet = Sheet(
-            size: .a3, orientation: .landscape, projection: .first,
-            title: TitleBlock(
-                title: "Test Drawing",
-                drawingNumber: "T-001",
-                owner: "ACME Co"))
-        let writer = SVGWriter()
-        sheet.render(into: writer)
-        let counts = writer.entityCounts
-        #expect(counts.polylines >= 2)
-        #expect(counts.lines >= 4)  // centring ticks
-        #expect(counts.texts >= 1)  // title block field labels
-    }
-
-    @Test("Projection symbol renders two circles for both conventions onto a PDFWriter")
-    func projectionSymbolCirclesPDF() {
-        let writer = PDFWriter()
-        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: writer)
-        #expect(writer.entityCounts.circles == 2)
-
-        let writer2 = PDFWriter()
-        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: writer2)
-        #expect(writer2.entityCounts.circles == 2)
-    }
-
-    @Test("Projection symbol renders two circles for both conventions onto an SVGWriter")
-    func projectionSymbolCirclesSVG() {
-        let writer = SVGWriter()
-        ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: writer)
-        #expect(writer.entityCounts.circles == 2)
-
-        let writer2 = SVGWriter()
-        ProjectionSymbol.render(.third, at: SIMD2(0, 0), into: writer2)
-        #expect(writer2.entityCounts.circles == 2)
-    }
-
-    @Test("TitleBlock fields are emitted as text onto a PDFWriter")
-    func titleBlockFieldsPDF() {
-        let tb = TitleBlock(
-            title: "Test Part",
-            drawingNumber: "ABC-123",
-            owner: "Widget Corp",
-            creator: "Jane Engineer",
-            dateOfIssue: "2026-04-22")
-        let sheet = Sheet(size: .a3, title: tb)
-        let writer = PDFWriter()
-        sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
-    }
-
-    @Test("TitleBlock fields are emitted as text onto an SVGWriter")
-    func titleBlockFieldsSVG() {
-        let tb = TitleBlock(
-            title: "Test Part",
-            drawingNumber: "ABC-123",
-            owner: "Widget Corp",
-            creator: "Jane Engineer",
-            dateOfIssue: "2026-04-22")
-        let sheet = Sheet(size: .a3, title: tb)
-        let writer = SVGWriter()
-        sheet.render(into: writer)
-        #expect(writer.entityCounts.texts >= 5)  // at least label/value pairs
+        let dxf = DXFWriter()
+        sheet.render(into: dxf)
+        #expect(dxf.entityCounts.texts >= 5)
+        let pdf = PDFWriter()
+        sheet.render(into: pdf)
+        #expect(pdf.entityCounts.texts >= 5)
+        let svg = SVGWriter()
+        sheet.render(into: svg)
+        #expect(svg.entityCounts.texts >= 5)
     }
 }
 
