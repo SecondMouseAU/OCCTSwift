@@ -1182,6 +1182,7 @@ Renders the sheet border, centring marks, title block, and projection symbol int
 public func render(into writer: DXFWriter)
 public func render(into writer: PDFWriter)
 public func render(into writer: SVGWriter)
+public func render(into writer: DrawingWriter)
 ```
 
 Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet edge and inner frame are polylines; centring marks are short lines at midpoints of each frame edge; the title block is a 170 × 55 mm rectangle in the bottom-right with ISO 7200 fields; the projection symbol is rendered by `ProjectionSymbol.render(_:at:into:)` above the title block.
@@ -1189,9 +1190,14 @@ Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet ed
 Three overloads, one per writer type, sharing one internal implementation (#1180) -- before this
 the scaffolding only rendered onto a `DXFWriter`, so a `PDFWriter`/`SVGWriter` sheet got no border,
 title block, or projection symbol at all, even though the body only calls the five primitives every
-writer implements identically.
+writer implements identically. A fourth overload (#1267) accepts the public `DrawingWriter`
+protocol directly, for a caller that only knows which writer to use at runtime -- it dispatches to
+whichever of the three concrete overloads matches the value's actual type, rather than a second
+copy of the render body (`DrawingWriter` and the shared internal implementation's own protocol are
+declared independently, so a `DrawingWriter` value has no static path into that internal-typed
+body).
 
-- **Parameters:** `writer`, a `DXFWriter`, `PDFWriter`, or `SVGWriter` that accumulates geometry for eventual file output.
+- **Parameters:** `writer`, a `DXFWriter`, `PDFWriter`, `SVGWriter`, or any `DrawingWriter` that accumulates geometry for eventual file output.
 - **Note:** Pure-Swift; no OCCT bridge call.
 - **Example:**
   ```swift
@@ -1233,18 +1239,23 @@ public static func render(_ angle: ProjectionAngle,
 public static func render(_ angle: ProjectionAngle,
                           at origin: SIMD2<Double>,
                           into writer: SVGWriter)
+public static func render(_ angle: ProjectionAngle,
+                          at origin: SIMD2<Double>,
+                          into writer: DrawingWriter)
 ```
 
 The symbol is approximately 30 × 15 mm. First-angle: truncated-cone view on the left, circle on the right. Third-angle: circle on the left, truncated-cone on the right.
 
 Three overloads, one per writer type, sharing one internal implementation (#1180) -- previously
 `DXFWriter`-only, so `Sheet.render(into:)` could emit the symbol onto a PDF/SVG sheet's DXF writer
-but not onto the PDF/SVG writer it was actually building.
+but not onto the PDF/SVG writer it was actually building. A fourth overload (#1267) accepts the
+public `DrawingWriter` protocol directly and dispatches to whichever concrete overload matches, the
+same pattern and for the same reason as `Sheet.render(into: DrawingWriter)` above.
 
 - **Parameters:**
   - `angle`: `.first` (ISO) or `.third` (ANSI).
   - `origin`: bottom-left origin of the symbol bounding box in drawing coordinates.
-  - `writer`: the `DXFWriter`, `PDFWriter`, or `SVGWriter` to emit lines and circles into (layer `"TEXT"`).
+  - `writer`: the `DXFWriter`, `PDFWriter`, `SVGWriter`, or `DrawingWriter` to emit lines and circles into (layer `"TEXT"`).
 - **Note:** Pure-Swift; no OCCT bridge call. Called automatically by `Sheet.render(into:)`.
 - **Example:**
   ```swift
