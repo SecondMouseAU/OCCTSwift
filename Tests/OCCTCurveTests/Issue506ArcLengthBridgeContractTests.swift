@@ -39,23 +39,9 @@ struct Issue506ArcLengthBridgeContractTests {
         ])
     }
 
-    /// Chord-sum reference, so the clamping assertions compare against the curve's real length
-    /// rather than against whatever the implementation returns for the whole domain.
-    private func polylineLength(
-        _ c: Curve3D, from u1: Double, to u2: Double,
-        segments: Int = 20_000
-    ) -> Double {
-        var total = 0.0
-        var prev = c.point(at: u1)
-        for i in 1...segments {
-            let u = u1 + (u2 - u1) * Double(i) / Double(segments)
-            let p = c.point(at: u)
-            let d = p - prev
-            total += (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
-            prev = p
-        }
-        return total
-    }
+    // `polylineLength` (the chord-sum reference used below so the clamping assertions compare
+    // against the curve's real length rather than against whatever the implementation returns for
+    // the whole domain) moved to `CurveTestFixtures.swift` (#1259), shared with three other files.
 
     @Test("A reversed in-domain range measures the span, not zero")
     func reversedRangeMeasuresTheSpan() {

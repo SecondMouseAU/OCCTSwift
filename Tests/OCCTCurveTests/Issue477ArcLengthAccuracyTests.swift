@@ -16,36 +16,11 @@ import simd
 @Suite("Curve3D arc-length accuracy on multi-span curves (#477)")
 struct Issue477ArcLengthAccuracyTests {
 
-    // MARK: - Independent reference
-
-    /// Summed chord length of `segments` evenly spaced parameter samples.
-    private func polylineLength(_ c: Curve3D, from u1: Double, to u2: Double, segments: Int)
-        -> Double
-    {
-        var total = 0.0
-        var prev = c.point(at: u1)
-        for i in 1...segments {
-            let u = u1 + (u2 - u1) * Double(i) / Double(segments)
-            let p = c.point(at: u)
-            let d = p - prev
-            total += (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
-            prev = p
-        }
-        return total
-    }
-
-    /// Chord-sum arc length converges from below as O(h²), so two sample densities Richardson-
-    /// extrapolate to a reference far tighter than either: `L ≈ L₂ₙ + (L₂ₙ − Lₙ) / 3`.
-    private func referenceLength(
-        _ c: Curve3D, from u1: Double, to u2: Double,
-        segments n: Int = 20_000
-    ) -> Double {
-        let coarse = polylineLength(c, from: u1, to: u2, segments: n)
-        let fine = polylineLength(c, from: u1, to: u2, segments: 2 * n)
-        return fine + (fine - coarse) / 3
-    }
-
     // MARK: - Fixtures
+    //
+    // The independent reference (`polylineLength` + `referenceLength`) moved to
+    // `CurveTestFixtures.swift` (#1259): this file's copy was byte-identical to
+    // `Issue603SingleSpanQuadratureTests`'s.
 
     /// 40 interpolated points with sharply varying speed (cubic acceleration in x) and a zigzag
     /// in y, 39 `GeomAbs_CN` spans: the ordinary shape of an interpolated toolpath or an

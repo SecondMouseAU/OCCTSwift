@@ -32,17 +32,11 @@ import simd
 @Suite("Non-finite arc-length bounds report failure on every curve type (#548)")
 struct Issue548NonFiniteLengthBoundTests {
 
-    /// Multi-span interpolated BSpline: `NbIntervals(GeomAbs_CN) == 4`, so it takes the composite
-    /// branch where a NaN bound produced a plausible number instead of NaN.
-    private func multiSpanCurve() -> Curve3D? {
-        Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0),
-            SIMD3(100, 50, 0),
-            SIMD3(150, -60, 40),
-            SIMD3(250, 30, -20),
-            SIMD3(300, 0, 60),
-        ])
-    }
+    // The old private `multiSpanCurve()` (multi-span interpolated BSpline:
+    // `NbIntervals(GeomAbs_CN) == 4`, so it takes the composite branch where a NaN bound produced a
+    // plausible number instead of NaN) moved to `CurveTestFixtures.swift` as
+    // `wideRangeMultiSpanCurve()` (#1260): this file's copy was byte-identical to
+    // `Issue600OutOfDomainRangeTests`'s.
 
     private func multiSpanCurve2D() -> Curve2D? {
         Curve2D.interpolate(through: [
@@ -64,7 +58,7 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("A NaN upper bound is nil, not the 0 that means a zero-width interval")
     func nanUpperBoundIsNotZero() {
-        guard let c = multiSpanCurve() else { return }
+        guard let c = wideRangeMultiSpanCurve() else { return }
         let d = c.domain
 
         // Was 0.0: std::min(u1, nan) == std::max(u1, nan) == u1 collapsed the interval to [u1, u1].
@@ -80,7 +74,7 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("A NaN lower bound is nil, not the curve's whole length")
     func nanLowerBoundIsNotTheWholeLength() {
-        guard let c = multiSpanCurve(), let whole = c.length else { return }
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else { return }
         let d = c.domain
 
         // Was the whole length: both reduced bounds became NaN, every per-span skip test went
@@ -93,7 +87,7 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("Two NaN bounds are nil, not the whole length")
     func bothBoundsNaNIsNil() {
-        guard let c = multiSpanCurve() else { return }
+        guard let c = wideRangeMultiSpanCurve() else { return }
         #expect(c.length(from: .nan, to: .nan) == nil)
         #expect(c.arcLength(from: .nan, to: .nan) == -1.0)
     }
@@ -103,7 +97,7 @@ struct Issue548NonFiniteLengthBoundTests {
         let fixtures: [(String, Curve3D?)] = [
             ("segment", Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))),
             ("circle", Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)),
-            ("multi-span bspline", multiSpanCurve()),
+            ("multi-span bspline", wideRangeMultiSpanCurve()),
         ]
         for (name, curve) in fixtures {
             guard let c = curve else {
@@ -124,7 +118,7 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("Finite ranges still measure exactly as before")
     func finiteRangesAreUnaffected() {
-        guard let c = multiSpanCurve(), let whole = c.length else { return }
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else { return }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -198,7 +192,7 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("Shape.edgeArcLength(from:to:) never returns NaN for a NaN bound")
     func edgeArcLengthRejectsNonFiniteBounds() {
-        guard let spline = multiSpanCurve(),
+        guard let spline = wideRangeMultiSpanCurve(),
             let splineEdge = Shape.edgeFromCurve(spline),
             let straightEdge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
         else {

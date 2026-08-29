@@ -23,31 +23,11 @@ import simd
 struct Issue603SingleSpanQuadratureTests {
 
     // MARK: - Independent references
-
-    private func polylineLength(_ c: Curve3D, from u1: Double, to u2: Double, segments: Int)
-        -> Double
-    {
-        var total = 0.0
-        var prev = c.point(at: u1)
-        for i in 1...segments {
-            let p = c.point(at: u1 + (u2 - u1) * Double(i) / Double(segments))
-            let d = p - prev
-            total += (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
-            prev = p
-        }
-        return total
-    }
-
-    /// Chord sums converge from below as O(h²), so two densities extrapolate far tighter than
-    /// either: on a smooth curve this lands within ~1e-13 relative.
-    private func referenceLength(
-        _ c: Curve3D, from u1: Double, to u2: Double,
-        segments n: Int = 20_000
-    ) -> Double {
-        let coarse = polylineLength(c, from: u1, to: u2, segments: n)
-        let fine = polylineLength(c, from: u1, to: u2, segments: 2 * n)
-        return fine + (fine - coarse) / 3
-    }
+    //
+    // The chord-sum reference (`polylineLength` + `referenceLength`) moved to
+    // `CurveTestFixtures.swift` (#1259): this file's copy was byte-identical to
+    // `Issue477ArcLengthAccuracyTests`'s. Chord sums converge from below as O(h²), so two densities
+    // extrapolate far tighter than either: on a smooth curve this lands within ~1e-13 relative.
 
     /// `∫√(a²sin²t + b²cos²t) dt` by composite Simpson, the ellipse's arc length from first
     /// principles, with no curve object involved.

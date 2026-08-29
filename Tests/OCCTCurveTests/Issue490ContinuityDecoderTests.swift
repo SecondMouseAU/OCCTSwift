@@ -80,9 +80,9 @@ struct Issue490CurveContinuityTests {
 
     @Test("the analysis order saturates at C2, the strictest question LocalAnalysis can answer")
     func analysisOrderSaturates() throws {
-        guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
-        else { return }
+        // Sharp-corner fixture shared via CurveTestFixtures.swift (#1263): this was reimplemented
+        // inline here (and at four other sites across three files) before that review.
+        guard let (c1, c2) = sharpCornerCurves() else { return }
 
         let atC2 = try #require(
             c1.continuityWith(
@@ -105,9 +105,7 @@ struct Issue490CurveContinuityTests {
 
     @Test("each analysis order below the ceiling asks a different question")
     func analysisOrderIsObservable() throws {
-        guard let c1 = Curve3D.fit(points: [SIMD3(0, 0, 0), SIMD3(2.5, 0.5, 0), SIMD3(5, 0, 0)]),
-            let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
-        else { return }
+        guard let (c1, c2) = sharpCornerCurves() else { return }
 
         // The order is echoed back verbatim, so what makes each one a *different question* is the
         // set of classes it measures, see Issue495CurveAnalysisOrderTests for that half.

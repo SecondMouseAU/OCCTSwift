@@ -34,12 +34,8 @@ import simd
 @Suite("An out-of-domain range measures the curve, not its extrapolation (#600)")
 struct Issue600OutOfDomainRangeTests {
 
-    private func multiSpanCurve() -> Curve3D? {
-        Curve3D.interpolate(points: [
-            SIMD3(0, 0, 0), SIMD3(100, 50, 0), SIMD3(150, -60, 40),
-            SIMD3(250, 30, -20), SIMD3(300, 0, 60),
-        ])
-    }
+    // `multiSpanCurve()` moved to `CurveTestFixtures.swift` as `wideRangeMultiSpanCurve()` (#1260):
+    // this file's copy was byte-identical to `Issue548NonFiniteLengthBoundTests`'s.
 
     private func periodicCurve() -> Curve3D? {
         Curve3D.interpolatePeriodic(points: [
@@ -48,22 +44,10 @@ struct Issue600OutOfDomainRangeTests {
         ])
     }
 
-    /// Chord sum over the range *as the curve evaluates it*, so it winds on a periodic curve and
-    /// extrapolates on a polynomial one. Used only where the two should agree.
-    private func tracedLength(
-        _ c: Curve3D, from u1: Double, to u2: Double,
-        segments: Int = 20_000
-    ) -> Double {
-        var total = 0.0
-        var prev = c.point(at: u1)
-        for i in 1...segments {
-            let p = c.point(at: u1 + (u2 - u1) * Double(i) / Double(segments))
-            let d = p - prev
-            total += (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
-            prev = p
-        }
-        return total
-    }
+    // `tracedLength` (chord sum over the range *as the curve evaluates it*, so it winds on a
+    // periodic curve and extrapolates on a polynomial one) is the same "measure a curve's true
+    // chord length" primitive as `polylineLength`, moved to `CurveTestFixtures.swift` (#1259) and
+    // called by that name below.
 
     // MARK: - Curves that stop where their domain stops
 
@@ -120,7 +104,7 @@ struct Issue600OutOfDomainRangeTests {
 
     @Test("A multi-span BSpline keeps the behaviour #477 and #506 pinned")
     func multiSpanBSplineIsUnchanged() {
-        guard let c = multiSpanCurve(), let whole = c.length else { return }
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else { return }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -195,7 +179,7 @@ struct Issue600OutOfDomainRangeTests {
 
         // Against an independent reference, since this row is a behaviour change rather than a
         // preserved one: the chord sum evaluates the curve itself, winding included.
-        let traced = tracedLength(c, from: d.lowerBound, to: d.lowerBound + 2 * period)
+        let traced = polylineLength(c, from: d.lowerBound, to: d.lowerBound + 2 * period)
         #expect(abs(two - traced) < 0.01 * traced)
 
         // A range wholly past the end is one more turn, not nothing.
@@ -285,7 +269,7 @@ struct Issue600OutOfDomainRangeTests {
 
     @Test("In-domain measurements are untouched")
     func inDomainRangesAreUnchanged() {
-        guard let c = multiSpanCurve(), let whole = c.length,
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length,
             let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
             let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
         else { return }
@@ -294,7 +278,7 @@ struct Issue600OutOfDomainRangeTests {
 
         #expect(c.length(from: d.lowerBound, to: d.upperBound) == whole)
         if let half = c.length(from: d.lowerBound, to: d.lowerBound + span / 2) {
-            let traced = tracedLength(c, from: d.lowerBound, to: d.lowerBound + span / 2)
+            let traced = polylineLength(c, from: d.lowerBound, to: d.lowerBound + span / 2)
             #expect(abs(half - traced) < 0.01 * traced)
         }
         // Order tolerance and the zero-width interval, both from #506/#408.
