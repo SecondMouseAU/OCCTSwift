@@ -6,32 +6,9 @@ import simd
 
 @Suite("v0.169 Mesh + export progress (issue #98 follow-up)")
 struct MeshAndExportProgressTests {
-    final class Recorder: ImportProgress, @unchecked Sendable {
-        private let lock = NSLock()
-        private var _events: [(Double, String)] = []
-        private var _cancel: Bool = false
-
-        var eventCount: Int {
-            lock.lock()
-            defer { lock.unlock() }
-            return _events.count
-        }
-        func setCancel(_ value: Bool) {
-            lock.lock()
-            _cancel = value
-            lock.unlock()
-        }
-        func progress(fraction: Double, step: String) {
-            lock.lock()
-            _events.append((fraction, step))
-            lock.unlock()
-        }
-        func shouldCancel() -> Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            return _cancel
-        }
-    }
+    // `ProgressRecorder` (a lock-guarded ImportProgress recorder) lives in IOTestFixtures.swift,
+    // shared with ImportProgressTests (#1282). This suite only ever needed `events.count`, the
+    // narrower `eventCount` it used to keep its own copy of.
 
     @Test("Shape.meshWithProgress runs and is observable")
     func meshProgress() throws {
@@ -39,7 +16,7 @@ struct MeshAndExportProgressTests {
             Issue.record("box construction failed")
             return
         }
-        let recorder = Recorder()
+        let recorder = ProgressRecorder()
         let result = try box.meshWithProgress(
             linearDeflection: 0.5, angularDeflection: 0.5, progress: recorder)
         // After meshing the shape should be able to produce a mesh via the existing API.
@@ -48,7 +25,7 @@ struct MeshAndExportProgressTests {
         // We don't assert >= 1 events: small box meshing may complete inside one checkpoint
         // and hence skip Show() entirely on some toolchains. Coverage is via the larger
         // assemblies in OCCTSwiftTools' downstream tests.
-        _ = recorder.eventCount
+        _ = recorder.events.count
     }
 
     @Test("Shape.meshWithProgress honours cancellation")
@@ -57,7 +34,7 @@ struct MeshAndExportProgressTests {
             Issue.record("box construction failed")
             return
         }
-        let recorder = Recorder()
+        let recorder = ProgressRecorder()
         recorder.setCancel(true)
         do {
             _ = try box.meshWithProgress(
@@ -169,11 +146,11 @@ struct MeshAndExportProgressTests {
             .appendingPathComponent("export_progress_\(UUID()).step")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let recorder = Recorder()
+        let recorder = ProgressRecorder()
         try Exporter.writeSTEP(shape: box, to: url, progress: recorder)
         #expect(FileManager.default.fileExists(atPath: url.path))
         // The transfer phase has at least one progress checkpoint for a non-trivial shape.
-        _ = recorder.eventCount  // recorded; not strictly asserted to be >0 (toolchain-dependent)
+        _ = recorder.events.count  // recorded; not strictly asserted to be >0 (toolchain-dependent)
     }
 
     @Test("Exporter.writeIGES with progress: nil round-trips a file")
@@ -275,7 +252,7 @@ struct MeshAndExportProgressTests {
             .appendingPathComponent("doc_write_progress_\(UUID()).step")
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let recorder = Recorder()
+        let recorder = ProgressRecorder()
         try doc.writeSTEP(to: url, progress: recorder)
         #expect(FileManager.default.fileExists(atPath: url.path))
     }

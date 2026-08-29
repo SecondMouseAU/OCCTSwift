@@ -25,6 +25,76 @@ func invalidBowtieShape() -> Shape {
     return Shape.face(from: bowtie)!
 }
 
+// MARK: - #1281: robust-import cancellation fixtures
+
+/// A compound of `count` 10x10x10 boxes laid out in a row along X, `count * 30` apart.
+///
+/// Reimplemented independently across the robust-import cancellation suites (#300/#302/#525)
+/// with only the loop count differing: `MultibodyRobustImportTests.tenBoxes()` (N=10),
+/// `CancellationReportingTests.igesRobustTransferPhaseCancellationIsCancelled` (N=50), and
+/// `RobustImportProgressTests.igesRobustHealCancellation` (N=400) (#1281).
+func boxRow(count: Int) -> Shape? {
+    let boxes = (0..<count).compactMap { i in
+        Shape.box(width: 10, height: 10, depth: 10)?
+            .translated(by: SIMD3(Double(i) * 30, 0, 0))
+    }
+    guard boxes.count == count else { return nil }
+    return Shape.compound(boxes)
+}
+
+/// A convex `sides`-sided regular polygon of the given `radius`, extruded `height` along +Z.
+///
+/// Reimplemented independently across the robust-import cancellation suites (#300/#525):
+/// `CancellationReportingTests.prismSTEP(named:)` and
+/// `RobustImportProgressTests.stepRobustRepairCancellation` built the byte-identical
+/// 1200-sided, r=1000, h=50 prism, differing only in whether the result was written to a named
+/// STEP file (#1281).
+func ngonPrism(sides: Int, radius: Double, height: Double) -> Shape? {
+    let points = (0..<sides).map { i -> SIMD2<Double> in
+        let a = 2 * Double.pi * Double(i) / Double(sides)
+        return SIMD2(radius * cos(a), radius * sin(a))
+    }
+    guard let profile = Wire.polygon(points) else { return nil }
+    return Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: height)
+}
+
+// MARK: - #1282: shared ImportProgress recorder
+
+/// Records every `ImportProgress` callback and lets a test drive `shouldCancel()`'s answer.
+///
+/// `MeshAndExportProgressTests.Recorder` and `ImportProgressTests.ProgressRecorder` reimplemented
+/// this identically under two names, differing only in that `Recorder` exposed just
+/// `eventCount: Int`, a strict subset of what this type exposes (`events.count` covers it) (#1282).
+final class ProgressRecorder: ImportProgress, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _events: [(fraction: Double, step: String)] = []
+    private var _cancel: Bool = false
+
+    var events: [(fraction: Double, step: String)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _events
+    }
+
+    func setCancel(_ value: Bool) {
+        lock.lock()
+        _cancel = value
+        lock.unlock()
+    }
+
+    func progress(fraction: Double, step: String) {
+        lock.lock()
+        _events.append((fraction, step))
+        lock.unlock()
+    }
+
+    func shouldCancel() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return _cancel
+    }
+}
+
 // MARK: - #795: exporter drawing-collection consolidation golden output
 //
 // PDFExporter.primitiveOps()/collectFromDrawing()/collectProjectedEdges() and

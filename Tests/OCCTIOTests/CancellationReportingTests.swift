@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -67,14 +66,7 @@ struct CancellationReportingTests {
     }
 
     private func prismSTEP(named name: String) throws -> URL {
-        let sides = 1200
-        let points = (0..<sides).map { i -> SIMD2<Double> in
-            let a = 2 * Double.pi * Double(i) / Double(sides)
-            return SIMD2(1000 * cos(a), 1000 * sin(a))
-        }
-        let profile = try #require(Wire.polygon(points))
-        let subject = try #require(
-            Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 50))
+        let subject = try #require(ngonPrism(sides: 1200, radius: 1000, height: 50))
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
         try subject.writeSTEP(to: url)
         return url
@@ -104,10 +96,7 @@ struct CancellationReportingTests {
     /// The IGES sibling of the same bridge path, identical `TransferRoots(...) == 0` exit.
     @Test("Shape.loadIGESRobust cancelled during the transfer throws .cancelled (#525)")
     func igesRobustTransferPhaseCancellationIsCancelled() throws {
-        let boxes = (0..<50).compactMap { i in
-            Shape.box(width: 10, height: 10, depth: 10)?.translated(by: SIMD3(Double(i) * 30, 0, 0))
-        }
-        let subject = try #require(Shape.compound(boxes))
+        let subject = try #require(boxRow(count: 50))
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt525_transfer_cancel.igs")
         defer { try? FileManager.default.removeItem(at: url) }
