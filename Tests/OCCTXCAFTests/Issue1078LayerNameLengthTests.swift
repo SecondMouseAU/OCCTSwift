@@ -33,9 +33,7 @@ struct Issue1078LayerNameLengthTests {
             var buf = [CChar](repeating: 0, count: Int(len) + 1)
             let actual = OCCTDocumentGetLayerName(handle, Int32(i), &buf, Int32(buf.count))
             #expect(actual == len)
-            let name = buf.withUnsafeBufferPointer { ptr in
-                String(decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }, as: UTF8.self)
-            }
+            let name = Document.string(fromCString: buf)
             #expect(!name.isEmpty)
         }
     }
@@ -76,11 +74,7 @@ struct Issue1078LayerNameLengthTests {
                 var small = [CChar](repeating: 0, count: 8)
                 let reported = OCCTDocumentGetLayerName(handle, Int32(i), &small, Int32(small.count))
                 #expect(reported == len)
-                let prefix = small.withUnsafeBufferPointer { ptr in
-                    String(
-                        decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
-                        as: UTF8.self)
-                }
+                let prefix = Document.string(fromCString: small)
                 #expect(prefix.count == 7)
                 #expect(small[7] == 0)
             }
