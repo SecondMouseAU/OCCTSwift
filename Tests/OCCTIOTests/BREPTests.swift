@@ -33,9 +33,8 @@ struct BREPTests {
         // A bowtie (self-intersecting) polygon face is deterministically invalid
         //, BRepCheck flags the self-intersection, standing in for the "loose /
         // invalid but dimensionally real" reconstruction the gate must let through.
-        let bowtie = Wire.polygon(
-            [SIMD2(0, 0), SIMD2(1, 1), SIMD2(1, 0), SIMD2(0, 1)], closed: true)!
-        let invalid = Shape.face(from: bowtie)!
+        // Uses shared IOTestFixtures.invalidBowtieShape() helper.
+        let invalid = invalidBowtieShape()
         #expect(!invalid.isValid)
 
         let tempURL = FileManager.default.temporaryDirectory
