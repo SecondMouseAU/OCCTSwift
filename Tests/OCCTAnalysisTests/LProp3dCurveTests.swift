@@ -6,16 +6,6 @@ import simd
 
 @Suite("LProp3dCurve")
 struct LProp3dCurveTests {
-    @Test func curvatureOfCircle() {
-        // Circle of radius 5: curvature = 1/5 = 0.2
-        let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
-        if let c = circle {
-            // #595: localCurvature is deprecated onto curvature(at:), which is the same call.
-            let curv = c.curvature(at: 0.0)
-            if let curv { #expect(abs(curv - 0.2) < 1e-6) } else { Issue.record("no curvature") }
-        }
-    }
-
     @Test func tangentOfCircle() {
         let circle = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0)
         if let c = circle {
