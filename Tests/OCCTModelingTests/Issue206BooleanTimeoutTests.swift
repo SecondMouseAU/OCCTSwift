@@ -17,7 +17,7 @@ import simd
 @Suite("Issue #206, boolean timeout watchdog")
 struct Issue206BooleanTimeout {
 
-    /// Uses `BooleanTestFixtures.BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
+    /// Uses `BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
 
     @Test("a deadline already past interrupts the build → nil (all three ops)")
     func tinyTimeoutInterrupts() {
