@@ -47,7 +47,7 @@ struct Issue613IndexContractTests {
 
     /// An L-bracket with exactly one genuinely concave edge, the inner corner at x = 10, z = 10,
     /// running the full 40 mm in y. Two fused boxes, the plainest construction that has one.
-    static func lBracket() -> Shape? {
+    static func fusedLBracket() -> Shape? {
         guard let a = Shape.box(origin: .zero, width: 40, height: 40, depth: 10),
             let b = Shape.box(origin: .zero, width: 10, height: 40, depth: 40)
         else { return nil }
@@ -101,7 +101,7 @@ struct Issue613IndexContractTests {
     /// `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)` round nothing and report success.
     @Test("an L-bracket's inner corner is reported concave, and it is the edge that is concave")
     func concaveEdgeIsTheConcaveEdge() throws {
-        let bracket = try #require(Self.lBracket())
+        let bracket = try #require(Self.fusedLBracket())
 
         // Locate the inner corner geometrically, independent of any index scheme: the edge whose
         // midpoint sits on both walls' inner faces (x = 10 and z = 10).
@@ -127,7 +127,7 @@ struct Issue613IndexContractTests {
     /// while the classifier labels 0, and 42 convex against the classifier's 19.
     @Test("the classification array and the per-type counts describe the same edges")
     func concavityEntriesAlignWithCounts() throws {
-        let bracket = try #require(Self.lBracket())
+        let bracket = try #require(Self.fusedLBracket())
         let pairs = try #require(bracket.edgeConcavities())
 
         #expect(
@@ -165,7 +165,7 @@ struct Issue613IndexContractTests {
             "the three counts partition the edges: \(total) vs \(box.edgeCount)")
 
         // And on a shape that actually has one of each, the counts agree with the classifier.
-        let bracket = try #require(Self.lBracket())
+        let bracket = try #require(Self.fusedLBracket())
         let pairs = try #require(bracket.edgeConcavities())
         #expect(bracket.edgeConcavityCount(.concave) == pairs.filter { $0.1 == .concave }.count)
         #expect(bracket.edgeConcavityCount(.convex) == pairs.filter { $0.1 == .convex }.count)
@@ -477,7 +477,7 @@ struct Issue613IndexContractTests {
     /// directly observable, and under the occurrence walk it is a different index.
     @Test("biTgteBlend blends the edge edges() calls by that index")
     func biTgteBlendTargetsTheEnumeratedEdge() throws {
-        let bracket = try #require(Self.lBracket())
+        let bracket = try #require(Self.fusedLBracket())
         // Located geometrically, NOT via concaveEdges(), otherwise this test would also fail when
         // site 1 regresses, and could not attribute a failure to this site.
         let target = try #require(
@@ -502,7 +502,7 @@ struct Issue613IndexContractTests {
     /// reported an ordinary success.
     @Test("biTgteBlend refuses a batch naming an edge the shape does not have")
     func biTgteBlendRefusesUnresolvableIndices() throws {
-        let bracket = try #require(Self.lBracket())
+        let bracket = try #require(Self.fusedLBracket())
         // Geometric, for the same reason as above.
         let target = try #require(Self.indexOfEdge(matching: SIMD3(10, 20, 10), in: bracket))
 
