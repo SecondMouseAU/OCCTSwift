@@ -16,19 +16,8 @@ struct Issue485Curve3DContinuityTests {
 
     // MARK: - Fixtures
 
-    /// A cubic BSpline whose interior knot carries `multiplicity`, which is what drives its
-    /// measured continuity: mult 1 -> C2, mult 2 -> C1, mult 3 (== degree) -> C0.
-    static func bspline(interiorMultiplicity multiplicity: Int32) -> Curve3D? {
-        let poleCount = 4 + Int(multiplicity)
-        let poles = (1...poleCount).map { i in
-            SIMD3<Double>(Double(i), Double(i % 2) * 2.0, 0)
-        }
-        return Curve3D.bspline(
-            poles: poles,
-            knots: [0.0, 0.5, 1.0],
-            multiplicities: [4, multiplicity, 4],
-            degree: 3)
-    }
+    // `bspline(interiorMultiplicity:)` moved to CurveTestFixtures.swift (#1262), shared with
+    // Issue619ContinuityEncodingTests.
 
     /// A curve that genuinely measures G1, the class the issue noted was untested anywhere.
     ///
@@ -64,15 +53,15 @@ struct Issue485Curve3DContinuityTests {
     func knotMultiplicityDrivesMeasuredClass() {
         // The ordinals are the point: C1 is 2 and C2 is 4, not 1 and 2. The old hand-mapped
         // encoding reported 1 and 2 here, which is what made a threshold check misfire.
-        if let c2 = Self.bspline(interiorMultiplicity: 1) {
+        if let c2 = bspline(interiorMultiplicity: 1) {
             #expect(c2.continuityClass == .c2)
             #expect(c2.continuity == 4)
         }
-        if let c1 = Self.bspline(interiorMultiplicity: 2) {
+        if let c1 = bspline(interiorMultiplicity: 2) {
             #expect(c1.continuityClass == .c1)
             #expect(c1.continuity == 2)
         }
-        if let c0 = Self.bspline(interiorMultiplicity: 3) {
+        if let c0 = bspline(interiorMultiplicity: 3) {
             #expect(c0.continuityClass == .c0)
             #expect(c0.continuity == 0)
         }
@@ -117,9 +106,9 @@ struct Issue485Curve3DContinuityTests {
         // the measured value disagreed for every fixture below except the C0 one.
         var checked = 0
         for curve in [
-            Self.bspline(interiorMultiplicity: 1),
-            Self.bspline(interiorMultiplicity: 2),
-            Self.bspline(interiorMultiplicity: 3),
+            bspline(interiorMultiplicity: 1),
+            bspline(interiorMultiplicity: 2),
+            bspline(interiorMultiplicity: 3),
             Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
             Self.offsetOfG1Basis(),
         ].compactMap({ $0 }) {
@@ -132,8 +121,8 @@ struct Issue485Curve3DContinuityTests {
     @Test("The retired encoding's sentinel values never appear")
     func retiredSentinelValuesAreGone() {
         for curve in [
-            Self.bspline(interiorMultiplicity: 1),
-            Self.bspline(interiorMultiplicity: 2),
+            bspline(interiorMultiplicity: 1),
+            bspline(interiorMultiplicity: 2),
             Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
             Self.offsetOfG1Basis(),
         ].compactMap({ $0 }) {

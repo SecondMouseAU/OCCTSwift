@@ -19,14 +19,9 @@ import Testing
 @Suite("Curve3D nearest-parameter entry points agree (#500)")
 struct Issue500Curve3DNearestParameterTests {
 
-    /// Domain `[3, 8]` along +X: the point at parameter `t` is `(t, 0, 0)`.
-    private static func trimmedSegment() -> Curve3D? {
-        Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))?.trimmed(from: 3, to: 8)
-    }
-
     @Test("An ordinary projection returns the real parameter")
     func ordinaryProjection() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         #expect(curve.domain == 3...8)
         #expect(curve.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
         #expect(curve.nearestParameter(to: SIMD3(3, 4, 0)) == 3)  // the start point itself
@@ -41,7 +36,7 @@ struct Issue500Curve3DNearestParameterTests {
     /// converted by #539, answered 8 and 3 for the same curve and the same points the whole time.
     @Test("A point past the end answers with the end, not nil")
     func pastTheEndAnswersWithTheEnd() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         #expect(curve.nearestParameter(to: SIMD3(100, 0, 0)) == 8)
         #expect(curve.nearestParameter(to: SIMD3(0, 0, 0)) == 3)
         #expect(curve.nearestParameter(to: SIMD3(-50, 3, 0)) == 3)
@@ -67,7 +62,7 @@ struct Issue500Curve3DNearestParameterTests {
     /// there was no such point at all.
     @Test("projectPoint and nearestParameter now agree")
     func projectPointAndNearestParameterAgree() throws {
-        let curve = try #require(Self.trimmedSegment())
+        let curve = try #require(trimmedSegment())
         let p = SIMD3<Double>(100, 0, 0)
 
         let projected = curve.projectPoint(p)

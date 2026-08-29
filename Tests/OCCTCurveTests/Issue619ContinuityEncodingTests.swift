@@ -19,19 +19,8 @@ import simd
 @Suite("Measured continuity encoding after the retirement (#619)")
 struct Issue619ContinuityEncodingTests {
 
-    /// A cubic BSpline whose interior knot multiplicity sets its measured continuity:
-    /// mult 1 -> C2, mult 2 -> C1, mult 3 (== degree) -> C0.
-    static func bspline(interiorMultiplicity multiplicity: Int32) -> Curve3D? {
-        let poleCount = 4 + Int(multiplicity)
-        let poles = (1...poleCount).map { i in
-            SIMD3<Double>(Double(i), Double(i % 2) * 2.0, 0)
-        }
-        return Curve3D.bspline(
-            poles: poles,
-            knots: [0.0, 0.5, 1.0],
-            multiplicities: [4, multiplicity, 4],
-            degree: 3)
-    }
+    // `bspline(interiorMultiplicity:)` moved to CurveTestFixtures.swift (#1262), shared with
+    // Issue485Curve3DContinuityTests.
 
     // MARK: - The encoding, against geometry whose class is known by construction
 
@@ -73,7 +62,7 @@ struct Issue619ContinuityEncodingTests {
         // A doubled interior knot on a cubic drops it from C2 to C1. Under the old encoding this
         // curve answered 1; it answers 2 now. That single shift is the whole defect: the number
         // a C1 curve reports is the number a C2 curve used to report.
-        guard let c1 = Self.bspline(interiorMultiplicity: 2) else {
+        guard let c1 = bspline(interiorMultiplicity: 2) else {
             Issue.record("could not build the C1 BSpline fixture")
             return
         }
@@ -81,7 +70,7 @@ struct Issue619ContinuityEncodingTests {
         #expect(c1.continuity == 2)
 
         // ... and the C2 curve, which used to be the one answering 2, now answers 4.
-        guard let c2 = Self.bspline(interiorMultiplicity: 1) else {
+        guard let c2 = bspline(interiorMultiplicity: 1) else {
             Issue.record("could not build the C2 BSpline fixture")
             return
         }
@@ -93,7 +82,7 @@ struct Issue619ContinuityEncodingTests {
 
     @Test("A raw threshold of 2 now admits a merely-C1 curve; satisfies(.c2) still refuses it")
     func rawThresholdAdmitsC1WhereSatisfiesRefuses() {
-        guard let c1 = Self.bspline(interiorMultiplicity: 2) else {
+        guard let c1 = bspline(interiorMultiplicity: 2) else {
             Issue.record("could not build the C1 BSpline fixture")
             return
         }
@@ -110,7 +99,7 @@ struct Issue619ContinuityEncodingTests {
 
         // A genuine C2 curve passes both, so the trap is specifically about the C1 case rather
         // than the floor being unreachable.
-        if let c2 = Self.bspline(interiorMultiplicity: 1) {
+        if let c2 = bspline(interiorMultiplicity: 1) {
             #expect(c2.continuity >= 2)
             #expect(c2.continuityClass.satisfies(.c2))
         }
@@ -139,9 +128,9 @@ struct Issue619ContinuityEncodingTests {
         // decode 99/-2/-3 and fall back to `.c0`, breaking this.
         var checked = 0
         for curve in [
-            Self.bspline(interiorMultiplicity: 1),
-            Self.bspline(interiorMultiplicity: 2),
-            Self.bspline(interiorMultiplicity: 3),
+            bspline(interiorMultiplicity: 1),
+            bspline(interiorMultiplicity: 2),
+            bspline(interiorMultiplicity: 3),
             Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
         ].compactMap({ $0 }) {
             #expect(curve.continuity == Int(curve.continuityClass.rawValue))
