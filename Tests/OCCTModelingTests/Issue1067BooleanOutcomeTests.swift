@@ -28,12 +28,7 @@ struct Issue1067BooleanOutcome {
     /// See the suite comment for why this is deterministic rather than a race.
     private static let pastDeadline = 1e-9
 
-    private func overlappingBoxes() -> (Shape, Shape)? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return (a, b)
-    }
+    /// Uses `BooleanTestFixtures.BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
 
     /// Readable failure text: `#expect` on the enum itself would print nothing useful, since
     /// `BooleanOutcome` carries a `Shape` and is deliberately not `Equatable`.
@@ -64,7 +59,7 @@ struct Issue1067BooleanOutcome {
 
     @Test("an expired deadline reports timedOut, not failed (all three ops)")
     func expiredDeadlineIsTimedOut() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false), "fixture")
             return
         }
@@ -76,7 +71,7 @@ struct Issue1067BooleanOutcome {
 
     @Test("a refused operand reports failed even with the watchdog armed (all three ops)")
     func refusedOperandIsFailed() {
-        guard let (a, _) = overlappingBoxes(), let empty = a.nullified else {
+        guard let (a, _) = BooleanTestFixtures.overlappingBoxes(), let empty = a.nullified else {
             #expect(Bool(false), "fixture")
             return
         }
@@ -98,7 +93,7 @@ struct Issue1067BooleanOutcome {
 
     @Test("a completed boolean reports success and the operation actually did something")
     func completedBooleanIsSuccess() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false), "fixture")
             return
         }
@@ -119,7 +114,7 @@ struct Issue1067BooleanOutcome {
 
     @Test("union/subtracting/intersection still collapse both outcomes to nil")
     func namedMethodsStillReturnNilForBoth() {
-        guard let (a, b) = overlappingBoxes(), let empty = a.nullified else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes(), let empty = a.nullified else {
             #expect(Bool(false), "fixture")
             return
         }
@@ -134,7 +129,7 @@ struct Issue1067BooleanOutcome {
 
     @Test("the named methods return exactly their outcome sibling's shape")
     func namedMethodsAgreeWithTheOutcome() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false), "fixture")
             return
         }

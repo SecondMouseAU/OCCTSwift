@@ -9,18 +9,11 @@ import simd
 struct Issue202BooleanOptions {
 
     /// Two unit cubes stacked along Z, sharing the coincident face at z = 10.
-    private func stackedBoxes() -> (Shape, Shape)? {
-        guard let lower = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let upper = Shape.box(origin: SIMD3(0, 0, 10), width: 10, height: 10, depth: 10)
-        else {
-            return nil
-        }
-        return (lower, upper)
-    }
+    /// Uses `BooleanTestFixtures.BooleanTestFixtures.stackedBoxes()` for the stacked box pair.
 
     @Test("default parameters preserve existing behavior")
     func defaultParity() {
-        guard let (a, b) = stackedBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.stackedBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -47,7 +40,7 @@ struct Issue202BooleanOptions {
     // Issue case 1: union of consecutive chunk solids that share a boundary cross-section.
     @Test("glued union of coincident-face solids is valid with correct volume")
     func gluedUnion() {
-        guard let (a, b) = stackedBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.stackedBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -97,7 +90,7 @@ struct Issue202BooleanOptions {
 
     @Test("negative fuzzy value is ignored, not fatal")
     func negativeFuzzyIgnored() {
-        guard let (a, b) = stackedBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.stackedBoxes() else {
             #expect(Bool(false))
             return
         }

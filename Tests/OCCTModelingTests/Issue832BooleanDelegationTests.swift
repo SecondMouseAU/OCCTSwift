@@ -13,27 +13,15 @@ import simd
 @Suite("Issue #832, Shape+Modeling boolean delegation")
 struct Issue832BooleanDelegation {
 
-    private func stackedBoxes() -> (Shape, Shape)? {
-        guard let lower = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let upper = Shape.box(origin: SIMD3(0, 0, 10), width: 10, height: 10, depth: 10)
-        else {
-            return nil
-        }
-        return (lower, upper)
-    }
+    /// Uses `BooleanTestFixtures.stackedBoxes()` for the stacked box pair.
 
-    private func overlappingBoxes() -> (Shape, Shape)? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return (a, b)
-    }
+    /// Uses `BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
 
     @Test(
         "fused/subtracted/intersected(tolerance:) match union/subtracting/intersection(fuzzyValue:)"
     )
     func toleranceDelegatesToFuzzyValue() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -73,7 +61,7 @@ struct Issue832BooleanDelegation {
     // measurement this comment summarizes.
     @Test("negative tolerance behaves the same as tolerance: 0, matching union's contract")
     func negativeToleranceIgnored() {
-        guard let (a, b) = stackedBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.stackedBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -88,7 +76,7 @@ struct Issue832BooleanDelegation {
     // same BOPAlgo_GlueEnum choice with opposite raw-value orderings (#832). A raw-value cast
     // (`BooleanGlue(rawValue: glueMode.rawValue)`) would silently repoint every case to the wrong
     // BOPAlgo_GlueEnum. Asserted two ways: directly against the mapping (the discriminating
-    // check, a coincident-face fixture like stackedBoxes() below produces the identical fused
+    // check, a coincident-face fixture like BooleanTestFixtures.stackedBoxes() below produces the identical fused
     // volume under every glue mode, since glue mode is a BOP performance/robustness hint rather
     // than something that changes the correct answer for simple geometry, so a volume-only
     // comparison alone would NOT have caught a raw-value regression here, measured, not assumed),
@@ -99,7 +87,7 @@ struct Issue832BooleanDelegation {
         #expect(Shape.GlueMode.full.asBooleanGlue == .full)
         #expect(Shape.GlueMode.off.asBooleanGlue == .off)
 
-        guard let (a, b) = stackedBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.stackedBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -125,7 +113,7 @@ struct Issue832BooleanDelegation {
     // (now-inherited) default 120s timeout.
     @Test("delegated calls still succeed under the inherited default timeout")
     func delegatedCallsSucceedUnderDefaultTimeout() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -160,7 +148,7 @@ struct Issue832BooleanDelegation {
         "explicit timeout: is threaded through to the underlying call, not ignored (all six entry points)"
     )
     func explicitTimeoutIsThreadedThrough() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }

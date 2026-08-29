@@ -17,16 +17,11 @@ import simd
 @Suite("Issue #206, boolean timeout watchdog")
 struct Issue206BooleanTimeout {
 
-    private func overlappingBoxes() -> (Shape, Shape)? {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-            let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
-        else { return nil }
-        return (a, b)
-    }
+    /// Uses `BooleanTestFixtures.BooleanTestFixtures.overlappingBoxes()` for the overlapping box pair.
 
     @Test("a deadline already past interrupts the build → nil (all three ops)")
     func tinyTimeoutInterrupts() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -38,7 +33,7 @@ struct Issue206BooleanTimeout {
 
     @Test("a sane timeout leaves valid booleans unaffected, with correct volumes")
     func saneTimeoutSucceeds() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }
@@ -62,7 +57,7 @@ struct Issue206BooleanTimeout {
 
     @Test("default timeout and unbounded (0) both produce the same valid result")
     func defaultAndUnboundedParity() {
-        guard let (a, b) = overlappingBoxes() else {
+        guard let (a, b) = BooleanTestFixtures.overlappingBoxes() else {
             #expect(Bool(false))
             return
         }
