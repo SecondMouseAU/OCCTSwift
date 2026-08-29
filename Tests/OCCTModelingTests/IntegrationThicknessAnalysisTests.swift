@@ -70,7 +70,7 @@ struct IntegrationThicknessAnalysisTests {
             if let n = face.normal {
                 let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
                 if len < 1e-10 { continue }
-                let normalized = n / len  // ModelingTestExtensions.normalized uses same threshold
+                let normalized = n.normalized  // Use shared extension from ModelingTestExtensions.swift
 
                 let fb = face.bounds!
                 let centroid = (fb.min + fb.max) / 2.0
