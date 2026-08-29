@@ -17,14 +17,6 @@ struct Issue439OuterShellMultiSolid {
         return Shape.compound([a, b])
     }
 
-    /// A 20-cube with a fully-enclosed 8-cube removed: one solid, two shells (body + cavity).
-    private func hollowSolid() -> Shape? {
-        guard let block = Shape.box(origin: .zero, width: 20, height: 20, depth: 20),
-            let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)
-        else { return nil }
-        return block.subtracting(cavity)
-    }
-
     @Test("a 2-solid compound returns nil, not the first solid's shell")
     func multiSolidCompoundIsNil() {
         guard let comp = twoBoxCompound() else {
@@ -85,7 +77,7 @@ struct Issue439OuterShellMultiSolid {
     func multiSolidInnerShellsEmpty() {
         // Box A is hollow (one cavity); box B is plain. Reading the compound must not report
         // A's cavity as though it belonged to the compound.
-        guard let a = hollowSolid(),
+        guard let a = Issue211OuterShell.hollowSolid(),
             let b = Shape.box(origin: SIMD3(40, 0, 0), width: 10, height: 10, depth: 10),
             let comp = Shape.compound([a, b])
         else {
@@ -127,7 +119,7 @@ struct Issue439OuterShellMultiSolid {
     // drops internal void walls by design, so outerShells is not a boundary-complete substitute.
     @Test("outerShells drops cavity walls, as documented, the faces-compound keeps them")
     func outerShellsDropInternalVoids() {
-        guard let hollow = hollowSolid(),
+        guard let hollow = Issue211OuterShell.hollowSolid(),
             let plain = Shape.box(origin: SIMD3(40, 0, 0), width: 10, height: 10, depth: 10),
             let comp = Shape.compound([hollow, plain])
         else {

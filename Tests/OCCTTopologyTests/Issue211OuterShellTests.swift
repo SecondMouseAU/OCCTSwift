@@ -9,8 +9,11 @@ import simd
 @Suite("Issue #211, outerShell")
 struct Issue211OuterShell {
 
-    // A solid with an internal cavity: a 20-cube with a fully-enclosed 8-cube removed.
-    private func hollowSolid() -> Shape? {
+    /// A solid with an internal cavity: a 20-cube with a fully-enclosed 8-cube removed.
+    ///
+    /// Shared with `Issue439OuterShellMultiSolidTests` and `Issue502SubShapeTraversalTests`, which
+    /// each rebuilt this construction independently (#1265); all three now call this one.
+    static func hollowSolid() -> Shape? {
         guard let outer = Shape.box(origin: .zero, width: 20, height: 20, depth: 20),
             let inner = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)
         else { return nil }
@@ -19,7 +22,7 @@ struct Issue211OuterShell {
 
     @Test("a hollow solid has multiple shells and a recoverable outer shell")
     func hollowOuterShell() {
-        guard let hollow = hollowSolid() else {
+        guard let hollow = Self.hollowSolid() else {
             #expect(Bool(false))
             return
         }
@@ -55,7 +58,7 @@ struct Issue211OuterShell {
 
     @Test("innerShells returns the cavity shells, empty for a plain solid")
     func innerShells() {
-        guard let hollow = hollowSolid() else {
+        guard let hollow = Self.hollowSolid() else {
             #expect(Bool(false))
             return
         }

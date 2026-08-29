@@ -41,9 +41,7 @@ struct Issue502SubShapeTraversalTests {
         // `box(origin:)` is corner-anchored, so the cavity is strictly inside the block and the
         // cut leaves a second, inner shell. (`box(width:height:depth:)` is centred on the
         // origin, where the same cavity would break the surface instead.)
-        let block = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
-        let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!
-        guard let hollow = block.subtracting(cavity) else {
+        guard let hollow = Issue211OuterShell.hollowSolid() else {
             Issue.record("cut failed")
             return
         }
@@ -153,9 +151,7 @@ struct Issue502SubShapeTraversalTests {
     /// therefore hand back the same sub-shapes in the same order, element by element.
     @Test("Both spellings enumerate in the same order")
     func bothSpellingsEnumerateInTheSameOrder() {
-        let block = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
-        let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!
-        guard let hollow = block.subtracting(cavity),
+        guard let hollow = Issue211OuterShell.hollowSolid(),
             let assembly = Shape.compound([hollow, hollow.translated(by: SIMD3(40, 0, 0))!])
         else {
             Issue.record("fixture failed")
@@ -180,8 +176,7 @@ struct Issue502SubShapeTraversalTests {
     /// The indexed accessor reads out of the same enumeration as the array accessor.
     @Test("Indexed and array access return the same sub-shape")
     func indexedAndArrayAccessMatch() {
-        let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
-            .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
+        let hollow = Issue211OuterShell.hollowSolid()!
         let shells = hollow.shells
         #expect(shells.count == 2)
         for i in 0..<shells.count {
