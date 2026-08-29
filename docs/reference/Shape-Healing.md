@@ -1710,7 +1710,7 @@ public var isValidForBoolean: Bool { get }
 ```
 
 - **Returns:** `true` if the shape passes the OCCT boolean readiness check.
-- **OCCT:** `BRepAlgoAPI_Check` (via `OCCTShapeBooleanCheck`).
+- **OCCT:** `BRepAlgoAPI_Check` (via `OCCTShapeBooleanCheckSingle`).
 - **Example:**
   ```swift
   guard shape.isValidForBoolean else { return }
@@ -1729,7 +1729,7 @@ public func isValidForBoolean(with other: Shape) -> Bool
 
 - **Parameters:** `other`, the second shape to check compatibility with.
 - **Returns:** `true` if both shapes are suitable for boolean operations together.
-- **OCCT:** `BRepAlgoAPI_Check` (via `OCCTShapeBooleanCheck`).
+- **OCCT:** `BRepAlgoAPI_Check` (via `OCCTShapeBooleanCheckPair`).
 - **Example:**
   ```swift
   guard partA.isValidForBoolean(with: partB) else { return }
