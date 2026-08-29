@@ -34,12 +34,7 @@ struct ThreadFormsTests {
         #expect(t.isValid)
         // Crest sits at the nominal radius. The optimal Bnd_Box pole-inflates for these BSpline thread
         // surfaces (OCCTSwift #213), so measure the actual meshed surface envelope instead.
-        if let mesh = t.mesh(linearDeflection: 0.05) {
-            var maxR = Float(0)
-            for v in mesh.vertices {
-                let r = (v.x * v.x + v.y * v.y).squareRoot()
-                if r > maxR { maxR = r }
-            }
+        if let maxR = meshMaxRadialExtent(t, deflection: 0.05) {
             #expect(maxR <= 6.0 + 0.1)
         }
         if let v0 = shank.volume, let v1 = t.volume {
@@ -67,12 +62,7 @@ struct ThreadFormsTests {
         }
         #expect(t.isValid)
         // The faceted cut path keeps the crest exactly at the nominal radius (no ruled:false bulge).
-        if let mesh = t.mesh(linearDeflection: 0.05) {
-            var maxR = Float(0)
-            for v in mesh.vertices {
-                let r = (v.x * v.x + v.y * v.y).squareRoot()
-                if r > maxR { maxR = r }
-            }
+        if let maxR = meshMaxRadialExtent(t, deflection: 0.05) {
             #expect(maxR <= 6.0 + 0.05)
         }
         if let v0 = shank.volume, let v1 = t.volume {

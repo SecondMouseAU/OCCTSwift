@@ -12,6 +12,33 @@ extension SIMD3 where Scalar == Double {
     }
 }
 
+/// Maximum XY-planar radial distance (`sqrt(x² + y²)`) across a shape's meshed vertices, the
+/// measured "crest radius" of a threaded solid used by every thread-form test in this target.
+/// Shared by `ThreadFormsTests`, `Issue257MultiStartTests` and `Issue222Envelope`, which each used
+/// to reimplement this loop independently (#1266).
+///
+/// Returns `nil`, never a sentinel value a `<=` comparison could silently satisfy, when meshing
+/// fails: one of the four removed copies (`Issue257MultiStartTests.meshCrestRadius`) returned
+/// `-1` on `Shape.mesh` failure, and every call site compared the result with `<=` against a
+/// positive nominal radius (e.g. `<= 5.0 * 1.005`). `-1 <= 5.025` is trivially true, so a genuine
+/// measurement failure silently reported success instead of being caught.
+///
+/// - Parameter mesher: seam for tests only. Production callers never pass this and get the real
+///   `Shape.mesh(linearDeflection:)`. `Issue1266CrestRadiusSentinelTests` substitutes a provider
+///   that always fails, to prove a caller's nil-handling actually catches the failure: a genuine
+///   `Shape.mesh` failure can't safely be forced from the public API (confirmed empirically -- a
+///   `nullified` shape still meshes to a valid, empty `Mesh` rather than failing, and a
+///   non-positive or NaN deflection risks hanging rather than failing cleanly).
+func meshMaxRadialExtent(
+    _ shape: Shape, deflection: Double = 0.05,
+    mesher: (Shape, Double) -> Mesh? = { $0.mesh(linearDeflection: $1) }
+) -> Double? {
+    guard let mesh = mesher(shape, deflection) else { return nil }
+    return mesh.vertices.reduce(0.0) {
+        max($0, Double((($1.x * $1.x) + ($1.y * $1.y)).squareRoot()))
+    }
+}
+
 // MARK: - v0.138: Thread features (#66)
 
 @Suite("v0.138 ThreadSpec parsing")

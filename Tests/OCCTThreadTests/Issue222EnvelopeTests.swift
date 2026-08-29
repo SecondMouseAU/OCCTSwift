@@ -19,14 +19,6 @@ struct Issue222Envelope {
         return max(abs(b.max.x), abs(b.min.x), abs(b.max.y), abs(b.min.y))
     }
 
-    /// Crest radius from mesh vertices (independent tight ground truth, verts lie on real faces).
-    private func crestRadiusMesh(_ s: Shape) -> Double? {
-        guard let m = s.mesh(linearDeflection: 0.05) else { return nil }
-        return m.vertices.reduce(0.0) {
-            max($0, Double((($1.x * $1.x) + ($1.y * $1.y)).squareRoot()))
-        }
-    }
-
     @Test("Direct build keeps the crest within the nominal major radius (iso68, coarse)")
     func directInEnvelopeISO() {
         guard let rod = Shape.cylinder(radius: 6, height: 40) else {
@@ -46,7 +38,9 @@ struct Issue222Envelope {
         if let r = crestRadiusOptimal(t) {
             #expect(r <= 6.0 * 1.005, "optimal crest \(r) > nominal 6.0")
         }
-        if let r = crestRadiusMesh(t) { #expect(r <= 6.0 * 1.005, "mesh crest \(r) > nominal 6.0") }
+        if let r = meshMaxRadialExtent(t, deflection: 0.05) {
+            #expect(r <= 6.0 * 1.005, "mesh crest \(r) > nominal 6.0")
+        }
         if let v0 = rod.volume, let v1 = t.volume {
             #expect(v1 < v0, "no material removed, not a real thread")
         }
@@ -71,7 +65,9 @@ struct Issue222Envelope {
         if let r = crestRadiusOptimal(t) {
             #expect(r <= 6.0 * 1.005, "optimal crest \(r) > nominal 6.0")
         }
-        if let r = crestRadiusMesh(t) { #expect(r <= 6.0 * 1.005, "mesh crest \(r) > nominal 6.0") }
+        if let r = meshMaxRadialExtent(t, deflection: 0.05) {
+            #expect(r <= 6.0 * 1.005, "mesh crest \(r) > nominal 6.0")
+        }
     }
 
     @Test("default `.auto` still builds a valid single-start rod (no regression)")
