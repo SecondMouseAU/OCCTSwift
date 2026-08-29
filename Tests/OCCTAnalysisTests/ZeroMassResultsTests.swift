@@ -4,6 +4,17 @@ import simd
 
 @testable import OCCTSwift
 
+/// Shared test fixture for creating an open shell (5 of 6 faces) from a box at a given origin.
+/// Internal so it can be used across test files in the OCCTAnalysisTests module.
+internal func makeOpenShellFromBox(origin: SIMD3<Double> = .zero) throws -> Shape {
+    let box = try #require(
+        Shape.box(width: 10, height: 20, depth: 30)?
+            .translated(by: origin))
+    let fiveFaces = box.faces().dropLast().compactMap { Shape.fromFace($0) }
+    #expect(fiveFaces.count == 5)
+    return try #require(Shape.sew(shapes: Array(fiveFaces), tolerance: 1e-6))
+}
+
 /// Regression coverage for #609: zero-mass `BRepGProp` results were returned as successful answers
 /// across the whole mass-property surface, and the value handed back was not a recognisable zero.
 ///
@@ -29,10 +40,7 @@ struct ZeroMassResultsTests {
 
     /// Five of the box's six faces, sewn. Closed everywhere except one opening.
     private func openShell() throws -> Shape {
-        let b = try #require(box())
-        let five = b.faces().dropLast().compactMap { Shape.fromFace($0) }
-        #expect(five.count == 5)
-        return try #require(Shape.sew(shapes: five, tolerance: 1e-6))
+        try makeOpenShellFromBox()
     }
 
     // MARK: - volume / signedVolume
