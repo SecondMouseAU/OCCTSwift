@@ -23,18 +23,8 @@ import Testing
 @Suite("blendedEdges reports overwritten duplicates (#633)")
 struct Issue633BlendedEdgesDuplicateReport {
 
-    /// A 10mm box with one face dropped and the rest sewn back together: an open shell whose free
-    /// boundary edges `BRepFilletAPI_MakeFillet::Add` declines. Identical construction to
-    /// `Issue639FilletDeclinedEdgeReport.openShell()` and the Cluster B census's own fixture.
-    static func openShell() -> Shape? {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
-        let faces = box.faces().compactMap { Shape.fromFace($0) }
-        guard faces.count == 6 else { return nil }
-        return Shape.sew(shapes: Array(faces.dropFirst()))
-    }
-
-    /// Measured by the Cluster B census on this exact fixture; reused here rather than re-derived.
-    static let declinedIndices = [6, 9, 10, 11]
+    /// Uses `FilletTestFixtures.openShell()` and `FilletTestFixtures.declinedIndices` for the
+    /// open-shell fixture with known declined edges.
 
     // MARK: - overwrittenDuplicateIndices: a single duplicated edge
 
@@ -108,7 +98,7 @@ struct Issue633BlendedEdgesDuplicateReport {
 
     @Test("blendedEdgesWithReport names the same declined set #639 measured for its siblings")
     func declinedEdgesAreNamedOnAnOpenShell() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -120,7 +110,7 @@ struct Issue633BlendedEdgesDuplicateReport {
             Issue.record("blendedEdgesWithReport unexpectedly returned nil")
             return
         }
-        #expect(Set(report.declinedEdgeIndices) == Set(Self.declinedIndices))
+        #expect(Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices))
         #expect(report.overwrittenDuplicateIndices.isEmpty)
 
         // Reporting must not change the built geometry: same skip-not-reject answer as the
@@ -137,26 +127,26 @@ struct Issue633BlendedEdgesDuplicateReport {
 
     @Test("a duplicated accepted edge and a declined edge are reported independently")
     func duplicateAndDeclineAreReportedIndependently() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
         let edgeCount = shell.edges().count
-        guard let accepted = (0..<edgeCount).first(where: { !Self.declinedIndices.contains($0) })
+        guard let accepted = (0..<edgeCount).first(where: { !FilletTestFixtures.declinedIndices.contains($0) })
         else {
             Issue.record("fixture has no accepted edge")
             return
         }
         // Duplicate an accepted edge, and request every declined edge once.
         var request: [(edgeIndex: Int, radius: Double)] = [(accepted, 1.0), (accepted, 2.0)]
-        request.append(contentsOf: Self.declinedIndices.map { ($0, 1.0) })
+        request.append(contentsOf: FilletTestFixtures.declinedIndices.map { ($0, 1.0) })
 
         guard let report = shell.blendedEdgesWithReport(request) else {
             Issue.record("blendedEdgesWithReport unexpectedly returned nil")
             return
         }
         #expect(report.overwrittenDuplicateIndices == [accepted])
-        #expect(Set(report.declinedEdgeIndices) == Set(Self.declinedIndices))
+        #expect(Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices))
     }
 
     // MARK: - The all-or-nothing contracts blendedEdges already has are unaffected

@@ -46,14 +46,7 @@ struct Issue612FilletContourSelection {
         return face.extruded(by: SIMD3(0, 0, slotHeight))
     }
 
-    /// A 10mm box with one face dropped and the rest sewn back together: an open shell whose free
-    /// boundary edges `BRepFilletAPI_MakeFillet::Add` refuses (measured: 4 of its 12 edges).
-    static func openShell() -> Shape? {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
-        let faces = box.faces().compactMap { Shape.fromFace($0) }
-        guard faces.count == 6 else { return nil }
-        return Shape.sew(shapes: Array(faces.dropFirst()))
-    }
+    /// Uses `FilletTestFixtures.openShell()` for the open-shell fixture with known declined edges.
 
     /// Edge indices on a rim at height `z`, split by curve kind.
     static func rimEdges(of shape: Shape, atHeight z: Double) -> (lines: [Int], arcs: [Int]) {
@@ -255,7 +248,7 @@ struct Issue612FilletContourSelection {
 
     @Test("An edge Add() refuses is skipped, not turned into a nil result")
     func refusedEdgesAreSkippedNotRejected() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
@@ -308,7 +301,7 @@ struct Issue612FilletContourSelection {
 
     @Test("A variable fillet on an edge Add() refuses fails, where it used to SIGSEGV")
     func variableFilletOnARefusedEdgeDoesNotCrash() {
-        guard let shell = Self.openShell() else {
+        guard let shell = FilletTestFixtures.openShell() else {
             Issue.record("open shell fixture failed to build")
             return
         }
