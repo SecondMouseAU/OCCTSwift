@@ -1,0 +1,28 @@
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+Note: Google Test filter = TopoDS_TShape_Test.*
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from TopoDS_TShape_Test
+[ RUN      ] TopoDS_TShape_Test.ShapeType_AllTypes
+[       OK ] TopoDS_TShape_Test.ShapeType_AllTypes (1 ms)
+[ RUN      ] TopoDS_TShape_Test.FlagSettersGetters
+[       OK ] TopoDS_TShape_Test.FlagSettersGetters (0 ms)
+[ RUN      ] TopoDS_TShape_Test.NbChildren
+[       OK ] TopoDS_TShape_Test.NbChildren (0 ms)
+[ RUN      ] TopoDS_TShape_Test.EmptyCopy
+[       OK ] TopoDS_TShape_Test.EmptyCopy (0 ms)
+[ RUN      ] TopoDS_TShape_Test.EmptyCopy_AllTypes
+[       OK ] TopoDS_TShape_Test.EmptyCopy_AllTypes (0 ms)
+[ RUN      ] TopoDS_TShape_Test.Orientable_DifferentTypes
+[       OK ] TopoDS_TShape_Test.Orientable_DifferentTypes (0 ms)
+[ RUN      ] TopoDS_TShape_Test.FlagsIndependent
+[       OK ] TopoDS_TShape_Test.FlagsIndependent (0 ms)
+[ RUN      ] TopoDS_TShape_Test.NbChildren_ConsistencyWithIterator
+[       OK ] TopoDS_TShape_Test.NbChildren_ConsistencyWithIterator (0 ms)
+[ RUN      ] TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost
+[       OK ] TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost (34 ms)
+[----------] 9 tests from TopoDS_TShape_Test (35 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (35 ms total)
+[  PASSED  ] 9 tests.

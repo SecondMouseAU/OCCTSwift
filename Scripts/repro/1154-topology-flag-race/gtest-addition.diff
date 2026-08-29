@@ -1,0 +1,82 @@
+--- a/src/ModelingData/TKBRep/GTests/TopoDS_TShape_Test.cxx
++++ b/src/ModelingData/TKBRep/GTests/TopoDS_TShape_Test.cxx
+@@ -28,6 +28,10 @@
+ #include <TopoDS_Wire.hxx>
+ #include <TopExp_Explorer.hxx>
+ #include <gp_Pnt.hxx>
++
++#include <atomic>
++#include <thread>
++#include <vector>
+ 
+ //=================================================================================================
+ // Test TShape ShapeType() returns correct type for each shape kind
+@@ -310,4 +314,68 @@
+ 
+   EXPECT_EQ(aNbViaTShape, aNbViaIterator) << "NbChildren should match iterator count";
+   EXPECT_EQ(aNbViaTShape, 1);
++}
++
++//=================================================================================================
++// Test concurrent flag mutations on one shared TShape do not lose updates.
++// Each thread owns exactly one flag, so a read that follows that thread's own
++// write is only ever false if a concurrent write to a different flag raced
++// the shared myState word and clobbered it (#1154).
++//=================================================================================================
++
++TEST(TopoDS_TShape_Test, ConcurrentFlagMutationsAreNotLost)
++{
++  TopoDS_Builder  aBuilder;
++  TopoDS_Compound aCompound;
++  aBuilder.MakeCompound(aCompound);
++  TopoDS_TShape* aTShape = aCompound.TShape().get();
++
++  constexpr int    kIterations = 20000;
++  std::atomic<int> aLostUpdates{0};
++
++  typedef void (TopoDS_TShape::*SetterPtr)(bool);
++  typedef bool (TopoDS_TShape::*GetterPtr)() const;
++
++  auto aWorker = [&](SetterPtr theSetter, GetterPtr theGetter) {
++    for (int i = 0; i < kIterations; ++i)
++    {
++      (aTShape->*theSetter)(true);
++      if (!(aTShape->*theGetter)())
++      {
++        aLostUpdates.fetch_add(1, std::memory_order_relaxed);
++      }
++      (aTShape->*theSetter)(false);
++    }
++  };
++
++  // Modified() is deliberately excluded: it also clears Checked() as a documented
++  // side effect, so it does not own its bit exclusively the way the other seven do.
++  const SetterPtr aSetters[] = {&TopoDS_TShape::Free,
++                                 &TopoDS_TShape::Checked,
++                                 &TopoDS_TShape::Orientable,
++                                 &TopoDS_TShape::Closed,
++                                 &TopoDS_TShape::Infinite,
++                                 &TopoDS_TShape::Convex,
++                                 &TopoDS_TShape::Locked};
++  const GetterPtr aGetters[] = {&TopoDS_TShape::Free,
++                                 &TopoDS_TShape::Checked,
++                                 &TopoDS_TShape::Orientable,
++                                 &TopoDS_TShape::Closed,
++                                 &TopoDS_TShape::Infinite,
++                                 &TopoDS_TShape::Convex,
++                                 &TopoDS_TShape::Locked};
++
++  std::vector<std::thread> aThreads;
++  for (size_t i = 0; i < 7; ++i)
++  {
++    aThreads.emplace_back(aWorker, aSetters[i], aGetters[i]);
++  }
++  for (auto& t : aThreads)
++  {
++    t.join();
++  }
++
++  EXPECT_EQ(aLostUpdates.load(), 0)
++    << "non-atomic myState lost " << aLostUpdates.load() << " of "
++    << (kIterations * static_cast<int>(aThreads.size())) << " concurrent flag writes";
+ }

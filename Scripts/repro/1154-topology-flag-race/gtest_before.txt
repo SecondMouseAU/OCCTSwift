@@ -1,0 +1,39 @@
+Running main() from /private/tmp/googletest-20260810-2300-tbptpn/googletest-1.18.0/googletest/src/gtest_main.cc
+Note: Google Test filter = TopoDS_TShape_Test.*
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from TopoDS_TShape_Test
+[ RUN      ] TopoDS_TShape_Test.ShapeType_AllTypes
+[       OK ] TopoDS_TShape_Test.ShapeType_AllTypes (1 ms)
+[ RUN      ] TopoDS_TShape_Test.FlagSettersGetters
+[       OK ] TopoDS_TShape_Test.FlagSettersGetters (0 ms)
+[ RUN      ] TopoDS_TShape_Test.NbChildren
+[       OK ] TopoDS_TShape_Test.NbChildren (0 ms)
+[ RUN      ] TopoDS_TShape_Test.EmptyCopy
+[       OK ] TopoDS_TShape_Test.EmptyCopy (0 ms)
+[ RUN      ] TopoDS_TShape_Test.EmptyCopy_AllTypes
+[       OK ] TopoDS_TShape_Test.EmptyCopy_AllTypes (0 ms)
+[ RUN      ] TopoDS_TShape_Test.Orientable_DifferentTypes
+[       OK ] TopoDS_TShape_Test.Orientable_DifferentTypes (0 ms)
+[ RUN      ] TopoDS_TShape_Test.FlagsIndependent
+[       OK ] TopoDS_TShape_Test.FlagsIndependent (0 ms)
+[ RUN      ] TopoDS_TShape_Test.NbChildren_ConsistencyWithIterator
+[       OK ] TopoDS_TShape_Test.NbChildren_ConsistencyWithIterator (0 ms)
+[ RUN      ] TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/1b45f032-4784-4aca-963f-6584bc5aa547/scratchpad/1154/TopoDS_TShape_Test.cxx:378: Failure
+Expected equality of these values:
+  aLostUpdates.load()
+    Which is: 1
+  0
+non-atomic myState lost 1 of 140000 concurrent flag writes
+
+[  FAILED  ] TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost (0 ms)
+[----------] 9 tests from TopoDS_TShape_Test (2 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (2 ms total)
+[  PASSED  ] 8 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost
+
+ 1 FAILED TEST
