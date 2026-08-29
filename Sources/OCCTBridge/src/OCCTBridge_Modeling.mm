@@ -159,7 +159,6 @@
 #include <BRepFeat_MakePrism.hxx>
 #include <BRepFeat_SplitShape.hxx>
 #include <BRepAlgoAPI_Section.hxx>
-#include <BRepAlgoAPI_Check.hxx>
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -1305,31 +1304,12 @@ OCCTShapeRef OCCTShapeSection(OCCTShapeRef shape1, OCCTShapeRef shape2)
 }
 
 // MARK: - Boolean Pre-Validation (v0.34.0)
-
-#include <BRepAlgoAPI_Check.hxx>
-
-bool OCCTShapeBooleanCheck(OCCTShapeRef shape1, OCCTShapeRef shape2)
-{
-  if (!shape1)
-    return false;
-  try
-  {
-    if (shape2)
-    {
-      BRepAlgoAPI_Check checker(shape1->shape, shape2->shape);
-      return checker.IsValid();
-    }
-    else
-    {
-      BRepAlgoAPI_Check checker(shape1->shape);
-      return checker.IsValid();
-    }
-  }
-  catch (...)
-  {
-    return false;
-  }
-}
+//
+// OCCTShapeBooleanCheck used to live here. #1297 converged it with OCCTShapeBooleanCheckSingle/
+// OCCTShapeBooleanCheckPair (OCCTBridge_Healing.mm), the same BRepAlgoAPI_Check op wrapped a
+// second time with a fuller testSmallEdges/testSelfInterference/operation surface; those two now
+// carry this function's null guard as well. Shape.isValidForBoolean / isValidForBoolean(with:)
+// forward onto them.
 
 // MARK: - Split Shape by Wire (v0.34.0)
 

@@ -1514,6 +1514,8 @@ public func isBooleanValid(testSmallEdges: Bool = true, testSelfInterference: Bo
 
 - **Returns:** `true` if the shape passes all enabled checks.
 - **OCCT:** `OCCTShapeBooleanCheckSingle` → `BRepAlgoAPI_Check`.
+- **Note:** [`isValidForBoolean`](Shape-Healing.md#isvalidforboolean) is the same check at these
+  defaults (#1297).
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10) {
@@ -1538,6 +1540,8 @@ public func isBooleanValidWith(
 
 - **Parameters:** `other`, second operand; `operation`, `0`=unknown, `1`=common, `2`=fuse, `3`=cut, `4`=section.
 - **OCCT:** `OCCTShapeBooleanCheckPair` → `BRepAlgoAPI_Check`.
+- **Note:** [`isValidForBoolean(with:)`](Shape-Healing.md#isvalidforbooleanwith) is the same check
+  at these defaults (#1297).
 
 ---
 

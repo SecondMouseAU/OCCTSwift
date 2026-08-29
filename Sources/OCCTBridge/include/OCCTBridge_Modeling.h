@@ -1139,12 +1139,10 @@ OCCTShapeRef OCCTShapeEdgesToFaces(OCCTShapeRef compound, bool isOnlyPlane);
 OCCTShapeRef OCCTShapeSection(OCCTShapeRef shape1, OCCTShapeRef shape2);
 
 // MARK: - Boolean Pre-Validation (v0.34.0)
-
-/// Check whether shapes are valid for boolean operations.
-/// @param shape1 First shape (argument)
-/// @param shape2 Second shape (tool), may be NULL for self-check
-/// @return true if shapes are valid for booleans
-bool OCCTShapeBooleanCheck(OCCTShapeRef shape1, OCCTShapeRef shape2);
+//
+// OCCTShapeBooleanCheck used to be declared here. #1297 converged it with
+// OCCTShapeBooleanCheckSingle/OCCTShapeBooleanCheckPair (OCCTBridge_Healing.h), which now cover
+// its call sites (Shape.isValidForBoolean / isValidForBoolean(with:)) as well as their own.
 
 // MARK: - Split Shape by Wire (v0.34.0)
 

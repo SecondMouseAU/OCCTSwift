@@ -6964,8 +6964,13 @@ int32_t OCCTShapeToleranceInRangeCount(OCCTShapeRef shape,
 }
 
 // === BRepAlgoAPI_Check ===
+// #1297: converged with the older, now-removed OCCTShapeBooleanCheck (formerly
+// OCCTBridge_Modeling.mm), which guarded its OCCTShapeRef argument(s) before dereferencing.
+// Shape.isValidForBoolean / isValidForBoolean(with:) forward here now; the guard came along too.
 bool OCCTShapeBooleanCheckSingle(OCCTShapeRef shape, bool testSmallEdges, bool testSelfInterference)
 {
+  if (!shape)
+    return false;
   try
   {
     auto*             s = static_cast<OCCTShape*>(shape);
@@ -6984,6 +6989,8 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef shape1,
                                bool         testSmallEdges,
                                bool         testSelfInterference)
 {
+  if (!shape1 || !shape2)
+    return false;
   try
   {
     auto*             s1 = static_cast<OCCTShape*>(shape1);
