@@ -13,7 +13,7 @@ struct Curve3DLocalPropertiesTests {
         let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius)!
         let curv = circle.curvature(at: 0)
         if let curv {
-            #expect(abs(curv - 1.0 / radius) < 0.01)
+            #expect(abs(curv - 1.0 / radius) < 1e-6)
         } else {
             Issue.record("no curvature")
         }
