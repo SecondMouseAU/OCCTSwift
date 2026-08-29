@@ -22,9 +22,9 @@ struct ChamferBuilderCompletionsV124Tests {
                     let len = cb.length(contour: 1)
                     #expect(len > 0)
                     let closed = cb.isClosed(contour: 1)
-                    #expect(!closed || closed)  // just check no crash
+                    #expect(!closed)  // single-edge chamfer contour is not closed (one edge)
                     let cat = cb.isClosedAndTangent(contour: 1)
-                    #expect(!cat || cat)
+                    #expect(!cat)  // single-edge contour is not closed-and-tangent
                 }
             }
         }
