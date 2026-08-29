@@ -65,6 +65,22 @@ SCENARIOS=(
   # overriding auto-naming locally while the other half rely on the process-wide default,
   # concurrently, on independent documents) ran in no gate at all.
   "363-own-autonaming/occt_363_isolation.cpp|isolation 8 50 @SCRATCH"
+  # Issue #1155: survey of eight candidate classes named as "algorithms with internal
+  # mutable state" (BRepBuilderAPI_Transform, BRepClass3d_SolidClassifier,
+  # GeomAPI_ProjectPointOnSurf, BRepBuilderAPI_MakeEdge/MakeWire/MakeFace,
+  # BRepOffsetAPI_MakePipeShell/MakeThickSolid, BRepFilletAPI_MakeFillet/MakeChamfer,
+  # ShapeFix_Face/Wire/Shape, BRepCheck_Analyzer). All eight confirmed clean (instance
+  # state only); see Scripts/repro/1155-thread-safety-survey/README.md for the full
+  # characterization, including the one near-miss (a live-but-unreachable file-scope
+  # static cluster in the legacy fillet-reconstruction engine, tracked as a follow-up).
+  "1155-thread-safety-survey/occt_1155_stress.cpp|transform_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|classify_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|project_point_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|make_edge_wire_face_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|pipe_shell_thick_solid_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|fillet_chamfer_all_edges_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|shapefix_independent 8 30"
+  "1155-thread-safety-survey/occt_1155_stress.cpp|check_analyzer_independent 8 30"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)

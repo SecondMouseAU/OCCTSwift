@@ -1,0 +1,19 @@
+=== filletAllEdges(box-all-edges) ===
+    (24 edges added)
+    IsDone=1
+    volume=7804.696111
+=== filletAllEdges(box-fuse-sphere-all-edges) ===
+    (46 edges added)
+    IsDone=0
+=== filletAllEdges(coincident-face-fuse-all-edges) ===
+    (40 edges added)
+    IsDone=1
+    volume=1967.002940
+=== chamferAllEdges(box-all-edges-chamfer) ===
+    (24 edges added)
+    IsDone=0
+=== filletAllEdges(cylinder-all-edges) ===
+    (6 edges added)
+    IsDone=1
+    volume=1557.914867
+=== harness done ===

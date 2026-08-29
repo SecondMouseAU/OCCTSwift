@@ -1,0 +1,51 @@
+>>> TSan gate: logs in /tmp/occt-tsan-results.42D67G
+>>> Compiling 341-meshcaf/occt_341_stress.cpp
+>>> RUN  occt_341_stress create_fillet_boolean 8 30
+     PASS (0 races)
+>>> RUN  occt_341_stress mesh_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_341_stress obj_roundtrip_unique 8 25 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 344-cdf-directory/occt_344_newdoc_only.cpp
+>>> RUN  occt_344_newdoc_only 8 50
+     PASS (0 races)
+>>> Compiling 344-cdf-directory/occt_344_barrier.cpp
+>>> RUN  occt_344_barrier 8 50
+     PASS (0 races)
+>>> Compiling 344-cdf-directory/occt_344_stress.cpp
+>>> RUN  occt_344_stress 8 25 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 349-ocaf-driver-reentrancy/occt_349_barrier.cpp
+>>> RUN  occt_349_barrier 8 50 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 353-cdm-metadata-lookup-table/occt_353_barrier.cpp
+>>> RUN  occt_353_barrier 8 50 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 371-getapplication-singleton-elimination/occt_371_private_app.cpp
+>>> RUN  occt_371_private_app 8 50 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 374-resource-manager-storage-schema-race/occt_374_stress.cpp
+>>> RUN  occt_374_stress 8 50 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 363-own-autonaming/occt_363_isolation.cpp
+>>> RUN  occt_363_isolation isolation 8 50 /tmp/occt-tsan-scratch.q2V64d
+     PASS (0 races)
+>>> Compiling 1155-thread-safety-survey/occt_1155_stress.cpp
+>>> RUN  occt_1155_stress transform_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress classify_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress project_point_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress make_edge_wire_face_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress pipe_shell_thick_solid_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress fillet_chamfer_all_edges_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress shapefix_independent 8 30
+     PASS (0 races)
+>>> RUN  occt_1155_stress check_analyzer_independent 8 30
+     PASS (0 races)
+
+>>> TSan gate: 19/19 scenarios clean
