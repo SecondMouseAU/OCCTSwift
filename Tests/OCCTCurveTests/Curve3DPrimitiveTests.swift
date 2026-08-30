@@ -122,4 +122,19 @@ struct Curve3DPrimitiveTests {
         let len = simd_length(result.tangent)
         #expect(len > 0)
     }
+
+    // #815: `d2(at:)` had no test anywhere in the tree (its sibling `d1(at:)`, immediately above,
+    // does). For a circle centered at the origin, parametrized by angle u, `P(u) = R*(cos u, sin
+    // u, 0)` in the circle's own plane, so `d2(u) = -R*(cos u, sin u, 0) = -P(u)` for EVERY u,
+    // independent of which in-plane direction OCCT picks as the circle's own parametric origin.
+    // That makes it a genuine, exact, refman-groundable check rather than a magic-number pin.
+    @Test("D2 second derivative of a circle points from the curve back to its own center")
+    func d2SecondDerivative() {
+        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+        let u = circle.domain.lowerBound
+        let result = circle.d2(at: u)
+        #expect(abs(result.d2.x - (-result.point.x)) < 1e-9)
+        #expect(abs(result.d2.y - (-result.point.y)) < 1e-9)
+        #expect(abs(result.d2.z - (-result.point.z)) < 1e-9)
+    }
 }

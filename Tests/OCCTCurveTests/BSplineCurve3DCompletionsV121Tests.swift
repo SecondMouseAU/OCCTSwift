@@ -71,6 +71,21 @@ struct BSplineCurve3DCompletionsV121Tests {
         }
     }
 
+    // #815: the single-index setter had no test anywhere in the tree, only its batch sibling
+    // `bsplineSetKnots` (immediately above) did.
+    @Test("SetKnot single index")
+    func setKnot() {
+        if let curve = makeBSplineCurve() {
+            let r1 = curve.bsplineSetKnot(index: 1, value: -1.0)
+            #expect(r1)
+            let r2 = curve.bsplineSetKnot(index: 2, value: 3.0)
+            #expect(r2)
+            let seq = curve.bsplineKnotSequence()
+            #expect(abs((seq.first ?? 0) - (-1.0)) < 1e-9)
+            #expect(abs((seq.last ?? 0) - 3.0) < 1e-9)
+        }
+    }
+
     @Test("SetOrigin fails on non-periodic")
     func setOriginNonPeriodic() {
         if let curve = makeBSplineCurve() {
