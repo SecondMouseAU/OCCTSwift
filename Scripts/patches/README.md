@@ -353,7 +353,8 @@ See [`Scripts/repro/603-single-span-quadrature/`](https://github.com/SecondMouse
 ## 0022-ChFi2d_Builder-AddChamfer-connexion-error-check-705.patch
 
 **Fixes the upstream OCCT defect behind [#705](https://github.com/SecondMouseAU/OCCTSwift/issues/705)**,
-which OCCTSwift already guards bridge-side (`OCCTFace2DChamfer`, `OCCTBridge_Modeling.mm`):
+which OCCTSwift already guards bridge-side (`OCCTFace2DChamfer`, `OCCTBridge_Modeling_Chamfer.mm`
+since #396's twelve-way split; `OCCTBridge_Modeling.mm` at the time this patch was written):
 `Shape.chamfer2D(edgePairs:distances:)` SIGSEGVs, uncatchably, when the same edge pair is named
 twice, found by Cluster B's fillet/chamfer edge-set census (#665).
 
