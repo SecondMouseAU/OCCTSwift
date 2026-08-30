@@ -4,3 +4,4 @@ UNCLASSIFIED, add overrides, repeat until 0 unresolved and 0 unclassified. Keep 
 module per domain, so each domain's config is reviewable on its own."""
 from . import domain_io  # noqa: F401
 from . import domain_topology  # noqa: F401
+from . import domain_healing  # noqa: F401
