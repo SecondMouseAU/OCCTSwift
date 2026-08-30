@@ -6,3 +6,4 @@ from . import domain_io  # noqa: F401
 from . import domain_topology  # noqa: F401
 from . import domain_healing  # noqa: F401
 from . import domain_geom2d  # noqa: F401
+from . import domain_curve3d  # noqa: F401
