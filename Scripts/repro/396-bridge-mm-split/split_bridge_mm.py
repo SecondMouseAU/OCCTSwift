@@ -275,8 +275,7 @@ def preamble(lines, first_code_start, scattered_include_lines, shared_items, iss
     end = first_code_start
     while end > 0 and (lines[end - 1].lstrip().startswith("//") or lines[end - 1].strip() == ""):
         end -= 1
-    top = lines[:end]
-    top_include_lines = [l.strip() for l in top if l.strip().startswith(("#include", "#import"))]
+    raw_top = lines[:end]
     # Dedup by the HEADER NAME, not the raw line text: `#import <X.hxx>` and `#include <X.hxx>`
     # both include the same file (`#import` just adds an include-guard the header usually already
     # has), but are different strings, so a literal-text set misses this. Found splitting
@@ -284,13 +283,28 @@ def preamble(lines, first_code_start, scattered_include_lines, shared_items, iss
     # spellings for Geom2d_BezierCurve.hxx, ~500 lines apart, a harmless within-file redundancy --
     # but folding BOTH into the shared preamble replicated it into all 7 split files (2 -> 14
     # instances), which is what a text-only dedup could not catch. `INCLUDE_KEY` extracts the
-    # `<...>`/`"..."` payload; first-seen spelling wins, matching the include-order-preserving
-    # behavior below.
+    # `<...>`/`"..."` payload; first-seen spelling wins.
+    #
+    # Not just top-vs-scattered: the TOP block can duplicate itself too, and at real scale --
+    # OCCTBridge_Curve3D.mm's own top preamble (everything before its first function, ~840 lines,
+    # since this file's MARK comments sit well before any code) repeats an entire ~30-header block
+    # nearly verbatim a few lines later, found in the same PR that added this dedup in the first
+    # place. The original per-split behavior (#1378 onward) left `top` untouched on the theory that
+    # only SCATTERED includes needed deduping; that theory only held for files whose top block was
+    # itself already clean, which Curve3D's isn't. So `top` is filtered the same way `extra` is,
+    # keeping first occurrence and dropping later ones, feeding the SAME `seen` set forward into
+    # the scattered pass below.
     seen = set()
-    for l in top_include_lines:
-        m = INCLUDE_KEY.match(l)
+    top = []
+    for l in raw_top:
+        stripped = l.strip()
+        m = INCLUDE_KEY.match(stripped) if stripped.startswith(("#include", "#import")) else None
         if m:
-            seen.add(m.group(1).rsplit("/", 1)[-1])
+            key = m.group(1).rsplit("/", 1)[-1]
+            if key in seen:
+                continue
+            seen.add(key)
+        top.append(l)
     extra = []
     for i in scattered_include_lines:
         text = lines[i].strip()
@@ -463,6 +477,8 @@ def self_test():
 //
 #import "x.h"
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <TopoDS_Shape.hxx>
+#import <TopoDS_Shape.hxx>
 
 // A boolean helper.
 static bool helperFn(int x) { return x > 0; }
@@ -597,6 +613,12 @@ int OCCTUsesFixtureWant(OCCTFixtureWant w)
         if pre.count("BRepPrimAPI_MakeBox.hxx") != 1:
             failures.append(f"#import and #include of the same header did not dedup together: "
                              f"{pre.count('BRepPrimAPI_MakeBox.hxx')} mentions in the preamble, want 1")
+        # TopoDS_Shape.hxx is duplicated WITHIN the top block itself (#include then #import, both
+        # before the first code unit) -- the Curve3D shape (#1380's own Kilo review round 2): a
+        # file whose top preamble is itself internally duplicated, not just top-vs-scattered.
+        if pre.count("TopoDS_Shape.hxx") != 1:
+            failures.append(f"top-block-internal #include/#import duplicate was not deduped: "
+                             f"{pre.count('TopoDS_Shape.hxx')} mentions in the preamble, want 1")
         if "struct OCCTBoxHolder" not in pre:
             failures.append("SHARED struct OCCTBoxHolder was not folded into the preamble")
         if "identityFn" not in pre:
