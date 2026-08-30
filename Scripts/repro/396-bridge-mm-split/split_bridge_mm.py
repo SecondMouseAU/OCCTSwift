@@ -184,13 +184,24 @@ def name_and_kind(block_text):
         signature = code[:brace_idx]
     else:
         signature = code[:semi_idx + 1]
+    # Whether this signature is genuinely `static` decides SHARED-vs-single-bucket, and has to be
+    # checked BEFORE picking a name pattern: NAME_IN_BLOCK (the OCCTXxx public-function shape) and
+    # STATIC_HELPER_NAME (the lowercase internal-helper shape) are about NAME STYLE, not linkage,
+    # and every prior split's internal helpers happened to use lowercase names, so checking
+    # NAME_IN_BLOCK unconditionally first never crossed paths with a static one. OCCTBridge_
+    # Visualization.mm's `static TopAbs_ShapeEnum OCCTModeToShapeEnum(...)` and
+    # `static int32_t OCCTSelectorCollectResults(...)` are static helpers that happen to use the
+    # OCCTXxx public-function NAMING STYLE anyway -- NAME_IN_BLOCK matched and returned kind="func"
+    # before `static` was ever consulted, single-bucketing a SHARED helper and breaking every
+    # OTHER caller's build once split, the same failure shape as Document's multi-line-template
+    # miss, different mechanism.
+    sig_after_template = strip_template_prefix(signature.lstrip())
+    is_truly_static = re.match(r'^static\b', sig_after_template) is not None
     m = NAME_IN_BLOCK.search(signature)
     if m:
-        return "func", m.group(1)
+        return ("static" if is_truly_static else "func"), m.group(1)
     m = STATIC_HELPER_NAME.search(signature)
     if m:
-        sig_after_template = strip_template_prefix(signature.lstrip())
-        is_truly_static = re.match(r'^static\b', sig_after_template) is not None
         return ("static" if is_truly_static else "func"), m.group(1)
     # A bare `static <type> name = ...;` file-scope variable (no call-shaped `(`, so
     # STATIC_HELPER_NAME above never matches): OCCTBridge_Document.mm's
@@ -646,6 +657,22 @@ int OCCTUsesFixtureList(void)
 {
   return g_fixtureList.Size();
 }
+
+// A `static` helper using the OCCTXxx PUBLIC-function naming style, not this codebase's usual
+// lowercase internal-helper style -- the #1380 gap (OCCTBridge_Visualization.mm's
+// OCCTModeToShapeEnum/OCCTSelectorCollectResults) that made NAME_IN_BLOCK (checked before static-
+// ness) claim it as a single-bucket public function and break every OTHER caller once split.
+static int OCCTFixtureStaticHelper(int x)
+{
+  return x + 1;
+}
+
+OCCTShapeRef OCCTCallsFixtureStaticHelper(OCCTShapeRef a)
+{
+  OCCTFixtureStaticHelper(1);
+  BRepPrimAPI_MakeBox box(1, 1, 1);
+  return a;
+}
 """
     tmp_dir = tempfile.mkdtemp()
     fixture_path = os.path.join(tmp_dir, "fixture.mm")
@@ -692,6 +719,10 @@ int OCCTUsesFixtureList(void)
             failures.append(f"static variable with a paren-embedding type classified "
                              f"{by_name.get('g_fixtureList')!r}, want SHARED "
                              f"(not captured at all if None)")
+        if by_name.get("OCCTFixtureStaticHelper") != "SHARED":
+            failures.append(f"static helper using OCCTXxx public-function naming classified "
+                             f"{by_name.get('OCCTFixtureStaticHelper')!r}, want SHARED "
+                             f"(a real caller-bucket misclassification, not just cosmetic)")
 
         names = [n for _, n, *_ in plan]
         ns_names = [n for n in names if n.startswith("ns_")]
