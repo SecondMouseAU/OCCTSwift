@@ -382,6 +382,81 @@ own. Re-run the script for the current answer; if a filed issue's numbers and a 
 disagree, the issue's own embedded evidence is what to trust for what was true when it was filed,
 and the fresh run is what to trust for what is true now.
 
+## #819's fresh full-tree re-run, and the threshold-sensitivity sweep it asked for
+
+Phase 6 (#819, item 1) asks for exactly what "re-run the script for the current answer" above
+already invites: a fresh run against the tree as it stands now, substantially larger than at
+#784's own tuning (#396's file-split work alone added dozens of new bridge files, a pure move that
+relocates text without duplicating logic, plus the real growth from Pass 4a-5d and the correctness
+clusters). One genuine new finding at the default settings: `OCCTCurve2DIntersect`/
+`...SelfIntersect` (`OCCTBridge_Geom2d_Conversion.mm`), added to #794 as its twelfth pair — same
+shape as that issue's own table, a fully-duplicated extraction loop with only the constructor
+overload differing. Everything else at default settings was already adjudicated (isomorphic
+mirrors, already-filed pairs, already-documented deliberate decisions); re-confirmed by name
+against this file's own "Measured and NOT filed" section and #794's own table, not re-derived from
+score alone.
+
+**The `#792`-shaped threshold-sensitivity sweep** (item 1's other half: the default thresholds are
+tuned specifically to exclude short one-liner bodies, which is also why they're blind to real
+one-liner duplication like #792's three pairs). Loosening `shingle_k`/`min_distinctive`/
+`min_shared` well below the tuned defaults (as low as `k=4, min_distinctive=3`) to deliberately let
+short bodies back in surfaces real signal, but at a cost: 97-199 pairs depending on how far it's
+loosened, almost all boilerplate. Filtering to pairs where BOTH bodies are ≤40 tokens (the #792
+shape specifically) at a middle setting (`k=6, min_distinctive=5, min_shared=5,
+containment_threshold=0.90`) narrows this to a reviewable list, and reading every one by hand
+(not by score) sorts into three buckets:
+
+1. **Isomorphic mirrors**, the same already-documented pattern as the main run's own findings, just
+   short enough to only surface at loosened settings: `OCCTCurve3DIsClosed`/`OCCTCurve2DIsClosed`,
+   `OCCTGeomPoint3D{Distance,SquareDistance,X,Y}`/`OCCTPoint2D*` siblings,
+   `OCCTProjOnCurve{NbPoints,Distance}`/`OCCTProjOnSurf*`. No new action.
+2. **Already properly factored, so the short body IS the whole story, not a symptom of missing
+   consolidation.** Two shapes here, both genuinely different from #792's "no cross-reference
+   between two names for the same OCCT call" pattern:
+   - `OCCTShapeFindSurface`/`OCCTFindSurface` (`OCCTBridge_Topology_Analysis.mm`) both call the
+     shared `occtRunFindSurface` helper (#1018's own consolidation, see `CLAUDE.md`'s Known OCCT
+     Bugs) with a fixed vs. caller-supplied `onlyPlane`; a bug fix to the shared helper reaches
+     both automatically. This is what correct consolidation looks like at a small body size, not a
+     missed one.
+   - `OCCTCompCurve*`/`OCCTEdgeCurve*` (six method pairs: `Length`, `ParamRange`, `PointAtParam`,
+     `TangentAtParam`, `ParamAtAbscissa`, `SampleUniform`) and `OCCTMeshFaceIter*`/
+     `OCCTMeshVertexIter*` (`More`, `Next`) each delegate their entire computation to an already-
+     shared helper (`adaptorLength` etc., or the OCCT iterator's own `.More()`/`.Next()` called
+     directly); what repeats is only the unavoidable per-opaque-type null-check-and-delegate
+     wrapper a C ABI needs once per distinct `Ref` typedef. Not the #794 shape: #794's own defining
+     trait is "no shared helper factoring the common part," and here one already exists.
+   - `OCCTResourceManagerSetString`/`SetInt`/`SetReal`: three genuine C++ overloads of
+     `Resource_Manager::SetResource`, the normal shape of a bridge exposing an overloaded OCCT
+     method as three distinctly-named C entry points, not duplicated logic.
+3. **Same idiom, unrelated purpose, not mergeable**: `ocafStoreMutex`/`igesMutex`/`fontListMutex`
+   are three Meyers'-singleton mutex accessors (`static std::mutex& xxxMutex() { static std::mutex
+   m; return m; } `) guarding three unrelated critical sections (#349's OCAF store serialization,
+   the IGES reader/writer's documented non-thread-safety, a font-list registry). Structurally
+   identical because it's this codebase's one idiom for "a lazily-initialized process-wide mutex,"
+   not evidence the three locks should become one — doing so would be a correctness regression
+   (three independent critical sections turned into one point of contention, or worse, one lock
+   guarding unrelated state). The boilerplate-exclusion mechanism the main run already has
+   (`boilerplate_min_count`) is tuned for FUNCTION-BODY preambles repeated across a corpus, not
+   this shape (three occurrences total, well under any reasonable document-frequency cutoff); this
+   is a threshold-sweep-specific false positive, not a gap the main run's own tuning should try to
+   close.
+
+**One further pair investigated outside the sweep, at the main run's default settings**:
+`OCCTShapeVolumeInertia`/`OCCTShapeSurfaceInertia` (`OCCTBridge_Properties.mm`, score 0.85, 252
+shared shingles) is the same shape this file already documents for
+`OCCTShapeInertiaProperties`/`SurfaceInertiaProperties` above: both delegate mass-property
+computation to a shared helper (`occtVolumeMassProperties`/`occtSurfaceMassProperties`) and the
+remaining ~40 lines of duplication is pure field-copying out of the OCCT result object
+(`GProp_GProps`/`GProp_PrincipalProps`), not independently-computed logic. Not filed, for the same
+reason the sibling pair wasn't.
+
+**Conclusion for #819's own "adjudicate what only the whole-tree view surfaces" framing**: the
+whole-tree view surfaced one genuine new instance of an already-known pattern (added to #794) and
+a threshold-sensitivity sweep that, once every candidate is read rather than scored, confirms the
+main run's tuning is not silently hiding a systematic blind spot beyond the three pairs #792
+already named by hand. The sweep's real value turned out to be negative evidence (nothing new to
+fix) rather than positive (new fixes needed), which is itself the answer #819 asked for.
+
 ## Files
 
 - `detect-duplicate-logic.py` - the artifact. No other file in this directory; see above for why.
