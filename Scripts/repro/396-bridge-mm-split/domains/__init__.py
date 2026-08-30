@@ -8,3 +8,4 @@ from . import domain_healing  # noqa: F401
 from . import domain_geom2d  # noqa: F401
 from . import domain_curve3d  # noqa: F401
 from . import domain_surface  # noqa: F401
+from . import domain_document  # noqa: F401

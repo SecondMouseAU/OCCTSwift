@@ -63,6 +63,11 @@ STATIC_HELPER_NAME = re.compile(r'\b([a-z_][A-Za-z0-9_]*)\s*\(')
 STRUCT_OR_CLASS = re.compile(r'^(?:static\s+)?(struct|class|enum)\s+(?:class\s+)?([A-Za-z_][A-Za-z0-9_]*)')
 NAMESPACE_START = re.compile(r'^namespace\b')
 INNER_DECL = re.compile(r'\b(?:struct|class|enum(?:\s+class)?)\s+([A-Za-z_][A-Za-z0-9_]*)')
+# A bare file-scope `static [const|constexpr] <type> name = ...;` (or without initializer):
+# distinguished from a `static` FUNCTION forward-declaration (STATIC_HELPER_NAME, above) by having
+# no `(` before the name at all -- a variable, not a call-shaped declaration.
+STATIC_VAR = re.compile(r'^static\s+(?:const\s+|constexpr\s+)*[A-Za-z_][\w:<>,\s\*&]*?\b'
+                        r'([a-z_][A-Za-z0-9_]*)\s*[=;]')
 # The `<...>`/`"..."` payload of a #include/#import line; preamble() takes just the trailing path
 # segment of this (basename, dropping any leading directory) so `#import <Geom2d_BezierCurve.hxx>`
 # and `#include "../foo/Geom2d_BezierCurve.hxx"` key identically for its dedup.
@@ -130,12 +135,27 @@ def code_only(block_text):
     return "\n".join(lines[i:])
 
 
+def strip_template_prefix(text):
+    """Remove a leading `template <...>` (parameter list may span multiple lines -- OCCTBridge_
+    Document.mm's occtDocumentGdtObjectAtImpl has five), returning what follows it, or `text`
+    unchanged if it doesn't start with `template`. Non-greedy up to the first `>`, so a default
+    template argument that itself contains angle brackets (`template <typename T =
+    std::vector<int>>`) would stop early; no such case exists in this tree today. The single-line
+    case (`template <typename T>`) that the original two-line-`join` version handled is a strict
+    subset of this."""
+    stripped = text.lstrip()
+    if not stripped.startswith("template"):
+        return text
+    m = re.match(r'template\s*<.*?>', stripped, re.DOTALL)
+    return stripped[m.end():].lstrip() if m else text
+
+
 def name_and_kind(block_text):
     code = code_only(block_text)
     first_lines = code.split("\n", 3)
     if not first_lines or first_lines[0].strip() == "":
         return None, None
-    probe = "\n".join(first_lines[:2]) if first_lines[0].strip().startswith("template") else first_lines[0]
+    probe = strip_template_prefix(code) if first_lines[0].strip().startswith("template") else first_lines[0]
     m = STRUCT_OR_CLASS.match(probe.strip()) or STRUCT_OR_CLASS.match(first_lines[0])
     if m:
         return m.group(1), m.group(2)
@@ -166,12 +186,16 @@ def name_and_kind(block_text):
         return "func", m.group(1)
     m = STATIC_HELPER_NAME.search(signature)
     if m:
-        sig_after_template = signature.lstrip()
-        if sig_after_template.startswith("template"):
-            sig_after_template = sig_after_template.split("\n", 1)[1].lstrip() if "\n" in sig_after_template else ""
-        is_truly_static = sig_after_template.startswith("static") and \
-            re.match(r'^static\b', sig_after_template) is not None
+        sig_after_template = strip_template_prefix(signature.lstrip())
+        is_truly_static = re.match(r'^static\b', sig_after_template) is not None
         return ("static" if is_truly_static else "func"), m.group(1)
+    # A bare `static <type> name = ...;` file-scope variable (no call-shaped `(`, so
+    # STATIC_HELPER_NAME above never matches): OCCTBridge_Document.mm's
+    # `static const int kAssemblyItemCountLimit = 100000;` is the first one this split hit.
+    # Internal linkage, same reasoning as a `static` function -- routes SHARED.
+    m = STATIC_VAR.match(signature.strip())
+    if m:
+        return "static", m.group(1)
     return None, None
 
 
@@ -228,7 +252,40 @@ def classify(cfg, name, body):
 # Plan assembly. Domain-agnostic.
 # ----------------------------------------------------------------------------------------------
 
+def check_config_bucket_references(cfg):
+    """Every bucket a classification table can hand back must be a bucket write_files() actually
+    visits, or a plan item silently vanishes: write_files() only iterates cfg['buckets'], so an
+    item classified to a bucket string missing from that list (a stale reference after renaming
+    or removing a bucket, or a plain typo) is dropped from every output file with no error --
+    verify_full_coverage() does NOT catch this, since it marks a plan item's line range covered
+    regardless of what its bucket value is. Found removing Document's own empty "TDF" bucket:
+    BODY_PACKAGE_TO_BUCKET still mapped a package to it until this check would have caught the
+    dangling reference. "SHARED" is always valid (handled separately, never in cfg['buckets'])."""
+    valid = set(cfg["buckets"]) | {"SHARED"}
+    bad = set()
+    for bucket in cfg["body_package_to_bucket"].values():
+        if bucket not in valid:
+            bad.add(bucket)
+    for _, bucket in cfg["name_prefix_bucket"]:
+        if bucket not in valid:
+            bad.add(bucket)
+    for bucket in cfg["class_override_bucket"].values():
+        if bucket not in valid:
+            bad.add(bucket)
+    for bucket in cfg["name_bucket_override"].values():
+        if bucket not in valid:
+            bad.add(bucket)
+    default_bucket = cfg.get("default_bucket")
+    if default_bucket is not None and default_bucket not in valid:
+        bad.add(default_bucket)
+    if bad:
+        raise ValueError(f"domain {cfg['src']!r}: classification table(s) reference bucket(s) "
+                         f"{sorted(bad)} not in cfg['buckets'] {cfg['buckets']} (and not SHARED) "
+                         f"-- these items would be silently dropped by write_files()")
+
+
 def build_plan(cfg, path=None):
+    check_config_bucket_references(cfg)
     if path is None:
         path = os.path.join(SRC_DIR, f"OCCTBridge_{cfg['src']}.mm")
     classify.packages = load_packages()
@@ -548,6 +605,34 @@ int OCCTUsesFixtureWant(OCCTFixtureWant w)
 {
   return static_cast<int>(w);
 }
+
+// A bare file-scope static variable, no call-shaped parentheses at all -- the #1380 gap
+// (OCCTBridge_Document.mm's kAssemblyItemCountLimit) STATIC_HELPER_NAME alone doesn't cover.
+static const int kFixtureLimit = 100000;
+
+int OCCTUsesFixtureLimit(void)
+{
+  return kFixtureLimit;
+}
+
+// A template whose parameter list spans MULTIPLE lines (not the single-line `template
+// <typename T>` case above) -- the #1380 gap (OCCTBridge_Document.mm's
+// occtDocumentGdtObjectAtImpl, a 5-line template parameter list) that made a genuinely SHARED
+// helper get misclassified into one caller's bucket, breaking every OTHER caller's build.
+template <typename A,
+         typename B,
+         typename C>
+static bool multiLineTemplateFn(A a, B b, C c)
+{
+  return true;
+}
+
+OCCTShapeRef OCCTUsesMultiLineTemplateFn(OCCTShapeRef a)
+{
+  multiLineTemplateFn<int, int, int>(1, 2, 3);
+  BRepPrimAPI_MakeBox box(1, 1, 1);
+  return a;
+}
 """
     tmp_dir = tempfile.mkdtemp()
     fixture_path = os.path.join(tmp_dir, "fixture.mm")
@@ -583,6 +668,13 @@ int OCCTUsesFixtureWant(OCCTFixtureWant w)
         if by_name.get("OCCTFixtureWant") != "SHARED":
             failures.append(f"bare top-level enum class OCCTFixtureWant classified "
                              f"{by_name.get('OCCTFixtureWant')!r}, want SHARED (not captured at all if None)")
+        if by_name.get("kFixtureLimit") != "SHARED":
+            failures.append(f"bare static variable kFixtureLimit classified "
+                             f"{by_name.get('kFixtureLimit')!r}, want SHARED (not captured at all if None)")
+        if by_name.get("multiLineTemplateFn") != "SHARED":
+            failures.append(f"multi-line-template static helper classified "
+                             f"{by_name.get('multiLineTemplateFn')!r}, want SHARED "
+                             f"(a real caller-bucket misclassification, not just cosmetic)")
 
         names = [n for _, n, *_ in plan]
         ns_names = [n for n in names if n.startswith("ns_")]
@@ -634,6 +726,22 @@ int OCCTUsesFixtureWant(OCCTFixtureWant w)
         unc2, ovc2, orph2 = verify_full_coverage(lines, stripped_plan, unresolved, scattered, first_code_start)
         if not unc2:
             failures.append("coverage check did NOT catch an artificially dropped struct (false negative)")
+
+        # check_config_bucket_references(): a dangling bucket reference (a classification table
+        # pointing at a bucket string missing from cfg['buckets'], e.g. after renaming or removing
+        # a bucket) must be caught loudly -- write_files() would otherwise silently drop every item
+        # classified to it, and verify_full_coverage() can't see this since it only checks that a
+        # plan item's LINE RANGE is covered, not that its bucket is real. Found live: removing
+        # Document's own empty "TDF" bucket while BODY_PACKAGE_TO_BUCKET still mapped a package to
+        # it (#1380's own Document PR).
+        bad_cfg = dict(cfg, body_package_to_bucket=dict(cfg["body_package_to_bucket"],
+                                                        BRepAlgoAPI="NoSuchBucket"))
+        try:
+            build_plan(bad_cfg, fixture_path)
+            failures.append("check_config_bucket_references did NOT catch a dangling "
+                             "body_package_to_bucket reference to a bucket not in cfg['buckets']")
+        except ValueError:
+            pass  # expected
 
         if failures:
             for f in failures:
