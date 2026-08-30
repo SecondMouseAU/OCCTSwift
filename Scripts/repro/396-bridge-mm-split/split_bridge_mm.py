@@ -63,6 +63,10 @@ STATIC_HELPER_NAME = re.compile(r'\b([a-z_][A-Za-z0-9_]*)\s*\(')
 STRUCT_OR_CLASS = re.compile(r'^(?:static\s+)?(struct|class|enum)\s+(?:class\s+)?([A-Za-z_][A-Za-z0-9_]*)')
 NAMESPACE_START = re.compile(r'^namespace\b')
 INNER_DECL = re.compile(r'\b(?:struct|class|enum(?:\s+class)?)\s+([A-Za-z_][A-Za-z0-9_]*)')
+# The `<...>`/`"..."` payload of a #include/#import line; preamble() takes just the trailing path
+# segment of this (basename, dropping any leading directory) so `#import <Geom2d_BezierCurve.hxx>`
+# and `#include "../foo/Geom2d_BezierCurve.hxx"` key identically for its dedup.
+INCLUDE_KEY = re.compile(r'#\s*(?:include|import)\s*[<"]([^>"]+)[>"]')
 
 
 def load_packages():
@@ -272,13 +276,28 @@ def preamble(lines, first_code_start, scattered_include_lines, shared_items, iss
     while end > 0 and (lines[end - 1].lstrip().startswith("//") or lines[end - 1].strip() == ""):
         end -= 1
     top = lines[:end]
-    top_include_set = {l.strip() for l in top if l.strip().startswith(("#include", "#import"))}
+    top_include_lines = [l.strip() for l in top if l.strip().startswith(("#include", "#import"))]
+    # Dedup by the HEADER NAME, not the raw line text: `#import <X.hxx>` and `#include <X.hxx>`
+    # both include the same file (`#import` just adds an include-guard the header usually already
+    # has), but are different strings, so a literal-text set misses this. Found splitting
+    # OCCTBridge_Geom2d.mm (#1380/PR #1384's own Kilo review): the original file already had both
+    # spellings for Geom2d_BezierCurve.hxx, ~500 lines apart, a harmless within-file redundancy --
+    # but folding BOTH into the shared preamble replicated it into all 7 split files (2 -> 14
+    # instances), which is what a text-only dedup could not catch. `INCLUDE_KEY` extracts the
+    # `<...>`/`"..."` payload; first-seen spelling wins, matching the include-order-preserving
+    # behavior below.
+    seen = set()
+    for l in top_include_lines:
+        m = INCLUDE_KEY.match(l)
+        if m:
+            seen.add(m.group(1).rsplit("/", 1)[-1])
     extra = []
-    seen = set(top_include_set)
     for i in scattered_include_lines:
         text = lines[i].strip()
-        if text not in seen:
-            seen.add(text)
+        m = INCLUDE_KEY.match(text)
+        key = m.group(1).rsplit("/", 1)[-1] if m else text
+        if key not in seen:
+            seen.add(key)
             extra.append(text)
     result = "\n".join(top)
     if extra:
@@ -456,6 +475,7 @@ OCCTShapeRef OCCTBooleanUnion(OCCTShapeRef a, OCCTShapeRef b)
 }
 
 #include <BRepPrimAPI_MakeBox.hxx>
+#import <BRepPrimAPI_MakeBox.hxx>
 struct OCCTBoxHolder
 {
   int x;
@@ -571,6 +591,12 @@ int OCCTUsesFixtureWant(OCCTFixtureWant w)
         pre = preamble(lines, first_code_start, scattered, shared_items, cfg["issue_note"])
         if pre.count("BRepPrimAPI_MakeBox.hxx") < 1:
             failures.append("scattered mid-file #include was not folded into the preamble")
+        # The fixture has BRepPrimAPI_MakeBox.hxx three times: the top-preamble #include, an
+        # exact-text-duplicate scattered #include, and a scattered #import of the same header --
+        # a different spelling, not a different header. All three must collapse to ONE mention.
+        if pre.count("BRepPrimAPI_MakeBox.hxx") != 1:
+            failures.append(f"#import and #include of the same header did not dedup together: "
+                             f"{pre.count('BRepPrimAPI_MakeBox.hxx')} mentions in the preamble, want 1")
         if "struct OCCTBoxHolder" not in pre:
             failures.append("SHARED struct OCCTBoxHolder was not folded into the preamble")
         if "identityFn" not in pre:

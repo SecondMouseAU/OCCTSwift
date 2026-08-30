@@ -189,7 +189,6 @@
 #include <Geom2dEval_TBezierCurve.hxx>
 #include <Geom2dEval_AHTBezierCurve.hxx>
 #include <Geom2d_Line.hxx>
-#include <Geom2d_BezierCurve.hxx>
 #include <Geom2d_OffsetCurve.hxx>
 #include <GC_MakeSegment2d.hxx>
 #include <GC_MakeArcOfCircle2d.hxx>
