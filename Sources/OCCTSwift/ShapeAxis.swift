@@ -18,7 +18,7 @@ public struct ShapeAxis: Sendable, Hashable {
     /// perpendicular to it. `.sphere` has no intrinsic axis at all, see below. A
     /// caller expecting an actual surface *normal* (e.g. "erect a feature
     /// perpendicular to this face") should not use `direction` at all for any of
-    /// these kinds; see `ConstructionEntity.resolveFaceAxisDirection`, which falls
+    /// these kinds; see `BRepGraph.resolveFaceAxisDirection`, which falls
     /// back to the real local surface normal (`Face.normal(atU:v:)`) instead of
     /// `direction` for exactly the kinds that don't have a genuine axis (`.extrusion`
     /// and `.sphere`) or no `primaryAxis` at all (planes, free-form faces) (PR #897

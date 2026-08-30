@@ -124,7 +124,7 @@ public final class ConstructionContext: @unchecked Sendable {
     private let points = EntityStore<PointID, ConstructionPoint>()
 
     /// Guards `add`, `remove`, `removeAll`, `count` and the atomic cross-store snapshot
-    /// (`allEntitiesSnapshot`, used by `allBroken(in:)` and `ConstructionLayer.materialize`)
+    /// (`allEntitiesSnapshot`, used by `allBroken(in:)` and `ConstructionContext.materialize`)
     /// against each other so each behaves as one atomic step across all three stores.
     ///
     /// **Not** every operation this type exposes: `plane(_:)`/`axis(_:)`/`point(_:)`, `name(_:)`,
@@ -166,7 +166,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// `crossStoreLock` critical section, the same cross-store atomicity `count`/`removeAll`
     /// already have.
     ///
-    /// Used by `allBroken(in:)` below and by `ConstructionLayer.materialize(in:graph:options:)`
+    /// Used by `allBroken(in:)` below and by `ConstructionContext.materialize(in:graph:options:)`
     /// (PR #898 review, finding 1) so neither observes a torn cross-store read: some kinds
     /// already reflecting a concurrent `removeAll()`/`remove()` while others don't. Both callers
     /// take the snapshot once, up front, then do their (potentially slow, graph resolution,
@@ -180,7 +180,7 @@ public final class ConstructionContext: @unchecked Sendable {
     ///   bind-then-relabel instead of a direct return (`okf/policies/code-style.md`; #914 review,
     ///   second round). The inner per-entity element tuples keep their `(id:, name:, value:)`
     ///   labels, those genuinely are read by name at both call sites, `broken(_:)`'s parameter
-    ///   type and `ConstructionLayer.materialize`'s `entry.id`/`entry.value`, only the outer
+    ///   type and `ConstructionContext.materialize`'s `entry.id`/`entry.value`, only the outer
     ///   `(planes:, axes:, points:)` grouping is unlabeled.
     internal var allEntitiesSnapshot:
         (

@@ -110,7 +110,7 @@ self-contained one-liner for a container build step.
 
 ### Static Gate Scripts
 
-Eight gates, three censuses and one merge-history audit, all pure Python over the repo's own text. No
+Eight gates, four censuses and one merge-history audit, all pure Python over the repo's own text. No
 OCCT, no build, no network, ~3s for the lot, with one exception: a bare
 `census-unmeasured-values.py` run is ~13s since #726's sub-kind 4 walks a taint fixpoint per bridge
 function. Its `--self-test`, which is the only part CI and the hook run, stays under a second. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
@@ -174,11 +174,12 @@ python3 Scripts/count-operations.py              # README + API_REFERENCE + docs
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
+python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
 ```
 
-`census-unmeasured-values.py`, `census-doc-occt-attribution.py` and
-`census-arguments-tuple-shapes.py` are the three entries that are **not gates**. Each exits 0 whether or not it finds anything, because the output is a list of sites
+`census-unmeasured-values.py`, `census-doc-occt-attribution.py`,
+`census-arguments-tuple-shapes.py` and `census-comment-staleness.py` are the four entries that are **not gates**. Each exits 0 whether or not it finds anything, because the output is a list of sites
 for a human to adjudicate, not a verdict on the tree. CI therefore runs only their `--self-test`s:
 a bare run could never fail and so could never signal. Their detectors can still go blind, which is
 the failure every other entry here exists to prevent, so that is what CI holds them to.
@@ -204,7 +205,7 @@ hand-adjudicated sample** (`Scripts/repro/928-over-coverage-detector/`, re-scora
 `score_sample.py`). That rate is why it reports rather than gates; promoting it is a separate
 decision on a better number, and it comes with a rename to `check-` per the convention above.
 
-Seven of the eight gates take `--self-test`, as do all three censuses and the merge-history audit, each running a fixture battery proving the *detector* catches each
+Seven of the eight gates take `--self-test`, as do all four censuses and the merge-history audit, each running a fixture battery proving the *detector* catches each
 failure mode. Run it whenever you change one of these scripts, three gate scripts on this branch
 were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
 is blind looks exactly like one reporting "all clear" because the tree is clean.
@@ -212,8 +213,8 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs nineteen of `gate-scripts`'
-twenty invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs twenty of `gate-scripts`'
+twenty-one invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real
 run, which audits the branch's merge history and so answers a question about the branch rather than
 about the commit you are making; its `--self-test` does run. That is the only deliberate divergence
 between the two lists, and it is here rather than in a comment because an undocumented difference
