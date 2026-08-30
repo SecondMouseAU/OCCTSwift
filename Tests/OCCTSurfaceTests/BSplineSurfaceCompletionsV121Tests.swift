@@ -39,6 +39,34 @@ struct BSplineSurfaceCompletionsV121Tests {
         }
     }
 
+    // #815: `bsplineIncreaseVMultiplicity` had no test anywhere in the tree; its U twin
+    // (immediately above) does.
+    @Test("IncreaseVMultiplicity")
+    func increaseVMultiplicity() {
+        if let surf = makeBSplineSurface() {
+            let inserted = surf.bsplineInsertVKnots([0.5], multiplicities: [1])
+            #expect(inserted)
+            let r = surf.bsplineIncreaseVMultiplicity(index: 2, multiplicity: 2)
+            #expect(r)
+        }
+    }
+
+    // #815: the single-index setters had no test anywhere in the tree, only the batch
+    // `bsplineInsertUKnots`/`bsplineInsertVKnots` (below) did.
+    @Test("SetUKnot / SetVKnot single index")
+    func setKnot() {
+        if let surf = makeBSplineSurface() {
+            let r1 = surf.bsplineSetUKnot(index: 1, value: -1.0)
+            #expect(r1)
+            let r2 = surf.bsplineSetVKnot(index: 1, value: -1.0)
+            #expect(r2)
+            let uKnots = surf.bsplineUKnots()
+            let vKnots = surf.bsplineVKnots()
+            #expect(abs((uKnots.first ?? 0) - (-1.0)) < 1e-9)
+            #expect(abs((vKnots.first ?? 0) - (-1.0)) < 1e-9)
+        }
+    }
+
     @Test("InsertUKnots / InsertVKnots batch")
     func insertKnotsBatch() {
         if let surf = makeBSplineSurface() {

@@ -35,12 +35,47 @@ struct SurfaceAnalyticTests {
     @Test("Create sphere and check properties")
     func sphereProperties() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
-        // Sphere is U-periodic (wraps around) and V-closed (pole to pole)
+        // Sphere is U-periodic (wraps around). It is NOT V-closed in OCCT's own technical sense
+        // (`Geom_SphericalSurface::IsVClosed()` returns False, per its own header comment): the
+        // poles at V = -pi/2 and V = +pi/2 are DEGENERATE points, not a matching pair of points at
+        // the two ends of the V range the way `IsVClosed()` tests for. #815 found and corrected
+        // this comment: it previously said "V-closed (pole to pole)", describing the poles'
+        // degeneracy in the colloquial sense of "closed", not the `IsVClosed()` predicate the
+        // sibling `isVClosed` property below actually calls.
         #expect(sphere.isUPeriodic == true)
         let period = sphere.uPeriod
         #expect(period != nil)
         if let period = period {
             #expect(abs(period - 2 * .pi) < 1e-10)
+        }
+    }
+
+    // #815: `isUClosed`/`isVClosed` had no test anywhere in the tree, unlike their siblings
+    // `isUPeriodic`/`isVPeriodic` (tested throughout this file) and `isUClosedSA`/`isVClosedSA`
+    // (tested elsewhere). Values below are the pinned kernel's own header comments on
+    // `Geom_Plane`/`Geom_CylindricalSurface`/`Geom_SphericalSurface`/`Geom_ToroidalSurface`
+    // (`IsUClosed`/`IsVClosed`, each documented as an unconditional `Returns True.`/`Returns
+    // False.`), not values measured from this bridge.
+    @Test("Closure flags (isUClosed/isVClosed) match each analytic surface's own documented answer")
+    func closureFlags() {
+        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        #expect(plane.isUClosed == false)
+        #expect(plane.isVClosed == false)
+
+        if let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3) {
+            #expect(cyl.isUClosed == true)
+            #expect(cyl.isVClosed == false)
+        }
+
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        #expect(sphere.isUClosed == true)
+        #expect(sphere.isVClosed == false)
+
+        if let torus = Surface.torus(
+            origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 3)
+        {
+            #expect(torus.isUClosed == true)
+            #expect(torus.isVClosed == true)
         }
     }
 

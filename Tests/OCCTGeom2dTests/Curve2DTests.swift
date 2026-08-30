@@ -137,6 +137,20 @@ struct Curve2DTests {
         #expect(tangentLen > 0)
     }
 
+    // #815: `d2(at:)` had no test anywhere in the tree (its sibling `d1(at:)`, immediately above,
+    // does). For a circle centered at the origin, parametrized by angle u, `P(u) = R*(cos u, sin
+    // u)`, so `d2(u) = -R*(cos u, sin u) = -P(u)` for EVERY u, independent of which direction OCCT
+    // picks as the circle's own parametric origin: an exact, refman-groundable relationship
+    // rather than a magic-number pin.
+    @Test("D2 second derivative of a circle points from the curve back to its own center")
+    func d2SecondDerivative() {
+        let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5)!
+        let u = circle.domain.lowerBound
+        let result = circle.d2(at: u)
+        #expect(abs(result.d2.x - (-result.point.x)) < 1e-9)
+        #expect(abs(result.d2.y - (-result.point.y)) < 1e-9)
+    }
+
     @Test("Adaptive draw on circle produces at least 10 points")
     func adaptiveDrawCircle() {
         let circle = Curve2D.circle(center: .zero, radius: 5)!
