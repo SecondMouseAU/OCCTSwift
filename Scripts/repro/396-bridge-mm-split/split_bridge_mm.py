@@ -64,9 +64,12 @@ STRUCT_OR_CLASS = re.compile(r'^(?:static\s+)?(struct|class|enum)\s+(?:class\s+)
 NAMESPACE_START = re.compile(r'^namespace\b')
 INNER_DECL = re.compile(r'\b(?:struct|class|enum(?:\s+class)?)\s+([A-Za-z_][A-Za-z0-9_]*)')
 # A bare file-scope `static [const|constexpr] <type> name = ...;` (or without initializer):
-# distinguished from a `static` FUNCTION forward-declaration (STATIC_HELPER_NAME, above) by having
-# no `(` before the name at all -- a variable, not a call-shaped declaration.
-STATIC_VAR = re.compile(r'^static\s+(?:const\s+|constexpr\s+)*[A-Za-z_][\w:<>,\s\*&]*?\b'
+# distinguished from a `static` FUNCTION forward-declaration (STATIC_HELPER_NAME, above) by what
+# follows the captured name -- `=`/`;` here, a call-shaped `(` there -- not by what's IN the type.
+# The type's own character class includes `()`: OCCT's `Handle(X)` macro embeds parens even inside
+# a template argument (`NCollection_List<Handle(Font_SystemFont)>`, OCCTBridge_Visualization.mm's
+# `g_fontList`), which the original class (no `()`) couldn't get past to reach the real name.
+STATIC_VAR = re.compile(r'^static\s+(?:const\s+|constexpr\s+)*[A-Za-z_][\w:<>,\s\*&()]*?\b'
                         r'([a-z_][A-Za-z0-9_]*)\s*[=;]')
 # The `<...>`/`"..."` payload of a #include/#import line; preamble() takes just the trailing path
 # segment of this (basename, dropping any leading directory) so `#import <Geom2d_BezierCurve.hxx>`
@@ -633,6 +636,16 @@ OCCTShapeRef OCCTUsesMultiLineTemplateFn(OCCTShapeRef a)
   BRepPrimAPI_MakeBox box(1, 1, 1);
   return a;
 }
+
+// A static variable whose TYPE embeds parentheses (OCCT's `Handle(X)` macro inside a template
+// argument) -- the #1380 gap (OCCTBridge_Visualization.mm's g_fontList) STATIC_VAR's original
+// paren-free character class couldn't get past.
+static NCollection_List<Handle(Standard_Transient)> g_fixtureList;
+
+int OCCTUsesFixtureList(void)
+{
+  return g_fixtureList.Size();
+}
 """
     tmp_dir = tempfile.mkdtemp()
     fixture_path = os.path.join(tmp_dir, "fixture.mm")
@@ -675,6 +688,10 @@ OCCTShapeRef OCCTUsesMultiLineTemplateFn(OCCTShapeRef a)
             failures.append(f"multi-line-template static helper classified "
                              f"{by_name.get('multiLineTemplateFn')!r}, want SHARED "
                              f"(a real caller-bucket misclassification, not just cosmetic)")
+        if by_name.get("g_fixtureList") != "SHARED":
+            failures.append(f"static variable with a paren-embedding type classified "
+                             f"{by_name.get('g_fixtureList')!r}, want SHARED "
+                             f"(not captured at all if None)")
 
         names = [n for _, n, *_ in plan]
         ns_names = [n for n in names if n.startswith("ns_")]
