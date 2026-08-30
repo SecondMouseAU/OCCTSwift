@@ -1979,7 +1979,7 @@ extension Shape {
 
 // MARK: - BRepLProp Edge Extensions (v0.111.0)
 //
-// These read an edge through a `BRepAdaptor_Curve`, where `Curve3D.localCurvature` and friends read
+// These read an edge through a `BRepAdaptor_Curve`, where `Curve3D.curvature(at:)` and friends read
 // the curve underneath directly. Since #529 both spellings decide whether a quantity exists at the
 // same resolution (`Precision::Confusion()`), so they agree about definedness at every parameter of
 // every edge; they still differ in the last bits of the values themselves, because the adaptor

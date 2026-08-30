@@ -619,7 +619,7 @@ extension BRepGraph {
     }
 
     /// The face's real area centroid (`Face.surfaceInertia.centerOfMass`), the
-    /// same quantity `ShapeMeasurements.measure()` reports for the same face,
+    /// same quantity `Shape.measure()` reports for the same face,
     /// not the UV-midpoint approximation `resolveFaceOrigin` uses (#884).
     ///
     /// `centerOfMass` is nil exactly when `area == 0` at the Swift level (see

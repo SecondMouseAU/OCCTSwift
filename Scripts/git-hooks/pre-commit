@@ -122,6 +122,10 @@ run "census-doc-occt-attribution.py --self-test" Scripts/census-doc-occt-attribu
 # way, since a bare run lists `@Test(arguments:)` element types for a human to judge rather than
 # reaching a verdict.
 run "census-arguments-tuple-shapes.py --self-test" Scripts/census-arguments-tuple-shapes.py --self-test
+# #872's census. Self-test only, like the three above and for the same reason: it exits 0 either
+# way, since a bare run lists dotted `Type.member` comment mentions (plus Scripts/*.py usage-flag
+# and CLAUDE.md patch-number citations) that no longer resolve, for a human to adjudicate.
+run "census-comment-staleness.py --self-test" Scripts/census-comment-staleness.py --self-test
 
 # The bridge's clang-format check, from a DIFFERENT CI job (`code-style`, not `gate-scripts`) and
 # not a Python gate, so it does not go through run() either. Here because it is the check that was

@@ -226,6 +226,14 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-arguments-tuple-shapes.py --self-test
 
+      # #872's census, same shape as the three above: a bare run lists dotted `` `Type.member` ``
+      # mentions inside Sources/ comments (plus Scripts/*.py usage-flag and CLAUDE.md patch-number
+      # citations) that no longer resolve, for a human to adjudicate, and exits 0 either way, so
+      # only the self-test signals here.
+      - name: census-comment-staleness.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-comment-staleness.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
