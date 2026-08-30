@@ -73,7 +73,6 @@ COMMENT_LINE_RE = re.compile(r'^\s*(///|//)(?!/)(.*)$')
 # than a docs/ page's prose.
 DOTTED_MENTION_RE = re.compile(r'`([A-Z][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)(?:\([^`]*\))?`')
 BRIDGE_MENTION_RE = re.compile(r'`(OCCT[A-Za-z0-9_]+)`')
-BRIDGE_DECL_RE = re.compile(r'\bOCCT[A-Za-z0-9_]+(?=\s*\()')
 
 # Standard library / Foundation / Dispatch / Metal types this codebase's comments quote often
 # (`` `Int.max` ``, `` `Task.detached` ``, `` `MTLDevice.makeBuffer` ``) that are never going to be
@@ -184,11 +183,12 @@ BRIDGE_IDENT_RE = re.compile(r'\bOCCT[A-Za-z0-9_]+\b')
 
 def bridge_declared_functions():
     """Every `OCCTXxx` identifier that appears anywhere on a non-comment header line: function
-    declarations (`BRIDGE_DECL_RE`'s original, narrower net), but also struct/enum typedef names
-    (`} OCCTVolumeInertiaResult;`), which appear with no trailing `(` at all and were the source of
-    a real false positive (`OCCTVolumeInertiaResult` IS declared, at OCCTBridge_Properties.h:426,
-    just as a typedef target, not a function). A census only needs "this identifier is genuinely
-    somewhere in the live header text", not a precise function-vs-type classification."""
+    declarations, but also struct/enum typedef names (`} OCCTVolumeInertiaResult;`), which appear
+    with no trailing `(` at all and were the source of a real false positive when this only matched
+    identifiers followed by `(` (`OCCTVolumeInertiaResult` IS declared, at
+    OCCTBridge_Properties.h:426, just as a typedef target, not a function). A census only needs
+    "this identifier is genuinely somewhere in the live header text", not a precise
+    function-vs-type classification."""
     live = set()
     for path in sorted(glob.glob(os.path.join(REPO_ROOT, "Sources/OCCTBridge/include/*.h"))):
         with open(path, encoding="utf-8") as fh:
