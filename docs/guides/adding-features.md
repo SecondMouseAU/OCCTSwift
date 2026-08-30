@@ -69,7 +69,9 @@ OCCTShapeRef OCCTShapeChamferEdges(
 
 ### Step 3: Implement in Objective-C++
 
-Add to `Sources/OCCTBridge/src/OCCTBridge_Modeling.mm`:
+The Modeling domain's implementation is split across twelve `OCCTBridge_Modeling_<Bucket>.mm`
+files, one per OCCT subsystem (#396); the header stays a single `OCCTBridge_Modeling.h`. Chamfer
+lives with `BRepFilletAPI`/`ChFi2d`, so add to `Sources/OCCTBridge/src/OCCTBridge_Modeling_Chamfer.mm`:
 
 ```objc
 #include <TopExp_Explorer.hxx>

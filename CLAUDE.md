@@ -282,7 +282,9 @@ upstream C++ API the bridge wraps, not the Swift surface.
 ```
 Sources/OCCTSwift/          Swift public API (Shape, Wire, Surface, Face, Edge, Curve3D, Mesh, etc.)
 Sources/OCCTBridge/include/ C function declarations (16 files: OCCTBridge.h umbrella + 15 per-domain headers, #395)
-Sources/OCCTBridge/src/     Objective-C++ implementations (16 files, one per domain, matching the headers)
+Sources/OCCTBridge/src/     Objective-C++ implementations (one per domain, matching the headers,
+                             except Modeling: split into 12 OCCTBridge_Modeling_<Bucket>.mm files
+                             by OCCT subsystem under one shared OCCTBridge_Modeling.h, #396)
 Libraries/OCCT.xcframework  Pre-built OCCT static library (arm64 macOS/iOS)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (see "Test Layout")
 Scripts/build-occt.sh       Builds OCCT.xcframework from source

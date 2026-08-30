@@ -262,6 +262,36 @@ def definitions(path):
     return out
 
 
+HEADER_DIR = 'Sources/OCCTBridge/include'
+
+
+def domain_group(basename):
+    """`OCCTBridge_Modeling_Fillet.mm` -> `OCCTBridge_Modeling.h` (#396/#819): several .mm files
+    split by content family from one domain still share that domain's reach, the same fallback
+    `derive-bridge-header-split.py`'s own `target_header` uses.
+
+    `.mm` files ONLY: applying this to `.h` files too was tried first and broke 19 previously-clean
+    entries, all through the same mechanism -- `OCCTBridge_Internal.h` has no real header of its own
+    to stop at, so stripping walked it all the way down to the genuinely-existing `OCCTBridge.h`
+    (the umbrella), silently re-keying `SHARED`'s own storage away from the literal
+    `'OCCTBridge_Internal.h'` `reachable()` looks it up by, and every indirection that resolved
+    through a shared bridge-wide helper (GCPnts_AbscissaPoint, Geom2dAPI_ProjectPointOnCurve, and
+    16 more, none of them Modeling-related at all) broke at once. `source_files()` walks exactly one
+    `.h` under `Sources/OCCTBridge/src`, so this file is never grouped away from itself; only `.mm`
+    files, where a genuine multi-file domain split can occur, go through the fallback at all."""
+    if not basename.endswith('.mm') or basename == 'OCCTBridge.mm':
+        return basename
+    stem = basename[:-3]
+    candidate = stem
+    while candidate:
+        if os.path.isfile(os.path.join(HEADER_DIR, f'{candidate}.h')):
+            return f'{candidate}.h'
+        if '_' not in candidate:
+            break
+        candidate = candidate.rsplit('_', 1)[0]
+    return basename  # no ancestor header exists either; stays its own group
+
+
 def reachable():
     """bridge function → every name it reaches, following the bridge's own indirections."""
     per_file, types = {}, defaultdict(set)
@@ -272,7 +302,16 @@ def reachable():
                 types[name] |= names
             else:
                 fns.setdefault(name, set()).update(names)
-        per_file[os.path.basename(path)] = fns
+        # Grouped by DOMAIN, not by exact file: a call from one Modeling sub-file to a function
+        # defined in a sibling Modeling sub-file needs to resolve the same way it did before the
+        # domain had more than one physical file. Measured, not assumed, that this matters:
+        # OCCTShapeDrillHole (Features) calls the public OCCTShapeCreateCylinderOriented
+        # (SolidPrimitives) to build its cutting tool, so BRepPrimAPI_MakeCylinder was only
+        # reachable through a DIFFERENT file's own function, not a lowercase static helper.
+        group = domain_group(os.path.basename(path))
+        target = per_file.setdefault(group, {})
+        for name, names in fns.items():
+            target.setdefault(name, set()).update(names)
 
     # a function that names a bridge wrapper type reaches the OCCT classes that type holds
     for fns in per_file.values():

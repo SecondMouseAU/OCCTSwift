@@ -70,10 +70,36 @@ def strip_comments(text):
     return LINE_COMMENT.sub("", BLOCK_COMMENT.sub(" ", text))
 
 
-def target_header(mm_name):
-    """OCCTBridge_Modeling.mm -> OCCTBridge_Modeling.h; OCCTBridge.mm -> the umbrella."""
+def target_header(mm_name, known_headers=None):
+    """OCCTBridge_Modeling.mm -> OCCTBridge_Modeling.h; OCCTBridge.mm -> the umbrella.
+
+    Also OCCTBridge_Modeling_Fillet.mm -> OCCTBridge_Modeling.h (#396/#819): a domain split into
+    several .mm files by content family does not imply a matching header split, and #395's own
+    precedent (16 headers, mapped 1:1 to what were then 16 .mm files) predates any domain having
+    more than one. A sub-file's own trailing `_<Word>` components are stripped one at a time until
+    a header in `known_headers` matches, so `OCCTBridge_Modeling_WireEdgeFaceBuilders.mm` also
+    resolves correctly without a new special case for every future multi-word suffix.
+
+    `known_headers` is the set actually in play for this call (real repo headers for `derive()`,
+    a fixture's own tiny set for `--self-test`) -- NOT a real-filesystem check. The first version of
+    this fallback queried `Sources/OCCTBridge/include` directly and broke every self-test fixture:
+    each one's `OCCTBridge_A.mm` stripped down to the REAL `OCCTBridge.h` on disk, a header that
+    exists in the repo but has nothing to do with any fixture's own tiny, in-memory `{"OCCTBridge_A.h":
+    ...}` universe. A detector whose fixtures pass only because the real repo happens to contain a
+    same-named file is not proving anything about the detector itself."""
     stem = mm_name[:-3]
-    return "OCCTBridge.h" if stem == "OCCTBridge" else f"{stem}.h"
+    if stem == "OCCTBridge":
+        return "OCCTBridge.h"
+    if known_headers is None:
+        known_headers = {os.path.basename(p) for p in header_files()}
+    candidate = stem
+    while candidate:
+        if f"{candidate}.h" in known_headers:
+            return f"{candidate}.h"
+        if "_" not in candidate:
+            break
+        candidate = candidate.rsplit("_", 1)[0]
+    return f"{stem}.h"  # no ancestor exists either; let the caller's own missing-file handling fire
 
 
 def header_files():
@@ -118,13 +144,14 @@ def compute(mm_texts, header_texts):
     concatenated = strip_comments("".join(header_texts.values()))
     declared = set(DECL.findall(concatenated)) - set(TYPEDEF.findall(concatenated))
 
+    known_headers = set(header_texts.keys())
     mapping, ambiguous, unmapped = {}, {}, []
     for symbol in sorted(declared):
         owners = [mm for mm, names in definitions.items() if symbol in names]
         if len(owners) == 1:
-            mapping[symbol] = target_header(owners[0])
+            mapping[symbol] = target_header(owners[0], known_headers)
         elif owners:
-            ambiguous[symbol] = [target_header(o) for o in owners]
+            ambiguous[symbol] = [target_header(o, known_headers) for o in owners]
         else:
             unmapped.append(symbol)
 
