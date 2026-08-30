@@ -527,6 +527,32 @@ ALLOWED = {
         'now confirmed for a curve obtained from BRep_Tool::Curve rather than a wrapper argument',
 }
 
+
+def is_allowed(path, name):
+    """(file, function) lookup with a fallback for a #396/#1380 domain-.mm split: an ALLOWED entry
+    is keyed to the file it was measured against, and a split renames that file to
+    OCCTBridge_<Domain>_<Bucket>.mm without touching the function itself. A direct-filename miss
+    strips one `_`-delimited segment at a time (mirroring check-bridge-index.py's domain_group())
+    until it lands on a key ALLOWED actually has, or runs out of segments.
+
+    This also correctly covers a SHARED helper (#396/#1380's design: every struct/class/static
+    duplicated verbatim into every split file) that was ALLOWED under the pre-split name: each of
+    its N duplicate definitions strips down to the same original key and is exempted alike, one
+    ALLOWED entry rather than N. Measured, not assumed: caught real when OCCTBridge_Geom2d.mm
+    split into 7 files and its own `makeQualifiedCurve` (ALLOWED, SHARED, duplicated into all 7)
+    plus 3 single-bucket functions all fell out of the table, failing gate-scripts on the first
+    push (PR #1384)."""
+    basename = os.path.basename(path)
+    if (basename, name) in ALLOWED:
+        return True
+    candidate = basename[:-3] if basename.endswith('.mm') else basename
+    while '_' in candidate:
+        candidate = candidate.rsplit('_', 1)[0]
+        if (f'{candidate}.mm', name) in ALLOWED:
+            return True
+    return False
+
+
 # extern "C" is tolerated ahead of the return type (#666): without it, a function defined that way
 # is invisible to this regex, guarded or not, because `"` sits outside the return-type character
 # class. Zero real occurrences in this tree motivated it - still worth one line.
@@ -899,7 +925,7 @@ def unguarded_sites(parsed, helpers):
         for name, params, bs, be in funcs:
             body = ctext[bs:be + 1]
             for param, field, is_array in wrapper_params(params):
-                if (os.path.basename(path), name) in ALLOWED:
+                if is_allowed(path, name):
                     continue
                 ptr, handle, spans = aliases(body, param, field)
                 ev = []
@@ -980,7 +1006,7 @@ def local_handle_sites(parsed, helpers):
     found = []
     for path, raw, text, ctext, lines, funcs in parsed:
         for name, params, bs, be in funcs:
-            if (os.path.basename(path), name) in ALLOWED:
+            if is_allowed(path, name):
                 continue
             body = ctext[bs:be + 1]
             decls_by_var = var_declarations(body)
@@ -1285,7 +1311,7 @@ def ocaf_hazard_sites(parsed):
         for name, params, bs, be in funcs:
             body = ctext[bs:be + 1]
             # Skip if this function is in ALLOWED (though OCAF_ALLOWED would be separate)
-            if (os.path.basename(path), name) in ALLOWED:
+            if is_allowed(path, name):
                 continue
             
             decls_by_var = ocaf_handle_declarations(body)
@@ -1844,6 +1870,30 @@ def self_test():
         print(f'  {"ok  " if ok else "FALSE"} guarded, {name}: '
               f'{hit[0].func + " wrongly reported" if hit else "not reported"}')
     total = len(MISSED) + len(CLEAN)
+
+    # is_allowed()'s domain-split fallback (#396/#1380): an ALLOWED entry keyed to the pre-split
+    # filename must still exempt every one of a split's per-bucket files, including a SHARED
+    # helper duplicated into all of them -- and must NOT exempt an unrelated function that merely
+    # shares a domain prefix.
+    allowed_cases = [
+        ('exact match, unsplit file', 'OCCTBridge_Geom2d.mm', 'makeQualifiedCurve', True),
+        ('one bucket suffix stripped', 'OCCTBridge_Geom2d_Curves.mm', 'makeQualifiedCurve', True),
+        ('SHARED helper, a different bucket file', 'OCCTBridge_Geom2d_Adaptor.mm',
+         'makeQualifiedCurve', True),
+        ('single-bucket function, its own new file', 'OCCTBridge_Geom2d_Adaptor.mm',
+         'OCCTExtremaLocateExtCC2d', True),
+        ('same function name, an unrelated domain: must not cross-exempt', 'OCCTBridge_Surface.mm',
+         'makeQualifiedCurve', False),
+        ('unknown function, split filename: must not exempt everything', 'OCCTBridge_Geom2d_Curves.mm',
+         'someUnrelatedFunction', False),
+    ]
+    for desc, path, name, want in allowed_cases:
+        got = is_allowed(path, name)
+        ok = got == want
+        failed += not ok
+        total += 1
+        print(f'  {"ok  " if ok else "FAIL"} is_allowed, {desc}: {path}/{name} -> {got} (want {want})')
+
     print(f'{total - failed}/{total} cases correct')
     return 1 if failed else 0
 
