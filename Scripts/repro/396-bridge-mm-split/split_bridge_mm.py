@@ -389,8 +389,9 @@ FILE_HEADER_TEMPLATE = """\
 //  OCCTSwift
 //
 //  Split from OCCTBridge_{domain}.mm ({issue_note}): {desc}.
-//  Public C surface unchanged; imports the same OCCTBridge_{header}.h every sibling file does.
-//  No symbol changes, pure file move -- see Scripts/repro/396-bridge-mm-split/ for how.
+//  Public C surface unchanged; every sibling file imports the same headers this one does
+//  (the shared preamble below). No symbol changes, pure file move -- see
+//  Scripts/repro/396-bridge-mm-split/ for how.
 //
 
 """

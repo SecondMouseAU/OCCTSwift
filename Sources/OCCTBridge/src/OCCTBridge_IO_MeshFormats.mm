@@ -3,8 +3,9 @@
 //  OCCTSwift
 //
 //  Split from OCCTBridge_IO.mm (#396/#1378-follow-on): StlAPI, RWObj, RWPly, RWGltf, RWMesh,
-//  BRepMesh, IMeshTools. Public C surface unchanged; imports the same OCCTBridge_IO.h every sibling
-//  file does. No symbol changes, pure file move -- see Scripts/repro/396-bridge-mm-split/ for how.
+//  BRepMesh, IMeshTools. Public C surface unchanged; every sibling file imports the same headers
+//  this one does (the shared preamble below). No symbol changes, pure file move -- see
+//  Scripts/repro/396-bridge-mm-split/ for how.
 //
 
 //
