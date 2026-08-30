@@ -3,3 +3,4 @@ Each module below is one domain's taxonomy, built the same way: run --report, in
 UNCLASSIFIED, add overrides, repeat until 0 unresolved and 0 unclassified. Keep them one
 module per domain, so each domain's config is reviewable on its own."""
 from . import domain_io  # noqa: F401
+from . import domain_topology  # noqa: F401
