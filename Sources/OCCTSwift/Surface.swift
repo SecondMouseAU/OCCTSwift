@@ -115,11 +115,13 @@ public struct SurfaceGridD1: Sendable {
 /// only `Handle(Geom_Surface)`, no persistent adaptor, so plain evaluation (`point(atU:v:)`,
 /// `d1`/`d2`, `evaluateGrid`) calls `Geom_Surface::D0`/`D1`/`D2` directly and does **not** hit the
 /// BSpline-adaptor-cache race (#1153) the way ``EdgeCurve``/``WireCurve`` do. The real hazard here
-/// is the analytic subclasses' setters (`Sphere.setRadius`, `.BSpline.setPole`, `.setTrim`, etc.):
-/// they mutate the *same* `Handle(Geom_Surface)` a concurrent evaluation call reads, with no
-/// internal synchronization. Calling a setter concurrently with any evaluation (on this instance,
-/// or another `Surface`/`Curve3D` wrapping the same handle) races; concurrent evaluation-only
-/// calls, with no setter in the mix, are safe. Serialize mixed access with `OCCTSerial.withLock { }`.
+/// is the setters this class and its property views expose (`setOffsetValue`,
+/// `sphereProperties.setRadius`, `bsplineSurface`'s (`Surface.BSpline`) `setPole`/`setWeight`,
+/// and siblings on `torusProperties`/`cylinderProperties`/`bezierProperties`):
+/// each mutates this instance's own `Handle(Geom_Surface)` in place, so calling one concurrently
+/// with any evaluation on the same instance races. Concurrent evaluation-only calls, with no
+/// setter in the mix, are safe; two *different* `Surface` instances never share a handle, so they
+/// never race with each other regardless. Serialize mixed access with `OCCTSerial.withLock { }`.
 public final class Surface: @unchecked Sendable {
     internal let handle: OCCTSurfaceRef
 
