@@ -19,8 +19,8 @@ import OCCTBridge
 /// }   // n+1 points spaced equally along the wire
 /// ```
 ///
-/// **Not `Sendable`.** Same reason as ``EdgeCurve``, and not in the issue that originally audited
-/// this package's `@unchecked Sendable` claims (#1162), only its sibling was: the bridge struct
+/// **Not `Sendable`.** Same reason as ``EdgeCurve`` (issue #1162's audit found the identical
+/// defect here too, even though only ``EdgeCurve`` was in #1162's own table): the bridge struct
 /// behind `ref` holds a persistent `BRepAdaptor_CompCurve` built once at `init` and reused by
 /// every subsequent call, so `point`/`tangent`/`length`/every other accessor mutates the
 /// adaptor's BSpline evaluation cache with zero synchronization (issue #1153, kernel fix
