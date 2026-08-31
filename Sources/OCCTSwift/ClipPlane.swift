@@ -9,6 +9,12 @@ import simd
 ///
 /// For Metal rendering, the equation maps directly to `[[clip_distance]]` in the
 /// vertex shader. Apple Silicon supports up to 8 hardware-accelerated clip distances.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `equation`/`isOn`/`isCapping`/`cappingColor`/`hatchStyle`/
+/// `isHatchOn` are all read-write properties mutating the underlying `Graphic3d_ClipPlane` handle
+/// in place, and `chainNext(_:)` mutates the chain link. Serialize mixed access with
+/// `OCCTSerial.withLock { }`.
 public final class ClipPlane: @unchecked Sendable {
     internal let handle: OCCTClipPlaneRef
 

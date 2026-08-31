@@ -192,6 +192,13 @@ public struct AAGEdge: Sendable {
 /// the single `OCCTFaceGetSharedEdgeSummary` call `buildGraph()` makes today, which returns the
 /// true total and the first shared edge from one walk of the pair. Neither of the two earlier
 /// functions is called from this file any more (#811).
+///
+/// `@unchecked Sendable` is genuinely safe here, confirmed rather than assumed (issue #1162's
+/// audit): `init(shape:)` runs `buildGraph()` synchronously to completion, and `nodes`/`edges`/
+/// `adjacencyList`/`faceOccurrences` are all written exactly once there and never reassigned
+/// afterward (`private(set) var`/`private var`, no public mutator exists). Every public member is
+/// a `const` read over already-built state. Concurrent access to the same instance, from multiple
+/// threads, is fine.
 public final class AAG: @unchecked Sendable {
     /// The shape this graph represents.
     public let shape: Shape

@@ -9,6 +9,13 @@ import simd
 // knows how to emit its edges and annotations with the transform applied.
 // `Drawing.transformed(translate:scale:)` is the sugar call.
 
+/// `@unchecked Sendable` is needed (a plain `Sendable` struct would suffice for `translate`/
+/// `scale` alone) because `source` is a reference to a ``Drawing``, which is itself
+/// `@unchecked Sendable` but NOT safe for concurrent mutation, see its own doc comment. This
+/// struct's own fields are immutable and `apply(_:)` never touches `source` (a pure computation
+/// on `translate`/`scale`/the input point), so concurrent use of a `TransformedDrawing` value is
+/// safe as long as nothing concurrently mutates the `Drawing` it points at; that's `Drawing`'s
+/// contract, not something this wrapper adds or removes.
 public struct TransformedDrawing: @unchecked Sendable {
     public let source: Drawing
     public let translate: SIMD2<Double>

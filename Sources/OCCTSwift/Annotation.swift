@@ -31,6 +31,13 @@ public struct DimensionGeometry: Sendable {
 ///
 /// Each concrete dimension type (Length, Radius, Angle, Diameter) supplies only
 /// its own initializers.
+///
+/// `@unchecked Sendable` (inherited by every concrete subclass: ``LengthDimension``,
+/// ``RadiusDimension``, ``AngleDimension``, ``DiameterDimension``) reflects that `handle` is a
+/// plain bridge handle, not that concurrent use of one instance is safe, it isn't:
+/// `setCustomValue(_:)` mutates the underlying dimension handle in place with no lock, so calling
+/// it concurrently with `value`/`isValid`/`geometry` (or itself) races. Serialize mixed access
+/// with `OCCTSerial.withLock { }`.
 public class DimensionMeasurement: @unchecked Sendable {
     internal let handle: OCCTDimensionRef
 
@@ -151,6 +158,11 @@ public final class DiameterDimension: DimensionMeasurement, @unchecked Sendable 
 // MARK: - Text Label
 
 /// A positioned 3D text label.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `text`/`position` are read-write properties and `setHeight`
+/// mutates the underlying handle in place, all with no lock. Serialize mixed access with
+/// `OCCTSerial.withLock { }`.
 public final class TextLabel: @unchecked Sendable {
     internal let handle: OCCTTextLabelRef
 

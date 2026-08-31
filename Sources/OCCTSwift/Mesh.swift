@@ -172,6 +172,12 @@ public struct Triangle: Sendable {
 /// let node = SCNNode(geometry: geometry)
 /// scene.rootNode.addChildNode(node)
 /// ```
+///
+/// `@unchecked Sendable` is genuinely safe here, confirmed rather than assumed: every member is
+/// either a `const` read (`vertexCount`, `vertices`, `boundingBox`, ...) or returns a **new**
+/// object (`union(with:)`, `subtracting(_:)`, `intersection(with:)`, `toShape`,
+/// `trianglesWithFaces()`, `sceneKitGeometry()`, ...); nothing mutates this instance's own
+/// `handle` in place. Concurrent access to the same instance, from multiple threads, is fine.
 public final class Mesh: @unchecked Sendable {
     internal let handle: OCCTMeshRef
 
