@@ -7,14 +7,18 @@ search_exclude: true
 
 ## Coverage
 
-All user-facing OCCT classes are wrapped to method-level completeness: **4,256 operations**
-across **1,166 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
+All user-facing OCCT classes are wrapped to method-level completeness: **4,365 operations**
+across **1,174 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
 
 Both numbers are derived, not maintained by hand: the first is
 `python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
 README.md, `docs/API_REFERENCE.md` and, since #967, `docs/index.md` to. It still does **not** hold
 this file, which is how the figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real
-count grew past 4,200, and is why the figure above reads 4,256 against a derived 4,355 today.
+count grew past 4,200, and reached 4,256 (against a derived 4,355) by #807's own opening. **Both
+re-derived again at #820 (Phase 6)**, 2026-08-31: `count-operations.py` now reports 4,365, and
+`grep -rhoE '#include <[A-Za-z0-9_]+\.hxx>' Sources/OCCTBridge/{src,include} | sort -u | wc -l`
+(the same query this figure has always meant) now reports 1,174. Re-derive both again before
+trusting either; this file has a five-month history of exactly this drift.
 
 ### What's Wrapped
 
@@ -1820,6 +1824,224 @@ the span of the constraint parameters padded by 10 where it does not. A plane bo
 single constraint gives a 20-by-20 patch around it; a cylinder bounds `u` at `[0, 2pi]` and leaves
 only `v` derived. The pad of 10 is a fixed number with no basis in the input's scale, which is a
 real limitation for a model whose features are much larger or much smaller than that.
+
+### Substrate packages beneath the features lane, Phase 6 audit (#1045, #820)
+
+Fifteen packages under #811's own features lane, **337 classes** (re-derived fresh from the pinned
+headers at `Scripts/repro/820-refman-coverage-whole-surface/derive_substrate.py`, including the six
+bare `<Package>.hxx` package-utility headers the same way #812/#813 count theirs; #1045's own table
+undercounts these same fifteen at 331 for exactly that reason), were named by no #807 sub-issue at
+all. #1045 (closed) measured them and assigned the whole set to Phase 6 rather than opening a
+thirteenth lane pass, naming `GeomFill_` and `BRepFill_` HIGH priority in its own "Done when" #3:
+"Whichever lane takes `GeomFill_` and `BRepFill_` audits them, since those two carry most of the
+wrapped surface here." This is that audit, committed and re-runnable at
+[`Scripts/repro/820-refman-coverage-whole-surface/substrate_audit.py`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/820-refman-coverage-whole-surface),
+run to the same standard as the nine source lanes (mechanical wrapped/documented test first, then a
+curated table for everything that test leaves unexplained, each entry read against `occt-refman@8.0.1`
+or the pinned header rather than guessed from the name). **80 of 337 are already wrapped or
+documented; the remaining 257 are curated below.**
+
+**`GeomFill_` (68 classes, 38 already ok) and `BRepFill_` (46 classes, 13 already ok), read in the
+most depth per #1045's own priority.** Both back the already-wrapped `GeomFill_Sweep`/
+`BRepFill_Sweep`/`BRepFill_Filling` engine (`BRepOffsetAPI_MakePipeShell`/`MakeFilling`,
+`PipeShellBuilder`, `Shape.sweep`, `Shape.fill`), and CLAUDE.md's Known OCCT Bugs already documents
+two real kernel defects in exactly this engine (`GeomFill_Sweep::BuildAll` overwriting a measured
+error with the requested tolerance, #597; `BRepFill_Filling::AddConstraints` discarding a pcurve's
+trim range, #430), so "internal to an engine with known sharp edges" is not a guess here.
+`GeomFill_Tensor` is documented in `occt-refman` as "used to store the \"gradient of gradient\"";
+`GeomFill_TrihedronLaw`'s four confirmed concrete subclasses (`GeomFill_Darboux`/`_Fixed`/
+`_GuideTrihedronAC`/`_GuideTrihedronPlan`) are constructed in `OCCTBridge_Surface_Extrema.mm`/
+`OCCTBridge_Surface_Adaptor.mm`, confirmed by grep; `BRepFill_Sweep` itself is "Topological Sweep
+Algorithm... using an SectionLaw and a LocationLaw" per `occt-refman`.
+
+**The other thirteen packages (223 classes, 29 already ok, 194 curated below), each package's
+representative class confirmed by at least one `occt-refman@8.0.1` class-page read**:
+`BRepBlend_`/`Blend_`/`BlendFunc_`/`ChFiDS_`/`ChFiKPart_` (120 classes, 6 already ok) are the numeric
+blend/fillet/chamfer walking algorithm `ChFi3d_Builder` drives (`BRepFilletAPI_MakeFillet`/
+`MakeChamfer`, wrapped) -- `BRepBlend_Walking`/`ChFiDS_Spine` the walker and its spine data structure
+("Contains information necessary for construction of a 3D fillet or chamfer" per `occt-refman`),
+`Blend_Function` the abstract per-profile function base ("Deferred class for a function used to
+compute a blending surface between two surfaces, using a guide line"), sixteen `BRepBlend_` classes
+bare typedef aliases for a generic-programming template instantiation (the same shape #812's README
+documents for `HLRBRep_The<X>Of<Y>`), `ChFiKPart_ComputeData*` the closed-form planar/cylindrical/
+spherical/conical special-case solvers ("Methodes de classe permettant de remplir une SurfData dans
+les cas particuliers de conges", `occt-refman`); `BRepOffset_` (18, 7 ok) is the `BRepOffset_MakeOffset`
+engine (`BRepOffsetAPI_MakeOffsetShape`/`MakeThickSolid`, wrapped), `BRepOffset_Inter3d` its
+representative helper ("Computes the connection of the offset and not offset faces... Store the
+result in AsDes tool"); `Draft_` (9, 2 ok) is the draft-angle algorithm (`BRepOffsetAPI_DraftAngle`/
+`Shape.drafted(...)`, wrapped); `BiTgte_` (4, 2 ok) is the bisecting-tangent rolling-ball blend engine;
+`MAT_`/`MAT2d_`/`Bisector_` (47, 9 ok) are the medial-axis transform engine under `BRepMAT2d_`
+(already recorded as internal helper machinery in #808's own `INTERNAL_HELPERS` table for that
+package), `MAT2d_Mat2d` the entry algorithm ("this class contains the generic algorithm of
+computation of the bisecting locus"), `MAT_BasicElt` an input-graph node ("A BasicElt is associated
+to each elementary constituent of the figure"), `Bisector_Curve` the abstract bisector-curve base;
+`AdvApp2Var_`/`AdvApprox_` (25, 2 ok) are the two- and one-variable polynomial approximation engine
+under `GeomConvert_ApproxSurface` (and `GeomPlate_MakeApprox` for the one-variable half), wrapped,
+and CLAUDE.md's #522 entry documents a real kernel bug in exactly this engine
+(`AdvApp2Var_ApproxF2var::mma2ce1_`/`AdvApp2Var_Context`), `AdvApp2Var_Patch` ("used to store results
+on a domain [Ui,Ui+1]x[Vj,Vj+1]") and `AdvApprox_SimpleApprox` ("Approximate a function on an
+interval [First,Last]... The result is a simple polynomial whose degree is as low as possible") its
+representative internal state and driver.
+
+Every curated class, in full, by package and bucket (the list `whole_surface_union.py --self-test`
+and `substrate_audit.py` check against):
+
+**`GeomFill_` (68 classes, 38 already ok):**
+- internal engine helpers (15): `GeomFill_AppSweep`, `GeomFill_CircularBlendFunc`, `GeomFill_CornerState`, `GeomFill_FunctionDraft`, `GeomFill_FunctionGuide`, `GeomFill_LocFunction`, `GeomFill_LocationGuide`, `GeomFill_PlanFunc`, `GeomFill_PolynomialConvertor`, `GeomFill_QuasiAngularConvertor`, `GeomFill_SnglrFunc`, `GeomFill_SweepFunction`, `GeomFill_SweepSectionGenerator`, `GeomFill_Tensor`, `GeomFill_TgtOnCoons`
+- abstract bases (6): `GeomFill_Boundary`, `GeomFill_LocationLaw`, `GeomFill_SectionLaw`, `GeomFill_TgtField`, `GeomFill_TrihedronLaw`, `GeomFill_TrihedronWithGuide`
+- deprecated collection typedefs (7): `GeomFill_Array1OfLocationLaw`, `GeomFill_Array1OfSectionLaw`, `GeomFill_HArray1OfLocationLaw`, `GeomFill_HArray1OfSectionLaw`, `GeomFill_HSequenceOfAx2`, `GeomFill_SequenceOfAx2`, `GeomFill_SequenceOfTrsf`
+- unread enums (2): `GeomFill_ApproxStyle`, `GeomFill_Trihedron`
+
+**`BRepFill_` (46 classes, 13 already ok):**
+- internal engine helpers (18): `BRepFill_ACRLaw`, `BRepFill_ApproxSeewing`, `BRepFill_ComputeCLine`, `BRepFill_CurveConstraint`, `BRepFill_DraftLaw`, `BRepFill_Edge3DLaw`, `BRepFill_EdgeFaceAndOrder`, `BRepFill_EdgeOnSurfLaw`, `BRepFill_FaceAndOrder`, `BRepFill_LocationLaw`, `BRepFill_MultiLine`, `BRepFill_Section`, `BRepFill_SectionPlacement`, `BRepFill_ShapeLaw`, `BRepFill_Sweep`, `BRepFill_TrimEdgeTool`, `BRepFill_TrimShellCorner`, `BRepFill_TrimSurfaceTool`
+- abstract bases (1): `BRepFill_SectionLaw`
+- deprecated collection typedefs (12): `BRepFill_DataMapOfNodeDataMapOfShapeShape`, `BRepFill_DataMapOfNodeShape`, `BRepFill_DataMapOfOrientedShapeListOfShape`, `BRepFill_DataMapOfShapeDataMapOfShapeListOfShape`, `BRepFill_DataMapOfShapeHArray2OfShape`, `BRepFill_DataMapOfShapeSequenceOfPnt`, `BRepFill_DataMapOfShapeSequenceOfReal`, `BRepFill_IndexedDataMapOfOrientedShapeListOfShape`, `BRepFill_ListOfOffsetWire`, `BRepFill_SequenceOfEdgeFaceAndOrder`, `BRepFill_SequenceOfFaceAndOrder`, `BRepFill_SequenceOfSection`
+- unread enums (2): `BRepFill_ThruSectionErrorStatus`, `BRepFill_TypeOfContact`
+
+**`BRepBlend_` (43 classes, 1 already ok):**
+- internal engine helpers (23): `BRepBlend_AppFunc`, `BRepBlend_AppFuncRst`, `BRepBlend_AppFuncRstRst`, `BRepBlend_AppSurf`, `BRepBlend_BlendTool`, `BRepBlend_CSWalking`, `BRepBlend_CurvPointRadInv`, `BRepBlend_Extremity`, `BRepBlend_HCurve2dTool`, `BRepBlend_HCurveTool`, `BRepBlend_Line`, `BRepBlend_PointOnRst`, `BRepBlend_RstRstConstRad`, `BRepBlend_RstRstEvolRad`, `BRepBlend_RstRstLineBuilder`, `BRepBlend_SurfCurvConstRadInv`, `BRepBlend_SurfCurvEvolRadInv`, `BRepBlend_SurfPointConstRadInv`, `BRepBlend_SurfPointEvolRadInv`, `BRepBlend_SurfRstConstRad`, `BRepBlend_SurfRstEvolRad`, `BRepBlend_SurfRstLineBuilder`, `BRepBlend_Walking`
+- abstract bases (1): `BRepBlend_AppFuncRoot`
+- deprecated collection typedefs (2): `BRepBlend_SequenceOfLine`, `BRepBlend_SequenceOfPointOnRst`
+- template-instantiation typedefs (16): `BRepBlend_CSCircular`, `BRepBlend_CSConstRad`, `BRepBlend_ChAsym`, `BRepBlend_ChAsymInv`, `BRepBlend_ChamfInv`, `BRepBlend_Chamfer`, `BRepBlend_ConstRad`, `BRepBlend_ConstRadInv`, `BRepBlend_ConstThroat`, `BRepBlend_ConstThroatInv`, `BRepBlend_ConstThroatWithPenetration`, `BRepBlend_ConstThroatWithPenetrationInv`, `BRepBlend_EvolRad`, `BRepBlend_EvolRadInv`, `BRepBlend_Ruled`, `BRepBlend_RuledInv`
+
+**`Blend_` (13 classes, 0 already ok):**
+- internal engine helpers (1): `Blend_Point`
+- abstract bases (9): `Blend_AppFunction`, `Blend_CSFunction`, `Blend_CurvPointFuncInv`, `Blend_FuncInv`, `Blend_Function`, `Blend_RstRstFunction`, `Blend_SurfCurvFuncInv`, `Blend_SurfPointFuncInv`, `Blend_SurfRstFunction`
+- deprecated collection typedefs (1): `Blend_SequenceOfPoint`
+- unread enums (2): `Blend_DecrochStatus`, `Blend_Status`
+
+**`BlendFunc_` (22 classes, 1 already ok):**
+- internal engine helpers (18): `BlendFunc`, `BlendFunc_CSCircular`, `BlendFunc_CSConstRad`, `BlendFunc_ChAsym`, `BlendFunc_ChAsymInv`, `BlendFunc_ChamfInv`, `BlendFunc_Chamfer`, `BlendFunc_ConstRadInv`, `BlendFunc_ConstThroat`, `BlendFunc_ConstThroatInv`, `BlendFunc_ConstThroatWithPenetration`, `BlendFunc_ConstThroatWithPenetrationInv`, `BlendFunc_Corde`, `BlendFunc_EvolRad`, `BlendFunc_EvolRadInv`, `BlendFunc_Ruled`, `BlendFunc_RuledInv`, `BlendFunc_Tensor`
+- abstract bases (2): `BlendFunc_GenChamfInv`, `BlendFunc_GenChamfer`
+- unread enums (1): `BlendFunc_SectionShape`
+
+**`ChFiDS_` (27 classes, 5 already ok):**
+- internal engine helpers (10): `ChFiDS_ChamfSpine`, `ChFiDS_CircSection`, `ChFiDS_CommonPoint`, `ChFiDS_ElSpine`, `ChFiDS_FaceInterference`, `ChFiDS_FilSpine`, `ChFiDS_Map`, `ChFiDS_Regul`, `ChFiDS_Spine`, `ChFiDS_StripeMap`
+- deprecated collection typedefs (10): `ChFiDS_HData`, `ChFiDS_IndexedDataMapOfVertexListOfStripe`, `ChFiDS_ListOfHElSpine`, `ChFiDS_ListOfStripe`, `ChFiDS_Regularities`, `ChFiDS_SecArray1`, `ChFiDS_SecHArray1`, `ChFiDS_SequenceOfSpine`, `ChFiDS_SequenceOfSurfData`, `ChFiDS_StripeArray1`
+- unread enums (2): `ChFiDS_ChamfMethod`, `ChFiDS_State`
+
+**`ChFiKPart_` (15 classes, 0 already ok):**
+- internal engine helpers (14): `ChFiKPart_ComputeData`, `ChFiKPart_ComputeData_CS`, `ChFiKPart_ComputeData_ChAsymPlnCon`, `ChFiKPart_ComputeData_ChAsymPlnCyl`, `ChFiKPart_ComputeData_ChAsymPlnPln`, `ChFiKPart_ComputeData_ChPlnCon`, `ChFiKPart_ComputeData_ChPlnCyl`, `ChFiKPart_ComputeData_ChPlnPln`, `ChFiKPart_ComputeData_Fcts`, `ChFiKPart_ComputeData_FilPlnCon`, `ChFiKPart_ComputeData_FilPlnCyl`, `ChFiKPart_ComputeData_FilPlnPln`, `ChFiKPart_ComputeData_Rotule`, `ChFiKPart_ComputeData_Sphere`
+- deprecated collection typedefs (1): `ChFiKPart_RstMap`
+
+**`BRepOffset_` (18 classes, 7 already ok):**
+- internal engine helpers (4): `BRepOffset_Inter2d`, `BRepOffset_Inter3d`, `BRepOffset_MakeLoops`, `BRepOffset_Tool`
+- deprecated collection typedefs (4): `BRepOffset_DataMapOfShapeListOfInterval`, `BRepOffset_DataMapOfShapeMapOfShape`, `BRepOffset_DataMapOfShapeOffset`, `BRepOffset_ListOfInterval`
+- unread enums (3): `BRepOffset_Error`, `BRepOffset_Mode`, `BRepOffset_Status`
+
+**`Draft_` (9 classes, 2 already ok):**
+- internal engine helpers (3): `Draft_EdgeInfo`, `Draft_FaceInfo`, `Draft_VertexInfo`
+- deprecated collection typedefs (3): `Draft_IndexedDataMapOfEdgeEdgeInfo`, `Draft_IndexedDataMapOfFaceFaceInfo`, `Draft_IndexedDataMapOfVertexVertexInfo`
+- unread enums (1): `Draft_ErrorStatus`
+
+**`BiTgte_` (4 classes, 2 already ok):**
+- internal engine helpers (1): `BiTgte_CurveOnVertex`
+- unread enums (1): `BiTgte_ContactType`
+
+**`MAT_` (18 classes, 3 already ok):**
+- internal engine helpers (8): `MAT_BasicElt`, `MAT_Bisector`, `MAT_Edge`, `MAT_ListOfBisector`, `MAT_ListOfEdge`, `MAT_TListNodeOfListOfBisector`, `MAT_TListNodeOfListOfEdge`, `MAT_Zone`
+- deprecated collection typedefs (6): `MAT_DataMapOfIntegerArc`, `MAT_DataMapOfIntegerBasicElt`, `MAT_DataMapOfIntegerBisector`, `MAT_DataMapOfIntegerNode`, `MAT_SequenceOfArc`, `MAT_SequenceOfBasicElt`
+- unread enums (1): `MAT_Side`
+
+**`MAT2d_` (18 classes, 0 already ok):**
+- internal engine helpers (7): `MAT2d_BiInt`, `MAT2d_Circuit`, `MAT2d_Connexion`, `MAT2d_CutCurve`, `MAT2d_Mat2d`, `MAT2d_MiniPath`, `MAT2d_Tool2d`
+- deprecated collection typedefs (11): `MAT2d_Array2OfConnexion`, `MAT2d_DataMapOfBiIntInteger`, `MAT2d_DataMapOfBiIntSequenceOfInteger`, `MAT2d_DataMapOfIntegerBisec`, `MAT2d_DataMapOfIntegerConnexion`, `MAT2d_DataMapOfIntegerPnt2d`, `MAT2d_DataMapOfIntegerSequenceOfConnexion`, `MAT2d_DataMapOfIntegerVec2d`, `MAT2d_SequenceOfConnexion`, `MAT2d_SequenceOfSequenceOfCurve`, `MAT2d_SequenceOfSequenceOfGeometry`
+
+**`Bisector_` (11 classes, 6 already ok):**
+- internal engine helpers (4): `Bisector_FunctionH`, `Bisector_FunctionInter`, `Bisector_PointOnBis`, `Bisector_PolyBis`
+- abstract bases (1): `Bisector_Curve`
+
+**`AdvApp2Var_` (18 classes, 1 already ok):**
+- internal engine helpers (9): `AdvApp2Var_ApproxF2var`, `AdvApp2Var_Context`, `AdvApp2Var_Framework`, `AdvApp2Var_Iso`, `AdvApp2Var_MathBase`, `AdvApp2Var_Network`, `AdvApp2Var_Node`, `AdvApp2Var_Patch`, `AdvApp2Var_SysBase`
+- abstract bases (2): `AdvApp2Var_Criterion`, `AdvApp2Var_EvaluatorFunc2Var`
+- deprecated collection typedefs (4): `AdvApp2Var_SequenceOfNode`, `AdvApp2Var_SequenceOfPatch`, `AdvApp2Var_SequenceOfStrip`, `AdvApp2Var_Strip`
+- unread enums (2): `AdvApp2Var_CriterionRepartition`, `AdvApp2Var_CriterionType`
+
+**`AdvApprox_` (7 classes, 1 already ok):**
+- internal engine helpers (4): `AdvApprox_DichoCutting`, `AdvApprox_PrefAndRec`, `AdvApprox_PrefCutting`, `AdvApprox_SimpleApprox`
+- abstract bases (2): `AdvApprox_Cutting`, `AdvApprox_EvaluatorFunction`
+
+**Not individually re-verified**: whether every concrete subclass of every abstract base named
+above is itself wrapped (checked directly only for `GeomFill_TrihedronLaw`'s four subclasses, cited
+above); the base's own lack of independent capability does not depend on that being true for every
+sibling.
+
+### Phase 6 whole-surface reconciliation (#820)
+
+#820 unions the nine source lanes that give a per-class refman verdict (#808, #809, #810, #811,
+#812, #813, #814, #982, #983 -- #815-#818 ask "is it tested", a different question, and are excluded
+per #820's own "Lane" framing) plus the substrate audit immediately above, and diffs the result
+against the full pinned header set. Mechanism and every number below are re-derived by
+[`Scripts/repro/820-refman-coverage-whole-surface/whole_surface_union.py`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/820-refman-coverage-whole-surface),
+never hand-typed: it imports each of the nine lanes' own `refman_census.py` and calls that lane's
+own `classify()`, reproducing every one of their previously-published totals exactly (151 + 126 +
+278 + 129 + 93 + 192 + 368 + 51 + 342 = **1,730**, zero classes claimed twice) before adding the
+substrate audit's 337.
+
+| | count |
+|---|---|
+| shipped headers (pinned `Headers/*.hxx` stems) | 6,774 |
+| covered: nine source lanes | 1,730 |
+| covered: substrate audit (#1045/#820) | 337 |
+| **covered total** | **2,067** |
+| residual (shipped - covered) | 4,707 |
+
+**Answering #820's own "Done when" #1** (every refman class accounted for by exactly one lane, or
+explicitly by none with a reason): the 2,067 covered classes are, class-for-class, zero contested
+between the nine lanes and zero shared with the substrate audit. The 4,707 residual classes are
+**not** yet each accounted for, and the honest split is the finding this pass exists to report:
+
+- **642 classes, ~120 packages, have real, non-comment, non-`#include` bridge presence yet sit in
+  NO lane's table.** Concentrated in `ModelingAlgorithms` (237: `ShapeUpgrade`/`ShapeFix`/
+  `ShapeAnalysis`/`ShapeCustom`/`ShapeConstruct`/`ShapeBuild`, `BOPAlgo`/`BOPDS`/`BOPTools`/
+  `IntTools`, `GccAna`/`GccInt`/`GccEnt`/`Geom2dGcc`, `BRepLib`, `GeomAPI`, `Law`, `BRepGProp`),
+  `ModelingData` (229: `Geom`/`Geom2d`, `gce`, `Extrema`, `BRepGraph`, `BRepTools`, `GeomConvert`,
+  `GCPnts`), `FoundationClasses` (141: `math`, `NCollection`, `OSD`, `Convert`, `Message`,
+  `Standard`), `Visualization` (20: `SelectMgr`, `PrsDim`, `Font`, `Aspect`, `Prs3d`) and a handful
+  elsewhere. This is genuinely wrapped surface matching this file's own "What's Wrapped" table
+  (`TKGeomBase`/`TKGeomAlgo`/`TKShHealing`/`TKBO`/`TKBool`, above), so it is **not** an
+  under-coverage finding of the kind #808-#814/#982/#983 fixed by the dozen -- it is a partition
+  gap in #820's own sense: nobody has run the per-class refman audit that found those dozens of
+  wrong-attribution and stale-claim defects against THIS ~120-package surface, so none of that
+  class of bug is ruled out here either. **Filed as #1399** rather than absorbed into this pass, on
+  the same precedent #973 set filing #982/#983 and #811 set filing #1045: auditing ~120 packages to
+  the standard the nine lanes hold themselves to is several more Pass-sized efforts, out of
+  proportion to a reconciliation pass, and #820's own text asks whether the lanes partition the
+  refman, not that this pass re-does the missing lanes' work.
+- **3,983 classes have neither bridge presence, nor a docs/ mention, nor a gaps.md line.**
+  Overwhelmingly `DataExchange` (2,089: the STEP/IGES/other-format internal EXPRESS data model
+  underneath the `STEPControl_`/`IGESControl_`/`RWObj_`/etc. entry points #813 already audits) and
+  `ModelingAlgorithms` (769: mostly the legacy pre-`BOPAlgo` `TopOpeBRep*`/`TopOpeBRepBuild`/
+  `TopOpeBRepDS`/`TopOpeBRepTool` boolean engine BOPAlgo superseded, plus smaller intersection-engine
+  packages like `IntPatch`/`IntSurf`/`Intf`/`IntCurveSurface`), with `FoundationClasses` (406,
+  containers/OS abstraction), `ModelingData` (341, internal geometric-evaluation plumbing) and
+  `Visualization` (285, OpenGL/`Graphic3d` internals) the rest. This matches, and now measures
+  precisely for the first time, this file's own long-standing "What's Not Wrapped (by design)"
+  table above (previously "~1,700 STEP/IGES internals... ~500 Visualization/OpenGL... ~900
+  NCollection containers... ~200 Abstract base classes", four approximate figures against one
+  un-derived total). Not individually adjudicated class-by-class: bucketed by OCCT source module
+  (`Libraries/occt-src/src/<Module>/<Toolkit>/<Package>/`, the same derivation #973's own
+  `partition_census.py` uses for its "tier"), and spot-checked (not censused) via `occt-refman`
+  reads of representative classes in `TopOpeBRepDS`/`TopOpeBRepBuild` (confirmed genuinely
+  superseded rather than merely unaudited: zero call sites anywhere in `Sources/OCCTBridge`) and in
+  `IGESGeom`/`StepShape`/`Vrml` (confirmed genuinely internal EXPRESS/VRML-model classes with no
+  public-facing counterpart).
+- **64 classes are named under docs/ without bridge presence, and 18 more only in this file.** Not
+  separately adjudicated: most are bare `<Package>.hxx` package-utility header stems (`ShapeFix`,
+  `BOPAlgo_PaveFiller`, `IntTools`, `Law`, `Message`, `math`, ...) picked up incidentally by this
+  file's own toolkit-summary prose or by a `docs/` page naming the containing toolkit, the same
+  low-confidence signal #812's README already flags for a bare package header's name coinciding
+  with ordinary prose; a residue this small, at this confidence, was judged not worth a dedicated
+  read given the 642-class finding above needing the same kind of attention at ~10x the scale.
+
+**Residue this pass individually spot-checked, stated plainly**: roughly 40 classes read directly
+against `occt-refman@8.0.1` (34 across the fifteen substrate packages above, plus ~6 in the
+`TopOpeBRepDS`/`IGESGeom`/`StepShape`/`Vrml` spot-check), out of 4,707 residual and 337 substrate
+classes combined. The substrate 337 are fully accounted for (covered above); the 4,707-class residue
+is a module-level reconciliation and a targeted sample, not a census -- the honest gap this pass
+leaves is that neither the 642 wrapped-but-unaudited classes nor the 3,983 unwrapped ones were
+checked one by one, matching how the four Pass 5 test-lane audits describe their own "what this
+pass did not do".
 
 ### Constraint Solver Infrastructure (Complete)
 
