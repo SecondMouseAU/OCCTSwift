@@ -15,7 +15,19 @@ import OCCTBridge
 /// let mids = ec.points(count: 11)        // 11 points equally spaced along the edge
 /// let half = ec.point(atAbscissa: ec.length / 2)
 /// ```
-public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
+///
+/// **Not `Sendable`.** Unlike most bridge wrappers in this package, this is not just "no internal
+/// lock, use `OCCTSerial.withLock { }`": the bridge struct behind `ref` holds a **persistent**
+/// `BRepAdaptor_Curve` built once at `init` and reused by every subsequent call, so `point`/
+/// `tangent`/`length`/every other accessor here mutates the adaptor's BSpline evaluation cache
+/// with zero synchronization (issue #1153; the kernel fix, `Scripts/patches/0031`, is
+/// override-link-validated but **not in the pinned `OCCT.xcframework`** as of this writing). Every
+/// method here reads as a pure query, which is exactly what makes it dangerous: sampling a shared
+/// `EdgeCurve` from multiple threads (the natural "let me parallelize point sampling" pattern) is
+/// a live data race today, not a hypothetical one. Give each thread/task its own `EdgeCurve`
+/// (construct one per `Edge` per thread, cheap) rather than sharing one, or serialize access with
+/// `OCCTSerial.withLock { }`.
+public final class EdgeCurve: ArcLengthCurveAdaptor {
     internal let ref: OCCTEdgeCurveRef
 
     /// Build an arc-length adaptor over `edge`.

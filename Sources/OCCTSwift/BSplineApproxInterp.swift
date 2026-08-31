@@ -37,6 +37,14 @@ import simd
 ///     print("Max error: \(solver.maxError)")
 /// }
 /// ```
+///
+/// `@unchecked Sendable` reflects that a single instance's `handle` is a plain bridge handle, not
+/// that concurrent use of one instance from multiple threads is safe, it isn't (no internal
+/// synchronization, same as every other builder wrapper in this package, e.g.
+/// ``ThruSectionsBuilder``). The setters and ``perform()``/``performOptimal(maxIterations:)`` all
+/// mutate the same underlying `GeomAPI_PointsToBSpline`; calling any of them concurrently with
+/// each other, or with ``curve``/``maxError``/``isDone``, races. Serialize access to a shared
+/// instance with `OCCTSerial.withLock { }`; see `docs/thread-safety.md`.
 public final class BSplineApproxInterp: @unchecked Sendable {
     internal let handle: OCCTBSplineApproxInterpRef
 

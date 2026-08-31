@@ -3,6 +3,13 @@ import OCCTBridge
 import simd
 
 /// Multi-result projection of a point onto a 3D curve.
+///
+/// `@unchecked Sendable` is genuinely safe here, not just handle-passing safe: `init?` runs the
+/// whole `GeomAPI_ProjectPointOnCurve::Init` search synchronously to completion and stores it by
+/// value in a private, per-instance bridge struct; every accessor afterward (`count`, `point(at:)`,
+/// `parameter(at:)`, `distance(at:)`, `lowerDistance`, `lowerParameter`) is a `const` read of the
+/// already-computed result, with no method to mutate or re-run the search. Concurrent reads on the
+/// same instance from multiple threads, once safely published, are fine.
 public final class ProjectionOnCurve: @unchecked Sendable {
     private let ref: OCCTProjOnCurveRef
 
@@ -46,6 +53,14 @@ public final class ProjectionOnCurve: @unchecked Sendable {
 }
 
 /// Multi-result projection of a point onto a surface.
+///
+/// `@unchecked Sendable` is genuinely safe here, not just handle-passing safe, for the same reason
+/// as ``ProjectionOnCurve``: `init?` runs `GeomAPI_ProjectPointOnSurf::Init` synchronously to
+/// completion into a private, per-instance bridge struct, and every accessor afterward is a
+/// `const` read with no mutating method. Its internal `GeomAdaptor_Surface` (the class that would
+/// carry #1153's BSpline-cache race) is likewise a private, per-instance copy built once during
+/// `Init`, not shared across instances, so it isn't reachable here either. Concurrent reads on the
+/// same instance from multiple threads, once safely published, are fine.
 public final class ProjectionOnSurface: @unchecked Sendable {
     private let ref: OCCTProjOnSurfRef
 
