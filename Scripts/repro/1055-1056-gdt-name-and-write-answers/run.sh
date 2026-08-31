@@ -17,52 +17,68 @@
 #   B    occtDocumentCreateDimensionImpl applies the tolerance and ignores the refusal (#1056 site 1)
 #   C    SetValueOfZoneModifier stops clearing under _None (#1056 site 2)
 #
-# Requires a local Libraries/OCCT.xcframework. The tree must be clean in the two files it edits, so
+# Requires a local Libraries/OCCT.xcframework. The tree must be clean in the files it edits, so
 # it can never clobber uncommitted work; it restores from its own copies on exit either way.
+#
+# Repointed post-#1380/PR #1388 (chore(#819) retirement pass): OCCTBridge_Document.mm no longer
+# exists, split into 6 files. OCCTDocumentGetDatumName and the SetValueOfZoneModifier call (#1056
+# site 2) both landed in OCCTBridge_Document_GDT.mm. occtDocumentCreateDimensionImpl is a `static`
+# helper the split duplicated verbatim into all 6 (the #396/#1380 shared-helper pattern
+# check-null-handle-guards.py's is_allowed() docstring also describes), but only ONE copy is ever
+# actually called: OCCTDocumentCreateDimensionWithTolerance's own local copy in
+# OCCTBridge_Document_DocumentLifecycle.mm (#1056 site 1). Injection B has to land there, not in
+# GDT.mm, or it edits a copy nothing calls and the row silently proves nothing -- exactly the
+# stale-anchor failure mode the comment on A3 below already warns about, just one level up (a
+# dead FILE instead of a dead anchor).
 set -u
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-MM="$REPO/Sources/OCCTBridge/src/OCCTBridge_Document.mm"
+GDT="$REPO/Sources/OCCTBridge/src/OCCTBridge_Document_GDT.mm"
+LIFECYCLE="$REPO/Sources/OCCTBridge/src/OCCTBridge_Document_DocumentLifecycle.mm"
 SWIFT="$REPO/Sources/OCCTSwift/GDTRead.swift"
 FILTER='Issue1055DatumNameLengthTests|Issue1056GDTWriteAnswerTests'
 
 dirty=$(cd "$REPO" && git status --porcelain -- \
-  Sources/OCCTBridge/src/OCCTBridge_Document.mm Sources/OCCTSwift/GDTRead.swift)
+  Sources/OCCTBridge/src/OCCTBridge_Document_GDT.mm \
+  Sources/OCCTBridge/src/OCCTBridge_Document_DocumentLifecycle.mm \
+  Sources/OCCTSwift/GDTRead.swift)
 if [ -n "$dirty" ]; then
-  echo "refusing to run: the two files this edits have uncommitted changes" >&2
+  echo "refusing to run: the files this edits have uncommitted changes" >&2
   echo "$dirty" >&2
   exit 2
 fi
 
 # After the refusal above, so a refused run leaves nothing behind to clean up.
 STASH="$(mktemp -d)"
-cp "$MM" "$STASH/OCCTBridge_Document.mm"
+cp "$GDT" "$STASH/OCCTBridge_Document_GDT.mm"
+cp "$LIFECYCLE" "$STASH/OCCTBridge_Document_DocumentLifecycle.mm"
 cp "$SWIFT" "$STASH/GDTRead.swift"
 restore() {
-  cp "$STASH/OCCTBridge_Document.mm" "$MM"
+  cp "$STASH/OCCTBridge_Document_GDT.mm" "$GDT"
+  cp "$STASH/OCCTBridge_Document_DocumentLifecycle.mm" "$LIFECYCLE"
   cp "$STASH/GDTRead.swift" "$SWIFT"
   rm -rf "$STASH"
 }
 trap restore EXIT
 
 inject() {
-  python3 - "$1" "$MM" "$SWIFT" <<'PY'
+  python3 - "$1" "$GDT" "$LIFECYCLE" "$SWIFT" <<'PY'
 import sys
 
-which, mm_path, swift_path = sys.argv[1], sys.argv[2], sys.argv[3]
+which, gdt_path, lifecycle_path, swift_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 EDITS = {
     "A1": (
-        "mm",
+        "gdt",
         "    return length;",
         "    return (maxLen > 0) ? std::min(length, maxLen - 1) : length;",
     ),
     "A2a": (
-        "mm",
+        "gdt",
         "  if (maxLen < 0 || (maxLen > 0 && !outName))\n    return -1;",
         "  if (maxLen > 0 && !outName)\n    return -1;",
     ),
     "A2b": (
-        "mm",
+        "gdt",
         "  if (maxLen < 0 || (maxLen > 0 && !outName))\n    return -1;",
         "  if (maxLen < 0)\n    return -1;",
     ),
@@ -76,18 +92,18 @@ EDITS = {
         "        if Int(length) >= 0 { return Self.string(fromCString: short) }",
     ),
     "B": (
-        "mm",
+        "lifecycle",
         "    if (withTolerance && !occtDimensionApplyTolerance(dimObj, lowerTol, upperTol))\n      return -1;",
         "    if (withTolerance)\n      occtDimensionApplyTolerance(dimObj, lowerTol, upperTol);",
     ),
     "C": (
-        "mm",
+        "gdt",
         "    tolObj->SetValueOfZoneModifier((!none && value > 0.0) ? value : 0.0);",
         "    tolObj->SetValueOfZoneModifier(value > 0.0 ? value : 0.0);",
     ),
 }
 target, old, new = EDITS[which]
-path = mm_path if target == "mm" else swift_path
+path = {"gdt": gdt_path, "lifecycle": lifecycle_path, "swift": swift_path}[target]
 text = open(path).read()
 if old not in text:
     sys.exit(f"injection {which}: anchor not found in {path}")
@@ -109,7 +125,8 @@ run_one() {
   ( cd "$REPO" && unset OCCTSWIFT_BRIDGE_PREBUILT \
       && OCCTSWIFT_LOCAL=1 swift test --filter "$FILTER" 2>&1 \
       | grep -E '✘ Test "|Test run with|unexpected signal' )
-  cp "$STASH/OCCTBridge_Document.mm" "$MM"
+  cp "$STASH/OCCTBridge_Document_GDT.mm" "$GDT"
+  cp "$STASH/OCCTBridge_Document_DocumentLifecycle.mm" "$LIFECYCLE"
   cp "$STASH/GDTRead.swift" "$SWIFT"
 }
 

@@ -14,7 +14,9 @@
 # all and every row comes back green for the wrong reason.
 set -u
 W="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-MM="$W/Sources/OCCTBridge/src/OCCTBridge_Geom2d.mm"
+# OCCTBridge_Geom2d.mm no longer exists post-#1380 (chore(#819) retirement pass): split into 7
+# files. All six injections below target Bisector_BisecAna calls, which landed in one of them.
+MM="$W/Sources/OCCTBridge/src/OCCTBridge_Geom2d_Bisector.mm"
 TMP="$(mktemp -d)"
 GOOD="$TMP/Geom2d-baseline.mm"
 OUT="${MATRIX_OUT:-$W/Scripts/repro/1050-bisector-domain/probe-output-matrix.txt}"
