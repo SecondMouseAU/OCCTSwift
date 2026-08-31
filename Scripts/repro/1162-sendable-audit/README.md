@@ -4,9 +4,9 @@ Issue #1162 claimed 27+ Swift classes were marked `@unchecked Sendable` without 
 verification, and cited #1153/#1154/#1155/#1156/#1158/#1159 as evidence several were unsafe. All
 six are now CLOSED. Per this project's own "measure, don't assume the premise" discipline, this
 audit re-verified each citation against what actually shipped rather than trusting the issue's
-table, then investigated every class the issue named (plus two it should have named:
-`WireCurve`, `AxisPlacement2D`'s siblings) from the Swift wrapper down through the bridge to the
-underlying OCCT mechanism.
+table, then investigated every class the issue named (plus `WireCurve`, found along the way: same
+defect as `EdgeCurve`, but never named in the issue's table) from the Swift wrapper down through
+the bridge to the underlying OCCT mechanism.
 
 **A grep at the time of this audit found ~90 `@unchecked Sendable` declarations in
 `Sources/OCCTSwift/`, not 27.** The issue's table is a small, stale subset of a much larger, mostly
