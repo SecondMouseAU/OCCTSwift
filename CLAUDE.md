@@ -10,7 +10,7 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 the **`v3.0.0` release asset**, which is that same `V8_0_1` plus seventeen patches, `0010`-`0012`
 and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the right kernel, and
 `ci.yml`'s macOS job is a real signal again. Seventeen is what the **asset** holds;
-`Scripts/patches/` holds twenty-one, and the next paragraph is about the difference.
+`Scripts/patches/` holds twenty-three, and the next paragraph is about the difference.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
@@ -25,34 +25,53 @@ on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen whil
 `0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
 through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
 
-**As of #1018, #1022, #1154 and #1153 the counts diverge again, deliberately and with the reason
-written down.** `Scripts/patches/` holds twenty-one; the pinned asset holds seventeen. The four are
-`0028` (#1018), `0029` (#1022), `0030` (#1154) and `0031` (#1153), and `ci.yml`'s `build-and-test`
-never sees any of them, which is exactly what the paragraph above says a divergence means. One
-narrowing, measured on PR #1032 rather than assumed: `kernel-integration.yml` triggers on
-`Scripts/patches/**`, so the PR that **adds** a patch does get `V8_0_1` plus every carried patch
-built from source and the full suite run against it. That proves the patch applies, compiles and
-regresses nothing. It cannot prove any of the four fixes works, since none has a Swift-reachable
-assertion (`0030` and `0031` are both data races, so even a Swift-level assertion would only catch
-either by luck without TSan instrumentation the built asset doesn't carry), and it does not run on
-any later PR that leaves `Scripts/patches/` alone. None of that makes "read
-`kernel-integration.yml` instead of `ci.yml`" good advice; #585 is what discredited that. They are
-not equally urgent. `0028` is the one carried patch a rebuild would give no Swift-side coverage to
-at all: `OCCTGeomPlateErrors`, the only bridge reader of the three accessors it fixes, was deleted
-by #999 (PR #1015), so the upstream GTests are its only coverage anywhere. `0029` is an uncatchable
-SIGSEGV on `Document.datums` for any OCAF document whose datum carries a point without an
-annotation plane, so until a rebuilt asset ships it nothing protects a consumer. `0030` is a data
-race on `TopoDS_TShape::myState`, live in ordinary concurrent use of a boolean-operation result
-(which shares TShapes with its inputs) and invisible to every `swift test` run today since none of
-them run under ThreadSanitizer against the released kernel; `Scripts/tsan.supp` suppresses it so
-the TSan gate stays green until a rebuilt asset ships, per that file's own "remove when the fix
-lands" policy. `0031` is the same shape as `0030`, unsynchronized mutable evaluation state in
-`BSplCLib_Cache`/`BSplSLib_Cache` and the `GeomAdaptor_Curve`/`GeomAdaptor_Surface` Cache-handle
-check-then-act that creates and replaces them, live for any consumer sharing one adaptor (or one
-cache) across threads; unlike `0030`, `Scripts/tsan.supp` carries **no** suppression for it at all,
-since the earlier, rejected attempt at this fix (PR #1322, reviewed and rewritten from scratch, see
-the `#1153` Known OCCT Bugs entry below) never merged its own suppression lines to `main`, so there
-is nothing to retire once a rebuild ships. Do not read this note as permission to skip the check;
+**As of #1018, #1022, #1154, #1153, #1371 and #1157 the counts diverge again, deliberately and with
+the reason written down.** `Scripts/patches/` holds twenty-three; the pinned asset holds seventeen.
+The six are `0028` (#1018), `0029` (#1022), `0030` (#1154), `0031` (#1153), `0032` (#1371) and
+`0033` (#1157), and `ci.yml`'s `build-and-test` never sees any of them, which is exactly what the
+paragraph above says a divergence means. **This paragraph itself is the proof the count check
+matters, not just an example of it**: it said "twenty-one"/"The four are" through `0031` and went
+stale the moment `0032` landed without anyone updating it, caught only while writing `0033`'s own
+entry, the identical `docs/occtswift-wrapping-gaps.md`/`#807` shape ("the gate agrees, the prose
+beside it doesn't") this project has already hit once. One narrowing, measured on PR #1032 rather
+than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that **adds** a
+patch does get `V8_0_1` plus every carried patch built from source and the full suite run against
+it. That proves the patch applies, compiles and regresses nothing. It cannot prove any of the six
+fixes works, since none has a Swift-reachable assertion (`0030`, `0031` and `0033` are all data
+races, so even a Swift-level assertion would only catch any of the three by luck without TSan
+instrumentation the built asset doesn't carry; `0032`'s own class is confirmed unreachable from
+this bridge's call surface today, so there is nothing for any assertion, Swift-level or otherwise,
+to exercise), and it does not run on any later PR that leaves `Scripts/patches/` alone. None of
+that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is what
+discredited that. They are not equally urgent. `0028` is the one carried patch a rebuild would give
+no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge reader of the three
+accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are its only coverage
+anywhere. `0029` is an uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum
+carries a point without an annotation plane, so until a rebuilt asset ships it nothing protects a
+consumer. `0030` is a data race on `TopoDS_TShape::myState`, live in ordinary concurrent use of a
+boolean-operation result (which shares TShapes with its inputs) and invisible to every `swift test`
+run today since none of them run under ThreadSanitizer against the released kernel; `Scripts/tsan.
+supp` suppresses it so the TSan gate stays green until a rebuilt asset ships, per that file's own
+"remove when the fix lands" policy. `0031` is the same shape as `0030`, unsynchronized mutable
+evaluation state in `BSplCLib_Cache`/`BSplSLib_Cache` and the `GeomAdaptor_Curve`/
+`GeomAdaptor_Surface` Cache-handle check-then-act that creates and replaces them, live for any
+consumer sharing one adaptor (or one cache) across threads; unlike `0030`, `Scripts/tsan.supp`
+carries **no** suppression for it at all, since the earlier, rejected attempt at this fix (PR
+#1322, reviewed and rewritten from scratch, see the `#1153` Known OCCT Bugs entry below) never
+merged its own suppression lines to `main`, so there is nothing to retire once a rebuild ships.
+`0032` fixes nothing observable in this repo today, by measurement rather than assumption: the
+twelve `TopOpeBRepBuild` globals it converts to `thread_local` are confirmed unreachable from this
+bridge's own call surface (see the `#1371` entry below for the reachability probe), so a rebuild
+buys nothing here either, only a real defect for some future caller of the currently-unused
+two-argument `TopOpeBRepBuild_HBuilder::Perform` overload. `0033` is a live memory-safety hole
+(concurrent map mutation and shared-buffer corruption, not merely a logical race) in
+`Interface_Static`'s shared STEP/IGES parameter table, reachable by every OCCTSwift consumer of
+`Shape.writeSTEP`/`importSTEP`/`writeIGES`/`importIGES` and their OCAF/document-level siblings
+today; entirely masked in practice by the bridge's own `igesMutex()` (see #181-B/#359), which
+already serializes the whole window this patch's accessor-level lock cannot close on its own (see
+the `#1157` entry below for the measured 100% cross-talk rate that proves that narrower claim), so
+a rebuild buys defense-in-depth for any future caller reaching `Interface_Static` from outside that
+mutex, not new capability inside it. Do not read this note as permission to skip the check;
 read it as the answer the check should produce today, so a twenty-second patch appearing without a
 note is still a finding.
 
@@ -713,6 +732,98 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   [`Scripts/repro/1155-thread-safety-survey/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1155-thread-safety-survey)
   for the survey and [`Scripts/patches/README.md`](Scripts/patches/README.md)'s `0032` entry for
   the fix writeup. #1371.
+- `Interface_Static`'s shared parameter table (backs every STEP/IGES read/write, `Interface_Static::
+  CVal`/`IVal`/`RVal`/`SetCVal`/`SetIVal`/`SetRVal`, already serialized bridge-side via `igesMutex()`
+  since #181-B/#359), **#1157: fixed for `Interface_Static` itself, and measured to be structurally
+  unfixable beyond it.** The issue's own illustrative sketch (three named `TCollection_DataMap`s) was
+  wrong: the real store is `MoniTool_TypedValue::Stats()`'s `astats`, a file-scope
+  `NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>>` in a *different*
+  file (`MoniTool_TypedValue.cxx`), plus a shared scratch buffer (`static char defmess[31]`,
+  `Interface_Static.cxx`, a `strtok`-style shared-return-buffer hazard `CDef`/`IDef` alias into and
+  return, unreached by the STEP/IGES call chains this investigation traced). `SetCStringValue`
+  mutates a shared `TCollection_HAsciiString` in two steps (`Clear()` then `AssignCat()`), so
+  concurrent same-parameter writes race on the buffer object itself, not copies. Read constantly
+  mid-operation, not just at entry: `BRepToIGES_BREntity`/`GeomToIGES_GeomCurve`/`GeomSurface`/
+  `IGESToBRep_CurveAndSurface` all read named parameters once per entity/curve/surface converted,
+  and `XSControl_Controller::Customise` (run on every `STEPControl_Reader`/`Writer`/
+  `IGESControl_Reader`/`Writer` construction via `SelectNorm` → `SetController` → `Customise`) calls
+  `Interface_Static::Items()`, a full map iteration, whether or not the caller ever sets a
+  parameter itself. **`thread_local` was the task's own starting hypothesis and is wrong, but not
+  for the anticipated reason**: grepped all of `TKDESTEP`/`TKDEIGES`/`TKXSBase` for
+  `OSD_Parallel`/`OSD_ThreadPool`/`std::thread`/`tbb::`, zero hits in the read/write call chain, so
+  there is no #367/#369-style caller-configures/worker-reads hazard here at all. The actual reason:
+  four separate one-time lazy-registration guards assume ONE process-wide table.
+  `STEPControl_Controller`'s constructor and `STEPCAFControl_Controller::Init()` are mutex-guarded;
+  `STEPControl_Controller::Init()` (a *different* function from the constructor, called by every
+  `STEPControl_Writer`/`Reader`), `IGESControl_Controller`'s constructor, `IGESData::Init()`, and
+  `Interface_Static::Standards()` itself (`Interface_StaticStandards.cxx`, its own unguarded
+  `static int THE_Interface_Static_deja`) are not. `thread_local` storage would leave every thread
+  but the process's first STEP/IGES caller with a permanently empty table (the guards themselves,
+  not thread_local, would report "already done" and skip re-populating it), `CVal`/`IVal`/`RVal`
+  silently returning `""`/`0` — worse than the race, invisible to a one-op-per-thread reproducer.
+  **A recursive mutex fix for `Interface_Static.cxx` was implemented and TSan-confirmed to close
+  exactly what it targets, nothing more, nothing less**: `Scripts/patches/0033-*` (override-link
+  validated against a private minimal-module TSan build, not yet in a rebuilt xcframework) takes one
+  function-local-static `std::recursive_mutex` (`StaticsMutex()`, C++11 magic-statics lazy init) for
+  the whole body of all seventeen `Interface_Static` static entry points that touch `Stats()` or a
+  parameter's value (`Init` both overloads, `Static`, `IsPresent`, `CDef`, `IDef`, `IsSet`, `CVal`,
+  `IVal`, `RVal`, `SetCVal`, `SetIVal`, `SetRVal`, `Update`, `IsUpdated`, `Items`, `FillMap`).
+  Recursive because `Init`'s `Interface_ParamMisc` and `'&'` edit-syntax branches call back into
+  `Static()` on the same thread; a plain mutex would self-deadlock the first `STEPControl_Controller`
+  construction's ~50 `Init` calls, the same shape #1153's first rejected attempt hit for
+  `BSplCLib_Cache`. Reproducer (`Scripts/repro/1157-interface-static-thread-safety/
+  occt_1157_stress.cpp`) calls the exact `STEPControl_Reader`/`Writer`/`IGESControl_Reader`/`Writer`
+  sequences the bridge uses, with no `igesMutex()`-equivalent lock. TSan (private minimal-module
+  build, `FoundationClasses`+`ModelingData`+`ModelingAlgorithms`+`DataExchange`, all 32 previously-
+  carried patches applied): `step_write_independent` (8×20) 91 races + SIGABRT unpatched, 47 races +
+  SIGABRT patched; `iges_write_independent` (8×20) 406 races + SIGABRT unpatched, 72 races + SIGABRT
+  patched. The drop alone is not the claim: grepping every run's output for `Interface_Static.cxx`
+  (not "did the count drop" but "does the class this patch targets appear in any report") goes from
+  reports whose critical section is literally inside `Interface_Static::Init`'s own
+  `NCollection_DataMap::emplaceImpl`/`ReSize` (`MoniTool_TypedValue::Stats()`'s map) or
+  `SetCStringValue`'s buffer mutation, to **zero, in every scenario, both write paths**. **This is a
+  partial fix and says so in its own doc comment**: it does not make two independent, concurrently-
+  running operations that set DIFFERENT values for the SAME named parameter produce correct output.
+  `Interface_Static` is a shared global used as an implicit parameter-passing channel between a
+  caller's `Set*Val` and reads many frames below it inside `Transfer()`/`Write()`, and no accessor-
+  level lock closes that window: a `cross_talk_schema_locked` scenario (every individual
+  `SetCVal`/`CVal` call wrapped in its own `std::mutex`, simulating exactly what a container-level
+  kernel fix provides) still cross-talks 16000/16000 (100%), byte-identical to the fully unlocked
+  rate. `igesMutex()` stays, unchanged. **The residual races prove the wider claim empirically, not
+  just architecturally**: `step_write_independent`'s 47 residual races (0 touching
+  `Interface_Static.cxx`) are in `Interface_StaticStandards.cxx`'s own flag,
+  `XSControl_Controller.cxx`'s own `static NCollection_DataMap<...> listad` (a controller-name
+  registry backing `Record`/`Recorded`), `STEPControl_Controller::Init()`'s own `inic` flag, and
+  `IFSelect_WorkSession`'s constructor (a global named `errhand`); the IGES side's 72 add
+  `IGESControl_Controller::Init()`'s own flag, `Interface_InterfaceModel::Template`,
+  `IGESData_IGESModel::GetFromAnother`, `IGESToBRep::SetAlgoContainer`/`Init`,
+  `ShapeProcess::FindOperator`/`Perform`, and `IGESData_GlobalSection.cxx`'s `CopyString` helper — at
+  least nine sibling classes across `TKXSBase`/`TKDESTEP`/`TKDEIGES` carrying the identical
+  unsynchronized-process-global shape, `Interface_Static` was only the one the issue named. **A
+  dedicated `step_write_warmstart` scenario (single-threaded warm-up in-process before the concurrent
+  pool, so every one-time-init guard is already `true` when the threads start, confirmed via
+  `std::thread`'s constructor being a genuine happens-before edge) proved something sharper than "more
+  sibling classes exist"**: it eliminates the one-time-init races (`Standards()`'s flag,
+  `STEPControl_Controller::Init()`'s `inic`, `XSControl_Controller::Record`) entirely, zero hits
+  before or after the patch, but 28 races unpatched / 32 patched **remain**, all in
+  `STEPControl_ActorWrite::SetGroupMode`/`IsAssembly` and `IFSelect_WorkSession::SendAll`/its own
+  constructor. This is not a cold-start artifact: `XSControl_Controller` registers exactly one
+  `STEPControl_Controller` per process by design (`Recorded("STEP")` looks up a shared singleton),
+  so every `STEPControl_Writer` construction on every thread, at any point in a long-running
+  process's life, shares that ONE controller's `STEPControl_ActorWrite` (`myAdaptorWrite`), and
+  `Transfer()` mutates its state per call; `IFSelect_WorkSession::errhand` is written by every
+  `XSControl_WorkSession()` construction, unconditionally, forever. Two concurrent `Transfer()`
+  calls race on that shared actor regardless of how long the process has already been running.
+  **"True concurrent STEP/IGES I/O" is therefore not achievable via a minimal, surgical patch**: it
+  would mean restructuring `XSControl_Controller`'s per-format-singleton ownership (so
+  `myAdaptorWrite`/`myAdaptorRead` become per-operation, not per-controller-singleton, state) plus
+  at least nine more classes, an architectural project, the same class of judgment this project
+  already reached for `GeomPlate_MakeApprox::ApproxError()` (#597). `thelibtv` (`MoniTool_TypedValue.
+  cxx`'s other file-scope map, backing `AddLib`/`Lib`/`FromLib`) has the identical shape and is not
+  fixed: unreachable from the STEP/IGES call chains (its only callers are `Interface_GTool.cxx`, an
+  unrelated registration mechanism, and `MoniTool_TypedValue.cxx` itself). See
+  [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
+  for the reproducer, full TSan transcripts and the complete writeup. Not yet filed upstream. #1157.
 
 ### Carrying OCCT source patches
 

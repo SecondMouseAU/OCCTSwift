@@ -1,0 +1,290 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] DataExchange, Interface - guard Interface_Static's shared
+ parameter table with a recursive mutex
+
+Interface_Static's backing store (MoniTool_TypedValue::Stats(), a process-wide
+NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>>
+mapping parameter name to the boxed Interface_Static object holding its value)
+and each individual named parameter's own mutable value fields (theival/thehval/
+theoval, inherited from MoniTool_TypedValue, mutated in place by
+SetCStringValue/SetIntegerValue/SetRealValue/SetUptodate and read by
+CStringValue/IntegerValue/RealValue/UpdatedStatus) have no synchronization of
+their own. Every STEP/IGES read/write call (STEPControl_Reader/Writer,
+STEPCAFControl_Reader/Writer, IGESControl_Reader/Writer, IGESCAFControl_Reader/
+Writer) reads and writes this table repeatedly throughout the operation, not
+just at entry: BRepToIGES_BREntity, GeomToIGES_GeomCurve/GeomSurface,
+IGESToBRep_Actor/CurveAndSurface, StepToGeom and XSAlgo_ShapeProcessor all call
+Interface_Static::IVal/RVal/CVal once per entity/curve/surface translated, and
+XSControl_Controller::Customise (run on every STEPControl_Reader/Writer and
+IGESControl_Reader/Writer construction, via SelectNorm -> SetController ->
+Customise) calls Interface_Static::Items(), which iterates the whole map, on
+every single reader/writer construction regardless of whether the caller ever
+calls SetCVal/SetIVal/SetRVal itself.
+
+SetCStringValue in particular mutates a shared, reference-counted
+TCollection_HAsciiString buffer in two separate steps
+(thehval->Clear(); thehval->AssignCat(val);), so two threads concurrently
+setting the same parameter race on the SAME string buffer object, not merely on
+independent copies: a genuine memory-safety hazard (buffer corruption), not
+only a logical one.
+
+Reachable from every OCCT consumer of Interface_Static, not just OCCTSwift's
+own bridge (which already mitigates this bridge-side via igesMutex(), see
+OCCTSwift#181-B/#359). Confirmed via OCCTSwift#1157's own TSan reproducer
+(Scripts/repro/1157-interface-static-thread-safety/occt_1157_stress.cpp): the
+same STEPControl_Writer/Reader and IGESControl_Writer/Reader sequences the
+bridge uses, run concurrently on independent shapes/files with no lock, race on
+MoniTool_TypedValue::Stats()'s NCollection_DataMap under ThreadSanitizer.
+
+Fixed by taking a single, function-local static, thread-safe-lazy-init (C++11
+magic statics) std::recursive_mutex for the whole body of every
+Interface_Static static entry point that touches Stats() or a per-parameter
+value: Init (both overloads), Static, IsPresent, CDef, IDef, IsSet, CVal, IVal,
+RVal, SetCVal, SetIVal, SetRVal, Update, IsUpdated, Items, FillMap.
+SetUptodate()/UpdatedStatus() (Interface_Static's own instance methods) need no
+separate lock, since their only two call sites (Update/IsUpdated) already hold
+this one before calling them, and Items() (the third caller of
+UpdatedStatus()) does too. Recursive, not a plain mutex, because several of
+these methods call back into others declared here on the same thread: Init's
+Interface_ParamMisc branch calls Static(), the '&' edit-syntax branch calls
+Static() then mutates the returned handle's own fields directly (SetIntegerLimit/
+SetRealLimit/SetUnitDef/StartEnum/AddEnum, all further MoniTool_TypedValue
+mutation, out of scope for THIS defect since none of those touch
+theival/thehval/theoval or Stats() beyond the one Static() lookup already
+covered), and Init(char) calls the Interface_ParamType overload then Static()
+again for the 'p' post-check. A plain mutex would deadlock the very first
+Interface_Static::Init call for the "step"/"XSTEP" family
+(STEPControl_Controller's constructor makes ~50 such calls under its own
+mutex-guarded once-only registration, several of them the Interface_ParamMisc
+form), the same self-deadlock shape OCCTSwift#1153's rejected first attempt hit
+for a different class (see this project's own CLAUDE.md "Known OCCT Bugs"
+entry for #1153).
+
+thelibtv (MoniTool_TypedValue.cxx's OTHER file-scope NCollection_DataMap,
+backing AddLib/Lib/FromLib/LibList/StaticValue) has the identical shape and is
+NOT fixed here: grepped the whole DataExchange module for its three writers/
+readers and found no call reachable from STEPControl/IGESControl/XSAlgo's
+STEP/IGES read/write call chains (its only two callers in the tree are
+Interface_GTool.cxx, an unrelated generic-tool registration mechanism, and
+MoniTool_TypedValue.cxx's own methods), so it is out of scope for the
+OCCTSwift#1157 investigation this patch closes; a real, same-shape,
+unaddressed sibling for a future pass, same as OCCTSwift#1371's own "not
+fixed: GLOBAL_faces2d" note for a different toolkit.
+
+This is a partial fix, deliberately: it makes Interface_Static's shared
+storage memory-safe under concurrent access, but does NOT make two
+independent, concurrently-running STEP/IGES operations that set DIFFERENT
+values for the SAME named parameter (e.g. two threads writing STEP with
+different write.step.schema settings at once) produce correct, uncorrupted-by-
+each-other output. Interface_Static functions as a shared global used as an
+IMPLICIT parameter-passing channel between a caller's SetCVal/SetIVal/SetRVal
+and reads many stack frames below it inside Transfer()/Write()/ReadFile(), and
+no amount of locking the accessor calls themselves closes the window between
+one thread's Set and its own later (same-thread) Get. OCCTSwift#1157 measured
+this empirically: a variant of this exact per-accessor lock, wrapped around a
+scenario that sets then reads the same parameter with a yield() in between,
+still cross-talks between two concurrent threads 100% of the time, the
+identical rate as with no lock at all. OCCTSwift's own igesMutex() therefore
+stays in place after this patch, unchanged: it serializes the whole
+configure-then-run window per operation, which this mutex deliberately does
+not attempt.
+
+`thread_local` storage, the fix this project's own #1157 investigation
+started from, was considered and rejected: STEPControl_Controller's
+constructor, IGESControl_Controller's constructor, and IGESData::Init() each
+gate their parameter registration (~50 Interface_Static::Init calls apiece)
+behind a process-global one-time-only guard (a function-local static bool, or
+Interface_InterfaceModel::HasTemplate("iges")). Making the backing map
+thread_local would let only the first thread ever to touch STEP/IGES in the
+process populate its own copy; every other thread's thread-local copy would
+stay permanently empty (the registration guard, itself not thread_local, would
+report "already done" and skip re-running), so Interface_Static::CVal/IVal/RVal
+would silently return ""/0 for every parameter on any thread but the first,
+worse than the current race and invisible to any reproducer that runs one
+operation per thread.
+---
+diff --git a/src/DataExchange/TKXSBase/Interface/Interface_Static.cxx b/src/DataExchange/TKXSBase/Interface/Interface_Static.cxx
+index 3a4f5c11..7c9de822 100644
+--- a/src/DataExchange/TKXSBase/Interface/Interface_Static.cxx
++++ b/src/DataExchange/TKXSBase/Interface/Interface_Static.cxx
+@@ -19,10 +19,46 @@
+ #include <TCollection_HAsciiString.hxx>
+
+ #include <cstdio>
++#include <mutex>
+ IMPLEMENT_STANDARD_RTTIEXT(Interface_Static, Interface_TypedValue)
+
+ static char defmess[31];
+
++// Interface_Static's backing store (MoniTool_TypedValue::Stats(), a process-wide
++// NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>>) and each
++// individual named parameter's own mutable value fields (mutated in place by
++// SetCStringValue/SetIntegerValue/SetRealValue/SetUptodate, read by
++// CStringValue/IntegerValue/RealValue/UpdatedStatus, all inherited from
++// MoniTool_TypedValue/Interface_TypedValue) have no synchronization of their own.
++// Every static entry point below that touches either one takes this recursive mutex for its
++// whole body: recursive because several of these methods call back into other methods
++// declared here (Init's Interface_ParamMisc branch calls Static(), the '&' edit-syntax
++// branch calls Static() then mutates the returned handle directly, Init(char) calls the
++// Interface_ParamType overload then Static() again), all intended to run on the SAME
++// calling thread as one logical operation.
++//
++// This closes the memory-unsafety hole (concurrent NCollection_DataMap::Find/Bind, and
++// concurrent multi-step mutation of the same TCollection_HAsciiString buffer via
++// Clear()+AssignCat()) for every OCCT consumer, not just OCCTSwift's own bridge. It does
++// NOT make two independent, concurrently-running STEP/IGES operations that set DIFFERENT
++// values for the SAME named parameter safe to interleave: Interface_Static is a shared
++// global used as an IMPLICIT parameter-passing channel between a caller's SetCVal/SetIVal/
++// SetRVal and reads many stack frames below it inside Transfer()/Write()/ReadFile(), and no
++// amount of locking the accessor calls themselves closes the window between one thread's
++// Set and its own later (same-thread) Get. See OCCTSwift#1157 for the measurement that
++// proved this empirically (a variant of this exact lock still cross-talks 100% of the
++// time). OCCTSwift's own igesMutex() (Sources/OCCTBridge/src/OCCTBridge_IO_StepFormat.mm /
++// OCCTBridge_IO_IgesFormat.mm) stays in place for that reason: it serializes the whole
++// configure-then-run window, which this mutex deliberately does not attempt.
++namespace
++{
++std::recursive_mutex& StaticsMutex()
++{
++  static std::recursive_mutex aMutex;
++  return aMutex;
++}
++} // namespace
++
+ //  Satisfies functions offered as standard ...
+
+ // svv #2
+@@ -156,6 +192,7 @@ bool Interface_Static::Init(const char* const         family,
+                             const Interface_ParamType type,
+                             const char* const         init)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   if (name[0] == '\0')
+   {
+     return false;
+@@ -189,6 +226,7 @@ bool Interface_Static::Init(const char* const family,
+                             const char        type,
+                             const char* const init)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   Interface_ParamType epyt;
+   switch (type)
+   {
+@@ -291,6 +329,7 @@ bool Interface_Static::Init(const char* const family,
+
+ occ::handle<Interface_Static> Interface_Static::Static(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Standard_Transient> result;
+   MoniTool_TypedValue::Stats().Find(name, result);
+   return occ::down_cast<Interface_Static>(result);
+@@ -298,11 +337,13 @@ occ::handle<Interface_Static> Interface_Static::Static(const char* const name)
+
+ bool Interface_Static::IsPresent(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   return MoniTool_TypedValue::Stats().IsBound(name);
+ }
+
+ const char* Interface_Static::CDef(const char* const name, const char* const part)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   if (!part || part[0] == '\0')
+   {
+     return "";
+@@ -380,6 +421,7 @@ const char* Interface_Static::CDef(const char* const name, const char* const p
+
+ int Interface_Static::IDef(const char* const name, const char* const part)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   if (!part || part[0] == '\0')
+   {
+     return 0;
+@@ -429,6 +471,7 @@ int Interface_Static::IDef(const char* const name, const char* const part)
+
+ bool Interface_Static::IsSet(const char* const name, const bool proper)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -448,6 +491,7 @@ bool Interface_Static::IsSet(const char* const name, const bool proper)
+
+ const char* Interface_Static::CVal(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -461,6 +505,7 @@ const char* Interface_Static::CVal(const char* const name)
+
+ int Interface_Static::IVal(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -474,6 +519,7 @@ int Interface_Static::IVal(const char* const name)
+
+ double Interface_Static::RVal(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -487,6 +533,7 @@ double Interface_Static::RVal(const char* const name)
+
+ bool Interface_Static::SetCVal(const char* const name, const char* const val)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -497,6 +544,7 @@ bool Interface_Static::SetCVal(const char* const name, const char* const val)
+
+ bool Interface_Static::SetIVal(const char* const name, const int val)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -511,6 +559,7 @@ bool Interface_Static::SetIVal(const char* const name, const int val)
+
+ bool Interface_Static::SetRVal(const char* const name, const double val)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -523,6 +572,7 @@ bool Interface_Static::SetRVal(const char* const name, const double val)
+
+ bool Interface_Static::Update(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -534,6 +584,7 @@ bool Interface_Static::Update(const char* const name)
+
+ bool Interface_Static::IsUpdated(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   occ::handle<Interface_Static> item = Interface_Static::Static(name);
+   if (item.IsNull())
+   {
+@@ -546,6 +597,7 @@ occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> Inte
+   const int         mode,
+   const char* const criter)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   int modup = (mode / 100); // 0 any, 1 non-update, 2 update
+   occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> list =
+     new NCollection_HSequence<occ::handle<TCollection_HAsciiString>>();
+@@ -605,6 +657,7 @@ occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> Inte
+ void Interface_Static::FillMap(
+   NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>& theMap)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(StaticsMutex());
+   theMap.Clear();
+
+   NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>>& aMap =

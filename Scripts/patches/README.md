@@ -8,7 +8,7 @@ until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building
 for what that takes.
 
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, so the
-carried sequence now reads 0010–0012, 0014–0030. The gaps are the retirements, not missing files:
+carried sequence now reads 0010–0012, 0014–0033. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1360,6 +1360,131 @@ reach (also read/written from `TopOpeBRepBuild_GridEE.cxx`, `TopOpeBRepBuild_on.
 un-investigated and un-fixed rather than guessed at; a candidate for a future pass, not filed as its
 own issue yet since nothing has actually measured its reachability the way #1371 measured these
 twelve.
+
+Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0033-Interface_Static-thread-safety-mutex-1157.patch
+
+**Fixes the OCCTSwift#1157 investigation's own scope: `Interface_Static`'s shared parameter table,
+and only that.** `Interface_Static`'s backing store is `MoniTool_TypedValue::Stats()`'s `astats`, a
+file-scope `NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>>` declared
+in a *different* file (`MoniTool_TypedValue.cxx`), mapping parameter name to the boxed
+`Interface_Static` object holding its value; the value itself lives in `MoniTool_TypedValue`'s own
+`theival`/`thehval`/`theoval`, mutated via inherited, unoverridden `SetIntegerValue`/
+`SetCStringValue`/`SetRealValue`. `SetCStringValue` mutates a shared `TCollection_HAsciiString`
+buffer in two steps (`Clear()` then `AssignCat()`), so concurrent same-parameter writes race on the
+buffer object itself, a memory-safety hazard, not only a logical one. Every STEP/IGES read/write
+call (`STEPControl_Reader`/`Writer`, `STEPCAFControl_Reader`/`Writer`, `IGESControl_Reader`/`Writer`,
+`IGESCAFControl_Reader`/`Writer`) reads this table repeatedly throughout the operation, not just at
+entry: `BRepToIGES_BREntity`/`GeomToIGES_GeomCurve`/`GeomSurface`/`IGESToBRep_Actor`/
+`CurveAndSurface`/`StepToGeom`/`XSAlgo_ShapeProcessor` all call `Interface_Static::IVal`/`RVal`/
+`CVal` once per entity/curve/surface converted, and `XSControl_Controller::Customise` (run on every
+`STEPControl_Reader`/`Writer` and `IGESControl_Reader`/`Writer` construction, via `SelectNorm` →
+`SetController` → `Customise`) calls `Interface_Static::Items()`, a full map iteration, on every
+single reader/writer construction regardless of whether the caller ever calls `SetCVal`/`SetIVal`/
+`SetRVal` itself.
+
+**Fix:** a single, function-local static, thread-safe-lazy-init (C++11 magic statics)
+`std::recursive_mutex` (`StaticsMutex()`, anonymous namespace, `Interface_Static.cxx`), taken for
+the whole body of every `Interface_Static` static entry point that touches `Stats()` or a
+per-parameter value: `Init` (both overloads), `Static`, `IsPresent`, `CDef`, `IDef`, `IsSet`, `CVal`,
+`IVal`, `RVal`, `SetCVal`, `SetIVal`, `SetRVal`, `Update`, `IsUpdated`, `Items`, `FillMap`.
+`SetUptodate()`/`UpdatedStatus()` (`Interface_Static`'s own instance methods) need no separate lock,
+their only three call sites (`Update`, `IsUpdated`, `Items`) already hold this one before calling
+them. Recursive, not plain, because several of these call back into others declared here on the
+same thread: `Init`'s `Interface_ParamMisc` branch calls `Static()`, the `'&'` edit-syntax branch
+calls `Static()` then mutates the returned handle's own limit/enum fields directly, `Init(char)`
+calls the `Interface_ParamType` overload then `Static()` again for the `'p'` post-check. A plain
+mutex would self-deadlock the very first `STEPControl_Controller` construction, which makes ~50 such
+calls under its own mutex-guarded once-only registration, several of the `Interface_ParamMisc` form
+— the identical shape `0031`/`#1153`'s first, rejected patch attempt (PR #1322) hit for
+`BSplCLib_Cache`, a different class, same mechanism. `Interface_Static::Standards()` (defined in a
+**separate** file, `Interface_StaticStandards.cxx`, deliberately not touched by this patch: it only
+ever calls through the now-locked `Interface_Static::Init`/`SetIVal`, never touching `Stats()` or a
+value field itself, so two concurrent `Standards()` calls interleaving at the per-`Init()`-call
+granularity are safe under the fix, whichever thread's `Init()` for a given name runs first wins
+under the lock, the other's `IsBound()` check, also under the lock, sees it and returns `false`
+harmlessly) needs no direct guard for this claim, confirmed rather than assumed: zero
+`Interface_Static.cxx` races in any TSan run below, patched, including scenarios that still race on
+`Standards()`'s own unrelated one-time flag.
+
+**`thread_local` was considered and rejected, for a different reason than the investigation
+started from.** No internal OCCT parallelism reaches this code (grepped
+`TKDESTEP`/`TKDEIGES`/`TKXSBase` for `OSD_Parallel`/`OSD_ThreadPool`/`std::thread`/`tbb::`, zero hits
+in the read/write call chain), so there is no caller-configures/worker-reads hazard. Instead:
+`STEPControl_Controller`'s constructor, `STEPCAFControl_Controller::Init()`, `STEPControl_Controller
+::Init()` (a *different* function from the constructor, called by every `STEPControl_Writer`/
+`Reader`), `IGESControl_Controller`'s constructor, `IGESData::Init()`, and `Interface_Static::
+Standards()` itself each gate ~50-100 `Interface_Static::Init` calls behind a one-time process-global
+guard, only two of which (the two constructors) are mutex-protected. `thread_local` storage would
+leave every thread but the process's first STEP/IGES caller with a permanently empty table, since
+the guards themselves (not thread_local) would report "already done" and skip re-populating it on
+every subsequent thread; `CVal`/`IVal`/`RVal` would silently return `""`/`0` for every parameter —
+worse than the current race, invisible to a one-operation-per-thread reproducer.
+
+**Validation.** `Scripts/repro/1157-interface-static-thread-safety/occt_1157_stress.cpp` calls the
+exact `STEPControl_Reader`/`Writer`/`IGESControl_Reader`/`Writer` sequences the bridge uses (same
+`Interface_Static::Set*Val` calls, same order), with no `igesMutex()`-equivalent lock. Override-link
+validated against a private minimal-module TSan build (`FoundationClasses`+`ModelingData`+
+`ModelingAlgorithms`+`DataExchange`, `V8_0_1` + all 32 previously-carried patches). TSan:
+`step_write_independent` (8×20) 91 races + SIGABRT unpatched → 47 races + SIGABRT patched;
+`iges_write_independent` (8×20) 406 races + SIGABRT unpatched → 72 races + SIGABRT patched. The
+count drop alone is not the claim, grepping every run for `Interface_Static.cxx` (not "did the count
+fall" but "does the class this patch targets appear in any report, anywhere") goes from reports
+whose critical section is literally inside `Interface_Static::Init`'s own
+`NCollection_DataMap::emplaceImpl`/`ReSize` (`MoniTool_TypedValue::Stats()`'s map) or
+`SetCStringValue`'s buffer mutation, to **zero, in both write scenarios, patched**.
+
+**This is a partial fix and its own doc comment says so.** It does not make two independent,
+concurrently-running operations that set DIFFERENT values for the SAME named parameter produce
+correct output: `Interface_Static` is a shared global used as an implicit parameter-passing channel
+between a caller's `Set*Val` and reads many frames below it inside `Transfer()`/`Write()`, and no
+accessor-level lock closes that window. Measured directly: a `cross_talk_schema_locked` scenario
+(every individual `SetCVal`/`CVal` call wrapped in its own `std::mutex`, simulating exactly what a
+container-level kernel fix provides) cross-talks 16000/16000 (100%), byte-identical to the fully
+unlocked rate. OCCTSwift's own `igesMutex()` stays in place, unchanged, after this patch.
+
+**The residual races prove the wider claim empirically.** `step_write_independent`'s 47 residual
+races (0 touching `Interface_Static.cxx`) are in `Interface_StaticStandards.cxx`'s own
+`THE_Interface_Static_deja` flag, `XSControl_Controller.cxx`'s own `static NCollection_DataMap<...>
+listad` (a controller-name registry backing `Record`/`Recorded`), `STEPControl_Controller::Init()`'s
+own `inic` flag, and `IFSelect_WorkSession`'s constructor (a global named `errhand`); the IGES
+side's 72 add `IGESControl_Controller::Init()`'s own flag, `Interface_InterfaceModel::Template`,
+`IGESData_IGESModel::GetFromAnother`, `IGESToBRep::SetAlgoContainer`/`Init`, `ShapeProcess::
+FindOperator`/`Perform`, and `IGESData_GlobalSection.cxx`'s `CopyString` helper: at least nine
+sibling classes across `TKXSBase`/`TKDESTEP`/`TKDEIGES` carrying the identical unsynchronized-
+process-global shape. A dedicated `step_write_warmstart` scenario (single-threaded warm-up
+in-process before the concurrent pool starts, so every one-time-init guard is already `true` when
+the threads start — `std::thread`'s constructor is a genuine happens-before edge) confirms these are
+mostly cold-start artifacts (`Standards()`'s flag, `STEPControl_Controller::Init()`'s `inic`,
+`XSControl_Controller::Record` all disappear entirely, before and after the patch) but **not all of
+them**: 28 races unpatched / 32 patched remain, all in `STEPControl_ActorWrite::SetGroupMode`/
+`IsAssembly` and `IFSelect_WorkSession::SendAll`/its own constructor. This is structural, not a
+cold-start artifact: `XSControl_Controller` registers exactly one `STEPControl_Controller` per
+process by design (`Recorded("STEP")` looks up a shared singleton), so every `STEPControl_Writer`
+construction, on every thread, at any point in a long-running process's life, shares that one
+controller's `STEPControl_ActorWrite` (`myAdaptorWrite`), and `Transfer()` mutates its state per
+call; `IFSelect_WorkSession::errhand` is written by every `XSControl_WorkSession()` construction,
+unconditionally, forever. "True concurrent STEP/IGES I/O" is therefore not achievable via a minimal,
+surgical patch: it would mean restructuring `XSControl_Controller`'s per-format-singleton ownership
+(so `myAdaptorWrite`/`myAdaptorRead` become per-operation state) plus at least nine more classes, an
+architectural project, the same class of judgment this project already reached for
+`GeomPlate_MakeApprox::ApproxError()` (#597).
+
+**Not fixed:** `thelibtv` (`MoniTool_TypedValue.cxx`'s other file-scope map, backing `AddLib`/`Lib`/
+`FromLib`) has the identical shape and is unreachable from the STEP/IGES call chains this
+investigation traced (its only callers are `Interface_GTool.cxx`, an unrelated registration
+mechanism, and `MoniTool_TypedValue.cxx` itself). `Interface_StaticStandards.cxx`'s
+`THE_Interface_Static_deja`, `XSControl_Controller.cxx`'s `listad`, `STEPControl_Controller::Init()`
+'s `inic`, `IGESControl_Controller`'s own constructor guard, `IGESData::Init()`'s own guard, and the
+persistent `STEPControl_ActorWrite`/`IFSelect_WorkSession::errhand` races documented above are all
+real, all measured, none fixed here, each a different class from `Interface_Static` and out of this
+issue's named scope.
+
+See [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
+for the reproducer, full TSan transcripts and the complete writeup.
 
 Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
 

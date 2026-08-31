@@ -221,8 +221,9 @@ lock needed on your side. `STEPControl`/`STEPCAFControl`/`IGESControl` readers a
 read and write OCCT's process-global `Interface_Static` parameter table
 ([Open-Cascade-SAS/OCCT#1179](https://github.com/Open-Cascade-SAS/OCCT/issues/1179)), so the
 bridge serializes every data-exchange (DE) call on a single shared mutex (`igesMutex()` in
-`OCCTBridge_IO.mm`). This is a wrapper-level fix, not an OCCT kernel patch. OCCT's own DE
-readers/writers aren't thread-safe by design, same as issue #298's original framing.
+`OCCTBridge_IO_StepFormat.mm`/`OCCTBridge_IO_IgesFormat.mm`). This is a wrapper-level fix, not an
+OCCT kernel patch. OCCT's own DE readers/writers aren't thread-safe by design, same as issue #298's
+original framing.
 
 - **#181-B** (fixed via PR #184) found this for concurrent `writeSTEP`: two STEP writes on
   different threads SIGSEGV'd inside `STEPCAFControl_Writer`/`STEPControl_Writer` at once. The
@@ -232,6 +233,21 @@ readers/writers aren't thread-safe by design, same as issue #298's original fram
   (`OCCTExportSTEPWithName`, `OCCTExportSTEPWithModeProgress`, `OCCTDocumentWriteSTEPWithModes`)
   never picked up the lock either, 18 functions total. Fixed by extending `igesMutex()`
   coverage to all 18, matching the existing convention.
+- **#1157** investigated whether `Interface_Static` could be made thread-safe at the kernel level so
+  `igesMutex()` could be narrowed or removed. Partial answer: `Interface_Static`'s own backing store
+  (a process-wide `NCollection_DataMap`, `MoniTool_TypedValue::Stats()`) is fixed kernel-side
+  (`Scripts/patches/0033-*`, override-link validated, TSan-confirmed to close exactly that race and
+  nothing more), but `igesMutex()` stays, unchanged. Two independent reasons, both measured rather
+  than assumed: (1) even with `Interface_Static` itself perfectly locked, two concurrent operations
+  setting different values for the same named parameter still cross-talk 100% of the time (it is a
+  shared implicit parameter-passing channel, not merely an unprotected container), and (2) the wider
+  `XSControl_Controller`/`IFSelect_WorkSession` machinery every `STEPControl_Writer`/`Reader`
+  construction goes through has its own, structural, always-live races (a single process-wide
+  `STEPControl_Controller` singleton shares one `STEPControl_ActorWrite` actor across every
+  concurrent `Transfer()` call, and `IFSelect_WorkSession`'s constructor races on a global named
+  `errhand`), independent of `Interface_Static` and not reachable by a patch scoped to it. See
+  [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
+  and CLAUDE.md's own `#1157` entry for the full measurement.
 
 Distinct from issue #280 (constructing a `STEPCAFControl_Reader` poisons subsequent STEP
 writes), that's a different, already-fixed mechanism confirmed *not* `Interface_Static`-related,
