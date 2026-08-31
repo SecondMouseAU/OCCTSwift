@@ -3,6 +3,13 @@ import OCCTBridge
 import simd
 
 /// A real interval [start, end] with optional start/end tolerances.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `setStart`/`setEnd`/`fuseAtStart`/`fuseAtEnd`/`cutAtStart`/
+/// `cutAtEnd` all mutate the same underlying `Intrv_Interval`-backed handle in place with no lock.
+/// This is not the "Likely true - value type" issue #1162 originally guessed: an `Interval` is a
+/// reference to shared, mutable OCCT state, not a Swift value type. Serialize access to a shared
+/// instance with `OCCTSerial.withLock { }`.
 public final class Interval: @unchecked Sendable {
     public let handle: OCCTIntrvIntervalRef
 
@@ -98,6 +105,11 @@ public final class Interval: @unchecked Sendable {
 }
 
 /// A sorted sequence of non-overlapping intervals with set-theoretic operations.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `unite`/`subtract`/`intersect`/`xUnite` all mutate the same
+/// underlying handle in place with no lock, same shape as ``Interval``. Serialize access to a
+/// shared instance with `OCCTSerial.withLock { }`.
 public final class IntervalSet: @unchecked Sendable {
     public let handle: OCCTIntrvIntervalsRef
 

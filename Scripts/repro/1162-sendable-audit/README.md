@@ -80,10 +80,11 @@ Legend for **Original claim**: `F` = issue said False/unsafe, `U` = issue said U
 | `ShapeRayIntersection` | pending | U | pending | pending (subagent) | pending |
 | `SharedLibrary` | pending | U | pending | pending (subagent) | pending |
 | `LengthDimension`/`RadiusDimension`/`AngleDimension`/`DiameterDimension`/`TextLabel` | pending | U | pending | pending (subagent) | pending |
-| `GeomTransformation` | `GeomTransformation.swift:6` | LT | **"Likely true" was wrong** | Has real post-construction mutators (`setTranslation`/etc.) on the shared `gp_Trsf`-backed handle, no lock. | pending final doc edit |
-| `Interval`/`IntervalSet` | `Interval.swift:6,101` | LT | **"Likely true" was wrong** | Has real mutators. | pending final doc edit |
-| `AxisPlacement2D` | `AxisPlacement2D.swift:8` | LT | **Confirmed safe** | No mutator reachable. | pending final doc edit (likely kept-as-is) |
-| `OBB` | `OBB.swift:6` | LT | **"Likely true" was wrong** | Has real mutators. | pending final doc edit |
+| `GeomTransformation` | `GeomTransformation.swift:6` | LT | **"Likely true" was wrong** | Verified directly (grep + read): real post-construction mutators (`setTranslation`/`setRotation`/`setScale`/`setMirrorPoint`/`setMirrorAxis`) on the shared handle, no lock. | **Kept, doc corrected.** |
+| `Interval` | `Interval.swift:6` | LT | **"Likely true" was wrong** | Verified directly: real mutators (`setStart`/`setEnd`/`fuseAtStart`/`fuseAtEnd`/`cutAtStart`/`cutAtEnd`). | **Kept, doc corrected.** |
+| `IntervalSet` | `Interval.swift:101` | LT | **"Likely true" was wrong** | Verified directly: real mutators (`unite`/`subtract`/`intersect`/`xUnite`). | **Kept, doc corrected.** |
+| `AxisPlacement2D` | `AxisPlacement2D.swift:8` | LT | **Confirmed safe** | Verified directly: every member is a `const` read or returns a *new* instance (`reversed()`); no in-place mutator exists at all. | **Kept-as-is + doc states the evidence.** |
+| `OBB` | `OBB.swift:6` | LT | **"Likely true" was wrong, but not for an obvious reason** | Verified directly: `enlarge(by:)` is a real, easy-to-miss mutator (no `set`/`mutating` naming to grep for) on the shared `Bnd_OBB`-backed handle; every other member is a `const` read. | **Kept, doc corrected** to name `enlarge(by:)` specifically. |
 
 *(This table is updated in a follow-up commit once the remaining rows are resolved; see the PR
 body / final session report for the completed version if this note is still here.)*
