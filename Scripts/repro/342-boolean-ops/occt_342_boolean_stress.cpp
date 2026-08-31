@@ -69,6 +69,24 @@ static double gCutBaselineVolume  = 0;
 static int    gCutBaselineFaces   = 0;
 static double gCommonBaselineVolume = 0;
 static int    gCommonBaselineFaces  = 0;
+// #369 fix: runFuseMultiParallel exercises BRepAlgoAPI_BuilderAlgo directly (SetArguments with
+// BOTH shapes, no SetTools) -- per its own header, "the class contains API level of the General
+// Fuse algorithm", and BOPAlgo_Builder's header is explicit that "the result of the General Fuse
+// algorithm itself is a compound containing all split parts of the arguments." That is a
+// genuinely different operation from BRepAlgoAPI_Fuse (Object=box, Tool=sphere, BOPAlgo_BOP with
+// BOPAlgo_FUSE), which merges same-domain faces into a single solid. For this box+sphere pair,
+// General Fuse legitimately returns an 8-solid, 27-face compound (verified valid via
+// BRepCheck_Analyzer) where BRepAlgoAPI_Fuse returns a 1-solid, 13-face solid -- same total
+// enclosed volume, different topology, BOTH correct. Comparing runFuseMultiParallel's output
+// against gFuseBaselineFaces/Volume (computed via BRepAlgoAPI_Fuse) was therefore comparing two
+// different OCCT operations and reported "wrong result" 100% of the time regardless of threading
+// or concurrency -- this is what #367/#369 investigated as "cross-caller data corruption" and
+// was, in full, a test-harness bug. See Scripts/repro/342-boolean-ops/README.md and CLAUDE.md's
+// Known OCCT Bugs #367/#369 entry for the full writeup and the empirical proof (single-caller
+// runs reproduce the "divergence" identically to 8-concurrent-caller runs, with zero TSan races
+// either way against a kernel where #1153/#1154 are fixed).
+static double gGeneralFuseBaselineVolume = 0;
+static int    gGeneralFuseBaselineFaces  = 0;
 
 static void computeBaselines() {
     {
@@ -89,9 +107,22 @@ static void computeBaselines() {
         gCommonBaselineVolume = volumeOf(op.Shape());
         gCommonBaselineFaces  = faceCount(op.Shape());
     }
-    note("baselines: fuse vol=%.6f faces=%d | cut vol=%.6f faces=%d | common vol=%.6f faces=%d",
+    {
+        TopTools_ListOfShape args;
+        args.Append(makeBox());
+        args.Append(makeSphere());
+        BRepAlgoAPI_BuilderAlgo op;
+        op.SetArguments(args);
+        op.SetRunParallel(false);
+        op.Build();
+        gGeneralFuseBaselineVolume = volumeOf(op.Shape());
+        gGeneralFuseBaselineFaces  = faceCount(op.Shape());
+    }
+    note("baselines: fuse vol=%.6f faces=%d | cut vol=%.6f faces=%d | common vol=%.6f faces=%d | "
+         "generalFuse vol=%.6f faces=%d",
          gFuseBaselineVolume, gFuseBaselineFaces, gCutBaselineVolume, gCutBaselineFaces,
-         gCommonBaselineVolume, gCommonBaselineFaces);
+         gCommonBaselineVolume, gCommonBaselineFaces, gGeneralFuseBaselineVolume,
+         gGeneralFuseBaselineFaces);
 }
 
 static bool closeEnough(double a, double b) { return std::fabs(a - b) < 1e-6 * std::max(1.0, std::fabs(b)); }
@@ -166,10 +197,15 @@ void runFuseMultiParallel(int id, int iterations) {
         builder.Build();
         if (!builder.IsDone()) { gErrors++; note("[fuse_multi %d] not done", id); continue; }
         TopoDS_Shape result = builder.Shape();
-        if (!closeEnough(volumeOf(result), gFuseBaselineVolume) || faceCount(result) != gFuseBaselineFaces) {
+        // #369: compare against the General Fuse baseline (same BRepAlgoAPI_BuilderAlgo +
+        // SetArguments pattern, serial), NOT gFuseBaselineFaces/Volume (a different operation,
+        // BRepAlgoAPI_Fuse). See the comment on gGeneralFuseBaselineVolume above.
+        if (!closeEnough(volumeOf(result), gGeneralFuseBaselineVolume) ||
+            faceCount(result) != gGeneralFuseBaselineFaces) {
             gWrongResult++;
             note("[fuse_multi %d] diverged: vol=%.6f faces=%d (expected vol=%.6f faces=%d)", id,
-                 volumeOf(result), faceCount(result), gFuseBaselineVolume, gFuseBaselineFaces);
+                 volumeOf(result), faceCount(result), gGeneralFuseBaselineVolume,
+                 gGeneralFuseBaselineFaces);
         }
         gOps++;
     }

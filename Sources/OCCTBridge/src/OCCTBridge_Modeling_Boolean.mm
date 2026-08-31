@@ -1064,11 +1064,16 @@ OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
     }
     BRepAlgoAPI_BuilderAlgo builder;
     builder.SetArguments(arguments);
-    // #367: SetRunParallel(true) here caused silent data corruption (100%
-    // wrong results, 237 TSan races) whenever two concurrent top-level
-    // callers both requested internal parallelism: their work items
-    // cross-contaminated on the shared OSD_ThreadPool::DefaultPool. Left
-    // at the safe serial default.
+    // #367/#369: SetRunParallel(true) was removed here after appearing to cause silent data
+    // corruption under concurrent top-level callers. #369's root-cause investigation found the
+    // "corruption" was a test-harness bug
+    // (Scripts/repro/342-boolean-ops/occt_342_boolean_stress.cpp compared this General Fuse
+    // operation's output against a BRepAlgoAPI_Fuse baseline -- a different OCCT operation with
+    // legitimately different topology for the same input), not a real defect in
+    // OSD_ThreadPool/BOPTools_Parallel: both direct isolation testing and the corrected harness
+    // show zero TSan races and zero wrong results, solo or under concurrent load.
+    // SetRunParallel(true) is very likely safe to re-enable here; left at the serial default
+    // pending that follow-up decision. See CLAUDE.md's Known OCCT Bugs #367/#369 entry.
     builder.Build();
     if (!builder.IsDone())
       return nullptr;

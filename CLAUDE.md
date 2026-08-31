@@ -824,6 +824,60 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   unrelated registration mechanism, and `MoniTool_TypedValue.cxx` itself). See
   [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
   for the reproducer, full TSan transcripts and the complete writeup. Not yet filed upstream. #1157.
+- **`OSD_ThreadPool::DefaultPool()` cross-caller "corruption", #367/#369: NOT A BUG, the diagnosis
+  was wrong.** #367 found `OCCTShapeFuseMulti`'s `SetRunParallel(true)` producing 400/400 "wrong"
+  results (27 faces instead of 13 for a box+sphere fuse) plus 237 TSan races under concurrent
+  top-level callers, read it as two independent `BRepAlgoAPI_BuilderAlgo::Build()` calls
+  cross-contaminating on the shared `OSD_ThreadPool::DefaultPool()`, and shipped a bridge fix
+  (drop `SetRunParallel(true)`, v1.15.16). #369 was filed to root-cause the mechanism, following
+  this project's TSan protocol (minimal-module instrumented rebuild, direct
+  `OSD_ThreadPool.cxx`/`BOPTools_Parallel.hxx` reading) — and found there never was one. The
+  27-vs-13 "divergence" is `BRepAlgoAPI_BuilderAlgo` (`SetArguments`, no `SetTools`) legitimately
+  performing a **different OCCT operation** than the baseline it was compared against:
+  `BRepAlgoAPI_BuilderAlgo`'s own header says *"the class contains API level of the **General
+  Fuse** algorithm"*, and `BOPAlgo_Builder`'s header is explicit that its result *"is a compound
+  containing all split parts of the arguments"* — not a merged solid. `BRepAlgoAPI_Fuse`
+  (`Object`/`Tool`, `BOPAlgo_BOP` with `BOPAlgo_FUSE`) merges same-domain faces into one solid;
+  General Fuse does not. The reproducer's `computeBaselines()` computed "expected" via
+  `BRepAlgoAPI_Fuse` and compared `SetRunParallel(true)`'s General-Fuse output against it: two
+  different, both-correct operations on the same input (8-solid/27-face compound,
+  `BRepCheck_Analyzer`-valid, vs 1-solid/13-face solid, same enclosed volume to 6 decimal places),
+  reported "wrong" 100% of the time regardless of threading. **Proved decisively, not just argued**:
+  a reproducer with no `std::thread` at all (`occt_369_single_call_parallel.cpp`, one process, one
+  `Build()` call) gives 27 faces for both `SetRunParallel(false)` and `(true)`, every time; and
+  re-running the *original* scenario, both solo (1 caller) and at 8 concurrent callers, against a
+  freshly rebuilt TSan kernel carrying every patch landed since July (notably #1154's
+  `TopoDS_TShape::myState` atomic and #1153's `BSplCLib_Cache`/`GeomAdaptor` mutex, neither of
+  which existed when #367 ran) shows **0 TSan races** in both (was 237), while the face-count
+  "divergence" is unchanged (still 400/400) because it never depended on concurrency at all. The
+  237 July races were real, but were #1153/#1154 (both independently found and fixed later, as
+  ordinary intra-operation races any sufficiently parallel `SetRunParallel(true)` call could
+  trigger alone), coincidentally co-occurring in the same run as the always-broken comparison, not
+  evidence of a pool defect. Also checked directly: `OSD_ThreadPool::Launcher`'s
+  Lock/Free/WakeUp/WaitIdle bookkeeping (genuine atomic thread-exclusivity, a real
+  `std::mutex`+`std::condition_variable` handshake, `Standard_Transient`'s atomic refcount,
+  `Standard::Allocate` a thread-safe `calloc`/`free` in this build) and `BOPTools_Parallel.hxx`'s
+  `ContextFunctor2` (per-`Launcher` context array, per-instance `IntTools_Context`, per-call
+  `NCollection_IncAllocator`) — confirmed clean by two dedicated isolation reproducers (10
+  concurrent `Launcher`s with no BOPAlgo at all; 128,000 `ContextFunctor2` solver calls across 10
+  concurrent independent callers), zero races either way. An exhaustive grep of every `.cxx` under
+  `ModelingAlgorithms/TKBO`/`TKMesh`/`TKGeomAlgo`/`TKTopAlgo` for unsynchronized statics (the
+  pattern behind every other TSan finding in this series) found only dead-code or compiled-out
+  candidates, nothing live on this call path. **`OSD_ThreadPool::DefaultPool()` is safe for
+  concurrent independent submitters**; this was never a caller-side bug either.
+  `Shape.mesh(parameters:)` is the one other live, Swift-reachable, default-`true` internal-
+  parallelism surface (`MeshParameters.inParallel` defaults `true`,
+  `BRepMesh_FaceDiscret.cxx` dispatches via the same `OSD_ThreadPool`-backed `OSD_Parallel::For`),
+  not a special risk given the above. No matching upstream report found;
+  [Open-Cascade-SAS/OCCT#1071](https://github.com/Open-Cascade-SAS/OCCT/pull/1071) (closed, not
+  merged) is an unrelated performance PR for the same two classes, not evidence of a correctness
+  defect. **Left open, deliberately not changed by this investigation**: whether to re-enable
+  `SetRunParallel(true)` in `OCCTShapeFuseMulti` (very likely safe per the above, but a separate
+  decision), and whether that function should be using General Fuse's split-parts-compound
+  semantics at all for a "fuse multiple shapes into one" API, a pre-existing design question
+  unrelated to concurrency. See
+  [`Scripts/repro/342-boolean-ops/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/342-boolean-ops)
+  for the full writeup and all four reproducers. #367, #369.
 
 ### Carrying OCCT source patches
 
