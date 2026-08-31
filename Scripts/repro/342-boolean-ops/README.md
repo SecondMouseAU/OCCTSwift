@@ -1,18 +1,25 @@
 # OCCTSwift#342/#367/#369 reproducers, boolean-op concurrency
 
 Stress harnesses backing #342's stage-1 classification pass over `OCCTBridge_Modeling.mm`'s
-boolean operations (`Fuse`/`Cut`/`Common`/`FuseMulti`). Two files, two separate findings:
+boolean operations (`Fuse`/`Cut`/`Common`/`FuseMulti`).
 
-- `occt_342_boolean_stress.cpp`: the original classification sweep. Found #367 (fixed, shipped).
-- `occt_369_threadpool_isolation.cpp`: the #369 root-cause follow-up. Narrows the bug's location;
-  does **not** find the root cause. Read this before picking #369 back up.
+- `occt_342_boolean_stress.cpp`: the original classification sweep. Found what looked like #367
+  (a real bridge fix shipped), then #369's own investigation found the "corruption" that fix
+  responded to was actually a bug in **this harness**, now fixed in place (see below).
+- `occt_369_threadpool_isolation.cpp`: isolates `OSD_ThreadPool::Launcher` alone (no BOPAlgo).
+- `occt_369_contextfunctor2_isolation.cpp`: isolates `BOPTools_Parallel.hxx`'s `ContextFunctor2`
+  with a toy solver/context (no real BOP geometry).
+- `occt_369_single_call_parallel.cpp`: the reproducer that actually found the root cause — one
+  process, no `std::thread` in the driver at all, comparing `SetRunParallel(true)` vs `(false)`
+  for a single `BRepAlgoAPI_BuilderAlgo::Build()` call.
+- `occt_369_validity_check.cpp`: confirms the "wrong" General Fuse result is a valid,
+  `BRepCheck_Analyzer`-clean shape, not corrupted geometry.
 
-## #367, `Shape.fuseAll(_:)` data corruption (FIXED, v1.15.16)
+## #367, `Shape.fuseAll(_:)` — the fix shipped, but the diagnosis was wrong (corrected by #369)
 
 `occt_342_boolean_stress.cpp` checks two things per scenario: TSan race reports, and a
 correctness check against a single-threaded baseline (volume + face count), matching the #298
-methodology, since a race can produce a wrong-but-plausible result without crashing or without
-TSan catching every run's exact interleaving.
+methodology.
 
 ```bash
 occt_342_boolean_stress <scenario> <threads> <iterations>
@@ -23,122 +30,126 @@ occt_342_boolean_stress <scenario> <threads> <iterations>
 parallelism): clean. 10 threads × 200 iterations (`mixed`, 2000 ops total), 0 errors, 0 wrong
 results, 0 unsuppressed TSan races.
 
-**`fuse_multi_parallel`** (mirrors `OCCTShapeFuseMulti`'s old `SetRunParallel(true)`): **not**
-clean. 8 threads × 50 iterations, **400/400 operations (100%) produced wrong results** (27 faces
-instead of the correct 13; volume matched almost exactly, consistent with duplicated/torn geometry
-rather than floating-point imprecision), plus 237 TSan race reports across foundational topology
-code (`TopoDS_Builder::Add`, `TopExp_Explorer::Init`/`Next`, `BRep_Tool::Range`,
-`BOPTools_AlgoTools::MakeSplitEdge`).
+**`fuse_multi_parallel`** (mirrors `OCCTShapeFuseMulti`'s old `SetRunParallel(true)`) originally
+reported **not** clean: 8 threads × 50 iterations, 400/400 operations "diverged" (27 faces instead
+of 13; volume matching almost exactly), plus 237 TSan race reports in July 2026. That read as
+100% reproducible cross-caller data corruption, and `OCCTShapeFuseMulti` dropped
+`SetRunParallel(true)` in response (bridge-only fix, v1.15.16).
 
-Clearest captured trace: thread T1's own top-level `Build()` call allocates a `TopoDS_Vertex` via
-its own `BOPAlgo_PaveFiller::PerformEF` → `BOPTools_AlgoTools::MakeNewVertex`. Thread T9, a
-worker spawned by a *different*, unrelated top-level caller T4's `OSD_ThreadPool` dispatch, reads
-and writes that same heap block from inside `BOPTools_AlgoTools::MakeSplitEdge`. Two independent
-`BRepAlgoAPI_BuilderAlgo::Build()` calls, each requesting internal parallelism, submit work to the
-same process-wide `OSD_ThreadPool::DefaultPool()`, and a worker ends up touching data that belongs
-to a completely different top-level call.
+**#369 found the 27-vs-13 "divergence" was never corruption**: `runFuseMultiParallel()`
+constructs a bare `BRepAlgoAPI_BuilderAlgo`, `SetArguments()` with both shapes and no
+`SetTools()` — per that class's own header, *"the class contains API level of the **General
+Fuse** algorithm"*, and `BOPAlgo_Builder`'s header is explicit that *"the result of the General
+Fuse algorithm itself is a compound containing all split parts of the arguments."* That is a
+different OCCT operation from `BRepAlgoAPI_Fuse` (`Object=box`, `Tool=sphere`, `BOPAlgo_BOP` with
+`BOPAlgo_FUSE`), which merges same-domain faces into one solid. For this box+sphere pair, General
+Fuse legitimately returns an 8-solid, 27-face compound (`occt_369_validity_check.cpp`:
+`IsDone=1`, `BRepCheck_Analyzer.IsValid=1`) where `BRepAlgoAPI_Fuse` returns a 1-solid, 13-face
+solid — same total enclosed volume (1106.814145 vs 1106.814146), different topology, **both
+correct**. `computeBaselines()` computed the "expected" value via `BRepAlgoAPI_Fuse` and compared
+`runFuseMultiParallel`'s General Fuse output against it: two different operations, so it read
+"wrong" 100% of the time, with or without concurrency.
 
-**Fix (bridge-only, no kernel patch)**: `OCCTShapeFuseMulti` dropped `SetRunParallel(true)`
-entirely, removes the trigger rather than locking around a known-corrupting path. Grepped
-`Sources/OCCTBridge/src/*.mm` exhaustively: this was the *only* call site that ever set it.
+**Decisive proof, not just a plausible alternative explanation**: `occt_369_single_call_parallel`
+runs `BRepAlgoAPI_BuilderAlgo` once, `SetRunParallel(false)` and `(true)`, in a driver with no
+`std::thread` at all — the *only* concurrency in the program is the pool's own internal workers,
+spawned and joined inside that one `Build()` call. Both give 27 faces, every time, serial or
+parallel. And re-running the *original* `fuse_multi_parallel` scenario (both 1 caller alone and 8
+concurrent callers) against a freshly rebuilt TSan kernel carrying every currently-patched fix
+(including #1154's `TopoDS_TShape::myState` atomic and #1153's `BSplCLib_Cache`/`GeomAdaptor`
+mutex, neither of which existed in July): **0 TSan races** in both cases (was 237), while the
+face-count "divergence" is unchanged (400/400) because it never depended on concurrency at all —
+confirming the 237 July races were real, but were #1153/#1154 (both since fixed as their own,
+unrelated intra-operation findings), not a cross-caller pool defect, and happened to co-occur in
+the same run as the always-broken face-count comparison.
 
-## #369, root-causing the mechanism (OPEN, not fixed)
+**Fix**: `occt_342_boolean_stress.cpp` now computes a separate `gGeneralFuseBaselineVolume`/
+`gGeneralFuseBaselineFaces` (same `BRepAlgoAPI_BuilderAlgo`+`SetArguments` pattern, serial) and
+`runFuseMultiParallel` compares against that, not the `BRepAlgoAPI_Fuse` baseline. Re-run both
+ways against the same freshly rebuilt TSan kernel: solo (1×100) and 8×50 concurrent, **0 errors, 0
+wrongResult, 0 races**, both. The `OCCTShapeFuseMulti` bridge comment is corrected to reflect
+this; the function itself is left at the serial default (re-enabling `SetRunParallel(true)` there
+is very likely safe per this investigation, but is a separate decision from root-causing #369, and
+the fuseMulti bridge site's own semantics — `.Shape()` being a compound of split parts rather than
+a single merged solid — may be worth a look independent of threading).
 
-`OCCTShapeFuseMulti`'s trigger is gone, so nothing currently ships this bug. But the *mechanism*
-,  why two independent top-level `BRepAlgoAPI_BuilderAlgo::Build()` calls corrupt each other's data
-when both use `SetRunParallel(true)`, was never found. This section is the state of that
-investigation, so a future session doesn't have to re-derive the parts already ruled out.
+## #369, root-causing the mechanism — CLOSED, no bug found
 
-### Ruled out: `OSD_ThreadPool` itself
+`OSD_ThreadPool::DefaultPool()` is safe for concurrent independent submitters. This section
+records what was checked and how, so a future session doesn't have to re-derive it.
+
+### `OSD_ThreadPool` itself
 
 Read `OSD_ThreadPool.hxx`/`.cxx` in full (`Libraries/occt-src/src/FoundationClasses/TKernel/OSD/`).
-The pool's own documentation states the design intent explicitly: "concurrent threads trying to
-use the same thread pool will run sequentially", i.e. `Launcher`'s constructor is *supposed* to
-degrade safely (lock as many free threads as available, fall back toward single-threaded) when
-another `Launcher` already holds some of the pool.
+`EnumeratedThread::Lock()`/`Free()` use a genuine atomic exchange (`myUsageCounter.exchange(1) ==
+0`); `Standard_Condition` is a real `std::mutex`+`std::condition_variable`, not a spin-flag;
+`Launcher::perform()` = `run()` (wake workers) + `wait()` (blocks until every locked thread's
+`myIdleEvent` fires, which only happens after `performJob()` returns), so by the time a `Launcher`
+releases its threads, every worker has genuinely finished and is parked. `Standard_Transient`'s
+refcount is `std::atomic_int`; `Standard::Allocate`/`Free` in this build (`USE_TBB=OFF`, no
+`MMGT_OPT_FLEXIBLE`) are plain `calloc`/`free`, the thread-safe system allocator.
 
-Checked the actual mechanism:
-- `EnumeratedThread::Lock()`/`Free()` use a genuine atomic exchange
-  (`myUsageCounter.exchange(1) == 0`), two concurrent `Launcher`s can never both successfully lock
-  the same `EnumeratedThread`.
-- `Standard_Condition` (`myWakeEvent`/`myIdleEvent`) is a real memory fence: proper
-  `std::mutex` + `std::condition_variable`, not a spin-flag, so a write made before `Set()` on one
-  thread is correctly visible after `Wait()` returns on another.
-- `Launcher::perform()` = `run()` (wake workers) + `wait()` (`WaitIdle()` on each, which blocks on
-  `myIdleEvent`, itself `Set()` only after `performJob()` completes and nulls `myJob`), so by the
-  time a `Launcher` releases (`Free()`s) its threads, each worker has genuinely finished the prior
-  job and is parked back at `myWakeEvent.Wait()`.
+**Empirically confirmed clean**, twice:
+- `occt_369_threadpool_isolation.cpp`: `OSD_ThreadPool::Launcher` directly, no BOPAlgo. 10
+  threads × 300 iterations (3000 ops): 0 errors, 0 TSan races.
+- `occt_369_contextfunctor2_isolation.cpp`: `BOPTools_Parallel::Perform(bool, TypeSolverVector&,
+  handle<TypeContext>&)` directly (the exact `ContextFunctor2` path `BOPAlgo_PaveFiller` uses),
+  with a toy solver whose `Perform()` claims a private tagged heap slot and a toy context tracking
+  which top-level caller last touched it. 10 threads × 200 iterations × 64 items (128,000 solver
+  calls): 0 errors, 0 TSan races.
 
-**Empirically confirmed clean**: `occt_369_threadpool_isolation.cpp` uses `OSD_ThreadPool::Launcher`
-directly, no BOPAlgo, no OCCT geometry at all. Each of N concurrent top-level callers creates its
-own `Launcher` on the shared `DefaultPool()` and dispatches trivial work: write a unique per-call
-tag into a private `std::vector` slot (indexed by *data* index, not thread index, deliberately, to
-also catch any thread-index mixup), read it back immediately, and re-check the whole buffer at the
-end. Any cross-`Launcher` interference would show up as a foreign tag.
+### `BOPTools_Parallel.hxx`
 
-```bash
-occt_369_threadpool_isolation <threads> <iterations>
-```
+`myContext` (`occ::handle<IntTools_Context>`) is a private member, constructed fresh per
+`BOPAlgo_PaveFiller` instance (`BOPAlgo_PaveFiller.cxx:203`), never shared. Every
+`NCollection_IncAllocator` `BOPAlgo_Builder`/`BOPAlgo_Tools`/`BOPAlgo_PaveFiller` phase functions
+construct is a fresh local (`new NCollection_IncAllocator`), never shared or reused across calls.
+`ContextFunctor2::myContextArray` is sized and indexed per-`Launcher` instance, a stack-local
+object; `Launcher`'s thread-index renumbering can hand the same numeric index to different
+physical `EnumeratedThread`s across concurrent `Launcher`s, but since each `Launcher`'s
+`myContextArray` is its own object, that never cross-contaminates (confirmed empirically by the
+isolation test above, which specifically probes this).
 
-10 threads × 300 iterations (3000 operations): **0 errors, 0 TSan races.** `OSD_ThreadPool`'s own
-Lock/Free/WakeUp/WaitIdle bookkeeping is safe for concurrent independent `Launcher` users under
-this test. The bug is narrowed to something in `BOPTools_Parallel`/`BOPAlgo_PaveFiller`'s
-*specific use* of the pool, not the pool primitive itself.
+An exhaustive grep of every `.cxx` under `ModelingAlgorithms/TKBO` (`BOPAlgo`/`BOPDS`/`BOPTools`)
+and adjacent dirs (`TKMesh`, `TKGeomAlgo`, `TKTopAlgo`) for unsynchronized function-local/file-scope
+statics — the pattern behind every prior TSan finding in this project's series — turned up nothing
+live: `BOPDS_CommonBlock::PaveBlockOnEdge`'s static fallback handle has zero call sites anywhere in
+the tree (dead code); `BRepMesh_IncrementalMesh`'s `IS_IN_PARALLEL` is bypassed by the bridge's own
+constructor call; `BRepClass3d_SolidClassifier`'s `STAT` is compiled out entirely (`LBRCOMPT` is
+`#define`d `0` on both branches); `BRepLib`'s `thePrecision`/`thePlane` statics (flagged `// TODO -
+not thread-safe` in OCCT's own source) are reachable from the boolean-op edge-construction path via
+`BOPTools_AlgoTools::MakeSectEdge`, but nothing in this call path ever calls the corresponding
+setters, so there is no write to race against.
 
-### Read but not yet conclusive: `BOPTools_Parallel.hxx`
+### Answers to the three open questions
 
-`Libraries/occt-src/src/ModelingAlgorithms/TKBO/BOPTools/BOPTools_Parallel.hxx`: the direct
-consumer `BOPAlgo_PaveFiller` uses (via `ContextFunctor2`, the `OSD_ThreadPool::Launcher`-based
-path taken when `OSD_Parallel::ToUseOcctThreads()` is true). Checked the obvious candidates:
+1. **Is `OSD_ThreadPool::DefaultPool()` fundamentally unsafe for concurrent independent
+   submitters?** No. Confirmed clean by direct isolation testing at both the `Launcher` level and
+   the `ContextFunctor2` level, and by the corrected real-world `fuse_multi_parallel` scenario (0
+   races, solo or concurrent). There was never a caller-side bug either — the "corruption" was a
+   test-harness comparison bug, not a defect in how `BOPTools_Parallel`/`BOPAlgo_PaveFiller` use
+   the pool.
+2. **Does this affect anything else opting into internal OCCT parallelism?** `Shape.mesh(parameters:)`
+   is the one other live, Swift-reachable, default-`true` surface (`MeshParameters.inParallel`
+   defaults `true` in `Sources/OCCTSwift/Mesh.swift`; `OCCTBridge_Mesh.mm:245` forwards it to
+   `IMeshTools_Parameters.InParallel`, and `BRepMesh_FaceDiscret.cxx` dispatches via
+   `OSD_Parallel::For`, the same `OSD_ThreadPool::DefaultPool()`-backed path). Since the pool
+   itself is confirmed safe for concurrent independent submitters, this is not a special risk.
+   The other two `SetRunParallel` bridge sites (`OCCTShapeSelfIntersectsBounded` and its sibling in
+   `OCCTBridge_Modeling_Boolean.mm`) are hardcoded `false`, not reachable as `true`; the third
+   (`OCCTBridge_IO_MeshFormats.mm:577`) is likewise hardcoded `false`.
+3. **Is this already known upstream?** No exact match found. `Open-Cascade-SAS/OCCT#1071` ("Improve
+   OSD_Parallel and OSD_ThreadPool parallel infrastructure") is a closed (not merged) performance
+   PR — chunked work distribution, a new `Reduce()` primitive — unrelated to any correctness defect
+   and not evidence of one. Nothing else matched `OSD_ThreadPool`/`BOPTools_Parallel`/concurrent
+   `BRepAlgoAPI_BuilderAlgo` in issues or PRs.
 
-- `ContextFunctor2::myContextArray` is sized per-`Launcher` (`[LowerThreadIndex(),
-  UpperThreadIndex())`) and indexed by `theThreadIndex`, which `Launcher`'s constructor renumbers
-  to a *local*, 0-based index per `Launcher` instance (`// make thread index to fit into myThreads
-  range` in `OSD_ThreadPool.cxx`). Two concurrent `Launcher`s can end up assigning the *same local
-  index value* to *different* underlying `EnumeratedThread`s, but each `Launcher`'s own
-  `myContextArray` is a separate, stack-local object, so this shouldn't cross-contaminate on its
-  own; didn't find a flaw here on inspection.
-- `SetContext()` binds the self-thread's slot (`ChangeLast()`) to the caller's own context, looks
-  correctly scoped per top-level call.
-- The data index (`theIndex`, from `JobRange::It()`'s atomic fetch-add) comes from a `JobRange`
-  constructed fresh per `Launcher::Perform()` call, also looks correctly scoped.
+### What's left open
 
-None of this is a confirmed root cause, just what's been read and not yet found broken. The
-actual corrupted object in the original trace (a `TopoDS_Vertex`) is allocated and consumed several
-layers below this file, inside `BOPAlgo_PaveFiller`/`BOPDS_DS`/`IntTools_Context`, none of which
-have been read yet.
-
-### Suggested next steps, in order of expected leverage
-
-1. **Extend `occt_369_threadpool_isolation.cpp`'s pattern to use `ContextFunctor2` directly** with
-   a toy "solver" type (something with a trivial `Perform()`/`SetContext()`, not real BOP geometry)
-   instead of the private-buffer functor it uses now. This keeps the exact context-array/
-   thread-index machinery from `BOPTools_Parallel.hxx` in the loop while still avoiding
-   `BOPAlgo_PaveFiller`'s complexity, if THIS reproduces corruption, the bug is confirmed inside
-   `BOPTools_Parallel.hxx` itself (`ContextFunctor2`), not below it. If it stays clean, the bug is
-   further down, inside `BOPAlgo_PaveFiller`/`BOPDS_DS`/`IntTools_Context`.
-2. If narrowed to `BOPAlgo_PaveFiller`, read `BOPAlgo_PaveFiller::Prepare()` and
-   `BOPAlgo_PaveFiller::MakeSplitEdges()` (`BOPAlgo_PaveFiller_7.cxx`) end to end, the two frames
-   from the original trace, looking specifically for anything **shared across `BOPAlgo_PaveFiller`
-   instances** rather than owned per-instance (a global/static cache, a shared allocator pool
-   keyed by something coarser than "this one call," or a `BOPDS_DS`/`IntTools_Context` member that
-   isn't actually reset/reallocated per top-level call the way it's assumed to be).
-3. Check whether `NCollection_BaseAllocator::CommonBaseAllocator()` (used by `ContextFunctor2` to
-   construct each per-thread `IntTools_Context`, see `BOPTools_Parallel.hxx:138`) is itself safe
-   for concurrent use by unrelated top-level calls, if it's a shared pool-style allocator with any
-   fast-path assumption about single-caller use, that would explain corruption spanning many
-   unrelated topology functions (matches the *breadth* of the 237 TSan reports better than a single
-   narrow indexing bug would).
-4. Check whether this is already known/reported upstream before assuming it's novel, search
-   Open-Cascade-SAS/OCCT's issue tracker for `OSD_ThreadPool`/`BOPTools_Parallel`/concurrent
-   `BRepAlgoAPI_BuilderAlgo` before filing anything new.
-
-### Why this matters beyond `fuseAll`
-
-`ContextFunctor2` is `BOPTools_Parallel`'s general context-dependent parallel path, used
-throughout `BOPAlgo_PaveFiller` internals whenever `SetRunParallel(true)` is honored, not just via
-`OCCTShapeFuseMulti`. If the root cause turns out to be in `BOPTools_Parallel.hxx` or
-`BOPAlgo_PaveFiller` itself (steps 1-2 above), it's a latent risk for *any* future OCCTSwift bridge
-call that enables internal BOP parallelism, not specific to the one call site #367 fixed. Worth
-re-auditing `Sources/OCCTBridge/src/*.mm` for `SetRunParallel`/`InParallel`/`SetParallel` calls
-again once (if) the actual mechanism is found, in case a future addition reintroduces it elsewhere.
+Whether to re-enable `SetRunParallel(true)` in `OCCTShapeFuseMulti` now that the mechanism that
+prompted removing it is understood not to be real. Separately, whether `OCCTShapeFuseMulti`
+should even be using General Fuse (`BRepAlgoAPI_BuilderAlgo`, `.Shape()` a compound of split
+pieces) at all for a "fuse multiple shapes into one" API, versus folding the arguments through
+`BRepAlgoAPI_Fuse` pairwise or otherwise producing a single merged solid — an existing design
+question, unrelated to concurrency, that this investigation did not set out to answer and did not
+change.
