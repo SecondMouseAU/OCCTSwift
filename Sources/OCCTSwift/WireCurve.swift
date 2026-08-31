@@ -18,7 +18,15 @@ import OCCTBridge
 ///     wc.point(atAbscissa: wc.length * Double(i) / Double(n))
 /// }   // n+1 points spaced equally along the wire
 /// ```
-public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
+///
+/// **Not `Sendable`.** Same reason as ``EdgeCurve`` (issue #1162's audit found the identical
+/// defect here too, even though only ``EdgeCurve`` was in #1162's own table): the bridge struct
+/// behind `ref` holds a persistent `BRepAdaptor_CompCurve` built once at `init` and reused by
+/// every subsequent call, so `point`/`tangent`/`length`/every other accessor mutates the
+/// adaptor's BSpline evaluation cache with zero synchronization (issue #1153, kernel fix
+/// override-link-validated but not yet in the pinned `OCCT.xcframework`). Give each thread/task
+/// its own `WireCurve` rather than sharing one, or serialize access with `OCCTSerial.withLock { }`.
+public final class WireCurve: ArcLengthCurveAdaptor {
     internal let ref: OCCTCompCurveRef
 
     /// Build an arc-length adaptor over `wire`.

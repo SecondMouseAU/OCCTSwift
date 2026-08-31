@@ -10,6 +10,11 @@ import simd
 /// - Depth attachment `loadAction` (clear depth)
 /// - `setDepthBias()` on `MTLRenderCommandEncoder` (polygon offset)
 /// - Render pass ordering (layer priority)
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `setDepthOffsetPositive()`/`setDepthOffsetNegative()` mutate
+/// the underlying `Graphic3d_ZLayerSettings` handle in place with no lock. Serialize mixed access
+/// with `OCCTSerial.withLock { }`.
 public final class ZLayerSettings: @unchecked Sendable {
     internal let handle: OCCTZLayerSettingsRef
 

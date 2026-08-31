@@ -39,8 +39,13 @@ public protocol ArcLengthCurveAdaptor: AnyObject {
 A multi-edge `Wire` treated as a single continuously-parameterized curve (`BRepAdaptor_CompCurve`). Provides total arc length and arc-length-based point/tangent sampling that walks across edge boundaries seamlessly.
 
 ```swift
-public final class WireCurve: @unchecked Sendable
+public final class WireCurve: ArcLengthCurveAdaptor
 ```
+
+Not `Sendable` (issue #1162): the bridge struct behind it holds a persistent `BRepAdaptor_CompCurve`
+reused by every call, so every accessor mutates its BSpline evaluation cache with no
+synchronization. Construct one per thread/task rather than sharing an instance, or serialize access
+with `OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
 
 ---
 
@@ -281,8 +286,13 @@ The ceiling is a bound on the allocation, not on what is useful. One sample cost
 A single `Edge` as an arc-length-parameterized curve (`BRepAdaptor_Curve`). Mirrors `WireCurve`'s API for a single edge, adds arc-length sampling (`length`, `point(atAbscissa:)`, `points(count:)`) on top of the edge's native parameter space.
 
 ```swift
-public final class EdgeCurve: @unchecked Sendable
+public final class EdgeCurve: ArcLengthCurveAdaptor
 ```
+
+Not `Sendable` (issue #1162): the bridge struct behind it holds a persistent `BRepAdaptor_Curve`
+reused by every call, so every accessor mutates its BSpline evaluation cache with no
+synchronization. Construct one per thread/task rather than sharing an instance, or serialize access
+with `OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
 
 ---
 

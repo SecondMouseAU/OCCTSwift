@@ -3,6 +3,14 @@ import OCCTBridge
 import simd
 
 /// Oriented bounding box in 3D space.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `enlarge(by:)` mutates the underlying `Bnd_OBB`-backed
+/// handle in place with no lock, so calling it concurrently with a read (`center`, `halfSizes`,
+/// `isOut`, `squareExtent`) races. This is not the "Likely true - computed value" issue #1162
+/// originally guessed: `enlarge(by:)` is a real, if easy-to-miss, mutator. Concurrent read-only
+/// calls with no `enlarge` in the mix are safe. Serialize mixed access with
+/// `OCCTSerial.withLock { }`.
 public final class OBB: @unchecked Sendable {
     let handle: OCCTOBBRef
 

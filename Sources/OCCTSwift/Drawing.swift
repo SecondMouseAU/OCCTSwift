@@ -11,6 +11,15 @@ import simd
 /// let topView = Drawing.project(box, direction: SIMD3(0, 0, 1))
 /// let visibleEdges = topView.edges(ofType: .visible)
 /// ```
+///
+/// `@unchecked Sendable` reflects that `handle`/`annotationStore` are plain bridge references, not
+/// that concurrent use of one instance is safe, it isn't: `addLinearDimension`/`addRadialDimension`/
+/// every other `add*` method, `append(_:)`, and `clearAnnotations()` all mutate the shared
+/// `annotationStore` in place with no lock, so calling one of those concurrently with each other
+/// or with `dimensions`/`annotations` (both of which read `annotationStore`) races.
+/// `edges(ofType:)`/`visibleEdges`/`hiddenEdges`/`outlineEdges` read `handle`'s HLR result directly
+/// rather than `annotationStore`, so they're unaffected by that specific race, but still share the
+/// same general rule: serialize mixed access with `OCCTSerial.withLock { }`.
 public final class Drawing: @unchecked Sendable {
 
     /// Projection type for creating 2D views.

@@ -109,6 +109,19 @@ public struct SurfaceGridD1: Sendable {
 /// Wraps analytic surfaces (plane, cylinder, cone, sphere, torus),
 /// swept surfaces (extrusion, revolution), freeform surfaces (Bezier, BSpline),
 /// and derived surfaces (trimmed, offset) polymorphically.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge pointer, not that concurrent
+/// use of one instance from multiple threads is safe, it isn't. The bridge's own struct holds
+/// only `Handle(Geom_Surface)`, no persistent adaptor, so plain evaluation (`point(atU:v:)`,
+/// `d1`/`d2`, `evaluateGrid`) calls `Geom_Surface::D0`/`D1`/`D2` directly and does **not** hit the
+/// BSpline-adaptor-cache race (#1153) the way ``EdgeCurve``/``WireCurve`` do. The real hazard here
+/// is the setters this class and its property views expose (`setOffsetValue`,
+/// `sphereProperties.setRadius`, `bsplineSurface`'s (`Surface.BSpline`) `setPole`/`setWeight`,
+/// and siblings on `torusProperties`/`cylinderProperties`/`bezierProperties`):
+/// each mutates this instance's own `Handle(Geom_Surface)` in place, so calling one concurrently
+/// with any evaluation on the same instance races. Concurrent evaluation-only calls, with no
+/// setter in the mix, are safe; two *different* `Surface` instances never share a handle, so they
+/// never race with each other regardless. Serialize mixed access with `OCCTSerial.withLock { }`.
 public final class Surface: @unchecked Sendable {
     internal let handle: OCCTSurfaceRef
 

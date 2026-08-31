@@ -3,6 +3,28 @@ import OCCTBridge
 import simd
 
 /// A 3D solid shape backed by OpenCASCADE B-Rep geometry.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge pointer, safe to move across a
+/// concurrency-domain boundary; it does **not** mean two threads may call methods on the *same*
+/// instance concurrently, or on two `Shape`s produced by an operation (a boolean, a fillet, ...)
+/// that shares `TopoDS_TShape`s between its inputs and result. Two specific, currently-live
+/// mechanisms make that unsafe, and both look like read-only queries from the caller's side:
+///
+/// - **Topology flags** (`TopoDS_TShape::myState`, backing `isValid`'s `BRepCheck_Analyzer` pass
+///   and the `Free`/`Modified`/`Checked`/... accessors) are mutated with non-atomic bitwise ops,
+///   no synchronization (issue #1154). The fix (`Scripts/patches/0030`) is override-link-validated
+///   but **not in the pinned `OCCT.xcframework`** as of this writing, so the race is live in what
+///   ships today; see `Scripts/patches/README.md` and this file's own `CLAUDE.md` "Known OCCT
+///   Bugs" entry before assuming otherwise.
+/// - **Shared geometry after booleans/fillets**: a result `Shape` can share edge/face TShapes with
+///   its inputs, so evaluating the result and an input concurrently (even read-only) can race on
+///   the same underlying geometry.
+///
+/// Serialize concurrent access with `OCCTSerial.withLock { }`, or give each thread its own
+/// geometry via `shape.copy(copyGeometry: true)` / `Shape.deepCopy(_:copyGeometry:)` (**not** the
+/// no-argument instance `deepCopy()`, which clones topology only). See `docs/thread-safety.md` for
+/// the full model and the third mechanism (BSpline evaluation caches) that affects some other
+/// wrapper types but not `Shape` itself directly.
 public final class Shape: @unchecked Sendable {
     internal let handle: OCCTShapeRef
 

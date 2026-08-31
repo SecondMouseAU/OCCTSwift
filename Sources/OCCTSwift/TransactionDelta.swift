@@ -5,6 +5,11 @@ import simd
 /// Represents an undo delta from a committed transaction.
 ///
 /// Provides information about what changed during the transaction.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge pointer, not that concurrent use
+/// of one instance is safe, it isn't: `setName` mutates the delta's underlying handle in place
+/// with no lock, so calling it concurrently with `name`/any other accessor races. Serialize mixed
+/// access with `OCCTSerial.withLock { }`.
 public final class TransactionDelta: @unchecked Sendable {
     let handle: UnsafeMutableRawPointer
 

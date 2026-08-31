@@ -3,6 +3,14 @@ import OCCTBridge
 import simd
 
 /// 3D geometric transformation (Handle-wrapped).
+///
+/// `@unchecked Sendable` reflects that `ref` is a plain bridge handle, not that concurrent use of
+/// one instance is safe, it isn't: `setTranslation`/`setRotation`/`setScale`/`setMirrorPoint`/
+/// `setMirrorAxis` all mutate the same underlying `gp_Trsf`-backed handle in place with no lock,
+/// so calling any of them concurrently with each other or with a read races. This is not the
+/// "Likely true - value type" issue #1162 originally guessed: a `GeomTransformation` is a
+/// reference to shared, mutable OCCT state, not a Swift value type. Serialize access to a shared
+/// instance with `OCCTSerial.withLock { }`.
 public final class GeomTransformation: @unchecked Sendable {
     internal let ref: OCCTGeomTransformRef
 

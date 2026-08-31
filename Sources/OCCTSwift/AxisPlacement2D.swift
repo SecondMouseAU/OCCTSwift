@@ -5,6 +5,12 @@ import simd
 /// A 2D axis placement backed by `Geom2d_AxisPlacement`.
 ///
 /// Represents a coordinate system defined by an origin point and a direction vector.
+///
+/// `@unchecked Sendable` is genuinely safe here, confirmed rather than assumed: every member is
+/// either a `const` read (`origin`, `direction`, `angle(to:)`) or returns a **new** instance
+/// (`reversed()`); there is no setter or other method that mutates `handle`'s underlying
+/// `Geom2d_AxisPlacement` in place. Concurrent access to the same instance, from multiple threads,
+/// is fine.
 public final class AxisPlacement2D: @unchecked Sendable {
     internal let handle: OCCTAxisPlacement2DRef
 

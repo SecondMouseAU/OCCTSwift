@@ -10,6 +10,13 @@ import simd
 /// the 3D hit point, the face struck, or curve (not just line) input; prefer
 /// `curveShapeIntersect` for a one-shot line query that only needs parameters, or if you need the
 /// `gp_Circ`-axis input `LocOpe_CurveShapeIntersector` supports and this type does not (#852).
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't. This is a **stateful cursor**, not a snapshot: `next()`
+/// advances the underlying `BRepIntCurveSurface_Inter`'s internal position, and `hasMore`/
+/// `currentHit`/`currentFace` all read relative to that position, so concurrent calls of any kind
+/// on the same instance (even two threads only ever calling `next()`, or one reading while another
+/// advances) race. Give each thread/task its own instance rather than sharing one, or serialize
+/// access with `OCCTSerial.withLock { }`.
 public final class ShapeRayIntersection: @unchecked Sendable {
     let handle: OCCTCurveSurfaceInterRef
 

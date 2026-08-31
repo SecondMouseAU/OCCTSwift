@@ -379,6 +379,33 @@ reproducer (`Scripts/repro/374-resource-manager-storage-schema-race/occt_374_str
 "unguarded" variant of #371's own confirmation harness): 13 races + SIGABRT before the fix, 0/4
 clean runs after (8×30, 8×50, 10×60, 8×40).
 
+### Swift `@unchecked Sendable` audit (issue #1162)
+
+Issue #1162 flagged 27+ Swift classes marked `@unchecked Sendable` without thread-safety
+verification, citing #1153/#1154/#1155/#1156/#1158/#1159 (all now closed) as evidence. Re-verifying
+those citations against what's actually shipped, rather than trusting them, found several stale or
+outright wrong: #1153/#1154's kernel fixes are override-link-validated but not in the pinned
+kernel (so their races are still live), #1155's survey answered a different question (independent
+instances per thread, not concurrent calls on one shared instance), and #1156/#1158/#1159 are
+duplicates with no independent evidence of their own. Full audit table, per-class mechanism, and
+disposition: [`Scripts/repro/1162-sendable-audit/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1162-sendable-audit).
+
+**The project-wide convention, stated explicitly rather than left implicit**: `@unchecked Sendable`
+on a bridge-handle wrapper means the handle is safe to move across a concurrency-domain boundary,
+**not** that concurrent method calls on the same instance from multiple threads are safe. That
+distinction was first written down for `ThruSectionsBuilder` (PR #912, predating #1162), and #1162
+generalized it: every class in this package keeps `@unchecked Sendable` unless its unsafe surface
+is masked *as* safe (every method reads like a pure query and none is) rather than merely
+undocumented, in which case the conformance is genuinely misleading and was removed.
+
+Two classes met that bar: **`EdgeCurve` and `WireCurve` are no longer `Sendable`.** Their bridge
+structs each hold a *persistent* `BRepAdaptor_Curve`/`BRepAdaptor_CompCurve`, built once at `init`
+and reused by every subsequent call, so every accessor (`point`, `tangent`, `length`, ...) mutates
+the adaptor's BSpline evaluation cache (item 1 above) with zero synchronization, despite looking
+like a `const` query. Every other flagged class's unsafe surface is an ordinary, API-visible
+mutator (a setter, a re-callable `perform()`/`build()`) and kept its conformance with a corrected
+or strengthened doc comment instead, matching every other builder-style wrapper in this package.
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
 Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349, #353,

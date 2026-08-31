@@ -4,6 +4,11 @@ import OCCTBridge
 /// Image pixel map wrapping OCCT Image_AlienPixMap.
 ///
 /// Supports creating, reading, writing, and manipulating pixel images.
+///
+/// `@unchecked Sendable` reflects that `handle` is a plain bridge handle, not that concurrent use
+/// of one instance is safe, it isn't: `initTrash`/`initCopy`/`clear`/`setPixel`/`load`/
+/// `adjustGamma` all mutate the underlying `Image_AlienPixMap` handle in place with no lock.
+/// Serialize mixed access with `OCCTSerial.withLock { }`.
 public final class PixMap: @unchecked Sendable {
     /// Image pixel format.
     public enum Format: Int32, Sendable {
