@@ -474,6 +474,13 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Get the maximum continuity order of an edge (GeomAbs_Shape enum as Int).
+    ///
+    /// - Important: This always returns 0 (`GeomAbs_C0`) against OCCT 8.0.0p1, regardless of the
+    ///   edge's real continuity. Edge continuity is conceptually the `BRepGraph_LayerRegularity`
+    ///   layer, but that class does not compile in p1 and is absent from `libOCCT`, so the graph
+    ///   path is unavailable and this is a stub (#1001). Use
+    ///   ``Shape/maxContinuity(edge:)`` instead, which goes through the shape-based
+    ///   `BRep_Tool::MaxContinuity` and is unaffected.
     public func edgeMaxContinuity(_ edgeIndex: Int) -> Int {
         Int(OCCTBRepGraphEdgeMaxContinuity(handle, Int32(edgeIndex)))
     }
@@ -1596,25 +1603,42 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Set the SameParameter flag of an edge definition.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). SameParameter is now a derived per-CoEdge
+    ///   property (computed from the pcurve vs the 3D curve), not a settable edge flag; the Edges
+    ///   editor no longer exposes a setter. Kept for ABI compatibility. Use
+    ///   ``isEdgeSameParameter(_:)`` to read the derived value.
     public func setEdgeSameParameter(_ edgeIndex: Int, sameParameter: Bool) {
         OCCTBRepGraphSetEdgeSameParameter(handle, Int32(edgeIndex), sameParameter)
     }
 
     /// Set the SameRange flag of an edge definition.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). SameRange is now a derived per-CoEdge
+    ///   property (computed from the pcurve vs the 3D curve), not a settable edge flag; the Edges
+    ///   editor no longer exposes a setter. Kept for ABI compatibility. Use
+    ///   ``isEdgeSameRange(_:)`` to read the derived value.
     public func setEdgeSameRange(_ edgeIndex: Int, sameRange: Bool) {
         OCCTBRepGraphSetEdgeSameRange(handle, Int32(edgeIndex), sameRange)
     }
 
     /// Set the IsDegenerate flag of an edge definition.
     ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Edge degeneracy is now derived from
+    ///   geometry/topology, not a settable `EdgeDef` flag; the Edges editor exposes no setter.
+    ///   Kept for ABI compatibility. Use ``isEdgeDegenerated(_:)`` to read the derived value.
     /// - Parameters:
     ///   - edgeIndex: The edge index.
-    ///   - degenerate: Whether the edge is degenerate.
+    ///   - degenerate: Ignored (see above).
     public func setEdgeDegenerate(_ edgeIndex: Int, degenerate: Bool) {
         OCCTBRepGraphSetEdgeDegenerate(handle, Int32(edgeIndex), degenerate)
     }
 
     /// Set the IsClosed flag (StartVertex == EndVertex topology) of an edge.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Edge closure is now derived from
+    ///   geometry/topology, not a settable `EdgeDef` flag; the Edges editor exposes no setter.
+    ///   Kept for ABI compatibility. Use ``isEdgeClosed(_:)`` to read the derived value.
     public func setEdgeIsClosed(_ edgeIndex: Int, isClosed: Bool) {
         OCCTBRepGraphSetEdgeIsClosed(handle, Int32(edgeIndex), isClosed)
     }
@@ -1634,6 +1658,10 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Set the IsClosed flag of a wire definition.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Wire closure is derived from the ordered
+    ///   coedge chain, not a settable flag. Kept for ABI compatibility. Use ``isWireClosed(_:)``
+    ///   to read the derived value.
     public func setWireIsClosed(_ wireIndex: Int, isClosed: Bool) {
         OCCTBRepGraphSetWireIsClosed(handle, Int32(wireIndex), isClosed)
     }
@@ -1645,14 +1673,21 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the natural-restriction flag of a face definition.
     ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A face's natural-restriction flag is no
+    ///   longer stored or settable. Kept for ABI compatibility. Use
+    ///   ``isFaceNaturalRestriction(_:)`` to read the derived value.
     /// - Parameters:
     ///   - faceIndex: The face index.
-    ///   - naturalRestriction: Whether the face has natural restriction.
+    ///   - naturalRestriction: Ignored (see above).
     public func setFaceNaturalRestriction(_ faceIndex: Int, naturalRestriction: Bool) {
         OCCTBRepGraphSetFaceNaturalRestriction(handle, Int32(faceIndex), naturalRestriction)
     }
 
     /// Set the IsClosed flag of a shell definition.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Shell closure is derived from
+    ///   face-boundary edge incidence, not a settable flag. Kept for ABI compatibility. Use
+    ///   ``isShellClosed(_:)`` to read the derived value.
     public func setShellIsClosed(_ shellIndex: Int, isClosed: Bool) {
         OCCTBRepGraphSetShellIsClosed(handle, Int32(shellIndex), isClosed)
     }
@@ -1844,6 +1879,8 @@ public final class BRepGraph: @unchecked Sendable {
     public func setEdgePolygon3DRepId(_ edgeIndex: Int, polygon3DRepId: Int) {
         OCCTBRepGraphSetEdgePolygon3DRepId(handle, Int32(edgeIndex), Int32(polygon3DRepId))
     }
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Coedges are not reference-counted in p1
+    ///   (no `CoEdgeRefId` / `SetRefCoEdgeDefId`). Kept for ABI compatibility.
     public func setCoEdgeRefCoEdgeDefId(_ coedgeRefIndex: Int, coedgeIndex: Int) {
         OCCTBRepGraphSetCoEdgeRefCoEdgeDefId(handle, Int32(coedgeRefIndex), Int32(coedgeIndex))
     }
@@ -1866,6 +1903,9 @@ public final class BRepGraph: @unchecked Sendable {
     public func clearCoEdgePCurveBinding(_ coedgeIndex: Int) {
         OCCTBRepGraphClearCoEdgePCurveBinding(handle, Int32(coedgeIndex))
     }
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A wire reference's "is outer" flag is no
+    ///   longer settable (the outer wire is derived as the first active wire of the owning face).
+    ///   Kept for ABI compatibility.
     public func setWireRefIsOuter(_ wireRefIndex: Int, isOuter: Bool) {
         OCCTBRepGraphSetWireRefIsOuter(handle, Int32(wireRefIndex), isOuter)
     }
@@ -1962,6 +2002,10 @@ public final class BRepGraph: @unchecked Sendable {
     // MARK: - EditorView geometric setters & PCurve API (v0.162.0)
 
     /// Set the UV box (UV1 at ParamFirst, UV2 at ParamLast) of a coedge definition.
+    ///
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A per-coedge UV bounding box is no longer
+    ///   a settable definition field; UV endpoints are derived from the PCurve via
+    ///   `BRepGraph_Tool::CoEdge::UVPoints`. Kept for ABI compatibility.
     public func setCoEdgeUVBox(_ coedgeIndex: Int, u1: Double, v1: Double, u2: Double, v2: Double) {
         OCCTBRepGraphSetCoEdgeUVBox(handle, Int32(coedgeIndex), u1, v1, u2, v2)
     }
@@ -2039,25 +2083,39 @@ public final class BRepGraph: @unchecked Sendable {
         matrix.withUnsafeBufferPointer { buf in call(buf.baseAddress!) }
     }
 
+    // The six per-topology-reference setters below (vertex/coedge/wire/face/shell/solid) are
+    // no-ops against OCCT 8.0.0p1 (#1001). Only occurrence and child references carry a local
+    // location in p1; the per-topology references no longer store one, so their editors expose
+    // no `SetRefLocalLocation`. Kept for ABI compatibility. (CoEdge refs were removed entirely,
+    // coedges are not reference-counted.) Their getter siblings below already say so; see
+    // ``vertexRefLocalLocation(_:)`` etc. `setOccurrenceRefLocalLocation`/`setChildRefLocalLocation`
+    // just below are real, unaffected setters.
+
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) {
             OCCTBRepGraphSetVertexRefLocalLocation(handle, Int32(vertexRefIndex), $0)
         }
     }
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) {
             OCCTBRepGraphSetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), $0)
         }
     }
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setWireRefLocalLocation(_ wireRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetWireRefLocalLocation(handle, Int32(wireRefIndex), $0) }
     }
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setFaceRefLocalLocation(_ faceRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetFaceRefLocalLocation(handle, Int32(faceRefIndex), $0) }
     }
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setShellRefLocalLocation(_ shellRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetShellRefLocalLocation(handle, Int32(shellRefIndex), $0) }
     }
+    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
     public func setSolidRefLocalLocation(_ solidRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetSolidRefLocalLocation(handle, Int32(solidRefIndex), $0) }
     }
@@ -2281,6 +2339,10 @@ public final class BRepGraph: @unchecked Sendable {
     public func repSetPolygonOnTri(_ polyRepId: Int, polygon: PolygonOnTriangulation) {
         OCCTBRepGraphRepSetPolygonOnTri(handle, Int32(polyRepId), polygon.handle)
     }
+    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A polygon-on-tri's owning triangulation is
+    ///   resolved at attach time (`CoEdgeDef.FaceId` -> `FaceDef` triangulation) in p1, not stored
+    ///   as a rep-id link on the polygon rep, so there is no slot to rebind by id. Kept for ABI
+    ///   compatibility.
     public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: Int) {
         OCCTBRepGraphRepSetPolygonOnTriTriangulationId(
             handle, Int32(polyOnTriRepId), Int32(triRepId))

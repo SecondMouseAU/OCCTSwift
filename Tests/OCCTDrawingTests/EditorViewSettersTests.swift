@@ -51,8 +51,13 @@ struct EditorViewSettersTests {
                 graph.setEdgeDegenerate(0, degenerate: true)
                 #expect(!graph.isEdgeDegenerated(0))
 
-                // No-readback setters: just confirm they don't crash.
-                graph.setEdgeIsClosed(0, isClosed: false)
+                // Same shape as SameParameter/SameRange/Degenerate above: closure is derived, the
+                // setter is a no-op (#1001). Capture-before/assert-unchanged rather than assuming
+                // a specific boolean, since the point is that the setter can't move the derived
+                // value either way, not that a box edge happens to read false.
+                let closedBefore = graph.isEdgeClosed(0)
+                graph.setEdgeIsClosed(0, isClosed: !closedBefore)
+                #expect(graph.isEdgeClosed(0) == closedBefore)
             }
         }
     }
@@ -66,8 +71,11 @@ struct EditorViewSettersTests {
                 graph.setFaceTolerance(0, tolerance: 0.005)
                 #expect(abs(graph.faceTolerance(0) - 0.005) < 1e-12)
 
-                // No-readback setter.
-                graph.setFaceNaturalRestriction(0, naturalRestriction: true)
+                // No-op setter (#1001): the natural-restriction flag is no longer stored/settable
+                // in OCCT 8.0.0p1. Capture-before/assert-unchanged, not a hardcoded expectation.
+                let restrictionBefore = graph.isFaceNaturalRestriction(0)
+                graph.setFaceNaturalRestriction(0, naturalRestriction: !restrictionBefore)
+                #expect(graph.isFaceNaturalRestriction(0) == restrictionBefore)
             }
         }
     }
@@ -82,11 +90,18 @@ struct EditorViewSettersTests {
                 // invalid ids (try/catch in bridge) so the calls below are always safe.
                 graph.setCoEdgeParamRange(0, first: 0.0, last: 1.0)
                 graph.setCoEdgeOrientation(0, orientation: 0)
+                // setWireIsClosed/setShellIsClosed are no-ops (#1001): closure is derived from the
+                // coedge chain / face-boundary incidence in OCCT 8.0.0p1. Capture-before/
+                // assert-unchanged, not a hardcoded expectation.
                 if graph.wireCount > 0 {
-                    graph.setWireIsClosed(0, isClosed: true)
+                    let closedBefore = graph.isWireClosed(0)
+                    graph.setWireIsClosed(0, isClosed: !closedBefore)
+                    #expect(graph.isWireClosed(0) == closedBefore)
                 }
                 if graph.shellCount > 0 {
-                    graph.setShellIsClosed(0, isClosed: true)
+                    let closedBefore = graph.isShellClosed(0)
+                    graph.setShellIsClosed(0, isClosed: !closedBefore)
+                    #expect(graph.isShellClosed(0) == closedBefore)
                 }
             }
         }
