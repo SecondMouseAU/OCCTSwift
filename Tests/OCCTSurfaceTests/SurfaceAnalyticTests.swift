@@ -165,4 +165,28 @@ struct SurfaceAnalyticTests {
             #expect(abs(maxK - 1.0 / r) < 1e-10)  // 1/r around circumference
         }
     }
+
+    /// #1437: `OCCTSurfaceGetPrincipalCurvatures` had the identical dirMin/dirMax transposition as
+    /// its sibling `OCCTFaceGetPrincipalCurvatures` (`OCCTBridge_Properties.mm`), both pairing the
+    /// first `CurvatureDirections` output with the wrong curvature. `cylinderPrincipalCurvatures`
+    /// above only asserts magnitudes, never directions, so the swap went uncaught here too.
+    ///
+    /// The cylinder's axis is explicitly `(0, 0, 1)`, so: the minimum-curvature direction (~0,
+    /// along the axis) must be near-parallel to Z, and the maximum-curvature direction (~1/r,
+    /// circumferential) must lie near the XY plane (Z ~ 0).
+    @Test("Cylinder principal curvature directions are not transposed")
+    func cylinderPrincipalCurvatureDirectionsNotTransposed() throws {
+        let r: Double = 4.0
+        let cyl = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: r))
+        let pc = try #require(cyl.principalCurvatures(atU: 0.5, v: 1.0))
+
+        #expect(
+            abs(abs(pc.dirMin.z) - 1.0) < 1e-10,
+            "dirMin should be the axial direction (|z| ~ 1), got \(pc.dirMin)"
+        )
+        #expect(
+            abs(pc.dirMax.z) < 1e-10,
+            "dirMax should be the circumferential direction (z ~ 0), got \(pc.dirMax)"
+        )
+    }
 }

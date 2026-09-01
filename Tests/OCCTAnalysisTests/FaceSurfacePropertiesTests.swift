@@ -164,6 +164,37 @@ struct FaceSurfacePropertiesTests {
         }
     }
 
+    /// #1437: `OCCTFaceGetPrincipalCurvatures` paired `dirMin`/`dirMax` with the wrong OCCT
+    /// output, exactly transposed (`GeomLProp_SLProps::CurvatureDirections(gp_Dir& MaxD, gp_Dir&
+    /// MinD)` takes the MAXIMUM direction first). `principalCurvaturesCylinder` above only ever
+    /// asserted the magnitudes, never the directions, so the swap went uncaught.
+    ///
+    /// `Shape.cylinder(radius:height:)` (used above) is built via `BRepPrimAPI_MakeCylinder(radius,
+    /// height)` with no axis argument, whose default axis is `gp::XOY()`'s Z direction. So: the
+    /// minimum-curvature direction (~0, along the axis) must be near-parallel to Z, and the
+    /// maximum-curvature direction (~1/r, circumferential) must lie near the XY plane (Z ~ 0).
+    @Test("Principal curvature directions of cylinder are not transposed")
+    func principalCurvatureDirectionsCylinderNotTransposed() throws {
+        let radius = 5.0
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
+        let cylFace = try #require(cyl.faces().first { $0.surfaceType == .cylinder })
+        let bounds = try #require(cylFace.uvBounds)
+        let uMid = (bounds.uMin + bounds.uMax) / 2.0
+        let vMid = (bounds.vMin + bounds.vMax) / 2.0
+        let pc = try #require(cylFace.principalCurvatures(atU: uMid, v: vMid))
+
+        // dirMin is the axial direction: near-parallel to Z, so |z| should be close to 1.
+        #expect(
+            abs(abs(pc.dirMin.z) - 1.0) < 1e-6,
+            "dirMin should be the axial direction (|z| ~ 1), got \(pc.dirMin)"
+        )
+        // dirMax is the circumferential direction: lies in the XY plane, so |z| should be ~0.
+        #expect(
+            abs(pc.dirMax.z) < 1e-6,
+            "dirMax should be the circumferential direction (z ~ 0), got \(pc.dirMax)"
+        )
+    }
+
     @Test("Surface type detection")
     func surfaceTypeDetection() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
