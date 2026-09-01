@@ -83,12 +83,15 @@ public enum EdgeAnalysis {
 
     /// Check if two edges overlap.
     ///
-    /// Returns (overlapping, tolerance).
-    public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape) -> (
-        overlapping: Bool, tolerance: Double
-    ) {
-        var tol = 0.0
-        let ok = OCCTEdgeCheckOverlapping(edge1.handle, edge2.handle, &tol)
+    /// - Parameter tolerance: The overlap distance threshold. Defaults to `Precision::Confusion()`
+    ///   (`1e-7`). Prior to #1438 this was fixed at `0.0` internally, which made the underlying
+    ///   OCCT comparison always fail, so `checkOverlapping` always returned `false`.
+    /// - Returns: (overlapping, tolerance) -- `tolerance` echoes back the threshold used.
+    public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape, tolerance: Double = 1e-7)
+        -> (overlapping: Bool, tolerance: Double)
+    {
+        var tol = tolerance
+        let ok = OCCTEdgeCheckOverlapping(edge1.handle, edge2.handle, tolerance, &tol)
         return (ok, tol)
     }
 
@@ -119,7 +122,12 @@ public enum EdgeAnalysis {
         return (SIMD2(px, py), SIMD2(tx, ty))
     }
 
-    /// Check PCurve range on a face.
+    /// Check whether `[first, last]` is a valid parameter range for the edge's pcurve on `face`.
+    ///
+    /// The check is against the pcurve's own underlying geometric domain (its full period, for a
+    /// periodic pcurve), not against the edge's current stored trim range: a range can be valid
+    /// here even when it extends beyond where the edge itself happens to be trimmed, as long as it
+    /// stays within the pcurve's own domain (#1438).
     public static func checkPCurveRange(
         _ edge: Shape, face: Shape,
         first: Double, last: Double

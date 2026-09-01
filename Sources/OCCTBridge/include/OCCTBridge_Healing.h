@@ -1436,9 +1436,12 @@ bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef _Nonnull edge,
                                   double* _Nonnull toler1,
                                   double* _Nonnull toler2);
 
-/// Check if two edges overlap. Returns true if overlapping.
+/// Check if two edges overlap within `tolerance`. Returns true if overlapping. `tolOverlap` is
+/// seeded with `tolerance` before the check (#1438: it used to be zeroed instead, which made the
+/// underlying comparison "distance >= 0" and disabled the check entirely).
 bool OCCTEdgeCheckOverlapping(OCCTShapeRef _Nonnull edge1,
                               OCCTShapeRef _Nonnull edge2,
+                              double tolerance,
                               double* _Nonnull tolOverlap);
 
 /// Get UV bounds of an edge on a face.
@@ -1458,7 +1461,9 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef _Nonnull edge,
                              double* _Nonnull tx,
                              double* _Nonnull ty);
 
-/// Check PCurve range on a face.
+/// Check whether [first, last] is a valid parameter range for the edge's pcurve on the face,
+/// against the pcurve's own underlying geometric domain (period, for a periodic pcurve; the basis
+/// curve's own first/last, for a Geom2d_TrimmedCurve), NOT the edge's current stored trim (#1438).
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef _Nonnull edge,
                               OCCTShapeRef _Nonnull face,
                               double first,
