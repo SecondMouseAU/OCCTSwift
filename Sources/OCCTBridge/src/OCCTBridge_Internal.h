@@ -88,9 +88,12 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
-#include <GCPnts_AbscissaPoint.hxx> // occtAdaptorLengthBetween, the shared ranged arc length
-#include <CPnts_AbscissaPoint.hxx>  // occtArcQuadrature's per-span integrator (#603)
-#include <TColStd_Array1OfReal.hxx> // the GeomAbs_CN interval array the same helpers walk
+#include <GCPnts_AbscissaPoint.hxx>    // occtAdaptorLengthBetween, the shared ranged arc length
+#include <CPnts_AbscissaPoint.hxx>     // occtArcQuadrature's per-span integrator (#603)
+#include <TColStd_Array1OfReal.hxx>    // the GeomAbs_CN interval array the same helpers walk
+#include <Aspect_TypeOfDeflection.hxx> // occtDrawerGetEffectiveDeflection (#1418)
+#include <Prs3d.hxx>        // occtDrawerGetEffectiveDeflection: Prs3d::GetDeflection (#1418)
+#include <Prs3d_Drawer.hxx> // occtDrawerGetEffectiveDeflection (#1418)
 #include <cmath>
 
 // === Foundation struct definitions ===
@@ -3206,6 +3209,36 @@ inline bool occtAddShapeIfPresent(BRep_Builder&       builder,
     return true;
   }
   return false;
+}
+
+// === #1418: the drawer's real, size-scaled mesh deflection ===
+//
+// Prs3d_Drawer::DeviationCoefficient() is a dimensionless coefficient (OCCT default 0.001), not a
+// usable absolute deflection, whenever the drawer's TypeOfDeflection() is Aspect_TOD_RELATIVE --
+// itself OCCT's own default type -- and must be scaled by the shape's own bounding-box diagonal
+// before it means anything, per Prs3d_Drawer.hxx's own doc comment ("SizeOfObject *
+// DeviationCoefficient") and docs/reference/Drawing.md's "relative to the bounding-box diagonal".
+// This mirrors OCCT's own reference caller, StdPrs_ToolTriangulatedShape::GetDeflection, computing
+// a Bnd_Box and scaling through Prs3d::GetDeflection rather than returning the bare coefficient.
+//
+// Was duplicated verbatim as a static, non-shared OCCTDrawerGetEffectiveDeflection in all four
+// OCCTBridge_Visualization_*.mm split files with none of this scaling, live (called) only from
+// _Presentation.mm and dead code in the other three; consolidated here rather than fixed four
+// times over, following this file's own occtPipeShellFinish precedent for a cross-split-file
+// helper.
+inline double occtDrawerGetEffectiveDeflection(const Handle(Prs3d_Drawer)& drawer,
+                                               const TopoDS_Shape&         shape)
+{
+  if (drawer.IsNull())
+    return 0.1;
+  if (drawer->TypeOfDeflection() != Aspect_TOD_RELATIVE)
+    return drawer->MaximalChordialDeviation();
+
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box, false);
+  return Prs3d::GetDeflection(box,
+                              drawer->DeviationCoefficient(),
+                              drawer->MaximalChordialDeviation());
 }
 
 #endif /* OCCTBridge_Internal_h */
