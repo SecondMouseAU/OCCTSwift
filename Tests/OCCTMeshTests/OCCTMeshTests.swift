@@ -401,6 +401,36 @@ struct DrawerMeshTests {
             #expect(mesh.triangleCount == 12)
         }
     }
+
+    @Test("Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
+    func relativeDeflectionScalesWithShapeSize() {
+        // A drawer's TypeOfDeflection() default is .relative, and DeviationCoefficient() (default
+        // ~0.001) is documented as a coefficient of the shape's own bounding-box diagonal, not a
+        // usable absolute deflection on its own -- OCCTDrawerGetEffectiveDeflection used to return
+        // the bare coefficient with no scaling step, so it behaved as a fixed absolute deflection
+        // regardless of the shape's real-world size.
+        //
+        // With the fix, the same relative coefficient produces roughly scale-invariant
+        // tessellation density: a 50x-larger sphere should need a broadly similar triangle count,
+        // not 50x more. Without the fix, the raw ~0.001 coefficient stays a constant *absolute*
+        // deflection, so the larger sphere (needing the same absolute chordal tolerance over a
+        // much bigger surface) needs dramatically more triangles.
+        let smallSphere = Shape.sphere(radius: 1)!
+        let largeSphere = Shape.sphere(radius: 50)!
+        let drawer = DisplayDrawer()
+
+        let smallMesh = smallSphere.shadedMesh(drawer: drawer)
+        let largeMesh = largeSphere.shadedMesh(drawer: drawer)
+
+        #expect(smallMesh != nil)
+        #expect(largeMesh != nil)
+        if let small = smallMesh, let large = largeMesh, small.triangleCount > 0 {
+            // large/small triangle count ratio should stay well under the 50x radius ratio;
+            // the un-scaled bug makes it grow roughly linearly with shape size instead.
+            let ratio = Double(large.triangleCount) / Double(small.triangleCount)
+            #expect(ratio < 10)
+        }
+    }
 }
 
 // MARK: - Overload-Pair Deinterleave Parity Tests (#1224)

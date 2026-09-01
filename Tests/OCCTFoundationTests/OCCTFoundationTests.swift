@@ -329,6 +329,32 @@ struct MaterialOCCTTests {
         #expect(mr < 0.1)
     }
 
+    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() {
+        // #1419: Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial_Water)'s PBR material has an
+        // authored (NormalizedRoughness) roughness of exactly 0.0 --
+        // Graphic3d_PBRMaterial::SetBSDF's dielectric-glass branch calls SetRoughness(0.f)
+        // directly. The wrong accessor, Roughness(), remaps that into [MinRoughness,1] for
+        // internal calculations and would read back exactly MinRoughness() (0.01), never below
+        // it, for ANY material. Measured directly against the pinned kernel, see
+        // Scripts/repro/1419-pbr-roughness-accessor/: Water/Glass/Diamond/Neon/Ionized all report
+        // normalized=0.0, remapped=0.01.
+        if let water = Material.predefinedMaterial(named: "Water") {
+            #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
+            #expect(abs(water.pbrRoughness) < 1e-4)
+        }
+    }
+
+    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() {
+        // #1419: Brass's PBR material has an authored roughness of 0.212132 (sqrt(0.045),
+        // Graphic3d_BSDF::CreateMetallic's roughness parameter); Roughness() would remap it to
+        // 0.220011 in [MinRoughness,1] space. The two are close enough that a loose tolerance
+        // would pass either way, so this pins the value tightly against the authored one.
+        if let brass = Material.predefinedMaterial(named: "Brass") {
+            #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
+            #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
+        }
+    }
+
     @Test func roughnessFromSpecular() {
         let r = Material.roughnessFromSpecular(color: .white, shininess: 0.8)
         #expect(r >= 0 && r <= 1)
