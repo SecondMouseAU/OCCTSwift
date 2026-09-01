@@ -1363,7 +1363,11 @@ int32_t OCCTFilletSurfError(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
-    return 4;
+    // FilletSurf_ErrorTypeStatus is EmptyList=0, EdgeNotG1=1, FacesNotG1=2, EdgeNotOnShape=3,
+    // NotSharpEdge=4, PbFilletCompute=5 (#1439); an exception here has no verdict of its own, so
+    // this reports PbFilletCompute, the closest real category, and deliberately not 4, which
+    // FilletSurf_Builder also returns for a genuine (non-exceptional) NotSharpEdge verdict.
+    return 5;
   }
 }
 

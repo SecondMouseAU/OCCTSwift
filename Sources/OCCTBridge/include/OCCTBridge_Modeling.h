@@ -3016,7 +3016,8 @@ int32_t OCCTFilletSurfBuild(OCCTShapeRef _Nonnull shape,
                             int32_t* _Nonnull outCount);
 
 /// Get the error status when FilletSurf_Builder fails.
-/// @return 0=EdgeNotG1, 1=FacesNotG1, 2=EdgeNotOnShape, 3=NotSharpEdge, 4=PbFilletCompute
+/// @return 0=EmptyList, 1=EdgeNotG1, 2=FacesNotG1, 3=EdgeNotOnShape, 4=NotSharpEdge,
+/// 5=PbFilletCompute
 int32_t OCCTFilletSurfError(OCCTShapeRef _Nonnull shape,
                             const OCCTShapeRef _Nonnull* _Nonnull edges,
                             int32_t edgeCount,
