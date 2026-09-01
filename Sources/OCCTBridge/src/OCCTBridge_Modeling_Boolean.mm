@@ -3593,11 +3593,11 @@ void OCCTHistoryMerge(OCCTHistoryRef history, OCCTHistoryRef other)
     return;
   try
   {
-    auto h1 = static_cast<Handle(BRepTools_History)*>(history);
-    auto h2 = static_cast<Handle(BRepTools_History)*>(other);
-    if (!h1->IsNull() && !h2->IsNull())
+    auto* h1 = static_cast<OCCTHistoryStorage*>(history);
+    auto* h2 = static_cast<OCCTHistoryStorage*>(other);
+    if (!h1->history.IsNull() && !h2->history.IsNull())
     {
-      (*h1)->Merge(*h2);
+      h1->history->Merge(h2->history);
     }
   }
   catch (...)
@@ -3613,10 +3613,10 @@ void OCCTHistoryReplaceGenerated(OCCTHistoryRef history,
     return;
   try
   {
-    auto h = static_cast<Handle(BRepTools_History)*>(history);
-    if (!h->IsNull())
+    auto* h = static_cast<OCCTHistoryStorage*>(history);
+    if (!h->history.IsNull())
     {
-      (*h)->ReplaceGenerated(initial->shape, generated->shape);
+      h->history->ReplaceGenerated(initial->shape, generated->shape);
     }
   }
   catch (...)
@@ -3630,10 +3630,10 @@ void OCCTHistoryReplaceModified(OCCTHistoryRef history, OCCTShapeRef initial, OC
     return;
   try
   {
-    auto h = static_cast<Handle(BRepTools_History)*>(history);
-    if (!h->IsNull())
+    auto* h = static_cast<OCCTHistoryStorage*>(history);
+    if (!h->history.IsNull())
     {
-      (*h)->ReplaceModified(initial->shape, modified->shape);
+      h->history->ReplaceModified(initial->shape, modified->shape);
     }
   }
   catch (...)
@@ -3650,10 +3650,10 @@ int32_t OCCTHistoryGetModifiedShapes(OCCTHistoryRef history,
     return 0;
   try
   {
-    auto h = static_cast<Handle(BRepTools_History)*>(history);
-    if (h->IsNull())
+    auto* h = static_cast<OCCTHistoryStorage*>(history);
+    if (h->history.IsNull())
       return 0;
-    const auto& modified = (*h)->Modified(initial->shape);
+    const auto& modified = h->history->Modified(initial->shape);
     int32_t     count    = 0;
     for (auto it = modified.cbegin(); it != modified.cend() && count < maxCount; ++it, ++count)
     {
@@ -3678,10 +3678,10 @@ int32_t OCCTHistoryGetGeneratedShapes(OCCTHistoryRef history,
     return 0;
   try
   {
-    auto h = static_cast<Handle(BRepTools_History)*>(history);
-    if (h->IsNull())
+    auto* h = static_cast<OCCTHistoryStorage*>(history);
+    if (h->history.IsNull())
       return 0;
-    const auto& generated = (*h)->Generated(initial->shape);
+    const auto& generated = h->history->Generated(initial->shape);
     int32_t     count     = 0;
     for (auto it = generated.cbegin(); it != generated.cend() && count < maxCount; ++it, ++count)
     {
@@ -4123,7 +4123,8 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //   0  = clean (conclusive)
 //  -1  = indeterminate (timed out, breaker tripped - analysis was running)
 //  -2  = indeterminate (timed out, breaker NOT tripped - analysis made no progress)
-//  -3  = error (exception occurred)
+//  -3  = error (exception occurred, or the analyzer recorded a fault other than
+//        BOPAlgo_SelfIntersect, e.g. BOPAlgo_BadType for a refused/empty argument - #1436)
 //
 // Output parameters (optional, can pass nullptr):
 //   - outTotalFacePairs: estimated total face pairs to check
@@ -4187,19 +4188,47 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
       *outTimeSpent = std::chrono::duration<double>(endTime - startTime).count();
     }
 
-    // Check for faults FIRST - a completed analysis that found a fault is conclusive
-    // regardless of whether the deadline passed during execution
-    if (aa.HasFaulty())
-      return 1; // self-intersects (conclusive)
-
-    // With timeout: check if breaker tripped
-    // If the analysis was interrupted, its result cannot be trusted (aborted analysis answers
-    // nothing)
+    // The watchdog is read before the results, same order and same reason as
+    // OCCTShapeSelfIntersectsBounded above (#1054): an aborted analysis answers nothing,
+    // whatever it recorded on the way out, and a breaker-interrupted run can report up to
+    // three spurious BOPAlgo_SelfIntersect entries of its own (Scripts/repro/
+    // 1054-selfintersect-fault-kinds/). Trusting HasFaulty()/the fault loop ahead of this
+    // check would reintroduce that exact bug here.
     bool breakerTripped = (!breaker.IsNull() && breaker->tripped());
     bool deadlinePassed = (!breaker.IsNull() && breaker->deadlinePassed());
 
     if (breakerTripped)
       return -1; // timed out, breaker was tripped (analysis was running)
+
+    // Read the results by status rather than through HasFaulty(): HasFaulty() is "did any
+    // enabled mode record something", true for BOPAlgo_BadType/OperationAborted/CheckUnknown
+    // just as much as for a genuine BOPAlgo_SelfIntersect, so it is not an answer to "does
+    // this shape self-intersect" (#1436, the same mistake fixed in this function's sibling
+    // above, #1054). An empty compound, for example, records BOPAlgo_BadType and returns
+    // early with no self-intersection test ever run; HasFaulty() was true regardless.
+    bool selfIntersects = false;
+    bool otherFault     = false;
+    for (NCollection_List<BOPAlgo_CheckResult>::Iterator it(aa.GetCheckResult()); it.More();
+         it.Next())
+    {
+      if (it.Value().GetCheckStatus() == BOPAlgo_SelfIntersect)
+        selfIntersects = true;
+      else
+        otherFault = true;
+    }
+
+    // otherFault wins over selfIntersects, deliberately (same rule as the sibling function):
+    // a fault outside BOPAlgo_SelfIntersect means the analysis did not finish answering the
+    // question asked, so neither "intersects" nor "clean" is defensible. Report it as an
+    // error rather than folding it into either conclusive result.
+    if (otherFault)
+      return -3; // analysed something, but not the question asked
+
+    // Check for a genuine fault next - a completed analysis that found a real
+    // self-intersection is conclusive regardless of whether the deadline passed during
+    // execution, as long as the breaker (checked above) was not the reason it stopped.
+    if (selfIntersects)
+      return 1; // self-intersects (conclusive)
 
     // Timeout set, deadline passed, but breaker not tripped AND no fault found:
     // analysis made no progress (completed but took longer than timeout without breaker being
@@ -4207,11 +4236,7 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
     if (timeoutSeconds > 0.0 && deadlinePassed && !breakerTripped)
       return -2; // timed out, breaker NOT tripped (analysis made no progress)
 
-    // No timeout - completed successfully
-    if (timeoutSeconds <= 0.0)
-      return 0;
-
-    // Completed before timeout with no faults
+    // No timeout, or completed before timeout with no faults.
     return 0;
   }
   catch (...)

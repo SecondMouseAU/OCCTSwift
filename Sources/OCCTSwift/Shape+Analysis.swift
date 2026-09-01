@@ -727,7 +727,9 @@ extension Shape {
             /// The check timed out but the breaker was not tripped (analysis completed but exceeded timeout).
             /// This indicates the analysis made no meaningful progress within the time limit.
             case indeterminateBreakerNotTripped
-            /// An error occurred during analysis.
+            /// An error occurred during analysis, or the analyzer could not answer the
+            /// question asked (e.g. a refused/empty argument). Either way, treat as unknown,
+            /// not as `.clean` (#1436).
             case error
         }
 
