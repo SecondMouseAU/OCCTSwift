@@ -653,16 +653,25 @@ int32_t OCCTContapCylinderDir(double   px,
       if (ctype == GeomAbs_Line)
       {
         *outType = 0; // line
-        // Return first line
-        gp_Lin line = contAna.Line(1);
-        gp_Pnt loc  = line.Location();
-        gp_Dir dir  = line.Direction();
-        outData[0]  = loc.X();
-        outData[1]  = loc.Y();
-        outData[2]  = loc.Z();
-        outData[3]  = dir.X();
-        outData[4]  = dir.Y();
-        outData[5]  = dir.Z();
+        // #1416: Contap_ContAna::Perform(gp_Cylinder, gp_Dir) sets nbSol to exactly 0 or 2 on
+        // its only success path (Contap_ContAna.cxx), never 1: a cylinder's silhouette against a
+        // non-degenerate view direction is always the pair of tangent rulings either side of the
+        // axis. Write every line NbContours() reports (capped at 2, the most this overload ever
+        // produces), 6 doubles each: location xyz then direction xyz, line 1 at outData[0..5],
+        // line 2 at outData[6..11]. Caller must provide a 12-double outData buffer.
+        for (int32_t i = 0; i < nb && i < 2; ++i)
+        {
+          gp_Lin  line     = contAna.Line(i + 1);
+          gp_Pnt  loc      = line.Location();
+          gp_Dir  dir      = line.Direction();
+          double* lineData = outData + (i * 6);
+          lineData[0]      = loc.X();
+          lineData[1]      = loc.Y();
+          lineData[2]      = loc.Z();
+          lineData[3]      = dir.X();
+          lineData[4]      = dir.Y();
+          lineData[5]      = dir.Z();
+        }
       }
       else if (ctype == GeomAbs_Circle)
       {

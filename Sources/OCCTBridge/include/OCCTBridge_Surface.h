@@ -740,7 +740,10 @@ OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef sur
 
 /// Contour type enum: 0=Line, 1=Circle, 2=Walking, 3=Restriction
 /// Compute analytical contours on a sphere with a view direction.
-/// @return Number of contours, or -1 on failure. If circle, outCx/Cy/Cz/Cr are filled.
+/// @return Number of contours, or -1 on failure. If circle, outData[0..3] holds
+///   center xyz + radius. `Contap_ContAna::Perform(gp_Sphere, gp_Dir)` only ever
+///   produces a single contour, so outData needs 8 doubles (4 used).
+/// @param outData Caller-owned buffer of at least 8 doubles.
 int32_t OCCTContapSphereDir(double   cx,
                             double   cy,
                             double   cz,
@@ -752,6 +755,10 @@ int32_t OCCTContapSphereDir(double   cx,
                             double*  outData);
 
 /// Compute analytical contours on a cylinder with a view direction.
+/// @return Number of contours (0 or 2; never 1 -- see #1416), or -1 on failure. When 2 (the
+///   ordinary, non-degenerate case), outData holds BOTH tangent lines: line 1 location xyz +
+///   direction xyz at outData[0..5], line 2 at outData[6..11].
+/// @param outData Caller-owned buffer of at least 12 doubles.
 int32_t OCCTContapCylinderDir(double   px,
                               double   py,
                               double   pz,
@@ -766,6 +773,10 @@ int32_t OCCTContapCylinderDir(double   px,
                               double*  outData);
 
 /// Compute analytical contours on a sphere with an eye point (perspective).
+/// @return Number of contours, or -1 on failure. `Contap_ContAna::Perform(gp_Sphere, gp_Pnt)`
+///   only ever produces a single contour (a circle, outData[0..3] center xyz + radius), so
+///   outData needs 8 doubles (4 used).
+/// @param outData Caller-owned buffer of at least 8 doubles.
 int32_t OCCTContapSphereEye(double   cx,
                             double   cy,
                             double   cz,
