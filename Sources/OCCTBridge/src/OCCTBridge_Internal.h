@@ -3124,6 +3124,18 @@ inline bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell,
 
 // Build the configured shell and, when asked, close it into a solid. Holds the sole copy
 // of the build-history workaround that used to be pasted into all six entry points.
+//
+// #1414: BRepOffsetAPI_MakePipeShell::MakeSolid() never touches Done()/NotDone(), it only
+// reads IsDone() once as a precondition (inherited from the Build() above), so re-testing
+// IsDone() after calling it was always true regardless of whether MakeSolid() itself closed
+// the shell. BRepFill_PipeShell::MakeSolid() (the class it wraps) genuinely returns false
+// for a real, reachable input, e.g. an unclosed profile wire, whose swept shell can never be
+// capped into a solid, so the stale check silently handed callers the open shell under a
+// "solid" label it never earned. Use MakeSolid()'s own return value instead, and refuse
+// (nullptr) on a genuine failure rather than return an open shell mislabeled as the solid
+// the caller asked for: every other failure in this function already signals nullptr, and
+// this project has already made the equivalent call for BRepOffsetAPI_ThruSections::MakeSolid
+// (#905): fail visibly rather than silently demote the result.
 inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid)
 {
   pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
@@ -3134,11 +3146,9 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
   TopoDS_Shape result = pipeShell.Shape();
   if (solid)
   {
-    pipeShell.MakeSolid();
-    if (pipeShell.IsDone())
-    {
-      result = pipeShell.Shape();
-    }
+    if (!pipeShell.MakeSolid())
+      return nullptr;
+    result = pipeShell.Shape();
   }
   return new OCCTShape(result);
 }
