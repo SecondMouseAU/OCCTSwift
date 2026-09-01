@@ -19,8 +19,10 @@ public enum MessageSystem {
         OCCTMessageMsgFileLoad(path)
     }
 
-    /// Load OCCT's Shape Healing (ShapeFix) diagnostic message set. Reliably succeeds: falls back
-    /// to a message set compiled into OCCT itself if no `CSF_SHMessage` resource file is found.
+    /// Load OCCT's Shape Healing (ShapeFix) diagnostic message set.
+    ///
+    /// Reliably succeeds: falls back to a message set compiled into OCCT itself if no
+    /// `CSF_SHMessage` resource file is found.
     ///
     /// ```swift
     /// MessageSystem.loadDefault()
