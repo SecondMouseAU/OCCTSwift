@@ -423,7 +423,8 @@ public static func loadFile(_ path: String) -> Bool
 
 ### `MessageSystem.loadDefault()`
 
-Load the default OCCT message file bundled with the framework.
+Load OCCT's Shape Healing (ShapeFix) diagnostic message set. Reliably succeeds: falls back to a
+message set compiled into the OCCT static library when no `CSF_SHMessage` resource file is found.
 
 ```swift
 @discardableResult
@@ -431,7 +432,13 @@ public static func loadDefault() -> Bool
 ```
 
 - **Returns:** `true` on success.
-- **OCCT:** `Message_MsgFile::LoadFile` (default path) via `OCCTMessageMsgFileLoadDefault`.
+- **OCCT:** `ShapeExtend::Init()` via `OCCTMessageMsgFileLoadDefault`.
+- **Example:**
+  ```swift
+  MessageSystem.loadDefault()
+  let hasSmallSolidMessage = MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0")
+  // hasSmallSolidMessage == true
+  ```
 
 ---
 

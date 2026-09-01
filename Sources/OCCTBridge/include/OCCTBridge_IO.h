@@ -886,7 +886,9 @@ char* _Nullable OCCTMessageMsgGet(const char* _Nonnull key);
 /// Load message definitions from a file.
 bool OCCTMessageMsgFileLoad(const char* _Nonnull fileName);
 
-/// Load the default OCCT message file.
+/// Load OCCT's Shape Healing (ShapeFix) diagnostic message set (issue #1422). Always succeeds:
+/// the underlying `ShapeExtend::Init()` falls back to a message set compiled into the OCCT
+/// static library when the (rarely set) `CSF_SHMessage` environment variable is absent.
 bool OCCTMessageMsgFileLoadDefault(void);
 
 /// Check if a message key is registered.

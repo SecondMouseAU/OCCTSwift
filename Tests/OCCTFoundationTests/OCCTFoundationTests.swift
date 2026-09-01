@@ -1395,8 +1395,17 @@ struct MessageMsgTests {
     }
 
     @Test func loadDefault() {
-        // May fail but should not crash
-        let _ = MessageSystem.loadDefault()
+        // Issue #1422: loadDefault() used to reference a fabricated env var ("CSF_XHatch") that
+        // could never resolve, so this used to be able to assert only "doesn't crash." It now
+        // loads OCCT's real Shape Healing (ShapeFix) message set via ShapeExtend::Init(), which
+        // falls back to a message set compiled into the OCCT static library when no CSF_SHMessage
+        // resource file is found, so this reliably succeeds. Nothing else in this bridge or its
+        // tests calls ShapeExtend::Init() (only OCCT's higher-level ShapeProcess/XSAlgo framework
+        // does, which this bridge never reaches), so this key cannot already be present from an
+        // unrelated code path.
+        let ok = MessageSystem.loadDefault()
+        #expect(ok)
+        #expect(MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0"))
     }
 
     @Test func loadNonexistent() {

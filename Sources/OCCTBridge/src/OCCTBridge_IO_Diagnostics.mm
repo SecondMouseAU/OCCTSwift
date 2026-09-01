@@ -41,6 +41,7 @@
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <ShapeFix_Shape.hxx>
+#include <ShapeExtend.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Shell.hxx>
@@ -824,7 +825,20 @@ bool OCCTMessageMsgFileLoadDefault(void)
 {
   try
   {
-    return Message_MsgFile::LoadFromEnv("CSF_XHatch", "");
+    // "CSF_XHatch" (issue #1422) was a fabricated env var name -- it appears nowhere in OCCT and
+    // could never resolve. The only two real upstream "default message set" loaders are
+    // ShapeExtend::Init() (CSF_SHMessage/"SHAPE", ShapeExtend.cxx) and
+    // Interface_Static::Standards() (CSF_XSMessage/"XSTEP", Interface_StaticStandards.cxx).
+    // ShapeExtend::Init() is the one chosen here: it does nothing but load ShapeFix diagnostic
+    // messages, matching this function's own documented, narrow contract, where
+    // Interface_Static::Standards() would also silently configure ~15 unrelated XSTEP read/write
+    // precision/tolerance static parameters as a side effect. Both internally retry
+    // Message_MsgFile::LoadFromEnv(<real env var>, <real file name>) first (matching the upstream
+    // precedent's shape) and fall back to a message set compiled into the OCCT static library on
+    // failure, so this reliably succeeds even though neither env var is ever set anywhere in this
+    // project or by any downstream SwiftPM consumer.
+    ShapeExtend::Init();
+    return Message_MsgFile::HasMsg(TCollection_AsciiString("ShapeFix.FixSmallSolid.MSG0"));
   }
   catch (...)
   {
