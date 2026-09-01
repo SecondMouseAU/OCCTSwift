@@ -897,7 +897,7 @@ public struct ContourResult {
 }
 ```
 
-- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre and radius; for lines: location and direction).
+- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre xyz + radius, `data[0...3]`; for lines: location xyz + direction xyz per contour, 6 doubles each). `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data` holds 8 doubles. `contourCylinderDir` can report two tangent lines (`count == 2`, the ordinary, non-degenerate case — a cylinder's silhouette against a non-axis-parallel view direction is always a pair of tangent rulings, never one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
 
 ---
 
@@ -923,6 +923,20 @@ public static func contourSphereDir(center: SIMD3<Double>, radius: Double,
 ### `Shape.contourCylinderDir(origin:axis:radius:direction:)`
 
 Compute the silhouette contour of a cylinder for an orthographic view direction.
+
+A cylinder's silhouette against a non-axis-parallel view direction is always the pair of tangent
+rulings either side of the axis: `count` is `2`, never `1`. Both lines are returned in `data`,
+6 doubles each (location xyz + direction xyz): line 1 at `data[0...5]`, line 2 at `data[6...11]`.
+
+```swift
+if let result = Shape.contourCylinderDir(
+    origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+    radius: 5, direction: SIMD3(1, 0, 0)),
+   result.count == 2 {
+    let line1Location = SIMD3(result.data[0], result.data[1], result.data[2])
+    let line2Location = SIMD3(result.data[6], result.data[7], result.data[8])
+}
+```
 
 ```swift
 public static func contourCylinderDir(origin: SIMD3<Double>, axis: SIMD3<Double>,

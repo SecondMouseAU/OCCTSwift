@@ -1306,7 +1306,15 @@ extension Shape {
         public let type: ContourType
         /// Number of contours found.
         public let count: Int
-        /// Circle: center and radius; line: location and direction.
+        /// Raw parameters.
+        ///
+        /// Circle: center xyz + radius (`data[0...3]`).
+        /// Line: location xyz + direction xyz per contour, 6 doubles each.
+        /// `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data`
+        /// holds 8 doubles (one line at `data[0...5]`, or a circle at `data[0...3]`).
+        /// `contourCylinderDir` can report two tangent lines (#1416: a cylinder's silhouette
+        /// against a non-degenerate view direction is always the pair of tangent rulings, never
+        /// one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
         public let data: [Double]
     }
 
@@ -1338,6 +1346,20 @@ extension Shape {
 
     /// Compute analytical contours on a cylinder with a view direction.
     ///
+    /// A cylinder's silhouette against a non-degenerate (non-axis-parallel) view direction is
+    /// always the pair of tangent rulings either side of the axis, `count == 2`, never 1 (#1416).
+    /// Both are returned: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
+    ///
+    /// ```swift
+    /// if let result = Shape.contourCylinderDir(
+    ///     origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+    ///     radius: 5, direction: SIMD3(1, 0, 0)),
+    ///    result.count == 2 {
+    ///     let line1Location = SIMD3(result.data[0], result.data[1], result.data[2])
+    ///     let line2Location = SIMD3(result.data[6], result.data[7], result.data[8])
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - origin: Cylinder axis origin
     ///   - axis: Cylinder axis direction
@@ -1349,7 +1371,7 @@ extension Shape {
         radius: Double, direction: SIMD3<Double>
     ) -> ContourResult? {
         var outType: Int32 = 0
-        var outData = [Double](repeating: 0, count: 8)
+        var outData = [Double](repeating: 0, count: 12)
         let count = OCCTContapCylinderDir(
             origin.x, origin.y, origin.z,
             axis.x, axis.y, axis.z, radius,
