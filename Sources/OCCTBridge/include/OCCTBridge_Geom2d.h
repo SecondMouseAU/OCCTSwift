@@ -398,6 +398,14 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef       curve,
                            int32_t              max);
 
 // Hatching
+/// Hatch a region bounded by `boundaries` with parallel lines.
+/// @param outXY Output buffer: pairs of (x1,y1,x2,y2) per segment (4 doubles each), sized for
+///   `maxSegments * 4` doubles by the caller.
+/// @param maxSegments Maximum number of output segments (NOT a point count; matches OCCTHatchLines'
+///   own `maxSegments`/`outSegments` convention -- #1420 found the two had drifted, `maxSegments`
+///   here used to be named `maxPoints` and be read as a point count internally, silently
+///   truncating output at half the caller's real buffer capacity).
+/// @return Number of segments written.
 int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
                          int32_t               boundaryCount,
                          double                originX,
@@ -407,7 +415,7 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
                          double                spacing,
                          double                tolerance,
                          double*               outXY,
-                         int32_t               maxPoints);
+                         int32_t               maxSegments);
 
 // Bisector
 OCCTCurve2DRef OCCTCurve2DBisectorCC(OCCTCurve2DRef c1,

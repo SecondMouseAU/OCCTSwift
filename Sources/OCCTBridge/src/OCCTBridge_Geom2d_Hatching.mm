@@ -686,9 +686,9 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
                          double                spacing,
                          double                tolerance,
                          double*               outXY,
-                         int32_t               maxPoints)
+                         int32_t               maxSegments)
 {
-  if (!boundaries || boundaryCount <= 0 || !outXY || maxPoints <= 0 || spacing <= 0)
+  if (!boundaries || boundaryCount <= 0 || !outXY || maxSegments <= 0 || spacing <= 0)
     return 0;
   try
   {
@@ -773,7 +773,11 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
         const Geom2dAdaptor_Curve& hatchCurve = hatcher.HatchingCurve(idx);
         gp_Pnt2d                   p1         = hatchCurve.Value(u1);
         gp_Pnt2d                   p2         = hatchCurve.Value(u2);
-        if (pointIdx + 4 > maxPoints * 2)
+        // #1420: maxSegments is a SEGMENT count (4 doubles each), matching the caller's buffer
+        // sizing and OCCTHatchLines' own maxSegments/outSegments convention below -- not a point
+        // count (2 doubles each). The old `maxPoints * 2` guard here silently capped output at
+        // half the caller's real buffer capacity.
+        if (pointIdx + 4 > maxSegments * 4)
           break;
         outXY[pointIdx++] = p1.X();
         outXY[pointIdx++] = p1.Y();

@@ -34,4 +34,42 @@ struct Curve2DHatchingTests {
             #expect(len > 0)
         }
     }
+
+    @Test("Hatch output is not silently truncated at half the buffer's real capacity (#1420)")
+    func hatchNotTruncatedAtHalfCapacity() {
+        // Curve2DGcc.hatch sizes its buffer for 4096 segments (maxSegments * 4 doubles) and
+        // passes maxSegments=4096 straight through to OCCTCurve2DHatch's `maxPoints`/`maxSegments`
+        // parameter. Before #1420's fix, the C guard misread that parameter as a POINT count
+        // (2 doubles each) rather than a SEGMENT count (4 doubles each), so it capped output at
+        // maxSegments/2 = 2048 segments -- silently, with no truncation signal -- even though the
+        // buffer actually holds room for 4096.
+        //
+        // A tall, narrow rectangle hatched at unit spacing produces roughly one segment per unit
+        // of height (a convex boundary, so every hatch line inside it yields exactly one domain).
+        // height=3000 sits comfortably between the old truncation cap (2048) and the buffer's real
+        // capacity (4096): a true count in that gap is the only way to distinguish "still
+        // truncated" from "fits either way".
+        let height = 3000.0
+        let width = 10.0
+        let s1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(width, 0))!
+        let s2 = Curve2D.segment(from: SIMD2(width, 0), to: SIMD2(width, height))!
+        let s3 = Curve2D.segment(from: SIMD2(width, height), to: SIMD2(0, height))!
+        let s4 = Curve2D.segment(from: SIMD2(0, height), to: SIMD2(0, 0))!
+
+        let segments = Curve2DGcc.hatch(
+            boundaries: [s1, s2, s3, s4],
+            origin: .zero,
+            direction: SIMD2(1, 0),
+            spacing: 1.0,
+            tolerance: 1e-6
+        )
+
+        // The true segment count for this boundary/spacing comfortably exceeds the old (buggy)
+        // truncation point of 2048. A count stuck at exactly 2048 is the truncation signature.
+        #expect(segments.count > 2048)
+        // ...and stays within the buffer's real, requested capacity of 4096 -- confirming this
+        // scenario is a genuine "more than half, no more than the whole buffer" case rather than
+        // one that would pass even under the old halved cap.
+        #expect(segments.count <= 4096)
+    }
 }
