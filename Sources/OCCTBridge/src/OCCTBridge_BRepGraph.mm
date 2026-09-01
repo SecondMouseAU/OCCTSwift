@@ -1510,7 +1510,7 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
     // Copy up to outOpNameMax-1 characters, NUL-terminate
     int copyLen = std::min(srcLen, outOpNameMax - 1);
     memcpy(outOpName, src, copyLen);
-    outOpName[copyLen] = '0';
+    outOpName[copyLen] = '\0'; // #1434: was the ASCII digit '0' (0x30), not NUL (0x00)
     return srcLen;
   }
   catch (...)
@@ -4069,9 +4069,12 @@ bool OCCTBRepGraphCompSolidRemoveSolid(OCCTBRepGraphRef g,
 // OCCT 8.0.0p1: GenOps:RemoveRep removed, representations are owned by their topology defs and
 // cleared through the per-kind editors. For the side-registry rep ids we expose, "removing" a rep
 // nullifies its registry slot so a later Set*RepId() resolving the same id becomes a safe no-op.
-// repKind follows BRepGraphInc_RepId::Kind ordering (0=FaceSurface, 1=FaceTriangulation,
-// 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri); any
-// out-of-range kind/index is ignored.
+// repKind is this bridge's OWN ABI ordering below (0=FaceSurface, 1=FaceTriangulation,
+// 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri),
+// matching the switch below; it does NOT follow BRepGraphInc_RepId::Kind's own ordering, which
+// numbers these differently (EdgeCurve3D=0 ... FaceSurface=5, FaceTriangulation=6). No caller
+// passes a real OCCT ordinal into this parameter, so the divergence is harmless (#1434), but the
+// two must not be confused. Any out-of-range kind/index is ignored.
 void OCCTBRepGraphRemoveRep(OCCTBRepGraphRef g, int32_t repKind, int32_t repIndex)
 {
   if (!g || repIndex < 0)
@@ -5702,13 +5705,35 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
       n2.Reverse();
     }
 
-    // Angle between normals
-    double cosAngle = n1.Dot(n2);
-    cosAngle        = std::max(-1.0, std::min(1.0, cosAngle)); // Clamp
+    // Angle between the two (outward, material-adjusted) face normals; std::acos always answers
+    // in [0, PI], so this alone cannot distinguish a convex edge from its complementary concave
+    // edge (same two face normals, opposite material side).
+    double cosAngle    = n1.Dot(n2);
+    cosAngle           = std::max(-1.0, std::min(1.0, cosAngle)); // Clamp
+    double normalAngle = std::acos(cosAngle);
 
-    // The dihedral angle is PI - acos(dot) for interior angle
-    // Or we return the angle between normals directly
-    return std::acos(cosAngle);
+    // #1434: recover the true interior/material dihedral angle from normalAngle using OCCT's own
+    // connect-type classifier (ChFi3d::DefineConnectType, the same one OCCTEdgeGetConvexity
+    // calls a few hundred lines below). Returning normalAngle unconverted, as this function used
+    // to, is not even correct for the convex case in general, it only ever looked right because
+    // this function's sole test used a box, whose edges are the self-symmetric 90-degree case
+    // where PI - normalAngle == normalAngle. Ground-truth OCCT probes (not hand geometry alone)
+    // against independently-known angles confirm:
+    //   convex (or tangential/unclassifiable): trueAngle = PI - normalAngle
+    //   concave:                               trueAngle = PI + normalAngle
+    // 1, 60, 90 and 179-degree convex wedges all matched PI - normalAngle to 4 decimal places,
+    // and a 200-degree reflex (concave) notch matched PI + normalAngle. That also rules out
+    // "2*PI - normalAngle" for the concave case, one of the two fix shapes floated when this
+    // issue was filed: it would report 340 degrees for the 200-degree reflex case, not ~200.
+    const double           smoothThreshold = 0.01; // matches OCCTEdgeGetConvexity's SinTol
+    ChFiDS_TypeOfConcavity connectType =
+      ChFi3d::DefineConnectType(edge->edge, face1->face, face2->face, smoothThreshold, true);
+
+    if (connectType == ChFiDS_Concave)
+    {
+      return M_PI + normalAngle;
+    }
+    return M_PI - normalAngle;
   }
   catch (...)
   {
