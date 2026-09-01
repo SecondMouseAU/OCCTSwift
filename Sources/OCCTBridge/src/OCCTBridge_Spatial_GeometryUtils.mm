@@ -509,6 +509,13 @@ void OCCTAx3Create(double px,
   }
   catch (...)
   {
+    // gp_Dir/gp_Ax3 raise Standard_ConstructionError for a zero-length direction/xDirection or a
+    // parallel direction/xDirection pair (#1443). No valid axis exists to report: isDirect=false
+    // plus an all-zero xDirection/yDirection is unambiguous, since a genuine gp_Ax3's
+    // XDirection()/YDirection() are always unit vectors and can never be all-zero.
+    *isDirect = false;
+    *xDx = *xDy = *xDz = 0;
+    *yDx = *yDy = *yDz = 0;
   }
 }
 
@@ -541,6 +548,12 @@ void OCCTAx3CreateFromNormal(double px,
   }
   catch (...)
   {
+    // gp_Dir raises Standard_ConstructionError for a zero-length normal (#1443, this overload has
+    // no xDirection so the parallel case doesn't apply). Same unambiguous fallback as
+    // OCCTAx3Create's catch.
+    *isDirect = false;
+    *xDx = *xDy = *xDz = 0;
+    *yDx = *yDy = *yDz = 0;
   }
 }
 
@@ -646,6 +659,15 @@ void OCCTAx3MirrorPoint(double px,
   }
   catch (...)
   {
+    // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
+    // the only throw site here; gp_Ax3::Mirrored(const gp_Pnt&) is itself noexcept. No valid
+    // mirrored axis exists to report: the input point unmoved, plus an all-zero
+    // direction/xDirection (unambiguous the same way as OCCTAx3Create's fallback).
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
+    *rnx = *rny = *rnz = 0;
+    *rxDx = *rxDy = *rxDz = 0;
   }
 }
 
@@ -691,6 +713,15 @@ void OCCTAx3Rotate(double px,
   }
   catch (...)
   {
+    // Two throw sites share this catch (#1443): the input ax3's own construction
+    // (direction/xDirection zero-length or parallel), and the rotation axis's gp_Dir (a
+    // zero-length rotation direction, e.g. axDx=axDy=axDz=0). Neither leaves a valid rotated axis
+    // to report; same fallback shape as OCCTAx3MirrorPoint.
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
+    *rnx = *rny = *rnz = 0;
+    *rxDx = *rxDy = *rxDz = 0;
   }
 }
 
@@ -720,6 +751,13 @@ void OCCTAx3Translate(double px,
   }
   catch (...)
   {
+    // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
+    // the only throw site here; gp_Ax3::Translated(const gp_Vec&) is itself noexcept. No valid
+    // translated axis exists to report: fall back to the input point unmoved (this overload has
+    // no direction/xDirection output to signal through).
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
   }
 }
 
