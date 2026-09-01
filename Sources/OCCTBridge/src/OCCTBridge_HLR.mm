@@ -139,32 +139,36 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType)
 
   try
   {
-    TopoDS_Shape    result;
     BRep_Builder    builder;
     TopoDS_Compound compound;
     builder.MakeCompound(compound);
 
+    // #1421: MakeCompound unconditionally allocates a fresh TopoDS_TCompound, so compound.IsNull()
+    // can never be true here regardless of whether the switch below adds anything. Track whether
+    // occtAddShapeIfPresent actually added a shape instead, and refuse on that.
+    bool added = false;
+
     switch (edgeType)
     {
       case OCCTEdgeTypeVisible:
-        occtAddShapeIfPresent(builder, compound, drawing->visibleSharp);
-        occtAddShapeIfPresent(builder, compound, drawing->visibleSmooth);
-        occtAddShapeIfPresent(builder, compound, drawing->visibleOutline);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->visibleSharp);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->visibleSmooth);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->visibleOutline);
         break;
 
       case OCCTEdgeTypeHidden:
-        occtAddShapeIfPresent(builder, compound, drawing->hiddenSharp);
-        occtAddShapeIfPresent(builder, compound, drawing->hiddenSmooth);
-        occtAddShapeIfPresent(builder, compound, drawing->hiddenOutline);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->hiddenSharp);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->hiddenSmooth);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->hiddenOutline);
         break;
 
       case OCCTEdgeTypeOutline:
-        occtAddShapeIfPresent(builder, compound, drawing->visibleOutline);
-        occtAddShapeIfPresent(builder, compound, drawing->hiddenOutline);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->visibleOutline);
+        added |= occtAddShapeIfPresent(builder, compound, drawing->hiddenOutline);
         break;
     }
 
-    if (compound.IsNull())
+    if (!added)
       return nullptr;
 
     return new OCCTShape(compound);

@@ -3181,14 +3181,21 @@ inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const Topo
 // guard/add logic applied to fewer than all eight would have no compiler or test signal. This
 // helper collapses each to one call; placed here (rather than as a static helper local to
 // OCCTBridge_HLR.mm) so any other bridge site with the same idiom can share it too.
-inline void occtAddShapeIfPresent(BRep_Builder&       builder,
+//
+// #1421: returns whether it actually added anything, so a caller can tell "every contributing
+// field was null" (an empty result) from "at least one edge landed in the compound" -- the
+// compound handle itself is never null once BRep_Builder::MakeCompound has run (it unconditionally
+// allocates a fresh TopoDS_TCompound), so IsNull() on the compound can never signal that.
+inline bool occtAddShapeIfPresent(BRep_Builder&       builder,
                                   TopoDS_Shape&       compound,
                                   const TopoDS_Shape& shape)
 {
   if (!shape.IsNull())
   {
     builder.Add(compound, shape);
+    return true;
   }
+  return false;
 }
 
 #endif /* OCCTBridge_Internal_h */
