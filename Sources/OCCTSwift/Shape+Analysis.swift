@@ -1306,7 +1306,9 @@ extension Shape {
         public let type: ContourType
         /// Number of contours found.
         public let count: Int
-        /// Raw parameters. Circle: center xyz + radius (`data[0...3]`).
+        /// Raw parameters.
+        ///
+        /// Circle: center xyz + radius (`data[0...3]`).
         /// Line: location xyz + direction xyz per contour, 6 doubles each.
         /// `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data`
         /// holds 8 doubles (one line at `data[0...5]`, or a circle at `data[0...3]`).
