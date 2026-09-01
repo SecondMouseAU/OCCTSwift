@@ -389,7 +389,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
     doc,
     datumIndex,
-    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
     outAttr,
