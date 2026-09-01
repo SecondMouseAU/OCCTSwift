@@ -83,9 +83,12 @@ public enum EdgeAnalysis {
 
     /// Check if two edges overlap.
     ///
-    /// - Parameter tolerance: The overlap distance threshold. Defaults to `Precision::Confusion()`
-    ///   (`1e-7`). Prior to #1438 this was fixed at `0.0` internally, which made the underlying
-    ///   OCCT comparison always fail, so `checkOverlapping` always returned `false`.
+    /// - Parameters:
+    ///   - edge1: The first edge.
+    ///   - edge2: The second edge.
+    ///   - tolerance: The overlap distance threshold. Defaults to `Precision::Confusion()`
+    ///     (`1e-7`). Prior to #1438 this was fixed at `0.0` internally, which made the underlying
+    ///     OCCT comparison always fail, so `checkOverlapping` always returned `false`.
     /// - Returns: (overlapping, tolerance) -- `tolerance` echoes back the threshold used.
     public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape, tolerance: Double = 1e-7)
         -> (overlapping: Bool, tolerance: Double)
