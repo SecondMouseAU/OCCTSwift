@@ -38,6 +38,7 @@
 #include <BRepBuilderAPI_Copy.hxx>
 #include <BRepClass_FaceClassifier.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepGProp.hxx>
 #include <IntCurvesFace_Intersector.hxx>
@@ -552,21 +553,74 @@ OCCTSurfaceRef OCCTShapeFindSurface(OCCTShapeRef shape, double tolerance)
 // dereference myTShape with no null test, so the wrapper's wire needs testing as well as the
 // pointer. No public Swift producer hands back a null Wire today (Wire(_:) refuses one, since
 // OCCTWireFromShape tests IsNull first), so this is a contract pin rather than a reachable crash.
+//
+// #1415: the analyzer's face was declared and never assigned (the comment claimed one was "created"
+// but no SetFace/Init call existed), so ShapeAnalysis_Wire::Load(const TopoDS_Wire&) only ever set
+// myWire, myFace stayed default-null, and IsReady() (== IsLoaded() && !myFace.IsNull()) was false
+// on every call. CheckClosed/CheckSelfIntersection both early-return false on !IsReady() --
+// confirmed directly against ShapeAnalysis_Wire.cxx/.lxx and reproduced live
+// (Scripts/repro/1415-wire-analyze-face/) on the exact single-edge open-line case this issue was
+// filed with: unfixed, CheckClosed() -> false unconditionally -> the bridge's `wire.Closed() ||
+// !CheckClosed()` forced isClosed true for an OPEN wire, and CheckSelfIntersection() -> false
+// unconditionally, silently reporting a genuinely self-intersecting wire as clean.
+//
+// Fixed in two parts, not one, because "just set a face" turns out not to fix isClosed:
+//
+// 1. hasSelfIntersection needs a real face. ShapeAnalysis_Wire's self-intersection check is
+//    inherently 2D/pcurve-based (CheckSelfIntersectingEdge/CheckIntersectingEdges both fetch each
+//    edge's pcurve via ShapeAnalysis_Edge::PCurve(edge, myFace, ...) and intersect those, not the
+//    3D curves), so there is no face-free way to get a real answer out of this class. Build one via
+//    BRepBuilderAPI_MakeFace(wire, /*OnlyPlane=*/true), the same pattern already used for a
+//    face-less wire at OCCTWireFillet2D/OCCTWireFilletAll2D (OCCTBridge_Healing_Blends.mm): it fits
+//    a plane through the wire and gives each edge a pcurve on it, which is what the intersection
+//    check actually needs. This only succeeds for an (approximately) planar wire; a genuinely
+//    non-planar 3D wire leaves the analyzer without a face and hasSelfIntersection reports false,
+//    same as before this fix -- a real, acknowledged limitation of this OCCT class, not something a
+//    face substitute can work around, and not new: it was never checkable for such wires either.
+//
+// 2. isClosed is NOT fixed by setting a face, even for a planar wire: CheckClosed()'s own contract
+//    (ShapeAnalysis_Wire.hxx) is "true if at least one sub-check flagged a FIXABLE problem", so a
+//    false return is ambiguous between "genuinely closed" and "endpoints are simply too far apart
+//    to fix" (a FAIL, not a DONE) -- confirmed empirically: an open two-edge polyline with
+//    endpoints 11 units apart at tolerance 1e-7, given a real face, still returns CheckClosed() ==
+//    false, so
+//    `!CheckClosed()` reads it as closed. `!analyzer.CheckClosed(tolerance)` was never a sound way
+//    to compute isClosed, face or no face. Computed directly instead: TopoDS_Shape::Closed() (the
+//    cheap flag BRepBuilderAPI_MakeWire sets when the wire's first and last vertices are literally
+//    the same TopoDS_Vertex) first, then a genuine 3D coincidence check on the wire's endpoints
+//    (TopExp::Vertices, matching OCCTWireVertices's own idiom two functions below) for wires built
+//    by hand where the flag was never set. No face needed for this half at all.
 bool OCCTWireAnalyze(OCCTWireRef wire, double tolerance, OCCTWireAnalysisResult* result)
 {
   if (!wire || wire->wire.IsNull() || !result)
     return false;
   try
   {
-    // Create a dummy planar face for wire analysis
-    TopoDS_Face        face;
     ShapeAnalysis_Wire analyzer;
     analyzer.Load(wire->wire);
     analyzer.SetPrecision(tolerance);
 
-    result->edgeCount = analyzer.NbEdges();
-    // CheckClosed returns true when there IS a problem, so negate it
-    result->isClosed            = wire->wire.Closed() || !analyzer.CheckClosed(tolerance);
+    // See part 1 above: only a planar wire can get a face this way, and only then can
+    // CheckSelfIntersection do anything but silently report "clean".
+    BRepBuilderAPI_MakeFace planarFace(wire->wire, /*OnlyPlane=*/true);
+    if (planarFace.IsDone())
+      analyzer.SetFace(planarFace.Face());
+
+    // See part 2 above: independent of the face, a direct 3D endpoint check.
+    bool isClosed = wire->wire.Closed();
+    if (!isClosed)
+    {
+      TopoDS_Vertex vFirst, vLast;
+      TopExp::Vertices(wire->wire, vFirst, vLast);
+      if (!vFirst.IsNull() && !vLast.IsNull())
+      {
+        isClosed = vFirst.IsSame(vLast)
+                   || BRep_Tool::Pnt(vFirst).Distance(BRep_Tool::Pnt(vLast)) <= tolerance;
+      }
+    }
+
+    result->edgeCount           = analyzer.NbEdges();
+    result->isClosed            = isClosed;
     result->hasSmallEdges       = analyzer.CheckSmall(tolerance);
     result->hasGaps3d           = analyzer.CheckGaps3d();
     result->hasSelfIntersection = analyzer.CheckSelfIntersection();
@@ -613,6 +667,25 @@ OCCTSurfaceRef OCCTShapeFindSurfaceEx(OCCTShapeRef shape,
 // TopoDS_Shape::IsSame (TopTools_ShapeMapHasher.hxx:35-38), so orientation cannot select a
 // different entry. Confirmed by measurement rather than by reading the header: over all 12 edges of
 // a box present in both orientations, Type() returned the same interval list for both, 0 differing.
+//
+// #1423: this classifier's `break` after the first interval and OCCTShapeCountEdgeConcavity's
+// scan-every-interval below look like a real first-vs-any divergence -- BRepOffset_Interval's own
+// header documents Type() as splitting an edge into "the parts... connecting the convex, concave or
+// tangent faces", implying more than one interval per edge is a real possibility. It structurally
+// is not, for this call path: BRepOffset_Analyse.cxx's own EdgeAnalyse() always appends exactly ONE
+// interval per edge (spanning the edge's whole range, whatever ChFiDS_TypeOfConcavity it computes,
+// including the ChFiDS_Mixed case for a spline-spline edge with a convex/concave transition -- that
+// still collapses to one interval of type Mixed, not two of different types), and Type()'s only
+// other writer, the artificial-tangent-face splitting in TreatTangentFaces(), is gated on
+// myFaceOffsetMap, populated only by the explicit SetFaceOffsetMap() setter neither this function
+// nor its sibling ever calls. So myMapEdgeType(edge).Extent() is provably always 0 or 1 through
+// this analyser's (theShape, theAngle)-constructor-then-Type() path, confirmed both by reading
+// BRepOffset_Analyse.cxx's every myMapEdgeType writer and empirically: probed a box, a box+sphere
+// fuse, a fully-filleted box, a triangle-to-square ThruSections loft (BSpline side faces) and a
+// cylinder+box fuse (122 edges total) and found maxIntervalsOnAnyEdge == 1 on every one
+// (Scripts/repro/1423-edge-concavity-interval-count/). The `break`/scan-all difference is therefore
+// dead code today, not a live bug: reachable divergence would need a caller that opts into
+// SetFaceOffsetMap(), which neither entry point below does.
 int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef       shape,
                                       double             angle,
                                       OCCTEdgeConcavity* outEdgeTypes,
