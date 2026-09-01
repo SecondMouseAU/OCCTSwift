@@ -19,7 +19,14 @@ public enum MessageSystem {
         OCCTMessageMsgFileLoad(path)
     }
 
-    /// Load the default OCCT message file.
+    /// Load OCCT's Shape Healing (ShapeFix) diagnostic message set. Reliably succeeds: falls back
+    /// to a message set compiled into OCCT itself if no `CSF_SHMessage` resource file is found.
+    ///
+    /// ```swift
+    /// MessageSystem.loadDefault()
+    /// let hasSmallSolidMessage = MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0")
+    /// // hasSmallSolidMessage == true
+    /// ```
     @discardableResult
     public static func loadDefault() -> Bool {
         OCCTMessageMsgFileLoadDefault()
