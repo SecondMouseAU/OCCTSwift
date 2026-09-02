@@ -133,6 +133,7 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepAdaptor_CompCurve.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAdaptor_Surface.hxx> // #1502: OCCTGeomFillDarbouxTrihedron's real curve-on-surface
 #include <GeomLProp_SLProps.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopAbs.hxx>
@@ -735,10 +736,25 @@ OCCTTrihedronFrame OCCTGeomFillDarbouxTrihedron(OCCTShapeRef edgeShape,
     TopoDS_Edge edge        = TopoDS::Edge(edgeWrapper->shape);
     TopoDS_Face face        = TopoDS::Face(faceWrapper->shape);
 
+    // #1502: GeomFill_Darboux::D0/D1/D2 unconditionally static_cast<>s the handle
+    // SetCurve() was given to Adaptor3d_CurveOnSurface* and reads its private
+    // myCurve/mySurface fields; a plain BRepAdaptor_Curve (an unrelated
+    // Adaptor3d_Curve sibling) has neither at those offsets, an uncatchable bus
+    // error. Build a real curve-on-surface from the edge's pcurve on `face`
+    // instead, the same construction OCCTValidateEdge (OCCTBridge_Healing_Misc.mm)
+    // and OCCT's own BRepFill_EdgeOnSurfLaw use to drive a Darboux trihedron along
+    // an edge lying on a face.
+    double               first, last;
+    Handle(Geom2d_Curve) pcurve = BRep_Tool::CurveOnSurface(edge, face, first, last);
+    if (pcurve.IsNull())
+      return frame;
+
+    Handle(BRepAdaptor_Surface)      brepSurf  = new BRepAdaptor_Surface(face);
+    Handle(Geom2dAdaptor_Curve)      adapCurve = new Geom2dAdaptor_Curve(pcurve, first, last);
+    Handle(Adaptor3d_CurveOnSurface) cos       = new Adaptor3d_CurveOnSurface(adapCurve, brepSurf);
+
     Handle(GeomFill_Darboux) darboux = new GeomFill_Darboux();
-    // Darboux needs a curve on surface, use BRepAdaptor_Curve with face context
-    Handle(BRepAdaptor_Curve) adaptor = new BRepAdaptor_Curve(edge);
-    darboux->SetCurve(adaptor);
+    darboux->SetCurve(cos);
 
     gp_Vec t, n, b;
     if (darboux->D0(param, t, n, b))
@@ -1029,11 +1045,11 @@ OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef surface1, OCCTSurfaceRef 
   return result;
 }
 
-OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1,
-                                           OCCTSurfaceRef surface2,
-                                           int            index)
+OCCTExtremaSSPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1,
+                                             OCCTSurfaceRef surface2,
+                                             int            index)
 {
-  OCCTExtremaPointPair result = {};
+  OCCTExtremaSSPointPair result = {};
   try
   {
     auto*                       s1  = (OCCTSurface*)surface1;
@@ -1049,15 +1065,11 @@ OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1,
       result.x1 = p1.Value().X();
       result.y1 = p1.Value().Y();
       result.z1 = p1.Value().Z();
-      double u1, v1;
-      p1.Parameter(u1, v1);
-      result.param1 = u1;
-      result.x2     = p2.Value().X();
-      result.y2     = p2.Value().Y();
-      result.z2     = p2.Value().Z();
-      double u2, v2;
-      p2.Parameter(u2, v2);
-      result.param2 = u2;
+      p1.Parameter(result.u1, result.v1);
+      result.x2 = p2.Value().X();
+      result.y2 = p2.Value().Y();
+      result.z2 = p2.Value().Z();
+      p2.Parameter(result.u2, result.v2);
     }
   }
   catch (...)
