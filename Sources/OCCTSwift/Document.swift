@@ -2736,9 +2736,9 @@ extension Document {
         Int(OCCTDocumentExplorerDepth(handle, Int32(index)))
     }
 
-    /// Whether the explorer node at `index` is an assembly node. Always `false`.
+    /// Whether the explorer node at `index` is an assembly node.
     ///
-    /// This shares the same flat index as `explorerShape(at:)`/`explorerDepth(at:)`/
+    /// Always `false`. This shares the same flat index as `explorerShape(at:)`/`explorerDepth(at:)`/
     /// `explorerLocation(at:)`, all built by walking with
     /// `XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes`, so no index this family can be asked about
     /// is ever an assembly node. To detect an assembly, use ``AssemblyNode/isAssembly`` (via
