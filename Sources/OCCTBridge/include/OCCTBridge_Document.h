@@ -2740,7 +2740,10 @@ OCCTShapeRef _Nullable OCCTDocumentExplorerFindShape(OCCTDocumentRef _Nonnull do
 /// Get the depth of a document explorer node at given index.
 int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef _Nonnull doc, int32_t index);
 
-/// Check if a document explorer node is an assembly.
+/// Check if a document explorer node is an assembly. Always false: this explorer's shared flat
+/// index (see OCCTDocumentExplorerCount/Shape/Depth/Location above) walks leaf nodes only
+/// (XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes), which excludes every assembly node by
+/// definition. Use OCCTDocumentIsAssembly(doc, labelId) to detect an assembly. #1480.
 bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef _Nonnull doc, int32_t index);
 
 /// Get the location matrix (12 doubles, row-major 3x4) for a document explorer node.
