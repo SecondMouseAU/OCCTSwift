@@ -639,8 +639,14 @@
 //                                       driver that owns it; no direct wrap)
 // ShapeUpgrade_ConvertSurfaceToBezierBasis → OCCTShapeUpgradeConvertSurfaceToBezier
 //                                       (via ShapeUpgrade_ShapeConvertToBezier, as above)
-// ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
-// ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
+// ShapeUpgrade_FixSmallBezierCurves   → no direct wrap (#1491: no standalone Perform()/Compute();
+//                                       already exercised internally by
+//                                       ShapeUpgrade_ShapeConvertToBezier, see that entry below)
+// ShapeUpgrade_FixSmallCurves         → no direct wrap (#1491: no standalone Perform()/Compute();
+//                                       only ShapeUpgrade_WireDivide plugs it in, and only as a
+//                                       byproduct of an active curve split. The real standalone
+//                                       "fix small edges" op is a different class, see
+//                                       ShapeFix_Wireframe below)
 // ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeConvertToBezier,
 //                                       OCCTShapeUpgradeConvertCurves3dToBezier,
 //                                       OCCTShapeUpgradeConvertSurfaceToBezier

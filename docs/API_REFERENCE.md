@@ -26,7 +26,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,327** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,325** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -120,7 +120,6 @@ a map of the major areas, and the `Total` as the count.
 | **ShapeBuild Vertex** | 2 | combineVertex, combineVertices(static) |
 | **ShapeExtend Explorer** | 2 | sortedCompound, predominantShapeType |
 | **ShapeUpgrade Divide** | 4 | divideFace, divideWire, analyzeEdgeDivide, canDivideClosedEdge |
-| **ShapeUpgrade Fix** | 2 | fixSmallCurves, fixSmallBezierCurves |
 | **ShapeUpgrade Convert** | 2 | convertCurves3dToBezier, convertSurfacesToBezier |
 | **Point2D (Geom2d_CartesianPoint)** | 13 | create, x, y, setCoords, distance, squareDistance, translated, rotated, scaled, mirroredPoint, mirroredAxis, distanceToCurve, transformed |
 | **Transform2D (Geom2d_Transformation)** | 14 | identity, translation, rotation, scale, mirrorPoint, mirrorAxis, inverted, composed, powered, apply, scaleFactor, isNegative, matrixValues, applyToCurve |
@@ -504,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,365** | |
+| **Total** | **4,363** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 

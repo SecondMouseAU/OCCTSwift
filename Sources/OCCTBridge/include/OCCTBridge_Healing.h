@@ -1017,19 +1017,10 @@ bool OCCTShapeUpgradeEdgeDivideCompute(OCCTShapeRef edgeShape,
 /// @return true if the edge is closed and can be divided
 bool OCCTShapeUpgradeClosedEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRef faceShape);
 
-// --- ShapeUpgrade_FixSmallCurves ---
-/// Fix small curves in a shape by removing degenerate edges.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallCurves(OCCTShapeRef shape, double tolerance);
-
-// --- ShapeUpgrade_FixSmallBezierCurves ---
-/// Fix small Bezier curves in a shape.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, double tolerance);
+// OCCTShapeUpgradeFixSmallCurves / OCCTShapeUpgradeFixSmallBezierCurves removed (#1491): both were
+// complete no-ops with no OCCT-supported standalone use. See the removal comment in
+// OCCTBridge_Healing_Upgrade.mm and the #1491 PR body. Use OCCTShapeFixSmallEdges
+// (Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:)) instead.
 
 // --- ShapeUpgrade_ConvertCurve3dToBezier ---
 /// Convert 3D curves in a shape to Bezier representation.
