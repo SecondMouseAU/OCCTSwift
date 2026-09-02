@@ -89,9 +89,9 @@ extension Shape {
     /// *with*. This overload uses each boundary edge's own underlying surface, so any
     /// continuity above `.c0` requires every boundary edge to have been borrowed from an
     /// existing face; a boundary built from free-standing wires has nothing to match and
-    /// returns nil. To fill an opening smoothly into the shape around it, use
-    /// ``fill(boundaries:supportedBy:parameters:)``; to name the reference face per edge,
-    /// use ``fill(constraints:parameters:)``.
+    /// is constrained positionally instead (#1503). To fill an opening smoothly into the
+    /// shape around it, use ``fill(boundaries:supportedBy:parameters:)``; to name the
+    /// reference face per edge, use ``fill(constraints:parameters:)``.
     ///
     /// - Parameters:
     ///   - boundaries: Array of wires defining the boundary
