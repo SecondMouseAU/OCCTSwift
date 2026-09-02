@@ -56,6 +56,7 @@
 #include <BRepGProp.hxx>
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
 
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Curve.hxx>
@@ -758,14 +759,20 @@ OCCTWireRef OCCTWireFilletAll2D(OCCTWireRef wire, double radius)
     // Use ChFi2d_Builder to fillet all vertices
     ChFi2d_Builder fillet2d(face);
 
-    // Add fillet to each vertex
+    // Add fillet to each vertex. #1478: track failure across the whole loop rather than
+    // reading Status() once after it -- ChFi2d_Builder::status is a single field overwritten
+    // by every AddFillet call, so a single post-loop read only reflects the LAST call and can
+    // miss a mid-loop failure masked by a later success.
+    bool anyFailed = false;
     for (int v = 1; v <= vertexMap.Extent(); v++)
     {
       TopoDS_Vertex vertex = TopoDS::Vertex(vertexMap(v));
       fillet2d.AddFillet(vertex, radius);
+      if (fillet2d.Status() != ChFi2d_IsDone)
+        anyFailed = true;
     }
 
-    if (fillet2d.Status() != ChFi2d_IsDone)
+    if (anyFailed)
     {
       // Some vertices might not be fillettable; return original
       return new OCCTWire(wire->wire);
@@ -876,39 +883,39 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance)
       return nullptr;
     TopoDS_Face face = makeFace.Face();
 
-    // Get edges and vertices
-    TopTools_IndexedMapOfShape edgeMap;
-    TopExp::MapShapes(wire->wire, TopAbs_EDGE, edgeMap);
+    // Walk the wire in true connection order (#1478): TopExp::MapShapes returns stored
+    // sub-shape order, not connection order, so pairing consecutive map indices can pair
+    // edges that are not actually adjacent. BRepTools_WireExplorer walks the wire the way
+    // every other adjacency-pairing site in this bridge already does, so consecutive edges
+    // from it are adjacent by construction and need no separate shared-vertex check.
+    std::vector<TopoDS_Edge> edges;
+    for (BRepTools_WireExplorer explorer(wire->wire); explorer.More(); explorer.Next())
+    {
+      edges.push_back(explorer.Current());
+    }
 
-    if (edgeMap.Extent() < 2)
+    if (edges.size() < 2)
       return nullptr;
 
     // Use ChFi2d_Builder for 2D chamfers
     ChFi2d_Builder chamfer2d(face);
 
-    // For each pair of adjacent edges, add chamfer
-    // We need to find adjacent edge pairs
-    for (int i = 1; i <= edgeMap.Extent(); i++)
+    // For each pair of adjacent edges, add chamfer. #1478: track failure across the whole
+    // loop rather than reading Status() once after it -- ChFi2d_Builder::status is a single
+    // field overwritten by every AddChamfer call, so a single post-loop read only reflects
+    // the LAST call and can miss a mid-loop failure masked by a later success.
+    bool anyFailed = false;
+    for (size_t i = 0; i < edges.size(); i++)
     {
-      TopoDS_Edge edge1   = TopoDS::Edge(edgeMap(i));
-      int         nextIdx = (i % edgeMap.Extent()) + 1;
-      TopoDS_Edge edge2   = TopoDS::Edge(edgeMap(nextIdx));
+      const TopoDS_Edge& edge1 = edges[i];
+      const TopoDS_Edge& edge2 = edges[(i + 1) % edges.size()];
 
-      // Check if edges share a vertex
-      TopoDS_Vertex v1_1, v1_2, v2_1, v2_2;
-      TopExp::Vertices(edge1, v1_1, v1_2);
-      TopExp::Vertices(edge2, v2_1, v2_2);
-
-      bool sharesVertex =
-        v1_1.IsSame(v2_1) || v1_1.IsSame(v2_2) || v1_2.IsSame(v2_1) || v1_2.IsSame(v2_2);
-
-      if (sharesVertex)
-      {
-        chamfer2d.AddChamfer(edge1, edge2, distance, distance);
-      }
+      chamfer2d.AddChamfer(edge1, edge2, distance, distance);
+      if (chamfer2d.Status() != ChFi2d_IsDone)
+        anyFailed = true;
     }
 
-    if (chamfer2d.Status() != ChFi2d_IsDone)
+    if (anyFailed)
     {
       // Some edges might not be chamferable; return original
       return new OCCTWire(wire->wire);
