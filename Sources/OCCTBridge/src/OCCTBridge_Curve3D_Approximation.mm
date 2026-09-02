@@ -810,10 +810,14 @@ bool OCCTGeomLibCheckBSpline3D(OCCTCurve3DRef _Nonnull curveRef,
     Handle(Geom_BSplineCurve) bsp   = Handle(Geom_BSplineCurve)::DownCast(curve);
     if (bsp.IsNull())
       return false;
+    // Do not gate on IsDone(): myDone is only ever set true by the constructor's trivial
+    // early-exit branch (periodic curve, or fewer than 4 poles) or by FixTangentOnCurve(). Along
+    // the real analysis branch (an ordinary non-periodic curve with 4+ poles), myDone is never
+    // touched, even though myFixFirstTangent/myFixLastTangent are correctly computed there.
+    // OCCT's own internal caller (TopOpeBRepTool_CurveTool.cxx) never checks IsDone() either,
+    // it goes straight to NeedTangentFix, matching OCCTGeomLibFixBSpline3D below. #1457.
     GeomLib_CheckBSplineCurve checker(bsp, tolerance, angularTol);
-    if (!checker.IsDone())
-      return false;
-    bool f = false, l = false;
+    bool                      f = false, l = false;
     checker.NeedTangentFix(f, l);
     *needFixFirst = f;
     *needFixLast  = l;
