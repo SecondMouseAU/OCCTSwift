@@ -608,6 +608,21 @@ extension Document {
         Int(OCCTDocumentGetDatumCount(handle))
     }
 
+    /// Number of dimensions that reference `shapeLabel` as a target, via
+    /// `XCAFDoc_DimTolTool::GetRefDimensionLabels`.
+    ///
+    /// A single-shape dimension created by `createDimension(on:type:value:...)` must appear here
+    /// exactly once, never twice (#1481).
+    ///
+    /// ```swift
+    /// let label = doc.addShape(shaft, makeAssembly: false)
+    /// doc.createDimension(on: label, type: .sizeDiameter, value: 20.0)
+    /// #expect(doc.refDimensionCount(for: label) == 1)
+    /// ```
+    public func refDimensionCount(for shapeLabel: Int64) -> Int {
+        Int(OCCTDocumentGetRefDimensionCount(handle, shapeLabel))
+    }
+
     // MARK: - Read path
 
     /// The dimension at the given index.

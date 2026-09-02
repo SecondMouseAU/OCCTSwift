@@ -1583,6 +1583,26 @@ public var datumCount: Int { get }
 
 ---
 
+### `refDimensionCount(for:)`
+
+Number of dimensions that reference a shape as a target.
+
+```swift
+public func refDimensionCount(for shapeLabel: Int64) -> Int
+```
+
+- **Parameters:** `shapeLabel`, the label ID a shape was added at, e.g. via `addShape(_:makeAssembly:)`.
+- **Returns:** how many dimensions list `shapeLabel` in their ref-label graph. A single-shape dimension created by `createDimension(on:type:value:...)` is exactly 1, not 2 (#1481: `SetDimension` used to be called with the shape's label as both the first and second ref-label sequence, double-registering it).
+- **OCCT:** `XCAFDoc_DimTolTool::GetRefDimensionLabels` (via `OCCTDocumentGetRefDimensionCount`).
+- **Example:**
+  ```swift
+  let label = doc.addShape(shaft, makeAssembly: false)
+  doc.createDimension(on: label, type: .sizeDiameter, value: 20.0)
+  print(doc.refDimensionCount(for: label)) // 1
+  ```
+
+---
+
 ### `dimension(at:)`
 
 The dimension at a given index.

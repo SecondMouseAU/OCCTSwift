@@ -504,7 +504,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,365** | |
+| **Total** | **4,366** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -666,6 +666,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | `document.dimensionCount` / `document.dimension(at:)` | `XCAFDimTolObjects_DimensionObject` |
 | `document.geomToleranceCount` / `document.geomTolerance(at:)` | `XCAFDimTolObjects_GeomToleranceObject` |
 | `document.datumCount` / `document.datum(at:)` | `XCAFDimTolObjects_DatumObject` |
+| `document.refDimensionCount(for:)` | `XCAFDoc_DimTolTool::GetRefDimensionLabels` |
 
 #### Topological Naming (v0.25.0)
 | Swift API | OCCT Class |
