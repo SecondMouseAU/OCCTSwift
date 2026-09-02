@@ -860,6 +860,19 @@ bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
   }
 }
 
+void OCCTEdgeSetSameParameter(OCCTEdgeRef edge, bool sameParameter)
+{
+  if (!occtShapeIsPresent(edge))
+    return;
+  try
+  {
+    BRep_Builder().SameParameter(edge->edge, sameParameter);
+  }
+  catch (...)
+  {
+  }
+}
+
 OCCTShapeRef _Nullable OCCTShapeBuildVertexCombine(OCCTShapeRef v1Shape,
                                                    OCCTShapeRef v2Shape,
                                                    double       tolFactor)
