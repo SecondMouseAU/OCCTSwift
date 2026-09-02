@@ -2325,6 +2325,27 @@ public static func lineSphere(lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
 
 ---
 
+### `IntAna.ResultType`
+
+Which shape `IntAna_QuadQuadGeo` actually reported, mirroring OCCT's `IntAna_ResultType`.
+
+```swift
+public enum ResultType: Int32, Sendable {
+    case point = 0
+    case line = 1
+    case circle = 2
+    case pointAndCircle = 3
+    case ellipse = 4
+    case parabola = 5
+    case hyperbola = 6
+    case empty = 7
+    case same = 8
+    case noGeometricSolution = 9
+}
+```
+
+---
+
 ### `IntAna.QuadQuadResult`
 
 Result of a quadric-quadric intersection.
@@ -2332,14 +2353,25 @@ Result of a quadric-quadric intersection.
 ```swift
 public struct QuadQuadResult {
     public let count: Int
+    public let resultType: ResultType
     public let lines: [(origin: SIMD3<Double>, direction: SIMD3<Double>)]
     public let points: [SIMD3<Double>]
+    public let circles: [(center: SIMD3<Double>, axis: SIMD3<Double>, radius: Double)]
 }
 ```
 
-- `count`: number of solutions `IntAna_QuadQuadGeo` found.
-- `lines`: solution lines (origin + direction), populated for a plane-plane intersection.
-- `points`: solution points, populated for e.g. a plane-sphere intersection's circle centre.
+- `count`: number of solutions `IntAna_QuadQuadGeo` found. `resultType` is only meaningful when
+  this is at least 1.
+- `resultType`: the kind of intersection OCCT reported (`.line` for plane-plane, `.point` or
+  `.circle` for plane-sphere).
+- `lines`: solution lines (origin + direction), populated when `resultType == .line`
+  (plane-plane).
+- `points`: solution points, populated when `resultType == .point` (e.g. a plane tangent to a
+  sphere).
+- `circles`: solution circles (center, axis, radius), populated when `resultType == .circle`
+  (e.g. a plane secant to a sphere — the common case, #1495: `IntAna_QuadQuadGeo::Point()`
+  silently returns `(0, 0, 0)` for this case in OCCT itself, so this wrapper reads `Circle()`
+  instead).
 
 *(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -2376,7 +2408,15 @@ public static func planeSphere(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Do
                                 radius: Double) -> QuadQuadResult
 ```
 
+- **Returns:** `resultType == .circle` (center/axis/radius in `circles`) for the ordinary secant
+  case, `.point` (in `points`) only when the plane is tangent to the sphere.
 - **OCCT:** `IntAna_QuadQuadGeo` plane-sphere (via `OCCTIntAnaPlaneSphere`).
+- **Example:**
+  ```swift
+  let r = IntAna.planeSphere(planeOrigin: SIMD3(0, 0, 3), planeNormal: SIMD3(0, 0, 1),
+                              sphereCenter: .zero, sphereAxis: SIMD3(0, 0, 1), radius: 10)
+  // r.resultType == .circle, r.circles[0].center ≈ (0, 0, 3), r.circles[0].radius ≈ 9.539
+  ```
 
 ---
 
