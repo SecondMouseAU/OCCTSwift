@@ -854,6 +854,9 @@ public func convertToPeriodic() -> Surface?
 
 - **Returns:** The periodified surface, or `nil` if the surface is already periodic or cannot be converted.
 - **OCCT:** `ShapeCustom_Surface::ConvertToPeriodic` via `OCCTSurfaceConvertToPeriodic`.
+- **Note:** This is a pure knot rearrangement (OCCT reinterprets an already-closed clamped
+  B-spline as periodic by reusing its own poles); it has no deviation from the original to
+  measure, so there is no accompanying gap accessor. See `conversionGap` below (#1510).
 - **Example:**
   ```swift
   if let periodic = surface.convertToPeriodic() {
@@ -863,16 +866,26 @@ public func convertToPeriodic() -> Surface?
 
 ---
 
-### `conversionGap`
+### `conversionGap` (deprecated)
 
-The distance between the original and periodically converted surface (conversion error).
+**Deprecated, always returns -1.0. Do not use.** OCCT's `ShapeCustom_Surface::Gap()` reports the
+deviation from the *last call to `ConvertToAnalytical`*, per its own header doc, never
+`ConvertToPeriodic`, which never writes it at all: `ConvertToPeriodic` is a pure knot
+rearrangement with no deviation to compute. This accessor used to run an unrelated, throwaway
+`ConvertToAnalytical(1e-3)` recognition pass just to read *its* gap, which could be nonzero even
+when that recognition failed outright, and was identical whether or not `convertToPeriodic()` had
+ever been called. Kept only so existing callers keep compiling. See
+[`Scripts/repro/1510-surface-conversion-gap/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1510-surface-conversion-gap)
+for the direct-sampling confirmation that a real measurement here would be uninformative (the
+converted surface is geometrically identical to the original within its own domain, in every case
+tried).
 
 ```swift
 public var conversionGap: Double { get }
 ```
 
-- **Returns:** Gap value in model units; 0.0 if no conversion has been applied.
-- **OCCT:** `ShapeCustom_Surface::Gap` via `OCCTSurfaceConversionGap`.
+- **Returns:** Always `-1.0`.
+- **OCCT:** `ShapeCustom_Surface::Gap` via `OCCTSurfaceConversionGap`, deprecated.
 
 ---
 
