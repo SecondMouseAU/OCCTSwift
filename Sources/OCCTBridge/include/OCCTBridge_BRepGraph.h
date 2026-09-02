@@ -139,7 +139,9 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape,
 /// @param face1 First face
 /// @param face2 Second face
 /// @param parameter Parameter along edge (0.0 to 1.0) where to measure angle
-/// @return Dihedral angle in radians (0 to 2*PI), or -1 on error
+/// @return The interior/material dihedral angle in radians (0 to 2*PI): less than PI for a
+///         convex edge, greater than PI for a concave one, or -1 on error. Classification uses
+///         ChFi3d::DefineConnectType, the same classifier OCCTEdgeGetConvexity calls (#1434).
 double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
                                 OCCTFaceRef face1,
                                 OCCTFaceRef face2,
