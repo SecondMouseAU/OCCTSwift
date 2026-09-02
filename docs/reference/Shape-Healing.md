@@ -593,14 +593,19 @@ Sew faces using the fast sewing algorithm.
 public func fastSewn(tolerance: Double = 1e-6) -> Shape?
 ```
 
-Faster than `sewn(tolerance:)` for large models with many faces, but handles fewer edge cases (non-manifold topology, very irregular gaps).
+Faster than `sewn(tolerance:)` for large models with many faces, but requires every face's
+surface to be naturally bounded (e.g. a sphere, cylinder, cone, or torus). A face whose surface
+is only trimmed by its wire — an ordinary planar `TopoDS_Face`, the common shape of a box or any
+other polyhedral solid — is declined and produces no result, so this returns nil for most
+everyday B-Rep solids; use [`sewn(tolerance:)`](#sewntolerance) for those (#1475).
 
 - **Parameters:** `tolerance`, sewing tolerance (default 1e-6).
 - **Returns:** Sewn shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_FastSewing` (via `OCCTShapeFastSewn`).
 - **Example:**
   ```swift
-  if let shell = largeFaceSoup.fastSewn(tolerance: 1e-4) { }
+  let sewn = Shape.sphere(radius: 10)!.fastSewn()  // naturally-bounded surface: succeeds
+  let box = Shape.box(width: 10, height: 10, depth: 10)!.fastSewn()  // nil: trimmed planes
   ```
 
 ---
