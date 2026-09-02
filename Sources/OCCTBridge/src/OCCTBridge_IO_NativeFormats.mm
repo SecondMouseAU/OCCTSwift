@@ -527,7 +527,14 @@ const char* _Nullable OCCTGeomToolsCurveSetWrite(const OCCTCurve3DRef* curveRefs
       // match the input array. Refusing the batch is what the siblings already do (#618).
       if (!c || c->curve.IsNull())
         return nullptr;
-      cs.Add(c->curve);
+      // Add() returns the index of the key, new OR existing (NCollection_IndexedMap.hxx),
+      // deduplicating by underlying-object identity. cs is fresh above, so the i-th (0-based)
+      // insertion of a genuinely new curve always lands at the next sequential 1-based index;
+      // anything else means this curve's Handle target was already added earlier in the batch,
+      // which would otherwise silently collapse to that earlier entry (#1512). Refuse the whole
+      // batch, matching the null-handle refusal immediately above.
+      if (cs.Add(c->curve) != i + 1)
+        return nullptr;
     }
     std::ostringstream oss;
     cs.Write(oss);
@@ -605,7 +612,12 @@ const char* _Nullable OCCTGeomToolsCurve2dSetWrite(const OCCTCurve2DRef* curveRe
       auto* c = (OCCTCurve2D*)curveRefs[i];
       if (!c || c->curve.IsNull())
         return nullptr;
-      cs.Add(c->curve);
+      // Same dedup refusal as OCCTGeomToolsCurveSetWrite above: Add() returns the index of
+      // the key, new OR existing, deduplicating by underlying-object identity. cs is fresh
+      // above, so anything but the next sequential 1-based index means this curve's Handle
+      // target was already added earlier in the batch (#1512).
+      if (cs.Add(c->curve) != i + 1)
+        return nullptr;
     }
     std::ostringstream oss;
     cs.Write(oss);
@@ -682,7 +694,12 @@ const char* _Nullable OCCTGeomToolsSurfaceSetWrite(const OCCTSurfaceRef* surfRef
       auto* s = (OCCTSurface*)surfRefs[i];
       if (!s || s->surface.IsNull())
         return nullptr;
-      ss.Add(s->surface);
+      // Same dedup refusal as OCCTGeomToolsCurveSetWrite above: Add() returns the index of
+      // the key, new OR existing, deduplicating by underlying-object identity. ss is fresh
+      // above, so anything but the next sequential 1-based index means this surface's Handle
+      // target was already added earlier in the batch (#1512).
+      if (ss.Add(s->surface) != i + 1)
+        return nullptr;
     }
     std::ostringstream oss;
     ss.Write(oss);
