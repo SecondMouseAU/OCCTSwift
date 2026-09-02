@@ -390,7 +390,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
     doc,
     datumIndex,
-    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
     outAttr,
@@ -776,7 +776,7 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
     return 0;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
     TDF_LabelSequence          labels;
     dimTolTool->GetDatumLabels(labels);
     return (int32_t)labels.Length();
@@ -1154,7 +1154,7 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
     return -1;
   try
   {
-    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DimTolTool::Set(doc->doc->Main());
+    Handle(XCAFDoc_DimTolTool) dimTolTool = XCAFDoc_DocumentTool::DimTolTool(doc->doc->Main());
 
     TDF_Label             datLabel = dimTolTool->AddDatum();
     Handle(XCAFDoc_Datum) datAttr;
