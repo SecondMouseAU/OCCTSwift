@@ -355,8 +355,14 @@ int32_t DiscretizeEdgeInto(const TopoDS_Edge&                                   
   // Try primary path: BRepAdaptor_Curve + TangentialDeflection
   try
   {
+    // GCPnts_TangentialDeflection's constructor is (curve, angularDeflection [radians],
+    // curvatureDeflection [linear]) -- see GCPnts_TangentialDeflection.hxx:77-82. `deflection`
+    // is this function's caller-supplied LINEAR/chordal tolerance (documented as such on every
+    // public entry point that reaches here), so it belongs in the third slot, not the second.
+    // A prior version had these swapped (#1440): the caller's chordal tolerance landed in the
+    // angular slot and this fixed 0.1 landed in the linear slot, backwards.
     BRepAdaptor_Curve           curve(edge);
-    GCPnts_TangentialDeflection discretizer(curve, deflection, 0.1);
+    GCPnts_TangentialDeflection discretizer(curve, 0.1, deflection);
 
     if (discretizer.NbPoints() >= 2)
     {
@@ -947,8 +953,16 @@ bool OCCTBRepLibComputeNormals(OCCTShapeRef shape)
 class OCCTPointCloudCollector : public BRepLib_PointCloudShape
 {
 public:
+  // BRepLib_PointCloudShape's own default tolerance is Precision::Confusion() (see
+  // BRepLib_PointCloudShape.hxx:36-37), not 0.0. This constructor used to hardcode 0.0, which
+  // diverges from that documented default: myTol gates a degenerate/zero-area-face filter in
+  // computeDensity() (`if (anArea < myTol * myTol) continue;`), reached whenever a caller
+  // requests auto-density (density == 0.0). At myTol == 0.0 that filter never rejects any
+  // non-negative area, so a genuinely zero-area/degenerate face can win the min-area search and
+  // poison the auto-computed density (#1440). Passing no tolerance argument takes the header's
+  // own default instead of re-stating it.
   OCCTPointCloudCollector(const TopoDS_Shape& s)
-      : BRepLib_PointCloudShape(s, 0.0)
+      : BRepLib_PointCloudShape(s)
   {
   }
 
@@ -1402,6 +1416,14 @@ double OCCTPolyPolygon3DParameter(OCCTPolyPolygon3DRef _Nonnull ref, int index)
   try
   {
     auto* p = reinterpret_cast<Poly_Polygon3DOpaque*>(ref);
+    // Poly_Polygon3D::Parameters() is `return myParameters->Array1();` with no null check
+    // (unlike the sibling Poly_PolygonOnTriangulation::Parameter(), which OCCT itself guards
+    // with Standard_NullObject_Raise_if). A polygon built via the no-params constructor has a
+    // null myParameters Handle, so calling Parameters() dereferences it -- an uncatchable
+    // SIGSEGV `catch (...)` cannot stop. Guard with HasParameters() first, matching the idiom
+    // OCCTPolyPolygonOnTriSetParameters already uses below (#1440).
+    if (!p->polygon->HasParameters())
+      return 0;
     return p->polygon->Parameters()(index + 1);
   }
   catch (...)
