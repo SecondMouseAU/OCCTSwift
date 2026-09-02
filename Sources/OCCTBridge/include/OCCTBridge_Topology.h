@@ -1188,8 +1188,13 @@ OCCTBoundSortBoxRef _Nonnull OCCTBoundSortBoxCreate(const double* _Nonnull boxes
 /// Release a bound sort box.
 void OCCTBoundSortBoxRelease(OCCTBoundSortBoxRef _Nonnull bsb);
 
-/// Find indices of boxes that intersect a query box.
-/// @return Number of hits
+/// Find indices of boxes that intersect a query box. Indices are 0-based, matching this
+/// bridge's own convention (translated from Bnd_BoundSortBox's native 1-based indices, whose
+/// own header documents "the index is 1-based"; OCCTBoundSortBoxCreate stores caller box i at
+/// OCCT array position i+1). Count-then-fill: outIndices=NULL returns the total number of
+/// intersecting boxes without writing any. The fill call also returns the TOTAL count, not the
+/// number written, so a return value greater than maxIndices signals truncation. #1462
+/// @return Total number of intersecting boxes (not the number written to outIndices).
 int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef _Nonnull bsb,
                                 double xmin,
                                 double ymin,
@@ -1197,7 +1202,7 @@ int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef _Nonnull bsb,
                                 double xmax,
                                 double ymax,
                                 double zmax,
-                                int32_t* _Nonnull outIndices,
+                                int32_t* _Nullable outIndices,
                                 int32_t maxIndices);
 
 // --- BRepExtrema_SelfIntersection face pair reporting ---
