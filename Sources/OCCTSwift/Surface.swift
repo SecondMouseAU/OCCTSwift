@@ -4033,7 +4033,13 @@ extension Surface {
     /// *its* gap, which could be nonzero even when that recognition failed outright, and was
     /// identical whether or not `convertToPeriodic()` had ever been called. Kept only for source
     /// compatibility; do not use it. (#1510)
-    @available(*, deprecated, message: "Never reflected convertToPeriodic(); ConvertToPeriodic has no gap concept in OCCT to report. Always returns -1.0. See #1510.")
+    @available(
+        *, deprecated,
+        message: """
+            Never reflected convertToPeriodic(); ConvertToPeriodic has no gap concept in OCCT \
+            to report. Always returns -1.0. See #1510.
+            """
+    )
     public var conversionGap: Double {
         OCCTSurfaceConversionGap(handle)
     }
