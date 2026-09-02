@@ -346,7 +346,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
                                           int32_t      zTimes,
                                           bool         useRepeatedShape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -1157,7 +1157,7 @@ OCCTShapeRef OCCTShapeMakeDraft(OCCTShapeRef shape,
                                 double       angle,
                                 double       lengthMax)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -1840,7 +1840,7 @@ OCCTShapeRef OCCTShapeCreateRevolution(OCCTWireRef profile,
                                        double      dirZ,
                                        double      angle)
 {
-  if (!profile)
+  if (!occtShapeIsPresent(profile))
     return nullptr;
   occtEnsureSignals();
   try
@@ -1918,7 +1918,7 @@ OCCTShapeRef OCCTShapeCreateRevolutionFull(OCCTShapeRef shape,
                                            double       dirY,
                                            double       dirZ)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -1944,7 +1944,7 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
                                               double       dirZ,
                                               double       angle)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
