@@ -285,6 +285,29 @@ keyed on the RECEIVER's declared type rather than the method name, because `Add`
 most overloaded names: `unwrap_sweep.py --by-callee` counts 39 sites whose callee is `Add` and only
 four are a builder, so a name-keyed rule reports the other 35 (fixture `SK`).
 
+A FIFTH SPELLING, THE SPLIT-STATEMENT CAST, TAUGHT BY #1513. Every form above assumes the cast and
+the dereferencing use sit in the SAME expression: deref_call()'s outward walk through
+SHAPE_TRANSPARENT_CASTS only ever walks the enclosing calls of ONE expression, so it resolves
+`BRepAdaptor_Curve bac(TopoDS::Edge(shape->shape));` (inline, fixture `SM`) because the cast IS the
+constructor's own argument. Split across two statements -
+`TopoDS_Edge edge = TopoDS::Edge(shape->shape); BRepAdaptor_Curve bac(edge);` - the first
+statement's assignment expression ends at its own `;`, so walking outward from `shape->shape` never
+reaches the second statement's constructor, and nothing tracked `edge` as standing for the shape in
+the first place: `aliases()` (shared with the two Handle-typed walks above) only recognises a bare
+`name = ptr` or `name = ptr->field`, neither of which matches `name = TopoDS::Cast(ptr->field)`.
+`occtCPntsUniformDeflectionImpl` (`OCCTBridge_Curve3D_ArcLength.mm`) had exactly this shape,
+unguarded, invisible to every walk above and to `check-bridge-index.py`/the other censuses alike.
+`SHAPE_CAST_DECL`/`shape_cast_aliases()` close it: a `TopoDS_<Type> name = TopoDS::<transparent
+cast>(ptr->field);` declaration is folded into the same `alias` dict `shape_events()` already scans
+for a direct `TopoDS_Shape local = shape->shape;` alias, so a later bare use of `name` gets the
+identical guard/use classification a direct alias already got. Scoped to the shape walk only, not
+folded into the shared `aliases()`: nothing in the two Handle-typed walks ever casts a
+`Geom_Curve`/`Geom2d_Curve`/`Geom_Surface` handle through `TopoDS::`, so there is no equivalent
+shape there to teach. STILL BLIND: a second hop - `TopoDS_Edge edge2 = edge;` (a plain copy, not
+another `TopoDS::` cast) or `edge` handed through a further alias before its own use - since
+`shape_cast_aliases()` only matches a cast whose source is `ptr` itself (a tracked wrapper-pointer
+alias), not another `shape_cast_aliases()` name; no known instance in this tree today.
+
 WHAT THIS WALK CANNOT SEE, same standard as the two above: a hazard reached inside a helper this
 bridge writes (only a helper that GUARDS is recognised, not one that USES); a hazard on a
 `TopoDS_Shape` obtained from somewhere other than a wrapper argument, which is the #656 shape
@@ -1054,6 +1077,35 @@ def shape_wrapper_params(params):
     return out
 
 
+# #1513: a TopoDS_<Type> local declared FROM a transparent cast of a tracked shape-wrapper
+# pointer's field, in its OWN statement - `TopoDS_Edge edge = TopoDS::Edge(shape->shape);` - read
+# by a LATER statement's shape-dereferencing constructor. See the module docstring's "A FIFTH
+# SPELLING" paragraph for why deref_call()'s outward walk cannot see this on its own: it only
+# follows call-nesting within the one expression the cast sits in, and here the cast's own
+# expression ends at the declaration's `;`. Matched against `shape_events()`'s `body`, which is
+# `ctext` (casts blanked) but NOT `TopoDS::` casts - `strip_casts()` only blanks
+# reinterpret_cast/static_cast/const_cast/dynamic_cast and the `(OCCT*)` C-style form, so the
+# literal `TopoDS::Edge(...)` text this regex needs is still there.
+SHAPE_CAST_DECL = re.compile(
+    r'\bTopoDS_\w+\s+(\w+)\s*=\s*TopoDS::(?:' + '|'.join(SHAPE_TRANSPARENT_CASTS) + r')\s*'
+    r'\(\s*(\w+)\s*(?:\[[^\]]*\])?\s*->\s*(\w+)\s*\)\s*;')
+
+
+def shape_cast_aliases(body, ptr, field):
+    """name -> position immediately after the declaration, for every SHAPE_CAST_DECL match whose
+    cast source is a tracked pointer alias (`ptr`) and whose field matches the one this walk is
+    following (#1513). Mirrors aliases()'s own `handle` dict in shape, so shape_events() can fold
+    these in as more names standing in for the shape and get the identical guard/use scan for
+    free - a bare later use of `name` (no `->field` needed, since `name` IS a TopoDS_<Type> value,
+    not the wrapper) is what deref_call() already resolves correctly once it is offered."""
+    out = {}
+    for m in SHAPE_CAST_DECL.finditer(body):
+        name, src, src_field = m.group(1), m.group(2), m.group(3)
+        if src in ptr and src_field == field and name not in out:
+            out[name] = m.end()
+    return out
+
+
 def shape_events(body, param, field, shape_helpers):
     """Ordered (position, 'guard'|'use', member) for one topology-wrapper parameter (#1026).
 
@@ -1065,6 +1117,11 @@ def shape_events(body, param, field, shape_helpers):
     is neither, which is the whole difference between this walk and the handle walks above, and
     each of those three was measured rather than assumed."""
     ptr, alias, _ = aliases(body, param, field)
+    # #1513: fold in the split-statement cast form (`TopoDS_Edge edge = TopoDS::Edge(
+    # shape->shape);`) as more names standing in for the shape, so the scan below treats a later
+    # bare `edge` exactly like a direct `TopoDS_Shape local = shape->shape;` alias already gets.
+    for name, bound in shape_cast_aliases(body, ptr, field).items():
+        alias.setdefault(name, bound)
     decls = {var: ty for ty, var in DEREF_DECL.findall(body)}
 
 
@@ -1563,6 +1620,19 @@ double OCCTFixtureSM(OCCTShapeRef edge) {
     BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
     return adaptor.FirstParameter();
 }''', 'shape'),
+    # #1513, occtCPntsUniformDeflectionImpl's own shape: the cast and the dereferencing constructor
+    # are the SAME hazard as SM's, split across two statements instead of nested in one expression.
+    # Before SHAPE_CAST_DECL/shape_cast_aliases(), deref_call()'s outward walk never started: it
+    # only follows call-nesting within one expression, and the cast's own expression ends at the
+    # declaration's `;`, three lines above the constructor that actually dereferences.
+    ('the split-statement form: a TopoDS:: cast assigned to a local, consumed by a '
+     'shape-dereferencing constructor in the NEXT statement', '''
+double OCCTFixtureSQ(OCCTShapeRef shape) {
+    if (!shape) return 0;
+    TopoDS_Edge edge = TopoDS::Edge(shape->shape);
+    BRepAdaptor_Curve bac(edge);
+    return bac.FirstParameter();
+}''', 'shape'),
 ]
 
 # The other failure mode, and the one #624/#630 was: a detector taught indirection can start
@@ -1573,6 +1643,16 @@ double OCCTFixtureSN(OCCTShapeRef edge) {
     if (!edge || edge->shape.IsNull()) return 0;
     BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
     return adaptor.FirstParameter();
+}''', 'shape'),
+    # #1513, SQ's own guarded counterpart: the split-statement form must not false-positive once
+    # the field is guarded before the local is declared, the same round-trip SM/SN already prove
+    # for the inline form.
+    ('the same split-statement cast, with the shape guard added before the local is declared', '''
+double OCCTFixtureSR(OCCTShapeRef shape) {
+    if (!shape || shape->shape.IsNull()) return 0;
+    TopoDS_Edge edge = TopoDS::Edge(shape->shape);
+    BRepAdaptor_Curve bac(edge);
+    return bac.FirstParameter();
 }''', 'shape'),
     # #1035's own SH: this is what stops the outward walk being noise. The cast is transparent
     # here too, but BRepBndLib::Add and TopExp::MapShapes were both MEASURED to cope with a null

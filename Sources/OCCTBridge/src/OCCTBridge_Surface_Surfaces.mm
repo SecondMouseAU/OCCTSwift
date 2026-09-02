@@ -1884,7 +1884,7 @@ OCCTGeomIntSSRef _Nullable OCCTGeomIntSSCreate(OCCTShapeRef face1,
                                                OCCTShapeRef face2,
                                                double       tolerance)
 {
-  if (!face1 || !face2)
+  if (!occtShapeIsPresent(face1) || !occtShapeIsPresent(face2))
     return nullptr;
   try
   {
@@ -1979,7 +1979,7 @@ OCCTShapeRef _Nullable OCCTAdaptor3dIsoCurveEdge(OCCTShapeRef faceShape,
                                                  double       p1,
                                                  double       p2)
 {
-  if (!faceShape)
+  if (!occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {

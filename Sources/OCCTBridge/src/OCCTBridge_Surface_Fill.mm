@@ -919,7 +919,7 @@ void OCCTGeomFillCoonsAlgPatchEval(OCCTShapeRef edge1,
 
 OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sectionEdge)
 {
-  if (!pathEdge || !sectionEdge)
+  if (!occtShapeIsPresent(pathEdge) || !occtShapeIsPresent(sectionEdge))
     return nullptr;
   try
   {
@@ -994,7 +994,7 @@ OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sec
 OCCTEvolvedSectionInfo OCCTGeomFillEvolvedSectionInfo(OCCTShapeRef edgeShape)
 {
   OCCTEvolvedSectionInfo result = {0, 0, 0, false};
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return result;
   try
   {
