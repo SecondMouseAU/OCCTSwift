@@ -2971,12 +2971,16 @@ typedef struct
 /// Create a fillet between two edges in a plane.
 /// @param edge1 First edge
 /// @param edge2 Second edge
+/// @param planeOx/Oy/Oz Point on the plane
 /// @param planeNx/Ny/Nz Plane normal
 /// @param radius Fillet radius
 /// @param nearX/Y/Z Point near desired fillet location
 /// @return Fillet result with fillet edge, modified edges, and solution count
 OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
                                          OCCTShapeRef _Nonnull edge2,
+                                         double planeOx,
+                                         double planeOy,
+                                         double planeOz,
                                          double planeNx,
                                          double planeNy,
                                          double planeNz,

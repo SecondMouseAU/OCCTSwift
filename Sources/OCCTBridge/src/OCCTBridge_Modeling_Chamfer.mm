@@ -1307,6 +1307,9 @@ OCCTChamfer2DResult OCCTChFi2dChamferEdges(OCCTShapeRef _Nonnull edge1,
 
 OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
                                          OCCTShapeRef _Nonnull edge2,
+                                         double planeOx,
+                                         double planeOy,
+                                         double planeOz,
                                          double planeNx,
                                          double planeNy,
                                          double planeNz,
@@ -1320,7 +1323,7 @@ OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
   {
     TopoDS_Edge      e1 = TopoDS::Edge(edge1->shape);
     TopoDS_Edge      e2 = TopoDS::Edge(edge2->shape);
-    gp_Pln           plane(gp_Pnt(0, 0, 0), gp_Dir(planeNx, planeNy, planeNz));
+    gp_Pln           plane(gp_Pnt(planeOx, planeOy, planeOz), gp_Dir(planeNx, planeNy, planeNz));
     ChFi2d_FilletAPI fillet(e1, e2, plane);
     if (!fillet.Perform(radius))
       return result;

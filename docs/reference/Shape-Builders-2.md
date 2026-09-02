@@ -2518,24 +2518,26 @@ public struct Fillet2DEdgeResult: Sendable {
 
 ---
 
-### `Shape.fillet2dEdges(edge1:edge2:planeNormal:radius:nearPoint:)`
+### `Shape.fillet2dEdges(edge1:edge2:planeOrigin:planeNormal:radius:nearPoint:)`
 
 Create a fillet between two edges in a plane using `ChFi2d_FilletAPI`.
 
 ```swift
 public static func fillet2dEdges(edge1: Shape, edge2: Shape,
+                                 planeOrigin: SIMD3<Double> = .zero,
                                  planeNormal: SIMD3<Double>,
                                  radius: Double,
                                  nearPoint: SIMD3<Double>) -> Fillet2DEdgeResult?
 ```
 
-- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
+- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeOrigin`, a point on the plane containing the edges (defaults to the world origin; must match the edges' actual plane for edges not passing through `(0,0,0)`, #1459). `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
 - **Returns:** `Fillet2DEdgeResult` with the fillet arc, trimmed edges, and solution count, or `nil` on failure.
 - **OCCT:** `ChFi2d_FilletAPI` (selects analytical or iterative algorithm automatically)
 - **Example:**
   ```swift
   if let r = Shape.fillet2dEdges(
       edge1: e1, edge2: e2,
+      planeOrigin: SIMD3(0, 0, 0),
       planeNormal: SIMD3(0, 0, 1),
       radius: 2.0,
       nearPoint: SIMD3(1, 1, 0)) {
