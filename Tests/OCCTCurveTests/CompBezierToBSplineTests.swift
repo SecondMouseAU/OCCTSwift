@@ -53,4 +53,22 @@ struct CompBezierToBSplineTests {
         let result = CompBezierConverter.toBSpline(segments: [seg1, seg2])
         #expect(result == nil)
     }
+
+    @Test func manySegmentsExceedingCapacityReturnsNil() {
+        // 60 chained cubic segments grow the composite curve's pole count to at least
+        // 2*60+2 = 122 (over the fixed 100-pole/300-double buffer) and its knot count to
+        // exactly 60+1 = 61 (over the fixed 50-knot/mult buffer), regardless of how the
+        // junction-tangent smoothing inside Perform() classifies each junction. The bridge
+        // must reject this rather than report an unclamped nbPoles/nbKnots against a buffer
+        // that only ever holds a truncated prefix (#1441).
+        var segments: [[SIMD3<Double>]] = []
+        for i in 0..<60 {
+            let x = Double(i) * 3
+            segments.append([
+                SIMD3(x, 0, 0), SIMD3(x + 1, 1, 0), SIMD3(x + 2, -1, 0), SIMD3(x + 3, 0, 0),
+            ])
+        }
+        let result = CompBezierConverter.toBSpline(segments: segments)
+        #expect(result == nil)
+    }
 }

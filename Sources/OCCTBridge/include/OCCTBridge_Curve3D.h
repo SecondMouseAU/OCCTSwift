@@ -199,6 +199,10 @@ double         OCCTCurve3DGetLengthBetween(OCCTCurve3DRef curve, double u1, doub
 OCCTCurve3DRef OCCTCurve3DToBSpline(OCCTCurve3DRef curve);
 int32_t        OCCTCurve3DBSplineToBeziers(OCCTCurve3DRef curve, OCCTCurve3DRef* out, int32_t max);
 void           OCCTCurve3DFreeArray(OCCTCurve3DRef* curves, int32_t count);
+/// Join curves[0..count) end-to-end into a single BSpline via
+/// GeomConvert_CompCurveToBSplineCurve. Returns nullptr, rather than a partial join, if any
+/// curve after the first is not G0-continuous with the accumulated curve within `tolerance`
+/// (#1441).
 OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
                                         int32_t               count,
                                         double                tolerance);
@@ -1405,7 +1409,9 @@ typedef struct
 /// @param segCount Number of Bezier segments
 /// @param ptsPerSeg Number of control points per segment (degree+1)
 /// @param out Result filled on success
-/// @return true on success
+/// @return true on success; false if segCount/ptsPerSeg are invalid, the underlying conversion
+///         throws, or the composite curve needs more poles/knots than `out`'s fixed capacity
+///         (100 poles, 50 knots) can hold (#1441).
 bool OCCTConvertCompBezierToBSpline(const double* _Nonnull poles,
                                     int32_t segCount,
                                     int32_t ptsPerSeg,
@@ -1427,7 +1433,9 @@ typedef struct
 /// @param segCount Number of Bezier segments
 /// @param ptsPerSeg Number of control points per segment (degree+1)
 /// @param out Result filled on success
-/// @return true on success
+/// @return true on success; false if segCount/ptsPerSeg are invalid, the underlying conversion
+///         throws, or the composite curve needs more poles/knots than `out`'s fixed capacity
+///         (100 poles, 50 knots) can hold (#1441).
 bool OCCTConvertCompBezier2dToBSpline2d(const double* _Nonnull poles,
                                         int32_t segCount,
                                         int32_t ptsPerSeg,
@@ -2431,7 +2439,9 @@ int32_t OCCTCurve3DSplitAtContinuity(OCCTCurve3DRef _Nonnull curve,
                                      OCCTCurve3DRef _Nullable* _Nonnull outSegments,
                                      int32_t maxSegments);
 
-/// Concatenate an array of 3D curves with G1 continuity.
+/// Concatenate an array of 3D curves with G1 continuity. Returns nullptr, rather than a partial
+/// concatenation, if any curve after the first is not G0-continuous with the accumulated curve
+/// within `tol` (#1441).
 OCCTCurve3DRef _Nullable OCCTCurve3DConcatenateG1(const OCCTCurve3DRef _Nonnull* _Nonnull curves,
                                                   int32_t count,
                                                   double  tol);
