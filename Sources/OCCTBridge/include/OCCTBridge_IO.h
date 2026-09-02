@@ -173,6 +173,20 @@ OCCTShapeRef OCCTImportIGES(const char* path);
 /// @return Shape reference with healing applied, or NULL on failure
 OCCTShapeRef OCCTImportIGESRobust(const char* path);
 
+/// Test-only introspection of the shared `read.maxprecision.val` `Interface_Static` parameter
+/// (#1504). `Interface_Static` is a process-wide global shared with STEP (#1157), so a test
+/// wanting to prove one robust importer's own `SetRVal` call actually ran needs to rule out a
+/// value left over from an earlier STEP/IGES call in the same process: pin a sentinel with
+/// `OCCTDebugSetReadMaxPrecisionVal` immediately before the call under test, then read it back
+/// afterward with this.
+/// @return The parameter's current value.
+double OCCTDebugGetReadMaxPrecisionVal(void);
+
+/// Set the shared `read.maxprecision.val` `Interface_Static` parameter (#1504). See
+/// `OCCTDebugGetReadMaxPrecisionVal`.
+/// @param value The value to set.
+void OCCTDebugSetReadMaxPrecisionVal(double value);
+
 /// Export shape to IGES file
 /// @param shape The shape to export
 /// @param path Output file path
