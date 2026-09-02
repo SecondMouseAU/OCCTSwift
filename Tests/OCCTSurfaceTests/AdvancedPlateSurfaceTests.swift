@@ -22,7 +22,11 @@ struct AdvancedPlateSurfaceTests {
         }
     }
 
-    @Test("Plate surface with mixed G0/G1 orders")
+    // #1460: this used to assert only `shape != nil`, exercising the exact silent-no-op path
+    // #1460 fixed without ever measuring whether the `.g1` tangent constraint did anything (it
+    // didn't; see `Issue1460PlatePointG1Tests`). `.g1` is now rejected for a point constraint,
+    // same as `.g2`, so a batch mixing `.g0` and `.g1` is now `nil`, not a degraded surface.
+    @Test("Plate surface rejects mixed G0/G1 orders (a bare point cannot carry tangent data)")
     func platePointsMixedOrders() {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
@@ -30,7 +34,7 @@ struct AdvancedPlateSurfaceTests {
         ]
         let orders: [SurfaceContinuity] = [.g0, .g1, .g0, .g1, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
-        #expect(shape != nil)
+        #expect(shape == nil)
     }
 
     @Test("Plate surface with custom degree and iterations")
