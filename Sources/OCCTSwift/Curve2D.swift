@@ -869,10 +869,11 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// The same approximation ``approximated(tolerance:continuity:maxSegments:maxDegree:)``
-    /// performs, one shared `Geom2dConvert_ApproxCurve` run behind both (#1474, mirroring #491's
-    /// `Curve3D.approxWithDetails`/`Surface.approxWithDetails`), reporting the fit's error and
-    /// completion status. For identical arguments the two return the same curve; use this one
-    /// when you need to know how close the fit actually came.
+    /// performs, reporting the fit's error and completion status.
+    ///
+    /// One shared `Geom2dConvert_ApproxCurve` run behind both (#1474, mirroring #491's
+    /// `Curve3D.approxWithDetails`/`Surface.approxWithDetails`). For identical arguments the two
+    /// return the same curve; use this one when you need to know how close the fit actually came.
     ///
     /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true
     /// even for a fit that is *not* within `tolerance`; `isDone` and `maxError` are how you find
