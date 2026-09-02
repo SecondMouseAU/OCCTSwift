@@ -964,16 +964,51 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 ,  a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
 
 - **Parameters:** `tolerance`, maximum approximation error, applied over the whole curve; `continuity`, desired continuity order; `maxSegments`, maximum number of BSpline segments; `maxDegree`, maximum polynomial degree.
-- **Returns:** Approximated BSpline, or `nil` on failure.
-- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
+- **Returns:** Approximated BSpline, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`), gated on `HasResult()`.
 - **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406),
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, which is documented as true for a fit that is "not NECESSARILY within the required
+  tolerance": the same accessor
+  [`approxWithDetails`](#approxwithdetailstolerancecontinuitymaxsegmentsmaxdegree) uses, since #1474
+  put one shared implementation behind both, mirroring the #491 fix already shipped for
+  `Curve3D`/`Surface`. Use `approxWithDetails` when you need the actual `maxError`.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
   let approx = circle.approximated(tolerance: 0.01, continuity: 2)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status.
+
+```swift
+public func approxWithDetails(tolerance: Double = 1e-3, continuity: Int = 2,
+                              maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurve2DResult
+```
+
+One shared `Geom2dConvert_ApproxCurve` run backs both entry points (#1474), so for identical
+arguments they return the same curve: this one just also carries the diagnostics OCCT already
+computed.
+
+- **Returns:** `ApproxCurve2DResult(curve:maxError:isDone:hasResult:)`. `curve` is populated
+  exactly when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the
+  greatest distance between the source curve and the fit.
+- **OCCT:** `Geom2dConvert_ApproxCurve`: `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Example:**
+  ```swift
+  let circle = Curve2D.circle(center: .zero, radius: 5)!
+  let fit = circle.approxWithDetails(tolerance: 1e-6)
+  if let bspline = fit.curve, fit.maxError <= 1e-6 {
+      print("fitted with \(bspline.poleCount ?? 0) poles")
+  }
   ```
 
 ---
