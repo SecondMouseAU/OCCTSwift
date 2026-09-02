@@ -943,6 +943,16 @@ bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
                                       OCCTShapeRef oldFaceShape,
                                       OCCTShapeRef newFaceShape);
 
+// --- BRep_Builder (edge parametrization flag) ---
+/// Explicitly set an edge's SameParameter flag (`BRep_Tool::SameParameter`'s writer). None of the
+/// `ShapeBuild_Edge` helpers above (`CopyPCurves`, `ReassignPCurve`, ...) touch this flag
+/// themselves, matching upstream: attaching or reassigning a pcurve by hand leaves the caller to
+/// decide whether the result is still verified same-parameter. Exists to build a regression
+/// fixture for #1461 (a deliberately mismatched 3D-curve/pcurve pair with a known, real
+/// deviation, used to prove `OCCTValidateEdge` reads the edge's real flag rather than a
+/// hardcoded one); no Swift wrapper, reachable from a Swift test via `import OCCTBridge`.
+void OCCTEdgeSetSameParameter(OCCTEdgeRef _Nonnull edge, bool sameParameter);
+
 // --- ShapeBuild_Vertex ---
 /// Combine two vertices into one at the average position.
 /// @param tolFactor Tolerance factor (default 1.0001)
@@ -1053,7 +1063,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
 typedef struct
 {
   bool   isDone;
-  bool   isWithinTolerance; // at default tolerance
+  bool   isWithinTolerance; // at the caller-supplied tolerance
   double maxDistance;
   double tolerance; // tolerance used for check
 } OCCTValidateEdgeResult;
