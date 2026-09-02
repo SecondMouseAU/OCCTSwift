@@ -47,11 +47,14 @@
 /// )
 /// ```
 ///
-/// - Note: Not every API accepts every order. A bare point cannot carry curvature, so
-///   ``Shape/plateSurface(through:orders:...)` and the
-///   point half of ``Shape/plateSurface(pointConstraints:curveConstraints:...)` reject
-///   ``g2`` up front, before building any constraint (`GeomPlate_PointConstraint` throws
-///   above order 1; see ``SurfaceContinuity/isUnsupportedForPointConstraint``, #437).
+/// - Note: Not every API accepts every order. A bare point cannot carry tangent or curvature
+///   data, so ``Shape/plateSurface(through:orders:...)` and the
+///   point half of ``Shape/plateSurface(pointConstraints:curveConstraints:...)` reject both
+///   ``g1`` and ``g2`` up front, before building any constraint. `GeomPlate_PointConstraint`
+///   throws above order 1, which is why ``g2`` was rejected first (#437); ``g1`` does NOT
+///   throw, but its point-only constructor never sets any derivative data, so the tangent
+///   constraint silently drops out at the solver instead of ever reaching the surface (#1460).
+///   See ``SurfaceContinuity/isUnsupportedForPointConstraint``.
 public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     /// Positional continuity (G0). The surface passes through the constraint.
     case g0 = 0
@@ -62,7 +65,7 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 }
 
 extension SurfaceContinuity {
-    /// Whether this order can never be honoured by a bare *point* constraint (#437).
+    /// Whether this order can never be honoured by a bare *point* constraint (#437, #1460).
     ///
     /// `GeomPlate_PointConstraint`'s point constructor throws above order 1
     /// (`GeomPlate_PointConstraint.cxx`, pinned `V8_0_1`):
@@ -77,14 +80,27 @@ extension SurfaceContinuity {
     /// point constraint: this is not an OCCT defect. `GeomPlate_CurveConstraint` has no such
     /// restriction (it accepts order up to 2 directly), so this only ever applies to a *point*.
     ///
+    /// ``g1`` is rejected too, but for a different reason (#1460): order 1 does NOT throw in the
+    /// constructor above, so a bare point carrying ``g1`` used to reach
+    /// `GeomPlate_BuildPlateSurface` and build successfully, silently degraded to G0-only. The
+    /// point-only constructor's member-init list never touches the tangent-derivative fields
+    /// `D1()` returns, so they default to `gp_Vec()`, i.e. `(0,0,0)`; `LoadPoint`'s order==1
+    /// branch feeds that zero vector into `Plate_GtoCConstraint`, whose constructor computes
+    /// `D1T.Du ^ D1T.Dv` (zero cross zero), sees `normale.Modulus() < NORMIN`, and returns before
+    /// adding any constraint. `nb_PPConstraints` stays 0: the tangent request never reaches the
+    /// solver, and nothing in the chain reports it. A bare point structurally cannot carry
+    /// tangent data either, same as curvature; the only OCCT overload that can
+    /// (`GeomPlate_PointConstraint(U, V, Surf, Order, ...)`) needs a reference surface neither
+    /// bridge entry point's signature has.
+    ///
     /// `Shape.plateSurface(through:orders:...)` and the point half of
     /// `Shape.plateSurface(pointConstraints:curveConstraints:...)` check this before building any
-    /// `GeomPlate_PointConstraint`, so a `.g2` point order fails immediately with the reason on
-    /// record here rather than reaching `GeomPlate_BuildPlateSurface`, throwing, and being
-    /// swallowed by the bridge's `catch (...)`, which produced the same `nil`, but for a reason
-    /// nothing on the Swift side asserted, and only because OCCT happens to throw there today.
+    /// `GeomPlate_PointConstraint`, so a `.g1` or `.g2` point order fails immediately with the
+    /// reason on record here rather than reaching `GeomPlate_BuildPlateSurface` and either
+    /// throwing (`.g2`, swallowed by the bridge's `catch (...)`) or silently building a degraded
+    /// surface with no diagnostic at all (`.g1`).
     var isUnsupportedForPointConstraint: Bool {
-        self == .g2
+        self != .g0
     }
 }
 

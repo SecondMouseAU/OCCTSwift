@@ -342,20 +342,25 @@ extension Shape {
 
     /// Create a plate surface through points with specified constraint orders per point.
     ///
-    /// Each point can independently specify G0 (position only) or G1 (position + tangent)
-    /// continuity. **`.g2` always returns `nil`**: a bare point carries no curvature to match,
-    /// so `GeomPlate_PointConstraint` rejects order 2 outright (#437). This is checked here,
-    /// before any constraint is built; see ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// Each point can only specify G0 (position only) continuity. **`.g1` and `.g2` always
+    /// return `nil`**: a bare point cannot carry tangent or curvature data, so
+    /// `GeomPlate_PointConstraint`'s point-only constructor structurally cannot honour either
+    /// (#437 for `.g2`, which throws in the constructor; #1460 for `.g1`, which does not throw
+    /// but silently drops the tangent constraint at the solver, degrading to a G0-only build
+    /// with no diagnostic). This is checked here, before any constraint is built; see
+    /// ``SurfaceContinuity/isUnsupportedForPointConstraint``.
     ///
     /// ```swift
-    /// // .g2 anywhere in `orders` is rejected up front; the call below is always nil.
-    /// let rejected = Shape.plateSurface(through: points,
-    ///                                    orders: Array(repeating: .g2, count: points.count))
+    /// // .g1 or .g2 anywhere in `orders` is rejected up front; both calls below are always nil.
+    /// let rejectedTangent = Shape.plateSurface(through: points,
+    ///                                           orders: Array(repeating: .g1, count: points.count))
+    /// let rejectedCurvature = Shape.plateSurface(through: points,
+    ///                                             orders: Array(repeating: .g2, count: points.count))
     /// ```
     ///
     /// - Parameters:
     ///   - points: Array of 3D points the surface must satisfy
-    ///   - orders: Constraint order per point (`.g0` or `.g1`; `.g2` is rejected, see above)
+    ///   - orders: Constraint order per point (`.g0` only; `.g1` and `.g2` are rejected, see above)
     ///   - degree: Maximum polynomial degree (default 3)
     ///   - pointsOnCurves: Number of sample points on curves (default 15)
     ///   - iterations: Number of solver iterations (default 2)
@@ -392,7 +397,7 @@ extension Shape {
     }
 
     /// Whether any order in a batch of *point* constraints would fail
-    /// Checks if any order fails the point constraint domain check (#437).
+    /// Checks if any order fails the point constraint domain check (#437, #1460).
     ///
     /// Tests whether any element is ``SurfaceContinuity/isUnsupportedForPointConstraint``.
     /// Shared implementation for both plate-point entry points' rejection guard:
@@ -405,7 +410,7 @@ extension Shape {
         orders.contains(where: \.isUnsupportedForPointConstraint)
     }
 
-    /// Checks if any point constraint fails the point constraint domain check (#437).
+    /// Checks if any point constraint fails the point constraint domain check (#437, #1460).
     ///
     /// Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
     /// `(point, order)` tuple shape.
@@ -424,22 +429,26 @@ extension Shape {
     /// Combines point constraints (each with its own continuity order) and
     /// curve constraints (wires with continuity orders) into a single plate surface.
     ///
-    /// `.g2` is rejected up front for a **point** constraint (`GeomPlate_PointConstraint` rejects
-    /// order 2 outright, #437) but is fine for a **curve** constraint (`GeomPlate_CurveConstraint`
-    /// accepts order 2 directly); see ``SurfaceContinuity/isUnsupportedForPointConstraint``. Only
-    /// `points`' orders are checked; `curves`' orders are not.
+    /// `.g1` and `.g2` are rejected up front for a **point** constraint
+    /// (`GeomPlate_PointConstraint`'s point-only constructor can carry neither tangent nor
+    /// curvature data; `.g2` throws in the constructor, #437, `.g1` silently drops the tangent
+    /// constraint at the solver instead, #1460) but both are fine for a **curve** constraint
+    /// (`GeomPlate_CurveConstraint` accepts order up to 2 directly); see
+    /// ``SurfaceContinuity/isUnsupportedForPointConstraint``. Only `points`' orders are checked;
+    /// `curves`' orders are not.
     ///
     /// ```swift
-    /// // A point held to G0 alongside a rectangular boundary wire held to G0.
-    /// // A .g2 point order here would make the whole call return nil (see above).
+    /// // A point held to G0 alongside a rectangular boundary wire held to G1.
+    /// // A .g1 or .g2 point order here would make the whole call return nil (see above).
     /// let surface = Shape.plateSurface(
     ///     pointConstraints: [(point: SIMD3(5, 5, 3), order: .g0)],
-    ///     curveConstraints: [(wire: boundaryWire, order: .g0)]
+    ///     curveConstraints: [(wire: boundaryWire, order: .g1)]
     /// )
     /// ```
     ///
     /// - Parameters:
-    ///   - points: Point constraints with positions and orders (`.g2` always rejected, see above)
+    ///   - points: Point constraints with positions and orders (`.g0` only; `.g1`/`.g2` always
+    ///     rejected, see above)
     ///   - curves: Curve constraints with wires and orders
     ///   - degree: Maximum polynomial degree (default 3)
     ///   - tolerance: Approximation tolerance (default 0.01)
