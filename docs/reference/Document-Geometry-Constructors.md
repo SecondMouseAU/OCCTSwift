@@ -2119,15 +2119,16 @@ public static func checkVertexTolerance(_ edge: Shape, face: Shape) -> (ok: Bool
 
 ---
 
-### `EdgeAnalysis.checkOverlapping(_:_:)`
+### `EdgeAnalysis.checkOverlapping(_:_:tolerance:)`
 
 Detect whether two edges overlap and report the overlap tolerance.
 
 ```swift
-public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape) -> (overlapping: Bool, tolerance: Double)
+public static func checkOverlapping(_ edge1: Shape, _ edge2: Shape, tolerance: Double = 1e-7) -> (overlapping: Bool, tolerance: Double)
 ```
 
-- **Returns:** `overlapping` is `true` when the edges share geometry; `tolerance` is the detected overlap distance.
+- **Parameters:** `tolerance`, the overlap distance threshold (defaults to `Precision::Confusion()`, `1e-7`).
+- **Returns:** `overlapping` is `true` when the edges are within `tolerance` of each other; `tolerance` echoes back the threshold used.
 - **OCCT:** `ShapeAnalysis_Edge::CheckOverlapping`
 - **Example:**
   ```swift
@@ -2178,14 +2179,16 @@ public static func endTangent2d(_ edge: Shape, face: Shape,
 
 ### `EdgeAnalysis.checkPCurveRange(_:face:first:last:)`
 
-Verify that a PCurve parameter range is valid on the face.
+Verify that a PCurve parameter range is valid against the pcurve's own underlying geometric domain.
 
 ```swift
 public static func checkPCurveRange(_ edge: Shape, face: Shape,
                                      first: Double, last: Double) -> Bool
 ```
 
-- **Parameters:** `first`, `last`, the parameter range to check against the face's natural bounds.
+- **Parameters:** `first`, `last`, the parameter range to check. Checked against the pcurve's own
+  domain (its full period, for a periodic pcurve), not against the edge's current stored trim, so
+  a range can be valid even when it extends past where the edge itself is trimmed.
 - **Returns:** `true` if the range is valid.
 - **OCCT:** `ShapeAnalysis_Edge::CheckPCurveRange`
 - **Example:**

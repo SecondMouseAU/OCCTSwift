@@ -47,4 +47,31 @@ struct CanonicalRecognitionDetailedTests {
             #expect(foundLine)
         }
     }
+
+    // #1438: OCCTShapeRecognizeCanonicalSurface had no guard at all (not even a pointer check),
+    // and ShapeAnalysis_CanonicalRecognition's constructor unconditionally dereferences the
+    // shape's TShape (TopoDS_Shape::ShapeType()), an uncatchable SIGSEGV on a nullified wrapper --
+    // `catch (...)` cannot absorb it. `.nullified` is a real, public, non-crashing way to get a
+    // non-null wrapper pointer around a null TopoDS_Shape.
+    @Test func recognizeCanonicalSurfaceOnNullShapeDoesNotCrash() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10), let nullShape = box.nullified
+        else {
+            Issue.record("failed to build box / nullified shape")
+            return
+        }
+        let result = nullShape.recognizeCanonicalSurface(tolerance: 1e-4)
+        #expect(result.type == .none)
+    }
+
+    // #1438: same crash mechanism as recognizeCanonicalSurfaceOnNullShapeDoesNotCrash above, for
+    // OCCTShapeRecognizeCanonicalCurve.
+    @Test func recognizeCanonicalCurveOnNullShapeDoesNotCrash() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10), let nullShape = box.nullified
+        else {
+            Issue.record("failed to build box / nullified shape")
+            return
+        }
+        let result = nullShape.recognizeCanonicalCurve(tolerance: 1e-4)
+        #expect(result.type == .none)
+    }
 }
