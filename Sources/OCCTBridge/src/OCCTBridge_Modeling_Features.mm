@@ -2080,12 +2080,12 @@ OCCTShapeRef _Nullable OCCTBRepFeatBuilderFuse(OCCTShapeRef shape, OCCTShapeRef 
     BRepFeat_Builder builder;
     builder.Init(shape->shape, tool->shape);
     builder.SetOperation(1); // Fuse
-    TopTools_ListOfShape parts;
-    builder.PartsOfTool(parts);
-    for (auto it = parts.begin(); it != parts.end(); ++it)
-    {
-      builder.KeepPart(*it);
-    }
+    builder.Perform();
+    // No KeepPart(): PartsOfTool()/KeepPart() select which solids of the
+    // *split* tool to retain for a Cut/Common-style partial keep. For a
+    // plain Fuse the whole tool is wanted, and keeping parts here selects
+    // the wrong artifact (measured: reduces the result to the object alone,
+    // see #1458).
     builder.PerformResult();
     if (builder.HasErrors())
       return nullptr;
@@ -2109,8 +2109,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatBuilderCut(OCCTShapeRef shape, OCCTShapeRef t
     BRepFeat_Builder builder;
     builder.Init(shape->shape, tool->shape);
     builder.SetOperation(0); // Cut
-    TopTools_ListOfShape parts;
-    builder.PartsOfTool(parts);
+    builder.Perform();
     // For cut, keep NO parts of tool (remove all)
     builder.PerformResult();
     if (builder.HasErrors())
