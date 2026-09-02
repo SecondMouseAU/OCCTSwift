@@ -17,8 +17,10 @@ public final class BoundSortBox: @unchecked Sendable {
     deinit { OCCTBoundSortBoxRelease(handle) }
 
     /// Find indices of boxes (0-based, into the array passed to ``init(boxes:)``) that intersect
-    /// a query box. Count-then-fill: an unbounded, size-then-allocate call, so no truncation is
-    /// possible regardless of how many boxes intersect (#1462).
+    /// a query box.
+    ///
+    /// Count-then-fill: an unbounded, size-then-allocate call, so no truncation is possible
+    /// regardless of how many boxes intersect (#1462).
     ///
     /// ```swift
     /// let sorter = BoundSortBox(boxes: [
