@@ -1053,7 +1053,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
 typedef struct
 {
   bool   isDone;
-  bool   isWithinTolerance; // at default tolerance
+  bool   isWithinTolerance; // at the caller-supplied tolerance
   double maxDistance;
   double tolerance; // tolerance used for check
 } OCCTValidateEdgeResult;
