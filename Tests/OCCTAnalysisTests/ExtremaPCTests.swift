@@ -39,6 +39,32 @@ struct ExtremaPCTests {
         }
     }
 
+    @Test func pointToCircleOppositeStart() {
+        // #1456: `occtExtremaPCCurveImpl`'s whole-curve path always searched the
+        // degenerate [0,0] parameter domain instead of the curve's natural range
+        // (a ternary that can't actually pick between the 3-arg ranged constructor and
+        // the 1-arg natural-range constructor). `pointToCircle` above doesn't catch this:
+        // its query point's true closest point happens to sit at parameter 0, which is
+        // the one point the [0,0] domain can ever "find". This probes a query point
+        // diametrically opposite the u=0 point instead. With the bug, the search finds
+        // only the u=0 point -- here the FARTHEST point (distance 20) -- and reports it
+        // as the (and only) result, so `results.min(by: distance)` silently returns 20
+        // instead of the true closest distance of 0. Ground-truth verified directly
+        // against the pinned kernel (ExtremaPC_Curve's two Geom_Curve constructors).
+        guard
+            let circ = Curve3D.circle(
+                center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 10.0)
+        else { return }
+        let results = circ.extrema(from: SIMD3(-10, 0, 0))
+        #expect(results.count == 2)
+        if let closest = results.min(by: { $0.distance < $1.distance }) {
+            #expect(closest.distance < 1e-6)
+        }
+        if let farthest = results.max(by: { $0.distance < $1.distance }) {
+            #expect(abs(farthest.distance - 20.0) < 1e-6)
+        }
+    }
+
     @Test func pointToHelix() {
         guard let helix = Curve3D.circularHelix(radius: 5.0, pitch: 10.0) else { return }
         // Point at center of helix, all points on helix are equidistant at radius 5
