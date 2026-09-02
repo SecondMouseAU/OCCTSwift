@@ -1146,7 +1146,7 @@ OCCTExtremaLocateExtCCResult OCCTExtremaLocateExtCC(OCCTCurve3DRef curve1,
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
 {
   if (!curve || curve->curve.IsNull())
-    return 7; // OtherCurve
+    return 8; // OtherCurve
   try
   {
     GeomAdaptor_Curve ac(curve->curve);
@@ -1154,7 +1154,7 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
   }
   catch (...)
   {
-    return 7;
+    return 8;
   }
 }
 

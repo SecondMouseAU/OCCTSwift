@@ -2198,7 +2198,8 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef _Nonnull curve,
 
 // --- Curve3D extras ---
 
-/// Get the curve type enum (GeomAbs_CurveType: 0=Line..7=OtherCurve).
+/// Get the curve type enum (GeomAbs_CurveType: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola,
+/// 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OffsetCurve, 8=OtherCurve).
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef _Nonnull curve);
 
 /// Find the parameter on a 3D curve nearest to a 3D point, over the curve's whole range.
