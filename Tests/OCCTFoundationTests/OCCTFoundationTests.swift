@@ -1356,7 +1356,10 @@ struct OSDFileIteratorTests {
 struct OSDDiskTests {
     @Test func diskSize() {
         let size = DiskInfo.size()
-        // On macOS, may return 0 (OCCT limitation)
+        // Fixed by #1442 (bridge now constructs OSD_Disk from the path string directly
+        // rather than via OSD_Path, whose Disk() component is never populated on
+        // macOS/iOS/Linux): a real path now reports a real, nonzero KB figure. See
+        // Issue1442DiskUnicodeOSDUtilitiesTests for the precise regression coverage.
         #expect(size >= 0)
     }
 
