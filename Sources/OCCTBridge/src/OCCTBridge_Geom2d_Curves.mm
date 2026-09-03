@@ -1430,7 +1430,7 @@ int OCCTGeom2dConvertApproxArcsSegments(OCCTCurve2DRef _Nonnull curveRef,
       }
       written++;
     }
-    return count;
+    return written;
   }
   catch (...)
   {
@@ -4622,7 +4622,8 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves,
       Handle(Geom2d_BSplineCurve) bsp = Geom2dConvert::CurveToBSplineCurve(curves[i]->curve);
       if (bsp.IsNull())
         continue;
-      joiner.Add(bsp, tolerance);
+      if (!joiner.Add(bsp, tolerance))
+        return nullptr;
     }
     Handle(Geom2d_BSplineCurve) result = joiner.BSplineCurve();
     if (result.IsNull())
