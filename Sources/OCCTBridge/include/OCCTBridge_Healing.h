@@ -202,9 +202,9 @@ typedef struct
 /// Tangency/curvature continuity needs a support surface to be continuous WITH. Each
 /// boundary edge's own pcurve support surface is used, so continuity > 0 requires every
 /// boundary edge to carry a pcurve (i.e. to have been borrowed from an existing face);
-/// a free-standing edge with no pcurve makes the whole call fail. Use
-/// OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support faces
-/// explicitly.
+/// a free-standing edge with no pcurve is added with position-only continuity instead
+/// (#1503). Use OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support
+/// faces explicitly.
 ///
 /// @param boundaries Array of boundary wires
 /// @param wireCount Number of boundary wires

@@ -652,8 +652,12 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
       filling.Add(edge, derived, order, isBound);
       return true;
     }
-    // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
-    // Standard_Failure here, which is OCCT's documented contract for this case.
+    // No pcurve anywhere: nothing to be tangent to. Downgrade to position-only continuity,
+    // per the degradation OCCTBridge_Healing.h, Shape+Surface.swift and FillConstraint.swift
+    // all document, rather than let the face-less overload throw Standard_Failure for lacking
+    // a curve to build the requested continuity from, failing the whole fill over one edge
+    // (#1503).
+    order = GeomAbs_C0;
   }
   filling.Add(edge, order, isBound);
   return true;
