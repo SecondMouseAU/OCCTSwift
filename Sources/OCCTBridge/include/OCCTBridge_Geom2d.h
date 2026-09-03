@@ -259,11 +259,34 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx,
                                               double endParam);
 
 // Conversion Extras
+/// Approximate a curve as a BSpline. Returns the fit whenever Geom2dConvert_ApproxCurve produced
+/// one (HasResult), which per OCCT includes a best-effort fit outside `tolerance` -- use
+/// OCCTGeomConvertApproxCurve2D for the same fit plus its maxError/isDone. Both share one
+/// implementation, matching the #491 pattern already used for Curve3D/Surface (#1474).
 OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve,
                                       double         tolerance,
                                       int32_t        continuity,
                                       int32_t        maxSegments,
                                       int32_t        maxDegree);
+
+/// Result of Geom2dConvert_ApproxCurve approximation: the fitted curve plus OCCT's own diagnostics.
+typedef struct
+{
+  OCCTCurve2DRef _Nullable curve; // result BSpline (as Curve2D)
+  double maxError;
+  bool   isDone;
+  bool   hasResult;
+} OCCTApproxCurve2DResult;
+
+/// The same approximation OCCTCurve2DApproximate performs (one shared implementation, #1474),
+/// reporting the fit's maxError and completion flags. `curve` is populated exactly when
+/// `hasResult`; `isDone` is whether the fit reached `tolerance`.
+OCCTApproxCurve2DResult OCCTGeomConvertApproxCurve2D(OCCTCurve2DRef _Nonnull curve,
+                                                     double  tolerance,
+                                                     int32_t continuity,
+                                                     int32_t maxSegments,
+                                                     int32_t maxDegree);
+
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in
 // OCCTBridge_Internal.h. Returns the TRUE split count even when writing was truncated by `max`, so
