@@ -666,6 +666,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | `document.dimensionCount` / `document.dimension(at:)` | `XCAFDimTolObjects_DimensionObject` |
 | `document.geomToleranceCount` / `document.geomTolerance(at:)` | `XCAFDimTolObjects_GeomToleranceObject` |
 | `document.datumCount` / `document.datum(at:)` | `XCAFDimTolObjects_DatumObject` |
+| `document.refDimensionCount(for:)` | `XCAFDoc_DimTolTool::GetRefDimensionLabels` |
 
 #### Topological Naming (v0.25.0)
 | Swift API | OCCT Class |

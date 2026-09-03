@@ -163,6 +163,15 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 /// Get count of datum labels in document
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
 
+/// Number of dimensions referencing the shape at shapeLabelId, via
+/// XCAFDoc_DimTolTool::GetRefDimensionLabels. Returns 0 if shapeLabelId does not resolve to a
+/// label. A single-shape dimension created via OCCTDocumentCreateDimension /
+/// OCCTDocumentCreateDimensionWithTolerance must appear here exactly once, not twice (#1481: the
+/// create path used to pass the same shape label as both SetDimension() sequence arguments,
+/// double-registering it as both the DimensionRefFirstGUID and DimensionRefSecondGUID graph-node
+/// father).
+int32_t OCCTDocumentGetRefDimensionCount(OCCTDocumentRef doc, int64_t shapeLabelId);
+
 /// How a dimension's values array encodes its magnitude, taken from OCCT's own predicates
 /// (XCAFDimTolObjects_DimensionObject::IsDimWithRange / IsDimWithPlusMinusTolerance). The array is
 /// 0, 1, 2 or 3 long, and which accessors mean anything follows from that (#996).
