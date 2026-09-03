@@ -776,10 +776,25 @@ OCCTShapeRef OCCTShapeDivideByNumber(OCCTShapeRef shape, int32_t nbU, int32_t nb
   try
   {
     ShapeUpgrade_ShapeDivide divider(shape->shape);
-    // Use FaceDivideArea with splitting-by-number mode
+    // Use FaceDivideArea with splitting-by-number mode. Two things are needed to make this
+    // actually run rather than silently fail or silently ignore the caller's axis counts (#1491):
+    //
+    // 1. MaxArea() defaults to Precision::Infinite(), not the -1 sentinel
+    //    ShapeUpgrade_FaceDivideArea::Perform() checks for ("if (myMaxArea == -1) { ... derive
+    //    myMaxArea from myNbParts ... }"). Left at its default, Perform()'s very next line
+    //    ("if ((anArea - myMaxArea) < Precision::Confusion()) return false;") is unconditionally
+    //    true for any finite face area, so Perform() -- and therefore this whole function --
+    //    failed outright for every input, every time, independent of nbU/nbV. Measured directly:
+    //    a plain box through this exact call sequence with MaxArea() left unset returns false.
+    // 2. SetNumbersUVSplits is what makes Compute() respect the caller's per-axis split counts
+    //    once Perform() actually runs; without it, myUnbSplit/myVnbSplit stay at their own
+    //    default sentinel (-1) and ShapeUpgrade_SplitSurfaceArea::Compute silently derives its
+    //    own roughly-square split from NbParts() alone instead.
     Handle(ShapeUpgrade_FaceDivideArea) faceDivide = new ShapeUpgrade_FaceDivideArea();
     faceDivide->SetSplittingByNumber(true);
     faceDivide->NbParts() = nbU * nbV;
+    faceDivide->MaxArea() = -1;
+    faceDivide->SetNumbersUVSplits(nbU, nbV);
     divider.SetSplitFaceTool(faceDivide);
     if (!divider.Perform())
       return nullptr;
@@ -1153,78 +1168,23 @@ bool OCCTShapeUpgradeClosedEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRe
   }
 }
 
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallCurves(OCCTShapeRef shape, double tolerance)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    // Use ShapeFix_Wireframe which internally uses FixSmallCurves logic
-    // to fix small edges across the entire shape
-    TopTools_IndexedMapOfShape faceMap;
-    TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-    if (faceMap.Extent() == 0)
-      return nullptr;
-
-    BRep_Builder    bb;
-    TopoDS_Compound result;
-    bb.MakeCompound(result);
-    bool anyFixed = false;
-
-    for (int i = 1; i <= faceMap.Extent(); i++)
-    {
-      TopoDS_Face                face = TopoDS::Face(faceMap(i));
-      TopTools_IndexedMapOfShape edgeMap;
-      TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
-      for (int j = 1; j <= edgeMap.Extent(); j++)
-      {
-        TopoDS_Edge                         edge = TopoDS::Edge(edgeMap(j));
-        Handle(ShapeUpgrade_FixSmallCurves) fsc  = new ShapeUpgrade_FixSmallCurves();
-        fsc->SetPrecision(tolerance);
-        fsc->Init(edge, face);
-        anyFixed = true;
-      }
-    }
-    // Return original shape (fix is in-place via shape healing)
-    return new OCCTShape(shape->shape);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, double tolerance)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    TopTools_IndexedMapOfShape faceMap;
-    TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-    if (faceMap.Extent() == 0)
-      return nullptr;
-
-    for (int i = 1; i <= faceMap.Extent(); i++)
-    {
-      TopoDS_Face                face = TopoDS::Face(faceMap(i));
-      TopTools_IndexedMapOfShape edgeMap;
-      TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
-      for (int j = 1; j <= edgeMap.Extent(); j++)
-      {
-        TopoDS_Edge                               edge = TopoDS::Edge(edgeMap(j));
-        Handle(ShapeUpgrade_FixSmallBezierCurves) fsbc = new ShapeUpgrade_FixSmallBezierCurves();
-        fsbc->SetPrecision(tolerance);
-        fsbc->Init(edge, face);
-      }
-    }
-    return new OCCTShape(shape->shape);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
+// OCCTShapeUpgradeFixSmallCurves / OCCTShapeUpgradeFixSmallBezierCurves removed (#1491): both were
+// complete no-ops that unconditionally handed back the caller's own unmodified shape.
+// ShapeUpgrade_FixSmallCurves/FixSmallBezierCurves have no standalone Perform()/Compute() at all;
+// per their own headers they are internal helper "tool" classes meant only to be plugged into a
+// driving class via SetFixSmallCurveTool. Investigated wiring ShapeFix_Wireframe in, since the
+// removed comment above claimed that was the intended mechanism -- it was not: ShapeFix_Wireframe
+// (ShapeUpgrade/../ShapeFix/ShapeFix_Wireframe.cxx) never references either class anywhere. The
+// only two real OCCT callers are ShapeUpgrade_WireDivide (which constructs a default
+// ShapeUpgrade_FixSmallCurves in its own constructor, but only reaches Approx() as a byproduct of
+// an active 3D/2D curve *split* actually producing a too-small leftover segment, unreachable from a
+// tolerance-only entry point with no splitting criterion to drive it) and
+// ShapeUpgrade_ShapeConvertToBezier (which wires FixSmallBezierCurves into its own internal
+// WireDivide automatically -- already exercised correctly by the existing OCCTShapeConvertToBezier
+// / Shape.convertToBezier()). The one genuinely standalone "fix small edges" OCCT operation is a
+// different class, ShapeFix_Wire::FixSmall via ShapeFix_Wireframe::FixSmallEdges(), already wrapped
+// faithfully as OCCTShapeFixSmallEdges / Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:). See
+// the #1491 PR body for the full investigation.
 
 OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shape,
                                                                bool         lineMode,

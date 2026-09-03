@@ -392,7 +392,12 @@ let package = Package(
         // face-pair edge comparison -- not observable through AAG's own Swift API, which always
         // sizes its buffer from the true count now.
         .testTarget(name: "OCCTModelingTests", dependencies: ["OCCTSwift", "OCCTBridge"], path: "Tests/OCCTModelingTests"),
-        .testTarget(name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTShapeHealingTests"),
+        // OCCTBridge added (#1491) so a regression test can call OCCTShapeDivideByNumber directly
+        // with distinct nbU/nbV: Shape.dividedByNumber(_:), the only Swift call site, always passes
+        // nbV=1, so proving the per-axis fix needs the raw C entry point, not the Swift wrapper.
+        .testTarget(
+            name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift", "OCCTBridge"],
+            path: "Tests/OCCTShapeHealingTests"),
         // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
         // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without
         // this exclude SwiftPM reports them as unhandled on every build of this package as the ROOT

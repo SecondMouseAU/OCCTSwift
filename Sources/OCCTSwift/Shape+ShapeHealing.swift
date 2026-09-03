@@ -377,11 +377,19 @@ extension Shape {
         guard let h = OCCTShapeUpdateTolerances(handle, verifyFaces) else { return nil }
         return Shape(handle: h)
     }
-    /// Split faces into approximately the specified number of patches.
+    /// Split each face into `parts` strips along its U parametric direction, leaving V undivided.
     ///
-    /// Useful for mesh preparation and parametric surface subdivision.
+    /// This always passes `nbV: 1` to the underlying bridge call `OCCTShapeDivideByNumber(shape,
+    /// nbU, nbV)`, which (as of #1491, when that bridge function started honoring per-axis split
+    /// counts instead of silently deriving its own roughly-square grid) means every split lands on
+    /// U specifically, not on whichever of a face's U/V extents happens to be geometrically longer
+    /// — a face's own U/V parameterization is arbitrary and has no fixed relationship to which
+    /// extent is larger. Useful when a face's U direction is already known to be the one you want
+    /// sliced (e.g. rings along a long extrusion, where U runs along the extrusion axis). For a
+    /// split along V instead, or an actual 2D grid, call `OCCTShapeDivideByNumber` directly (via
+    /// `import OCCTBridge`) with explicit `nbU`/`nbV`.
     ///
-    /// - Parameter parts: Approximate number of patches per face
+    /// - Parameter parts: Number of strips per face
     /// - Returns: Shape with divided faces, or nil on failure
     public func dividedByNumber(_ parts: Int) -> Shape? {
         guard parts > 1 else { return nil }
@@ -1169,27 +1177,11 @@ extension Shape {
         OCCTShapeUpgradeClosedEdgeDivideCompute(handle, face.handle)
     }
 
-    // MARK: - ShapeUpgrade_FixSmallCurves
-
-    /// Fix small curves in this shape.
-    ///
-    /// - Parameter tolerance: Tolerance for small curve detection (default: 1e-6)
-    /// - Returns: Fixed shape, or nil on failure
-    public func fixSmallCurves(tolerance: Double = 1e-6) -> Shape? {
-        guard let ref = OCCTShapeUpgradeFixSmallCurves(handle, tolerance) else { return nil }
-        return Shape(handle: ref)
-    }
-
-    // MARK: - ShapeUpgrade_FixSmallBezierCurves
-
-    /// Fix small Bezier curves in this shape.
-    ///
-    /// - Parameter tolerance: Tolerance for small curve detection (default: 1e-6)
-    /// - Returns: Fixed shape, or nil on failure
-    public func fixSmallBezierCurves(tolerance: Double = 1e-6) -> Shape? {
-        guard let ref = OCCTShapeUpgradeFixSmallBezierCurves(handle, tolerance) else { return nil }
-        return Shape(handle: ref)
-    }
+    // fixSmallCurves(tolerance:) / fixSmallBezierCurves(tolerance:) removed (#1491): both were
+    // complete no-ops -- ShapeUpgrade_FixSmallCurves/FixSmallBezierCurves have no OCCT-supported
+    // standalone use (see the removal comment in OCCTBridge_Healing_Upgrade.mm). Use
+    // ``fixSmallEdges(tolerance:dropSmall:limitAngle:)`` instead, which wraps the real standalone
+    // equivalent, ShapeFix_Wireframe::FixSmallEdges().
 
     // MARK: - ShapeUpgrade_ConvertCurve3dToBezier
 
