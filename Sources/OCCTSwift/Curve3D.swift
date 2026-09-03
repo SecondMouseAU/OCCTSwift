@@ -3705,7 +3705,7 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OtherCurve).
+    /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OffsetCurve, 8=OtherCurve).
     public var curveType: Int {
         Int(OCCTCurve3DCurveType(handle))
     }
