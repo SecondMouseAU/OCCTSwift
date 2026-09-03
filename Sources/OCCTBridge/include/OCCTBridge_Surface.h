@@ -1321,10 +1321,21 @@ typedef struct
 OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef _Nonnull surface1,
                                         OCCTSurfaceRef _Nonnull surface2);
 
+// #1502: both extremal points here sit on a surface, so each needs a full (u, v), not the
+// single `param` OCCTExtremaPointPair carries (that struct is correct for OCCTExtremaExtCCPoint
+// and OCCTExtremaExtCSPoint's curve-side point, one parameter per point). Mirrors
+// OCCTExtremaPointOnSurf's (x, y, z, u, v) shape above, doubled for the two surfaces.
+typedef struct
+{
+  double squareDistance;
+  double x1, y1, z1, u1, v1; // Point on surface 1
+  double x2, y2, z2, u2, v2; // Point on surface 2
+} OCCTExtremaSSPointPair;
+
 /// Get Nth extremum from surface-surface computation
-OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
-                                           OCCTSurfaceRef _Nonnull surface2,
-                                           int index);
+OCCTExtremaSSPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
+                                             OCCTSurfaceRef _Nonnull surface2,
+                                             int index);
 
 // --- gce_MakePln ---
 /// Create a plane from equation Ax+By+Cz+D=0

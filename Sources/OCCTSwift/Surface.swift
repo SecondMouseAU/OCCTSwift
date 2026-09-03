@@ -2711,13 +2711,40 @@ extension Surface {
             isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
+    /// A point pair from a surface-surface extrema result, one point on each surface.
+    ///
+    /// Unlike ``Curve3D/ExtremaPointPair``, both points here live on a surface and so each
+    /// carries a full `(u, v)`, not one parameter: reusing the curve-curve struct (a single
+    /// `param` per point) silently discarded the V coordinate of both points (#1502). Shape
+    /// mirrors ``ExtremaPointOnSurface`` doubled for the two surfaces.
+    public struct ExtremaSurfacePointPair: Sendable {
+        public let squareDistance: Double
+        public let point1: SIMD3<Double>
+        public let u1: Double
+        public let v1: Double
+        public let point2: SIMD3<Double>
+        public let u2: Double
+        public let v2: Double
+    }
+
     /// Get Nth extremum from surface-surface computation.
-    public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPair {
+    ///
+    /// ```swift
+    /// if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3),
+    ///    let s2 = Surface.sphere(center: SIMD3(10, 0, 0), radius: 2) {
+    ///     let ss = s1.extremaSS(other: s2)
+    ///     if ss.isDone, !ss.isParallel, ss.count > 0 {
+    ///         let pair = s1.extremaSSPoint(other: s2, index: 1)
+    ///         print(pair.u1, pair.v1, pair.u2, pair.v2)
+    ///     }
+    /// }
+    /// ```
+    public func extremaSSPoint(other: Surface, index: Int) -> ExtremaSurfacePointPair {
         let r = OCCTExtremaExtSSPoint(handle, other.handle, Int32(index))
-        return Curve3D.ExtremaPointPair(
+        return ExtremaSurfacePointPair(
             squareDistance: r.squareDistance,
-            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+            point1: SIMD3(r.x1, r.y1, r.z1), u1: r.u1, v1: r.v1,
+            point2: SIMD3(r.x2, r.y2, r.z2), u2: r.u2, v2: r.v2)
     }
 
     /// Create a conical surface from 2 points (axis) + 2 radii.
