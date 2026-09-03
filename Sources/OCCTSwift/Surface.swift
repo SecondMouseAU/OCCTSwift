@@ -4012,13 +4012,34 @@ extension Surface {
 extension Surface {
     /// Convert surface to periodic form.
     ///
-    /// Returns nil if already periodic or not convertible.
+    /// Returns nil if already periodic or not convertible. This is a pure knot rearrangement
+    /// (OCCT's `ShapeCustom_Surface::ConvertToPeriodic` reinterprets an already-closed clamped
+    /// B-spline as periodic by reusing its own poles, via `Geom_BSplineSurface::SetUPeriodic`/
+    /// `SetVPeriodic`); it has no deviation from the original to report, so there is no
+    /// `conversionGap`-style accessor for it. See `conversionGap`'s own doc comment (#1510).
     public func convertToPeriodic() -> Surface? {
         guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
         return Surface(handle: ref)
     }
 
-    /// Get conversion gap (distance between original and converted surface).
+    /// Deprecated: always returns -1.0.
+    ///
+    /// This never reflected `convertToPeriodic()`. OCCT's `ShapeCustom_Surface::Gap()` reports the
+    /// deviation from the *last call to `ConvertToAnalytical`* (its own header doc says so), not
+    /// `ConvertToPeriodic`, which never writes it at all, because it is a pure knot rearrangement
+    /// with nothing to measure (confirmed by direct sampling, see
+    /// `Scripts/repro/1510-surface-conversion-gap/`). This property used to run an unrelated,
+    /// throwaway `ConvertToAnalytical` recognition pass at a hardcoded tolerance just to read
+    /// *its* gap, which could be nonzero even when that recognition failed outright, and was
+    /// identical whether or not `convertToPeriodic()` had ever been called. Kept only for source
+    /// compatibility; do not use it. (#1510)
+    @available(
+        *, deprecated,
+        message: """
+            Never reflected convertToPeriodic(); ConvertToPeriodic has no gap concept in OCCT \
+            to report. Always returns -1.0. See #1510.
+            """
+    )
     public var conversionGap: Double {
         OCCTSurfaceConversionGap(handle)
     }

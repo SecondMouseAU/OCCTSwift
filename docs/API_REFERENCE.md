@@ -143,7 +143,7 @@ a map of the major areas, and the `Total` as the count.
 | **Interval Arithmetic** | 23 | Interval create/bounds/isProbablyEmpty/position/isBefore/isAfter/isInside/isEnclosing/isSimilar/setStart/setEnd/fuseAtStart/fuseAtEnd/cutAtStart/cutAtEnd, IntervalSet create/createEmpty/count/bounds/unite/subtract/intersect/xUnite |
 | **Ray-Shape Intersection (BRepIntCurveSurface)** | 4 | lineIntersection, curveIntersection, allHits, hitFace |
 | **ShapeConstruct Triangulation** | 2 | triangulationFromPoints, triangulationFromWire |
-| **Surface Periodic Conversion** | 2 | convertToPeriodic, conversionGap |
+| **Surface Periodic Conversion** | 2 | convertToPeriodic, conversionGap (deprecated, always -1.0, #1510: `ConvertToPeriodic` has no OCCT gap concept to report) |
 | **Mesh Linear Properties** | 2 | meshPolygonPoints (edge), meshCinertCompute |
 | **Mesh Surface/Volume Properties** | 2 | meshProps(surface), meshProps(volume) |
 | **Mesh Shape Utilities** | 3 | maxMeshTolerance, meshMaxDimension, uvPoints |
