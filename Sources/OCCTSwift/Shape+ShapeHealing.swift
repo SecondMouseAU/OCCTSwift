@@ -369,16 +369,17 @@ extension Shape {
         guard let h = OCCTShapeUpdateTolerances(handle, verifyFaces) else { return nil }
         return Shape(handle: h)
     }
-    /// Split each face into `parts` strips along its longer parametric direction, leaving the
-    /// shorter direction undivided.
+    /// Split each face into `parts` strips along its U parametric direction, leaving V undivided.
     ///
     /// This always passes `nbV: 1` to the underlying bridge call `OCCTShapeDivideByNumber(shape,
     /// nbU, nbV)`, which (as of #1491, when that bridge function started honoring per-axis split
     /// counts instead of silently deriving its own roughly-square grid) means every split lands on
-    /// whichever of a face's U/V extents is larger; the other axis is never split. Useful for
-    /// slicing a face into layers along one dominant direction (e.g. rings along a long extrusion).
-    /// For an actual 2D grid, call `OCCTShapeDivideByNumber` directly (via `import OCCTBridge`)
-    /// with explicit `nbU`/`nbV`.
+    /// U specifically, not on whichever of a face's U/V extents happens to be geometrically longer
+    /// — a face's own U/V parameterization is arbitrary and has no fixed relationship to which
+    /// extent is larger. Useful when a face's U direction is already known to be the one you want
+    /// sliced (e.g. rings along a long extrusion, where U runs along the extrusion axis). For a
+    /// split along V instead, or an actual 2D grid, call `OCCTShapeDivideByNumber` directly (via
+    /// `import OCCTBridge`) with explicit `nbU`/`nbV`.
     ///
     /// - Parameter parts: Number of strips per face
     /// - Returns: Shape with divided faces, or nil on failure
