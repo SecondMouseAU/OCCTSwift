@@ -35,7 +35,7 @@ public enum HLREdgeCategory: Int32, Sendable {
 }
 ```
 
-Used with `hlrEdges(direction:category:)` and `hlrPolyEdges(direction:category:deflection:)` to select which edge class to extract. `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are available for exact HLR only.
+Used with `hlrEdges(direction:category:nbIso:)` and `hlrPolyEdges(direction:category:deflection:)` to select which edge class to extract. `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are available for exact HLR only, and `.visibleIso`/`.hiddenIso` additionally need a non-zero `nbIso` (default `10`) to return anything (#1500).
 
 | Case | Edge class |
 |---|---|
@@ -70,7 +70,7 @@ public enum HLREdgeType: Int32, Sendable {
 }
 ```
 
-Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)` and the `reflectLinesFiltered` family. Case meanings, from `HLRBRep_TypeOfResultingEdge`:
+Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:nbIso:)` and the `reflectLinesFiltered` family. Case meanings, from `HLRBRep_TypeOfResultingEdge`:
 
 ---
 
@@ -96,21 +96,29 @@ A sharp edge, of C0 continuity.
 
 ---
 
-### `hlrEdges(direction:category:)`
+### `hlrEdges(direction:category:nbIso:)`
 
 Extracts edges by fine-grained category using exact HLR (hidden line removal).
 
 ```swift
-public func hlrEdges(direction: SIMD3<Double>, category: HLREdgeCategory) -> Shape?
+public func hlrEdges(direction: SIMD3<Double>, category: HLREdgeCategory, nbIso: Int = 10) -> Shape?
 ```
 
-- **Parameters:** `direction`, view direction vector; `category`, which class of edges to extract.
+- **Parameters:**
+  - `direction`: view direction vector.
+  - `category`: which class of edges to extract.
+  - `nbIso`: number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted for
+    `.visibleIso`/`.hiddenIso`; OCCT gates isoline computation entirely on this count, so `0`
+    means those two categories always return `nil` (#1500). Default `10`.
 - **Returns:** Compound of extracted edges, or `nil` if none exist for that category.
 - **OCCT:** `HLRBRep_Algo` / `HLRBRep_HLRToShape` via `OCCTHLRGetEdgesByCategory`.
 - **Example:**
   ```swift
   if let edges = shape.hlrEdges(direction: SIMD3(0, 0, -1), category: .visibleSharp) {
       // edges is a compound of visible sharp edges in the -Z view
+  }
+  if let iso = shape.hlrEdges(direction: SIMD3(1, 0, 0), category: .visibleIso) {
+      // iso is a compound of visible isoparameter lines, 10 per face by default
   }
   ```
 
@@ -143,13 +151,13 @@ Poly HLR projects the shape's triangulation rather than its exact geometry, maki
 
 ---
 
-### `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)`
+### `hlrCompoundOfEdges(direction:edgeType:visible:in3d:nbIso:)`
 
 Extracts a compound of edges using the generic `CompoundOfEdges` API from exact HLR.
 
 ```swift
 public func hlrCompoundOfEdges(direction: SIMD3<Double>, edgeType: HLREdgeType,
-                                visible: Bool, in3d: Bool) -> Shape?
+                                visible: Bool, in3d: Bool, nbIso: Int = 10) -> Shape?
 ```
 
 - **Parameters:**
@@ -157,6 +165,9 @@ public func hlrCompoundOfEdges(direction: SIMD3<Double>, edgeType: HLREdgeType,
   - `edgeType`: edge type filter (`HLREdgeType`).
   - `visible`: `true` for visible edges, `false` for hidden.
   - `in3d`: `true` to return 3D edges; `false` for projected 2D edges.
+  - `nbIso`: number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted when
+    `edgeType` is `.isoLine`; OCCT gates isoline computation entirely on this count, so `0` means
+    `.isoLine` always returns `nil` (#1500). Default `10`.
 - **Returns:** Compound of matching edges, or `nil` on failure.
 - **OCCT:** `HLRBRep_HLRToShape::CompoundOfEdges` via `OCCTHLRCompoundOfEdges`.
 - **Example:**
@@ -164,6 +175,10 @@ public func hlrCompoundOfEdges(direction: SIMD3<Double>, edgeType: HLREdgeType,
   if let outlines = shape.hlrCompoundOfEdges(direction: SIMD3(0, 0, -1),
                                               edgeType: .outLine, visible: true, in3d: true) {
       // outlines contains the visible silhouette edges in 3D
+  }
+  if let isoLines = shape.hlrCompoundOfEdges(direction: SIMD3(1, 0, 0),
+                                              edgeType: .isoLine, visible: true, in3d: true) {
+      // isoLines contains the visible isoparameter lines, 10 per face by default
   }
   ```
 
@@ -854,6 +869,9 @@ public func convertToPeriodic() -> Surface?
 
 - **Returns:** The periodified surface, or `nil` if the surface is already periodic or cannot be converted.
 - **OCCT:** `ShapeCustom_Surface::ConvertToPeriodic` via `OCCTSurfaceConvertToPeriodic`.
+- **Note:** This is a pure knot rearrangement (OCCT reinterprets an already-closed clamped
+  B-spline as periodic by reusing its own poles); it has no deviation from the original to
+  measure, so there is no accompanying gap accessor. See `conversionGap` below (#1510).
 - **Example:**
   ```swift
   if let periodic = surface.convertToPeriodic() {
@@ -863,16 +881,26 @@ public func convertToPeriodic() -> Surface?
 
 ---
 
-### `conversionGap`
+### `conversionGap` (deprecated)
 
-The distance between the original and periodically converted surface (conversion error).
+**Deprecated, always returns -1.0. Do not use.** OCCT's `ShapeCustom_Surface::Gap()` reports the
+deviation from the *last call to `ConvertToAnalytical`*, per its own header doc, never
+`ConvertToPeriodic`, which never writes it at all: `ConvertToPeriodic` is a pure knot
+rearrangement with no deviation to compute. This accessor used to run an unrelated, throwaway
+`ConvertToAnalytical(1e-3)` recognition pass just to read *its* gap, which could be nonzero even
+when that recognition failed outright, and was identical whether or not `convertToPeriodic()` had
+ever been called. Kept only so existing callers keep compiling. See
+[`Scripts/repro/1510-surface-conversion-gap/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1510-surface-conversion-gap)
+for the direct-sampling confirmation that a real measurement here would be uninformative (the
+converted surface is geometrically identical to the original within its own domain, in every case
+tried).
 
 ```swift
 public var conversionGap: Double { get }
 ```
 
-- **Returns:** Gap value in model units; 0.0 if no conversion has been applied.
-- **OCCT:** `ShapeCustom_Surface::Gap` via `OCCTSurfaceConversionGap`.
+- **Returns:** Always `-1.0`.
+- **OCCT:** `ShapeCustom_Surface::Gap` via `OCCTSurfaceConversionGap`, deprecated.
 
 ---
 

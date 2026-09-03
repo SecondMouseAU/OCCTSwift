@@ -312,8 +312,16 @@ extension Shape {
     }
     /// Sew faces using the fast sewing algorithm.
     ///
-    /// Faster than `sewn(tolerance:)` for large models, but may handle
-    /// fewer edge cases.
+    /// Faster than `sewn(tolerance:)` for large models, but requires every face's surface to
+    /// be naturally bounded (e.g. a sphere, cylinder, cone, or torus). A face whose surface is
+    /// only trimmed by its wire — an ordinary planar `TopoDS_Face`, the common shape of a box or
+    /// any other polyhedral solid — is declined and produces no result, so this returns nil for
+    /// most everyday B-Rep solids; use ``sewn(tolerance:)`` for those (#1475).
+    ///
+    /// ```swift
+    /// let sewn = Shape.sphere(radius: 10)!.fastSewn()  // naturally-bounded surface: succeeds
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!.fastSewn()  // nil: trimmed planes
+    /// ```
     ///
     /// - Parameter tolerance: Sewing tolerance (default: 1e-6)
     /// - Returns: The sewn shape, or nil on failure

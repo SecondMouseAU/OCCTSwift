@@ -41,7 +41,7 @@ a map of the major areas, and the `Total` as the count.
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
 | **Wires** | 31 | rectangle, circle, polygon, polygon3D, line, arc, bspline, nurbs, path, join, offset, offset3D, interpolate, fillet2D, filletAll2D, chamfer2D, chamferAll2D, helix, helixTapered, orderedEdgeCount, orderedEdgePoints, orderedEdgePointCount, analyze, wireFromEdges, edges, allEdgePolylines, allEdgePolylinesIndexed, edgePolyline, bounds |
 | **Curve Analysis** | 6 | length, curveInfo, point(at:), tangent(at:), curvature(at:), curvePoint(at:) |
-| **2D Curves (Curve2D)** | 97 | line, segment, circle, arc, ellipse, parabola, hyperbola, bspline, bezier, interpolate, fit, trim, offset, reverse, translate, rotate, scale, mirror, curvature, normal, inflection, intersect, project, Gcc solver, hatch, bisector, draw, evaluateGrid, evaluateGridD1, lineThroughPoints, lineParallel, isLinear, convertToLine, simplifyBSpline, approximated, GccAna bisectors (point/line/circle), GccAna line solvers (parallel/perpendicular/oblique), Geom2dGcc circle/line on-constraint solvers, IntAna2d intersections, Extrema2d distances, curvatureExtremaDetailed, inflectionPointsDetailed, Bisector_BisecAna |
+| **2D Curves (Curve2D)** | 97 | line, segment, circle, arc, ellipse, parabola, hyperbola, bspline, bezier, interpolate, fit, trim, offset, reverse, translate, rotate, scale, mirror, curvature, normal, inflection, intersect, project, Gcc solver, hatch, bisector, draw, evaluateGrid, evaluateGridD1, lineThroughPoints, lineParallel, isLinear, convertToLine, simplifyBSpline, approximated, approxWithDetails, GccAna bisectors (point/line/circle), GccAna line solvers (parallel/perpendicular/oblique), Geom2dGcc circle/line on-constraint solvers, IntAna2d intersections, Extrema2d distances, curvatureExtremaDetailed, inflectionPointsDetailed, Bisector_BisecAna |
 | **3D Curves (Curve3D)** | 84 | line, segment, circle, arc, ellipse, parabola, hyperbola, bspline, bezier, interpolate, fit, trim, reverse, translate, rotate, scale, mirror, length, curvature, tangent, normal, torsion, toBSpline, toBezierSegments, join, approximate, drawAdaptive, drawUniform, drawDeflection, projectedOnPlane, evaluateGrid, evaluateGridD1, planeNormal, minDistance(toCurve), extrema, intersectSurface, distanceToSurface, toAnalytical, quasiUniformParameters, quasiUniformDeflectionPoints, continuityBreaks, arcOfEllipse(angles), arcOfEllipse(points), joined(curves), projectPoint, validateRange, samplePoints, arcOfHyperbola, arcOfParabola, convertToPeriodic, splitAt, ellipseThreePoints, hyperbolaThreePoints |
 | **Surfaces (Surface)** | 86 | plane, cylinder, cone, sphere, torus, extrusion, revolution, bezier, bspline, trim, offset, translate, rotate, scale, mirror, toBSpline, approximate, uIso, vIso, pipe, drawGrid, drawMesh, curvatures, projectCurve, projectCurveSegments, projectCurve3D, projectPoint, plateThrough, nlPlateDeformed, nlPlateDeformedG1, nlPlateDeformedG2, nlPlateDeformedG3, nlPlateDeformedIncremental, nlPlateDerivative, evaluateGrid, evaluateGridD1, intersections, toAnalytical, bezierFill(4-curve), bezierFill(2-curve), singularityCount, isDegenerated, hasSingularities, toBezierPatchGrid, bsplineFill(2-curve), bsplineFill(4-curve), extrema, valueOfUV, nextValueOfUV, conicalSurface(axis), conicalSurface(points), cylindricalSurface(axis), cylindricalSurface(points), planeFromPoints, planeFromPointNormal, trimmedCone, trimmedCylinder, knotSplitting, joinBezierPatches, convertToAnalytical, splitByContinuity, generatedFromSections, degeneratedBoundaryValue, isDegeneratedBoundary, boundaryWithSurfaceEvaluate, averagePlane |
 | **Face Analysis** | 22 | uvBounds, point(atU:v:), normal, orientation, gaussianCurvature, meanCurvature, principalCurvatures, surfaceType, area, project, allProjections, intersection, orientedFaces |
@@ -142,7 +142,7 @@ a map of the major areas, and the `Total` as the count.
 | **Interval Arithmetic** | 23 | Interval create/bounds/isProbablyEmpty/position/isBefore/isAfter/isInside/isEnclosing/isSimilar/setStart/setEnd/fuseAtStart/fuseAtEnd/cutAtStart/cutAtEnd, IntervalSet create/createEmpty/count/bounds/unite/subtract/intersect/xUnite |
 | **Ray-Shape Intersection (BRepIntCurveSurface)** | 4 | lineIntersection, curveIntersection, allHits, hitFace |
 | **ShapeConstruct Triangulation** | 2 | triangulationFromPoints, triangulationFromWire |
-| **Surface Periodic Conversion** | 2 | convertToPeriodic, conversionGap |
+| **Surface Periodic Conversion** | 2 | convertToPeriodic, conversionGap (deprecated, always -1.0, #1510: `ConvertToPeriodic` has no OCCT gap concept to report) |
 | **Mesh Linear Properties** | 2 | meshPolygonPoints (edge), meshCinertCompute |
 | **Mesh Surface/Volume Properties** | 2 | meshProps(surface), meshProps(volume) |
 | **Mesh Shape Utilities** | 3 | maxMeshTolerance, meshMaxDimension, uvPoints |
@@ -503,8 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,363** | |
-
+| **Total** | **4,366** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 
@@ -665,6 +664,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | `document.dimensionCount` / `document.dimension(at:)` | `XCAFDimTolObjects_DimensionObject` |
 | `document.geomToleranceCount` / `document.geomTolerance(at:)` | `XCAFDimTolObjects_GeomToleranceObject` |
 | `document.datumCount` / `document.datum(at:)` | `XCAFDimTolObjects_DatumObject` |
+| `document.refDimensionCount(for:)` | `XCAFDoc_DimTolTool::GetRefDimensionLabels` |
 
 #### Topological Naming (v0.25.0)
 | Swift API | OCCT Class |

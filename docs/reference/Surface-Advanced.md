@@ -1285,16 +1285,37 @@ public func extremaSS(other: Surface) -> SurfaceSurfaceExtrema
 
 ---
 
+### `ExtremaSurfacePointPair`
+
+A point pair from a surface-surface extrema result, one point on each surface. Unlike
+`Curve3D.ExtremaPointPair` (one `param` per point, correct for a curve-side point), both points
+here live on a surface, so each carries a full `(u, v)`. Reusing the curve-curve struct used to
+silently discard the V coordinate of both points (#1502).
+
+```swift
+public struct ExtremaSurfacePointPair: Sendable {
+    public let squareDistance: Double
+    public let point1: SIMD3<Double>
+    public let u1: Double
+    public let v1: Double
+    public let point2: SIMD3<Double>
+    public let u2: Double
+    public let v2: Double
+}
+```
+
+---
+
 ### `extremaSSPoint(other:index:)`
 
 Returns the Nth extremum pair from a surface-surface extrema computation.
 
 ```swift
-public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPair
+public func extremaSSPoint(other: Surface, index: Int) -> ExtremaSurfacePointPair
 ```
 
 - **Parameters:** `other`, the second surface; `index`, 1-based extremum index.
-- **Returns:** `Curve3D.ExtremaPointPair` with `squareDistance`, `point1`, `param1`, `point2`, `param2`.
+- **Returns:** `ExtremaSurfacePointPair` with `squareDistance`, `point1`, `u1`, `v1`, `point2`, `u2`, `v2`.
 - **OCCT:** `Extrema_ExtSS::Points` / `SquareDistance`.
 
 ---

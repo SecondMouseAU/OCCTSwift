@@ -279,7 +279,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -876,7 +876,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
                                                       int          maxDegree,
                                                       int          maxSegments)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return nullptr;
   try
   {
@@ -1146,7 +1146,7 @@ OCCTExtremaLocateExtCCResult OCCTExtremaLocateExtCC(OCCTCurve3DRef curve1,
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
 {
   if (!curve || curve->curve.IsNull())
-    return 7; // OtherCurve
+    return 8; // OtherCurve
   try
   {
     GeomAdaptor_Curve ac(curve->curve);
@@ -1154,7 +1154,7 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
   }
   catch (...)
   {
-    return 7;
+    return 8;
   }
 }
 

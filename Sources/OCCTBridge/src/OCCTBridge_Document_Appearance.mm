@@ -915,8 +915,19 @@ OCCTMaterial OCCTDocumentGetLabelMaterial(OCCTDocumentRef doc, int64_t labelId)
 
       result.transparency = common.Transparency;
 
-      // Estimate roughness from shininess
-      result.roughness = 1.0 - (common.Shininess / 100.0);
+      // Estimate roughness from shininess (and specular color): reuses the same
+      // physically-based conversion the visualization side already has for this exact shape,
+      // "common material (specular color + shininess) -> roughness"
+      // (OCCTMaterialRoughnessFromSpecular, OCCTBridge_Visualization_Appearance.mm,
+      // Graphic3d_PBRMaterial::RoughnessFromSpecular). #1508: the previous `1.0 - (common.Shininess
+      // / 100.0)` treated Shininess as if it were on a 0-100 scale;
+      // XCAFDoc_VisMaterialCommon::Shininess is documented [0,1] (XCAFDoc_VisMaterialCommon.hxx's
+      // own default ctor, `Shininess(1.0f)`), so the /100 division collapsed every legitimate value
+      // into [0.99, 1.0], reporting a fully glossy material (Shininess 1.0) as nearly fully matte.
+      result.roughness = OCCTMaterialRoughnessFromSpecular(common.SpecularColor.Red(),
+                                                           common.SpecularColor.Green(),
+                                                           common.SpecularColor.Blue(),
+                                                           common.Shininess);
     }
 
     return result;
@@ -1108,7 +1119,13 @@ bool OCCTDocumentSetColorAttr(OCCTDocumentRef ref, int64_t labelId, double r, do
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
-    Quantity_Color        color(r, g, b, Quantity_TOC_sRGB);
+    // #1508: Quantity_TOC_RGB, matching OCCTDocumentGetColorAttr's Red()/Green()/Blue() readback
+    // (Quantity_Color.hxx: those return the internal value with no colorspace conversion) and the
+    // sibling OCCTDocumentSetLabelColor/GetLabelColor pair in this same file, which already
+    // round-trip correctly on Quantity_TOC_RGB both ways. TOC_sRGB here silently gamma-encoded the
+    // caller's RGB into OCCT's internal linear storage on the way in, with nothing decoding it back
+    // out, so set-then-get returned a different color than was set.
+    Quantity_Color        color(r, g, b, Quantity_TOC_RGB);
     Handle(XCAFDoc_Color) attr = XCAFDoc_Color::Set(label, color);
     return !attr.IsNull();
   }
@@ -1133,7 +1150,9 @@ bool OCCTDocumentSetColorRGBAAttr(OCCTDocumentRef ref,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
-    Quantity_ColorRGBA    rgba(Quantity_Color(r, g, b, Quantity_TOC_sRGB), alpha);
+    // #1508: Quantity_TOC_RGB, see OCCTDocumentSetColorAttr's comment above -- same mismatch,
+    // same fix.
+    Quantity_ColorRGBA    rgba(Quantity_Color(r, g, b, Quantity_TOC_RGB), alpha);
     Handle(XCAFDoc_Color) attr = XCAFDoc_Color::Set(label, rgba);
     return !attr.IsNull();
   }

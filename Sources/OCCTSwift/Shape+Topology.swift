@@ -1440,11 +1440,22 @@ extension Shape {
     }
 
     /// Get edges by fine-grained category using exact HLR (hidden line removal).
-    public func hlrEdges(direction: SIMD3<Double>, category: HLREdgeCategory) -> Shape? {
+    ///
+    /// - Parameters:
+    ///   - direction: View direction.
+    ///   - category: Edge category to extract.
+    ///   - nbIso: Number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted
+    ///     for the `.visibleIso`/`.hiddenIso` categories; OCCT gates isoline computation on this
+    ///     count entirely, so a value of `0` means `.visibleIso`/`.hiddenIso` always return `nil`
+    ///     (#1500). Default `10`.
+    /// - Returns: Shape containing edges, or nil if none / the projection failed.
+    public func hlrEdges(
+        direction: SIMD3<Double>, category: HLREdgeCategory, nbIso: Int = 10
+    ) -> Shape? {
         guard
             let h = OCCTHLRGetEdgesByCategory(
                 handle, direction.x, direction.y, direction.z,
-                OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue)))
+                OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue)), Int32(nbIso))
         else { return nil }
         return Shape(handle: h)
     }
@@ -1478,14 +1489,24 @@ extension Shape {
     }
 
     /// Get edges using the generic CompoundOfEdges API from exact HLR.
+    ///
+    /// - Parameters:
+    ///   - direction: View direction.
+    ///   - edgeType: Resulting edge type to extract.
+    ///   - visible: `true` for visible edges, `false` for hidden.
+    ///   - in3d: `true` for a 3D result, `false` for a 2D projected one.
+    ///   - nbIso: Number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted
+    ///     when `edgeType` is `.isoLine`; OCCT gates isoline computation on this count entirely,
+    ///     so a value of `0` means `.isoLine` always returns `nil` (#1500). Default `10`.
+    /// - Returns: Shape containing edges, or nil if none / the projection failed.
     public func hlrCompoundOfEdges(
         direction: SIMD3<Double>, edgeType: HLREdgeType,
-        visible: Bool, in3d: Bool
+        visible: Bool, in3d: Bool, nbIso: Int = 10
     ) -> Shape? {
         guard
             let h = OCCTHLRCompoundOfEdges(
                 handle, direction.x, direction.y, direction.z,
-                edgeType.rawValue, visible, in3d)
+                edgeType.rawValue, visible, in3d, Int32(nbIso))
         else { return nil }
         return Shape(handle: h)
     }

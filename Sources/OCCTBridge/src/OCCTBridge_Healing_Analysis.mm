@@ -1380,6 +1380,10 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    // #1509: myStatus is set on an ordinary "not this type" outcome, not just genuine errors, and
+    // every IsX short-circuits to false while myStatus != 0. ClearStatus() between checks is
+    // required, not optional, for the sequence below to reach anything past IsPlane.
+    recog.ClearStatus();
     gp_Cylinder cyl;
     if (recog.IsCylinder(tolerance, cyl))
     {
@@ -1397,6 +1401,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    recog.ClearStatus();
     gp_Cone cone;
     if (recog.IsCone(tolerance, cone))
     {
@@ -1415,6 +1420,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    recog.ClearStatus();
     gp_Sphere sph;
     if (recog.IsSphere(tolerance, sph))
     {
@@ -1460,6 +1466,10 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef edgeShape, dou
       return result;
     }
 
+    // #1509: myStatus is set on an ordinary "not this type" outcome, not just genuine errors, and
+    // every IsX short-circuits to false while myStatus != 0. ClearStatus() between checks is
+    // required, not optional, for the sequence below to reach anything past IsLine.
+    recog.ClearStatus();
     gp_Circ circ;
     if (recog.IsCircle(tolerance, circ))
     {
@@ -1477,6 +1487,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef edgeShape, dou
       return result;
     }
 
+    recog.ClearStatus();
     gp_Elips elips;
     if (recog.IsEllipse(tolerance, elips))
     {
@@ -2265,7 +2276,7 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef edge,
 
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef edge, OCCTShapeRef face, double first, double last)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {

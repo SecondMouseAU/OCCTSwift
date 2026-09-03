@@ -716,6 +716,8 @@ OCCTShapeRef OCCTShapeGetSubShapeByTypeIndex(OCCTShapeRef shape, int32_t type, i
 
 int32_t OCCTEdgeFaceAdjacency(OCCTShapeRef shape, int32_t* adjacentFaceCounts)
 {
+  if (!shape)
+    return 0;
   try
   {
     NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher> map;
@@ -738,6 +740,8 @@ int32_t OCCTEdgeFaceAdjacency(OCCTShapeRef shape, int32_t* adjacentFaceCounts)
 
 int32_t OCCTVertexEdgeAdjacency(OCCTShapeRef shape, int32_t* adjacentEdgeCounts)
 {
+  if (!shape)
+    return 0;
   try
   {
     NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher> map;
@@ -763,6 +767,8 @@ int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef shape,
                               int32_t*     faceIndices,
                               int32_t      maxFaces)
 {
+  if (!shape || !edge || !faceIndices || maxFaces <= 0)
+    return 0;
   try
   {
     NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher> map;
@@ -798,6 +804,8 @@ int32_t OCCTVertexAdjacentEdges(OCCTShapeRef shape,
                                 int32_t*     edgeIndices,
                                 int32_t      maxEdges)
 {
+  if (!shape || !vertex || !edgeIndices || maxEdges <= 0)
+    return 0;
   try
   {
     NCollection_IndexedDataMap<TopoDS_Shape, TopTools_ListOfShape, TopTools_ShapeMapHasher> map;
@@ -827,6 +835,8 @@ int32_t OCCTVertexAdjacentEdges(OCCTShapeRef shape,
 
 int32_t OCCTWireExplorerOrientations(OCCTShapeRef wire, OCCTShapeRef face, int32_t* orientations)
 {
+  if (!wire)
+    return 0;
   try
   {
     TopoDS_Wire            w = TopoDS::Wire(wire->shape);
@@ -864,6 +874,8 @@ int32_t OCCTWireExplorerVertices(OCCTShapeRef wire,
                                  double*      ys,
                                  double*      zs)
 {
+  if (!wire)
+    return 0;
   try
   {
     TopoDS_Wire            w = TopoDS::Wire(wire->shape);
@@ -1077,6 +1089,8 @@ int32_t OCCTShapeUniqueSubShapeCount(OCCTShapeRef shape, int32_t type)
 
 bool OCCTShapeTransformIsNegative(OCCTShapeRef shape)
 {
+  if (!shape)
+    return false;
   try
   {
     auto* s = static_cast<OCCTShape*>(shape);
@@ -1293,7 +1307,7 @@ OCCTCurve2DRef OCCTBRepToolCurveOnPlane(OCCTShapeRef   edge,
 
 int32_t OCCTBRepToolPolygon3D(OCCTShapeRef edge, double** outPoints)
 {
-  if (!edge || !outPoints)
+  if (!occtShapeIsPresent(edge) || !outPoints)
     return 0;
   *outPoints = nullptr;
   try

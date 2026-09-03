@@ -766,7 +766,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     gp_Vec                     axes[3]    = {v1, v2, v3};
     double                     maxM       = std::max({Ix, Iy, Iz});
     std::vector<OCCTShapeAxis> collected;
-    if (pp.HasSymmetryPoint())
+    if (pp.HasSymmetryPoint(fractionalTolerance))
     {
       // Spherical: add all three principal axes (all equal).
       for (int i = 0; i < 3; i++)
@@ -788,7 +788,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
         collected.push_back(a);
       }
     }
-    else if (pp.HasSymmetryAxis())
+    else if (pp.HasSymmetryAxis(fractionalTolerance))
     {
       // Rotational: the unique (different) moment's axis IS the symmetry axis.
       int uniqueIdx = 0;
@@ -3013,7 +3013,7 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef shape, int32_t subShapeType)
 
 bool OCCTBRepToolIsClosedOnFace(OCCTShapeRef edge, OCCTShapeRef face)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {

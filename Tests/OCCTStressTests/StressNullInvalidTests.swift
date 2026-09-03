@@ -280,6 +280,14 @@ struct StressInvalidParameterTests {
         _ = m
     }
 
+    // #1473: same shape as #345 above, but for the 2D sibling. OCCTMakeMirror2dAxis built
+    // gp_Dir2d(dx, dy) directly from caller doubles with no try/catch, an uncaught
+    // Standard_ConstructionError crossing the bridge boundary and aborting the process.
+    @Test func mirror2dAxisZeroDirection() {
+        let m = TransformFactory2D.mirrorAxis(point: SIMD2(0, 0), direction: SIMD2(0, 0))
+        _ = m
+    }
+
     @Test func mirrorPlaneZeroNormal() {
         let m = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 0))
         _ = m
@@ -464,6 +472,78 @@ struct StressUnifySameDomainNullPCurveTests {
         unifier.setAngularTolerance(1.0 * .pi / 180)
         unifier.build()
         _ = unifier.shape
+    }
+}
+
+// MARK: - SolidPrimitives Null Handle Guards
+
+// #1498: five functions in OCCTBridge_Modeling_SolidPrimitives.mm checked only the wrapper
+// *pointer* (`if (!shape)`/`if (!profile)`) before handing the underlying TopoDS_Shape/TopoDS_Wire
+// into an OCCT constructor that dereferences it unconditionally, an uncatchable SIGSEGV rather
+// than a `catch (...)`-absorbed failure, unlike this same file's other shape-consuming functions
+// (`OCCTShapeExtrudeSemiInfinite`, `OCCTShapeCreateExtrusionInfinite`,
+// `OCCTShapeCreateExtrusionShape`, `OCCTShapeMakeSolidFromShell`,
+// `OCCTShapeCreateRevolutionFromCurve`), which already guard with `occtShapeIsPresent(...)`.
+//
+// Four of the five sites are reachable one line from Swift via the deprecated
+// `Shape.nullified` property (a real, non-null `OCCTShapeRef` wrapping a null `TopoDS_Shape`):
+// `occtShapePeriodicImpl` (`makePeriodic`/`repeated`), `OCCTShapeMakeDraft` (`draft`),
+// `OCCTShapeCreateRevolutionFull` (`revolved(axisOrigin:axisDirection:)`) and
+// `OCCTShapeCreateRevolutionPartial` (`revolved(axisOrigin:axisDirection:angle:)`). Each test here
+// was run once against the pre-fix `if (!shape)` guard to confirm the crash, then against the fix
+// to confirm a clean `nil`, per this project's "prove the test fails" policy.
+//
+// The fifth site, `OCCTShapeCreateRevolution` (the Wire-based overload backing the static
+// `Shape.revolve(profile:axisOrigin:axisDirection:angle:)`), has no Swift-level repro: there is no
+// public `Wire.nullified` (or equivalent) to construct a present-but-null `OCCTWireRef` from
+// Swift -- `Wire(_ shape: Shape)` routes through `OCCTWireFromShape`, which already refuses a null
+// `TopoDS_Shape` before constructing the wrapper. That site's coverage is a direct C-level
+// ground-truth test instead: see
+// `Scripts/repro/1498-solidprimitives-null-guards/repro_1498.mm`, which compiles the real
+// `OCCTBridge_Modeling_SolidPrimitives.mm` translation unit and drives
+// `OCCTShapeCreateRevolution` with a hand-constructed null-wire wrapper.
+@Suite("Stress: SolidPrimitives Null Handle Guards (#1498)")
+struct StressSolidPrimitivesNullGuardTests {
+
+    @Test("occtShapePeriodicImpl: makePeriodic on a nullified shape does not crash")
+    func makePeriodicOnNullifiedShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let result = nullShape.makePeriodic(xPeriod: 10, yPeriod: 10, zPeriod: 10)
+        #expect(result == nil)
+    }
+
+    @Test("occtShapePeriodicImpl: repeated on a nullified shape does not crash")
+    func repeatedOnNullifiedShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let result = nullShape.repeated(xPeriod: 10, xCount: 2)
+        #expect(result == nil)
+    }
+
+    @Test("OCCTShapeMakeDraft: draft on a nullified shape does not crash")
+    func draftOnNullifiedShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let result = nullShape.draft(direction: SIMD3(0, 0, 1), angle: 0.1, length: 5)
+        #expect(result == nil)
+    }
+
+    @Test("OCCTShapeCreateRevolutionFull: full revolve on a nullified shape does not crash")
+    func revolvedFullOnNullifiedShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let result = nullShape.revolved(axisOrigin: SIMD3(0, 0, 0), axisDirection: SIMD3(0, 0, 1))
+        #expect(result == nil)
+    }
+
+    @Test("OCCTShapeCreateRevolutionPartial: partial revolve on a nullified shape does not crash")
+    func revolvedPartialOnNullifiedShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let result = nullShape.revolved(
+            axisOrigin: SIMD3(0, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .pi)
+        #expect(result == nil)
     }
 }
 

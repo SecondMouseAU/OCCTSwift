@@ -440,7 +440,8 @@
 // Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
 //                                       OCCTCurve2DJoinToBSpline
 // Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments,
-// OCCTCurve2DToArcsAndSegments Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+// OCCTCurve2DToArcsAndSegments Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate,
+//                                       OCCTGeomConvertApproxCurve2D (#1474)
 // Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
 //                                       since #562 deleted the second family that wrapped it)
 // Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers

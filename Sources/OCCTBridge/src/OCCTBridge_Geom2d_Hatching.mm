@@ -550,6 +550,64 @@ static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, dou
   }
 }
 
+// Signed area of the loop formed by walking `curves` in array order, sampled as a polyline via
+// each curve's own parameterization (shoelace sum). A positive result means the loop as
+// constructed winds counter-clockwise; negative means clockwise; the magnitude is only an
+// approximation but the SIGN, all OCCTCurve2DHatch below uses it for, is robust for a simple
+// (non-self-intersecting) loop. Mirrors occtSignedWireAreaInPlane's approach
+// (OCCTBridge_Modeling_*.mm), adapted to work directly on a raw Geom2d_Curve array: there's no
+// TopoDS_Wire/gp_Pln here, since OCCTCurve2DHatch's callers hand over bare 2D curves rather than
+// real topology with edge orientations (#1496).
+static double occtSignedGeom2dCurvesArea(const OCCTCurve2DRef* curves, int32_t count)
+{
+  constexpr int32_t samplesPerCurve = 24;
+  double            area            = 0.0;
+  bool              hasPrev         = false;
+  double            u0 = 0.0, v0 = 0.0;       // first sampled point (to close the loop)
+  double            uPrev = 0.0, vPrev = 0.0; // previous sampled point
+
+  for (int32_t i = 0; i < count; i++)
+  {
+    if (!curves[i] || curves[i]->curve.IsNull())
+      continue;
+    const Handle(Geom2d_Curve)& c = curves[i]->curve;
+    double                      f = c->FirstParameter();
+    double                      l = c->LastParameter();
+    if (!std::isfinite(f) || !std::isfinite(l))
+      continue;
+    for (int32_t s = 0; s <= samplesPerCurve; s++)
+    {
+      double   t = (double)s / (double)samplesPerCurve;
+      gp_Pnt2d p;
+      try
+      {
+        p = c->Value(f + (l - f) * t);
+      }
+      catch (...)
+      {
+        continue;
+      }
+      if (!hasPrev)
+      {
+        u0 = uPrev = p.X();
+        v0 = vPrev = p.Y();
+        hasPrev    = true;
+      }
+      else
+      {
+        area += (uPrev * p.Y() - p.X() * vPrev);
+        uPrev = p.X();
+        vPrev = p.Y();
+      }
+    }
+  }
+  if (hasPrev)
+  {
+    area += (uPrev * v0 - u0 * vPrev); // close the loop
+  }
+  return 0.5 * area;
+}
+
 int32_t OCCTHatchLines(const double*  boundaryXY,
                        int32_t        boundaryCount,
                        const double*  islandsXY,
@@ -695,13 +753,27 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
     Geom2dHatch_Intersector intersector(tolerance, tolerance);
     Geom2dHatch_Hatcher     hatcher(intersector, tolerance, tolerance);
 
+    // #1496: Geom2dHatch_Hatcher is *oriented* -- unlike this file's OCCTHatchLines sibling,
+    // which deliberately uses Hatch_Hatcher's unoriented mode (`hatcher(tolerance, false)`)
+    // specifically so winding doesn't matter (#1172). For the oriented algorithm, "inside" is
+    // defined relative to each element's own orientation: material is to the left when walking
+    // an element FORWARD, matching how DBRep_IsoBuilder (OCCT's own reference caller of this
+    // class) derives orientation from real edge orientation. There's no topology here, just a
+    // raw Geom2d_Curve array with no per-edge orientation to read, so the whole array is treated
+    // as one ordered loop and given one winding sign, derived from its actual geometry rather
+    // than assumed: a counter-clockwise loop keeps TopAbs_FORWARD, a clockwise one needs
+    // TopAbs_REVERSED to put material on the correct side.
+    const TopAbs_Orientation orientation =
+      (occtSignedGeom2dCurvesArea(boundaries, boundaryCount) < 0.0) ? TopAbs_REVERSED
+                                                                    : TopAbs_FORWARD;
+
     // Add boundary elements
     for (int32_t i = 0; i < boundaryCount; i++)
     {
       if (!boundaries[i] || boundaries[i]->curve.IsNull())
         continue;
       Geom2dAdaptor_Curve adaptor(boundaries[i]->curve);
-      hatcher.AddElement(adaptor, TopAbs_FORWARD);
+      hatcher.AddElement(adaptor, orientation);
     }
 
     // Compute bounding box for hatch range

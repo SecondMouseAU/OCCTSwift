@@ -492,9 +492,9 @@ public static func hatch(boundaries: [Curve2D],
                          tolerance: Double = 1e-6) -> [Curve2DHatchSegment]
 ```
 
-Each `Curve2DHatchSegment` is a line segment clipped to lie inside the boundary region. The boundary curves must form a closed region; the algorithm uses `Geom2dHatch_Hatcher` internally.
+Each `Curve2DHatchSegment` is a line segment clipped to lie inside the boundary region. The boundary curves must form a single closed region, walked in the order given; they may wind either clockwise or counter-clockwise, the winding sense is detected from the geometry and does not need to be specified (#1496). The algorithm uses `Geom2dHatch_Hatcher` internally.
 
-- **Parameters:** `boundaries`, closed boundary curves defining the hatch region; `origin`, origin point of the hatch pattern; `direction`, hatch line direction (unit vector); `spacing`, distance between hatch lines; `tolerance`, intersection tolerance.
+- **Parameters:** `boundaries`, closed boundary curves defining the hatch region, in order around the loop; `origin`, origin point of the hatch pattern; `direction`, hatch line direction (unit vector); `spacing`, distance between hatch lines; `tolerance`, intersection tolerance.
 - **Returns:** Array of hatch segments inside the boundary.
 - **OCCT:** `Geom2dHatch_Hatcher` + `Geom2dHatch_Intersector`.
 - **Example:**

@@ -803,7 +803,7 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApprox(OCCTShapeRef edgeShape,
                                                 OCCTShapeRef faceShape,
                                                 double       tolerance)
 {
-  if (!edgeShape || !faceShape)
+  if (!occtShapeIsPresent(edgeShape) || !occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {
@@ -850,7 +850,7 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
                                                               OCCTShapeRef faceShape,
                                                               double       tolerance)
 {
-  if (!edgeShape || !faceShape)
+  if (!occtShapeIsPresent(edgeShape) || !occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {

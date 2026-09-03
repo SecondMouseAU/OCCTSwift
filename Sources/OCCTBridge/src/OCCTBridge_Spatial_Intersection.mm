@@ -680,16 +680,33 @@ OCCTQuadQuadGeoResult OCCTIntAnaPlaneSphere(double pox,
     IntAna_QuadQuadGeo inter(plane, sphere);
     if (!inter.IsDone())
       return r;
-    r.solutionCount = inter.NbSolutions();
-    r.resultType    = (int32_t)inter.TypeInter();
+    r.solutionCount        = inter.NbSolutions();
+    IntAna_ResultType type = inter.TypeInter();
+    r.resultType           = (int32_t)type;
     for (int i = 0; i < r.solutionCount && i < 4; i++)
     {
       try
       {
-        gp_Pnt p            = inter.Point(i + 1);
-        r.points[i * 3]     = p.X();
-        r.points[i * 3 + 1] = p.Y();
-        r.points[i * 3 + 2] = p.Z();
+        if (type == IntAna_Circle)
+        {
+          gp_Circ circ         = inter.Circle(i + 1);
+          gp_Pnt  center       = circ.Location();
+          gp_Dir  axis         = circ.Axis().Direction();
+          r.circles[i * 7]     = center.X();
+          r.circles[i * 7 + 1] = center.Y();
+          r.circles[i * 7 + 2] = center.Z();
+          r.circles[i * 7 + 3] = axis.X();
+          r.circles[i * 7 + 4] = axis.Y();
+          r.circles[i * 7 + 5] = axis.Z();
+          r.circles[i * 7 + 6] = circ.Radius();
+        }
+        else
+        {
+          gp_Pnt p            = inter.Point(i + 1);
+          r.points[i * 3]     = p.X();
+          r.points[i * 3 + 1] = p.Y();
+          r.points[i * 3 + 2] = p.Z();
+        }
       }
       catch (...)
       {
@@ -881,7 +898,9 @@ int32_t OCCTIntAnaConeSpherePoints(double  semiAngle,
     int32_t actual = nbSamples;
     for (int32_t i = 0; i < actual; i++)
     {
-      double t = first + (last - first) * i / (actual - 1);
+      // actual == 1 would divide by zero below (#1495); a single requested sample is the
+      // domain's start, matching OCCTEdgeGetPoints' identical degenerate-count guard.
+      double t = (actual == 1) ? first : first + (last - first) * i / (actual - 1);
       gp_Pnt p = curve.Value(t);
       xs[i]    = p.X();
       ys[i]    = p.Y();

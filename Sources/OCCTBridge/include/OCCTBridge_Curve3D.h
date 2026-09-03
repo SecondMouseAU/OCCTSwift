@@ -1946,6 +1946,9 @@ int32_t OCCTExtremaElCLinLin(double l1px,
                              int32_t max);
 
 /// Distance between a 3D line and circle (Extrema_ExtElC).
+/// A line coincident with the circle's own axis is a degenerate, parallel case with a
+/// well-defined constant distance (the circle's radius): returns 1 result with that distance
+/// (points zeroed, undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCLinCirc(double lpx,
                               double lpy,
@@ -1965,6 +1968,9 @@ int32_t OCCTExtremaElCLinCirc(double lpx,
                               int32_t max);
 
 /// Distance between two 3D circles (Extrema_ExtElC).
+/// Coaxial, coplanar circles are a degenerate, parallel case with a well-defined constant
+/// distance (the radii's absolute difference): returns 1 result with that distance (points
+/// zeroed, undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCCircCirc(double c1x,
                                double c1y,
@@ -1986,6 +1992,9 @@ int32_t OCCTExtremaElCCircCirc(double c1x,
 /// Distance between a 3D line and ellipse (Extrema_ExtElC).
 /// No tolerance (#999): of Extrema_ExtElC's six constructors only the line/line and line/circle
 /// ones take one (AngTol and Tol respectively), and Extrema_ExtElC(gp_Lin, gp_Elips) takes none.
+/// A line coincident with the ellipse's own axis is a degenerate, parallel case with a
+/// well-defined constant distance: returns 1 result with that distance (points zeroed,
+/// undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCLinElips(double lpx,
                                double lpy,
@@ -2198,7 +2207,8 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef _Nonnull curve,
 
 // --- Curve3D extras ---
 
-/// Get the curve type enum (GeomAbs_CurveType: 0=Line..7=OtherCurve).
+/// Get the curve type enum (GeomAbs_CurveType: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola,
+/// 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OffsetCurve, 8=OtherCurve).
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef _Nonnull curve);
 
 /// Find the parameter on a 3D curve nearest to a 3D point, over the curve's whole range.

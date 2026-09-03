@@ -683,8 +683,10 @@ enum class OCCTFillingSupport
 //
 // Returns false only when `kind` is Nominated and that face carries no pcurve for the edge; the
 // constraint is then NOT added and the caller should fail the whole fill. Every other path adds
-// a constraint and returns true, including the no-pcurve-anywhere case, which reaches the
-// face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
+// a constraint and returns true, including the no-pcurve-anywhere case, which downgrades `order`
+// to GeomAbs_C0 before adding: with no pcurve to build a tangent constraint from, the face-less
+// overload throws OCCT's documented Standard_Failure at Build() time for anything above C0
+// (#1503).
 bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               const TopoDS_Edge&         edge,
                               const TopoDS_Face&         support,

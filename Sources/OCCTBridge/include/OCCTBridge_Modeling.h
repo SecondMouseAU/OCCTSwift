@@ -3050,12 +3050,16 @@ typedef enum
 /// @param shape Input shape
 /// @param dirX,dirY,dirZ View direction
 /// @param category Edge category to extract
+/// @param nbIso Number of isoparametric lines HLRBRep_Algo computes per face (only consulted for
+///        the `.visibleIso`/`.hiddenIso` categories; 0 disables isoline computation entirely,
+///        which is why those two categories used to always return NULL, #1500)
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
                                                  double              dirX,
                                                  double              dirY,
                                                  double              dirZ,
-                                                 OCCTHLREdgeCategory category);
+                                                 OCCTHLREdgeCategory category,
+                                                 int32_t             nbIso);
 
 /// Get edges by fine-grained category from a polygon-based (fast) HLR drawing.
 /// Note: IsoLine and Outline3d categories are not available for poly HLR (returns NULL).
@@ -3078,6 +3082,9 @@ OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape
 /// @param edgeType 0=Undefined, 1=IsoLine, 2=OutLine, 3=Rg1Line, 4=RgNLine, 5=Sharp
 /// @param visible true for visible edges, false for hidden
 /// @param in3d true for 3D result, false for 2D projected
+/// @param nbIso Number of isoparametric lines HLRBRep_Algo computes per face (only consulted when
+///        `edgeType` is `IsoLine`; 0 disables isoline computation entirely, which is why that
+///        edge type used to always return NULL, #1500)
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
                                               double  dirX,
@@ -3085,7 +3092,8 @@ OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
                                               double  dirZ,
                                               int32_t edgeType,
                                               bool    visible,
-                                              bool    in3d);
+                                              bool    in3d,
+                                              int32_t nbIso);
 
 // --- HLRAppli_ReflectLines ---
 
