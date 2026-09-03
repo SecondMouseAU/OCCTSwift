@@ -280,6 +280,14 @@ struct StressInvalidParameterTests {
         _ = m
     }
 
+    // #1473: same shape as #345 above, but for the 2D sibling. OCCTMakeMirror2dAxis built
+    // gp_Dir2d(dx, dy) directly from caller doubles with no try/catch, an uncaught
+    // Standard_ConstructionError crossing the bridge boundary and aborting the process.
+    @Test func mirror2dAxisZeroDirection() {
+        let m = TransformFactory2D.mirrorAxis(point: SIMD2(0, 0), direction: SIMD2(0, 0))
+        _ = m
+    }
+
     @Test func mirrorPlaneZeroNormal() {
         let m = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 0))
         _ = m

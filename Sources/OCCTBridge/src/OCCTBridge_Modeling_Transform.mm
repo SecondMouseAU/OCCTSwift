@@ -1468,8 +1468,14 @@ void OCCTMakeMirror2dPoint(double px, double py, double* matrix)
 
 void OCCTMakeMirror2dAxis(double px, double py, double dx, double dy, double* matrix)
 {
-  gce_MakeMirror2d mm(gp_Ax2d(gp_Pnt2d(px, py), gp_Dir2d(dx, dy)));
-  _storeTrsf2d(mm.Value(), matrix);
+  try
+  {
+    gce_MakeMirror2d mm(gp_Ax2d(gp_Pnt2d(px, py), gp_Dir2d(dx, dy)));
+    _storeTrsf2d(mm.Value(), matrix);
+  }
+  catch (...)
+  {
+  }
 }
 
 void OCCTMakeRotation2d(double px, double py, double angle, double* matrix)
