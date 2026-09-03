@@ -85,10 +85,10 @@ public enum IntAna {
         return ConicQuadResult(points: pts, params: pars, isParallel: r.isParallel)
     }
 
-    /// Which shape `IntAna_QuadQuadGeo` actually reported. Mirrors `IntAna_ResultType`.
+    /// Which shape `IntAna_QuadQuadGeo` actually reported.
     ///
-    /// A plane-sphere intersection is ``point`` only in the tangent case; the ordinary secant
-    /// case is ``circle``, and its center/radius are only valid via
+    /// Mirrors `IntAna_ResultType`. A plane-sphere intersection is ``point`` only in the tangent
+    /// case; the ordinary secant case is ``circle``, and its center/radius are only valid via
     /// ``QuadQuadResult/circles``, not ``QuadQuadResult/points`` (#1495: OCCT's own
     /// `IntAna_QuadQuadGeo::Point()` silently returns `(0, 0, 0)` for the `.circle` case, which
     /// this wrapper works around by calling `Circle()` instead when `resultType == .circle`).
@@ -183,7 +183,8 @@ public enum IntAna {
                                     circlesOut.append(
                                         (
                                             center: SIMD3(cd[i * 7], cd[i * 7 + 1], cd[i * 7 + 2]),
-                                            axis: SIMD3(cd[i * 7 + 3], cd[i * 7 + 4], cd[i * 7 + 5]),
+                                            axis: SIMD3(
+                                                cd[i * 7 + 3], cd[i * 7 + 4], cd[i * 7 + 5]),
                                             radius: cd[i * 7 + 6]
                                         ))
                                 }
