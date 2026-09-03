@@ -750,7 +750,10 @@ OCCTShapeRef OCCTShapeFastSewn(OCCTShapeRef shape, double tolerance)
     BRepBuilderAPI_FastSewing sewer(tolerance);
     sewer.Add(shape->shape);
     sewer.Perform();
-    return new OCCTShape(sewer.GetResult());
+    TopoDS_Shape sewn = sewer.GetResult();
+    if (sewn.IsNull())
+      return nullptr;
+    return new OCCTShape(sewn);
   }
   catch (...)
   {
