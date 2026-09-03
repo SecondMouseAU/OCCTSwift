@@ -1075,18 +1075,28 @@ public func explorerDepth(at index: Int) -> Int
 
 ### `Document.explorerIsAssembly(at:)`
 
-Whether an explorer node represents an assembly (has children).
+Whether an explorer node at `index` is itself an assembly node. It always returns `false`: this
+accessor shares the same flat index as `explorerShape(at:)`/`explorerDepth(at:)`/
+`explorerLocation(at:)`, built by walking `XCAFPrs_DocumentExplorer` with
+`XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes`, which the flag's own OCCT header comment documents
+as "skip assembly nodes". No index into this explorer's flat list can ever land on an assembly
+node, so `explorerIsAssembly(at:)` has nothing to report `true` for. This is by design, not a
+defect: every sibling accessor in this family (`explorerNodeCount`, `explorerShape`,
+`explorerPathId`, `explorerDepth`, `explorerLocation`) shares this same leaf-only index space, and
+changing just this one accessor's walk would desynchronize it from the others sharing the same
+`index`.
 
 ```swift
 public func explorerIsAssembly(at index: Int) -> Bool
 ```
 
 - **Parameters:** `index`, 0-based node index.
-- **Returns:** `true` if the node is an assembly.
+- **Returns:** `false`, always — leaf nodes are never assembly nodes.
 - **OCCT:** `XCAFPrs_DocumentExplorer::Current` + `XCAFDoc_ShapeTool::IsAssembly`
-- **Example:**
+- **To actually detect an assembly**, use `AssemblyNode.isAssembly` (via `Document.node(at:)`),
+  which walks the real free-shape/component label tree rather than this flat leaf-only list:
   ```swift
-  if doc.explorerIsAssembly(at: 2) { /* nested assembly */ }
+  if let node = doc.node(at: labelId), node.isAssembly { /* nested assembly */ }
   ```
 
 ---
