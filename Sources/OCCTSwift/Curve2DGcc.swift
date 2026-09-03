@@ -238,8 +238,21 @@ public enum Curve2DGcc {
     // MARK: - Hatching
 
     /// Generate parallel hatch lines clipped to a region bounded by curves.
+    ///
+    /// `boundaries` forms a single closed loop, walked in the order given; it may wind either
+    /// clockwise or counter-clockwise, the winding sense is detected from the geometry and does
+    /// not need to be specified (#1496).
+    ///
+    /// ```swift
+    /// let s1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let s2 = Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(10, 10))!
+    /// let s3 = Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10))!
+    /// let s4 = Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(0, 0))!
+    /// let segments = Curve2DGcc.hatch(
+    ///     boundaries: [s1, s2, s3, s4], direction: SIMD2(1, 0), spacing: 2.0)
+    /// ```
     /// - Parameters:
-    ///   - boundaries: Closed boundary curves defining the region
+    ///   - boundaries: Closed boundary curves defining the region, in order around the loop
     ///   - origin: Origin point for the hatch pattern
     ///   - direction: Direction of hatch lines
     ///   - spacing: Distance between hatch lines
