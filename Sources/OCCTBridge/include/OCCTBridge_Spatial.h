@@ -425,12 +425,18 @@ OCCTIntConicQuadResult OCCTIntAnaLineSphere(double lox,
 // MARK: - IntAna_QuadQuadGeo (v0.98.0)
 
 /// Result of a quadric-quadric intersection.
+///
+/// `resultType` mirrors `IntAna_ResultType` (`IntAna_Point` = 0 ... `IntAna_NoGeometricSolution` =
+/// 9) and says which of `points`/`lines`/`circles` actually holds the solution at index `i`: a
+/// plane-sphere intersection is `IntAna_Point` only in the tangent case, `IntAna_Circle` for the
+/// ordinary secant case (#1495), a plane-plane intersection is always `IntAna_Line`.
 typedef struct
 {
   int32_t solutionCount;
-  int32_t resultType; // IntAna_ResultType enum
-  double  points[12]; // up to 4 result points
-  double  lines[24];  // up to 4 lines (origin xyz + direction xyz)
+  int32_t resultType;  // IntAna_ResultType enum
+  double  points[12];  // up to 4 result points (valid when resultType == IntAna_Point)
+  double  lines[24];   // up to 4 lines (origin xyz + direction xyz)
+  double  circles[28]; // up to 4 circles (center xyz + axis xyz + radius), IntAna_Circle
 } OCCTQuadQuadGeoResult;
 
 /// Intersect two planes.
