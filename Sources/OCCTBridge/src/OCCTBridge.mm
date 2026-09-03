@@ -436,17 +436,64 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
   try
   {
     BRepCheck_Analyzer analyzer(s);
-    if (analyzer.IsValid())
-      return false; // fast path: a valid shape can't carry the flag
+    if (!analyzer.IsValid())
+    {
+      // A wire that already bounds a TopoDS_Face somewhere in `s` gets a real face context
+      // from BRepCheck_Analyzer's own recursive walk, so BRepCheck_Wire::SelfIntersect() can
+      // fire on it here.
+      for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next())
+      {
+        Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
+        if (res.IsNull())
+          continue;
+        for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+        {
+          if (it.Value() == BRepCheck_SelfIntersectingWire)
+            return true;
+        }
+      }
+    }
+
+    // #1505: BRepCheck_Wire::SelfIntersect() requires a TopoDS_Face context to project pcurves
+    // onto, so a wire with no enclosing face anywhere in `s` (e.g. a bare Shape.fromWire(_:)
+    // shape, which is exactly what OCCTShapeCreateExtrusionShape/OCCTShapeHeal/
+    // OCCTShapeHealWithHistory can be handed) is never examined by the walk above; it always
+    // reads back "not flagged". If `s` carries no face at all, synthesize a planar face per
+    // wire and check that instead. A shape that already has a face is left to the walk above:
+    // every wire in it either bounds one of those faces (already checked with its real
+    // context) or, in the two-callers case this bridge never builds, is a stray wire alongside
+    // a face in the same compound, which stays out of scope for this fix.
+    if (TopExp_Explorer(s, TopAbs_FACE).More())
+      return false;
+
     for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next())
     {
-      Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
-      if (res.IsNull())
-        continue;
-      for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+      const TopoDS_Wire& wire = TopoDS::Wire(we.Current());
+      try
       {
-        if (it.Value() == BRepCheck_SelfIntersectingWire)
-          return true;
+        BRepBuilderAPI_MakeFace faceMaker(wire, /*OnlyPlane=*/true);
+        if (!faceMaker.IsDone())
+          continue; // not planar, or otherwise can't be faced: no verdict from this path
+        BRepCheck_Analyzer wireAnalyzer(faceMaker.Face());
+        if (wireAnalyzer.IsValid())
+          continue;
+        for (TopExp_Explorer fwe(faceMaker.Face(), TopAbs_WIRE); fwe.More(); fwe.Next())
+        {
+          Handle(BRepCheck_Result) res = wireAnalyzer.Result(fwe.Current());
+          if (res.IsNull())
+            continue;
+          for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+          {
+            if (it.Value() == BRepCheck_SelfIntersectingWire)
+              return true;
+          }
+        }
+      }
+      catch (...)
+      {
+        // Couldn't face/check this one wire; fall through to whatever the other wires (or the
+        // original analyzer walk above) already found rather than treating this as fatal.
+        continue;
       }
     }
   }
