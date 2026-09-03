@@ -279,7 +279,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -876,7 +876,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
                                                       int          maxDegree,
                                                       int          maxSegments)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return nullptr;
   try
   {

@@ -1307,7 +1307,7 @@ OCCTCurve2DRef OCCTBRepToolCurveOnPlane(OCCTShapeRef   edge,
 
 int32_t OCCTBRepToolPolygon3D(OCCTShapeRef edge, double** outPoints)
 {
-  if (!edge || !outPoints)
+  if (!occtShapeIsPresent(edge) || !outPoints)
     return 0;
   *outPoints = nullptr;
   try

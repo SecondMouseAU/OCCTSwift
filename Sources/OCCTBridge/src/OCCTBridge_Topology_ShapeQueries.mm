@@ -3013,7 +3013,7 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef shape, int32_t subShapeType)
 
 bool OCCTBRepToolIsClosedOnFace(OCCTShapeRef edge, OCCTShapeRef face)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {

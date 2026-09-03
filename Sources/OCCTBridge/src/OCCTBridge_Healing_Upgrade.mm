@@ -1074,7 +1074,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeFaceDivide(OCCTShapeRef faceShape)
 OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape,
                                                         OCCTShapeRef faceShape)
 {
-  if (!wireShape || !faceShape)
+  if (!occtShapeIsPresent(wireShape) || !occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {

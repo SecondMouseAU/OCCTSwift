@@ -2276,7 +2276,7 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef edge,
 
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef edge, OCCTShapeRef face, double first, double last)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {

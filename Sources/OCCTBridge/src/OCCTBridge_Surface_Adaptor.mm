@@ -597,7 +597,7 @@ OCCTTrihedronFrame OCCTGeomFillDraftTrihedron(OCCTShapeRef edgeShape,
                                               double       biNormalZ,
                                               double       angle)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return makeEmptyFrame();
   try
   {
@@ -626,7 +626,7 @@ OCCTTrihedronFrame OCCTGeomFillDraftTrihedron(OCCTShapeRef edgeShape,
 
 OCCTTrihedronFrame OCCTGeomFillDiscreteTrihedron(OCCTShapeRef edgeShape, double param)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return makeEmptyFrame();
   try
   {
@@ -655,7 +655,7 @@ OCCTTrihedronFrame OCCTGeomFillDiscreteTrihedron(OCCTShapeRef edgeShape, double 
 
 OCCTTrihedronFrame OCCTGeomFillCorrectedFrenet(OCCTShapeRef edgeShape, double param)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return makeEmptyFrame();
   try
   {
@@ -688,7 +688,7 @@ void OCCTAdaptor3dIsoCurveEval(OCCTShapeRef faceShape,
                                int          evalCount,
                                double*      outPoints)
 {
-  if (!faceShape || !outPoints || evalCount < 1)
+  if (!occtShapeIsPresent(faceShape) || !outPoints || evalCount < 1)
     return;
   try
   {
@@ -729,6 +729,8 @@ OCCTTrihedronFrame OCCTGeomFillDarbouxTrihedron(OCCTShapeRef edgeShape,
                                                 double       param)
 {
   OCCTTrihedronFrame frame = {};
+  if (!occtShapeIsPresent(edgeShape) || !occtShapeIsPresent(faceShape))
+    return frame;
   try
   {
     auto*       edgeWrapper = reinterpret_cast<OCCTShape*>(edgeShape);
@@ -779,6 +781,8 @@ OCCTTrihedronFrame OCCTGeomFillDarbouxTrihedron(OCCTShapeRef edgeShape,
 OCCTTrihedronFrame OCCTGeomFillFrenetTrihedron(OCCTShapeRef edgeShape, double param)
 {
   OCCTTrihedronFrame frame = {};
+  if (!occtShapeIsPresent(edgeShape))
+    return frame;
   try
   {
     auto*                     wrapper = reinterpret_cast<OCCTShape*>(edgeShape);
@@ -815,6 +819,8 @@ OCCTTrihedronFrame OCCTGeomFillConstantBiNormalTrihedron(OCCTShapeRef edgeShape,
                                                          double       biNormalZ)
 {
   OCCTTrihedronFrame frame = {};
+  if (!occtShapeIsPresent(edgeShape))
+    return frame;
   try
   {
     auto*                     wrapper = reinterpret_cast<OCCTShape*>(edgeShape);

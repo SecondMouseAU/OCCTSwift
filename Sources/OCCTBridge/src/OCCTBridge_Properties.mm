@@ -1435,7 +1435,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
 OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param)
 {
   OCCTCurveLocalProps result = {};
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return result;
   try
   {
@@ -1499,7 +1499,7 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param)
 OCCTSurfaceLocalProps OCCTGeomLPropSLProps(OCCTShapeRef faceShape, double u, double v)
 {
   OCCTSurfaceLocalProps result = {};
-  if (!faceShape)
+  if (!occtShapeIsPresent(faceShape))
     return result;
   try
   {
