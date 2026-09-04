@@ -371,7 +371,8 @@ extension Shape {
     ///   converts to ~1.745e-12 radians, about 172x (exactly 180/pi) stricter than OCCT's own
     ///   default.
     /// - Returns: Shape with regularity encoded, or nil on failure
-    public func encodingRegularity(toleranceDegrees: Double = 1.0e-10 * 180.0 / Double.pi) -> Shape? {
+    public func encodingRegularity(toleranceDegrees: Double = 1.0e-10 * 180.0 / Double.pi) -> Shape?
+    {
 
         guard let h = OCCTShapeEncodeRegularity(handle, toleranceDegrees) else { return nil }
         return Shape(handle: h)
