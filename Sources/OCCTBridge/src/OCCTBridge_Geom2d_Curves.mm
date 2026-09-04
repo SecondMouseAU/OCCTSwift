@@ -551,9 +551,12 @@ static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, dou
   }
 }
 
-bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* deviation)
+bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D,
+                         double         tolerance,
+                         bool*          isLinear,
+                         double*        deviation)
 {
-  if (!curve2D || !deviation)
+  if (!curve2D || !isLinear || !deviation)
     return false;
   try
   {
@@ -565,7 +568,8 @@ bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* devia
     {
       poles(i) = bsp->Pole(i);
     }
-    return ShapeCustom_Curve2d::IsLinear(poles, tolerance, *deviation);
+    *isLinear = ShapeCustom_Curve2d::IsLinear(poles, tolerance, *deviation);
+    return true;
   }
   catch (...)
   {

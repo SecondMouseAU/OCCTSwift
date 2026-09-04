@@ -4130,16 +4130,22 @@ extension Curve3D {
     }
 
     /// Move point and tangent at parameter u on BSpline curve.
+    ///
+    /// `startingCondition`/`endingCondition` are OCCT's own independent continuity codes, not a
+    /// pole-index range: `-1` means that endpoint is free to move, `0` means the point cannot
+    /// move, `1` means the point and its tangent cannot move, and so on (see
+    /// `Geom_BSplineCurve::MovePointAndTangent`). The two codes are unrelated and need not be
+    /// ordered, e.g. `startingCondition: 1, endingCondition: -1` is a legitimate call.
     @discardableResult
     public func bsplineMovePointAndTangent(
         u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
-        tolerance: Double, poleRange: ClosedRange<Int>
+        tolerance: Double, startingCondition: Int, endingCondition: Int
     ) -> Bool {
         OCCTCurve3DBSplineMovePointAndTangent(
             handle, u, point.x, point.y, point.z,
             tangent.x, tangent.y, tangent.z,
             tolerance,
-            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+            Int32(startingCondition), Int32(endingCondition))
     }
 }
 

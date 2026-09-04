@@ -1354,9 +1354,10 @@ extension Curve2D {
     /// - Returns: Tuple of (isLinear, deviation) where deviation is the actual maximum
     ///   deviation from the line, or nil if not a BSpline curve
     public func isLinear(tolerance: Double = 1e-6) -> (isLinear: Bool, deviation: Double)? {
+        var isLinearResult = false
         var deviation: Double = 0
-        let result = OCCTCurve2DIsLinear(handle, tolerance, &deviation)
-        return (isLinear: result, deviation: deviation)
+        let measured = OCCTCurve2DIsLinear(handle, tolerance, &isLinearResult, &deviation)
+        return measured ? (isLinear: isLinearResult, deviation: deviation) : nil
     }
 
     /// Convert a nearly-linear 2D curve to a line.
@@ -3385,15 +3386,21 @@ extension Curve2D {
     }
 
     /// Move point and tangent at parameter u on 2D BSpline curve.
+    ///
+    /// `startingCondition`/`endingCondition` are OCCT's own independent continuity codes, not a
+    /// pole-index range: `-1` means that endpoint is free to move, `0` means the point cannot
+    /// move, `1` means the point and its tangent cannot move, and so on (see
+    /// `Geom2d_BSplineCurve::MovePointAndTangent`). The two codes are unrelated and need not be
+    /// ordered, e.g. `startingCondition: 1, endingCondition: -1` is a legitimate call.
     @discardableResult
     public func bsplineMovePointAndTangent(
         u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
-        tolerance: Double, poleRange: ClosedRange<Int>
+        tolerance: Double, startingCondition: Int, endingCondition: Int
     ) -> Bool {
         OCCTCurve2DBSplineMovePointAndTangent(
             handle, u, point.x, point.y,
             tangent.x, tangent.y,
             tolerance,
-            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+            Int32(startingCondition), Int32(endingCondition))
     }
 }
