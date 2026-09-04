@@ -1922,7 +1922,7 @@ int32_t OCCTBRepGraphMeshNbActivePolygonsOnTri(OCCTBRepGraphRef g)
   }
 }
 
-// MeshView FaceOps: cache-first triangulation queries.
+// MeshView FaceOps: cache-first, persistent-fallback triangulation queries.
 // OCCT 8.0.0p1: the mesh cache no longer exposes per-entity RepIds. These now return a presence
 // sentinel (0 = a mesh entry exists, -1 = none) instead of the former rep index.
 
@@ -1932,7 +1932,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
     return -1;
   try
   {
-    return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1;
+    return g->graph.Mesh().Effective().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1;
   }
   catch (...)
   {
@@ -1940,7 +1940,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
   }
 }
 
-// MeshView EdgeOps: cache-first polygon3D queries.
+// MeshView EdgeOps: cache-first, persistent-fallback polygon3D queries.
 
 int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex)
 {
@@ -1948,7 +1948,7 @@ int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeInde
     return -1;
   try
   {
-    return g->graph.Mesh().Cache().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1;
+    return g->graph.Mesh().Effective().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1;
   }
   catch (...)
   {

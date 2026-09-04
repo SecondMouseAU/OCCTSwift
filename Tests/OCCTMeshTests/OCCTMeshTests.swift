@@ -1046,12 +1046,41 @@ struct MeshViewCountsTests {
     func meshCountsAfterIncrementalMesh() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            // Generate triangulation via incremental mesher.
+            // Generate triangulation via incremental mesher BEFORE building the graph: construction
+            // ingests the existing triangulation into the persistent tier, not the runtime cache.
             _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
             let graph = BRepGraph(shape: box)
             if let graph {
                 // After meshing, persistent triangulation tier should report nonzero.
                 #expect(graph.triangulationCount + graph.polygon3DCount >= 0)
+                // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
+                // the persistent tier, matching faceHasTriangulation (which already does).
+                #expect(graph.faceHasTriangulation(0) == true)
+                #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
+            }
+        }
+    }
+
+    @Test("Mesh edge polygon3D rep id resolves the persistent tier (#1547)")
+    func meshEdgePolygon3DRepIdResolvesPersistentTier() {
+        let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
+        guard let poly = Polygon3D.create(points: pts) else {
+            Issue.record("Polygon3D.create nil")
+            return
+        }
+        let box = Shape.box(width: 10, height: 10, depth: 10)
+        if let box {
+            let graph = BRepGraph(shape: box)
+            if let graph {
+                guard let repId = graph.createPolygon3DRep(poly) else {
+                    Issue.record("createPolygon3DRep nil")
+                    return
+                }
+                // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
+                // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
+                graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
+                #expect(graph.edgeHasPolygon3D(0) == true)
+                #expect(graph.meshEdgePolygon3DRepId(0) != nil)
             }
         }
     }
