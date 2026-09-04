@@ -600,7 +600,7 @@ int32_t OCCTExtremaElSSPlanePlane(double               pl1x,
         out[0].y2             = 0;
         out[0].z2             = 0;
       }
-      return 1;
+      return (max > 0) ? 1 : 0;
     }
     int n     = ext.NbExt();
     int count = 0;

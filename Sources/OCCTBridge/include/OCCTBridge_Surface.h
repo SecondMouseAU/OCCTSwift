@@ -1053,9 +1053,21 @@ bool OCCTGeomFillBoundWithSurfEvaluate(OCCTSurfaceRef _Nonnull surface,
 // MARK: - ShapeCustom_Surface (additional: ConvertToPeriodic, Gap)
 
 /// Convert surface to periodic form. Returns null if already periodic or not convertible.
+///
+/// `ShapeCustom_Surface::ConvertToPeriodic` is a pure knot-rearrangement (it calls
+/// `Geom_BSplineSurface::SetUPeriodic`/`SetVPeriodic`, which reinterprets an already-closed
+/// clamped B-spline as periodic by reusing its own poles); it never touches `myGap` and has no
+/// deviation to report. See `OCCTSurfaceConversionGap` below. (#1510)
 OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull surface);
 
-/// Get gap after last ShapeCustom_Surface conversion.
+/// Deprecated, always returns -1.0. `ShapeCustom_Surface::Gap()`'s own header doc says it reports
+/// the deviation from the *last call to ConvertToAnalytical*, never `ConvertToPeriodic`, and
+/// `ConvertToPeriodic` (see above) has no gap concept to report: it is a lossless knot
+/// rearrangement, confirmed by direct sampling (`Scripts/repro/1510-surface-conversion-gap/`).
+/// This function used to run an unrelated, hardcoded-tolerance `ConvertToAnalytical` call just to
+/// read *its* `Gap()`, which reported a nonzero number even when that recognition attempt failed
+/// outright and never reflected the surface's actual periodic conversion. Kept only so existing
+/// callers keep compiling; do not use it to judge periodic-conversion fidelity. (#1510)
 double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface);
 
 // MARK: - GeomConvert_ApproxSurface
@@ -1309,10 +1321,21 @@ typedef struct
 OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef _Nonnull surface1,
                                         OCCTSurfaceRef _Nonnull surface2);
 
+// #1502: both extremal points here sit on a surface, so each needs a full (u, v), not the
+// single `param` OCCTExtremaPointPair carries (that struct is correct for OCCTExtremaExtCCPoint
+// and OCCTExtremaExtCSPoint's curve-side point, one parameter per point). Mirrors
+// OCCTExtremaPointOnSurf's (x, y, z, u, v) shape above, doubled for the two surfaces.
+typedef struct
+{
+  double squareDistance;
+  double x1, y1, z1, u1, v1; // Point on surface 1
+  double x2, y2, z2, u2, v2; // Point on surface 2
+} OCCTExtremaSSPointPair;
+
 /// Get Nth extremum from surface-surface computation
-OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
-                                           OCCTSurfaceRef _Nonnull surface2,
-                                           int index);
+OCCTExtremaSSPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
+                                             OCCTSurfaceRef _Nonnull surface2,
+                                             int index);
 
 // --- gce_MakePln ---
 /// Create a plane from equation Ax+By+Cz+D=0

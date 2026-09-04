@@ -390,7 +390,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
     doc,
     datumIndex,
-    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
     outAttr,
@@ -409,11 +409,14 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
 /// trust the return pair, since a partial application would otherwise be reported as a clean
 /// failure and the caller could not tell it from a no-op.
 ///
-/// One copy, two callers: OCCTDocumentSetDimensionTolerance and the create path this file's
-/// occtDocumentCreateDimensionImpl runs. Both are in this file and nothing outside it applies a
-/// tolerance, so file-static is the right reach. The two spellings of the operation disagreeing
-/// about what counts as applied is the defect #1056 is about, so they share the test rather than
-/// each carrying their own.
+/// This file's own copy has exactly one live caller: the create path immediately below, run from
+/// OCCTDocumentCreateDimensionWithTolerance. OCCTDocumentSetDimensionTolerance, the other spelling
+/// of "apply a tolerance" the defect #1056 is about, is a different function in
+/// OCCTBridge_Document_GDT.mm, calling that file's own byte-identical copy of this one, not this
+/// one (#1481, which is also why this whole shared-helpers block exists identically in six
+/// OCCTBridge_Document_*.mm files: a leftover of #1380's mechanical split that duplicated it
+/// everywhere without pruning per-file reachability). In every file but this one and GDT.mm, both
+/// this function and occtDocumentCreateDimensionImpl below are dead code: defined, never called.
 static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
                                         double                                           lowerTol,
                                         double                                           upperTol)
@@ -473,10 +476,13 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
     if (withTolerance && !occtDimensionApplyTolerance(dimObj, lowerTol, upperTol))
       return -1;
 
-    TDF_Label         dimLabel = dimTolTool->AddDimension();
-    TDF_LabelSequence shapeSeq;
-    shapeSeq.Append(shapeLabel);
-    dimTolTool->SetDimension(shapeSeq, shapeSeq, dimLabel);
+    TDF_Label dimLabel = dimTolTool->AddDimension();
+    // The single-shape overload, not the 3-sequence one: SetDimension(shapeSeq, shapeSeq, dimLabel)
+    // registers shapeLabel as BOTH the DimensionRefFirstGUID and DimensionRefSecondGUID graph-node
+    // father, double-registering this dimension for shapeLabel (#1481). SetDimension(theL, theDimL)
+    // forwards to the 3-label overload with a null second label, which only appends to the first
+    // sequence, registering the shape once.
+    dimTolTool->SetDimension(shapeLabel, dimLabel);
 
     Handle(XCAFDoc_Dimension) dimAttr;
     if (!dimLabel.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))

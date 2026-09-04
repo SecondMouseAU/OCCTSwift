@@ -163,6 +163,15 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 /// Get count of datum labels in document
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
 
+/// Number of dimensions referencing the shape at shapeLabelId, via
+/// XCAFDoc_DimTolTool::GetRefDimensionLabels. Returns 0 if shapeLabelId does not resolve to a
+/// label. A single-shape dimension created via OCCTDocumentCreateDimension /
+/// OCCTDocumentCreateDimensionWithTolerance must appear here exactly once, not twice (#1481: the
+/// create path used to pass the same shape label as both SetDimension() sequence arguments,
+/// double-registering it as both the DimensionRefFirstGUID and DimensionRefSecondGUID graph-node
+/// father).
+int32_t OCCTDocumentGetRefDimensionCount(OCCTDocumentRef doc, int64_t shapeLabelId);
+
 /// How a dimension's values array encodes its magnitude, taken from OCCT's own predicates
 /// (XCAFDimTolObjects_DimensionObject::IsDimWithRange / IsDimWithPlusMinusTolerance). The array is
 /// 0, 1, 2 or 3 long, and which accessors mean anything follows from that (#996).
@@ -2740,7 +2749,10 @@ OCCTShapeRef _Nullable OCCTDocumentExplorerFindShape(OCCTDocumentRef _Nonnull do
 /// Get the depth of a document explorer node at given index.
 int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef _Nonnull doc, int32_t index);
 
-/// Check if a document explorer node is an assembly.
+/// Check if a document explorer node is an assembly. Always false: this explorer's shared flat
+/// index (see OCCTDocumentExplorerCount/Shape/Depth/Location above) walks leaf nodes only
+/// (XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes), which excludes every assembly node by
+/// definition. Use OCCTDocumentIsAssembly(doc, labelId) to detect an assembly. #1480.
 bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef _Nonnull doc, int32_t index);
 
 /// Get the location matrix (12 doubles, row-major 3x4) for a document explorer node.

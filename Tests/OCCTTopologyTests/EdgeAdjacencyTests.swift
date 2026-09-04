@@ -38,8 +38,12 @@ struct EdgeAdjacencyTests {
                 let angle = edge.dihedralAngle(between: f1, and: f2)
                 #expect(angle != nil)
                 if let angle {
-                    // Box edges have 90-degree dihedral angles (PI/2)
-                    #expect(abs(angle - .pi / 2) < 0.1 || abs(angle - 3 * .pi / 2) < 0.1)
+                    // Box edges have 90-degree dihedral angles (PI/2), always convex, so the
+                    // `3*PI/2` branch this used to also accept could never actually be taken
+                    // (#1434). See Issue1434DihedralAngleRangeTests for coverage of the concave
+                    // (>PI) half of the documented range, using a fixture that isn't the
+                    // self-symmetric 90-degree case a box's edges always are.
+                    #expect(abs(angle - .pi / 2) < 0.1)
                 }
                 return
             }

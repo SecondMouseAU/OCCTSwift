@@ -2359,13 +2359,42 @@ extension Shape {
 
     // MARK: - BRepFeat_Builder
 
-    /// Feature-based fuse (union with part selection).
+    /// Feature-based fuse (union) of this shape with `tool`, via `BRepFeat_Builder`.
+    ///
+    /// Runs the full local-operation pipeline (`Init` → `SetOperation` → `Perform` →
+    /// `PerformResult`), so the returned shape is the real geometric union, matching
+    /// `BRepAlgoAPI_Fuse` on the same pair. For a plain fuse there is nothing to select, so unlike
+    /// ``featCut(with:)`` the whole tool is always kept.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+    /// let fused = box.featFuse(with: sphere)
+    /// print(fused?.volume ?? 0)   // 1261.799388
+    /// ```
+    ///
+    /// - Parameter tool: The shape to fuse into this one.
+    /// - Returns: The union shape, or nil on failure.
     public func featFuse(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderFuse(handle, tool.handle) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Feature-based cut (subtraction with part selection).
+    /// Feature-based cut (subtraction) of `tool` from this shape, via `BRepFeat_Builder`.
+    ///
+    /// Runs the full local-operation pipeline (`Init` → `SetOperation` → `Perform` →
+    /// `PerformResult`) and keeps no parts of the split tool, so the returned shape is the real
+    /// geometric difference, matching `BRepAlgoAPI_Cut` on the same pair.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+    /// let cut = box.featCut(with: sphere)
+    /// print(cut?.volume ?? 0)   // 738.200612
+    /// ```
+    ///
+    /// - Parameter tool: The shape to subtract from this one.
+    /// - Returns: The difference shape, or nil on failure.
     public func featCut(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderCut(handle, tool.handle) else { return nil }
         return Shape(handle: h)

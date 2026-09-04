@@ -2736,7 +2736,14 @@ extension Document {
         Int(OCCTDocumentExplorerDepth(handle, Int32(index)))
     }
 
-    /// Check if a document explorer node is an assembly.
+    /// Whether the explorer node at `index` is an assembly node.
+    ///
+    /// Always `false`. This shares the same flat index as `explorerShape(at:)`/`explorerDepth(at:)`/
+    /// `explorerLocation(at:)`, all built by walking with
+    /// `XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes`, so no index this family can be asked about
+    /// is ever an assembly node. To detect an assembly, use ``AssemblyNode/isAssembly`` (via
+    /// ``node(at:)``), which walks the real free-shape/component label tree instead of this
+    /// flat leaf-only list. #1480.
     public func explorerIsAssembly(at index: Int) -> Bool {
         OCCTDocumentExplorerIsAssembly(handle, Int32(index))
     }

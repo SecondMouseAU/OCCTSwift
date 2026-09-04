@@ -860,6 +860,19 @@ bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
   }
 }
 
+void OCCTEdgeSetSameParameter(OCCTEdgeRef edge, bool sameParameter)
+{
+  if (!occtShapeIsPresent(edge))
+    return;
+  try
+  {
+    BRep_Builder().SameParameter(edge->edge, sameParameter);
+  }
+  catch (...)
+  {
+  }
+}
+
 OCCTShapeRef _Nullable OCCTShapeBuildVertexCombine(OCCTShapeRef v1Shape,
                                                    OCCTShapeRef v2Shape,
                                                    double       tolFactor)
@@ -958,7 +971,7 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge,
                                         double tolerance)
 {
   OCCTValidateEdgeResult result = {};
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return result;
   try
   {
@@ -976,7 +989,11 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge,
     Handle(Geom2dAdaptor_Curve)      gac2d       = new Geom2dAdaptor_Curve(pcurve, first, last);
     Handle(Adaptor3d_CurveOnSurface) curveOnSurf = new Adaptor3d_CurveOnSurface(gac2d, brepSurf);
 
-    BRepLib_ValidateEdge validator(curve3d, curveOnSurf, Standard_True);
+    // theSameParameter is the edge's own OCCT-tracked SameParameter state, not a mode flag the
+    // caller picks: BRepLib_ValidateEdge::processApprox() uses it to decide whether the naive
+    // same-t point comparison is valid, and every real OCCT caller (BRepCheck_Edge,
+    // ShapeAnalysis_Edge::CheckSameParameter) passes the edge's real flag (#1461).
+    BRepLib_ValidateEdge validator(curve3d, curveOnSurf, BRep_Tool::SameParameter(e));
     validator.Process();
 
     result.isDone = validator.IsDone();
@@ -1051,7 +1068,15 @@ bool OCCTShapeFixIntersectingWires(OCCTShapeRef shape, int32_t faceIndex, double
 
     Handle(ShapeBuild_ReShape) ctx = new ShapeBuild_ReShape();
     ShapeFix_IntersectionTool  tool(ctx, precision, 1.0);
-    return tool.FixIntersectingWires(face);
+    bool                       done = tool.FixIntersectingWires(face);
+    // FixIntersectingWires records its substitutions on ctx (and, on success, reassigns its
+    // by-reference `face` parameter to a brand-new TopoDS_Face) but never mutates shape->shape
+    // itself -- ctx->Apply() is what actually rebuilds the shape from the accumulated
+    // Replace() map. Without this, the function always reported `true` with no observable
+    // change (#1461).
+    if (done)
+      shape->shape = ctx->Apply(shape->shape);
+    return done;
   }
   catch (...)
   {

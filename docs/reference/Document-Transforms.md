@@ -27,6 +27,10 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>, xDirection: SIMD3<D
 
 OCCT normalises and orthogonalises the input vectors; computed `xDirection`, `yDirection`, and `isDirect` are stored on the value.
 
+On a construction failure (a zero-length `direction`/`xDirection`, or the two parallel/antiparallel)
+this initializer does not throw or fail: `isDirect` is `false` and `xDirection`/`yDirection` are
+both `.zero`, unambiguous since a genuine result direction is always a unit vector (#1443).
+
 - **Parameters:** `origin`, position; `direction`, main (Z) axis; `xDirection`, desired X axis (will be corrected to be orthogonal).
 - **OCCT:** `OCCTAx3Create` → `gp_Ax3(gp_Pnt, gp_Dir, gp_Dir)`.
 - **Example:**
@@ -47,6 +51,9 @@ Create from origin and main direction only; X/Y axes are auto-computed.
 ```swift
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 ```
+
+On a zero-length `direction` this initializer does not throw or fail: `isDirect` is `false` and
+`xDirection`/`yDirection` are both `.zero` (#1443, same fallback as the three-argument initializer).
 
 - **Parameters:** `origin`, position; `direction`, main (Z) axis. X and Y are chosen by OCCT.
 - **OCCT:** `OCCTAx3CreateFromNormal` → `gp_Ax3(gp_Pnt, gp_Dir)`.
@@ -117,6 +124,9 @@ Mirror this coordinate system about a point.
 public func mirrored(about point: SIMD3<Double>) -> CoordinateSystem3D
 ```
 
+If `self` is itself degenerate (see the initializers above), the mirror is a no-op: the returned
+`origin` equals `self.origin` and `direction`/`xDirection` are `.zero` (#1443).
+
 - **Parameters:** `point`, the mirror point.
 - **Returns:** New mirrored coordinate system.
 - **OCCT:** `OCCTAx3MirrorPoint` → `gp_Ax3::Mirror(gp_Pnt)`.
@@ -135,6 +145,9 @@ public func rotated(
 ) -> CoordinateSystem3D
 ```
 
+If `self` is itself degenerate, or `axisDirection` is zero-length, the rotation is a no-op: the
+returned `origin` equals `self.origin` and `direction`/`xDirection` are `.zero` (#1443).
+
 - **Parameters:** `axisOrigin`, axis origin point; `axisDirection`, axis direction; `angle`, angle in radians.
 - **Returns:** New rotated coordinate system.
 - **OCCT:** `OCCTAx3Rotate` → `gp_Ax3::Rotate`.
@@ -148,6 +161,9 @@ Translate by a vector.
 ```swift
 public func translated(by vector: SIMD3<Double>) -> CoordinateSystem3D
 ```
+
+If `self` is itself degenerate, the translation is a no-op: the returned `origin` equals
+`self.origin`, unmoved (#1443).
 
 - **Parameters:** `vector`, translation delta.
 - **Returns:** New coordinate system with shifted origin; direction and X direction unchanged.

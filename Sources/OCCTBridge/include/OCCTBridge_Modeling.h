@@ -237,7 +237,8 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 //   0  = clean (conclusive)
 //  -1  = indeterminate (timed out, breaker was tripped - analysis was running)
 //  -2  = indeterminate (timed out, breaker NOT tripped - analysis made no progress)
-//  -3  = error (exception occurred)
+//  -3  = error (exception occurred, or the analyzer recorded a fault other than
+//        BOPAlgo_SelfIntersect, e.g. BOPAlgo_BadType for a refused/empty argument - #1436)
 // Output parameters (optional, can pass nullptr):
 //   - outTotalFacePairs: estimated total face pairs to check (if available)
 //   - outTimeSpent: actual time spent in seconds
@@ -2970,12 +2971,16 @@ typedef struct
 /// Create a fillet between two edges in a plane.
 /// @param edge1 First edge
 /// @param edge2 Second edge
+/// @param planeOx/Oy/Oz Point on the plane
 /// @param planeNx/Ny/Nz Plane normal
 /// @param radius Fillet radius
 /// @param nearX/Y/Z Point near desired fillet location
 /// @return Fillet result with fillet edge, modified edges, and solution count
 OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
                                          OCCTShapeRef _Nonnull edge2,
+                                         double planeOx,
+                                         double planeOy,
+                                         double planeOz,
                                          double planeNx,
                                          double planeNy,
                                          double planeNz,
@@ -3016,7 +3021,8 @@ int32_t OCCTFilletSurfBuild(OCCTShapeRef _Nonnull shape,
                             int32_t* _Nonnull outCount);
 
 /// Get the error status when FilletSurf_Builder fails.
-/// @return 0=EdgeNotG1, 1=FacesNotG1, 2=EdgeNotOnShape, 3=NotSharpEdge, 4=PbFilletCompute
+/// @return 0=EmptyList, 1=EdgeNotG1, 2=FacesNotG1, 3=EdgeNotOnShape, 4=NotSharpEdge,
+/// 5=PbFilletCompute
 int32_t OCCTFilletSurfError(OCCTShapeRef _Nonnull shape,
                             const OCCTShapeRef _Nonnull* _Nonnull edges,
                             int32_t edgeCount,
@@ -3044,12 +3050,16 @@ typedef enum
 /// @param shape Input shape
 /// @param dirX,dirY,dirZ View direction
 /// @param category Edge category to extract
+/// @param nbIso Number of isoparametric lines HLRBRep_Algo computes per face (only consulted for
+///        the `.visibleIso`/`.hiddenIso` categories; 0 disables isoline computation entirely,
+///        which is why those two categories used to always return NULL, #1500)
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
                                                  double              dirX,
                                                  double              dirY,
                                                  double              dirZ,
-                                                 OCCTHLREdgeCategory category);
+                                                 OCCTHLREdgeCategory category,
+                                                 int32_t             nbIso);
 
 /// Get edges by fine-grained category from a polygon-based (fast) HLR drawing.
 /// Note: IsoLine and Outline3d categories are not available for poly HLR (returns NULL).
@@ -3072,6 +3082,9 @@ OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape
 /// @param edgeType 0=Undefined, 1=IsoLine, 2=OutLine, 3=Rg1Line, 4=RgNLine, 5=Sharp
 /// @param visible true for visible edges, false for hidden
 /// @param in3d true for 3D result, false for 2D projected
+/// @param nbIso Number of isoparametric lines HLRBRep_Algo computes per face (only consulted when
+///        `edgeType` is `IsoLine`; 0 disables isoline computation entirely, which is why that
+///        edge type used to always return NULL, #1500)
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
                                               double  dirX,
@@ -3079,7 +3092,8 @@ OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
                                               double  dirZ,
                                               int32_t edgeType,
                                               bool    visible,
-                                              bool    in3d);
+                                              bool    in3d,
+                                              int32_t nbIso);
 
 // --- HLRAppli_ReflectLines ---
 

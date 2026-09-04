@@ -39,4 +39,20 @@ struct CompBezier2dToBSpline2dTests {
         let result = CompBezierConverter.toBSpline2d(segments: [])
         #expect(result == nil)
     }
+
+    @Test func manySegmentsExceedingCapacityReturnsNil2D() {
+        // Same overflow shape as the 3D converter's test (#1441): 60 chained cubic segments
+        // grow past the fixed 100-pole/200-double and 50-knot/mult buffers regardless of
+        // per-junction tangent smoothing, and the bridge must reject rather than report an
+        // unclamped count against a buffer holding only a truncated prefix.
+        var segments: [[SIMD2<Double>]] = []
+        for i in 0..<60 {
+            let x = Double(i) * 3
+            segments.append([
+                SIMD2(x, 0), SIMD2(x + 1, 1), SIMD2(x + 2, -1), SIMD2(x + 3, 0),
+            ])
+        }
+        let result = CompBezierConverter.toBSpline2d(segments: segments)
+        #expect(result == nil)
+    }
 }

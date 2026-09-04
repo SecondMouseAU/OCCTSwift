@@ -1889,7 +1889,7 @@ OCCTGeomIntSSRef _Nullable OCCTGeomIntSSCreate(OCCTShapeRef face1,
                                                OCCTShapeRef face2,
                                                double       tolerance)
 {
-  if (!face1 || !face2)
+  if (!occtShapeIsPresent(face1) || !occtShapeIsPresent(face2))
     return nullptr;
   try
   {
@@ -1984,7 +1984,7 @@ OCCTShapeRef _Nullable OCCTAdaptor3dIsoCurveEdge(OCCTShapeRef faceShape,
                                                  double       p1,
                                                  double       p2)
 {
-  if (!faceShape)
+  if (!occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {
@@ -2831,8 +2831,10 @@ int32_t OCCTBRepGPropFaceVKnots(OCCTShapeRef face, double* buffer, int32_t maxCo
     BRepGProp_Face gf(TopoDS::Face(face->shape));
     int            n = gf.SVIntSubs();
     if (n < 1)
-      n = 1; // array is sized to the V subinterval count
-    NCollection_Array1<double> k(1, n);
+      n = 1;
+    // SVIntSubs() returns the V subinterval count, N-1; VKnots() always writes N knots
+    // (BRepGProp_Face.cxx), one past the subinterval count, so the array must hold n+1 (#1433).
+    NCollection_Array1<double> k(1, n + 1);
     gf.VKnots(k);
     int32_t c = 0;
     for (int i = k.Lower(); i <= k.Upper() && c < maxCount; i++, c++)
@@ -2901,8 +2903,10 @@ bool OCCTBRepGPropFaceBoundaryIntegration(OCCTShapeRef face,
     int s = gf.LIntSubs();
     if (subs)
       *subs = s;
-    int                        n = s < 1 ? 1 : s;
-    NCollection_Array1<double> k(1, n);
+    int n = s < 1 ? 1 : s;
+    // LIntSubs() returns the subinterval count, N-1; LKnots() always writes N knots
+    // (BRepGProp_Face.cxx), one past the subinterval count, so the array must hold n+1 (#1433).
+    NCollection_Array1<double> k(1, n + 1);
     gf.LKnots(k);
     int32_t c = 0;
     for (int i = k.Lower(); i <= k.Upper() && c < maxKnots; i++, c++)
@@ -5179,8 +5183,10 @@ OCCTSurfaceRef _Nullable OCCTSurfaceUReversed(OCCTSurfaceRef _Nonnull surface)
     auto rev = s->UReversed();
     if (rev.IsNull())
       return nullptr;
-    auto* result = new occ::handle<Geom_Surface>(rev);
-    return (OCCTSurfaceRef)result;
+    // Allocate as OCCTSurface, matching every other factory in this file (and what
+    // OCCTSurfaceRelease deletes as); a bare occ::handle<Geom_Surface> here was a
+    // new/delete type mismatch (#1433).
+    return new OCCTSurface(rev);
   }
   catch (...)
   {
@@ -5198,8 +5204,10 @@ OCCTSurfaceRef _Nullable OCCTSurfaceVReversed(OCCTSurfaceRef _Nonnull surface)
     auto rev = s->VReversed();
     if (rev.IsNull())
       return nullptr;
-    auto* result = new occ::handle<Geom_Surface>(rev);
-    return (OCCTSurfaceRef)result;
+    // Allocate as OCCTSurface, matching every other factory in this file (and what
+    // OCCTSurfaceRelease deletes as); a bare occ::handle<Geom_Surface> here was a
+    // new/delete type mismatch (#1433).
+    return new OCCTSurface(rev);
   }
   catch (...)
   {

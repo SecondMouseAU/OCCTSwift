@@ -281,7 +281,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -471,28 +471,42 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
     return 0;
   try
   {
-    // ExtremaPC_Curve has deleted copy/move, so construct directly
-    ExtremaPC_Curve extPC(hasBounds ? curve->curve : curve->curve,
-                          hasBounds ? uMin : 0,
-                          hasBounds ? uMax : 0);
-    if (!extPC.IsInitialized())
-      return 0;
-    const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
-    if (!result.IsDone())
-      return 0;
-    int n = std::min((int)result.NbExt(), (int)maxResults);
-    for (int i = 0; i < n; i++)
+    // #1456: the 3-arg (curve, uMin, uMax) and 1-arg (curve) constructors are not
+    // interchangeable via a ternary -- they take different argument counts, and passing
+    // (0, 0) for the "no bounds" case (as the old ternary did) pins the search to the
+    // degenerate [0, 0] domain instead of the curve's natural range. Share the
+    // Perform()+collect logic via a lambda and pick the right constructor with a real
+    // if/else; ExtremaPC_Curve has deleted copy/move, so each branch constructs its own.
+    auto collect = [&](const ExtremaPC_Curve& extPC) -> int32_t {
+      if (!extPC.IsInitialized())
+        return 0;
+      const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
+      if (!result.IsDone())
+        return 0;
+      int n = std::min((int)result.NbExt(), (int)maxResults);
+      for (int i = 0; i < n; i++)
+      {
+        outParams[i]    = result[i].Parameter;
+        outDistances[i] = std::sqrt(result[i].SquareDistance);
+        if (outPx)
+          outPx[i] = result[i].Point.X();
+        if (outPy)
+          outPy[i] = result[i].Point.Y();
+        if (outPz)
+          outPz[i] = result[i].Point.Z();
+      }
+      return n;
+    };
+    if (hasBounds)
     {
-      outParams[i]    = result[i].Parameter;
-      outDistances[i] = std::sqrt(result[i].SquareDistance);
-      if (outPx)
-        outPx[i] = result[i].Point.X();
-      if (outPy)
-        outPy[i] = result[i].Point.Y();
-      if (outPz)
-        outPz[i] = result[i].Point.Z();
+      ExtremaPC_Curve extPC(curve->curve, uMin, uMax);
+      return collect(extPC);
     }
-    return n;
+    else
+    {
+      ExtremaPC_Curve extPC(curve->curve);
+      return collect(extPC);
+    }
   }
   catch (...)
   {
@@ -4215,9 +4229,13 @@ void OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef curve, double* knotSeq, in
       *count = 0;
       return;
     }
-    TColStd_Array1OfReal seq(1, bsc->NbPoles() + bsc->Degree() + 1);
-    bsc->KnotSequence(seq);
-    *count = seq.Length();
+    // #1456: NbPoles()+Degree()+1 is only the flat-knot-sequence length for a non-periodic
+    // curve; a periodic curve's real length (BSplCLib::KnotSequenceLength) is larger, and the
+    // deprecated array-out overload silently returns fewer knots than actually exist into an
+    // under-sized buffer. The non-deprecated accessor below returns the correctly-sized
+    // sequence directly, for both periodic and non-periodic curves.
+    const TColStd_Array1OfReal& seq = bsc->KnotSequence();
+    *count                          = seq.Length();
     for (int i = 1; i <= seq.Length(); i++)
     {
       knotSeq[i - 1] = seq(i);

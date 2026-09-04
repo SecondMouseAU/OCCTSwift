@@ -11,7 +11,7 @@ See also: **[Shape](Shape.md)** (index).
 
 ## Topics
 
-- [GeomFill\_Sweep](#geomfill_sweep) · [GeomFill\_EvolvedSection](#geomfill_evolvedsection) · [ProjLib\_ComputeApprox](#projlib_computeapprox) · [BRepOffset\_Offset](#brepoffset_offset) · [Adaptor3d\_IsoCurve](#adaptor3d_isocurve) · [ShapeAnalysis\_TransferParametersProj](#shapeanalysis_transferparametersrproj) · [BOPAlgo\_RemoveFeatures](#bopalgo_removefeatures) · [BOPAlgo\_Section](#bopalgo_section) · [ShapeBuild\_Edge](#shapebuild_edge) · [ShapeBuild\_Vertex](#shapebuild_vertex) · [ShapeExtend\_Explorer](#shapeextend_explorer) · [ShapeUpgrade\_FaceDivide](#shapeupgrade_facedivide) · [ShapeUpgrade\_WireDivide](#shapeupgrade_wiredivide) · [ShapeUpgrade\_EdgeDivide](#shapeupgrade_edgedivide) · [ShapeUpgrade\_ClosedEdgeDivide](#shapeupgrade_closededgedivide) · [ShapeUpgrade\_FixSmallCurves](#shapeupgrade_fixsmallcurves) · [ShapeUpgrade\_FixSmallBezierCurves](#shapeupgrade_fixsmallbeziercurves) · [ShapeUpgrade\_ConvertCurve3dToBezier](#shapeupgrade_convertcurve3dtobezier) · [ShapeUpgrade\_ConvertSurfaceToBezierBasis](#shapeupgrade_convertsurfacetobezierbasis) · [2D Vector/Direction Utilities & LProp](#2d-vectordirection-utilities--lprop) · [TopTrans Surface Transition](#toptrans-surface-transition) · [TopTrans Curve Transition](#toptrans-curve-transition) · [GeomFill Trihedrons](#geomfill-trihedrons) · [Polygon Interference](#polygon-interference) · [GccAna\_Circ2d3Tan](#gccana_circ2d3tan) · [IntTools](#inttools) · [BOPAlgo Builder](#bopalgo-builder) · [BOPTools](#boptools) · [IntTools\_BeanFaceIntersector](#inttools_beanfaceintersector) · [BOPAlgo\_WireSplitter](#bopalgo_wiresplitter) · [BRepFeat\_SplitShape](#brepfeat_splitshape) · [BRepFeat\_MakeCylindricalHole](#brepfeat_makecylindricalhole) · [BRepFeat\_Gluer](#brepfeat_gluer) · [LocOpe\_WiresOnShape + LocOpe\_Spliter](#locope_wiresonshape--locope_spliter) · [LocOpe\_Gluer](#locope_gluer) · [ChFi2d\_Builder](#chfi2d_builder) · [ChFi2d\_ChamferAPI](#chfi2d_chamferapi) · [ChFi2d\_FilletAPI](#chfi2d_filletapi) · [FilletSurf\_Builder](#filletsorf_builder)
+- [GeomFill\_Sweep](#geomfill_sweep) · [GeomFill\_EvolvedSection](#geomfill_evolvedsection) · [ProjLib\_ComputeApprox](#projlib_computeapprox) · [BRepOffset\_Offset](#brepoffset_offset) · [Adaptor3d\_IsoCurve](#adaptor3d_isocurve) · [ShapeAnalysis\_TransferParametersProj](#shapeanalysis_transferparametersrproj) · [BOPAlgo\_RemoveFeatures](#bopalgo_removefeatures) · [BOPAlgo\_Section](#bopalgo_section) · [ShapeBuild\_Edge](#shapebuild_edge) · [ShapeBuild\_Vertex](#shapebuild_vertex) · [ShapeExtend\_Explorer](#shapeextend_explorer) · [ShapeUpgrade\_FaceDivide](#shapeupgrade_facedivide) · [ShapeUpgrade\_WireDivide](#shapeupgrade_wiredivide) · [ShapeUpgrade\_EdgeDivide](#shapeupgrade_edgedivide) · [ShapeUpgrade\_ClosedEdgeDivide](#shapeupgrade_closededgedivide) · [ShapeUpgrade\_ConvertCurve3dToBezier](#shapeupgrade_convertcurve3dtobezier) · [ShapeUpgrade\_ConvertSurfaceToBezierBasis](#shapeupgrade_convertsurfacetobezierbasis) · [2D Vector/Direction Utilities & LProp](#2d-vectordirection-utilities--lprop) · [TopTrans Surface Transition](#toptrans-surface-transition) · [TopTrans Curve Transition](#toptrans-curve-transition) · [GeomFill Trihedrons](#geomfill-trihedrons) · [Polygon Interference](#polygon-interference) · [GccAna\_Circ2d3Tan](#gccana_circ2d3tan) · [IntTools](#inttools) · [BOPAlgo Builder](#bopalgo-builder) · [BOPTools](#boptools) · [IntTools\_BeanFaceIntersector](#inttools_beanfaceintersector) · [BOPAlgo\_WireSplitter](#bopalgo_wiresplitter) · [BRepFeat\_SplitShape](#brepfeat_splitshape) · [BRepFeat\_MakeCylindricalHole](#brepfeat_makecylindricalhole) · [BRepFeat\_Gluer](#brepfeat_gluer) · [LocOpe\_WiresOnShape + LocOpe\_Spliter](#locope_wiresonshape--locope_spliter) · [LocOpe\_Gluer](#locope_gluer) · [ChFi2d\_Builder](#chfi2d_builder) · [ChFi2d\_ChamferAPI](#chfi2d_chamferapi) · [ChFi2d\_FilletAPI](#chfi2d_filletapi) · [FilletSurf\_Builder](#filletsorf_builder)
 
 ---
 
@@ -648,46 +648,6 @@ public func canDivideClosedEdge(onFace face: Shape) -> Bool
 - **Example:**
   ```swift
   if edge.canDivideClosedEdge(onFace: face) { }
-  ```
-
----
-
-## ShapeUpgrade\_FixSmallCurves
-
-### `fixSmallCurves(tolerance:)`
-
-Fix small curves in this shape.
-
-```swift
-public func fixSmallCurves(tolerance: Double = 1e-6) -> Shape?
-```
-
-- **Parameters:** `tolerance`, threshold below which curves are considered small.
-- **Returns:** Fixed shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_FixSmallCurves`
-- **Example:**
-  ```swift
-  if let fixed = shape.fixSmallCurves() { }
-  ```
-
----
-
-## ShapeUpgrade\_FixSmallBezierCurves
-
-### `fixSmallBezierCurves(tolerance:)`
-
-Fix small Bezier curves in this shape.
-
-```swift
-public func fixSmallBezierCurves(tolerance: Double = 1e-6) -> Shape?
-```
-
-- **Parameters:** `tolerance`, detection threshold.
-- **Returns:** Fixed shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_FixSmallBezierCurves`
-- **Example:**
-  ```swift
-  if let fixed = shape.fixSmallBezierCurves() { }
   ```
 
 ---
@@ -2518,24 +2478,26 @@ public struct Fillet2DEdgeResult: Sendable {
 
 ---
 
-### `Shape.fillet2dEdges(edge1:edge2:planeNormal:radius:nearPoint:)`
+### `Shape.fillet2dEdges(edge1:edge2:planeOrigin:planeNormal:radius:nearPoint:)`
 
 Create a fillet between two edges in a plane using `ChFi2d_FilletAPI`.
 
 ```swift
 public static func fillet2dEdges(edge1: Shape, edge2: Shape,
+                                 planeOrigin: SIMD3<Double> = .zero,
                                  planeNormal: SIMD3<Double>,
                                  radius: Double,
                                  nearPoint: SIMD3<Double>) -> Fillet2DEdgeResult?
 ```
 
-- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
+- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeOrigin`, a point on the plane containing the edges (defaults to the world origin; must match the edges' actual plane for edges not passing through `(0,0,0)`, #1459). `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
 - **Returns:** `Fillet2DEdgeResult` with the fillet arc, trimmed edges, and solution count, or `nil` on failure.
 - **OCCT:** `ChFi2d_FilletAPI` (selects analytical or iterative algorithm automatically)
 - **Example:**
   ```swift
   if let r = Shape.fillet2dEdges(
       edge1: e1, edge2: e2,
+      planeOrigin: SIMD3(0, 0, 0),
       planeNormal: SIMD3(0, 0, 1),
       radius: 2.0,
       nearPoint: SIMD3(1, 1, 0)) {

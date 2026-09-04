@@ -897,6 +897,36 @@ void OCCTGeomFillCoonsAlgPatchEval(OCCTShapeRef edge1,
     Handle(GeomFill_SimpleBound) b3 = new GeomFill_SimpleBound(ac3, 1e-3, 1e-3);
     Handle(GeomFill_SimpleBound) b4 = new GeomFill_SimpleBound(ac4, 1e-3, 1e-3);
 
+    // GeomFill_ConstrainedFilling.cxx's 4-boundary Init() (the one real kernel consumer of
+    // GeomFill_CoonsAlgPatch) never builds one straight from raw curve parameter ranges: its
+    // file-local sortbounds() first walks the loop head-to-tail (each boundary's Reverse flag
+    // chosen so its raw first/last point continues the previous boundary's raw last/first point)
+    // and only then does `rev[2] = !rev[2]; rev[3] = !rev[3];` before reparametrizing every
+    // boundary to [0,1] -- because GeomFill_CoonsAlgPatch's own ctor (GeomFill_CoonsAlgPatch.cxx)
+    // reads opposite sides B1/B3 and B2/B4 walked in the SAME absolute direction (both U-direction
+    // sides 0->1 left-to-right, both V-direction sides 0->1 bottom-to-top), not chained
+    // head-to-tail around the loop, so the two sides that closed the chain (indices 2 and 3) need
+    // reversing relative to it. Replicated here rather than reordering the boundary array, since
+    // edge1..edge4 are assumed already given in loop order and the eval grid below is keyed to that
+    // order.
+    Handle(GeomFill_Boundary) bound[4] = {b1, b2, b3, b4};
+    bool                      rev[4]   = {false, false, false, false};
+    gp_Pnt                    firstPnt, tail;
+    bound[0]->Points(firstPnt, tail);
+    for (int i = 1; i < 4; i++)
+    {
+      gp_Pnt qf, ql;
+      bound[i]->Points(qf, ql);
+      rev[i] = (ql.Distance(tail) < qf.Distance(tail));
+      tail   = rev[i] ? qf : ql;
+    }
+    rev[2] = !rev[2];
+    rev[3] = !rev[3];
+    for (int i = 0; i < 4; i++)
+    {
+      bound[i]->Reparametrize(0., 1., false, false, 1., 1., rev[i]);
+    }
+
     GeomFill_CoonsAlgPatch patch(b1, b2, b3, b4);
     for (int i = 0; i < evalU; i++)
     {
@@ -919,7 +949,7 @@ void OCCTGeomFillCoonsAlgPatchEval(OCCTShapeRef edge1,
 
 OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sectionEdge)
 {
-  if (!pathEdge || !sectionEdge)
+  if (!occtShapeIsPresent(pathEdge) || !occtShapeIsPresent(sectionEdge))
     return nullptr;
   try
   {
@@ -994,7 +1024,7 @@ OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sec
 OCCTEvolvedSectionInfo OCCTGeomFillEvolvedSectionInfo(OCCTShapeRef edgeShape)
 {
   OCCTEvolvedSectionInfo result = {0, 0, 0, false};
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return result;
   try
   {

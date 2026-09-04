@@ -1454,8 +1454,31 @@ OCCTShapeRef OCCTShapeEdgesToFaces(OCCTShapeRef compound, bool isOnlyPlane)
 
     while (!remainingEdges.IsEmpty())
     {
+      // Seed the next wire with the first remaining edge. This is what makes the
+      // edge that failed to connect to a *previous* wire (below) actually start
+      // the *next* one, rather than being silently dropped (#1506).
       BRepBuilderAPI_MakeWire wireBuilder;
-      // Try adding edges to the wire
+      TopoDS_Edge             seedEdge = TopoDS::Edge(remainingEdges.First());
+      remainingEdges.RemoveFirst();
+      wireBuilder.Add(seedEdge);
+
+      // Snapshot the wire the moment the builder is genuinely done, and only
+      // then: per BRepBuilderAPI_MakeWire's own docs, once an Add() fails to
+      // connect, Error()/IsDone() stay false and Wire() raises StdFail_NotDone
+      // "until a new connectable edge is added", even though the wire built so
+      // far (e.g. an already-closed loop) is still intact internally. Reading
+      // Wire() only right after a successful Add() is the only state where it's
+      // safe to call, and finalizing eagerly means a completed wire is captured
+      // into `result` before a later disconnected edge can make it unreadable
+      // (#1506).
+      bool        haveWire = wireBuilder.IsDone();
+      TopoDS_Wire lastGoodWire;
+      if (haveWire)
+        lastGoodWire = wireBuilder.Wire();
+
+      // Try adding the rest of the edges to the wire, in repeated passes so an
+      // edge that doesn't connect yet may still connect once a later edge in
+      // the same pass closes the gap.
       bool added = true;
       while (added && !remainingEdges.IsEmpty())
       {
@@ -1466,33 +1489,27 @@ OCCTShapeRef OCCTShapeEdgesToFaces(OCCTShapeRef compound, bool isOnlyPlane)
           wireBuilder.Add(TopoDS::Edge(it.Value()));
           if (wireBuilder.Error() == BRepBuilderAPI_WireDone)
           {
-            added = true;
+            added        = true;
+            haveWire     = true;
+            lastGoodWire = wireBuilder.Wire();
             remainingEdges.Remove(it);
           }
           else
           {
-            wireBuilder = BRepBuilderAPI_MakeWire(wireBuilder.Wire());
+            // Disconnected from the wire built so far; leave it for a later
+            // pass, or as the seed of the next wire above. Do not call Wire()
+            // here, it throws while the builder is in this state.
             it.Next();
           }
         }
       }
-      if (wireBuilder.IsDone())
+      if (haveWire)
       {
-        TopoDS_Wire             wire = wireBuilder.Wire();
-        BRepBuilderAPI_MakeFace faceBuilder(wire, isOnlyPlane);
+        BRepBuilderAPI_MakeFace faceBuilder(lastGoodWire, isOnlyPlane);
         if (faceBuilder.IsDone())
         {
           builder.Add(result, faceBuilder.Face());
           anyFace = true;
-        }
-      }
-      if (!added && !remainingEdges.IsEmpty())
-      {
-        // Can't connect more edges; start a new wire with first remaining
-        TopTools_ListIteratorOfListOfShape it(remainingEdges);
-        if (it.More())
-        {
-          remainingEdges.Remove(it);
         }
       }
     }

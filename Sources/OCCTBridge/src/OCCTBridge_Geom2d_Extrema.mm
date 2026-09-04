@@ -686,12 +686,21 @@ int32_t OCCTExtremaExtElC2dLinLin(double               l1px,
       if (max >= 1)
       {
         out[0].squareDistance = ext.SquareDistance(1);
-        out[0].param1         = 0;
-        out[0].param2         = 0;
-        out[0].p1x            = l1px;
-        out[0].p1y            = l1py;
-        out[0].p2x            = l2px;
-        out[0].p2y            = l2py;
+        // Extrema_ExtElC never writes myPoint[0] on the parallel branch (only
+        // mySqDist[0]), so there is no matched pair to read via ext.Points(). Derive
+        // a genuine one instead of echoing the raw input origins, which generally do
+        // not achieve squareDistance (#1494): project line 1's origin perpendicularly
+        // onto line 2.
+        gp_Pnt2d p1 = l1.Location();
+        gp_Vec2d w(l2.Location(), p1);
+        double   t    = w.Dot(gp_Vec2d(l2.Direction()));
+        gp_Pnt2d p2   = l2.Location().Translated(gp_Vec2d(l2.Direction()).Multiplied(t));
+        out[0].param1 = 0;
+        out[0].param2 = t;
+        out[0].p1x    = p1.X();
+        out[0].p1y    = p1.Y();
+        out[0].p2x    = p2.X();
+        out[0].p2y    = p2.Y();
         return 1;
       }
       return 0;

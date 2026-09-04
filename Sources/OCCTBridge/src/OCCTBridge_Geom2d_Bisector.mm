@@ -853,15 +853,48 @@ double OCCTMedialAxisDistanceOnArc(OCCTMedialAxisRef ma, int32_t arcIndex, doubl
     if (arc.IsNull())
       return -1.0;
 
-    // Compute boundary distances at both endpoints
-    gp_Pnt2d pt1 = ma->locus.GeomElt(arc->FirstNode());
-    gp_Pnt2d pt2 = ma->locus.GeomElt(arc->SecondNode());
-    double   d1  = ma->distanceToBoundary(pt1);
-    double   d2  = ma->distanceToBoundary(pt2);
-
-    // Linear interpolation between node distances
     t = std::max(0.0, std::min(1.0, t));
-    return d1 + t * (d2 - d1);
+
+    // Node positions as the fallback point (mirrors OCCTMedialAxisDrawArc's own fallback,
+    // two functions above): linear interpolation is only exact for a straight arc, but it's
+    // a reasonable stand-in when the real curve can't be evaluated.
+    gp_Pnt2d firstPt = ma->locus.GeomElt(arc->FirstNode());
+    gp_Pnt2d lastPt  = ma->locus.GeomElt(arc->SecondNode());
+    gp_Pnt2d pt(firstPt.X() + t * (lastPt.X() - firstPt.X()),
+                firstPt.Y() + t * (lastPt.Y() - firstPt.Y()));
+    try
+    {
+      Standard_Boolean            reverse = Standard_False;
+      Bisector_Bisec              bisec   = ma->locus.GeomBis(arc, reverse);
+      Handle(Geom2d_TrimmedCurve) trimmed = bisec.Value();
+      if (!trimmed.IsNull())
+      {
+        double u0 = trimmed->FirstParameter();
+        double u1 = trimmed->LastParameter();
+
+        // Clamp infinite parameters, same fallback OCCTMedialAxisDrawArc uses.
+        if (Precision::IsNegativeInfinite(u0))
+          u0 = -1000.0;
+        if (Precision::IsPositiveInfinite(u1))
+          u1 = 1000.0;
+
+        // GeomBis's own doc: Reverse is false when the arc's FirstNode is the curve's first
+        // point (u0); when true, FirstNode is the curve's LAST point (u1) instead. t=0 must
+        // land on FirstNode per this function's contract ("0=firstNode, 1=secondNode"), so
+        // walk the parameter range in whichever direction that requires.
+        double u = reverse ? (u1 - t * (u1 - u0)) : (u0 + t * (u1 - u0));
+        trimmed->D0(u, pt);
+      }
+    }
+    catch (...)
+    {
+      // Fall through with the node-position interpolation already computed above.
+    }
+
+    // Measure from the real curve point (or its fallback), not by interpolating the
+    // endpoint distances themselves: distance-to-boundary is not linear in t except along a
+    // straight bisector arc.
+    return ma->distanceToBoundary(pt);
   }
   catch (...)
   {

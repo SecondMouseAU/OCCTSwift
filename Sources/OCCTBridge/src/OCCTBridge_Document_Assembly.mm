@@ -390,7 +390,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
     doc,
     datumIndex,
-    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
     outAttr,
@@ -1288,6 +1288,12 @@ int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef docRef, int32_t index)
   }
 }
 
+// Always returns false: this explorer's flat index is built with
+// XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes (shared with OCCTDocumentExplorerCount/Shape/
+// PathId/Depth/Location above), and that flag's own header comment documents it as skipping
+// assembly nodes. No index reachable through this walk can ever be an assembly node, by design,
+// not a bug: OCCTDocumentIsAssembly(doc, labelId) is the accessor that answers this question for
+// real, against the free-shape/component label tree rather than this leaf-only list. #1480.
 bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef docRef, int32_t index)
 {
   try
@@ -1318,8 +1324,11 @@ bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef docRef, int32_t index)
 
 void OCCTDocumentExplorerLocation(OCCTDocumentRef docRef, int32_t index, double* matrix12)
 {
-  for (int i = 0; i < 12; i++)
-    matrix12[i] = (i % 4 == i / 3) ? 1.0 : 0.0; // identity
+  for (int j = 0; j < 12; j++)
+    matrix12[j] = 0;
+  matrix12[0]  = 1;
+  matrix12[5]  = 1;
+  matrix12[10] = 1; // identity
   try
   {
     Handle(TDocStd_Document) doc = docRef->doc;
@@ -1335,10 +1344,7 @@ void OCCTDocumentExplorerLocation(OCCTDocumentRef docRef, int32_t index, double*
         TopLoc_Location             loc  = node.Location;
         if (!loc.IsIdentity())
         {
-          gp_Trsf trsf = loc.IsIdentity()   ? gp_Trsf()
-                         : loc.IsIdentity() ? gp_Trsf()
-                         : loc.IsIdentity() ? gp_Trsf()
-                                            : loc.Transformation();
+          gp_Trsf trsf = loc.Transformation();
           for (int r = 1; r <= 3; r++)
           {
             for (int c = 1; c <= 4; c++)

@@ -1314,14 +1314,27 @@ char* OCCTUnicodeConvertToUnicode(const char* input)
     TCollection_AsciiString    aStr(input);
     TCollection_ExtendedString eStr;
     Resource_Unicode::ConvertFormatToUnicode(aStr.ToCString(), eStr);
-    // Convert extended string to a simple C string (ASCII portion)
+    // UTF-8-encode every code unit (#1442): 1 byte for [0,0x7F] (already handled below),
+    // 2 bytes for [0x80,0x7FF], 3 bytes for [0x800,0xFFFF]. char16_t here is a single OCCT
+    // extended-character code unit, never a surrogate half, so no pair-combining is needed.
     std::string result;
     for (int i = 1; i <= eStr.Length(); i++)
     {
       char16_t c = eStr.Value(i);
-      if (c < 128)
+      if (c < 0x80)
       {
         result += (char)c;
+      }
+      else if (c < 0x800)
+      {
+        result += (char)(0xC0 | (c >> 6));
+        result += (char)(0x80 | (c & 0x3F));
+      }
+      else
+      {
+        result += (char)(0xE0 | (c >> 12));
+        result += (char)(0x80 | ((c >> 6) & 0x3F));
+        result += (char)(0x80 | (c & 0x3F));
       }
     }
     return strdup(result.c_str());
@@ -1550,14 +1563,21 @@ int32_t OCCTFileList(const char* path, const char* mask, char** names, int32_t m
   }
 }
 
+// Construct OSD_Disk directly from the path string, not via OSD_Path (#1442). OSD_Disk(const
+// OSD_Path&) reads OSD_Path::Disk() (the "drive" component); OSD_Path.cxx's UnixExtract, the
+// branch every macOS/iOS/Linux path takes, never assigns myDisk, so that route left myDiskName
+// permanently empty on those platforms and every statvfs() call (and hence DiskSize()/
+// DiskFree()/Failed()) failed regardless of whether the real path was valid. The const char*
+// overload assigns myDiskName from the raw string directly and is unaffected.
+
 int64_t OCCTDiskSize(const char* path)
 {
   try
   {
-    TCollection_AsciiString apath(path);
-    OSD_Path                opath(apath);
-    OSD_Disk                disk(opath);
-    return (int64_t)disk.DiskSize();
+    OSD_Disk disk(path);
+    // OSD_Disk::DiskSize() reports 512-byte blocks (OSD_Disk.hxx), this bridge fn is
+    // documented in KB; 1 block = 0.5 KB (#1442).
+    return (int64_t)disk.DiskSize() / 2;
   }
   catch (...)
   {
@@ -1569,10 +1589,10 @@ int64_t OCCTDiskFree(const char* path)
 {
   try
   {
-    TCollection_AsciiString apath(path);
-    OSD_Path                opath(apath);
-    OSD_Disk                disk(opath);
-    return (int64_t)disk.DiskFree();
+    OSD_Disk disk(path);
+    // OSD_Disk::DiskFree() reports 512-byte blocks (OSD_Disk.hxx), this bridge fn is
+    // documented in KB; 1 block = 0.5 KB (#1442).
+    return (int64_t)disk.DiskFree() / 2;
   }
   catch (...)
   {
@@ -1584,12 +1604,12 @@ bool OCCTDiskIsValid(const char* path)
 {
   try
   {
-    TCollection_AsciiString apath(path);
-    OSD_Path                opath(apath);
-    OSD_Disk                disk(opath);
-    // If it doesn't throw, it's valid enough
+    OSD_Disk disk(path);
+    // DiskSize() does not throw on failure (OSD_Disk.cxx): it sets the OSD_Error flag and
+    // returns 0. Check Failed(), not the exception (#1442), matching OCCTEnvironmentSet's
+    // !env.Failed() pattern elsewhere in this file.
     disk.DiskSize();
-    return true;
+    return !disk.Failed();
   }
   catch (...)
   {

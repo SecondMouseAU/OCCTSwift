@@ -2044,7 +2044,7 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 | Case | Meaning |
 |---|---|
 | `.g0` | Positional continuity: the surface passes through the constraint. |
-| `.g1` | Tangent continuity: the surface is tangent along the constraint. |
+| `.g1` | Tangent continuity: the surface is tangent along the constraint. Rejected for a bare point constraint (see below). |
 | `.g2` | Curvature continuity: the surface matches curvature along the constraint. Rejected for a bare point constraint (see below). |
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
@@ -2060,12 +2060,17 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 
 ```swift
 ```
-Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
-point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
-before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
-relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
-`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
+Not every API accepts every order. A bare point carries no tangent or curvature data to match, so
+`GeomPlate_PointConstraint`'s point-only constructor structurally cannot honour `.g1` or `.g2`.
+`.g2` throws above order 1 in the constructor itself; `.g1` does not throw, but its member-init
+list never sets the tangent-derivative fields, so the tangent constraint silently drops out at the
+solver (`Plate_GtoCConstraint`'s zero-normal early return) and the build degrades to G0-only with
+no diagnostic. `Shape.plateSurface(through:orders:)` and the point half of
+`Shape.plateSurface(pointConstraints:curveConstraints:)` reject both `.g1` and `.g2` in Swift
+before building any constraint, so a point given either returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (`.g2`, #437) or silently building a degraded result
+(`.g1`, #1460). Curve constraints have no such restriction: `GeomPlate_CurveConstraint` accepts
+order up to 2 directly, so both `.g1` and `.g2` are fine for a curve.
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
 > `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
@@ -2437,14 +2442,16 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-Each point independently specifies G0 (position) or G1 (position + tangent) continuity.
-**`.g2` always returns `nil`**: `GeomPlate_PointConstraint` rejects order 2 outright for a bare
-point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`,
-before any constraint is built, rather than relying on OCCT's own throw.
+Each point can only specify G0 (position) continuity. **`.g1` and `.g2` always return `nil`**:
+`GeomPlate_PointConstraint`'s point-only constructor cannot carry tangent or curvature data for a
+bare point (`.g2` rejects order 2 outright in the constructor, #437; `.g1` builds but silently
+drops the tangent constraint at the solver with no diagnostic, #1460), and both are checked in
+Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`, before any constraint is built,
+rather than relying on OCCT's own throw (which only ever caught `.g2`).
 
 - **Parameters:**
   - `points`: 3D points (minimum 3); must match `orders.count`.
-  - `orders`: per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
+  - `orders`: per-point constraint orders (`.g0` only; `.g1` and `.g2` are rejected, see above).
   - `degree`: maximum polynomial degree (default 3).
   - `pointsOnCurves`: sample points on internal curves (default 15).
   - `iterations`: solver iterations (default 2).
@@ -2468,14 +2475,15 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-At least one of `points` or `curves` must be non-empty. `.g2` is rejected up front for a **point**
-constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is fine for a
-**curve** constraint (`GeomPlate_CurveConstraint` accepts order 2 directly); only `points`'
-orders are checked.
+At least one of `points` or `curves` must be non-empty. `.g1` and `.g2` are rejected up front for
+a **point** constraint (`GeomPlate_PointConstraint`'s point-only constructor can carry neither
+tangent nor curvature data; `.g2` throws in the constructor, #437, `.g1` silently drops the
+tangent constraint at the solver instead, #1460) but both are fine for a **curve** constraint
+(`GeomPlate_CurveConstraint` accepts order up to 2 directly); only `points`' orders are checked.
 
 - **Parameters:**
-  - `points`: point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
-    rejected, see above).
+  - `points`: point constraints, each with a position and a `SurfaceContinuity` (`.g0` only;
+    `.g1`/`.g2` always rejected, see above).
   - `curves`: curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree`: maximum polynomial degree (default 3).
   - `tolerance`: approximation tolerance.

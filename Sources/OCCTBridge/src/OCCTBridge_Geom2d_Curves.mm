@@ -1364,10 +1364,14 @@ bool OCCTGeomLibCheckBSpline2D(OCCTCurve2DRef _Nonnull curveRef,
     Handle(Geom2d_BSplineCurve) bsp   = Handle(Geom2d_BSplineCurve)::DownCast(curve);
     if (bsp.IsNull())
       return false;
+    // Do not gate on IsDone(): myDone is only ever set true by the constructor's trivial
+    // early-exit branch (periodic curve, or fewer than 4 poles) or by FixTangentOnCurve(). Along
+    // the real analysis branch (an ordinary non-periodic curve with 4+ poles), myDone is never
+    // touched, even though myFixFirstTangent/myFixLastTangent are correctly computed there.
+    // OCCT's own internal caller (TopOpeBRepTool_CurveTool.cxx) never checks IsDone() either,
+    // it goes straight to NeedTangentFix, matching OCCTGeomLibFixBSpline2D below. #1457.
     GeomLib_Check2dBSplineCurve checker(bsp, tolerance, angularTol);
-    if (!checker.IsDone())
-      return false;
-    bool f = false, l = false;
+    bool                        f = false, l = false;
     checker.NeedTangentFix(f, l);
     *needFixFirst = f;
     *needFixLast  = l;
@@ -1426,7 +1430,7 @@ int OCCTGeom2dConvertApproxArcsSegments(OCCTCurve2DRef _Nonnull curveRef,
       }
       written++;
     }
-    return count;
+    return written;
   }
   catch (...)
   {
@@ -4618,7 +4622,8 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves,
       Handle(Geom2d_BSplineCurve) bsp = Geom2dConvert::CurveToBSplineCurve(curves[i]->curve);
       if (bsp.IsNull())
         continue;
-      joiner.Add(bsp, tolerance);
+      if (!joiner.Add(bsp, tolerance))
+        return nullptr;
     }
     Handle(Geom2d_BSplineCurve) result = joiner.BSplineCurve();
     if (result.IsNull())

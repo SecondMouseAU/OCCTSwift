@@ -1351,6 +1351,8 @@ OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape)
 // --- ShapeFix_ComposeShell ---
 OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, double precision)
 {
+  if (!occtShapeIsPresent(faceRef))
+    return nullptr;
   try
   {
     const TopoDS_Shape& shape = *(const TopoDS_Shape*)faceRef;
@@ -1550,6 +1552,8 @@ OCCTShapeRef OCCTShapeSolidFromShell(OCCTShapeRef shape)
 
 OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape)
 {
+  if (!shape)
+    return nullptr;
   try
   {
     ShapeFix_EdgeConnect connector;

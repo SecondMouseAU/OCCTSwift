@@ -10,7 +10,6 @@
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.1, providing B-Rep solid modeling for macOS and iOS. **v3.0.0. SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
 
 **4,365 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.1
-
 ## Quick Start
 
 ### Installation

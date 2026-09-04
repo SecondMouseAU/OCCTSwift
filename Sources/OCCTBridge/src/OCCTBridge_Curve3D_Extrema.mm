@@ -279,7 +279,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -813,7 +813,19 @@ int32_t OCCTExtremaElCLinCirc(double               lpx,
     if (!ext.IsDone())
       return -1;
     if (ext.IsParallel())
-      return 0;
+    {
+      if (max > 0)
+      {
+        out[0].squareDistance = ext.SquareDistance(1);
+        out[0].x1             = 0;
+        out[0].y1             = 0;
+        out[0].z1             = 0;
+        out[0].x2             = 0;
+        out[0].y2             = 0;
+        out[0].z2             = 0;
+      }
+      return 1;
+    }
     int n     = ext.NbExt();
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
@@ -862,7 +874,19 @@ int32_t OCCTExtremaElCCircCirc(double               c1x,
     if (!ext.IsDone())
       return -1;
     if (ext.IsParallel())
-      return 0;
+    {
+      if (max > 0)
+      {
+        out[0].squareDistance = ext.SquareDistance(1);
+        out[0].x1             = 0;
+        out[0].y1             = 0;
+        out[0].z1             = 0;
+        out[0].x2             = 0;
+        out[0].y2             = 0;
+        out[0].z2             = 0;
+      }
+      return 1;
+    }
     int n     = ext.NbExt();
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
@@ -919,7 +943,19 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
     if (!ext.IsDone())
       return -1;
     if (ext.IsParallel())
-      return 0;
+    {
+      if (max > 0)
+      {
+        out[0].squareDistance = ext.SquareDistance(1);
+        out[0].x1             = 0;
+        out[0].y1             = 0;
+        out[0].z1             = 0;
+        out[0].x2             = 0;
+        out[0].y2             = 0;
+        out[0].z2             = 0;
+      }
+      return 1;
+    }
     int n     = ext.NbExt();
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)

@@ -85,14 +85,43 @@ public enum IntAna {
         return ConicQuadResult(points: pts, params: pars, isParallel: r.isParallel)
     }
 
+    /// Which shape `IntAna_QuadQuadGeo` actually reported.
+    ///
+    /// Mirrors `IntAna_ResultType`. A plane-sphere intersection is ``point`` only in the tangent
+    /// case; the ordinary secant case is ``circle``, and its center/radius are only valid via
+    /// ``QuadQuadResult/circles``, not ``QuadQuadResult/points`` (#1495: OCCT's own
+    /// `IntAna_QuadQuadGeo::Point()` silently returns `(0, 0, 0)` for the `.circle` case, which
+    /// this wrapper works around by calling `Circle()` instead when `resultType == .circle`).
+    public enum ResultType: Int32, Sendable {
+        case point = 0
+        case line = 1
+        case circle = 2
+        case pointAndCircle = 3
+        case ellipse = 4
+        case parabola = 5
+        case hyperbola = 6
+        case empty = 7
+        case same = 8
+        case noGeometricSolution = 9
+    }
+
     /// Result type for quadric-quadric intersection.
     public struct QuadQuadResult {
-        /// Number of solutions found.
+        /// Number of solutions found. `0` means no intersection; `resultType` is only meaningful
+        /// when this is at least `1`.
         public let count: Int
-        /// Intersection lines (origin + direction pairs); populated for plane-plane.
+        /// The kind of intersection OCCT reported, e.g. `.line` for plane-plane, `.point` or
+        /// `.circle` for plane-sphere.
+        public let resultType: ResultType
+        /// Intersection lines (origin + direction pairs); populated when `resultType == .line`
+        /// (plane-plane).
         public let lines: [(origin: SIMD3<Double>, direction: SIMD3<Double>)]
-        /// Intersection points; populated for plane-sphere circle center etc.
+        /// Intersection points; populated when `resultType == .point` (e.g. a plane tangent to a
+        /// sphere).
         public let points: [SIMD3<Double>]
+        /// Intersection circles (center, axis/normal, radius); populated when
+        /// `resultType == .circle` (e.g. a plane secant to a sphere, the common case, #1495).
+        public let circles: [(center: SIMD3<Double>, axis: SIMD3<Double>, radius: Double)]
     }
 
     /// Intersect two planes — result is typically a line.
@@ -109,6 +138,16 @@ public enum IntAna {
     }
 
     /// Intersect a plane with a sphere — result is typically a circle.
+    ///
+    /// The common secant case reports ``QuadQuadResult/resultType`` `.circle`, with the
+    /// center/axis/radius in ``QuadQuadResult/circles``, not `.points` (#1495). Only the
+    /// tangent case (`.point`) populates `points`.
+    ///
+    /// ```swift
+    /// let r = IntAna.planeSphere(planeOrigin: SIMD3(0, 0, 3), planeNormal: SIMD3(0, 0, 1),
+    ///                             sphereCenter: .zero, sphereAxis: SIMD3(0, 0, 1), radius: 10)
+    /// // r.resultType == .circle, r.circles[0].center ≈ (0, 0, 3), r.circles[0].radius ≈ 9.539
+    /// ```
     public static func planeSphere(
         planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>,
         sphereCenter: SIMD3<Double>, sphereAxis: SIMD3<Double>,
@@ -124,25 +163,39 @@ public enum IntAna {
 
     private static func quadQuadResultFromC(_ r: OCCTQuadQuadGeoResult) -> QuadQuadResult {
         let n = Int(r.solutionCount)
+        let resultType = ResultType(rawValue: r.resultType) ?? .noGeometricSolution
         var linesOut: [(origin: SIMD3<Double>, direction: SIMD3<Double>)] = []
         var ptsOut: [SIMD3<Double>] = []
+        var circlesOut: [(center: SIMD3<Double>, axis: SIMD3<Double>, radius: Double)] = []
         withUnsafePointer(to: r.lines) { lp in
             lp.withMemoryRebound(to: Double.self, capacity: 24) { ld in
                 withUnsafePointer(to: r.points) { pp in
                     pp.withMemoryRebound(to: Double.self, capacity: 12) { pd in
-                        for i in 0..<min(n, 4) {
-                            linesOut.append(
-                                (
-                                    SIMD3(ld[i * 6], ld[i * 6 + 1], ld[i * 6 + 2]),
-                                    SIMD3(ld[i * 6 + 3], ld[i * 6 + 4], ld[i * 6 + 5])
-                                ))
-                            ptsOut.append(SIMD3(pd[i * 3], pd[i * 3 + 1], pd[i * 3 + 2]))
+                        withUnsafePointer(to: r.circles) { cp in
+                            cp.withMemoryRebound(to: Double.self, capacity: 28) { cd in
+                                for i in 0..<min(n, 4) {
+                                    linesOut.append(
+                                        (
+                                            SIMD3(ld[i * 6], ld[i * 6 + 1], ld[i * 6 + 2]),
+                                            SIMD3(ld[i * 6 + 3], ld[i * 6 + 4], ld[i * 6 + 5])
+                                        ))
+                                    ptsOut.append(SIMD3(pd[i * 3], pd[i * 3 + 1], pd[i * 3 + 2]))
+                                    circlesOut.append(
+                                        (
+                                            center: SIMD3(cd[i * 7], cd[i * 7 + 1], cd[i * 7 + 2]),
+                                            axis: SIMD3(
+                                                cd[i * 7 + 3], cd[i * 7 + 4], cd[i * 7 + 5]),
+                                            radius: cd[i * 7 + 6]
+                                        ))
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        return QuadQuadResult(count: n, lines: linesOut, points: ptsOut)
+        return QuadQuadResult(
+            count: n, resultType: resultType, lines: linesOut, points: ptsOut, circles: circlesOut)
     }
 
     /// Intersect three planes to find a single point.

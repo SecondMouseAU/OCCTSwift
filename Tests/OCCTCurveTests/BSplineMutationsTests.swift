@@ -24,6 +24,36 @@ struct BSplineMutationsTests {
         }
     }
 
+    @Test func periodicKnotSequenceLength() {
+        // #1456: OCCTCurve3DBSplineGetKnotSequence sized its scratch array as
+        // NbPoles()+Degree()+1, the flat-knot-sequence length for a NON-periodic curve
+        // only. A periodic curve's real length (BSplCLib::KnotSequenceLength) is larger,
+        // so the deprecated array-out overload silently wrote one fewer knot value than
+        // exists into an under-sized buffer, and `*count` came back short by the same
+        // amount. Ground-truth verified directly against the pinned kernel: this exact
+        // 6-pole degree-3 clamped curve drops to 5 poles once made periodic, but its real
+        // KnotSequence().Length() stays 10 -- the old formula (poleCount+degree+1) gives 9.
+        let poles = [
+            SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0),
+            SIMD3(3.0, 1.0, 0.0), SIMD3(4.0, 0.0, 0.0), SIMD3(5.0, 1.0, 0.0),
+        ]
+        let knots: [Double] = [0, 1, 2, 3]
+        let mults: [Int32] = [4, 1, 1, 4]
+        guard
+            let curve = Curve3D.bspline(
+                poles: poles, knots: knots, multiplicities: mults, degree: 3)
+        else { return }
+
+        // Sanity: the non-periodic case is already correct (real length == old formula).
+        #expect(curve.bspline.poleCount == 6)
+        #expect(curve.bsplineKnotSequence().count == 10)
+
+        #expect(curve.bspline.setPeriodic(true))
+        #expect(curve.bspline.poleCount == 5)
+        let seq = curve.bsplineKnotSequence()
+        #expect(seq.count == 10)  // NOT poleCount+degree+1 == 9, the pre-fix value
+    }
+
     @Test func curveMaxDegree() {
         let maxDeg = Curve3D.bsplineMaxDegree
         #expect(maxDeg >= 10)  // OCCT supports at least degree 25

@@ -202,9 +202,9 @@ typedef struct
 /// Tangency/curvature continuity needs a support surface to be continuous WITH. Each
 /// boundary edge's own pcurve support surface is used, so continuity > 0 requires every
 /// boundary edge to carry a pcurve (i.e. to have been borrowed from an existing face);
-/// a free-standing edge with no pcurve makes the whole call fail. Use
-/// OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support faces
-/// explicitly.
+/// a free-standing edge with no pcurve is added with position-only continuity instead
+/// (#1503). Use OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support
+/// faces explicitly.
 ///
 /// @param boundaries Array of boundary wires
 /// @param wireCount Number of boundary wires
@@ -943,6 +943,16 @@ bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
                                       OCCTShapeRef oldFaceShape,
                                       OCCTShapeRef newFaceShape);
 
+// --- BRep_Builder (edge parametrization flag) ---
+/// Explicitly set an edge's SameParameter flag (`BRep_Tool::SameParameter`'s writer). None of the
+/// `ShapeBuild_Edge` helpers above (`CopyPCurves`, `ReassignPCurve`, ...) touch this flag
+/// themselves, matching upstream: attaching or reassigning a pcurve by hand leaves the caller to
+/// decide whether the result is still verified same-parameter. Exists to build a regression
+/// fixture for #1461 (a deliberately mismatched 3D-curve/pcurve pair with a known, real
+/// deviation, used to prove `OCCTValidateEdge` reads the edge's real flag rather than a
+/// hardcoded one); no Swift wrapper, reachable from a Swift test via `import OCCTBridge`.
+void OCCTEdgeSetSameParameter(OCCTEdgeRef _Nonnull edge, bool sameParameter);
+
 // --- ShapeBuild_Vertex ---
 /// Combine two vertices into one at the average position.
 /// @param tolFactor Tolerance factor (default 1.0001)
@@ -1007,19 +1017,10 @@ bool OCCTShapeUpgradeEdgeDivideCompute(OCCTShapeRef edgeShape,
 /// @return true if the edge is closed and can be divided
 bool OCCTShapeUpgradeClosedEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRef faceShape);
 
-// --- ShapeUpgrade_FixSmallCurves ---
-/// Fix small curves in a shape by removing degenerate edges.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallCurves(OCCTShapeRef shape, double tolerance);
-
-// --- ShapeUpgrade_FixSmallBezierCurves ---
-/// Fix small Bezier curves in a shape.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, double tolerance);
+// OCCTShapeUpgradeFixSmallCurves / OCCTShapeUpgradeFixSmallBezierCurves removed (#1491): both were
+// complete no-ops with no OCCT-supported standalone use. See the removal comment in
+// OCCTBridge_Healing_Upgrade.mm and the #1491 PR body. Use OCCTShapeFixSmallEdges
+// (Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:)) instead.
 
 // --- ShapeUpgrade_ConvertCurve3dToBezier ---
 /// Convert 3D curves in a shape to Bezier representation.
@@ -1053,7 +1054,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
 typedef struct
 {
   bool   isDone;
-  bool   isWithinTolerance; // at default tolerance
+  bool   isWithinTolerance; // at the caller-supplied tolerance
   double maxDistance;
   double tolerance; // tolerance used for check
 } OCCTValidateEdgeResult;
@@ -1436,9 +1437,12 @@ bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef _Nonnull edge,
                                   double* _Nonnull toler1,
                                   double* _Nonnull toler2);
 
-/// Check if two edges overlap. Returns true if overlapping.
+/// Check if two edges overlap within `tolerance`. Returns true if overlapping. `tolOverlap` is
+/// seeded with `tolerance` before the check (#1438: it used to be zeroed instead, which made the
+/// underlying comparison "distance >= 0" and disabled the check entirely).
 bool OCCTEdgeCheckOverlapping(OCCTShapeRef _Nonnull edge1,
                               OCCTShapeRef _Nonnull edge2,
+                              double tolerance,
                               double* _Nonnull tolOverlap);
 
 /// Get UV bounds of an edge on a face.
@@ -1458,7 +1462,9 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef _Nonnull edge,
                              double* _Nonnull tx,
                              double* _Nonnull ty);
 
-/// Check PCurve range on a face.
+/// Check whether [first, last] is a valid parameter range for the edge's pcurve on the face,
+/// against the pcurve's own underlying geometric domain (period, for a periodic pcurve; the basis
+/// curve's own first/last, for a Geom2d_TrimmedCurve), NOT the edge's current stored trim (#1438).
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef _Nonnull edge,
                               OCCTShapeRef _Nonnull face,
                               double first,
