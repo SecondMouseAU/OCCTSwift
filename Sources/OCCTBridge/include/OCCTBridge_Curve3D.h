@@ -2323,11 +2323,12 @@ double OCCTProjOnCurveLowerParam(OCCTProjOnCurveRef _Nonnull proj);
 /// Set the knot value at a given index (1-based).
 bool OCCTCurve3DBSplineSetKnot(OCCTCurve3DRef _Nonnull curve, int32_t index, double knot);
 
-/// Get the full knot sequence (with multiplicities expanded). Caller must pre-allocate knotSeq.
-/// Returns the count in *count.
-void OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef _Nonnull curve,
-                                       double* _Nonnull knotSeq,
-                                       int32_t* _Nonnull count);
+/// Get the full knot sequence (with multiplicities expanded), clamped to maxCount. Caller must
+/// pre-allocate knotSeq with at least maxCount doubles. Returns the number of knots actually
+/// written, never more than maxCount (#1541).
+int32_t OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef _Nonnull curve,
+                                          double* _Nonnull knotSeq,
+                                          int32_t maxCount);
 
 /// Get all weights (one per pole). Caller must pre-allocate weights array.
 void OCCTCurve3DBSplineGetWeights(OCCTCurve3DRef _Nonnull curve, double* _Nonnull weights);
