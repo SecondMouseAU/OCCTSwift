@@ -834,7 +834,7 @@ public final class Surface: @unchecked Sendable {
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// if let k = sphere.gaussianCurvature(atU: 0, v: 0) { #expect(abs(k - 1.0 / 25) < 1e-12) }
     ///
-    /// let cylinder = Surface.cylinder(axis: .zero, direction: SIMD3(0, 0, 1), radius: 3)!
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
     /// cylinder.gaussianCurvature(atU: 1, v: 6)   // 0, developable, and that is the answer
     /// ```
     public func gaussianCurvature(atU u: Double, v: Double) -> Double? {
@@ -1613,7 +1613,7 @@ extension Surface {
         public let uCount: Int
         /// Number of patches in V direction.
         public let vCount: Int
-        /// Patches in row-major order (U varies faster).
+        /// Patches in U-major order (V varies faster).
         public let patches: [Surface]
     }
 
@@ -1725,8 +1725,8 @@ extension Surface {
         uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
         uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil
     ) -> SurfaceExtremaResult? {
-        let b1 = uvBounds1 ?? (0, 1, 0, 1)
-        let b2 = uvBounds2 ?? (0, 1, 0, 1)
+        let b1 = uvBounds1 ?? self.domain
+        let b2 = uvBounds2 ?? other.domain
         var result = OCCTSurfaceExtremaResult()
         let count = OCCTSurfaceExtrema(
             handle, other.handle,
