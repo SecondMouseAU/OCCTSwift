@@ -152,9 +152,14 @@ transcripts are in
 `TopOpeBRepBuild_ffsfs.cxx`/`GridSS.cxx`/`GridFF.cxx`) that #298's fix (above) did not reach, the
 same failure shape in the same toolkit. Confirmed unreachable from this bridge's own call surface
 by two independent methods (a static call-graph read and an empirical reachability probe), so it
-does not race in practice today, but filed and fixed anyway (`Scripts/patches/0032`, see CLAUDE.md's
-Known OCCT Bugs, #1371) on this project's precedent that a live unsynchronized global is worth
-fixing before something starts reaching it, not after.
+does not race in practice today. Fixed here initially (`Scripts/patches/0032`) on this project's
+precedent that a live unsynchronized global is worth fixing before something starts reaching it, not
+after, then **retired 2026-09-02** once OCCT's own upstream `master` shipped a strictly better fix
+for the identical globals (per-instance member fields, not `thread_local`) in
+[OCCT#1505](https://github.com/Open-Cascade-SAS/OCCT/pull/1505)/[#1509](https://github.com/Open-Cascade-SAS/OCCT/pull/1509);
+carrying an inferior fix for an already-unreachable defect someone else was actively fixing better
+was not worth it. See CLAUDE.md's Known OCCT Bugs, #1371, and `Scripts/patches/README.md`'s retired
+`0032` entry for the full account.
 
 ### Document creation thread safety (issues #341, #344)
 

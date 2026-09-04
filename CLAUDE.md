@@ -10,7 +10,7 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 the **`v3.0.0` release asset**, which is that same `V8_0_1` plus seventeen patches, `0010`-`0012`
 and `0014`-`0027`. A clean checkout with no local `Libraries/` now gets the right kernel, and
 `ci.yml`'s macOS job is a real signal again. Seventeen is what the **asset** holds;
-`Scripts/patches/` holds twenty-three, and the next paragraph is about the difference.
+`Scripts/patches/` holds twenty-two, and the next paragraph is about the difference.
 
 **Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
 tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
@@ -25,54 +25,65 @@ on 2026-08-17**, and inside a single session: the v2.0.0 asset held fifteen whil
 `0027` (#913) sat in `Scripts/patches/` untested by anything, and `0027` arrived on `main` partway
 through the very check that found `0026`. `v3.0.0-kernel.1` is the rebuild that closed it.
 
-**As of #1018, #1022, #1154, #1153, #1371 and #1157 the counts diverge again, deliberately and with
-the reason written down.** `Scripts/patches/` holds twenty-three; the pinned asset holds seventeen.
-The six are `0028` (#1018), `0029` (#1022), `0030` (#1154), `0031` (#1153), `0032` (#1371) and
-`0033` (#1157), and `ci.yml`'s `build-and-test` never sees any of them, which is exactly what the
-paragraph above says a divergence means. **This paragraph itself is the proof the count check
-matters, not just an example of it**: it said "twenty-one"/"The four are" through `0031` and went
-stale the moment `0032` landed without anyone updating it, caught only while writing `0033`'s own
-entry, the identical `docs/occtswift-wrapping-gaps.md`/`#807` shape ("the gate agrees, the prose
-beside it doesn't") this project has already hit once. One narrowing, measured on PR #1032 rather
-than assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that **adds** a
-patch does get `V8_0_1` plus every carried patch built from source and the full suite run against
-it. That proves the patch applies, compiles and regresses nothing. It cannot prove any of the six
+**As of #1018, #1022, #1154, #1153 and #1157 the counts diverge again, deliberately and with
+the reason written down.** `Scripts/patches/` holds twenty-two; the pinned asset holds seventeen.
+The five are `0028` (#1018), `0029` (#1022), `0030` (#1154), `0031` (#1153) and `0033` (#1157), and
+`ci.yml`'s `build-and-test` never sees any of them, which is exactly what the paragraph above says a
+divergence means. **This paragraph itself is the proof the count check matters, not just an example
+of it**: it said "twenty-one"/"The four are" through `0031`, went stale the moment `0032` landed
+without anyone updating it (caught only while writing `0033`'s own entry, the identical
+`docs/occtswift-wrapping-gaps.md`/`#807` shape, "the gate agrees, the prose beside it doesn't"), and
+`0032` itself is now gone. **Retired 2026-09-02, not shipped, dropped**: it fixed twelve
+`TopOpeBRepBuild` globals confirmed unreachable from this bridge's own call surface (see the `#1371`
+entry below), and OCCT's own upstream `master` fixes the identical globals through a strictly
+better mechanism, per-instance member fields rather than `thread_local` duplication, in
+[OCCT#1505](https://github.com/Open-Cascade-SAS/OCCT/pull/1505) (merged 2026-08-25) and
+[OCCT#1509](https://github.com/Open-Cascade-SAS/OCCT/pull/1509) (merged 2026-08-28) — both by
+maintainer dpasukhi, both going further than this patch did, also fixing `GLOBAL_faces2d`, which
+this patch's own writeup explicitly left uninvestigated. Carrying (or upstreaming) an inferior,
+narrower fix for an already-unreachable defect someone else is actively fixing better would have
+been wasted effort. See `Scripts/patches/README.md`'s retired `0032` entry for the full account, and
+"Carrying OCCT source patches" below for the process change this prompted: check upstream's own
+recent activity before starting a new investigation in this space, not after landing a patch that
+turns out to duplicate work already four days old. One narrowing, measured on PR #1032 rather than
+assumed: `kernel-integration.yml` triggers on `Scripts/patches/**`, so the PR that **adds** a patch
+does get `V8_0_1` plus every carried patch built from source and the full suite run against it.
+That proves the patch applies, compiles and regresses nothing. It cannot prove any of the five
 fixes works, since none has a Swift-reachable assertion (`0030`, `0031` and `0033` are all data
 races, so even a Swift-level assertion would only catch any of the three by luck without TSan
-instrumentation the built asset doesn't carry; `0032`'s own class is confirmed unreachable from
-this bridge's call surface today, so there is nothing for any assertion, Swift-level or otherwise,
-to exercise), and it does not run on any later PR that leaves `Scripts/patches/` alone. None of
-that makes "read `kernel-integration.yml` instead of `ci.yml`" good advice; #585 is what
-discredited that. They are not equally urgent. `0028` is the one carried patch a rebuild would give
-no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge reader of the three
-accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are its only coverage
-anywhere. `0029` is an uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum
-carries a point without an annotation plane, so until a rebuilt asset ships it nothing protects a
-consumer. `0030` is a data race on `TopoDS_TShape::myState`, live in ordinary concurrent use of a
-boolean-operation result (which shares TShapes with its inputs) and invisible to every `swift test`
-run today since none of them run under ThreadSanitizer against the released kernel; `Scripts/tsan.
-supp` suppresses it so the TSan gate stays green until a rebuilt asset ships, per that file's own
-"remove when the fix lands" policy. `0031` is the same shape as `0030`, unsynchronized mutable
-evaluation state in `BSplCLib_Cache`/`BSplSLib_Cache` and the `GeomAdaptor_Curve`/
-`GeomAdaptor_Surface` Cache-handle check-then-act that creates and replaces them, live for any
-consumer sharing one adaptor (or one cache) across threads; unlike `0030`, `Scripts/tsan.supp`
-carries **no** suppression for it at all, since the earlier, rejected attempt at this fix (PR
-#1322, reviewed and rewritten from scratch, see the `#1153` Known OCCT Bugs entry below) never
-merged its own suppression lines to `main`, so there is nothing to retire once a rebuild ships.
-`0032` fixes nothing observable in this repo today, by measurement rather than assumption: the
-twelve `TopOpeBRepBuild` globals it converts to `thread_local` are confirmed unreachable from this
-bridge's own call surface (see the `#1371` entry below for the reachability probe), so a rebuild
-buys nothing here either, only a real defect for some future caller of the currently-unused
-two-argument `TopOpeBRepBuild_HBuilder::Perform` overload. `0033` is a live memory-safety hole
-(concurrent map mutation and shared-buffer corruption, not merely a logical race) in
-`Interface_Static`'s shared STEP/IGES parameter table, reachable by every OCCTSwift consumer of
+instrumentation the built asset doesn't carry), and it does not run on any later PR that leaves
+`Scripts/patches/` alone. None of that makes "read `kernel-integration.yml` instead of `ci.yml`"
+good advice; #585 is what discredited that. They are not equally urgent. `0028` is the one carried
+patch a rebuild would give no Swift-side coverage to at all: `OCCTGeomPlateErrors`, the only bridge
+reader of the three accessors it fixes, was deleted by #999 (PR #1015), so the upstream GTests are
+its only coverage anywhere. `0029` is an uncatchable SIGSEGV on `Document.datums` for any OCAF
+document whose datum carries a point without an annotation plane, so until a rebuilt asset ships it
+nothing protects a consumer. `0030` is a data race on `TopoDS_TShape::myState`, live in ordinary
+concurrent use of a boolean-operation result (which shares TShapes with its inputs) and invisible to
+every `swift test` run today since none of them run under ThreadSanitizer against the released
+kernel; `Scripts/tsan.supp` suppresses it so the TSan gate stays green until a rebuilt asset ships,
+per that file's own "remove when the fix lands" policy. `0031` is the same shape as `0030`,
+unsynchronized mutable evaluation state in `BSplCLib_Cache`/`BSplSLib_Cache` and the
+`GeomAdaptor_Curve`/`GeomAdaptor_Surface` Cache-handle check-then-act that creates and replaces
+them, live for any consumer sharing one adaptor (or one cache) across threads; unlike `0030`,
+`Scripts/tsan.supp` carries **no** suppression for it at all, since the earlier, rejected attempt at
+this fix (PR #1322, reviewed and rewritten from scratch, see the `#1153` Known OCCT Bugs entry
+below) never merged its own suppression lines to `main`, so there is nothing to retire once a
+rebuild ships. **Watch, don't act on yet**: [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076)
+(open, stale since April 2026) would replace `BSplCLib_Cache`/`BSplSLib_Cache` with new
+`BSplCLib_CacheGrid`/`BSplSLib_CacheGrid` classes carrying the identical unsynchronized
+check-then-act (verified: zero occurrences of `mutex`/`atomic`/`lock`/`thread` in its new headers),
+so it does not fix the race even if merged; but if it ever does land, `0031` needs retargeting at
+the new class names, not abandoning. `0033` is a live memory-safety hole (concurrent map mutation
+and shared-buffer corruption, not merely a logical race) in `Interface_Static`'s shared STEP/IGES
+parameter table, reachable by every OCCTSwift consumer of
 `Shape.writeSTEP`/`importSTEP`/`writeIGES`/`importIGES` and their OCAF/document-level siblings
 today; entirely masked in practice by the bridge's own `igesMutex()` (see #181-B/#359), which
 already serializes the whole window this patch's accessor-level lock cannot close on its own (see
 the `#1157` entry below for the measured 100% cross-talk rate that proves that narrower claim), so
 a rebuild buys defense-in-depth for any future caller reaching `Interface_Static` from outside that
 mutex, not new capability inside it. Do not read this note as permission to skip the check;
-read it as the answer the check should produce today, so a twenty-second patch appearing without a
+read it as the answer the check should produce today, so a twenty-third patch appearing without a
 note is still a finding.
 
 **The count check is necessary and not sufficient.** At the v2.0.0 release check the count agreed
@@ -689,7 +700,19 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s own layer has no GTest in this PR, a real gap noted
   rather than hidden; the TSan transcripts are its evidence instead. See
   [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
-  for the full writeup. Not yet filed upstream.
+  for the full writeup. Not yet filed upstream. **Watch item, checked 2026-09-02, no action
+  needed today**: OCCT's own maintainer dpasukhi independently describes this exact mechanism in a
+  2026-08-29 blog post (`occt3d.com/blog/bspline-bezier-evaluation-in-occt/`), *"Const evaluation
+  is not immutable... Two threads calling `EvalD0()` on a shared B-spline adaptor can race while
+  rebuilding or replacing its cache,"* outside confirmation of this investigation's own diagnosis;
+  the post's preferred fix is architectural ("one adaptor per worker," `ShallowCopy()`) rather than
+  a lock, worth citing as design rationale when this patch is eventually filed, alongside our own
+  reasoning for why a mutex is still the right fallback for a bridge that hands adaptors to callers
+  whose threading we don't control. [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076)
+  (open, stale since April 2026) would rename `BSplCLib_Cache`/`BSplSLib_Cache` to
+  `BSplCLib_CacheGrid`/`BSplSLib_CacheGrid` but keeps the identical unsynchronized check-then-act, so
+  it changes nothing here unless and until it merges, at which point this patch needs retargeting at
+  the new names.
 - `TopOpeBRepBuild_ffsfs.cxx`/`GridSS.cxx`/`GridFF.cxx`'s `GLOBAL_*`/`stabuild_*`/`static_CONF*`
   cluster, twelve unsynchronized file-scope statics passing state between
   `TopOpeBRepBuild_Builder::GFillFaceSFS` and its callers (`GFillShellSFS`,
@@ -730,8 +753,15 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   `TopOpeBRepBuild_GridFF.cxx`, with a wider reach (`GridEE.cxx`, `on.cxx`, `Builder1_1.cxx` too)
   that this pass did not investigate. See
   [`Scripts/repro/1155-thread-safety-survey/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1155-thread-safety-survey)
-  for the survey and [`Scripts/patches/README.md`](Scripts/patches/README.md)'s `0032` entry for
-  the fix writeup. #1371.
+  for the survey and [`Scripts/patches/README.md`](Scripts/patches/README.md)'s (now-retired) `0032`
+  entry for the fix writeup. **Patch `0032` retired 2026-09-02, dropped rather than carried or
+  upstreamed**: OCCT's own [#1505](https://github.com/Open-Cascade-SAS/OCCT/pull/1505) (merged
+  2026-08-25) and [#1509](https://github.com/Open-Cascade-SAS/OCCT/pull/1509) (merged 2026-08-28),
+  both by maintainer dpasukhi, convert these same twelve globals to per-instance member fields
+  instead of `thread_local` duplication (strictly stronger, and #1509 also fixes `GLOBAL_faces2d`,
+  the sibling this investigation left uninvestigated), and the globals remain unreachable from this
+  bridge today regardless, so there was nothing live to protect by carrying an inferior fix for a
+  defect someone else was already fixing better. #1371.
 - `Interface_Static`'s shared parameter table (backs every STEP/IGES read/write, `Interface_Static::
   CVal`/`IVal`/`RVal`/`SetCVal`/`SetIVal`/`SetRVal`, already serialized bridge-side via `igesMutex()`
   since #181-B/#359), **#1157: fixed for `Interface_Static` itself, and measured to be structurally
@@ -882,6 +912,20 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
 ### Carrying OCCT source patches
 
 `Scripts/patches/*.patch` are upstream-bound fixes applied to `occt-src` (idempotently) by `build-occt.sh` before each cmake build. Drop a `git diff` (`-p1`, prefixes `a/`,`b/`) in that dir to carry a new one. Existing build trees (`occt-build-*`) pin a stale macOS SDK sysroot and can no longer incrementally compile, a fresh `cmake` configure (clean build dir) is required to pick up patches.
+
+**Check upstream's own recent activity before starting a new kernel-defect investigation**,
+especially anything touching caching, mutable/`static` state, or thread-safety — added 2026-09-02
+after patch `0032` (#1371) shipped, only to turn out four days later than OCCT's own
+[#1505](https://github.com/Open-Cascade-SAS/OCCT/pull/1505)/[#1509](https://github.com/Open-Cascade-SAS/OCCT/pull/1509),
+which fixed the identical globals more thoroughly. Maintainer **dpasukhi** is currently running a
+systematic, high-cadence sweep of exactly this class of defect (a numbered "Coding - Eliminate
+mutable static state" PR series, roughly one PR a day as of this writing); a five-minute
+`gh pr list --repo Open-Cascade-SAS/OCCT --search "author:dpasukhi <keyword>"` (or `gh issue list`
+for the same) before opening a new investigation costs little and can save the whole investigation
+when it turns out already done, better, upstream. His blog, `occt3d.com/blog/`, is a second source
+worth checking for the same reason: it's maintainer-authored, describes intended kernel architecture
+rather than just API surface, and directly engaged our own `#1153` thread-safety diagnosis
+independently before we'd cited it anywhere (see that entry in Known OCCT Bugs below).
 
 ## Release Process
 
