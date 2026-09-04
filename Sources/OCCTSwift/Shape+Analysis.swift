@@ -1804,7 +1804,20 @@ extension Shape {
     }
 
     /// Compute the minimum distance between two sub-shapes using BRepExtrema_DistanceSS.
-    public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceSSResult {
+    ///
+    /// - Parameters:
+    ///   - other: The second shape.
+    ///   - deflection: Maximum deviation of an extreme distance from the true minimum for it to
+    ///     be folded into the solution set (`BRepExtrema_DistanceSS`'s `theDeflection`). It is a
+    ///     numeric-tie tolerance, not a spatial search radius: raising it does not widen the
+    ///     search, it only widens how many near-minimum extrema get reported as "solutions"
+    ///     alongside the true one. Defaults to `1e-7` (`Precision::Confusion()`), OCCT's own
+    ///     default. ``point1``/``point2`` are the *first-appended* solution, which is not
+    ///     guaranteed to be the minimal one when more than one extremum falls within
+    ///     ``deflection`` of the minimum, so a large value can make them describe a different,
+    ///     non-minimal extremum than the one ``distance`` reports (#1544).
+    /// - Returns: Distance and closest points, or a zeroed, `isDone: false` result on failure.
+    public func distanceSS(to other: Shape, deflection: Double = 1e-7) -> DistanceSSResult {
         let r = OCCTBRepExtremaDistanceSS(handle, other.handle, deflection)
         return DistanceSSResult(
             distance: r.distance,

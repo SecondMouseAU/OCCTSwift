@@ -315,15 +315,20 @@ public func ancestor(of edge: Shape) -> Shape?
 
 ### `distanceSS(to:deflection:)`
 
-Computes the minimum distance between two sub-shapes using Gauss-point sampling.
+Computes the minimum distance between two sub-shapes.
 
 ```swift
-public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceSSResult
+public func distanceSS(to other: Shape, deflection: Double = 1e-7) -> DistanceSSResult
 ```
 
 - **Parameters:**
   - `other`: the second shape.
-  - `deflection`: sampling deflection; smaller values give finer sampling at a performance cost; default `100.0`.
+  - `deflection`: maximum deviation of an extreme distance from the true minimum for it to be
+    folded into the solution set (`BRepExtrema_DistanceSS`'s `theDeflection`). A numeric-tie
+    tolerance, not a spatial search radius: raising it does not sample more finely, it widens how
+    many near-minimum extrema get reported as "solutions" alongside the true one, and
+    `.point1`/`.point2` are the *first-appended* solution, not guaranteed to be the minimal one.
+    Default `1e-7` (`Precision::Confusion()`), OCCT's own default (#1544).
 - **Returns:** A `DistanceSSResult` containing `.distance`, `.point1`, `.point2`, `.solutionCount`, and `.isDone`.
 - **OCCT:** `BRepExtrema_DistanceSS`.
 - **Example:**
