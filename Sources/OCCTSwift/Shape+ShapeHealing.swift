@@ -363,9 +363,17 @@ extension Shape {
     /// Downstream algorithms can skip regular edges for better performance.
     /// The angular tolerance controls what is considered "smooth."
     ///
-    /// - Parameter toleranceDegrees: Angular tolerance in degrees (default: 1e-10)
+    /// - Parameter toleranceDegrees: Angular tolerance in degrees. Defaults to
+    ///   `1.0e-10 * 180.0 / Double.pi` (~5.7295779513e-9), OCCT's own default for
+    ///   `BRepLib::EncodeRegularity`'s `TolAng` (`1.0e-10`) converted from radians to degrees —
+    ///   the bridge (`OCCTShapeEncodeRegularity`) converts this parameter back to radians before
+    ///   calling it. Before #1545 this defaulted to the bare literal `1e-10` *degrees*, which
+    ///   converts to ~1.745e-12 radians, about 172x (exactly 180/pi) stricter than OCCT's own
+    ///   default.
     /// - Returns: Shape with regularity encoded, or nil on failure
-    public func encodingRegularity(toleranceDegrees: Double = 1e-10) -> Shape? {
+    public func encodingRegularity(toleranceDegrees: Double = 1.0e-10 * 180.0 / Double.pi) -> Shape?
+    {
+
         guard let h = OCCTShapeEncodeRegularity(handle, toleranceDegrees) else { return nil }
         return Shape(handle: h)
     }
