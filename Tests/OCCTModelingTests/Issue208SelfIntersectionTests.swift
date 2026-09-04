@@ -119,4 +119,35 @@ struct Issue319HardBoundedSelfIntersection {
         }
         #expect(filleted.isSelfIntersecting(hardTimeout: 30) == false)
     }
+
+    // #1549: `Shape.deepCopy` failing used to fall back to `?? self`, silently running the check
+    // against `self` directly, exactly the shared `Geom_Surface`/`Geom_Curve` evaluation-cache
+    // race #1160 built this probe to avoid. A `.nullified` shape forces that failure: reading
+    // `BRepTools_Modifier::Perform` (`BRepTools_Modifier.cxx`, the class both `deepCopy` and
+    // `BRepTools_CopyModification` are built on) shows a null `TopoDS_Shape` is its only
+    // documented, non-cancellation failure path, `if (myShape.IsNull()) { throw
+    // Standard_NullObject(); }`, a catchable `Standard_Failure` the bridge's own `catch (...)`
+    // turns into `nil`; confirmed both by that read and by a standalone ground-truth probe
+    // against the real library.
+    //
+    // This does NOT distinguish the fixed code from the reverted `?? self` by return value alone:
+    // `BOPAlgo_ArgumentAnalyzer` (the self-intersection analyzer itself) also classifies a null
+    // shape as `BOPAlgo_BadType` via its own `TestTypes` pass, not a crash, so running the check
+    // against a nullified `self` answers `nil` too, same as the fix's immediate `nil`, independent
+    // of the bug. Reverting `guard let probe = ... else { return nil }` back to
+    // `let probe = ... ?? self` was confirmed, by hand, to leave this specific assertion passing:
+    // both readings are `nil`, for the reason above, not because the revert is safe. What the
+    // revert-and-restore *does* prove, and what is checked directly below, is that `deepCopy`
+    // itself genuinely fails on this input every time, which is the fact this test exists to pin;
+    // see the PR description for the fuller account of why no return-value-discriminating input
+    // could be found for this OCCT version/API pairing.
+    @Test("a shape whose deepCopy fails reports indeterminate, not a crash or a hang")
+    func deepCopyFailureIsIndeterminate() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nulled = try #require(box.nullified)
+        // Confirms the forcing precondition on every run: deepCopy(copyGeometry:true,
+        // copyMesh:false), the exact call this method makes, genuinely fails on this input.
+        #expect(Shape.deepCopy(nulled, copyGeometry: true, copyMesh: false) == nil)
+        #expect(nulled.isSelfIntersecting(hardTimeout: 5) == nil)
+    }
 }

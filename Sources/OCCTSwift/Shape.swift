@@ -2504,7 +2504,12 @@ public final class Shape: @unchecked Sendable {
     ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
     ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
     ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
-    ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis.
+    ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis. If
+    ///   `deepCopy` itself fails (rare on a valid shape; `BRepTools_Modifier` throws a catchable
+    ///   `Standard_Failure` for, e.g., a nullified shape, and `deepCopy` returns `nil` for that
+    ///   or any other construction failure), this returns `nil` rather than silently falling back
+    ///   to a `self`-based check, which would reintroduce the exact shared-cache race this method
+    ///   exists to avoid (#1549).
     ///
     /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
     ///   concurrently with unrelated OCCT calls on other threads was verified with a
@@ -2518,8 +2523,9 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-    ///   first (indeterminate, the background check may still be running) or if the analysis
-    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``. The inner call
+    ///   first (indeterminate, the background check may still be running), if the analysis
+    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
+    ///   geometry-independent probe itself could not be built (#1549). The inner call
     ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
     ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
     ///   entry point too.
@@ -2537,7 +2543,14 @@ public final class Shape: @unchecked Sendable {
         final class SelfIntersectResultBox: @unchecked Sendable {
             var rawResult: Int32 = -1
         }
-        let probe = Shape.deepCopy(self, copyGeometry: true, copyMesh: false) ?? self
+        // A `deepCopy` failure is rare on a valid shape, but falling back to `self` here would
+        // silently reintroduce the shared-`Geom_Surface`/`Geom_Curve`-evaluation-cache race this
+        // method exists to avoid (#1549): the whole point of the probe is that it is NOT `self`.
+        // `nil` is the existing "indeterminate" answer this method already gives for a check that
+        // could not run to completion, so a probe that could not even be built reads the same way.
+        guard let probe = Shape.deepCopy(self, copyGeometry: true, copyMesh: false) else {
+            return nil
+        }
         let box = SelfIntersectResultBox()
         // The `0` below is load-bearing beyond "the caller's deadline is the only bound", and a
         // test depends on it: passing 0 means no watchdog exists, so this call can never lose a
