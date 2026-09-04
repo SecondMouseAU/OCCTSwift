@@ -249,14 +249,19 @@ bool OCCTFaceGetPrincipalCurvatures(OCCTFaceRef face,
     *k1 = props.MinCurvature();
     *k2 = props.MaxCurvature();
 
-    gp_Dir dir1, dir2;
-    props.CurvatureDirections(dir1, dir2);
-    *d1x = dir1.X();
-    *d1y = dir1.Y();
-    *d1z = dir1.Z();
-    *d2x = dir2.X();
-    *d2y = dir2.Y();
-    *d2z = dir2.Z();
+    // GeomLProp_SLProps::CurvatureDirections(gp_Dir& MaxD, gp_Dir& MinD) takes the MAXIMUM
+    // direction first and the MINIMUM second (GeomLProp_SLProps.hxx). k1/d1 above are paired as
+    // the MINIMUM curvature, so minD (not maxD) is what belongs in d1 (#1437); the correct
+    // pairing already exists next door as OCCTSurfaceLocalCurvatureDirections in
+    // OCCTBridge_Surface_Surfaces.mm.
+    gp_Dir maxD, minD;
+    props.CurvatureDirections(maxD, minD);
+    *d1x = minD.X();
+    *d1y = minD.Y();
+    *d1z = minD.Z();
+    *d2x = maxD.X();
+    *d2y = maxD.Y();
+    *d2z = maxD.Z();
     return true;
   }
   catch (...)
@@ -1784,6 +1789,8 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
                                          bool   computeCG)
 {
   OCCTVinertGKResult result = {};
+  if (!occtShapeIsPresent(faceRef))
+    return result;
   try
   {
     const TopoDS_Shape& shape = *(const TopoDS_Shape*)faceRef;
