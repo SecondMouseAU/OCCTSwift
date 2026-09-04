@@ -695,7 +695,10 @@ public func setStorageFormat(_ format: String) -> Bool
 
 ### `documentCount`
 
-Number of documents currently open in the application session.
+Number of documents opened through this document's own (private, per-instance)
+application. Since #371 each `Document` owns a private `TDocStd_Application`
+rather than sharing one process-wide instance, so this no longer reflects a
+shared multi-document session, in practice 1 for a valid document, 0 for null.
 
 ```swift
 public var documentCount: Int32
