@@ -2030,12 +2030,12 @@ Convenience overload accepting a `Wire` directly.
 Mark smooth (G1-continuous) edges as "regular."
 
 ```swift
-public func encodingRegularity(toleranceDegrees: Double = 1e-10) -> Shape?
+public func encodingRegularity(toleranceDegrees: Double = 1.0e-10 * 180.0 / Double.pi) -> Shape?
 ```
 
 Downstream algorithms (e.g. offset, draft) can skip regular edges for better performance. The angular tolerance controls what counts as smooth.
 
-- **Parameters:** `toleranceDegrees`, angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular (default 1e-10, effectively exact smoothness).
+- **Parameters:** `toleranceDegrees`, angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular. Defaults to `1.0e-10 * 180.0 / Double.pi` (~5.7295779513e-9), OCCT's own `BRepLib::EncodeRegularity` default (`1.0e-10` **radians**) converted to degrees. Before #1545 this defaulted to the bare literal `1e-10` *degrees* (~1.745e-12 radians), about 172x stricter than OCCT's own default.
 - **Returns:** Shape with regularity encoded, or nil on failure.
 - **OCCT:** `BRepLib::EncodeRegularity` (via `OCCTShapeEncodeRegularity`).
 - **Example:**
