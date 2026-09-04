@@ -610,7 +610,7 @@ public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Dou
 - **OCCT:** `Geom_Surface::Bounds` via `OCCTSurfaceBounds`.
 - **Example:**
   ```swift
-  let s = Surface.cylinder(axis: .zero, direction: SIMD3(0,0,1), radius: 5)!
+  let s = Surface.cylinder(origin: .zero, axis: SIMD3(0,0,1), radius: 5)!
   let b = s.parameterBounds
   print(b.uMin, b.uMax)  // 0.0, 2π
   ```

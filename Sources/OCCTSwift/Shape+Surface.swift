@@ -9,7 +9,7 @@ extension Shape {
     /// Create a B-spline surface from a grid of control points.
     ///
     /// The surface interpolates approximately through the control point grid.
-    /// Control points are specified in row-major order (U varies fastest).
+    /// Control points are specified in U-major order (V varies fastest).
     ///
     /// - Parameters:
     ///   - poles: 2D array of control points [uIndex][vIndex]
