@@ -3482,12 +3482,17 @@ extension Shape {
 
     /// Check if two shapes are valid for a boolean operation.
     ///
-    /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
+    /// Operation: matches `BOPAlgo_Operation`'s real ordinals, not a convenient-looking sequence:
+    /// 0=common, 1=fuse, 2=cut, 3=cut21 (`other` minus `self`), 4=section, 5=unknown. The bridge
+    /// passes `operation` straight through an unconditional `static_cast<BOPAlgo_Operation>`, so an
+    /// out-of-range or mismatched value silently selects the wrong check rather than failing
+    /// (#1540). The default, 5 (unknown), is the generic pairwise check with no operation-specific
+    /// dimension-compatibility test.
     ///
     /// `isValidForBoolean(with:)` is the same check at these defaults (#1297: the two used to
     /// reach independent bridge implementations; `isValidForBoolean(with:)` now forwards here).
     public func isBooleanValidWith(
-        _ other: Shape, operation: Int32 = 0,
+        _ other: Shape, operation: Int32 = 5,
         testSmallEdges: Bool = true,
         testSelfInterference: Bool = true
     ) -> Bool {

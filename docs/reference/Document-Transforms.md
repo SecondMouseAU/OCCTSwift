@@ -1548,13 +1548,15 @@ Check if two shapes are valid for a specific boolean operation together.
 ```swift
 public func isBooleanValidWith(
     _ other: Shape,
-    operation: Int32 = 0,
+    operation: Int32 = 5,
     testSmallEdges: Bool = true,
     testSelfInterference: Bool = true
 ) -> Bool
 ```
 
-- **Parameters:** `other`, second operand; `operation`, `0`=unknown, `1`=common, `2`=fuse, `3`=cut, `4`=section.
+- **Parameters:** `other`, second operand; `operation`, `BOPAlgo_Operation`'s real ordinals:
+  `0`=common, `1`=fuse, `2`=cut, `3`=cut21 (`other` minus `self`), `4`=section, `5`=unknown (the
+  default: a generic pairwise check with no operation-specific dimension-compatibility test).
 - **OCCT:** `OCCTShapeBooleanCheckPair` → `BRepAlgoAPI_Check`.
 - **Note:** [`isValidForBoolean(with:)`](Shape-Healing.md#isvalidforbooleanwith) is the same check
   at these defaults (#1297).
