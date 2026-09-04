@@ -799,6 +799,18 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge, double px, doub
 #include <BRepExtrema_ShapeProximity.hxx>
 #include <BRepExtrema_OverlapTool.hxx>
 
+// #1550: proximityFaces' indices address the same enumeration face(at:) does.
+//
+// BRepExtrema_ShapeProximity::initSubShapes fills myShapeList1/myShapeList2 with a bare
+// TopExp_Explorer(shape, TopAbs_FACE) walk, one entry per FACE OCCURRENCE, not one per distinct
+// face. Shape.faces()/Shape.face(at:) read the deduplicated TopTools_IndexedMapOfShape
+// occtMapSubShapes builds instead (#541), so on a shape with a genuinely shared face occurrence
+// (e.g. a split/Boolean result whose two solids share the cut face) the raw
+// OverlapSubShapes1()/2() indices can, from the first shared occurrence onward, name a different
+// face than face(at:) does at that same index. GetSubShape1/GetSubShape2 hand back the actual
+// TopoDS_Shape each raw index resolved to; remapping that through the same deduplicated map
+// face(at:) reads is what makes proximityFaces' indices directly usable there, matching every
+// other index-returning entry point in this bridge.
 int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
                            OCCTShapeRef           shape2,
                            double                 tolerance,
@@ -821,6 +833,13 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
     if (!prox.IsDone())
       return 0;
 
+    // #1550: one map per shape, built once for the whole batch, both in the deduplicated
+    // enumeration face(at:) reads.
+    TopTools_IndexedMapOfShape faceMap1;
+    TopTools_IndexedMapOfShape faceMap2;
+    occtMapSubShapes(shape1->shape, TopAbs_FACE, faceMap1);
+    occtMapSubShapes(shape2->shape, TopAbs_FACE, faceMap2);
+
     // Get overlapping face indices
     const auto& overlaps1 = prox.OverlapSubShapes1();
     int32_t     count     = 0;
@@ -831,11 +850,21 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
     {
       int32_t                           face1Idx = (int32_t)it.Key();
       const TColStd_PackedMapOfInteger& face2Set = it.Value();
+      // #1550: raw indices into BRepExtrema_ShapeProximity's own occurrence-walk lists, remapped
+      // to the deduplicated enumeration before they leave the bridge. A miss (-1) would mean the
+      // two walks had diverged; skip rather than hand back an index naming the wrong face.
+      int32_t mapped1 = occtMappedIndexOf(faceMap1, prox.GetSubShape1(face1Idx));
+      if (mapped1 < 0)
+        continue;
       for (TColStd_PackedMapOfInteger::Iterator it2(face2Set); it2.More() && count < maxPairs;
            it2.Next())
       {
-        outPairs[count].face1Index = face1Idx;
-        outPairs[count].face2Index = (int32_t)it2.Key();
+        int32_t face2Idx = (int32_t)it2.Key();
+        int32_t mapped2  = occtMappedIndexOf(faceMap2, prox.GetSubShape2(face2Idx));
+        if (mapped2 < 0)
+          continue;
+        outPairs[count].face1Index = mapped1;
+        outPairs[count].face2Index = mapped2;
         count++;
       }
     }

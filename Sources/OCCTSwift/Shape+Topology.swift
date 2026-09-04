@@ -50,17 +50,36 @@ extension Shape {
     }
 
     /// A pair of face indices detected as near-miss (within tolerance).
+    ///
+    /// `face1Index` addresses `self`'s enumeration, the same one ``Shape/face(at:)`` reads;
+    /// `face2Index` addresses `other`'s. Both used to come straight from OCCT's own internal,
+    /// non-deduplicated occurrence walk, which could silently name a different face than
+    /// `face(at:)` for a shape with a genuinely shared face occurrence, the same gap #541 already
+    /// closed for every other index-returning entry point in this bridge (#1550).
     public struct FaceProximityPair: Sendable {
         public let face1Index: Int
         public let face2Index: Int
     }
 
     /// Detect face pairs between this shape and another that are within tolerance.
+    ///
+    /// The returned indices address the same enumeration ``Shape/face(at:)`` reads, so they can be
+    /// handed straight to it: `face(at: pair.face1Index)` on `self`, `other.face(at:
+    /// pair.face2Index)` on `other` (#1550, matching #541's convention).
+    ///
     /// - Parameters:
     ///   - other: The shape to compare against.
     ///   - tolerance: Maximum distance (model units) at which two faces count as proximate.
     ///   - deflection: Linear mesh deflection (mm) for the proximity triangulation. Default `0.1`.
     /// - Returns: The index pairs of faces closer than the tolerance, empty when none are.
+    ///
+    /// ```swift
+    /// let pairs = shape1.proximityFaces(with: shape2, tolerance: 0.5)
+    /// for pair in pairs {
+    ///     let f1 = shape1.face(at: pair.face1Index)
+    ///     let f2 = shape2.face(at: pair.face2Index)
+    /// }
+    /// ```
     public func proximityFaces(with other: Shape, tolerance: Double, deflection: Double = 0.1)
         -> [FaceProximityPair]
     {
