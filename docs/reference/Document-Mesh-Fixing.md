@@ -2129,7 +2129,9 @@ Get the full knot sequence with multiplicities expanded.
 public func bsplineKnotSequence() -> [Double]
 ```
 
-- **Returns:** Up to 1024 knot values in the flat (expanded) sequence.
+- **Returns:** Every knot value in the flat (expanded) sequence, sized from the curve's own pole
+  count and degree (`poleCount + 2*degree + 1`, an exact upper bound for both periodic and
+  non-periodic curves); never truncates, however many poles the curve has (#1541).
 - **OCCT:** `Geom_BSplineCurve::KnotSequence` (via `OCCTCurve3DBSplineGetKnotSequence`).
 
 ---

@@ -3791,12 +3791,20 @@ extension Curve3D {
     }
 
     /// Get the full knot sequence (with multiplicities expanded).
+    ///
+    /// Sized from the curve's own pole count and degree: `poleCount + 2*degree + 1` is an exact
+    /// upper bound on the flat sequence's length for both periodic and non-periodic curves (per
+    /// `Geom_BSplineCurve::KnotSequence`'s own documented length formula), so this never
+    /// truncates regardless of how many poles the curve has (#1541, a fixed 1024-element buffer
+    /// used to overflow past ~1020 poles).
     public func bsplineKnotSequence() -> [Double] {
-        let maxSize = 1024
-        var seq = [Double](repeating: 0, count: maxSize)
-        var count: Int32 = 0
-        OCCTCurve3DBSplineGetKnotSequence(handle, &seq, &count)
-        return Array(seq.prefix(Int(count)))
+        let nPoles = Int(OCCTCurve3DBSplinePoleCount(handle))
+        guard nPoles > 0 else { return [] }
+        let degree = Int(OCCTCurve3DBSplineDegree(handle))
+        let capacity = nPoles + 2 * degree + 1
+        var seq = [Double](repeating: 0, count: capacity)
+        let count = Int(OCCTCurve3DBSplineGetKnotSequence(handle, &seq, Int32(capacity)))
+        return Array(seq.prefix(count))
     }
 
     /// Get all weights (one per pole).

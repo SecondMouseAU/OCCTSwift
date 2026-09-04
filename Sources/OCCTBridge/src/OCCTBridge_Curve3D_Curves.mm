@@ -4214,36 +4214,33 @@ bool OCCTCurve3DBSplineSetKnot(OCCTCurve3DRef curve, int32_t index, double knot)
   }
 }
 
-void OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef curve, double* knotSeq, int32_t* count)
+int32_t OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef curve, double* knotSeq, int32_t maxCount)
 {
-  if (!curve || curve->curve.IsNull())
-  {
-    *count = 0;
-    return;
-  }
+  if (!curve || curve->curve.IsNull() || maxCount <= 0)
+    return 0;
   try
   {
     Handle(Geom_BSplineCurve) bsc = Handle(Geom_BSplineCurve)::DownCast(curve->curve);
     if (bsc.IsNull())
-    {
-      *count = 0;
-      return;
-    }
+      return 0;
     // #1456: NbPoles()+Degree()+1 is only the flat-knot-sequence length for a non-periodic
     // curve; a periodic curve's real length (BSplCLib::KnotSequenceLength) is larger, and the
     // deprecated array-out overload silently returns fewer knots than actually exist into an
     // under-sized buffer. The non-deprecated accessor below returns the correctly-sized
     // sequence directly, for both periodic and non-periodic curves.
     const TColStd_Array1OfReal& seq = bsc->KnotSequence();
-    *count                          = seq.Length();
-    for (int i = 1; i <= seq.Length(); i++)
+    // #1541: seq.Length() can exceed the caller's buffer (e.g. curves with >1020 poles); clamp
+    // the write to maxCount, matching OCCTCurve3DBSplineToBeziers/OCCTSplitCurve3dContinuity.
+    int32_t written = std::min((int32_t)seq.Length(), maxCount);
+    for (int32_t i = 1; i <= written; i++)
     {
       knotSeq[i - 1] = seq(i);
     }
+    return written;
   }
   catch (...)
   {
-    *count = 0;
+    return 0;
   }
 }
 
