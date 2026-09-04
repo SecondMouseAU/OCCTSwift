@@ -744,11 +744,17 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    STEPControl_Reader reader;
-    reader.SetSystemLengthUnit(unitInMeters);
+    STEPControl_Reader    reader;
     IFSelect_ReturnStatus status = reader.ReadFile(path);
     if (status != IFSelect_RetDone)
       return nullptr;
+    // SetSystemLengthUnit() is a guarded no-op until ReadFile() has populated StepModel() (#1548),
+    // so it must run after ReadFile() and before the transfer below that consumes it. Its own
+    // scale is millimeter-based (1.0 == mm, 1000.0 == m, 25.4 == inch, matching
+    // UnitsMethods_LengthUnit's table), not the meter-based unitInMeters this bridge fn takes, so
+    // convert before handing it off; verified empirically against a known-dimension STEP file
+    // (Scripts/repro/1548-loadstep-unit-conversion/).
+    reader.SetSystemLengthUnit(unitInMeters * 1000.0);
 
     indicator                   = new BridgeProgressIndicator(ctx);
     Message_ProgressRange range = indicator->Start();
@@ -1370,11 +1376,13 @@ OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters)
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader reader;
-    reader.SetSystemLengthUnit(unitInMeters);
+    STEPControl_Reader    reader;
     IFSelect_ReturnStatus status = reader.ReadFile(path);
     if (status != IFSelect_RetDone)
       return nullptr;
+    // See OCCTImportSTEPWithUnitProgress above: SetSystemLengthUnit() must follow ReadFile()
+    // (#1548), and its own scale is millimeter-based, so unitInMeters is converted before use.
+    reader.SetSystemLengthUnit(unitInMeters * 1000.0);
     reader.TransferRoots();
     TopoDS_Shape shape = reader.OneShape();
     if (shape.IsNull())

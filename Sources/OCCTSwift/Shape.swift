@@ -1411,13 +1411,26 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Import a STEP file with a specific system length unit.
+    /// Import a STEP file, scaling the imported geometry into a specific target length unit.
+    ///
+    /// `unitInMeters` names the *target* unit: the length, in meters, of one unit in the
+    /// returned shape's coordinate system. OCCT reads the length unit the STEP file itself
+    /// declares in its header and scales the transferred geometry so the returned shape's
+    /// numbers come out in `unitInMeters`, whatever unit the file was authored in.
+    ///
+    /// ```swift
+    /// // A file authored in millimeters, imported unscaled (target unit = 1 mm).
+    /// let mmShape = try Shape.loadSTEP(from: url, unitInMeters: 0.001)
+    /// // The same file, imported scaled down into meters instead (target unit = 1 m).
+    /// let meterShape = try Shape.loadSTEP(from: url, unitInMeters: 1.0)
+    /// ```
     ///
     /// - Parameters:
     ///   - url: URL to the STEP file
-    ///   - unitInMeters: System length unit in meters (e.g. 0.001 for mm, 0.0254 for inch)
+    ///   - unitInMeters: Length, in meters, of one unit in the returned shape's coordinate
+    ///     system (e.g. 0.001 for millimeters, 1.0 for meters, 0.0254 for inches)
     ///   - progress: Optional progress + cancellation channel
-    /// - Returns: The imported shape in the specified unit system
+    /// - Returns: The imported shape, scaled into the specified unit system
     /// - Throws: ImportError if import fails
     public static func loadSTEP(
         from url: URL, unitInMeters: Double, progress: ImportProgress? = nil
