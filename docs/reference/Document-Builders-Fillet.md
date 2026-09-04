@@ -741,14 +741,14 @@ public func bsplineReverse() -> Bool
 
 ---
 
-### `Curve3D.bsplineMovePointAndTangent(u:point:tangent:tolerance:poleRange:)`
+### `Curve3D.bsplineMovePointAndTangent(u:point:tangent:tolerance:startingCondition:endingCondition:)`
 
-Move the point and tangent at parameter `u` on a 3D BSpline curve, adjusting poles within `poleRange`.
+Move the point and tangent at parameter `u` on a 3D BSpline curve.
 
 ```swift
 @discardableResult
 public func bsplineMovePointAndTangent(u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
-                                       tolerance: Double, poleRange: ClosedRange<Int>) -> Bool
+                                       tolerance: Double, startingCondition: Int, endingCondition: Int) -> Bool
 ```
 
 - **Parameters:**
@@ -756,7 +756,10 @@ public func bsplineMovePointAndTangent(u: Double, point: SIMD3<Double>, tangent:
   - `point`: desired 3D position at `u`.
   - `tangent`: desired tangent direction at `u`.
   - `tolerance`: geometric tolerance.
-  - `poleRange`: 1-based range of poles allowed to move.
+  - `startingCondition`/`endingCondition`: OCCT's independent continuity codes, not a pole-index
+    range: `-1` means that endpoint is free to move, `0` means the point cannot move, `1` means
+    the point and its tangent cannot move, and so on. The two codes are unrelated and need not be
+    ordered.
 - **OCCT:** `Geom_BSplineCurve::MovePointAndTangent` (via `OCCTCurve3DBSplineMovePointAndTangent`).
 
 ---
@@ -839,17 +842,19 @@ public func bsplineReverse() -> Bool
 
 ---
 
-### `Curve2D.bsplineMovePointAndTangent(u:point:tangent:tolerance:poleRange:)`
+### `Curve2D.bsplineMovePointAndTangent(u:point:tangent:tolerance:startingCondition:endingCondition:)`
 
 Move the point and tangent at parameter `u` on a 2D BSpline curve.
 
 ```swift
 @discardableResult
 public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
-                                       tolerance: Double, poleRange: ClosedRange<Int>) -> Bool
+                                       tolerance: Double, startingCondition: Int, endingCondition: Int) -> Bool
 ```
 
 - **Parameters:** `point` and `tangent` are 2D here (unlike the `Curve3D` variant).
+  `startingCondition`/`endingCondition` are OCCT's independent continuity codes, not a pole-index
+  range: see the `Curve3D` entry above for the code meanings.
 - **OCCT:** `Geom2d_BSplineCurve::MovePointAndTangent` (via `OCCTCurve2DBSplineMovePointAndTangent`).
 
 ---

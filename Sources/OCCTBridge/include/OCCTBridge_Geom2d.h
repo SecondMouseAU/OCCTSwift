@@ -619,9 +619,15 @@ OCCTCurve2DRef _Nullable OCCTCurve2DMakeLineParallel(double px,
 /// Check if a 2D curve's control points are collinear (i.e., nearly linear).
 /// @param curve2D The 2D curve to check
 /// @param tolerance Maximum deviation to consider as linear
+/// @param isLinear Output: whether the curve is linear within tolerance
 /// @param deviation Output: actual maximum deviation from line
-/// @return true if the curve is linear within tolerance
-bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* deviation);
+/// @return true if curve2D is a Geom2d_BSplineCurve and the check was performed (isLinear and
+///         deviation are then meaningful); false if curve2D is not a BSpline curve, in which
+///         case isLinear and deviation are left untouched
+bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D,
+                         double         tolerance,
+                         bool*          isLinear,
+                         double*        deviation);
 
 /// Convert a nearly-linear 2D curve to a Geom2d_Line.
 /// @param curve2D The 2D curve to convert
