@@ -1608,7 +1608,12 @@ public static func loadSTEPRoot(fromPath path: String, rootIndex: Int) throws ->
 
 ### `Shape.loadSTEP(from:unitInMeters:progress:)`
 
-Import a STEP file with a specific system length unit.
+Import a STEP file, scaling the imported geometry into a specific target length unit.
+
+`unitInMeters` names the *target* unit: the length, in meters, of one unit in the returned
+shape's coordinate system. OCCT reads the length unit the STEP file itself declares in its
+header and scales the transferred geometry so the returned shape's numbers come out in
+`unitInMeters`, whatever unit the file was authored in.
 
 ```swift
 public static func loadSTEP(from url: URL, unitInMeters: Double, progress: ImportProgress? = nil) throws -> Shape
@@ -1616,11 +1621,19 @@ public static func loadSTEP(from url: URL, unitInMeters: Double, progress: Impor
 
 - **Parameters:**
   - `url`: URL to the STEP file.
-  - `unitInMeters`: system length unit in metres (e.g. `0.001` for mm, `0.0254` for inch).
+  - `unitInMeters`: length, in meters, of one unit in the returned shape's coordinate system
+    (e.g. `0.001` for millimeters, `1.0` for meters, `0.0254` for inches).
   - `progress`: optional progress/cancellation channel.
-- **Returns:** The imported shape in the specified unit system.
+- **Returns:** The imported shape, scaled into the specified unit system.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader::SetSystemLengthUnit` (via `OCCTImportSTEPWithUnitProgress`).
+- **Example:**
+  ```swift
+  // A file authored in millimeters, imported unscaled (target unit = 1 mm).
+  let mmShape = try Shape.loadSTEP(from: url, unitInMeters: 0.001)
+  // The same file, imported scaled down into meters instead (target unit = 1 m).
+  let meterShape = try Shape.loadSTEP(from: url, unitInMeters: 1.0)
+  ```
 
 ---
 
