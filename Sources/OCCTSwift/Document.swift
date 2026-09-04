@@ -658,10 +658,11 @@ extension Document {
         OCCTDocumentSetStorageFormat(handle, format)
     }
 
-    /// Number of documents opened through this document's own (private, per-instance)
-    /// application. Since #371 each `Document` owns a private `TDocStd_Application`
-    /// rather than sharing one process-wide instance, so this no longer reflects a
-    /// shared multi-document session, in practice 1 for a valid document, 0 for null.
+    /// Number of documents opened through this document's own (private, per-instance) application.
+    ///
+    /// Since #371 each `Document` owns a private `TDocStd_Application` rather than sharing one
+    /// process-wide instance, so this no longer reflects a shared multi-document session, in
+    /// practice 1 for a valid document, 0 for null.
     public var documentCount: Int32 {
         OCCTDocumentNbDocuments(handle)
     }
