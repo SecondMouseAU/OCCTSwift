@@ -356,6 +356,9 @@ void OCCTPolyPolygonOnTriRelease(OCCTPolyPolygonOnTriRef _Nonnull ref);
 /// smoothAngle: angle threshold for normal smoothing (radians).
 /// mergeTolerance: distance threshold for merging nodes.
 /// outVertices/outNormals: interleaved x,y,z float arrays; outIndices: triangle indices.
+/// maxVertices/maxIndices are hard capacities, not hints: if the merged mesh needs more room
+/// than a requested (non-null) buffer provides, the whole call fails (returns 0, *outTriangleCount
+/// left untouched) rather than silently writing a truncated prefix (#1566).
 int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
                        double smoothAngle,
                        double mergeTolerance,
