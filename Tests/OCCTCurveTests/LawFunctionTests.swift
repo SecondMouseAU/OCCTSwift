@@ -86,4 +86,26 @@ struct LawFunctionTests {
         #expect(abs(b.upperBound - 1) < 1e-10)
         #expect(abs(law.value(at: 0.5) - 5) < 1e-6)
     }
+
+    // MARK: - #1586: multiplicities.count must equal knots.count
+
+    @Test("BSpline law rejects a shorter multiplicities array")
+    func bsplineRejectsShortMultiplicities() {
+        // Same valid poles/knots/degree as `bsplineLaw` above, but only one multiplicity for
+        // two knots. The bridge (OCCTLawCreateBSpline) loops `i in 0..<knotCount` reading
+        // `multiplicities[i]`, so this must be rejected before reaching it, not merely produce
+        // a wrong answer.
+        let law = LawFunction.bspline(
+            poles: [1.0, 3.0], knots: [0.0, 1.0],
+            multiplicities: [2], degree: 1)
+        #expect(law == nil)
+    }
+
+    @Test("BSpline law rejects a longer multiplicities array")
+    func bsplineRejectsLongMultiplicities() {
+        let law = LawFunction.bspline(
+            poles: [1.0, 3.0], knots: [0.0, 1.0],
+            multiplicities: [2, 2, 2], degree: 1)
+        #expect(law == nil)
+    }
 }
