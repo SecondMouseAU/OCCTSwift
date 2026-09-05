@@ -314,40 +314,45 @@ public static func fromHexRGBA(_ hex: String) -> Color?
 
 ---
 
-### `toHex(sRGB:)`
+### `toHex(includeHashPrefix:)`
 
 Converts this color to a 6-digit hex string.
 
 ```swift
-public func toHex(sRGB: Bool = false) -> String?
+public func toHex(includeHashPrefix: Bool = true) -> String?
 ```
 
-- **Parameters:** `sRGB`, when `true`, converts to sRGB before formatting; when `false` (default), formats linear RGB directly.
-- **Returns:** Hex string (e.g. `"FF0000"`), or `nil` on error.
+- **Parameters:** `includeHashPrefix`, when `true` (default), prefixes the result with `#`; when
+  `false`, omits it. This is the only thing the parameter controls: OCCT's
+  `Quantity_Color::ColorToHex` always gamma-encodes this color's linear RGB to sRGB before
+  formatting, in every version this project pins — there is no linear-output mode to opt into.
+- **Returns:** Hex string (e.g. `"#FF0000"`), or `nil` on error.
 - **OCCT:** `Quantity_Color::ColorToHex`.
 - **Example:**
   ```swift
-  let hex = Color.red.toHex()      // "FF0000"
-  let hexS = Color.red.toHex(sRGB: true)
+  let hex = Color.red.toHex()                              // "#FF0000"
+  let noPrefix = Color.red.toHex(includeHashPrefix: false)  // "FF0000"
   ```
 
 ---
 
-### `toHexRGBA(sRGB:)`
+### `toHexRGBA(includeHashPrefix:)`
 
 Converts this color to an 8-digit RGBA hex string.
 
 ```swift
-public func toHexRGBA(sRGB: Bool = false) -> String?
+public func toHexRGBA(includeHashPrefix: Bool = true) -> String?
 ```
 
-- **Parameters:** `sRGB`, when `true`, converts to sRGB before formatting.
+- **Parameters:** `includeHashPrefix`, when `true` (default), prefixes the result with `#`; when
+  `false`, omits it. As with `toHex(includeHashPrefix:)`, this is the only thing the parameter
+  controls; `Quantity_ColorRGBA::ColorToHex` always gamma-encodes to sRGB before formatting.
 - **Returns:** 8-digit hex string (RRGGBBAA), or `nil` on error.
 - **OCCT:** `Quantity_ColorRGBA::ColorToHex`.
 - **Example:**
   ```swift
   let semi = Color(red: 1, green: 0, blue: 0, alpha: 0.5)
-  let hex = semi.toHexRGBA()  // "FF00007F" or similar
+  let hex = semi.toHexRGBA()  // "#FF00007F" or similar
   ```
 
 ---

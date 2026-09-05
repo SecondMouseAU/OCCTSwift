@@ -1108,12 +1108,12 @@ bool OCCTColorFromHex(const char* _Nonnull hex,
   }
 }
 
-const char* _Nullable OCCTColorToHex(double r, double g, double b, bool useSRGB)
+const char* _Nullable OCCTColorToHex(double r, double g, double b, bool includeHashPrefix)
 {
   try
   {
     Quantity_Color          c(r, g, b, Quantity_TOC_RGB);
-    TCollection_AsciiString hex    = Quantity_Color::ColorToHex(c, !useSRGB);
+    TCollection_AsciiString hex    = Quantity_Color::ColorToHex(c, includeHashPrefix);
     char*                   result = (char*)malloc(hex.Length() + 1);
     if (!result)
       return nullptr;
@@ -1353,13 +1353,17 @@ bool OCCTColorRGBAFromHex(const char* _Nonnull hex,
   }
 }
 
-const char* _Nullable OCCTColorRGBAToHex(double r, double g, double b, double a, bool useSRGB)
+const char* _Nullable OCCTColorRGBAToHex(double r,
+                                         double g,
+                                         double b,
+                                         double a,
+                                         bool   includeHashPrefix)
 {
   try
   {
     Quantity_Color          rgb(r, g, b, Quantity_TOC_RGB);
     Quantity_ColorRGBA      c(rgb, float(a));
-    TCollection_AsciiString hex    = Quantity_ColorRGBA::ColorToHex(c, !useSRGB);
+    TCollection_AsciiString hex    = Quantity_ColorRGBA::ColorToHex(c, includeHashPrefix);
     char*                   result = (char*)malloc(hex.Length() + 1);
     if (!result)
       return nullptr;

@@ -120,17 +120,37 @@ public struct Color: Sendable, Equatable, Hashable {
         return Color(red: r, green: g, blue: b, alpha: a)
     }
 
-    /// Convert to hex string (linear RGB).
-    public func toHex(sRGB: Bool = false) -> String? {
-        guard let cStr = OCCTColorToHex(red, green, blue, sRGB) else { return nil }
+    /// Convert to a 6-digit hex string (e.g. `"#FF0000"`).
+    ///
+    /// OCCT's `Quantity_Color::ColorToHex` always gamma-encodes this color's linear RGB to sRGB
+    /// before formatting; there is no linear-output mode. `includeHashPrefix` controls only
+    /// whether the result is prefixed with `#`.
+    ///
+    /// ```swift
+    /// let hex = Color.red.toHex()                          // "#FF0000"
+    /// let noPrefix = Color.red.toHex(includeHashPrefix: false)  // "FF0000"
+    /// ```
+    public func toHex(includeHashPrefix: Bool = true) -> String? {
+        guard let cStr = OCCTColorToHex(red, green, blue, includeHashPrefix) else { return nil }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(UnsafeMutablePointer(mutating: cStr))
         return result
     }
 
-    /// Convert to hex string with alpha.
-    public func toHexRGBA(sRGB: Bool = false) -> String? {
-        guard let cStr = OCCTColorRGBAToHex(red, green, blue, alpha, sRGB) else { return nil }
+    /// Convert to an 8-digit RGBA hex string (e.g. `"#FF00007F"`).
+    ///
+    /// OCCT's `Quantity_ColorRGBA::ColorToHex` always gamma-encodes this color's linear RGB to
+    /// sRGB before formatting; there is no linear-output mode. `includeHashPrefix` controls only
+    /// whether the result is prefixed with `#`.
+    ///
+    /// ```swift
+    /// let semi = Color(red: 1, green: 0, blue: 0, alpha: 0.5)
+    /// let hex = semi.toHexRGBA()  // "#FF00007F"
+    /// ```
+    public func toHexRGBA(includeHashPrefix: Bool = true) -> String? {
+        guard let cStr = OCCTColorRGBAToHex(red, green, blue, alpha, includeHashPrefix) else {
+            return nil
+        }
         let result = String(cString: cStr)
         OCCTGeomToolsFreeString(UnsafeMutablePointer(mutating: cStr))
         return result
