@@ -322,9 +322,11 @@ bool OCCTColorFromHex(const char* _Nonnull hex,
                       double* _Nonnull outG,
                       double* _Nonnull outB);
 
-/// Convert linear RGB color to hex string. Caller must free returned string with
-/// OCCTGeomToolsFreeString.
-const char* _Nullable OCCTColorToHex(double r, double g, double b, bool useSRGB);
+/// Convert an RGB color (given in linear RGB) to a hex string, gamma-encoding to sRGB before
+/// formatting (OCCT's Quantity_Color::ColorToHex always does this; there is no linear-output
+/// mode). includeHashPrefix controls only whether the result is prefixed with '#'. Caller must
+/// free returned string with OCCTGeomToolsFreeString.
+const char* _Nullable OCCTColorToHex(double r, double g, double b, bool includeHashPrefix);
 
 /// Euclidean distance between two colors in linear RGB space
 double OCCTColorDistance(double r1, double g1, double b1, double r2, double g2, double b2);
@@ -392,8 +394,15 @@ bool OCCTColorRGBAFromHex(const char* _Nonnull hex,
                           double* _Nonnull outB,
                           double* _Nonnull outA);
 
-/// Convert RGBA color to hex string (with alpha). Caller must free with OCCTGeomToolsFreeString.
-const char* _Nullable OCCTColorRGBAToHex(double r, double g, double b, double a, bool useSRGB);
+/// Convert an RGBA color (given in linear RGB) to a hex string, gamma-encoding to sRGB before
+/// formatting (OCCT's Quantity_ColorRGBA::ColorToHex always does this; there is no linear-output
+/// mode). includeHashPrefix controls only whether the result is prefixed with '#'. Caller must
+/// free with OCCTGeomToolsFreeString.
+const char* _Nullable OCCTColorRGBAToHex(double r,
+                                         double g,
+                                         double b,
+                                         double a,
+                                         bool   includeHashPrefix);
 
 // --- Graphic3d_MaterialAspect ---
 

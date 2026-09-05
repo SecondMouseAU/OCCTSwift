@@ -144,10 +144,24 @@ struct ColorOCCTTests {
     }
 
     @Test func toHex() {
+        // Pure red is a fixed point of the linear->sRGB gamma curve (0 and 1 map to themselves),
+        // so the expected string is exact rather than approximate.
         let c = Color(red: 1.0, green: 0.0, blue: 0.0)
-        if let hex = c.toHex() {
-            #expect(!hex.isEmpty)
-        }
+        #expect(c.toHex() == "#FF0000")
+    }
+
+    // Regression for #1571: `includeHashPrefix` (formerly the backwards, misnamed `sRGB`
+    // parameter) controls ONLY the '#' prefix, matching OCCT's own `theToPrefixHash`. There is no
+    // linear-RGB-output mode: `Quantity_Color::ColorToHex` always gamma-encodes to sRGB.
+    @Test func toHexIncludeHashPrefixDefaultTrue() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0)
+        #expect(c.toHex() == "#FF0000")
+        #expect(c.toHex(includeHashPrefix: true) == "#FF0000")
+    }
+
+    @Test func toHexIncludeHashPrefixFalseOmitsPrefix() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0)
+        #expect(c.toHex(includeHashPrefix: false) == "FF0000")
     }
 
     @Test func fromHexRGBA() {
@@ -162,6 +176,20 @@ struct ColorOCCTTests {
         if let hex = c.toHexRGBA() {
             #expect(!hex.isEmpty)
         }
+    }
+
+    // Regression for #1571: same shape as `toHex`, for the RGBA overload. Alpha is passed through
+    // unconverted by OCCT (only R/G/B are gamma-encoded), and pure red/full alpha are again fixed
+    // points, so the expected string is exact.
+    @Test func toHexRGBAIncludeHashPrefixDefaultTrue() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        #expect(c.toHexRGBA() == "#FF0000FF")
+        #expect(c.toHexRGBA(includeHashPrefix: true) == "#FF0000FF")
+    }
+
+    @Test func toHexRGBAIncludeHashPrefixFalseOmitsPrefix() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        #expect(c.toHexRGBA(includeHashPrefix: false) == "FF0000FF")
     }
 
     @Test func distance() {
