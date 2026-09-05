@@ -1799,6 +1799,9 @@ OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreate(void);
 /// Create a style with surface color
 OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithSurfColor(double r, double g, double b, float alpha);
 
+/// Create a style with curve color
+OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithCurvColor(double r, double g, double b);
+
 /// Create a style with surface and curve colors
 OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateFull(double surfR,
                                             double surfG,

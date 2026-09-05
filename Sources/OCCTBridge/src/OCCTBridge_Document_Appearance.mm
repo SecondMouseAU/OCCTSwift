@@ -1549,6 +1549,25 @@ OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithSurfColor(double r, double g, double 
   return result;
 }
 
+OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithCurvColor(double r, double g, double b)
+{
+  XCAFPrs_Style style;
+  style.SetColorCurv(Quantity_Color(r, g, b, Quantity_TOC_sRGB));
+  OCCTXCAFPrsStyle result;
+  result.surfR        = 0;
+  result.surfG        = 0;
+  result.surfB        = 0;
+  result.surfAlpha    = 1.0f;
+  result.hasSurfColor = false;
+  result.curvR        = r;
+  result.curvG        = g;
+  result.curvB        = b;
+  result.hasCurvColor = true;
+  result.isVisible    = style.IsVisible();
+  result.isEmpty      = style.IsEmpty();
+  return result;
+}
+
 bool OCCTXCAFPrsStyleIsEqual(const OCCTXCAFPrsStyle* s1, const OCCTXCAFPrsStyle* s2)
 {
   try
