@@ -95,7 +95,7 @@ public enum BendDirection: Sendable, Equatable {
 
 - `.concave`: the metal folds toward itself (interior dihedral < 180°), as in an L-bracket.
 - `.convex`: the metal folds back on the opposite side (interior dihedral > 180°, reflex), as in the middle bend of a Z-section.
-- `.auto`: direction inferred from flange-body positions: concave when flange B's centroid sits on flange A's `+normal` side.
+- `.auto`: if the owning `Bend.angle` is non-nil and non-zero, its sign decides directly (positive = concave, negative = convex), overriding geometric inference. Otherwise direction is inferred from flange-body positions: concave when flange B's centroid sits on flange A's `+normal` side.
 
 ---
 
@@ -121,10 +121,10 @@ public struct Bend: Sendable {
 }
 ```
 
-- `angle`: bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex.
+- `angle`: bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex. When `direction` is `.auto` (the default), a non-nil, non-zero `angle` decides concave vs. convex by this sign, overriding geometric inference; an explicit `direction` always wins over `angle`.
 - `insideRadius`: concave (inner) bend radius. `0` for a sharp inside corner.
-- `outsideRadius`: convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
-- `materialThicknessAtBend`: material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
+- `outsideRadius`: convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
+- `materialThicknessAtBend`: material thickness through the bend zone; documented default is the builder's global `thickness`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
 - `direction`: explicit override; defaults to `.auto`.
 
 ---
@@ -143,11 +143,11 @@ Concave (inner) bend radius. `0` for a sharp inside corner.
 
 ### `Bend.outsideRadius`
 
-Convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
+Convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`. **Not yet read by `Builder.build()`**: neither the concave fillet path (which always uses `insideRadius` alone) nor the convex bend-material path (whose prism radius is always the builder's `thickness`) consult this field. Setting it has no effect on the built shape today (#1565).
 
 ### `Bend.materialThicknessAtBend`
 
-Material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
+Material thickness through the bend zone; documented default is the builder's global `thickness`. **Not yet read by `Builder.build()`** — same gap as `outsideRadius` above. Set to a fraction for etched/thinned bend lines is the intended, not-yet-implemented, use (#1565).
 
 ---
 
