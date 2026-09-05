@@ -264,6 +264,15 @@ public final class Drawing: @unchecked Sendable {
         viewDirection: SIMD3<Double>,
         traceLength: Double = 60
     ) -> DrawingAnnotation? {
+        // A zero-length input must be rejected BEFORE normalizing: #1581,
+        // simd_normalize(.zero) produces a NaN vector, and IEEE-754 compares
+        // NaN as neither `< 1e-9` nor `> 1e-9`, so the degenerate guard below
+        // (and the fallback-axis checks further down) would silently never
+        // fire for it, returning a non-nil annotation built from arbitrary
+        // hardcoded axes instead of the documented nil.
+        guard simd_length(cuttingPlaneNormal) > 1e-9, simd_length(viewDirection) > 1e-9 else {
+            return nil
+        }
         // Trace direction in 3D = cross(cuttingPlaneNormal, viewDirection). If
         // the cutting plane is parallel to the view plane, the trace is a
         // single point, return nil.
