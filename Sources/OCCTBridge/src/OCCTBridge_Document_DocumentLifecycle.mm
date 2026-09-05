@@ -4054,6 +4054,12 @@ void OCCTDriverTableInitStandard()
   }
 }
 
+// TPrsStd_DriverTable::Get()'s own header doc: "Returns the static table. If
+// it does not exist, creates it and fills it with standard drivers." So
+// Get() can never return a null handle, this always returns true, and merely
+// calling it lazily creates/populates the process-wide table as a side
+// effect (#1587). There is no other OCCT query that can observe the table's
+// existence without also creating it.
 bool OCCTDriverTableExists()
 {
   try
