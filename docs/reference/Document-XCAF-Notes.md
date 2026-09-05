@@ -420,47 +420,51 @@ Classification of each node in the assembly graph.
 
 ```swift
 public enum NodeType: Int32 {
-    case node       = 0
-    case occurrence = 1
-    case part       = 2
-    case instance   = 3
-    case subshape   = 4
-    case free       = 5
+    case undefined     = 0
+    case assemblyRoot  = 1
+    case subassembly   = 2
+    case occurrence    = 3
+    case part          = 4
+    case subshape      = 5
 }
 ```
 
 - **OCCT:** `XCAFDoc_AssemblyGraph::NodeType`
 
-> **The case raw values below do not match `XCAFDoc_AssemblyGraph::NodeType`'s own raw values in the
-> pinned OCCT 8.0.1 header.** `nodeType(at:)` decodes `XCAFDoc_AssemblyGraph::GetNodeType`'s C++ enum
-> value directly via `NodeType(rawValue:)`, with no remapping on either side of the bridge
-> (`OCCTAssemblyGraphGetNodeType` in `OCCTBridge_Document.mm` casts the C++ value straight to
-> `int32_t`). But `XCAFDoc_AssemblyGraph.hxx` defines
-> `NodeType_UNDEFINED=0, AssemblyRoot=1, Subassembly=2, Occurrence=3, Part=4, Subshape=5`, not this
-> Swift enum's `node=0, occurrence=1, part=2, instance=3, subshape=4, free=5`. A node OCCT reports as
-> `Occurrence` (raw `3`) decodes here as `.instance`, not `.occurrence`. Verified by reading the
-> pinned header directly, not assumed from the case names; each case below is described by what its
-> raw value actually decodes to, not by its Swift name.
+Raw values match `XCAFDoc_AssemblyGraph::NodeType`'s own raw values in the pinned OCCT 8.0.1 header
+exactly (`NodeType_UNDEFINED=0, NodeType_AssemblyRoot=1, NodeType_Subassembly=2,
+NodeType_Occurrence=3, NodeType_Part=4, NodeType_Subshape=5`). `nodeType(at:)` decodes
+`XCAFDoc_AssemblyGraph::GetNodeType`'s C++ enum value directly via `NodeType(rawValue:)`, with no
+remapping on either side of the bridge (`OCCTAssemblyGraphGetNodeType` in `OCCTBridge_Document.mm`
+casts the C++ value straight to `int32_t`), and the case names now match OCCT's own semantics
+one-for-one, not just the raw values. **Prior to #1568 this enum's raw values were scrambled**
+(`node=0, occurrence=1, part=2, instance=3, subshape=4, free=5`), so a caller testing `.part` was
+actually testing OCCT's `NodeType_Subassembly`; that mapping was verifiably wrong and is not carried
+forward.
+
+#### `AssemblyGraph.NodeType.undefined`
+
+Raw value `0`; OCCT's `NodeType_UNDEFINED` (undefined node type).
+
+#### `AssemblyGraph.NodeType.assemblyRoot`
+
+Raw value `1`; OCCT's `NodeType_AssemblyRoot` (a root node).
+
+#### `AssemblyGraph.NodeType.subassembly`
+
+Raw value `2`; OCCT's `NodeType_Subassembly` (an intermediate node).
 
 #### `AssemblyGraph.NodeType.occurrence`
 
-Raw value `1`; decodes OCCT's `NodeType_AssemblyRoot` (a root node), not an occurrence.
+Raw value `3`; OCCT's `NodeType_Occurrence` (an assembly/part occurrence node).
 
 #### `AssemblyGraph.NodeType.part`
 
-Raw value `2`; decodes OCCT's `NodeType_Subassembly` (an intermediate node), not a leaf part.
-
-#### `AssemblyGraph.NodeType.instance`
-
-Raw value `3`; decodes OCCT's `NodeType_Occurrence` (an assembly/part occurrence node).
+Raw value `4`; OCCT's `NodeType_Part` (a leaf node representing a part).
 
 #### `AssemblyGraph.NodeType.subshape`
 
-Raw value `4`; decodes OCCT's `NodeType_Part` (a leaf node representing a part), not a subshape.
-
-#### `AssemblyGraph.NodeType.free`
-
-Raw value `5`; decodes OCCT's `NodeType_Subshape` (a subshape node).
+Raw value `5`; OCCT's `NodeType_Subshape` (a subshape node).
 
 ---
 
