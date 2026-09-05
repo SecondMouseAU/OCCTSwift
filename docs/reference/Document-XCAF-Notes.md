@@ -598,19 +598,31 @@ public init?()
 ---
 ### `ViewObject.ProjectionType`
 
-Projection mode for this view.
+Projection mode for this view. Raw values match OCCT's own `XCAFView_ProjectionType` exactly
+(`NoCamera=0, Parallel=1, Central=2`), so a raw value written or read by another OCCT tool
+decodes correctly through this API.
 
 ```swift
 public enum ProjectionType: Int32 {
-    case central = 0
+    case noCamera = 0
     case parallel = 1
+    case central = 2
 }
 ```
 
 | Case | Meaning |
 |---|---|
-| `central` | Perspective projection (a single view point; distant geometry appears smaller). |
+| `noCamera` | No projection has been assigned yet. OCCT's own default/unset sentinel, not an error; a freshly-created `XCAFView_Object` reads as this before `setType` is ever called. |
 | `parallel` | Orthographic projection (parallel projection rays; no perspective foreshortening). |
+| `central` | Perspective projection (a single view point; distant geometry appears smaller). |
+
+---
+
+#### `ViewObject.ProjectionType.noCamera`
+
+No projection assigned (`XCAFView_ProjectionType_NoCamera`).
+
+- **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjectionType`
 
 ---
 
@@ -618,19 +630,27 @@ public enum ProjectionType: Int32 {
 
 Orthographic projection.
 
-- **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjType`
+- **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjectionType`
+
+---
+
+#### `ViewObject.ProjectionType.central`
+
+Perspective projection.
+
+- **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjectionType`
 
 ---
 
 ### `setType(_:)`
 
-Set the projection type (central or parallel).
+Set the projection type (no camera, parallel, or central).
 
 ```swift
 public func setType(_ type: ProjectionType)
 ```
 
-- **Parameters:** `type`, `.central` (perspective) or `.parallel` (orthographic).
+- **Parameters:** `type`, `.noCamera` (unset), `.parallel` (orthographic), or `.central` (perspective).
 - **OCCT:** `XCAFView_Object::SetType`
 
 ---

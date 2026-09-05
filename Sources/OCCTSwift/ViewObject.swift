@@ -16,10 +16,17 @@ public final class ViewObject: @unchecked Sendable {
         OCCTViewObjectRelease(handle)
     }
 
-    /// Projection type.
+    /// Projection type, matching OCCT's own `XCAFView_ProjectionType` raw values exactly
+    /// (`NoCamera=0, Parallel=1, Central=2`) so a raw value written or read by another OCCT
+    /// tool decodes correctly through this API.
     public enum ProjectionType: Int32 {
-        case central = 0
+        /// No camera / projection has been assigned to this view yet. This is
+        /// `XCAFView_ProjectionType_NoCamera`, OCCT's own default/unset sentinel, not an error
+        /// state; a freshly-created `XCAFView_Object` reads as this before `setType` is ever
+        /// called.
+        case noCamera = 0
         case parallel = 1
+        case central = 2
     }
 
     /// Set the projection type.
@@ -29,7 +36,7 @@ public final class ViewObject: @unchecked Sendable {
 
     /// Get the projection type.
     public var type: ProjectionType {
-        ProjectionType(rawValue: OCCTViewObjectGetType(handle)) ?? .central
+        ProjectionType(rawValue: OCCTViewObjectGetType(handle)) ?? .noCamera
     }
 
     /// Set the view direction.
