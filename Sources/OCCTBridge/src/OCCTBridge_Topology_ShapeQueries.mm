@@ -729,7 +729,7 @@ int32_t OCCTShapeRevolutionAxes(OCCTShapeRef   shape,
     int32_t count = std::min((int32_t)collected.size(), maxAxes);
     for (int32_t i = 0; i < count; i++)
       outAxes[i] = collected[i];
-    return (int32_t)collected.size();
+    return count;
   }
   catch (...)
   {
@@ -821,7 +821,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     int32_t count = std::min((int32_t)collected.size(), maxAxes);
     for (int32_t i = 0; i < count; i++)
       outAxes[i] = collected[i];
-    return (int32_t)collected.size();
+    return count;
   }
   catch (...)
   {
