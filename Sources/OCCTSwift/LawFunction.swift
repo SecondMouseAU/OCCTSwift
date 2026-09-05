@@ -97,7 +97,8 @@ public final class LawFunction: @unchecked Sendable {
     /// - Parameters:
     ///   - poles: Control point values (1D)
     ///   - knots: Knot values
-    ///   - multiplicities: Knot multiplicities
+    ///   - multiplicities: Knot multiplicities, one per knot (`multiplicities.count` must equal
+    ///     `knots.count`: the bridge reads `multiplicities[i]` for every knot index)
     ///   - degree: Polynomial degree
     /// - Returns: BSpline law function, or nil if validation fails
     public static func bspline(
@@ -105,7 +106,9 @@ public final class LawFunction: @unchecked Sendable {
         multiplicities: [Int32],
         degree: Int
     ) -> LawFunction? {
-        guard poles.count >= 2, knots.count >= 2 else { return nil }
+        guard poles.count >= 2, knots.count >= 2, multiplicities.count == knots.count else {
+            return nil
+        }
         let h = poles.withUnsafeBufferPointer { pPtr in
             knots.withUnsafeBufferPointer { kPtr in
                 multiplicities.withUnsafeBufferPointer { mPtr in
@@ -228,9 +231,19 @@ public final class LawFunction: @unchecked Sendable {
 
 extension LawFunction {
     /// Create an interpolated law function from values.
+    ///
+    /// - Parameters:
+    ///   - values: Values to interpolate
+    ///   - parameters: Optional parameter for each value; when supplied, `parameters.count` must
+    ///     equal `values.count` (the bridge reads `parameters[i]` for every value index), or `nil`
+    ///     is returned
+    ///   - periodic: Whether the resulting law is periodic
+    /// - Returns: The interpolated law function, or `nil` if `parameters` was supplied with a
+    ///   mismatched count or the underlying OCCT construction failed
     public static func interpolated(
         values: [Double], parameters: [Double]? = nil, periodic: Bool = false
     ) -> LawFunction? {
+        if let params = parameters, params.count != values.count { return nil }
         let ref: OCCTLawFunctionRef?
         if let params = parameters {
             ref = params.withUnsafeBufferPointer { paramBuf in
