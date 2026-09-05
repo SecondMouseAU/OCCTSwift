@@ -74,7 +74,9 @@ extension Drawing {
     /// Walk the circular edges of `shape` and add a `.centermark` at each visible circle's
     /// projected centre.
     ///
-    /// A circle is visible when its plane normal isn't parallel to the view direction.
+    /// A circle is visible when its plane normal is roughly parallel to the view direction
+    /// (the circle faces the viewer). A circle whose normal is roughly perpendicular to the
+    /// view direction projects edge-on, to a line segment rather than a circle, and is skipped.
     /// Complements `addAutoCentrelines`, which handles revolution axes.
     @discardableResult
     public func addAutoCentermarks(
