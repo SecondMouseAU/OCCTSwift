@@ -533,35 +533,57 @@ public struct WireOrder: Sendable
 
 ### `Status`
 
-Classification of the edge-ordering analysis result.
+Classification of the edge-ordering analysis result, mirroring
+`ShapeAnalysis_WireOrder::Status()`'s real return codes verbatim
+(`ShapeAnalysis_WireOrder.hxx`). `.unchanged`, `.reordered`, `.reversed` and `.shifted` are all
+**successful** analyses, differing only in how much reordering the input needed; there is no
+"gaps" code (connectivity-gap info lives in the separate `Gap(0)` accessor, which this bridge
+never calls).
 
 ```swift
 public enum Status: Sendable {
-    case closed
-    case open
-    case gaps
+    case unchanged
+    case reordered
+    case reversed
+    case shifted
     case failed
 }
 ```
 
-- `.closed`: the edges form a closed loop (all endpoints connected, OCCT status 0).
-- `.open`: the edges form an open chain (status 1).
-- `.gaps`: at least one gap remains between edges after ordering (status 2).
-- `.failed`: analysis could not complete (OCCT status < 0).
+- `.unchanged`: all edges were already direct and in sequence; no reordering was needed
+  (OCCT status 0).
+- `.reordered`: all edges are direct, but some needed to be reordered (OCCT status 1).
+- `.reversed`: some edges needed to be reversed, but the whole sequence remains fully connected
+  with no gap (OCCT status -1). The affected entries in `orderedEdges` are flagged `isReversed`.
+- `.shifted`: edges were already correctly connected but shifted forward or in reverse relative
+  to the input order, e.g. a closed loop walked starting from a different edge (OCCT status 3).
+- `.failed`: analysis did not produce a usable ordering. Not reachable from the current bridge
+  implementation, which only ever returns one of the four codes above; kept so the decode stays
+  exhaustive over `Int32`.
 
 ---
 
-#### `WireOrder.Status.closed`
+#### `WireOrder.Status.unchanged`
 
-The edges form a closed loop; all endpoints connect (OCCT status 0).
+All edges were already direct and in sequence; no reordering was needed (OCCT status 0).
 
-#### `WireOrder.Status.gaps`
+#### `WireOrder.Status.reordered`
 
-At least one gap remains between edges after ordering (OCCT status 2).
+All edges are direct, but some needed to be reordered (OCCT status 1).
+
+#### `WireOrder.Status.reversed`
+
+Some edges needed to be reversed, but the whole sequence remains fully connected with no gap
+(OCCT status -1). A successful analysis.
+
+#### `WireOrder.Status.shifted`
+
+Edges were already correctly connected but shifted forward or in reverse relative to the input
+order (OCCT status 3). A successful analysis.
 
 #### `WireOrder.Status.failed`
 
-Analysis could not complete (OCCT status less than 0).
+Analysis did not produce a usable ordering.
 
 ---
 
@@ -593,12 +615,16 @@ Status of the ordering analysis.
 public let status: Status
 ```
 
-Check this before consuming `orderedEdges`; if `.failed`, the array is empty.
+Check this before consuming `orderedEdges`; if `.failed`, the array is empty. `.unchanged`,
+`.reordered`, `.reversed` and `.shifted` are all successful analyses.
 
 - **Example:**
   ```swift
   if let wo = WireOrder.analyze(edges: edges) {
-      guard wo.status != .gaps else { print("wire has gaps"); return }
+      guard wo.status != .failed else { print("wire order analysis failed"); return }
+      for e in wo.orderedEdges where e.isReversed {
+          print("edge \(e.originalIndex) needs reversing")
+      }
   }
   ```
 
@@ -639,7 +665,9 @@ Passes endpoint coordinates to the bridge, which populates a `ShapeAnalysis_Wire
 - **Parameters:**
   - `edges`: array of `(start, end)` point pairs defining each edge.
   - `tolerance`: connection tolerance in model units (default 1e-3); endpoints within this distance are considered connected.
-- **Returns:** A `WireOrder` value, or `nil` if `edges` is empty or the bridge fails entirely.
+- **Returns:** A `WireOrder` value, or `nil` if `edges` is empty. An edge sequence that needs
+  reversing or reordering to connect is still reported as a successful result (see `Status`),
+  never as `nil`.
 - **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)`, analycts the point sequence, then reads ordered indices via `IOrder(i)`.
 - **Example:**
   ```swift
@@ -650,7 +678,7 @@ Passes endpoint coordinates to the bridge, which populates a `ShapeAnalysis_Wire
       (SIMD3(10, 0, 0),  SIMD3(10, 10, 0)),
   ]
   if let wo = WireOrder.analyze(edges: edges) {
-      print(wo.status)          // .closed
+      print(wo.status)          // .unchanged
       print(wo.orderedEdges)    // correct traversal order
   }
   ```
@@ -670,7 +698,8 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
 - **Parameters:**
   - `wire`: the wire whose edge ordering to analyze.
   - `tolerance`: connection tolerance in model units (default 1e-3).
-- **Returns:** A `WireOrder` value, or `nil` if the bridge fails.
+- **Returns:** A `WireOrder` value. An edge sequence that needs reversing or reordering to
+  connect is still reported as a successful result (see `Status`), never as `nil`.
 - **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)`, bridge extracts endpoints from each `TopoDS_Edge` in the wire before analysis.
 - **Example:**
   ```swift
@@ -678,7 +707,7 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
       SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0)
   ])!
   if let wo = WireOrder.analyze(wire: wire) {
-      print(wo.status)       // .closed or .open depending on wire
+      print(wo.status)       // .unchanged, .reordered, .reversed or .shifted depending on wire
   }
   ```
 

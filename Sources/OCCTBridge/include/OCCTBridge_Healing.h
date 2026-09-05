@@ -532,7 +532,10 @@ typedef struct
 /// Result of wire ordering analysis
 typedef struct
 {
-  int32_t status;  ///< 0=closed, 1=open, 2=gaps, -1=failed
+  int32_t status;  ///< ShapeAnalysis_WireOrder::Status() verbatim: 0=unchanged (already in
+                   ///< sequence), 1=reordered (still direct), -1=reversed-but-connected (some
+                   ///< edges reversed, no gap), 3=shifted-still-connected (forward/reverse
+                   ///< rotation). All four are successful analyses; there is no "gaps" code.
   int32_t nbEdges; ///< Number of edges in the order
 } OCCTWireOrderResult;
 

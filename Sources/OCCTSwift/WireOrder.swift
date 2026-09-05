@@ -18,15 +18,25 @@ import simd
 /// // result.orderedIndices gives the correct ordering
 /// ```
 public struct WireOrder: Sendable {
-    /// Status of the wire ordering analysis.
+    /// Status of the wire ordering analysis, mirroring `ShapeAnalysis_WireOrder::Status()`'s
+    /// real return codes (`ShapeAnalysis_WireOrder.hxx`): 0/1/-1/3 are all successful analyses,
+    /// differing only in how much reordering was needed; there is no "gaps" code, connectivity
+    /// gap info lives in the separate `Gap(0)` accessor, which this bridge never calls.
     public enum Status: Sendable {
-        /// Edges form a closed loop
-        case closed
-        /// Edges form an open chain
-        case open
-        /// Edges have gaps (not fully connected)
-        case gaps
-        /// Analysis failed
+        /// All edges were already direct and in sequence; no reordering was needed
+        /// (OCCT status 0).
+        case unchanged
+        /// All edges are direct, but some needed to be reordered (OCCT status 1).
+        case reordered
+        /// Some edges needed to be reversed, but the whole sequence remains fully connected with
+        /// no gap (OCCT status -1). A successful analysis: the affected entries in
+        /// `orderedEdges` are flagged `isReversed`.
+        case reversed
+        /// Edges were already correctly connected but shifted forward or in reverse relative to
+        /// the input order, e.g. a closed loop walked starting from a different edge
+        /// (OCCT status 3). A successful analysis.
+        case shifted
+        /// Analysis did not produce a usable ordering.
         case failed
     }
 
@@ -48,7 +58,9 @@ public struct WireOrder: Sendable {
     /// - Parameters:
     ///   - edges: Array of (start, end) point pairs defining each edge
     ///   - tolerance: Connection tolerance (default 1e-3)
-    /// - Returns: Wire ordering result, or nil if analysis failed
+    /// - Returns: Wire ordering result, or nil if `edges` is empty. Any edges that need to be
+    ///   reversed or reordered to connect are still reported as a successful result (see
+    ///   `Status`), never as nil.
     public static func analyze(
         edges: [(start: SIMD3<Double>, end: SIMD3<Double>)],
         tolerance: Double = 1e-3
@@ -82,7 +94,8 @@ public struct WireOrder: Sendable {
     /// - Parameters:
     ///   - wire: Wire to analyze
     ///   - tolerance: Connection tolerance (default 1e-3)
-    /// - Returns: Wire ordering result, or nil if analysis failed
+    /// - Returns: Wire ordering result. An edge sequence that needs reversing or reordering to
+    ///   connect is still reported as a successful result (see `Status`), never as nil.
     public static func analyze(wire: Wire, tolerance: Double = 1e-3) -> WireOrder? {
         let maxEntries: Int32 = 1000
         var outOrder = [OCCTWireOrderEntry](
@@ -99,19 +112,21 @@ public struct WireOrder: Sendable {
     ///
     /// Shared by both `analyze(edges:)` and `analyze(wire:)`, which differ only in
     /// how they build the C-side inputs (caller-supplied points vs. a wire's own edges), not in
-    /// how the result is interpreted.
+    /// how the result is interpreted. `-1` and `3` are successful analyses (see `Status`), not
+    /// failures: `ShapeAnalysis_WireOrder::Status()` never returns anything outside
+    /// `{0, 1, -1, 3}`, so `default` below is unreached in practice and exists only so the
+    /// switch stays exhaustive over `Int32`.
     private static func decode(_ result: OCCTWireOrderResult, outOrder: [OCCTWireOrderEntry])
         -> WireOrder?
     {
         let status: Status
         switch result.status {
-        case 0: status = .closed
-        case 1: status = .open
-        case 2: status = .gaps
+        case 0: status = .unchanged
+        case 1: status = .reordered
+        case -1: status = .reversed
+        case 3: status = .shifted
         default: status = .failed
         }
-
-        if result.status < 0 { return nil }
 
         var orderedEdges = [OrderedEdge]()
         orderedEdges.reserveCapacity(Int(result.nbEdges))
