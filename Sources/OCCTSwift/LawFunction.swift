@@ -238,6 +238,8 @@ extension LawFunction {
     ///     equal `values.count` (the bridge reads `parameters[i]` for every value index), or `nil`
     ///     is returned
     ///   - periodic: Whether the resulting law is periodic
+    /// - Returns: The interpolated law function, or `nil` if `parameters` was supplied with a
+    ///   mismatched count or the underlying OCCT construction failed
     public static func interpolated(
         values: [Double], parameters: [Double]? = nil, periodic: Bool = false
     ) -> LawFunction? {
