@@ -42,12 +42,26 @@ public final class Quaternion: @unchecked Sendable {
 
     /// Set Euler angles.
     ///
-    /// Order: 0=Intrinsic_XYZ, etc.
+    /// `order` is passed straight through to OCCT's `gp_EulerSequence` enum, whose ordinals
+    /// are NOT alphabetical and do NOT start at `Intrinsic_XYZ`. Per the pinned
+    /// `gp_EulerSequence.hxx`:
+    /// - `0` = `gp_EulerAngles` (alias `Intrinsic_ZXZ`, "classic" Euler angles)
+    /// - `1` = `gp_YawPitchRoll` (alias `Intrinsic_ZYX`)
+    /// - `2`-`7` = `Extrinsic_XYZ`, `XZY`, `YZX`, `YXZ`, `ZXY`, `ZYX`
+    /// - `8`-`13` = `Intrinsic_XYZ`, `XZY`, `YZX`, `YXZ`, `ZXY`, `ZYX`
+    /// - `14`-`19` = `Extrinsic_XYX`, `XZX`, `YZY`, `YXY`, `ZYZ`, `ZXZ`
+    /// - `20`-`25` = `Intrinsic_XYX`, `XZX`, `YZY`, `YXY`, `ZXZ`, `ZYZ`
+    ///
+    /// So `order: 8`, not `order: 0`, is `Intrinsic_XYZ`. See the pinned header for the full,
+    /// authoritative list.
     public func setEulerAngles(order: Int32, alpha: Double, beta: Double, gamma: Double) {
         OCCTQuaternionSetEulerAngles(handle, order, alpha, beta, gamma)
     }
 
     /// Get Euler angles.
+    ///
+    /// `order` uses the same `gp_EulerSequence` ordinal table as
+    /// `setEulerAngles(order:alpha:beta:gamma:)`; see that method's doc for the full list.
     public func getEulerAngles(order: Int32) -> (alpha: Double, beta: Double, gamma: Double) {
         var a = 0.0
         var b = 0.0
