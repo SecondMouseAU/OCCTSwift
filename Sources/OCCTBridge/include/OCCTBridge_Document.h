@@ -717,9 +717,11 @@ void OCCTDocumentLabelForgetAllAttributes(OCCTDocumentRef doc, int64_t labelId, 
 
 /// Get all descendant labels using TDF_ChildIterator.
 /// @param allLevels If true, iterate all descendants; if false, direct children only
-/// @param outLabelIds Output array of labelIds
-/// @param maxCount Maximum number of labels to return
-/// @return Number of labels found
+/// @param outLabelIds Output array of labelIds, written up to maxCount entries
+/// @param maxCount Maximum number of labels to write into outLabelIds
+/// @return The TRUE total descendant count, even when it exceeds maxCount and the write was
+///     truncated (#1563, the #562 precedent). Retry with a buffer sized to the returned count
+///     when it exceeds maxCount.
 int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
                                         int64_t         labelId,
                                         bool            allLevels,
@@ -1359,8 +1361,11 @@ void OCCTDocumentSetLayer(OCCTDocumentRef doc, int64_t labelId, const char* laye
 /// Check if a specific layer is set on a label.
 bool OCCTDocumentIsLayerSet(OCCTDocumentRef doc, int64_t labelId, const char* layerName);
 
-/// Get layers on a label. Returns count. Fills outNames (caller-allocated array of buffers).
-/// Each buffer must be at least maxLen chars.
+/// Get layers on a label. Fills outNames (caller-allocated array of buffers) up to maxNames
+/// entries; each buffer must be at least maxLen chars.
+/// @return The TRUE total layer count, even when it exceeds maxNames and the write was
+///     truncated (#1563, the #562 precedent). Retry with outNames/maxNames sized to the
+///     returned count when it exceeds maxNames.
 int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
                                    int64_t         labelId,
                                    char**          outNames,

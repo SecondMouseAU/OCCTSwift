@@ -265,11 +265,23 @@ extension AssemblyNode {
     /// - Parameter allLevels: If true, recurse all descendants; if false, direct children only
     /// - Returns: Array of descendant nodes
     public func descendants(allLevels: Bool = false) -> [AssemblyNode] {
-        let maxCount: Int32 = 1024
-        var labelIds = [Int64](repeating: -1, count: Int(maxCount))
-        let count = OCCTDocumentGetDescendantLabels(
-            document.handle, labelId,
-            allLevels, &labelIds, maxCount)
+        // Read-then-retry, the #481/#562 pattern this project already uses for
+        // Curve2D.splitIndicesAtDiscontinuities: the bridge reports the true descendant count
+        // even when it wrote fewer, so one retry sized to it is always enough. Before #1563 this
+        // read a fixed 1024 entries and took whatever came back, so a tree with more descendants
+        // than that was silently cut off with nothing to notice it by.
+        func read(capacity: Int32) -> (count: Int32, labelIds: [Int64]) {
+            var labelIds = [Int64](repeating: -1, count: Int(capacity))
+            let n = OCCTDocumentGetDescendantLabels(
+                document.handle, labelId,
+                allLevels, &labelIds, capacity)
+            return (n, labelIds)
+        }
+
+        var (count, labelIds) = read(capacity: 1024)
+        if count > 1024 {
+            (count, labelIds) = read(capacity: count)
+        }
         return (0..<Int(count)).map { AssemblyNode(document: document, labelId: labelIds[$0]) }
     }
 
@@ -982,28 +994,42 @@ extension AssemblyNode {
 
     /// Get layer names assigned to this label.
     public var layers: [String] {
-        let maxNames: Int32 = 16
-        let maxLen: Int32 = 256
-        // Allocate C string buffers
-        let buffers = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(
-            capacity: Int(maxNames))
-        defer { buffers.deallocate() }
-        for i in 0..<Int(maxNames) {
-            let buf = UnsafeMutablePointer<CChar>.allocate(capacity: Int(maxLen))
-            buf[0] = 0
-            buffers[i] = buf
-        }
-        let count = OCCTDocumentGetLabelLayers(document.handle, labelId, buffers, maxNames, maxLen)
-        var result: [String] = []
-        for i in 0..<Int(count) {
-            if let buf = buffers[i] {
-                result.append(String(cString: buf))
+        // Read-then-retry, the same #481/#562/#1563 pattern as descendants(allLevels:): the
+        // bridge reports the true layer count even when it wrote fewer, so one retry sized to it
+        // is always enough. Before #1563 this read a fixed 16 entries and took whatever came
+        // back, so a label with more than 16 layers was silently cut off with nothing to notice
+        // it by.
+        func read(maxNames: Int32, maxLen: Int32) -> (count: Int32, names: [String]) {
+            let buffers = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(
+                capacity: Int(maxNames))
+            defer { buffers.deallocate() }
+            for i in 0..<Int(maxNames) {
+                let buf = UnsafeMutablePointer<CChar>.allocate(capacity: Int(maxLen))
+                buf[0] = 0
+                buffers[i] = buf
             }
+            defer {
+                for i in 0..<Int(maxNames) {
+                    buffers[i]?.deallocate()
+                }
+            }
+            let count = OCCTDocumentGetLabelLayers(
+                document.handle, labelId, buffers, maxNames, maxLen)
+            var names: [String] = []
+            for i in 0..<Int(min(count, maxNames)) {
+                if let buf = buffers[i] {
+                    names.append(String(cString: buf))
+                }
+            }
+            return (count, names)
         }
-        for i in 0..<Int(maxNames) {
-            buffers[i]?.deallocate()
+
+        let maxLen: Int32 = 256
+        var (count, names) = read(maxNames: 16, maxLen: maxLen)
+        if count > 16 {
+            (count, names) = read(maxNames: count, maxLen: maxLen)
         }
-        return result
+        return names
     }
 }
 
