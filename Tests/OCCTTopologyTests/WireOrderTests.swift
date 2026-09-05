@@ -46,9 +46,9 @@ struct WireOrderTests {
 
         let result = WireOrder.analyze(edges: edges)
         #expect(result != nil)
-        // Closed loop or open chain (depends on algorithm)
+        // Already in sequence, or reordered to be (depends on algorithm)
         if let result {
-            #expect(result.status == .closed || result.status == .open)
+            #expect(result.status == .unchanged || result.status == .reordered)
         }
     }
 
@@ -82,16 +82,17 @@ struct WireOrderTests {
     //
     // These mirror `wireOrderStatus` and `orderedEdgesValidIndices` above, but drive them
     // through `analyze(wire:)` instead of `analyze(edges:)`, and add coverage neither
-    // overload had before: the negative-status nil-return guard inside `decode`. Both
-    // overloads now share a single `WireOrder.decode(_:outOrder:)` helper (#845), so these
-    // are a regression lock on that shared decode path from the `wire:` call site
-    // specifically, not just the `edges:` one.
+    // overload had before: the OCCT status -1 ("reversed but connected") case inside
+    // `decode` (see `analyzeWireShapeReversedEdgeIsReportedAsReversed` below; before #1575
+    // that case was misdecoded as a failure and returned nil). Both overloads share a single
+    // `WireOrder.decode(_:outOrder:)` helper (#845), so these are a regression lock on that
+    // shared decode path from the `wire:` call site specifically, not just the `edges:` one.
 
-    @Test("Wire order status is closed for a closed rectangle wire")
-    func analyzeWireShapeStatusIsClosed() throws {
+    @Test("Wire order status is unchanged for a closed rectangle wire")
+    func analyzeWireShapeStatusIsUnchanged() throws {
         let wire = try #require(Wire.rectangle(width: 10, height: 10))
         let result = try #require(WireOrder.analyze(wire: wire))
-        #expect(result.status == .closed)
+        #expect(result.status == .unchanged)
     }
 
     @Test("Ordered edges from analyze(wire:) have valid, non-repeating indices")
@@ -109,7 +110,7 @@ struct WireOrderTests {
             #expect(ordered.originalIndex < edgeCount)
             // A freshly-built rectangle's edges are all already walked forward
             // (measured directly against ShapeAnalysis_WireOrder: see
-            // analyzeWireShapeReversedEdgeReturnsNil below for the case where
+            // analyzeWireShapeReversedEdgeIsReportedAsReversed below for the case where
             // that isn't true), so none should be flagged reversed here.
             #expect(!ordered.isReversed)
             seenIndices.insert(ordered.originalIndex)
@@ -119,8 +120,8 @@ struct WireOrderTests {
         #expect(seenIndices == Set(0..<edgeCount))
     }
 
-    @Test("analyze(wire:) returns nil for a wire that needs an edge reversed to close")
-    func analyzeWireShapeReversedEdgeReturnsNil() throws {
+    @Test("analyze(wire:) reports a reversed edge as a successful, connected ordering (#1575)")
+    func analyzeWireShapeReversedEdgeIsReportedAsReversed() throws {
         // A square walked p1 -> p2 -> p3 -> p4 -> p1. Three edges are built already
         // matching that walk direction; the closing edge's underlying curve is built
         // the opposite way (p1 -> p4 instead of p4 -> p1). OCCTWireOrderAnalyzeWire
@@ -128,14 +129,20 @@ struct WireOrderTests {
         // curve->Value(first/last)), independent of the edge's TopoDS orientation, so
         // this is a genuine "some edges are reversed" case for ShapeAnalysis_WireOrder.
         //
-        // Measured directly against the pinned kernel (a standalone
-        // ShapeAnalysis_WireOrder probe reproducing this exact point sequence):
+        // Measured directly against the pinned kernel, both with a standalone
+        // ShapeAnalysis_WireOrder probe reproducing this exact point sequence and with
+        // a probe that builds the real TopoDS_Edge/TopoDS_Wire and walks it via
+        // TopExp_Explorer + BRep_Tool::Curve exactly as OCCTWireOrderAnalyzeWire does:
         // Status() reports -1 ("some edges are reversed, but no gap remain" per
-        // ShapeAnalysis_WireOrder.hxx), not one of the 0/1/2 codes the bridge's own
-        // `OCCTWireOrderResult.status` doc comment enumerates. `decode`'s
-        // `if result.status < 0 { return nil }` guard treats any negative status as
-        // failure, so this reversed-but-connected case surfaces as nil today, not as
-        // a `WireOrder` with an `isReversed` entry. That guard was previously
+        // ShapeAnalysis_WireOrder.hxx) and Ordered(1..4) reports 1, 2, 3, -4, i.e. the
+        // four edges are already in the right sequence and only the closing edge
+        // (original index 3) needs reversing.
+        //
+        // Before #1575's fix, `decode`'s `if result.status < 0 { return nil }` guard
+        // treated any negative status as failure, so this reversed-but-connected case
+        // surfaced as `nil`, not as a `WireOrder` with an `isReversed` entry. This test
+        // used to assert exactly that broken `nil` result; #1575 flips it to assert the
+        // corrected, non-nil, correctly-ordered result. This guard was previously
         // untested by every other case in this suite (`emptyEdgesReturnsNil` hits a
         // different, earlier guard in `analyze(edges:)` itself, before the bridge is
         // even called); this is the first test to exercise it, on either overload.
@@ -151,7 +158,15 @@ struct WireOrderTests {
 
         let wire = try #require(Wire.wireFromEdges([e1, e2, e3, e4Reversed]))
 
-        #expect(WireOrder.analyze(wire: wire) == nil)
+        let result = try #require(WireOrder.analyze(wire: wire))
+        #expect(result.status == .reversed)
+        #expect(result.orderedEdges.count == 4)
+        // Edges 0-2 are already correctly walked; only the closing edge (index 3) needs
+        // reversing, and the sequence position matches the original index throughout.
+        for (position, ordered) in result.orderedEdges.enumerated() {
+            #expect(ordered.originalIndex == position)
+            #expect(ordered.isReversed == (position == 3))
+        }
     }
 
     @Test("Ordered edges have valid indices")
