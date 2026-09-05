@@ -200,12 +200,18 @@ extension PlateSolver {
     }
 
     /// Load a linear XYZ constraint.
+    ///
+    /// `targets` and `coefficients` must each have exactly as many elements as `uvPoints`; a
+    /// mismatch is rejected (returns `false`) rather than read past the shorter array's end (#1583).
     @discardableResult
     public func loadLinearXYZ(
         uvPoints: [SIMD2<Double>],
         targets: [SIMD3<Double>],
         coefficients: [Double]
     ) -> Bool {
+        guard targets.count == uvPoints.count, coefficients.count == uvPoints.count else {
+            return false
+        }
         let uvs = uvPoints.flatMap { [$0.x, $0.y] }
         let tgts = targets.flatMap { [$0.x, $0.y, $0.z] }
         return OCCTPlateLoadLinearXYZ(handle, uvs, tgts, coefficients, Int32(uvPoints.count))
