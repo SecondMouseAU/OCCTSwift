@@ -1989,6 +1989,11 @@ bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef _Nonnull app);
 /// Create a new document via TObj_Application
 OCCTDocumentRef _Nullable OCCTTObjApplicationCreateDocument(OCCTTObjAppRef _Nonnull app);
 
+/// Release a reference obtained from OCCTTObjApplicationGetInstance. TObj_Application is a
+/// process-wide singleton whose own function-local static Handle keeps a permanent reference,
+/// so this only undoes the increment GetInstance made; it never deletes the object.
+void OCCTTObjApplicationRelease(OCCTTObjAppRef _Nonnull app);
+
 /// Create an ID filter (ignoreAll=true: ignore all except kept; false: keep all except ignored)
 OCCTIDFilterRef _Nullable OCCTIDFilterCreate(bool ignoreAll);
 

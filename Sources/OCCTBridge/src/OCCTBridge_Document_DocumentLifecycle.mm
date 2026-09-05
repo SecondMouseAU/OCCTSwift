@@ -4145,6 +4145,27 @@ OCCTDocumentRef OCCTTObjApplicationCreateDocument(OCCTTObjAppRef app)
   }
 }
 
+void OCCTTObjApplicationRelease(OCCTTObjAppRef app)
+{
+  if (!app)
+    return;
+
+  try
+  {
+    auto* a = static_cast<TObj_Application*>(app);
+    // Undo the OCCTTObjApplicationGetInstance() IncrementRefCounter(). Unlike
+    // OCCTMessengerRelease/OCCTReportRelease, never delete on a zero count: GetInstance()'s own
+    // function-local static Handle (TObj_Application.cxx) holds a permanent reference for the
+    // whole process, so a caller matching every GetInstance() with one Release can never actually
+    // drive this to 0, and deleting the singleton out from under that still-live static handle
+    // would corrupt it for the rest of the process's life.
+    a->DecrementRefCounter();
+  }
+  catch (...)
+  {
+  }
+}
+
 OCCTIDFilterRef OCCTIDFilterCreate(bool ignoreAll)
 {
   try
