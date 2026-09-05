@@ -1979,7 +1979,9 @@ int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef _Nonnull document);
 /// Initialize global presentation driver table with standard drivers
 void OCCTDriverTableInitStandard(void);
 
-/// Check if global driver table exists
+/// Always returns true: TPrsStd_DriverTable::Get() lazily creates the table
+/// if it does not already exist, so this cannot observe a "not yet created"
+/// state, and calling it has that creation side effect
 bool OCCTDriverTableExists(void);
 
 /// Clear all drivers from global table

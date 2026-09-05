@@ -1878,13 +1878,18 @@ public static func initStandard()
 
 ### `DriverTable.exists`
 
-Whether the global driver table has been initialized.
+Always `true`. `TPrsStd_DriverTable::Get()`'s own header doc says it lazily
+creates the table (and fills it with standard drivers) if one does not
+already exist, so this can never observe a "not yet created" state -- reading
+it is itself what creates and populates the global table on first use. There
+is no OCCT query that reports existence without also creating it.
 
 ```swift
 public static var exists: Bool { get }
 ```
 
-- **OCCT:** `TPrsStd_DriverTable::Get` (non-nil check)
+- **OCCT:** `TPrsStd_DriverTable::Get` (non-nil check; `Get()` itself always
+  creates on demand, so the check never fails)
 
 ---
 
@@ -1899,9 +1904,7 @@ public static func clear()
 - **OCCT:** `TPrsStd_DriverTable::Get().Clear()`
 - **Example:**
   ```swift
-  if DriverTable.exists {
-      DriverTable.clear()
-  }
+  DriverTable.clear()
   ```
 
 ---
