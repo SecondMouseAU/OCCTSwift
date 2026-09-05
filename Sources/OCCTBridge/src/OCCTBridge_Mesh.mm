@@ -1674,10 +1674,22 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
       return 0;
     int nNodes = result->NbNodes();
     int nTris  = result->NbTriangles();
+    // #1566: this merge is all-or-nothing, not incremental, so there is no way to hand back a
+    // "clamped" subset that is still a valid mesh: a vertex list cut off at maxVertices would
+    // leave triangle indices beyond it dangling, and reporting the true (larger) nNodes/nTris
+    // while only a smaller prefix was ever written -- this function's prior behavior -- told the
+    // caller data existed in the buffer that was never put there. Refuse the whole call instead,
+    // the same shape the two "no usable result" returns above already use. Gated on the caller
+    // actually having asked for that buffer (non-null): a caller passing null just to probe
+    // whether the merge itself succeeds isn't bound by a buffer it never supplied.
+    bool verticesOverflow = (outVertices || outNormals) && nNodes > maxVertices;
+    bool indicesOverflow  = outIndices && nTris * 3 > maxIndices;
+    if (verticesOverflow || indicesOverflow)
+      return 0;
     if (outTriangleCount)
       *outTriangleCount = nTris;
     // Extract vertices/normals
-    if (outVertices && nNodes <= maxVertices)
+    if (outVertices)
     {
       for (int i = 1; i <= nNodes; i++)
       {
@@ -1687,7 +1699,7 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
         outVertices[(i - 1) * 3 + 2] = (float)p.Z();
       }
     }
-    if (outNormals && result->HasNormals() && nNodes <= maxVertices)
+    if (outNormals && result->HasNormals())
     {
       for (int i = 1; i <= nNodes; i++)
       {
@@ -1698,7 +1710,7 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
       }
     }
     // Extract indices
-    if (outIndices && nTris * 3 <= maxIndices)
+    if (outIndices)
     {
       for (int i = 1; i <= nTris; i++)
       {
