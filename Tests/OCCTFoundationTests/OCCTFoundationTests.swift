@@ -1608,6 +1608,53 @@ struct SheetStandardLayoutTests {
         }
     }
 
+    // #1572: the doc (here and in docs/reference/SheetMetal.md) promises "margin on each
+    // outer edge and margin/2 between cells", but the code used to compute
+    // `cellW = (innerW - margin) / 2` and step columns by `cellW + margin`, which produces a
+    // *full*-margin gap, not margin/2. `front` sits in column 0 for both projection angles, so
+    // its x-offset tracks the column-0 cell centre exactly (view geometry and the applied scale
+    // are held fixed across the two calls below via a tiny `.custom` scale well under the
+    // fit-to-cell scale, so only `margin` varies). The documented algorithm gives
+    // `cellW(margin) = ((frameW - 2*margin) - margin/2) / 2`, which is linear in `margin`, so the
+    // column-0 centre's shift between two margins is exactly computable and distinguishes the
+    // margin/2 gap (this test's `expectedDelta`) from the full-margin-gap bug by a wide,
+    // unambiguous 5mm (15mm vs 10mm here), not a rounding-noise difference.
+    @Test("standardLayout's inter-cell gap is margin/2, matching the documented algorithm")
+    func interCellGapIsHalfMargin() {
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
+        guard let box = Shape.box(width: 20, height: 15, depth: 10) else {
+            Issue.record("setup nil")
+            return
+        }
+        let frame = sheet.innerFrame
+        let margin1 = 20.0
+        let margin2 = 60.0
+        guard
+            let layout1 = sheet.standardLayout(of: box, scale: .custom(0.01), margin: margin1),
+            let layout2 = sheet.standardLayout(of: box, scale: .custom(0.01), margin: margin2)
+        else {
+            Issue.record("setup nil")
+            return
+        }
+
+        let frameW = frame.max.x - frame.min.x
+        func expectedCellW(_ margin: Double) -> Double {
+            let innerW = frameW - 2 * margin
+            return (innerW - margin / 2) / 2
+        }
+        func expectedColumn0Centre(_ margin: Double) -> Double {
+            frame.min.x + margin + expectedCellW(margin) / 2
+        }
+        let expectedDelta = expectedColumn0Centre(margin2) - expectedColumn0Centre(margin1)
+        let actualDelta = layout2.front.offset.x - layout1.front.offset.x
+
+        // Pre-fix (full-margin gap), the same fixture moves front's centre by only
+        // 0.25 * (margin2 - margin1) = 10, not the documented 0.375 * 40 = 15; asserting equality
+        // against `expectedDelta` (the margin/2-gap prediction) fails against that code and passes
+        // against the fix.
+        #expect(abs(actualDelta - expectedDelta) < 1e-6)
+    }
+
     @Test("includeIso: false omits the isometric view")
     func includeIsoFalseOmits() {
         let sheet = Sheet(size: .a3)
