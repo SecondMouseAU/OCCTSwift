@@ -80,16 +80,16 @@ Always uses the boolean cut path (`applyThreadCut` with `apexSign: +1`): a helic
 - **OCCT:** `OCCTShapeBuildThreadCutter` (analytic helicoid bridge, ISO-68/Unified only), `Shape.screwSweptThreadCutter` (fallback), `Shape.subtracting`.
 - **Example:**
   ```swift
+  let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
   guard let outer = Shape.cylinder(radius: 12, height: 16),
-        let bore  = Shape.cylinder(radius: 6,  height: 16),
+        let bore  = Shape.cylinder(radius: spec.minorDiameter / 2, height: 16),
         let block = outer.subtracting(bore) else { return }
   let tapped = block.threadedHole(
       axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-      spec: ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75),
-      depth: 14)
+      spec: spec, depth: 14)
   // tapped?.isValid == true
   ```
-- **Note:** Pass the *solid body with the bore already in it*, `threadedHole` does not drill the hole. The outer surface and outer diameter are unchanged; only the bore wall gains the helical thread form.
+- **Note:** Pass the *solid body with the bore already in it*, `threadedHole` does not drill the hole. The outer surface and outer diameter are unchanged; only the bore wall gains the helical thread form. Pre-bore to the spec's `minorDiameter / 2` (the tap-drill size): a correctly-cut internal thread's crest sits there, untouched, and its root reaches out to the major/nominal diameter, matching a mating bolt's own crest and root (#1578).
 
 ---
 

@@ -75,14 +75,17 @@ struct ThreadFormsTests {
         "each form builds a valid internal thread (cut path)",
         arguments: [ThreadForm.iso68, .whitworth, .acme, .square, .buttress, .knuckle])
     func internalForm(_ form: ThreadForm) {
+        let spec = ThreadSpec(form: form, nominalDiameter: 12, pitch: 2.0)
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why. Each
+        // form's cut depth (and so minor diameter) differs, so the bore radius has to be
+        // per-form too, not the one nominal-diameter literal every form used to share.
         guard let outer = Shape.cylinder(radius: 12, height: 16),
-            let bore = Shape.cylinder(radius: 6, height: 16),
+            let bore = Shape.cylinder(radius: spec.minorDiameter / 2, height: 16),
             let block = outer.subtracting(bore)
         else {
             Issue.record("annulus")
             return
         }
-        let spec = ThreadSpec(form: form, nominalDiameter: 12, pitch: 2.0)
         guard
             let t = block.threadedHole(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),

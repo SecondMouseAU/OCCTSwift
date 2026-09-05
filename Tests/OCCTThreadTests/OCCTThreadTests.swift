@@ -39,6 +39,23 @@ func meshMaxRadialExtent(
     }
 }
 
+/// Maximum XY-planar radial distance among mesh vertices whose radius is BELOW `ceiling`, used
+/// by `Issue1578ThreadedHoleMinorDiameterTests` to measure how far an internal thread's cut
+/// actually reaches (its root) while excluding a deliberately larger stock outer surface, which
+/// would otherwise dominate a plain `meshMaxRadialExtent` measurement. Returns `nil` on a mesh
+/// failure, same rationale as `meshMaxRadialExtent` (#1266): never a sentinel a `<` comparison
+/// could silently satisfy.
+func meshMaxRadialExtentBelow(
+    _ shape: Shape, ceiling: Double, deflection: Double = 0.05,
+    mesher: (Shape, Double) -> Mesh? = { $0.mesh(linearDeflection: $1) }
+) -> Double? {
+    guard let mesh = mesher(shape, deflection) else { return nil }
+    return mesh.vertices.reduce(0.0) { acc, v in
+        let r = Double(((v.x * v.x) + (v.y * v.y)).squareRoot())
+        return r < ceiling ? max(acc, r) : acc
+    }
+}
+
 // MARK: - v0.138: Thread features (#66)
 
 @Suite("v0.138 ThreadSpec parsing")
@@ -77,16 +94,17 @@ struct ThreadSpecParsingTests {
 struct ThreadedFeatureTests {
     @Test("threadedHole cuts material from a bored block")
     func threadedHole() throws {
+        let spec = ThreadSpec.parse("M10x1.5")!
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
             let drillAxis = Shape.cylinder(
                 at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: 5, height: 30),
+                radius: spec.minorDiameter / 2, height: 30),
             let blockWithHole = block.subtracting(drillAxis)
         else {
             Issue.record("setup nil")
             return
         }
-        let spec = ThreadSpec.parse("M10x1.5")!
         let threaded = blockWithHole.threadedHole(
             axisOrigin: SIMD3(15, 15, 0),
             axisDirection: SIMD3(0, 0, 1),
@@ -120,17 +138,19 @@ struct ThreadedFeatureTests {
 
     @Test("threadedHole respects left-handed helix parameter")
     func leftHanded() {
+        let rh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: false)
+        let lh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: true)
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
+        // Handedness doesn't affect minorDiameter, so either spec's value works here.
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
             let drillAxis = Shape.cylinder(
                 at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: 5, height: 30),
+                radius: rh.minorDiameter / 2, height: 30),
             let bored = block.subtracting(drillAxis)
         else {
             Issue.record("setup nil")
             return
         }
-        let rh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: false)
-        let lh = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5, leftHanded: true)
         let rhResult = bored.threadedHole(
             axisOrigin: SIMD3(15, 15, 0),
             axisDirection: SIMD3(0, 0, 1),
@@ -158,16 +178,17 @@ struct ThreadedFeatureTests {
 
     @Test("Multi-start thread (starts: 2) removes more material than single-start")
     func multiStart() {
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 2.0)
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
         guard let block = Shape.box(width: 30, height: 30, depth: 30),
             let drillAxis = Shape.cylinder(
                 at: SIMD3(15, 15, 0), direction: SIMD3(0, 0, 1),
-                radius: 5, height: 30),
+                radius: spec.minorDiameter / 2, height: 30),
             let bored = block.subtracting(drillAxis)
         else {
             Issue.record("setup nil")
             return
         }
-        let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 2.0)
         let single = bored.threadedHole(
             axisOrigin: SIMD3(15, 15, 0),
             axisDirection: SIMD3(0, 0, 1),
