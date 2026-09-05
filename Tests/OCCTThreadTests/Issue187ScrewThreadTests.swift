@@ -99,14 +99,16 @@ struct Issue187ScrewThreadTests {
 
     @Test("threadedHole cuts a valid in-envelope thread into a bore wall")
     func threadedHoleValid() {
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
+        // Pre-bored to the MINOR diameter (#1578): a correctly-cut internal thread's crest sits
+        // there, untouched, and its root reaches out to the major/nominal diameter.
         guard let outer = Shape.cylinder(radius: 12, height: 16),
-            let bore = Shape.cylinder(radius: 6, height: 16),
+            let bore = Shape.cylinder(radius: spec.minorDiameter / 2, height: 16),
             let block = outer.subtracting(bore)
         else {
             Issue.record("no annulus")
             return
         }
-        let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
         let tapped = block.threadedHole(
             axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
             spec: spec, depth: 14)
