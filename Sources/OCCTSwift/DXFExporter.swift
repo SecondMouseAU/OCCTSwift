@@ -199,7 +199,7 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         var s = pair(0, "SECTION") + pair(2, "TABLES")
 
         // LTYPE
-        s += pair(0, "TABLE") + pair(2, "LTYPE") + pair(70, 4)
+        s += pair(0, "TABLE") + pair(2, "LTYPE") + pair(70, 3)
         s +=
             pair(0, "LTYPE") + pair(2, "CONTINUOUS") + pair(70, 0) + pair(3, "Solid line")
             + pair(72, 65) + pair(73, 0) + pair(40, 0.0)

@@ -82,4 +82,49 @@ struct DXFExportTests {
         w.collectFromDrawing(drawing)
         #expect(w.entityCounts.circles >= 1)
     }
+
+    // #1589: DXFWriter.tables()'s LTYPE table header declared a group-70 max-entry count of 4
+    // while only 3 linetypes (CONTINUOUS, DASHED, CHAIN) were ever written before ENDTAB, a
+    // stale/copy-paste value present since the file's very first commit (a6977a7b, v0.138.0).
+    // Every other table in the same function (LAYER, STYLE) has a count matching its actual
+    // entries exactly. This walks the written DXF text itself -- not `tables()`, which is
+    // private -- so it fails against the pre-fix `pair(70, 4)` and passes once the declared
+    // count matches the real one.
+    @Test("LTYPE table's declared group-70 count matches its actual entry count (#1589)")
+    func ltypeTableDeclaredCountMatchesEntries() throws {
+        let writer = DXFWriter()
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("ltype_count_1589_\(UUID()).dxf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+
+        // The LTYPE table header is `pair(0,"TABLE") + pair(2,"LTYPE") + pair(70, N)`, i.e.
+        // the literal text "0\nTABLE\n2\nLTYPE\n70\n" immediately followed by N.
+        guard let headerRange = content.range(of: "0\nTABLE\n2\nLTYPE\n70\n") else {
+            Issue.record("LTYPE table header not found in DXF output")
+            return
+        }
+        let afterCode = content[headerRange.upperBound...]
+        guard let countEnd = afterCode.firstIndex(of: "\n") else {
+            Issue.record("LTYPE declared count line not terminated")
+            return
+        }
+        guard let declaredCount = Int(afterCode[afterCode.startIndex..<countEnd]) else {
+            Issue.record("LTYPE declared count is not an integer")
+            return
+        }
+
+        guard let endTabRange = content.range(of: "0\nENDTAB\n", range: countEnd..<content.endIndex)
+        else {
+            Issue.record("LTYPE table's ENDTAB not found")
+            return
+        }
+        // Each linetype entry starts with `pair(0,"LTYPE") + pair(2,<name>)`, i.e. "0\nLTYPE\n";
+        // the table header itself starts with "0\nTABLE\n" so it never matches this pattern.
+        let tableBody = content[countEnd..<endTabRange.lowerBound]
+        let actualCount = tableBody.components(separatedBy: "0\nLTYPE\n").count - 1
+
+        #expect(declaredCount == actualCount)
+    }
 }

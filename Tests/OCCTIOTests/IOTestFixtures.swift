@@ -330,7 +330,7 @@ let golden795DXF = #"""
     2
     LTYPE
     70
-    4
+    3
     0
     LTYPE
     2
