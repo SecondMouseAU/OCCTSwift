@@ -2273,6 +2273,7 @@ public struct ConicQuadResult {
     public let points: [SIMD3<Double>]
     public let params: [Double]
     public let isParallel: Bool
+    public let isInQuadric: Bool
 }
 ```
 
@@ -2281,6 +2282,7 @@ public struct ConicQuadResult {
 | `points` | Intersection points in 3D |
 | `params` | Parameter on the line for each point, aligned index-for-index with `points` |
 | `isParallel` | The line is parallel to the quadric surface |
+| `isInQuadric` | Only meaningful when `isParallel` is `true`: the line lies entirely within the surface (an infinite intersection), rather than merely being parallel and disjoint from it (#1582). `points`/`params` stay empty either way. Only `linePlane(...)` computes this (mirrors OCCT's own `IntAna_IntConicQuad::IsInQuadric()`); `lineSphere(...)` always reports `false`. |
 
 ---
 
@@ -2299,13 +2301,17 @@ public static func linePlane(lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
                               planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> ConicQuadResult
 ```
 
-- **Returns:** Up to 1 intersection point; `isParallel` is `true` when the line lies in or is parallel to the plane.
+- **Returns:** Up to 1 intersection point; `isParallel` is `true` when the line lies in or is parallel to the plane. When `isParallel` is `true`, check `isInQuadric` to tell a line embedded entirely within the plane apart from one that is merely parallel and disjoint (#1582); both otherwise report the identical empty `points`/`params`.
 - **OCCT:** `IntAna_IntConicQuad` (via `OCCTIntAnaLineQuad`).
 - **Example:**
   ```swift
   let r = IntAna.linePlane(lineOrigin: SIMD3(0, 0, 5), lineDir: SIMD3(0, 0, -1),
                             planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
   // r.points[0] ≈ (0, 0, 0)
+
+  let embedded = IntAna.linePlane(lineOrigin: SIMD3(1, 2, 0), lineDir: SIMD3(1, 0, 0),
+                                   planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+  // embedded.isParallel == true, embedded.isInQuadric == true (the line lies in the plane)
   ```
 
 ---

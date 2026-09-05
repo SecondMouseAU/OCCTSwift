@@ -13,9 +13,34 @@ public enum IntAna {
         public let params: [Double]
         /// Whether the line is parallel to the surface.
         public let isParallel: Bool
+        /// Whether the line lies entirely within the surface (an infinite intersection).
+        ///
+        /// Only meaningful when ``isParallel`` is `true`: `points`/`params` stay empty either
+        /// way, so without this flag a parallel-and-disjoint line and a line embedded entirely in
+        /// the plane report the identical, indistinguishable result (#1582). Mirrors OCCT's own
+        /// `IntAna_IntConicQuad::IsInQuadric()`. Only ``linePlane(lineOrigin:lineDir:planeOrigin:planeNormal:)``
+        /// computes this; ``lineSphere(lineOrigin:lineDir:sphereCenter:sphereAxis:radius:)`` never
+        /// calls `IsInQuadric()` bridge-side, so it always reports `false`.
+        public let isInQuadric: Bool
     }
 
     /// Intersect a line with a plane.
+    ///
+    /// A parallel line (``ConicQuadResult/isParallel`` `true`) reports empty `points`/`params`
+    /// either way; check ``ConicQuadResult/isInQuadric`` to tell a line lying entirely within the
+    /// plane apart from one that is merely parallel and disjoint (#1582).
+    ///
+    /// ```swift
+    /// let embedded = IntAna.linePlane(
+    ///     lineOrigin: SIMD3(1, 2, 0), lineDir: SIMD3(1, 0, 0),
+    ///     planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+    /// // embedded.isParallel == true, embedded.isInQuadric == true (the line lies in the plane)
+    ///
+    /// let disjoint = IntAna.linePlane(
+    ///     lineOrigin: SIMD3(0, 0, 5), lineDir: SIMD3(1, 0, 0),
+    ///     planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+    /// // disjoint.isParallel == true, disjoint.isInQuadric == false (parallel and disjoint)
+    /// ```
     public static func linePlane(
         lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
         planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>
@@ -54,7 +79,8 @@ public enum IntAna {
                 }
             }
         }
-        return ConicQuadResult(points: pts, params: pars, isParallel: r.isParallel)
+        return ConicQuadResult(
+            points: pts, params: pars, isParallel: r.isParallel, isInQuadric: r.isInQuadric)
     }
 
     /// Intersect a line with a sphere.
@@ -82,7 +108,8 @@ public enum IntAna {
                 }
             }
         }
-        return ConicQuadResult(points: pts, params: pars, isParallel: r.isParallel)
+        return ConicQuadResult(
+            points: pts, params: pars, isParallel: r.isParallel, isInQuadric: r.isInQuadric)
     }
 
     /// Which shape `IntAna_QuadQuadGeo` actually reported.
