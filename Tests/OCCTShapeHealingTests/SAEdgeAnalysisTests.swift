@@ -67,6 +67,51 @@ struct SAEdgeAnalysisTests {
         }
     }
 
+    // #1577: checkVerticesWithCurve3d used to default `precision` to a fixed `1e-6`, stricter than
+    // ShapeAnalysis_Edge's own sentinel default (`preci < 0` checks each vertex against its OWN
+    // stored tolerance instead of a fixed distance). Build two straight edges whose endpoints are
+    // 0.005 apart, loosen both edges' tolerances to 0.01 (looser than that gap) via `setTolerance`,
+    // then join them with `wireFromEdges`: `BRepBuilderAPI_MakeWire`'s connectivity check compares
+    // the gap against each vertex's own tolerance, so the loosened tolerance lets it merge the two
+    // close vertices into one, at a weighted-average point, with a new tolerance covering both
+    // original points (~0.0125 here) -- but it leaves each edge's own 3D curve untouched, so the
+    // resulting shared vertex sits ~0.0025 away from where each edge's OWN curve evaluates at that
+    // end. That is a real, common ("healed"/sewn geometry) mismatch: within the merged vertex's own
+    // 0.0125 tolerance, but well past a fixed 1e-6, which is exactly the scenario the sentinel
+    // default exists to handle correctly.
+    @Test func edgeVerticesWithCurve3dSentinelDefaultUsesOwnVertexTolerance() {
+        guard let edgeA = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)) else {
+            Issue.record("failed to build edgeA")
+            return
+        }
+        guard let edgeB = Shape.edgeFromPoints(SIMD3(10.005, 0, 0), SIMD3(20, 0, 0)) else {
+            Issue.record("failed to build edgeB")
+            return
+        }
+        // Loosen both edges' (and their vertices') tolerance past the 0.005 endpoint gap so
+        // BRepBuilderAPI_MakeWire's connectivity check accepts the join instead of refusing a
+        // disconnected wire.
+        edgeA.setTolerance(0.01)
+        edgeB.setTolerance(0.01)
+
+        guard let wire = Shape.wireFromEdges([edgeA, edgeB]) else {
+            Issue.record("failed to build wire from mismatched edges")
+            return
+        }
+        let joinedEdges = wire.subShapes(ofType: .edge)
+        #expect(joinedEdges.count == 2)
+
+        for edge in joinedEdges {
+            // The old fixed-1e-6 default is stricter than the merged vertex's own (looser)
+            // tolerance, so it flags a mismatch that OCCT's own documented semantics does not
+            // consider a problem.
+            #expect(EdgeAnalysis.checkVerticesWithCurve3d(edge, precision: 1e-6))
+            // The new default (-1: check each vertex against its own tolerance) reports no
+            // mismatch for the same edge.
+            #expect(!EdgeAnalysis.checkVerticesWithCurve3d(edge))
+        }
+    }
+
     @Test func edgeVerticesWithPCurve() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)

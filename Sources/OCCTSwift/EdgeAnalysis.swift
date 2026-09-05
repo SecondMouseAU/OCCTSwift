@@ -34,14 +34,39 @@ public enum EdgeAnalysis {
     }
 
     /// Check vertices with 3D curve positions.
-    public static func checkVerticesWithCurve3d(_ edge: Shape, precision: Double = 1e-6) -> Bool {
+    ///
+    /// - Parameters:
+    ///   - edge: The edge whose vertices to check.
+    ///   - precision: Distance threshold for a vertex to be considered consistent with the
+    ///     curve. Defaults to `-1.0`, matching `ShapeAnalysis_Edge::CheckVerticesWithCurve3d`'s own
+    ///     sentinel default: a negative value checks each vertex against its own stored tolerance
+    ///     instead of a fixed distance. Prior to #1577 this defaulted to a fixed `1e-6`, which made
+    ///     the check stricter than OCCT's own default for any vertex whose own tolerance is looser
+    ///     than `1e-6` (common on healed/mesh-derived geometry).
+    /// - Returns: `true` if a vertex/curve mismatch was found (matching OCCT's own
+    ///   `CheckVerticesWithCurve3d` contract: `true` means a problem was detected, not that the
+    ///   check passed).
+    public static func checkVerticesWithCurve3d(_ edge: Shape, precision: Double = -1.0) -> Bool {
         OCCTEdgeCheckVerticesWithCurve3d(edge.handle, precision)
     }
 
     /// Check vertices with PCurve positions on a face.
+    ///
+    /// - Parameters:
+    ///   - edge: The edge whose vertices to check.
+    ///   - face: The face carrying the pcurve to check against.
+    ///   - precision: Distance threshold for a vertex to be considered consistent with the
+    ///     pcurve. Defaults to `-1.0`, matching `ShapeAnalysis_Edge::CheckVerticesWithPCurve`'s own
+    ///     sentinel default: a negative value checks each vertex against its own stored tolerance
+    ///     instead of a fixed distance. Prior to #1577 this defaulted to a fixed `1e-6`, which made
+    ///     the check stricter than OCCT's own default for any vertex whose own tolerance is looser
+    ///     than `1e-6` (common on healed/mesh-derived geometry).
+    /// - Returns: `true` if a vertex/pcurve mismatch was found (matching OCCT's own
+    ///   `CheckVerticesWithPCurve` contract: `true` means a problem was detected, not that the
+    ///   check passed).
     public static func checkVerticesWithPCurve(
         _ edge: Shape, face: Shape,
-        precision: Double = 1e-6
+        precision: Double = -1.0
     ) -> Bool {
         OCCTEdgeCheckVerticesWithPCurve(edge.handle, face.handle, precision)
     }

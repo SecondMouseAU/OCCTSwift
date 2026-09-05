@@ -2047,7 +2047,7 @@ public static func checkSameParameter(_ edge: Shape) -> (ok: Bool, maxDeviation:
 Verify that vertex positions match the curve 3D endpoints.
 
 ```swift
-public static func checkVerticesWithCurve3d(_ edge: Shape, precision: Double = 1e-6) -> Bool
+public static func checkVerticesWithCurve3d(_ edge: Shape, precision: Double = -1.0) -> Bool
 ```
 
 - **Returns:** `true` if check passes.
@@ -2061,7 +2061,7 @@ Verify that vertex positions match the PCurve endpoints on a face.
 
 ```swift
 public static func checkVerticesWithPCurve(_ edge: Shape, face: Shape,
-                                            precision: Double = 1e-6) -> Bool
+                                            precision: Double = -1.0) -> Bool
 ```
 
 - **OCCT:** `ShapeAnalysis_Edge::CheckVerticesWithPCurve`
