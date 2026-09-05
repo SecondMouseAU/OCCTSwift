@@ -84,4 +84,48 @@ struct ShapeRevolutionAxesTests {
         }
         #expect(abs((extent.upperBound - extent.lowerBound) - 20) < 1e-6)
     }
+
+    // #1576: `OCCTShapeRevolutionAxes` writes only `min(collected.size(), maxAxes)` entries into
+    // the caller's buffer but used to `return (int32_t)collected.size()` -- the full, UNCAPPED
+    // count -- rather than the capped count it actually wrote. `revolutionAxes()`'s own buffer
+    // is a fixed 256-element Swift array, so a shape with more than 256 distinct (post-dedup)
+    // axes made the bridge report a count exceeding what was written, and the `map` below
+    // indexing `buffer[256..<count]` trapped (Swift arrays are bounds-checked). 300 cylinders,
+    // each offset far enough along X that `axesCoincide`'s cross-product-with-the-axis-direction
+    // check can never collapse two of them (their separation is perpendicular to the shared Z
+    // axis direction, so it's never "the same line"), forces exactly 300 distinct axes: enough to
+    // overrun the real 256-element buffer through the real public API, no shipped constant
+    // changed to get there.
+    @Test("More than 256 distinct revolution axes: reported count never exceeds the buffer capacity")
+    func manyDistinctAxesCountNeverExceedsBufferCapacity() {
+        let n = 300
+        var cylinders: [Shape] = []
+        cylinders.reserveCapacity(n)
+        for i in 0..<n {
+            guard
+                let cyl = Shape.cylinder(
+                    at: SIMD3(Double(i) * 10, 0, 0),
+                    direction: SIMD3(0, 0, 1),
+                    radius: 1,
+                    height: 1
+                )
+            else {
+                Issue.record("cylinder \(i) nil")
+                return
+            }
+            cylinders.append(cyl)
+        }
+        guard let combined = Shape.compound(cylinders) else {
+            Issue.record("compound nil")
+            return
+        }
+        let axes = combined.revolutionAxes()
+        // Pre-fix this would have trapped constructing `axes` at all (fatal error: Index out of
+        // range), before ever reaching an #expect; reaching this line at all is part of the proof.
+        #expect(axes.count <= 256)
+        // All 300 axes are genuinely distinct, so the capped count should be exactly the buffer
+        // size, confirming the raw (uncapped) count really did exceed it.
+        #expect(axes.count == 256)
+        #expect(axes.allSatisfy { $0.kind == .cylinder })
+    }
 }
