@@ -1665,10 +1665,10 @@ OCCTViewObjectRef OCCTViewObjectCreate(void);
 /// Release view object
 void OCCTViewObjectRelease(OCCTViewObjectRef ref);
 
-/// Set projection type (0=central, 1=parallel)
+/// Set projection type (XCAFView_ProjectionType: 0=NoCamera, 1=Parallel, 2=Central)
 void OCCTViewObjectSetType(OCCTViewObjectRef ref, int32_t type);
 
-/// Get projection type (0=central, 1=parallel)
+/// Get projection type (XCAFView_ProjectionType: 0=NoCamera, 1=Parallel, 2=Central)
 int32_t OCCTViewObjectGetType(OCCTViewObjectRef ref);
 
 /// Set view direction
