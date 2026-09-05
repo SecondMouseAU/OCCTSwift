@@ -200,7 +200,7 @@ func makeGolden795Drawing() -> Drawing {
 let golden795SVG = #"""
     <?xml version="1.0" encoding="UTF-8"?>
     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-20.0000 -49.0000 75.0000 93.5000" width="75.0000mm" height="93.5000mm">
-    <g transform="translate(0,44.5000) scale(1,-1)">
+    <g transform="translate(0,-4.5000) scale(1,-1)">
     <g id="VISIBLE" stroke="black" stroke-width="0.5000" fill="none">
     <line x1="-7.5000" y1="-20.0000" x2="7.5000" y2="-20.0000"/>
     <line x1="-7.5000" y1="20.0000" x2="7.5000" y2="20.0000"/>

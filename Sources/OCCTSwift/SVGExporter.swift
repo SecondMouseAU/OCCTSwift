@@ -8,10 +8,15 @@ import simd
 // width and dash pattern per ISO 128-20.
 //
 // Coordinate handling: drawings use mathematical Y (up), SVG uses screen Y
-// (down). The writer wraps all content in a group with `transform="scale(1,-1)
-// translate(0, -viewBoxMaxY)"` to keep the staged mm coordinates sensible.
-// Text is handled specially — the y-flip would mirror glyphs, so each `<text>`
-// gets its own counter-transform.
+// (down). The writer wraps all content in a group with `transform="translate(0,
+// 2*vb.min.y + vb.size.y) scale(1,-1)"` -- SVG composes `transform="A B"` as
+// `p' = A·(B·p)`, so this maps `p.y` to `(2*vb.min.y + vb.size.y) - p.y`, a
+// reflection about the declared viewBox's own vertical midline
+// `vb.min.y + vb.size.y/2` that keeps the flipped content inside `vb` (#1570;
+// the `vb.min.y` term is not optional, it is what keeps a non-zero-origin
+// viewBox's content from landing entirely outside it). Text is handled
+// specially -- the y-flip would mirror glyphs, so each `<text>` gets its own
+// counter-transform.
 
 public enum SVGError: Error, LocalizedError {
     case writeFailed(String)
@@ -145,7 +150,9 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
             "viewBox=\"\(formatMM(vb.min.x)) \(formatMM(vb.min.y)) \(formatMM(vb.size.x)) \(formatMM(vb.size.y))\" "
         s += "width=\"\(formatMM(vb.size.x))mm\" height=\"\(formatMM(vb.size.y))mm\">\n"
         // Flip Y so drawing-space mathematical Y (up) maps to SVG screen Y (down).
-        s += "<g transform=\"translate(0,\(formatMM(vb.min.y + vb.size.y))) scale(1,-1)\">\n"
+        // Reflect about the viewBox's own midline (2*vb.min.y + vb.size.y), not just its
+        // height, so content stays inside the declared viewBox when vb.min.y != 0 (#1570).
+        s += "<g transform=\"translate(0,\(formatMM(2 * vb.min.y + vb.size.y))) scale(1,-1)\">\n"
 
         let layerOrder = [
             "VISIBLE", "OUTLINE", "BORDER", "TITLE",
