@@ -405,20 +405,20 @@ public final class AAG: @unchecked Sendable {
 
     /// Get neighbors of a face.
     public func neighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return Array(adjacencyList[faceIndex].keys)
     }
 
     /// Get the edge between two faces (if adjacent).
     public func edge(between face1: Int, and face2: Int) -> AAGEdge? {
-        guard face1 < adjacencyList.count else { return nil }
+        guard face1 >= 0, face1 < adjacencyList.count, face2 >= 0 else { return nil }
         guard let edgeIndex = adjacencyList[face1][face2] else { return nil }
         return edges[edgeIndex]
     }
 
     /// Get all concave neighbors of a face.
     public func concaveNeighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
             edges[edgeIndex].convexity == .concave ? neighbor : nil
         }
@@ -426,7 +426,7 @@ public final class AAG: @unchecked Sendable {
 
     /// Get all convex neighbors of a face.
     public func convexNeighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
             edges[edgeIndex].convexity == .convex ? neighbor : nil
         }
