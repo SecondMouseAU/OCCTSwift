@@ -1662,7 +1662,9 @@ All layer names assigned to this label.
 public var layers: [String]
 ```
 
-- **Returns:** Array of layer name strings (up to 16 entries).
+- **Returns:** Array of every layer name assigned to this label. Reads into a 16-entry buffer
+  first and, if the bridge reports more layers than that, retries once with a buffer sized to the
+  true count (#1563), so the result is never silently truncated.
 - **OCCT:** `XCAFDoc_LayerTool::GetLayers`.
 
 ---

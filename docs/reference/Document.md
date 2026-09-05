@@ -979,7 +979,9 @@ public func descendants(allLevels: Bool = false) -> [AssemblyNode]
 ```
 
 - **Parameters:** `allLevels`, if `true`, recurse all descendants; if `false`, direct children only.
-- **Returns:** Array of descendant nodes (up to 1,024).
+- **Returns:** Array of every descendant node. Reads into a 1,024-entry buffer first and, if the
+  bridge reports more descendants than that, retries once with a buffer sized to the true count
+  (#1563), so the result is never silently truncated.
 - **OCCT:** `TDF_ChildIterator(label, allLevels)` (via `OCCTDocumentGetDescendantLabels`).
   No `TDF_LabelSequence` is built.
 

@@ -1492,6 +1492,10 @@ void OCCTDocumentLabelForgetAllAttributes(OCCTDocumentRef doc, int64_t labelId, 
   }
 }
 
+// #1563: reports the TRUE descendant count even when `maxCount` truncated the write, matching the
+// #562 precedent (OCCTCurve2DSplitAtDiscontinuities) so the Swift caller can retry at the size it
+// was just told. It used to return the written count, which capped it silently at the caller's
+// buffer size and was indistinguishable from a tree with exactly that many descendants.
 int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
                                         int64_t         labelId,
                                         bool            allLevels,
@@ -1505,13 +1509,14 @@ int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return 0;
-    int32_t count = 0;
-    for (TDF_ChildIterator it(label, allLevels); it.More() && count < maxCount; it.Next())
+    int32_t total = 0;
+    for (TDF_ChildIterator it(label, allLevels); it.More(); it.Next())
     {
-      outLabelIds[count] = doc->registerLabel(it.Value());
-      count++;
+      if (total < maxCount)
+        outLabelIds[total] = doc->registerLabel(it.Value());
+      total++;
     }
-    return count;
+    return total;
   }
   catch (...)
   {
@@ -2902,6 +2907,9 @@ bool OCCTDocumentIsLayerSet(OCCTDocumentRef doc, int64_t labelId, const char* la
   }
 }
 
+// #1563: reports the TRUE layer count even when `maxNames` truncated the write, the same #562
+// shape as OCCTDocumentGetDescendantLabels immediately above. It used to return the written
+// count, indistinguishable from a label with exactly `maxNames` layers.
 int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
                                    int64_t         labelId,
                                    char**          outNames,
@@ -2919,14 +2927,15 @@ int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
     Handle(NCollection_HSequence<TCollection_ExtendedString>) layers = layerTool->GetLayers(label);
     if (layers.IsNull())
       return 0;
-    int32_t count = std::min((int32_t)layers->Length(), maxNames);
+    int32_t total = (int32_t)layers->Length();
+    int32_t count = std::min(total, maxNames);
     for (int32_t i = 0; i < count; i++)
     {
       TCollection_AsciiString ascii(layers->Value(i + 1));
       strncpy(outNames[i], ascii.ToCString(), maxLen - 1);
       outNames[i][maxLen - 1] = '\0';
     }
-    return count;
+    return total;
   }
   catch (...)
   {
