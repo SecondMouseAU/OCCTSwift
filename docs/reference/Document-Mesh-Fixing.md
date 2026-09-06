@@ -1926,7 +1926,7 @@ Run a single fix pass directly.
 
 Runs `ShapeFix_Face::FixPeriodicDegenerated` alone: heals a wire that belts the full period of a
 periodic surface as a single closed edge (see the `ShapeFix_Face::FixPeriodicDegenerated`
-null-Context SIGSEGV entry in `CLAUDE.md`'s Known OCCT Bugs, fixed upstream in OCCT 8.0.1).
+null-Context SIGSEGV row (#317) in `okf/references/known-occt-bugs.md`, fixed upstream in OCCT 8.0.1).
 
 ```swift
 @discardableResult public func fixPeriodicDegenerated() -> Bool

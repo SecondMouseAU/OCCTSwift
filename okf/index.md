@@ -4,7 +4,7 @@ title: OCCTSwift
 resource: https://github.com/SecondMouseAU/OCCTSwift
 tags: [cad, occt, opencascade, brep, swift, kernel]
 description: Swift wrapper for OpenCASCADE Technology (OCCT), the B-Rep solid modelling kernel of the ecosystem.
-timestamp: 2026-06-18
+timestamp: 2026-09-07
 ---
 
 # OCCTSwift
@@ -29,7 +29,8 @@ geometry, topology, modelling, mesh, shape-healing, I/O, XCAF, analysis, drawing
 
 ## References
 
-See [`references/`](references/index.md), OpenCASCADE upstream and licensing (LGPL + exception).
+See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LGPL + exception), the
+[carried OCCT patches](references/carried-occt-patches.md) and the [known OCCT bugs](references/known-occt-bugs.md) index.
 
 ## Notes
 
@@ -52,6 +53,10 @@ See [`references/`](references/index.md), OpenCASCADE upstream and licensing (LG
 - [Search before building](policies/search-before-building.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
 - [Upstream OCCT patch process, start to finish](policies/upstream-occt-patch-process.md)
+- [Pinned kernel patch check](policies/pinned-kernel-patch-check.md)
+- [Null handle and null shape guards in the bridge](policies/null-handle-guards.md)
+- [Static gates and censuses](policies/static-gates.md)
+- [Required status checks on main](policies/required-status-checks.md)
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)
