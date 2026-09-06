@@ -304,7 +304,7 @@ These require implementing C++ abstract classes, which the bridge architecture d
 - `gp_VectorWithNullMagnitude`, `BRepExtrema_UnCompatibleShape`, `Standard_DomainError` exception
   types (`DEFINE_STANDARD_EXCEPTION`), not constructible geometry. `gp_VectorWithNullMagnitude` is
   what `gp_Vec`/`gp_Dir`'s own constructor throws for a zero-length input, already absorbed by the
-  bridge-wide `catch (...)` sweep the #345 entry in `CLAUDE.md`'s Known OCCT Bugs describes;
+  bridge-wide `catch (...)` sweep the #345 row in `okf/references/known-occt-bugs.md` describes;
   `BRepExtrema_UnCompatibleShape` is `BRepExtrema`'s equivalent for a shape-type mismatch, caught
   the same way at every `BRepExtrema_*` call site. Neither is something to "wrap" as a value. (#809)
 - The entire `GCE2d_*` package (`GCE2d_MakeArcOfCircle`, `GCE2d_MakeArcOfEllipse`,
@@ -361,7 +361,7 @@ These require implementing C++ abstract classes, which the bridge architecture d
   exception types (`DEFINE_STANDARD_EXCEPTION`), not constructible topology. The first two are what
   a `TopoDS_Shape` modification raises when the shape, or its geometry, is already shared or
   protected; the third is what `TopoDS_Builder::Add` raises for an incorrect insertion. All three
-  are absorbed by the bridge-wide `catch (...)` the #345 entry in `CLAUDE.md`'s Known OCCT Bugs
+  are absorbed by the bridge-wide `catch (...)` the #345 row in `okf/references/known-occt-bugs.md`
   describes, the same treatment `gp_VectorWithNullMagnitude` gets above. (#808)
 - `BRepBuilderAPI_WireError`, `BRepBuilderAPI_PipeError`, `BRepBuilderAPI_TransitionMode`,
   `TopTools_FormatVersion`: enums whose **values** the Swift surface already mirrors, without the
@@ -1844,7 +1844,7 @@ documented; the remaining 257 are curated below.**
 **`GeomFill_` (68 classes, 38 already ok) and `BRepFill_` (46 classes, 13 already ok), read in the
 most depth per #1045's own priority.** Both back the already-wrapped `GeomFill_Sweep`/
 `BRepFill_Sweep`/`BRepFill_Filling` engine (`BRepOffsetAPI_MakePipeShell`/`MakeFilling`,
-`PipeShellBuilder`, `Shape.sweep`, `Shape.fill`), and CLAUDE.md's Known OCCT Bugs already documents
+`PipeShellBuilder`, `Shape.sweep`, `Shape.fill`), and `okf/references/known-occt-bugs.md` already documents
 two real kernel defects in exactly this engine (`GeomFill_Sweep::BuildAll` overwriting a measured
 error with the requested tolerance, #597; `BRepFill_Filling::AddConstraints` discarding a pcurve's
 trim range, #430), so "internal to an engine with known sharp edges" is not a guess here.
@@ -1877,7 +1877,7 @@ computation of the bisecting locus"), `MAT_BasicElt` an input-graph node ("A Bas
 to each elementary constituent of the figure"), `Bisector_Curve` the abstract bisector-curve base;
 `AdvApp2Var_`/`AdvApprox_` (25, 2 ok) are the two- and one-variable polynomial approximation engine
 under `GeomConvert_ApproxSurface` (and `GeomPlate_MakeApprox` for the one-variable half), wrapped,
-and CLAUDE.md's #522 entry documents a real kernel bug in exactly this engine
+and the #522 row in `okf/references/known-occt-bugs.md` documents a real kernel bug in exactly this engine
 (`AdvApp2Var_ApproxF2var::mma2ce1_`/`AdvApp2Var_Context`), `AdvApp2Var_Patch` ("used to store results
 on a domain [Ui,Ui+1]x[Vj,Vj+1]") and `AdvApprox_SimpleApprox` ("Approximate a function on an
 interval [First,Last]... The result is a simple polynomial whose degree is as low as possible") its

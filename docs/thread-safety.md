@@ -158,7 +158,7 @@ after, then **retired 2026-09-02** once OCCT's own upstream `master` shipped a s
 for the identical globals (per-instance member fields, not `thread_local`) in
 [OCCT#1505](https://github.com/Open-Cascade-SAS/OCCT/pull/1505)/[#1509](https://github.com/Open-Cascade-SAS/OCCT/pull/1509);
 carrying an inferior fix for an already-unreachable defect someone else was actively fixing better
-was not worth it. See CLAUDE.md's Known OCCT Bugs, #1371, and `Scripts/patches/README.md`'s retired
+was not worth it. See the #1371 row in `okf/references/known-occt-bugs.md`, and `Scripts/patches/README.md`'s retired
 `0032` entry for the full account.
 
 ### Document creation thread safety (issues #341, #344)
@@ -185,7 +185,7 @@ that changed and what it did not.
   temporary override. `OwnAutoNamingScope` replaces it, saving/restoring a per-instance
   override on `XCAFDoc_ShapeTool` (already one instance per document) instead of a
   shared flag, no locking needed at all, since independent documents never touch
-  anything shared. See the `#341` entry in `CLAUDE.md`'s Known OCCT Bugs for the full
+  anything shared. See the `#341` row in `okf/references/known-occt-bugs.md` and `Scripts/repro/341-meshcaf/` for the full
   writeup, including why the naive "set on entry, unset on exit" version of this fix
   would have broken `XCAFDoc_Editor::Expand()`'s self-recursion.
 - **v1.15.6** (`Scripts/patches/0012`, issue #344): an uncatchable SIGSEGV survived the
@@ -252,7 +252,7 @@ original framing.
   concurrent `Transfer()` call, and `IFSelect_WorkSession`'s constructor races on a global named
   `errhand`), independent of `Interface_Static` and not reachable by a patch scoped to it. See
   [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
-  and CLAUDE.md's own `#1157` entry for the full measurement.
+  and `Scripts/repro/1157-interface-static-thread-safety/` for the full measurement.
 
 Distinct from issue #280 (constructing a `STEPCAFControl_Reader` poisons subsequent STEP
 writes), that's a different, already-fixed mechanism confirmed *not* `Interface_Static`-related,
