@@ -45,6 +45,10 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### CLAUDE.md moves its rules into `okf/` and its Known OCCT Bugs record into `okf/references/` (#1617)
+
+`CLAUDE.md` shrinks from 1,072 lines to 345, keeping commands, guard syntax and a short working list, with one pointer per section into `okf/`. New: `okf/references/known-occt-bugs.md` (one row per root-caused kernel defect, with fix location and writeup pointer) and four `okf/policies/` pages (`pinned-kernel-patch-check`, `required-status-checks`, `static-gates`, `null-handle-guards`). `okf/references/carried-occt-patches.md` gains rows for `0030`, `0031` and `0033`, the retired `0032`, and a table of the five patches the pinned `v3.0.0` asset does not hold. `Scripts/census-comment-staleness.py`'s patch-citation channel scans the two okf references as well as `CLAUDE.md`. Three stale claims fixed: #344/#345 are not "still uncharacterized", `gate-scripts` is required on `main` not `refactor/**`, and no step says to commit a release directly.
+
 ### `Curve2D.swift`'s Gcc/analytic-intersection/extrema families split into their own files (#687)
 
 `Curve2D.swift` carried 962 lines across 13 declarations belonging to other type families. Split
