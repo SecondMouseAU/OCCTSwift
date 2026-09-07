@@ -1267,7 +1267,7 @@ public static func projectLineOnPlane(
 ```
 
 - **Returns:** 2D line result, or `nil` if projection is degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectLine` → `ProjLib::Project`.
+- **OCCT:** `OCCTProjLibPlaneProjectLine` → `ProjLib_Plane(gp_Pln, gp_Lin)`.
 
 ---
 
@@ -1282,7 +1282,7 @@ public static func projectLineOnCylinder(
 ) -> Line2DResult?
 ```
 
-- **OCCT:** `OCCTProjLibCylinderProjectLine` → `ProjLib::Project`.
+- **OCCT:** `OCCTProjLibCylinderProjectLine` → `ProjLib_Cylinder(gp_Cylinder, gp_Lin)`.
 
 ---
 
@@ -1298,7 +1298,7 @@ public static func projectCircleOnPlane(
 ```
 
 - **Returns:** 2D circle in the plane's parameter space, or `nil` if degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectCircle` → `ProjLib::Project`.
+- **OCCT:** `OCCTProjLibPlaneProjectCircle` → `ProjLib_Plane(gp_Pln, gp_Circ)`.
 
 ---
 

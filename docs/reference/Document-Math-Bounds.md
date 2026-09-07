@@ -2639,7 +2639,7 @@ public static func toBSpline2d(segments: [[SIMD2<Double>]]) -> BezierToBSpline2d
 
 - **Parameters:** `segments`, each element is the ordered 2D control points of one Bezier segment; all segments must have the same number of control points.
 - **Returns:** The merged 2D BSpline data, or `nil` on failure.
-- **OCCT:** `Convert_CompPolynomialToPoles` / `Convert_CompBezierCurves2dToBSplineCurve2d` (via `OCCTConvertCompBezier2dToBSpline2d`).
+- **OCCT:** `Convert_CompBezierCurves2dToBSplineCurve2d` (via `OCCTConvertCompBezier2dToBSpline2d`).
 
 ---
 

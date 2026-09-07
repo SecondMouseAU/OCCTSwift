@@ -710,7 +710,7 @@ public static func findRoot(
 
 - **Parameters:** `range`, hard bounds for the search; other parameters as above.
 - **Returns:** Root within `range`, or `nil` if not converged.
-- **OCCT:** `math_FunctionRoots` (bounded) via `OCCTMathFunctionRootBounded`.
+- **OCCT:** `math_FunctionRoot` (bounded) via `OCCTMathFunctionRootBounded`.
 - **Example:**
   ```swift
   let root = MathSolver.findRoot(near: 1.2, in: 1.0...2.0) { x in
@@ -1073,7 +1073,7 @@ public static func quinticRoots(a: Double, b: Double, c: Double, d: Double, e: D
 ```
 
 - **Returns:** Up to 5 real roots (sorted).
-- **OCCT:** `math_DirectPolynomialRoots` (degree 5) via `OCCTPolyQuinticRoots`.
+- **OCCT:** `MathPoly::Quintic` via `OCCTPolyQuinticRoots`.
 - **Example:**
   ```swift
   let r = PolynomialSolver.quinticRoots(a: 1, b: 0, c: 0, d: 0, e: 0, f: -32)

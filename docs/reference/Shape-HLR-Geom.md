@@ -1770,7 +1770,7 @@ The vector components as a `SIMD3<Double>`.
 public var coordinates: SIMD3<Double> { get }
 ```
 
-- **OCCT:** `Geom_Vector::X`, `Y`, `Z` via `OCCTGeomVector3DCoords`.
+- **OCCT:** `Geom_Vector::Vec`, read as `gp_Vec` components, via `OCCTGeomVector3DCoords`.
 
 ---
 
@@ -1806,7 +1806,7 @@ Returns the sum of this vector and another.
 public func added(_ other: GeomVector3D) -> GeomVector3D
 ```
 
-- **OCCT:** `gp_Vec::Added` via `OCCTGeomVector3DAdded`.
+- **OCCT:** `Geom_VectorWithMagnitude::Added` via `OCCTGeomVector3DAdded`.
 
 ---
 

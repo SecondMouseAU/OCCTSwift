@@ -957,7 +957,7 @@ public func projectPointAll(
   - `point`: the 3D query point.
   - `maxResults`: output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
-- **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
+- **OCCT:** `GeomAPI_ProjectPointOnCurve`, reading every extremum it found (via `OCCTExtremaPointCurve`).
 - **Example:**
   ```swift
   if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
@@ -986,7 +986,7 @@ public func locateNearestPoint(
   - `initU`, `initV`, starting UV parameters.
   - `tolerance`: convergence tolerance.
 - **Returns:** `(u, v, distance)` or `nil` on failure.
-- **OCCT:** `Extrema_ExtPS` local mode (via `OCCTExtremaLocateOnSurface`).
+- **OCCT:** `Extrema_GenLocateExtPS` over a `GeomAdaptor_Surface` (via `OCCTExtremaLocateOnSurface`).
 
 ---
 
@@ -3428,7 +3428,7 @@ The total number of named OCCT colours available.
 public static var namedColorCount: Int { get }
 ```
 
-- **OCCT:** `Quantity_Color` named-colour registry (via `OCCTNamedColorCount`).
+- **OCCT:** the `Quantity_NameOfColor` enumeration, counted to its last named entry (via `OCCTNamedColorCount`).
 
 ---
 

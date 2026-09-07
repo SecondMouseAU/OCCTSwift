@@ -1204,7 +1204,7 @@ Since `TopoDS_Wire` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `wire`, the wire to wrap.
 - **Returns:** A `Shape` wrapping the wire, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromWire`).
+- **OCCT:** no OCCT call; a `TopoDS_Wire` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromWire`).
 - **Example:**
   ```swift
   if let wireAsShape = Shape.fromWire(myWire) {
@@ -1226,7 +1226,7 @@ Since `TopoDS_Edge` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `edge`, the edge to wrap.
 - **Returns:** A `Shape` wrapping the edge, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromEdge`).
+- **OCCT:** no OCCT call; a `TopoDS_Edge` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromEdge`).
 
 ---
 
@@ -1242,7 +1242,7 @@ Since `TopoDS_Face` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `face`, the face to wrap.
 - **Returns:** A `Shape` wrapping the face, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromFace`).
+- **OCCT:** no OCCT call; a `TopoDS_Face` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromFace`).
 
 ---
 
