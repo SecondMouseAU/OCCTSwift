@@ -69,7 +69,6 @@
 #include <NLPlate_HPG0Constraint.hxx>
 #include <NLPlate_HPG1Constraint.hxx>
 #include <NLPlate_NLPlate.hxx>
-#include <Plate_D1.hxx>
 
 #include <ProjLib_CompProjectedCurve.hxx>
 #include <ProjLib_ProjectedCurve.hxx>
@@ -86,12 +85,6 @@
 #include <TopoDS.hxx>
 
 // MARK: - ProjLib: Curve Projection onto Surfaces (v0.22.0)
-
-#include <GeomProjLib.hxx>
-#include <ProjLib_CompProjectedCurve.hxx>
-#include <ProjLib_ProjectedCurve.hxx>
-#include <ProjLib_ProjectOnPlane.hxx>
-#include <Geom_Plane.hxx>
 
 OCCTCurve2DRef OCCTSurfaceProjectCurve2D(OCCTSurfaceRef surface,
                                          OCCTCurve3DRef curve,
@@ -237,14 +230,7 @@ bool OCCTSurfaceProjectPoint(OCCTSurfaceRef surface,
 
 // MARK: - NLPlate: Advanced Plate Surfaces (v0.23.0)
 
-#include <NLPlate_NLPlate.hxx>
-#include <NLPlate_HPG0Constraint.hxx>
-#include <NLPlate_HPG1Constraint.hxx>
 #include <NLPlate_HPG0G1Constraint.hxx>
-#include <Plate_D1.hxx>
-#include <GeomPlate_BuildAveragePlane.hxx>
-#include <GeomAPI_PointsToBSplineSurface.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
 
 // === #571: the one GeomPlate_MakeApprox call ===
 //

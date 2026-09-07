@@ -199,11 +199,6 @@ void occtEnsureSignals()
 #include <GCPnts_TangentialDeflection.hxx>
 #include <BRepAdaptor_Curve.hxx>
 
-// For mesh-to-shape conversion
-#include <BRepBuilderAPI_Sewing.hxx>
-#include <BRepBuilderAPI_MakeSolid.hxx>
-#include <ShapeFix_Solid.hxx>
-
 // Measurement & Analysis (v0.7.0)
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -219,7 +214,6 @@ void occtEnsureSignals()
 #include <BRepAdaptor_CompCurve.hxx>
 #include <GCPnts_AbscissaPoint.hxx>
 #include <BRepLProp_CLProps.hxx>
-#include <Geom_BSplineSurface.hxx>
 #include <GeomFill_BSplineCurves.hxx>
 #include <BRepFill.hxx>
 #include <TColgp_Array2OfPnt.hxx>
@@ -262,9 +256,6 @@ void occtEnsureSignals()
 // IGES import/export (v0.10.0)
 #include <IGESControl_Reader.hxx>
 #include <IGESControl_Writer.hxx>
-
-// BREP native format (v0.10.0)
-#include <BRep_Builder.hxx>
 
 // Geometry Construction (v0.11.0)
 #include <GeomAPI_Interpolate.hxx>
@@ -334,7 +325,6 @@ void occtEnsureSignals()
 #include <GeomPlate_MakeApprox.hxx>
 #include <GeomPlate_PointConstraint.hxx>
 #include <GeomPlate_CurveConstraint.hxx>
-#include <BRepAdaptor_Curve.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <Adaptor3d_CurveOnSurface.hxx>
 
@@ -382,10 +372,7 @@ void occtEnsureSignals()
 #include <LocOpe_CSIntersector.hxx>
 #include <LocOpe_PntFace.hxx>
 // #include <LocOpe_Gluer.hxx> // unused
-#include <BRepCheck_Analyzer.hxx>
 #include <BRepCheck_Edge.hxx>
-#include <BRepCheck_Wire.hxx>
-#include <BRepCheck_Shell.hxx>
 #include <BRepCheck_Vertex.hxx>
 #include <ShapeFix_ShapeTolerance.hxx>
 #include <ShapeFix_SplitCommonVertex.hxx>
@@ -398,11 +385,10 @@ void occtEnsureSignals()
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <ShapeUpgrade_ShapeDivideClosed.hxx>
 #include <ShapeUpgrade_ShapeDivideContinuity.hxx>
+
 // #include <NCollection_Sequence.hxx> // unused in v0.48
 
 // MARK: - Internal Structures
-
-#include <BRepBuilderAPI_Sewing.hxx>
 
 struct OCCTSewing
 {
@@ -418,9 +404,6 @@ struct OCCTSewing
 // are now defined in OCCTBridge_Internal.h (imported above).
 
 // MARK: - #263 self-intersecting-wire guard
-
-#include <BRepCheck_Result.hxx>
-#include <BRepCheck_ListOfStatus.hxx>
 
 // A self-intersecting wire (BRepCheck_SelfIntersectingWire) — typically a mesh-derived
 // outline that crosses itself — extrudes into a prism whose subsequent ShapeFix_Shape

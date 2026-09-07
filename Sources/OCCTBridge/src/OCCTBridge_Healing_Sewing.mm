@@ -111,7 +111,6 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
-#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -122,7 +121,6 @@
 #include <ShapeExtend_CompositeSurface.hxx>
 #include <ShapeFix_ComposeShell.hxx>
 #include <ShapeUpgrade_ClosedFaceDivide.hxx>
-#include <ShapeUpgrade_ShapeDivideAngle.hxx>
 #include <ShapeUpgrade_ShapeDivideArea.hxx>
 #include <ShapeUpgrade_ShellSewing.hxx>
 #include <ShapeFix_FaceConnect.hxx>

@@ -51,15 +51,6 @@
 // MARK: - AIS Annotations & Measurements (v0.26.0)
 // ============================================================
 
-#include <PrsDim_LengthDimension.hxx>
-#include <PrsDim_RadiusDimension.hxx>
-#include <PrsDim_AngleDimension.hxx>
-#include <PrsDim_DiameterDimension.hxx>
-#include <PrsDim_Dimension.hxx>
-#include <AIS_TextLabel.hxx>
-#include <TCollection_ExtendedString.hxx>
-#include <TCollection_AsciiString.hxx>
-
 struct OCCTDimension
 {
   Handle(PrsDim_Dimension) dim;

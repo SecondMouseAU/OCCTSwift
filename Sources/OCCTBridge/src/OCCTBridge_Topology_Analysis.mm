@@ -115,15 +115,12 @@
 
 // MARK: - Wire Explorer (v0.29.0)
 
-#include <BRepTools_WireExplorer.hxx>
-
 // Additional includes gathered from throughout the original file (#1380):
 #include <ShapeAnalysis_Edge.hxx>
 #include <BRepOffsetAPI_FindContigousEdges.hxx>
 #include <BRepClass3d.hxx>
 #include <TopoDS_Solid.hxx>
 #include <TopoDS_Shell.hxx>
-#include <TopExp_Explorer.hxx> // still used by the shell-classification and traversal helpers below
 #include <BRepBuilderAPI_FindPlane.hxx>
 #include <ShapeUpgrade_ShapeDivideClosedEdges.hxx>
 #include <ShapeCustom.hxx>
@@ -135,7 +132,6 @@
 #include <BRepLib_MakeVertex.hxx>
 #include <TopoDS_Builder.hxx>
 #include <TopoDS_CompSolid.hxx>
-#import <BRep_Tool.hxx>
 #import <Geom2d_Curve.hxx>
 #include <BRepLProp_SLProps.hxx>
 #include <GeomAbs_SurfaceType.hxx>
