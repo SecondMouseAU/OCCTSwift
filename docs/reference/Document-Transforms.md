@@ -184,12 +184,22 @@ public static func affinity(
     axisOrigin: SIMD2<Double>,
     axisDirection: SIMD2<Double>,
     ratio: Double
-) -> GeneralTransform2D
+) -> GeneralTransform2D?
 ```
 
 - **Parameters:** `axisOrigin`, axis pass-through point; `axisDirection`, axis direction; `ratio`, scale factor along the axis.
-- **Returns:** A new `GeneralTransform2D`.
+- **Returns:** A new `GeneralTransform2D`, or `nil` when `axisDirection` has no length. An axis needs a direction, and `gp_Dir2d` raises on a zero-norm vector rather than choosing one; before #1407 that raise crossed into Swift uncaught, which aborts the process rather than returning.
 - **OCCT:** `OCCTGTrsf2dAffinity` → `gp_GTrsf2d::SetAffinity`.
+
+```swift
+if let t = GeneralTransform2D.affinity(
+    axisOrigin: SIMD2(0, 0), axisDirection: SIMD2(1, 0), ratio: 2) {
+    print(t.matrix)  // [1, 0, 0, 2]
+}
+// A zero direction is refused rather than defaulted:
+GeneralTransform2D.affinity(
+    axisOrigin: .zero, axisDirection: SIMD2(0, 0), ratio: 2)  // nil
+```
 
 ---
 

@@ -48,7 +48,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Nine gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
+Ten gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
@@ -67,6 +67,7 @@ python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
+python3 Scripts/check-throwing-calls.py          # every throwing OCCT construction/evaluator is caught, guarded or unreachable (#1407)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)

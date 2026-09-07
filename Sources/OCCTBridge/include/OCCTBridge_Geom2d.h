@@ -2252,8 +2252,12 @@ OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, doubl
 // MARK: - gp_GTrsf2d (v0.116.0)
 
 /// Create a 2D affinity transformation about an axis with given ratio.
-/// Returns the 2x2 matrix (row-major) and translation vector.
-void OCCTGTrsf2dAffinity(double axPx,
+///
+/// Writes the 2x2 matrix (row-major) and translation vector and returns true. Returns false,
+/// leaving the outputs untouched, when the axis direction has no length: gp_Dir2d raises
+/// Standard_ConstructionError on a zero-norm vector, and an exception reaching Swift is a
+/// SIGABRT rather than an error (#1407).
+bool OCCTGTrsf2dAffinity(double axPx,
                          double axPy,
                          double axDx,
                          double axDy,

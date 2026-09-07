@@ -49,7 +49,7 @@ history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
 ## Every detector proves it is not blind
 
-Eight of the nine gates, all four censuses and the merge-history audit take `--self-test`, a
+Nine of the ten gates, all four censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
