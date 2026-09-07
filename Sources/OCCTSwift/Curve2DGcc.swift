@@ -5,14 +5,31 @@ import simd
 // MARK: - Gcc Constraint Solver
 
 /// Qualifier for how a curve participates in a geometric constraint.
+///
+/// "Inside" is orientation-dependent rather than a property of the shape: `GccEnt_Position.hxx`
+/// defines the interior of a line or any open curve as the left-hand side of the curve relative
+/// to its own orientation, so reversing a curve swaps which solutions ``enclosing`` and
+/// ``enclosed`` select.
+///
+/// ```swift
+/// // Circles tangent to both inputs and lying outside each of them.
+/// let outer = Curve2DGcc.circlesTangentTo(c1, .outside, c2, .outside, c3, .outside)
+/// ```
+///
+/// Only the solver members that take a *curve* take a qualifier. The all-point members
+/// (``Curve2DGcc/circlesThroughTwoPoints(_:_:radius:tolerance:)``,
+/// ``Curve2DGcc/circleThroughThreePoints(_:_:_:tolerance:)``) take none, because a point has no
+/// inside. OCCT's `GccEnt_noqualifier`, the fifth `GccEnt_Position` value, is not mirrored here:
+/// it is only ever a read-back result from `Geom2dGcc_QualifiedCurve::Qualifier()`, and this API
+/// never reads a qualifier back.
 public enum Curve2DQualifier: Int32, Sendable {
-    /// The solution position is unspecified relative to the curve.
+    /// The solution position is unspecified relative to the curve, so every solution applies.
     case unqualified = 0
     /// The solution encloses the curve.
     case enclosing = 1
     /// The solution is enclosed by the curve.
     case enclosed = 2
-    /// The solution is outside the curve.
+    /// The solution and the curve are external to one another.
     case outside = 3
 }
 
@@ -301,14 +318,48 @@ public enum BisecType: Int32, Sendable {
 }
 
 /// A bisector solution from an analytical bisector computation.
+///
+/// Three loosely typed fields carry a different payload per ``type``, so read ``type`` first:
+///
+/// | `type` | `position` | `secondary` | `radius` |
+/// |---|---|---|---|
+/// | ``BisecType/line`` | a point on the line | its direction | `0` |
+/// | ``BisecType/circle`` | the centre | `(0, 0)` | the radius |
+/// | ``BisecType/ellipse`` | the **centre** | `(majorRadius, minorRadius)` | `0` |
+/// | ``BisecType/hyperbola`` | the **centre** | `(majorRadius, minorRadius)` | `0` |
+/// | ``BisecType/parabola`` | the **vertex** | `(focalDistance, 0)` | `0` |
+/// | ``BisecType/point`` | `(0, 0)` | `(0, 0)` | `0` |
+///
+/// The conic rows are the ones worth reading twice: `position` is never a focus. It is
+/// `gp_Elips2d::Location`, `gp_Hypr2d::Location` and `gp_Parab2d::Location`, which the pinned
+/// headers define as the centre, the centre, and the vertex respectively. `radius` carries a
+/// value only for ``BisecType/circle``; a conic's semi-axes are in `secondary`.
+///
+/// ```swift
+/// for sol in GccAnaBisector.ofCircles(center1: .zero, radius1: 2,
+///                                     center2: SIMD2(10, 0), radius2: 3) {
+///     switch sol.type {
+///     case .ellipse, .hyperbola:
+///         print("centre \(sol.position), semi-axes \(sol.secondary)")
+///     case .parabola:
+///         print("vertex \(sol.position), focal \(sol.secondary.x)")
+///     default:
+///         break
+///     }
+/// }
+/// ```
 public struct BisecSolution: Sendable {
-    /// The type of bisector curve.
+    /// The type of bisector curve, and the key to what the other three fields mean.
     public let type: BisecType
-    /// Primary position (depends on type: center, point on line, focus).
+    /// Primary position, whose meaning depends on ``type``.
+    ///
+    /// A point on the line, a circle's centre, an ellipse's or hyperbola's centre, or a
+    /// parabola's vertex. Never a focus.
     public let position: SIMD2<Double>
-    /// Secondary values (direction for line, radii for conics).
+    /// Secondary values: a line's direction, `(majorRadius, minorRadius)` for an ellipse or
+    /// hyperbola, `(focalDistance, 0)` for a parabola, `(0, 0)` otherwise.
     public let secondary: SIMD2<Double>
-    /// Radius (for circle type).
+    /// Radius, for ``BisecType/circle`` only; `0` for every other type, conics included.
     public let radius: Double
 }
 

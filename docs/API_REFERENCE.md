@@ -126,7 +126,7 @@ a map of the major areas, and the `Total` as the count.
 | **AxisPlacement2D (Geom2d_AxisPlacement)** | 5 | create, origin, direction, reversed, angle |
 | **Vector2D Utilities** | 5 | angle, cross, dot, magnitude, normalize |
 | **Direction2D Utilities** | 3 | normalize, angle, cross |
-| **LProp AnalyticCurInf** | 1 | analyticCurvaturePoints (inflection/min/max curvature for analytic curves) |
+| **LProp CurAndInf** | 1 | analyticCurvaturePoints (curvature extrema of an analytic curve; only an ellipse has any) |
 | **Curve2D ↔ Point2D** | 3 | pointAt, segment(from:Point2D), project(Point2D) |
 | **FairCurve** | 2 | fairCurveBatten, fairCurveMinimalVariation |
 | **LocalAnalysis** | 4 | curveContinuity, curveContinuityFlags, surfaceContinuity, surfaceContinuityFlags |
@@ -597,7 +597,7 @@ into one `nil` ([#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067))
 | `Curve3D.interpolate(points:...)` | `GeomAPI_Interpolate` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
 | `curve.curvature(at:)` / `curve.torsion(at:)`, both `Double?` since #595 | `GeomLProp_CLProps` |
-| `Curve3D.join(_:)` | `GeomConvert::ConcatG1` |
+| `Curve3D.join(_:)` | `GeomConvert::CurveToBSplineCurve` + `GeomConvert_CompCurveToBSplineCurve::Add` |
 
 #### Parametric Surfaces (v0.20.0)
 | Swift API | OCCT Class |

@@ -1501,7 +1501,7 @@ public func uniformDeflection(_ deflection: Double) -> DeflectionResult?
 
 - **Parameters:** `deflection`, maximum chord deflection.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformDeflection` via `OCCTCPntsUniformDeflection`.
+- **OCCT:** `CPnts_UniformDeflection` via `OCCTCPntsUniformDeflection`. Not `GCPnts_UniformDeflection`, which this repo also wraps, behind `Curve3D.drawDeflection` and `Curve2D.drawDeflection`.
 - **Example:**
   ```swift
   if let d = edge.uniformDeflection(0.1) {
@@ -1521,7 +1521,7 @@ public func uniformDeflection(_ deflection: Double, range: ClosedRange<Double>) 
 
 - **Parameters:** `deflection`, maximum chord deflection; `range`, parameter range to sample.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformDeflection` with range via `OCCTCPntsUniformDeflectionRange`.
+- **OCCT:** `CPnts_UniformDeflection` with an explicit `(U1, U2)` range via `OCCTCPntsUniformDeflectionRange`.
 
 ---
 

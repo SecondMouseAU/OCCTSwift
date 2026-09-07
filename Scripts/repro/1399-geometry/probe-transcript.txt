@@ -1,0 +1,15 @@
+Geom2dEval_* constructors on arguments a Swift caller can pass:
+  SineWaveCurve(amplitude=1, omega=1, phase=0)               constructed, no throw
+  SineWaveCurve(amplitude=0, omega=1, phase=0)               THREW Standard_Failure: Geom2dEval_SineWaveCurve: amplitude must be > 0
+  SineWaveCurve(amplitude=1, omega=0, phase=0)               THREW Standard_Failure: Geom2dEval_SineWaveCurve: omega must be > 0
+  CircleInvoluteCurve(radius=5)                              constructed, no throw
+  CircleInvoluteCurve(radius=0)                              THREW Standard_Failure: Geom2dEval_CircleInvoluteCurve: radius must be > 0
+  ArchimedeanSpiralCurve(initialRadius=1, growthRate=0.1)    constructed, no throw
+  ArchimedeanSpiralCurve(initialRadius=1, growthRate=0)      THREW Standard_Failure: Geom2dEval_ArchimedeanSpiralCurve: growth rate must be > 0
+  ArchimedeanSpiralCurve(initialRadius=-1, growthRate=0.1)   THREW Standard_Failure: Geom2dEval_ArchimedeanSpiralCurve: initial radius must be >= 0
+  LogarithmicSpiralCurve(scale=1, growthExponent=0.2)        constructed, no throw
+  LogarithmicSpiralCurve(scale=0, growthExponent=0.2)        THREW Standard_Failure: Geom2dEval_LogarithmicSpiralCurve: scale must be > 0
+  LogarithmicSpiralCurve(scale=1, growthExponent=0)          THREW Standard_Failure: Geom2dEval_LogarithmicSpiralCurve: growth exponent must be > 0
+
+Any THREW line above is a value the bridge's untried Geom2dEval_* D0/D1 entry points
+let escape to the Swift boundary.

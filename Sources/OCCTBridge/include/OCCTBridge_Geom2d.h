@@ -695,7 +695,11 @@ typedef struct
   /// For line: (px, py) is a point on it, (dx, dy) is its direction
   /// For circle: (px, py) is center, radius is radius
   /// For point: (px, py) is the point, others are 0
-  /// For conics: (px, py) is focus/center, radius is semi-axis
+  /// For an ellipse or a hyperbola: (px, py) is the CENTER (gp_Elips2d/gp_Hypr2d::Location),
+  ///   (dx, dy) is (MajorRadius, MinorRadius), radius is 0
+  /// For a parabola: (px, py) is the VERTEX (gp_Parab2d::Location), dx is the focal distance,
+  ///   dy and radius are 0
+  /// No conic reports a focus, and `radius` carries a value for the circle case only.
   double px, py, dx, dy, radius;
 } OCCTBisecSolution;
 

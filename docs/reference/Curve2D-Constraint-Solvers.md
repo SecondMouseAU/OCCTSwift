@@ -166,12 +166,25 @@ public enum Curve2DQualifier: Int32, Sendable {
 }
 ```
 
-- `unqualified`: solution position relative to the curve is unconstrained.
-- `enclosing`: the solution circle encloses the qualified curve.
-- `enclosed`: the solution circle is enclosed by the qualified curve.
-- `outside`: the solution circle is outside the qualified curve.
+- `unqualified`: solution position relative to the curve is unconstrained, so every solution applies.
+- `enclosing`: the solution encloses the qualified curve.
+- `enclosed`: the solution is enclosed by the qualified curve.
+- `outside`: the solution and the curve are external to one another.
 
-Pass these alongside curves in every `Curve2DGcc` solver call.
+"Inside" here is orientation-dependent, not a property of the shape:
+`GccEnt_Position.hxx` defines the interior of a line or any open curve as **the left-hand side of
+the curve relative to its own orientation**, so reversing a curve swaps which solutions
+`enclosing` and `enclosed` select.
+
+Pass these alongside curves in the `Curve2DGcc` solver calls that take a qualified *curve*. The
+members whose arguments are all points (`circlesThroughTwoPoints(_:_:radius:tolerance:)`,
+`circleThroughThreePoints(_:_:_:tolerance:)`) take no qualifier, because a point has no inside;
+neither does `hatch(boundaries:origin:direction:spacing:tolerance:)` or any `GccAnaBisector`
+member.
+
+OCCT's `GccEnt_Position` has a fifth value, `GccEnt_noqualifier`, which is not mirrored here: it is
+what `Geom2dGcc_QualifiedCurve::Qualifier()` returns when reading back an unqualified curve, never
+something a caller passes in, and nothing in this API reads a qualifier back.
 
 ---
 
@@ -551,10 +564,15 @@ public struct BisecSolution: Sendable {
 }
 ```
 
-- `type`: geometric type of the bisector curve.
-- `position`: primary position: center for circles, a point on the line for lines, focus for conics.
-- `secondary`: secondary values: direction for lines, semi-axes for conics.
-- `radius`: radius for circle-type bisectors; 0 otherwise.
+- `type`: geometric type of the bisector curve, and the key to what the other three fields mean.
+- `position`: a point on the line for `.line`, the centre for `.circle`, `.ellipse` and
+  `.hyperbola`, and the **vertex** for `.parabola`. Never a focus: the bridge reads
+  `gp_Elips2d::Location`, `gp_Hypr2d::Location` and `gp_Parab2d::Location`, which the pinned
+  headers define as the centre, the centre, and the vertex.
+- `secondary`: the direction for `.line`, `(majorRadius, minorRadius)` for `.ellipse` and
+  `.hyperbola`, `(focalDistance, 0)` for `.parabola`, and `(0, 0)` otherwise.
+- `radius`: the radius for `.circle` only; `0` for every other type, conics included, whose
+  semi-axes live in `secondary` instead.
 
 *(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
 
