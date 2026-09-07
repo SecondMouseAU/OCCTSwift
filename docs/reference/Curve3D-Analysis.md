@@ -851,19 +851,19 @@ two parameters.
 
 #### `ExtremaPointPair.point1`
 
-Point on the first curve (or the query curve, for curve-surface).
+Point on the first curve.
 
 #### `ExtremaPointPair.param1`
 
-Parameter on the first curve (or the query curve, for curve-surface).
+Parameter on the first curve.
 
 #### `ExtremaPointPair.point2`
 
-Point on the second curve, or the UV point packed as `(u, v, 0)` for curve-surface.
+Point on the second curve.
 
 #### `ExtremaPointPair.param2`
 
-Parameter on the second curve, or the surface U parameter for curve-surface (`point2.z` carries V).
+Parameter on the second curve.
 
 ---
 

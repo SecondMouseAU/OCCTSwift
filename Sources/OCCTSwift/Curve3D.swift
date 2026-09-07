@@ -1764,7 +1764,7 @@ extension Curve3D {
     ///     let cs = line.extremaCS(range: -5...5, surface: sphere)
     ///     if cs.isDone, !cs.isParallel, cs.count >= 1 {
     ///         let p = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
-    ///         // p.point2 is sphere.value(u: p.u2, v: p.v2)
+    ///         // p.point2 is sphere.point(atU: p.u2, v: p.v2)
     ///         print(p.param1, p.u2, p.v2)
     ///     }
     /// }
