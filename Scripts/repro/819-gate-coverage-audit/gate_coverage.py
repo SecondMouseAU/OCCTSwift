@@ -582,8 +582,9 @@ DEFECT_CLASSES = [
               "and is answered rather than dismissed: a claim is registered as a (file, regex, "
               "derived-fact) triple and the gate fails when its regex matches NOTHING, so a "
               "rewording that escapes the check is itself the failure. Building it immediately "
-              "found three live defects: #1066's two ci.yml sentences and a third nobody had "
-              "filed, a carried-patch row whose key named no file on disk.",
+              "found four live defects: #1066's two ci.yml sentences, plus two carried-patch rows "
+              "whose keys named no file on disk (0010, written with an ellipsis, and 0027, keyed "
+              "to a name the patch file does not have). Neither row defect had been filed.",
     ),
     DefectClass(
         id="stale-tsan-suppression",
