@@ -879,8 +879,6 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g)
 
 // MARK: - BRepGraph Extended (v0.133.0)
 
-#include <BRepGraph_Tool.hxx>
-#include <BRepGraph_ShapesView.hxx>
 #include <BRepGraph_Copy.hxx>
 #include <BRepGraph_Transform.hxx>
 
@@ -1407,7 +1405,6 @@ int32_t OCCTBRepGraphSolidCompSolidCount(OCCTBRepGraphRef g, int32_t solidIndex)
 // layer (via LayerRegistry().FindLayer<>() / Ensure<>()); records are now `Event`s whose Mapping
 // value type is NCollection_LinearVector (was NCollection_DynamicArray).
 #include <BRepGraph_LayerHistory.hxx>
-#include <BRepGraph_LayerRegistry.hxx>
 
 // Read the history layer if one has been registered (null otherwise). Reads do not create it.
 static occ::handle<BRepGraph_LayerHistory> bgHistory(OCCTBRepGraphRef g)
@@ -2378,8 +2375,6 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
 
 // MARK: - BRepGraph Assembly & Refs (v0.134.0)
 
-#include <BRepGraph_RefsView.hxx>
-
 static BRepGraph_RefId::Kind refKindFromInt(int32_t k)
 {
   // OCCT 8.0.0p1: BRepGraph_RefId::Kind::CoEdge was removed (coedges are no longer
@@ -3180,7 +3175,6 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 // MARK: - BRepGraph Builder (v0.135.0; migrated to EditorView in v0.157.0 / OCCT 8.0.0 beta1)
 
 #include <BRepGraph_EditorView.hxx>
-#include <BRepGraph_Tool.hxx>
 #include <BRepGraph_DeferredScope.hxx>
 
 static TopAbs_Orientation oriFromInt(int32_t o)
@@ -4917,10 +4911,6 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef g, int32_t productInde
 
 // MARK: - BRepGraph EditorView v0.164.0. RepOps non-guard setters
 
-#include <Geom_Surface.hxx>
-#include <Geom_Curve.hxx>
-#include <Geom2d_Curve.hxx>
-
 // OCCT 8.0.0p1: EditorView::Reps() (the standalone representation editor addressed by RepId) was
 // removed. p1 attaches representation handles directly to topology defs via the per-kind editors,
 // with no public RepId slot to overwrite. We preserve the RepId-keyed ABI through the
@@ -5208,11 +5198,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t c
 
 // MARK: - BRepGraph ML Export & Sampling (v0.136.0)
 
-#include <BRepTools.hxx>
-#include <GeomLProp_SLProps.hxx>
-#include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
-#include <Precision.hxx>
 
 int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g,
                                       int32_t          faceIndex,

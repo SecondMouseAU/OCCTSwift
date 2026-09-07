@@ -79,7 +79,6 @@
 #include <IMeshTools_Parameters.hxx>
 #include <StlAPI_Writer.hxx>
 #include <StlAPI_Reader.hxx>
-#include <BinTools.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <TopoDS_Iterator.hxx>

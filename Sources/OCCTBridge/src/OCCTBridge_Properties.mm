@@ -98,9 +98,6 @@ bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props)
 
 // MARK: - Face Surface Properties (v0.18.0)
 
-#include <GeomLProp_SLProps.hxx>
-#include <BRepGProp.hxx>
-
 bool OCCTFaceGetUVBounds(OCCTFaceRef face, double* uMin, double* uMax, double* vMin, double* vMax)
 {
   if (!face || !uMin || !uMax || !vMin || !vMax)
@@ -327,9 +324,6 @@ double OCCTFaceGetArea(OCCTFaceRef face, double tolerance)
   }
 }
 
-#include <Geom_SurfaceOfRevolution.hxx>
-#include <Geom_SurfaceOfLinearExtrusion.hxx>
-
 bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
                             double*     ox,
                             double*     oy,
@@ -424,10 +418,6 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
 }
 
 // MARK: - Edge 3D Curve Properties (v0.18.0)
-
-#include <GeomLProp_CLProps.hxx>
-#include <BRepAdaptor_Curve.hxx>
-#include <GeomAbs_CurveType.hxx>
 
 bool OCCTEdgeGetParameterBounds(OCCTEdgeRef edge, double* first, double* last)
 {
@@ -669,9 +659,6 @@ int32_t OCCTEdgeGetCurveType(OCCTEdgeRef edge)
 
 // MARK: - Point Projection (v0.18.0)
 
-#include <GeomAPI_ProjectPointOnSurf.hxx>
-#include <GeomAPI_ProjectPointOnCurve.hxx>
-
 OCCTSurfaceProjectionResult OCCTFaceProjectPoint(OCCTFaceRef face, double px, double py, double pz)
 {
   OCCTSurfaceProjectionResult result = {};
@@ -795,9 +782,6 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge, double px, doub
 }
 
 // MARK: - Shape Proximity (v0.18.0)
-
-#include <BRepExtrema_ShapeProximity.hxx>
-#include <BRepExtrema_OverlapTool.hxx>
 
 // #1550: proximityFaces' indices address the same enumeration face(at:) does.
 //
