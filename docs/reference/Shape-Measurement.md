@@ -2108,6 +2108,13 @@ public func splitDrafts(faceIndex: Int, wire: Wire,
 - **Returns:** Modified shape with draft, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitDrafts` (via `OCCTLocOpeSplitDrafts`).
 - **Note:** `LocOpe_SplitDrafts::Perform()` can throw on incompatible geometry; the bridge wraps it in a try-catch.
+- **Returns `nil` on every input in OCCT 8.0.1 (#1393).** `LocOpe_SplitDrafts` accepts only a planar
+  face, and for a planar face it pipes along the intersection of two planes, which is always a
+  `Geom_Line`. `GeomConvert::CurveToBSplineCurve` has no line case and throws
+  `Standard_DomainError("No such curve")`, so the operation cannot complete on this kernel whatever
+  the caller passes. Measured in `Scripts/repro/1393-splitdrafts/`, with the fix queued upstream.
+  `Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift` asserts the refusal and will fail when
+  a repin makes it work.
 
 ---
 
