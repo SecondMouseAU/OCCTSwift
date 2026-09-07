@@ -944,9 +944,7 @@ defined in terms of, #973's own reason for filing it in this lane. `ShapePersist
 `Storage_StreamFormatError`, `Storage_StreamModeError`, `Storage_StreamReadError`,
 `Storage_StreamTypeMismatchError`, `Storage_StreamUnknownTypeError`, `Storage_StreamWriteError`,
 `Storage_TypeData`, `Storage_TypedCallBack`. `Storage_Schema` is worth naming individually: it is
-the class behind `docs/thread-safety.md`'s #374 writeup (`Storage_Schema::ICurrentData`), recorded
-there, not re-litigated here; see the carve-out entry below for the one respect in which that
-writeup is now stale.
+the class behind `docs/thread-safety.md`'s #374 writeup, recorded there, not re-litigated here.
 
 **Physical file layer (7).** The physical file open/read/write/seek primitives `Storage_`'s and
 `PCDM_`'s own drivers open through to reach disk; selected by the format's own driver, never by the
@@ -1006,26 +1004,24 @@ for wrapping here (a genuine but low-value, low-demand format most consumers wil
 neither format can round-trip a document it opens, since neither ships a storage driver); recorded
 so a future pass does not have to re-derive it.
 
-**Over-coverage: two stale claims found and NOT fixed here, per this task's own carve-out.**
+**Over-coverage: two stale claims found here, filed as #1232, fixed under #1400.**
 `Scripts/census-doc-occt-attribution.py --lane <this lane's 38 packages>` found 0 candidates (this
 lane is barely documented outside the classes above, so the detector's `Class::Method` attribution
 shape has almost nothing to check). The real finding came from reading `docs/thread-safety.md` by
 hand, per #983's own pointer at the `#349`/`#353`/`#374` cluster it describes "in terms of carried
-kernel patches." Both are genuine, and both are **filed rather than fixed**
-([#1232](https://github.com/SecondMouseAU/OCCTSwift/issues/1232)), because a human is concurrently
-building reproducers for open thread-safety issues in this exact file and touching it here would
-collide with that work. Summarized: (1) the `### Resource_Manager::Debug /
-Storage_Schema::ICurrentData() races, fixed (issue #374)` section, about `Storage_Schema`, a class
-in this lane, still describes the FIRST, superseded version of that fix (an `ICurrentDataMutex()`
-mutex), which `Scripts/patches/README.md`'s own `0016` entry and issue #518 (closed) record was
-revised on upstream review to a `myCurrentData` per-instance field with no mutex at all, confirmed
-directly against `Scripts/patches/0016-*.patch`'s current contents; (2) the `Scripts/tsan.supp`
-suppression-policy paragraph, about `CDM_Application`/`CDM_MetaData` (Pass 3's lane, #810, not this
-one, named here only because #983's own body points at the same three-issue cluster), cites the
-`#353` metadata-map suppression as a "current example," but `tsan.supp` itself says that
-suppression was removed in v1.15.11 once patch `0015` landed, and `0015` is in fact carried. See
-#1232 for the full detail, including the exact stale text quoted and what the correction should
-say.
+kernel patches." Both were genuine and both were filed rather than fixed at the time, because a
+human was concurrently building reproducers in that exact file. (1) The `#374` section described the
+FIRST, superseded version of that fix, an `ICurrentDataMutex()` recursive mutex, where patch `0016`
+in fact removes the `ICurrentData()`/`ISetCurrentData()` statics outright in favour of a
+`myCurrentData` per-instance field with no mutex at all. (2) The suppression-policy paragraph cited
+the `#353` metadata-map suppression as a "current example" after `tsan.supp` had dropped it in
+v1.15.11, patch `0015` having landed.
+
+#1232 was closed when this lane's PR merged, but neither correction had been written; #1400
+re-found (1) independently, through `refman_census.py` reporting `ICurrentData` on
+`Storage_Schema` as a member the pinned headers do not declare, which is exactly what removing the
+statics means. Both
+sentences are now corrected in `docs/thread-safety.md`.
 
 ### Mesh/presentation/misc lane, family-level (#814)
 
