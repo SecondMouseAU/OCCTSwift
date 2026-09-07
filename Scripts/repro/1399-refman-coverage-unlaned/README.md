@@ -7,6 +7,7 @@ table** and filed the number. This is the lane that turns the number into verdic
 |---|---|
 | `derive_lane.py` | the set, derived by importing #820's own union rather than transcribing it, and split by what can check each class. Thirteen self-test cases. |
 | `family-substrate.md` | the 26 containers and scalars, adjudicated |
+| `census-findings.md` | the attribution census's own 431 findings, adjudicated one at a time: 212 real, 210 false positives with the reason each was wrong |
 | `family-healing.md` | `ShapeFix`/`ShapeAnalysis`/`ShapeUpgrade`/`ShapeCustom`/`ShapeExtend`, `BRepTools`/`BRepLib`, `BRepBndLib`/`BndLib`/`Bnd_*`, `BRepGProp`/`GProp_*`, `BRepGraph_*` |
 | `family-geometry.md` | `Geom`/`Geom2d`/`GeomEval`/`Geom2dEval`, `Convert_*`, `CPnts`, the adaptors, `ElCLib`/`ElSLib`, `LProp`/`Law`, `ProjLib`, the `Gcc` construction family |
 | `family-booleans.md` | `BOPAlgo`/`BOPDS`, `IntTools`, `Intf`/`IntAna`/`IntRes2d`, `Extrema_POn*`, `Contap`, `HatchGen`, `FilletSurf` |
