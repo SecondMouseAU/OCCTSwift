@@ -67,6 +67,7 @@ python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
+python3 Scripts/check-throwing-calls.py          # every throwing OCCT construction/evaluator is caught, guarded or unreachable (#1407)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)

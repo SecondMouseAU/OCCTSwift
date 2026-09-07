@@ -176,6 +176,7 @@
 #include <Geom2d_Ellipse.hxx>
 #include <Geom2d_Hyperbola.hxx>
 #include <Geom2d_Parabola.hxx>
+#include <gp.hxx>
 #include <gp_Ax2d.hxx>
 #include <gp_Ax22d.hxx>
 #include <gp_Circ2d.hxx>
@@ -2612,7 +2613,7 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2)
 }
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
-void OCCTGTrsf2dAffinity(double axPx,
+bool OCCTGTrsf2dAffinity(double axPx,
                          double axPy,
                          double axDx,
                          double axDy,
@@ -2621,15 +2622,29 @@ void OCCTGTrsf2dAffinity(double axPx,
                          double* _Nonnull tx,
                          double* _Nonnull ty)
 {
-  gp_GTrsf2d gt;
-  gt.SetAffinity(gp_Ax2d(gp_Pnt2d(axPx, axPy), gp_Dir2d(axDx, axDy)), ratio);
-  const gp_Mat2d& m = gt.VectorialPart();
-  mat[0]            = m.Value(1, 1);
-  mat[1]            = m.Value(1, 2);
-  mat[2]            = m.Value(2, 1);
-  mat[3]            = m.Value(2, 2);
-  *tx               = gt.TranslationPart().X();
-  *ty               = gt.TranslationPart().Y();
+  // gp_Dir2d raises Standard_ConstructionError on a zero-norm vector, and this function ran the
+  // caller's two doubles straight into it with no try in the chain, so an axis direction of
+  // (0, 0) aborted the process instead of failing (#1407).
+  const double dirLen = std::sqrt(axDx * axDx + axDy * axDy);
+  if (dirLen < gp::Resolution())
+    return false;
+  try
+  {
+    gp_GTrsf2d gt;
+    gt.SetAffinity(gp_Ax2d(gp_Pnt2d(axPx, axPy), gp_Dir2d(axDx, axDy)), ratio);
+    const gp_Mat2d& m = gt.VectorialPart();
+    mat[0]            = m.Value(1, 1);
+    mat[1]            = m.Value(1, 2);
+    mat[2]            = m.Value(2, 1);
+    mat[3]            = m.Value(2, 2);
+    *tx               = gt.TranslationPart().X();
+    *ty               = gt.TranslationPart().Y();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
 
 void OCCTGTrsf2dMultiply(const double* _Nonnull matA,

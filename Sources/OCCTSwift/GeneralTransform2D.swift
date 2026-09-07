@@ -10,14 +10,28 @@ public struct GeneralTransform2D: Sendable {
     public let translation: SIMD2<Double>
 
     /// Create an affinity transformation about a 2D axis with given ratio.
+    ///
+    /// Returns `nil` when `axisDirection` has no length: an axis needs a direction, and OCCT
+    /// raises on a zero-norm one rather than picking a default. Before #1407 the raise crossed
+    /// into Swift uncaught, which is a process abort, not an error.
+    ///
+    /// ```swift
+    /// if let t = GeneralTransform2D.affinity(
+    ///     axisOrigin: SIMD2(0, 0), axisDirection: SIMD2(1, 0), ratio: 2) {
+    ///     print(t.matrix)  // [1, 0, 0, 2]
+    /// }
+    /// ```
     public static func affinity(
         axisOrigin: SIMD2<Double>, axisDirection: SIMD2<Double>, ratio: Double
-    ) -> GeneralTransform2D {
+    ) -> GeneralTransform2D? {
         var mat = [Double](repeating: 0, count: 4)
         var tx = 0.0
         var ty = 0.0
-        OCCTGTrsf2dAffinity(
-            axisOrigin.x, axisOrigin.y, axisDirection.x, axisDirection.y, ratio, &mat, &tx, &ty)
+        guard
+            OCCTGTrsf2dAffinity(
+                axisOrigin.x, axisOrigin.y, axisDirection.x, axisDirection.y, ratio,
+                &mat, &tx, &ty)
+        else { return nil }
         return GeneralTransform2D(matrix: mat, translation: SIMD2(tx, ty))
     }
 
