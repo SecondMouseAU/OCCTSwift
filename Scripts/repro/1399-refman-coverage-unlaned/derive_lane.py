@@ -222,8 +222,8 @@ def self_test():
          "min uses=%d" % min(r["bridge_uses"] for r in table))
 
     covered = claim_named_classes()
-    case("machine-covered-is-not-empty", len(counts["machine-covered"] * [0]) > 0
-         and counts["machine-covered"] > 100, "%d" % counts["machine-covered"])
+    case("machine-covered-is-not-empty", counts["machine-covered"] > 100,
+         "%d" % counts["machine-covered"])
     case("machine-covered-really-named-in-a-claim",
          all(r["class"] in covered for r in table if r["bucket"] == "machine-covered"))
     case("no-bucket-leaks-into-machine-covered",

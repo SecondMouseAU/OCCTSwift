@@ -1,9 +1,11 @@
 # #1399, substrate bucket: 26 classes
 
 The bucket is a routing device, not a verdict. Its rule is a name prefix
-(`NCollection_`, `TColStd_`, `TColgp_`, `TCollection_`, `Standard_`), on the reasoning that a
-container or a scalar carries no capability to over- or under-document, which is the same
-disposition #1045's fifteen substrate packages received.
+(`NCollection_`, `TColStd_`, `TColgp_`, `TCollection_`, `TShort_`, `TColQuaternion_`,
+`Standard_`), on the reasoning that a container or a scalar carries no capability to over- or
+under-document, which is the same disposition #1045's fifteen substrate packages received. Two of
+the seven prefixes, `TShort_` and `TColQuaternion_`, match nothing in this set: they are in the
+rule because they name the same kind of thing, not because they caught anything here.
 
 **The rule over-claims, and here is by how much: two of the 26 are not containers at all, and both
 verify as `ok`.** They are adjudicated individually below rather than swept up, because a bucket
