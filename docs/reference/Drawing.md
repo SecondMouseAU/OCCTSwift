@@ -1557,14 +1557,15 @@ public enum DeflectionType: Int32, Sendable {
 }
 ```
 
-- `.relative`: chordal deviation is expressed as a fraction of the bounding-box diagonal.
+- `.relative`: chordal deviation is derived from the shape's own size, see
+  ``deviationCoefficient`` for the exact formula.
 - `.absolute`: chordal deviation is a fixed distance in model units.
 
 ---
 
 #### `DisplayDrawer.DeflectionType.relative`
 
-Chordal deviation is expressed as a fraction of the bounding-box diagonal.
+Chordal deviation is derived from the shape's own bounding box rather than given as a distance.
 
 - `.absolute`: chordal deviation is a fixed distance in model units.
 
@@ -1591,7 +1592,7 @@ public init()
 
 ### `deviationCoefficient`
 
-Chordal deviation coefficient relative to the bounding-box diagonal.
+Chordal deviation coefficient, scaled by the shape's own size when `deflectionType` is `.relative`.
 
 ```swift
 public var deviationCoefficient: Double { get set }
@@ -1599,7 +1600,24 @@ public var deviationCoefficient: Double { get set }
 
 Lower values produce finer tessellation. Default ≈ 0.001. Only applies when `deflectionType` is `.relative`.
 
-- **OCCT:** `Prs3d_Drawer::DeviationCoefficient` / `SetDeviationCoefficient`.
+The absolute deflection `Shape.shadedMesh(drawer:)` and `Shape.edgeMesh(drawer:)` hand to
+`BRepMesh_IncrementalMesh` is `Prs3d::GetDeflection`'s, which is
+
+```
+max(longest bounding-box side * deviationCoefficient * 4, Precision::Confusion())
+```
+
+So a 10-unit cube at the default 0.001 tessellates to 0.04, not to 0.001 and not to the
+bounding-box **diagonal** times the coefficient. This page and
+``DisplayDrawer/deviationCoefficient``'s own doc comment both said "diagonal" until #1399
+measured `Prs3d::GetDeflection` against the pinned kernel
+(`Scripts/repro/1399-refman-coverage-unlaned/probe_foundation.mm`): 0.004 for a 1-unit cube,
+0.04 for 10, 0.4 for 100, all at coefficient 0.001. Prs3d_Drawer.hxx's own comment,
+"SizeOfObject * DeviationCoefficient", is where the diagonal reading came from, and it does not
+say diagonal either.
+
+- **OCCT:** `Prs3d_Drawer::DeviationCoefficient` / `SetDeviationCoefficient`, consumed through
+  `Prs3d::GetDeflection`.
 - **Example:**
   ```swift
   drawer.deviationCoefficient = 0.0002  // high-quality render

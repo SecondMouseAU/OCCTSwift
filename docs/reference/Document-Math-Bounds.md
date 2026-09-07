@@ -2197,7 +2197,7 @@ public static var angular: Double { get }
 
 ### `OCCTPrecision.intersection`
 
-Tolerance used by intersection algorithms.
+Tolerance used by intersection algorithms. `Precision::Confusion() / 100`, that is 1×10⁻⁹.
 
 ```swift
 public static var intersection: Double { get }
@@ -2209,7 +2209,8 @@ public static var intersection: Double { get }
 
 ### `OCCTPrecision.approximation`
 
-Tolerance used by approximation algorithms.
+Tolerance used by approximation algorithms. `Precision::Confusion() * 10`, that is 1×10⁻⁶, so it
+is deliberately looser than ``confusion``.
 
 ```swift
 public static var approximation: Double { get }
@@ -2233,11 +2234,16 @@ public static var infinite: Double { get }
 
 ### `OCCTPrecision.pConfusion`
 
-Parametric-space confusion tolerance (scaled by curve-space bounds).
+Parametric-space confusion tolerance: a constant 1×10⁻⁹.
 
 ```swift
 public static var pConfusion: Double { get }
 ```
+
+`Precision::PConfusion()` is ``confusion`` converted to parametric space for a curve whose mean
+tangent length is OCCT's default of 100, so it is `Precision::Confusion() / 100` and depends on
+nothing the caller passes. This entry said "scaled by curve-space bounds" until #1399 measured
+it; the overload that does take a tangent length, `Precision::PConfusion(T)`, is not wrapped.
 
 - **OCCT:** `Precision::PConfusion()` (via `OCCTPrecisionPConfusion`).
 

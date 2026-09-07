@@ -506,7 +506,7 @@ public static func normalize(_ v: SIMD3<Double>) -> SIMD3<Double>?
 
 ## MathSolver Extensions
 
-Numeric solver extensions on `MathSolver`, wrapping `math_BracketedRoot`, `math_FRPR`, `math_FunctionAllRoots`, `math_GaussLeastSquare`, `math_NewtonFunctionRoot`, `math_Uzawa`, `math_EigenVectors`, `math_KronrodSingleIntegration`, `math_GaussMultipleIntegration`, and `math_GaussSetIntegration`.
+Numeric solver extensions on `MathSolver`, wrapping `math_BracketedRoot`, `math_FRPR`, `math_FunctionAllRoots`, `math_GaussLeastSquare`, `math_NewtonFunctionRoot`, `math_Uzawa`, `math_EigenValuesSearcher`, `math_KronrodSingleIntegration`, `math_GaussMultipleIntegration`, and `math_GaussSetIntegration`.
 
 ### `MathSolver.bracketedRoot(in:tolerance:maxIterations:function:)`
 
@@ -672,13 +672,28 @@ public static func eigenvalues(
 ) -> [Double]?
 ```
 
-- **Parameters:** `diagonal`, n diagonal entries; `subdiagonal`, n entries (last unused).
+- **Parameters:** `diagonal`, n diagonal entries; `subdiagonal`, n entries of which
+  **`subdiagonal[0]` is the ignored one**, so the n-1 real off-diagonal entries go in
+  `subdiagonal[1...]`. This entry said "last unused" until #1399 measured it: OCCT's
+  `shiftSubdiagonalElements` copies `work(i-1) = work(i)` for `i` in `2...n` and then zeroes
+  `work(n)`, discarding the caller's first element. Poisoning `subdiagonal[0]` leaves the
+  eigenvalues unchanged; poisoning the last element changes them.
 - **Returns:** Array of eigenvalues, or `nil` on failure.
 - **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
   (#640). This "must be same length" was documentation only until #640: the bridge reads
   `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
   used to read out of bounds rather than fail.
-- **OCCT:** `OCCTMathEigenValues` → `math_EigenVectors`.
+- **OCCT:** `OCCTMathEigenValues` → `math_EigenValuesSearcher::EigenValue`. There is no
+  `math_EigenVectors` in the pinned kernel; this entry named one until #1399 measured it.
+- **Ordering:** unspecified. `math_EigenValuesSearcher.hxx` states that eigenvalues come back
+  "in the order they were computed by the algorithm, which may not be sorted", so sort the
+  returned array yourself if you need an order.
+- **Example:**
+  ```swift
+  // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+  let lambdas = MathSolver.eigenvalues(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1])
+  print(lambdas?.sorted() ?? [])   // [0.585..., 2.0, 3.414...]
+  ```
 
 ---
 
@@ -695,7 +710,20 @@ public static func eigenvaluesAndVectors(
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
 - **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
   `diagonal.count` exactly (#640).
-- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenVectors`.
+- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenValuesSearcher::EigenValue` /
+  `EigenVector`. There is no `math_EigenVectors` in the pinned kernel; this entry named one
+  until #1399 measured it.
+- **Ordering:** unspecified, as for `eigenvalues(diagonal:subdiagonal:)`. Each eigenvector
+  keeps its own eigenvalue's index, so the pairing survives a sort you apply yourself.
+- **Example:**
+  ```swift
+  // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+  if let r = MathSolver.eigenvaluesAndVectors(
+      diagonal: [2, 2, 2], subdiagonal: [0, -1, -1]
+  ) {
+      print(r.eigenvalues.sorted())   // [0.585..., 2.0, 3.414...]
+  }
+  ```
 
 ---
 
@@ -961,11 +989,33 @@ Length unit enum matching `UnitsMethods_LengthUnit`.
 
 ```swift
 public enum OCCTLengthUnit: Int32, Sendable {
-    case undefined, inch, millimeter, foot, mile, meter, kilometer, mil, micron, centimeter, microinch
+    case undefined = 0
+    case inch = 1
+    case millimeter = 2
+    case foot = 4
+    case mile = 5
+    case meter = 6
+    case kilometer = 7
+    case mil = 8
+    case micron = 9
+    case centimeter = 10
+    case microinch = 11
 }
 ```
 
+**The raw values are not consecutive**, which is why the declaration is spelled out above rather
+than as a comma-separated case list: `UnitsMethods_LengthUnit` has no `3`, so `foot` is `4`. A
+restatement that let Swift assign raw values implicitly would make `foot` `3`, and every case
+after it would be off by one from the kernel enum the bridge casts to. This page carried that
+restatement until #1399 checked it against
+`Libraries/OCCT.xcframework/macos-arm64/Headers/UnitsMethods_LengthUnit.hxx`; the Swift
+declaration itself was correct throughout.
+
 Case meanings, from `UnitsMethods_LengthUnit`:
+
+#### `OCCTLengthUnit.undefined`
+
+The enum's zero value, used where no unit has been established.
 
 #### `OCCTLengthUnit.inch`
 

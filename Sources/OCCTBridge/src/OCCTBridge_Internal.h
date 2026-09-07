@@ -376,11 +376,17 @@ std::mutex& fontListMutex();
 
 // === OCCT signal handling ===
 //
-// Installs OCCT's signal handlers (OSD::SetSignal) once, so that OS signals
-// raised inside OCCT (SIGSEGV/SIGFPE on degenerate geometry) are converted into
-// catchable Standard_Failure exceptions when a try block uses OCC_CATCH_SIGNALS.
-// Call at the top of any modelling op that can hit degenerate input (loft,
-// booleans, sweep, fillet…). Definition lives in OCCTBridge.mm. See issue #175.
+// Installs OCCT's signal handlers (OSD::SetSignal) once, process-wide, so an OS signal raised
+// inside OCCT (SIGSEGV/SIGFPE on degenerate geometry) is reported with an OCCT message and a
+// stack trace. Call at the top of any modelling op that can hit degenerate input (loft,
+// booleans, sweep, fillet). Definition lives in OCCTBridge.mm. See issue #175.
+//
+// #1399: this comment used to say the signals "are converted into catchable Standard_Failure
+// exceptions when a try block uses OCC_CATCH_SIGNALS". They are not, in this build, and the
+// #263 note twelve lines below already said so. OCC_CONVERT_SIGNALS is undefined here, so
+// OCC_CATCH_SIGNALS expands to nothing and Standard_ErrorHandler::Abort throws directly from
+// the signal handler, which does not unwind. Treat an OS signal inside OCCT as fatal and guard
+// the input instead.
 void occtEnsureSignals();
 
 // === #263: self-intersecting-wire guard ===
@@ -3216,12 +3222,16 @@ inline bool occtAddShapeIfPresent(BRep_Builder&       builder,
 // === #1418: the drawer's real, size-scaled mesh deflection ===
 //
 // Prs3d_Drawer::DeviationCoefficient() is a dimensionless coefficient (OCCT default 0.001), not a
-// usable absolute deflection, whenever the drawer's TypeOfDeflection() is Aspect_TOD_RELATIVE --
-// itself OCCT's own default type -- and must be scaled by the shape's own bounding-box diagonal
-// before it means anything, per Prs3d_Drawer.hxx's own doc comment ("SizeOfObject *
-// DeviationCoefficient") and docs/reference/Drawing.md's "relative to the bounding-box diagonal".
+// usable absolute deflection, whenever the drawer's TypeOfDeflection() is Aspect_TOD_RELATIVE
+// (itself OCCT's own default type), and must be scaled by the shape's own size before it means
+// anything, per Prs3d_Drawer.hxx's own doc comment ("SizeOfObject * DeviationCoefficient").
 // This mirrors OCCT's own reference caller, StdPrs_ToolTriangulatedShape::GetDeflection, computing
 // a Bnd_Box and scaling through Prs3d::GetDeflection rather than returning the bare coefficient.
+//
+// #1399: the size in question is the LONGEST BOUNDING-BOX SIDE, times four, not the diagonal.
+// Prs3d::GetDeflection is max(aDiag.maxComp() * coefficient * 4.0, Precision::Confusion()) over
+// the box's own extent vector. This comment and three doc sites said "diagonal" until it was
+// measured; see Scripts/repro/1399-refman-coverage-unlaned/probe_foundation.mm.
 //
 // Was duplicated verbatim as a static, non-shared OCCTDrawerGetEffectiveDeflection in all four
 // OCCTBridge_Visualization_*.mm split files with none of this scaling, live (called) only from

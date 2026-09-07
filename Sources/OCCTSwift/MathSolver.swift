@@ -1017,16 +1017,30 @@ extension MathSolver {
     }
 
     /// Find eigenvalues of a symmetric tridiagonal matrix.
-    /// diagonal and subdiagonal must be same length (last subdiagonal element unused).
     ///
-    /// That "must" was only ever documentation until #640: the bridge loops
+    /// `diagonal` and `subdiagonal` must be the same length, and **`subdiagonal[0]` is the
+    /// element OCCT ignores**: the n-1 real off-diagonal entries go in `subdiagonal[1...]`.
+    /// This comment said "last subdiagonal element unused" until #1399 measured it against the
+    /// pinned kernel. `math_EigenValuesSearcher`'s own `shiftSubdiagonalElements` copies
+    /// `work(i-1) = work(i)` for `i` in `2...n` and then zeroes `work(n)`, so the caller's
+    /// first element is discarded and the caller's last element is used. The example this
+    /// comment used to carry, `subdiagonal: [1.0, 1.0, 0.0]`, therefore does not describe
+    /// off-diagonals `(1, 1)`: measured, it returns `[1, 3, 2]`, the spectrum of
+    /// off-diagonals `(1, 0)`. See `Scripts/repro/1399-refman-coverage-unlaned/`.
+    ///
+    /// Eigenvalues come back **in no defined order**. `math_EigenValuesSearcher.hxx`: "in the
+    /// order they were computed by the algorithm, which may not be sorted."
+    ///
+    /// The "same length" requirement was only ever documentation until #640: the bridge loops
     /// `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter
     /// `subdiagonal` read out of bounds rather than failing. `diagonal.count` is never
     /// negative (it is a real array's own length), so unlike most of this family there is no
     /// positivity bound to add -- only the consistency check.
     ///
     /// ```swift
-    /// MathSolver.eigenvalues(diagonal: [2.0, 2.0, 2.0], subdiagonal: [1.0, 1.0, 0.0])   // != nil
+    /// // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+    /// MathSolver.eigenvalues(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1])?.sorted()
+    /// // [0.5857864376269049, 2.0, 3.414213562373095]
     /// MathSolver.eigenvalues(diagonal: [Double](repeating: 1, count: 50), subdiagonal: [1.0])   // nil
     /// ```
     public static func eigenvalues(
@@ -1043,10 +1057,16 @@ extension MathSolver {
 
     /// Find eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
     ///
-    /// Same guard as `eigenvalues`, and for the same reason (#640).
+    /// Same guard as `eigenvalues`, and for the same reason (#640), and the same two
+    /// conventions: `subdiagonal[0]` is the ignored element, and the returned order is
+    /// whatever the QR iteration produced. Each eigenvector keeps its own eigenvalue's index,
+    /// so the pairing survives a sort you apply yourself.
     ///
     /// ```swift
-    /// MathSolver.eigenvaluesAndVectors(diagonal: [2.0, 2.0, 2.0], subdiagonal: [1.0, 1.0, 0.0])   // != nil
+    /// // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+    /// if let r = MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1]) {
+    ///     print(r.eigenvalues.sorted())   // [0.5857864376269049, 2.0, 3.414213562373095]
+    /// }
     /// MathSolver.eigenvaluesAndVectors(diagonal: [Double](repeating: 1, count: 50), subdiagonal: [1.0])   // nil
     /// ```
     public static func eigenvaluesAndVectors(

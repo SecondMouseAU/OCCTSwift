@@ -635,6 +635,18 @@ public enum Exporter {
     /// and writes the optimized result. This can significantly reduce file size
     /// for models with repeated geometry.
     ///
+    /// The deduplication runs on the STEP entity graph, not on transferred shapes:
+    /// `StepTidy_DuplicateCleaner` is given the reader's own `XSControl_WorkSession`
+    /// (`STEPControl_Reader::WS()`) before `TransferRoots`. That is why this takes a file path
+    /// rather than a ``Shape``, and why it can only be applied to STEP that already exists.
+    ///
+    /// ```swift
+    /// try Exporter.optimizeSTEP(
+    ///     input: URL(fileURLWithPath: "/tmp/large.step"),
+    ///     output: URL(fileURLWithPath: "/tmp/large_opt.step")
+    /// )
+    /// ```
+    ///
     /// - Parameters:
     ///   - input: URL of the input STEP file
     ///   - output: URL for the optimized output STEP file

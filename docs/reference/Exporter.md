@@ -659,7 +659,13 @@ features). The input file is read fresh, no in-memory shape is required.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath` if either path is empty;
   `ExportError.exportFailed` if the read-deduplicate-write cycle fails.
-- **OCCT:** `STEPControl_Reader` + `STEPControl_Writer` with entity deduplication.
+- **OCCT:** `STEPControl_Reader::ReadFile`, then `StepTidy_DuplicateCleaner::Perform` on the
+  reader's own `XSControl_WorkSession` (`STEPControl_Reader::WS()`) **before** `TransferRoots`,
+  then `STEPControl_Writer::Transfer` / `Write`. The deduplication happens on the STEP entity
+  graph in the work session, not on the transferred shapes, which is why the input has to be a
+  file rather than an in-memory `Shape`. This entry said "`STEPControl_Reader` +
+  `STEPControl_Writer` with entity deduplication" until #1399, naming neither class that does
+  the work.
 - **Example:**
   ```swift
   try Exporter.optimizeSTEP(
