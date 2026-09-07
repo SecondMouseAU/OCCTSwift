@@ -678,7 +678,7 @@ public static func eigenvalues(
   (#640). This "must be same length" was documentation only until #640: the bridge reads
   `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
   used to read out of bounds rather than fail.
-- **OCCT:** `OCCTMathEigenValues` → `math_EigenValuesSearcher`.
+- **OCCT:** `OCCTMathEigenValues` → `math_EigenVectors`.
 
 ---
 
@@ -695,7 +695,7 @@ public static func eigenvaluesAndVectors(
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
 - **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
   `diagonal.count` exactly (#640).
-- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenValuesSearcher` (eigenvectors as `math_Vector`).
+- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenVectors`.
 
 ---
 
@@ -1267,7 +1267,7 @@ public static func projectLineOnPlane(
 ```
 
 - **Returns:** 2D line result, or `nil` if projection is degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectLine` → `ProjLib_Plane(gp_Pln, gp_Lin)`.
+- **OCCT:** `OCCTProjLibPlaneProjectLine` → `ProjLib::Project`.
 
 ---
 
@@ -1282,7 +1282,7 @@ public static func projectLineOnCylinder(
 ) -> Line2DResult?
 ```
 
-- **OCCT:** `OCCTProjLibCylinderProjectLine` → `ProjLib_Cylinder(gp_Cylinder, gp_Lin)`.
+- **OCCT:** `OCCTProjLibCylinderProjectLine` → `ProjLib::Project`.
 
 ---
 
@@ -1298,7 +1298,7 @@ public static func projectCircleOnPlane(
 ```
 
 - **Returns:** 2D circle in the plane's parameter space, or `nil` if degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectCircle` → `ProjLib_Plane(gp_Pln, gp_Circ)`.
+- **OCCT:** `OCCTProjLibPlaneProjectCircle` → `ProjLib::Project`.
 
 ---
 

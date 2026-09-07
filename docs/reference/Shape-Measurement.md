@@ -448,7 +448,7 @@ public func fixedFreeBounds(sewingTolerance: Double = 1e-6,
   - `sewingTolerance`: Tolerance for sewing free edges.
   - `closingTolerance`: Maximum distance to close a gap.
 - **Returns:** Tuple of `(fixed shape, number of wires fixed)`, or `nil` on failure.
-- **OCCT:** `ShapeFix_FreeBounds` (via `OCCTShapeFixFreeBounds`).
+- **OCCT:** `ShapeFix_Shape` / `ShapeAnalysis_FreeBounds` (via `OCCTShapeFixFreeBounds`).
 
 ---
 
@@ -1134,7 +1134,7 @@ public var purgedLocations: Shape? { get }
 Removes negative-scale and non-unit-scale transforms from the shape and all sub-shapes. Useful for cleaning imported geometry from STEP/IGES files.
 
 - **Returns:** Cleaned shape, or `nil` if purge was unnecessary or failed.
-- **OCCT:** `BRepTools_PurgeLocations` (via `OCCTShapePurgeLocations`).
+- **OCCT:** `BRepLib::SameParameter` / transform purge (via `OCCTShapePurgeLocations`).
 
 ---
 
@@ -1173,7 +1173,7 @@ public var curveOnSurfaceCheck: CurveOnSurfaceCheck? { get }
 Examines all edge-face pairs in the shape and reports the maximum deviation between each edge's 3D curve and its parametric curve (pcurve) on the face surface.
 
 - **Returns:** Check result, or `nil` if the check fails.
-- **OCCT:** `BRep_Tool::CurveOnSurface` then `BRepLib_CheckCurveOnSurface` per edge (via `OCCTShapeCheckCurveOnSurface`).
+- **OCCT:** `BRep_Tool::CurveOnSurface` / `ShapeAnalysis_Edge` (via `OCCTShapeCheckCurveOnSurface`).
 
 ---
 

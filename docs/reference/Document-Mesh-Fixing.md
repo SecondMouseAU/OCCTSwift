@@ -957,7 +957,7 @@ public func projectPointAll(
   - `point`: the 3D query point.
   - `maxResults`: output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve`, reading every extremum it found (via `OCCTExtremaPointCurve`).
+- **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
 - **Example:**
   ```swift
   if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
@@ -986,7 +986,7 @@ public func locateNearestPoint(
   - `initU`, `initV`, starting UV parameters.
   - `tolerance`: convergence tolerance.
 - **Returns:** `(u, v, distance)` or `nil` on failure.
-- **OCCT:** `Extrema_GenLocateExtPS` over a `GeomAdaptor_Surface` (via `OCCTExtremaLocateOnSurface`).
+- **OCCT:** `Extrema_ExtPS` local mode (via `OCCTExtremaLocateOnSurface`).
 
 ---
 
@@ -3687,7 +3687,7 @@ public static func build(
   - `isClockwise`: `true` for left-hand helix winding.
   - `tolerance`: maximum approximation error.
 - **Returns:** `BuildResult` with the BSpline curve and the achieved error, or `nil` on failure.
-- **OCCT:** `HelixGeom_BuilderHelix` (via `OCCTHelixBuild`).
+- **OCCT:** `HelixGeom_Helix` + `GeomAPI_PointsToBSpline` (via `OCCTHelixBuild`).
 - **Example:**
   ```swift
   if let result = Helix.build(
@@ -3720,7 +3720,7 @@ public static func buildCoil(
 
 - **Parameters:** Same geometric parameters as `build`, minus origin/direction (defaults to Z-axis origin).
 - **Returns:** `BuildResult`, or `nil` on failure.
-- **OCCT:** `HelixGeom_BuilderHelixCoil` (via `OCCTHelixCoilBuild`).
+- **OCCT:** `HelixGeom_Helix` coil variant (via `OCCTHelixCoilBuild`).
 
 ---
 
@@ -3741,7 +3741,7 @@ public static func evaluate(
 
 - **Parameters:** `u`, the parameter value to evaluate.
 - **Returns:** The 3D point on the helix at `u`.
-- **OCCT:** `HelixGeom_HelixCurve::Value` (via `OCCTHelixCurveEval`).
+- **OCCT:** `HelixGeom_Helix::Value` (via `OCCTHelixCurveEval`).
 
 ---
 
@@ -3760,7 +3760,7 @@ public static func evaluateD1(
 ) -> (point: SIMD3<Double>, tangent: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_HelixCurve::D1` (via `OCCTHelixCurveD1`).
+- **OCCT:** `HelixGeom_Helix::D1` (via `OCCTHelixCurveD1`).
 
 ---
 
@@ -3779,7 +3779,7 @@ public static func evaluateD2(
 ) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_HelixCurve::D2` (via `OCCTHelixCurveD2`).
+- **OCCT:** `HelixGeom_Helix::D2` (via `OCCTHelixCurveD2`).
 
 ---
 

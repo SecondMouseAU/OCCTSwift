@@ -1413,7 +1413,7 @@ Convenience method backed by `Extrema_ExtPC`. Returns `nil` when the algorithm f
 
 - **Parameters:** `point`, the query point.
 - **Returns:** Minimum distance, or `nil` on failure.
-- **OCCT:** `ExtremaPC_Curve` via `OCCTExtremaPCMinDistance`.
+- **OCCT:** `Extrema_ExtPC` via `OCCTExtremaPCMinDistance`.
 - **Example:**
   ```swift
   if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),

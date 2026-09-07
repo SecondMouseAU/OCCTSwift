@@ -254,7 +254,7 @@ public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirect
 
 - **Parameters:** `center`, ellipse center; `normal`, plane normal; `xDirection`, major-axis direction; `majorRadius`, `minorRadius`, semi-axes; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds` with `min` and `max` corners.
-- **OCCT:** `BndLib::Add(gp_Elips, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_Add3dCurve` (ellipse overload)
 - **Example:**
   ```swift
   let b = BndLib.ellipse(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -275,7 +275,7 @@ public static func cone(center: SIMD3<Double>, axis: SIMD3<Double>,
 
 - **Parameters:** `center`, cone apex reference point; `axis`, cone axis direction; `semiAngle`, half-angle in radians; `refRadius`, radius at `center`; `vmin`, `vmax`, axial parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib::Add(gp_Cone, vMin, vMax, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_AddSurface` (cone overload)
 - **Example:**
   ```swift
   let b = BndLib.cone(center: .zero, axis: SIMD3(0,0,1),
@@ -295,7 +295,7 @@ public static func circleArc(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 - **Parameters:** `center`, circle center; `normal`, plane normal; `radius`, circle radius; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib::Add(gp_Circ, first, last, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_Add3dCurve` (circle-arc overload)
 - **Example:**
   ```swift
   let b = BndLib.circleArc(center: .zero, normal: SIMD3(0,0,1),
@@ -316,7 +316,7 @@ public static func ellipseArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDir
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib::Add(gp_Elips, first, last, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_Add3dCurve` (ellipse-arc overload)
 - **Example:**
   ```swift
   let b = BndLib.ellipseArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -337,7 +337,7 @@ public static func parabolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDi
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `focalDistance`, vertex-to-focus distance; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib::Add(gp_Parab, first, last, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_Add3dCurve` (parabola-arc overload)
 - **Example:**
   ```swift
   let b = BndLib.parabolaArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -358,7 +358,7 @@ public static func hyperbolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xD
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib::Add(gp_Hypr, first, last, tolerance, Bnd_Box)`
+- **OCCT:** `BndLib_Add3dCurve` (hyperbola-arc overload)
 - **Example:**
   ```swift
   let b = BndLib.hyperbolaArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -381,7 +381,7 @@ public static func torusSurfaceArea(majorRadius: Double, minorRadius: Double) ->
 
 - **Parameters:** `majorRadius`, distance from torus center to tube center; `minorRadius`, tube radius.
 - **Returns:** Surface area in square units.
-- **OCCT:** `GProp_SelGProps` over a `gp_Torus`
+- **OCCT:** `GProp_PEquation` / `GProp_GProps` torus formulas
 - **Example:**
   ```swift
   let area = GeometryProperties.torusSurfaceArea(majorRadius: 5, minorRadius: 1)
@@ -400,7 +400,7 @@ public static func torusVolume(majorRadius: Double, minorRadius: Double) -> Doub
 
 - **Parameters:** `majorRadius`, major radius; `minorRadius`, tube radius.
 - **Returns:** Volume in cubic units.
-- **OCCT:** `GProp_VelGProps` over a `gp_Torus`
+- **OCCT:** `GProp_GProps` torus formulas
 - **Example:**
   ```swift
   let vol = GeometryProperties.torusVolume(majorRadius: 5, minorRadius: 1)
@@ -972,7 +972,7 @@ public static func coneSphere(semiAngle: Double, refRadius: Double,
 
 - **Parameters:** `semiAngle`, cone half-angle (radians); `refRadius`, cone radius at its reference plane; `sphereCenter`, `sphereRadius`, sphere definition; `tolerance`, intersection tolerance.
 - **Returns:** Number of intersection curves (0, 1, or 2), or `nil` on error (e.g. identical surfaces).
-- **OCCT:** `IntAna_IntQuadQuad` between a `gp_Cone` and an `IntAna_Quadric`
+- **OCCT:** `IntAna_QuadQuadGeo` (cone-sphere)
 - **Example:**
   ```swift
   if let n = QuadricIntersection.coneSphere(semiAngle: .pi/4, refRadius: 0,

@@ -9,6 +9,10 @@ nobody reads is not coverage. This page is the read.
 python3 Scripts/census-doc-occt-attribution.py     # 431 findings before, 230 after
 ```
 
+Those two numbers are this lane measured against its own base. For what the tree looks like once
+#1399's four family lanes land alongside it, see [After the merge](#after-the-merge) at the foot of
+this page: **386 findings with the five other branches merged and this one absent, 233 with it.**
+
 ## What was adjudicated, and what was not
 
 | bucket | count |
@@ -633,3 +637,54 @@ Sites are given at their pre-edit line numbers, so they can be matched against a
 | `docs/reference/Surface-BSpline-Bezier.md:65` | `TColgp_Array2OfPnt` | false positive | param |
 | `docs/reference/Surface-BSpline-Bezier.md:406` | `GeomAbs_BSplKnotDistribution` | false positive | enum |
 | `docs/reference/Wire.md:1107` | `ShapeAnalysis_Wire::CheckClosed` | false positive | heading |
+
+## After the merge
+
+#1399 ran five lanes at once (`healing`, `geometry`, `booleans`, `foundation` and this one) plus
+`fix/1631-edgeface-range`. The family lanes read their classes' bridge functions; this lane read
+the census's findings. On nine pages both arrived at the same site.
+
+| | findings |
+|---|---:|
+| `main` plus the other six branches, this one absent | 386 |
+| all seven | **233** |
+
+**All 42 contested hunks were conceded to the family lane.** In every one the family agent named
+the same class this lane did and said more about it: which overload runs, which sibling class is
+*not* on the path, what a load-bearing argument is for. Two examples, their text against this
+lane's:
+
+> `GProp_SelGProps`, the bounded-elementary-surface properties of a `gp_Cylinder` over
+> `alpha 0...2π`, `z 0...height`. Not `GProp_PGProps`, which is the point-set class the
+> `pointSetCentroid` family uses.
+
+against `GProp_SelGProps over a gp_Cylinder`, and
+
+> `BRepTools_PurgeLocations::Perform` / `GetResult`. The removal criterion is that class's own: a
+> location whose transform `IsNegative()`, or whose scale factor differs from 1 by more than
+> `TopLoc_Location::ScalePrec()`. `BRepLib` is not on this path.
+
+against `BRepTools_PurgeLocations`. Nothing was overruled: no contested site had a family lane
+naming a class the bridge does not reach, and the census agrees with both sides on all 42.
+
+The verdicts in the table above are unaffected. A finding's verdict is about the claim, not about
+who corrected it; 42 of the 212 reals are now corrected on a family lane's branch rather than this
+one, and this branch's diff no longer touches those lines.
+
+### The merged count is three higher than this lane alone, and all of it is prose worth having
+
+230 measured here, 233 merged. Fourteen sites appear that this lane's own run does not report and
+eleven disappear. **All fourteen are on a family lane's page, none on a line this lane wrote**: ten
+are contrastive or mechanism clauses on `healing`'s pages (`Neither ShapeAnalysis_Curve nor
+BRepGProp is on this path`, `GProp_GProps is the base class both inherit`,
+`TopLoc_Location::ScalePrec`), and four are on `foundation`'s rewritten `Selection.md`, a page this
+lane never edited.
+
+They are the `contrastive` and `internal` codes above: accurate sentences the census cannot tell
+from an attribution. Eight of the ten would fall to the script's own `CLAUSE_MARKERS` after a
+one-word rewording (`is not on this path` rather than `Neither ... nor ... is on this path`), which
+is the mechanism those marker lists exist for and #808's corrections are the cited examples of.
+That rewording is not made here: the sentences belong to pages the family lanes own, and the choice
+between a marker-visible phrasing and the phrasing an author preferred is theirs. It is also the
+cheaper half of a fix to the marker lists themselves, which is the same decision as the `heading`
+re-resolution above and belongs with it.

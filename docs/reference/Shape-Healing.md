@@ -206,7 +206,7 @@ public func revolutionToElementary() -> Shape?
 Similar to `sweptToElementary()` but targets only surfaces of revolution.
 
 - **Returns:** Shape with elementary surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom::ConvertToRevolution` (via `OCCTShapeRevolutionToElementary`).
+- **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeRevolutionToElementary`).
 - **Example:**
   ```swift
   if let canonical = importedRevol.revolutionToElementary() { }
@@ -1070,7 +1070,7 @@ Identifies whether the shape's geometry matches a canonical form (plane, cylinde
 
 - **Parameters:** `tolerance`, recognition tolerance (default 1e-4).
 - **Returns:** A `CanonicalForm` describing the recognised form, or nil if none is found.
-- **OCCT:** `ShapeAnalysis_CanonicalRecognition` (via `OCCTShapeRecognizeCanonical`).
+- **OCCT:** `ShapeAnalysis_Curve` / `BRepGProp` recognition (via `OCCTShapeRecognizeCanonical`).
 - **Example:**
   ```swift
   if let form = face.recognizeCanonical() {
@@ -2079,7 +2079,7 @@ Subdivides each face into approximately `parts` parametric patches. Useful for m
 
 - **Parameters:** `parts`, approximate number of patches per face.
 - **Returns:** Shape with divided faces, or nil if `parts ≤ 1` or on failure.
-- **OCCT:** `ShapeUpgrade_ShapeDivide` driving a `ShapeUpgrade_FaceDivideArea` split tool (via `OCCTShapeDivideByNumber`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByNumber`).
 - **Example:**
   ```swift
   if let subdivided = face.dividedByNumber(4) { }
