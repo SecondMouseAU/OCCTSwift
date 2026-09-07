@@ -2004,6 +2004,21 @@ between the nine lanes and zero shared with the substrate audit. The 4,707 resid
   the standard the nine lanes hold themselves to is several more Pass-sized efforts, out of
   proportion to a reconciliation pass, and #820's own text asks whether the lanes partition the
   refman, not that this pass re-does the missing lanes' work.
+
+  **Resolved by #1399**, and the framing above turned out to be the smaller half of the problem.
+  The 643 split three ways by what can check them: 479 named in claims
+  `census-doc-occt-attribution.py` parses, 138 real algorithm classes read by hand in four
+  families, and 26 containers. The hand read returned `ok` 41, `deliberate, recorded` 64, `under`
+  11 and `over` 48 across 164 classes including the containers, and `over` dominating is the
+  opposite of what the pass expected: a class absent from `docs/` almost always meant the
+  capability was documented under its Swift name with the wrong OCCT class beside it.
+
+  The larger finding was the 479. They were covered by a detector **whose 431 findings nobody had
+  ever read**; 212 of them were real, at a measured 49.8% false-positive rate. Fourteen code
+  defects came out of the pass, from `Shape.edgeFaceIntersection` finding nothing for any input
+  (#1631) to eight `BRepGraph` setters being silent no-ops (#1652). Full method, per-family
+  verdicts and the four corrections the lane made to its own instruments:
+  [`Scripts/repro/1399-refman-coverage-unlaned/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1399-refman-coverage-unlaned).
 - **3,983 classes have neither bridge presence, nor a docs/ mention, nor a gaps.md line.**
   Overwhelmingly `DataExchange` (2,089: the STEP/IGES/other-format internal EXPRESS data model
   underneath the `STEPControl_`/`IGESControl_`/`RWObj_`/etc. entry points #813 already audits) and
