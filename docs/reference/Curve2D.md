@@ -1060,7 +1060,7 @@ Useful for CNC G-code generation where only arcs and lines are supported.
 
 - **Parameters:** `tolerance`, maximum approximation error; `angleTolerance`, maximum angular deviation for arc fitting.
 - **Returns:** Array of arc/segment `Curve2D` objects, or `nil` on failure.
-- **OCCT:** `Geom2dConvert_ApproxCurve` arc-and-segment decomposition.
+- **OCCT:** `Geom2dConvert_ApproxArcsSegments` over a `Geom2dAdaptor_Curve`.
 - **Example:**
   ```swift
   let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!

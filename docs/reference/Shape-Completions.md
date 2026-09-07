@@ -1439,7 +1439,7 @@ Whether this shape contains free (non-shared) wires.
 public var hasFreeWires: Bool { get }
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBounds`.
+- **OCCT:** `TopExp::MapShapesAndAncestors`, reporting any child with no parent.
 
 ---
 
@@ -1451,7 +1451,7 @@ Whether this shape contains free (non-shared) faces.
 public var hasFreeFaces: Bool { get }
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBounds`.
+- **OCCT:** `TopExp::MapShapesAndAncestors`, reporting any child with no parent.
 
 ---
 
