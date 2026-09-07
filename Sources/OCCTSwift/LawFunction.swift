@@ -149,10 +149,19 @@ public final class LawFunction: @unchecked Sendable {
 
     /// Find knot indices where a BSpline law drops below given continuity.
     ///
-    /// Only works on BSpline-based law functions. Returns raw indices into the underlying
-    /// `Law_BSpline`'s own knot table -- not directly usable against `value(at:)` or
-    /// `bounds`, since this API exposes no way to read that knot table back. See
-    /// `knotSplitParameters(continuityOrder:)` for the actual parameter values (#403).
+    /// Reads any law whose OCCT object derives from `Law_BSpFunc`, which is four of the seven
+    /// factories rather than only ``bspline(poles:knots:multiplicities:degree:)``: `Law_Interpol`
+    /// and `Law_S` derive from it too, so ``interpolate(points:periodic:)``,
+    /// ``interpolated(values:parameters:periodic:)`` and ``sCurve(from:to:parameterRange:)`` are
+    /// readable as well. ``constant(_:from:to:)``, ``linear(from:to:parameterRange:)`` and
+    /// ``composite(laws:range:)`` are not, and return an empty array. A readable law always
+    /// reports at least its two end knots at every continuity order, so an empty array means
+    /// "not a `Law_BSpFunc`-derived law", never "no discontinuities" (#1399).
+    ///
+    /// Returns raw indices into the underlying `Law_BSpline`'s own knot table -- not directly
+    /// usable against `value(at:)` or `bounds`, since this API exposes no way to read that knot
+    /// table back. See `knotSplitParameters(continuityOrder:)` for the actual parameter values
+    /// (#403).
     ///
     /// ```swift
     /// let indices = law.knotSplitting(continuityOrder: .c2)
@@ -166,7 +175,8 @@ public final class LawFunction: @unchecked Sendable {
     ///   `degree - multiplicity < continuityOrder`, so the meaningful range is 0...degree and it
     ///   saturates there: a cubic law with simple interior knots is already C2 at every
     ///   interior knot, and only ``ParametricContinuity/c3`` reports them (#480).
-    /// - Returns: Array of knot indices where continuity breaks, or empty array
+    /// - Returns: Array of knot indices where continuity breaks. Empty only when the law is not
+    ///   `Law_BSpFunc`-derived: a readable law always reports its two end knots (#1399).
     public func knotSplitting(continuityOrder: ParametricContinuity = .c1) -> [Int] {
         // Same retry-on-truncation pattern as knotSplitParameters below: the bridge always
         // reports the true split count even when it writes fewer, so one retry sized to
@@ -207,7 +217,8 @@ public final class LawFunction: @unchecked Sendable {
     ///
     /// - Parameter continuityOrder: Minimum continuity to require of each arc, same derivative
     ///   order contract as `knotSplitting(continuityOrder:)` (#480)
-    /// - Returns: Split parameters in ascending order, or empty array if not a BSpline-based law
+    /// - Returns: Split parameters in ascending order. Empty only when the law is not
+    ///   `Law_BSpFunc`-derived, on the same rule as `knotSplitting(continuityOrder:)` (#1399).
     public func knotSplitParameters(continuityOrder: ParametricContinuity = .c1) -> [Double] {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split count even when it writes fewer, so one retry sized to

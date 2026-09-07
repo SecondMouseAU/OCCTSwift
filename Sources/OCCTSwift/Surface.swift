@@ -3745,11 +3745,24 @@ extension Surface {
     }
 
     /// Create a hyperboloid of revolution surface.
+    ///
+    /// One sheet: `P(u,v) = r1*cosh(v)*cos(u)*X + r1*cosh(v)*sin(u)*Y + r2*sinh(v)*Z`.
+    /// Two sheets: `P(u,v) = r2*sinh(v)*cos(u)*X + r2*sinh(v)*sin(u)*Y + r1*cosh(v)*Z`.
+    ///
+    /// ```swift
+    /// let waist = Surface.hyperboloid(r1: 4, r2: 10)               // one sheet
+    /// let bowl = Surface.hyperboloid(r1: 4, r2: 10, twoSheets: true)  // the +Z sheet only
+    /// ```
+    ///
     /// - Parameters:
     ///   - r1: first semi-axis radius (> 0)
     ///   - r2: second semi-axis radius (> 0)
-    ///   - twoSheets: if true, creates a two-sheet hyperboloid (default: one-sheet)
+    ///   - twoSheets: if true, uses the two-sheet parametrisation (default: one-sheet)
     /// - Returns: The constructed surface, or nil if a radius is not positive.
+    /// - Note: `twoSheets: true` gives **one** of the two sheets.
+    ///   `GeomEval_HyperboloidSurface` represents a single connected surface and its header says
+    ///   "The second sheet is not represented by this class"; mirror the result through the
+    ///   centre plane for the other one.
     public static func hyperboloid(r1: Double, r2: Double, twoSheets: Bool = false) -> Surface? {
         guard let ref = OCCTGeomEvalHyperboloidCreate(r1, r2, twoSheets ? 1 : 0) else { return nil }
         return Surface(handle: ref)

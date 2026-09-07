@@ -1532,6 +1532,12 @@ extension Shape {
     }
 
     /// Curvature special point type from LProp analysis.
+    ///
+    /// The three cases mirror `LProp_CIType`, which classifies by *radius* of curvature rather
+    /// than by curvature (`LProp_CurAndInf.hxx`), so an ellipse's major-axis vertices, where the
+    /// curve bends hardest, are ``minimumCurvature``. ``inflection`` is part of that enum but
+    /// ``Shape/analyticCurvaturePoints(curveType:first:last:)`` never returns it: an analytic
+    /// conic has no inflection.
     public enum CurvaturePointType: Int32 {
         case inflection = 0
         case minimumCurvature = 1
@@ -1546,12 +1552,27 @@ extension Shape {
         public let type: CurvaturePointType
     }
 
-    /// Compute curvature special points for analytic curve types using LProp.
+    /// Compute the curvature extrema of an analytic curve type.
+    ///
+    /// Only an ellipse has any: a line has zero curvature, a circle constant curvature, and a
+    /// parabola and a hyperbola monotonic curvature, so every other `curveType` returns an empty
+    /// array. An ellipse reports whichever of its four axis vertices fall inside `first...last`.
+    ///
+    /// ```swift
+    /// // Full ellipse domain: four vertices, the major-axis pair classified by minimum radius.
+    /// let pts = Shape.analyticCurvaturePoints(curveType: 2, first: 0, last: 2 * .pi)
+    /// let major = pts.filter { $0.type == .minimumCurvature }.map(\.parameter)  // [0, pi]
+    /// // A line has no curvature extremum at all.
+    /// let none = Shape.analyticCurvaturePoints(curveType: 0, first: 0, last: 1)  // []
+    /// ```
+    ///
     /// - Parameters:
-    ///   - curveType: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola
+    ///   - curveType: the `GeomAbs_CurveType` ordinal: 0=Line, 1=Circle, 2=Ellipse,
+    ///     3=Hyperbola, 4=Parabola
     ///   - first: First parameter of domain
     ///   - last: Last parameter of domain
-    /// - Returns: Array of special points (inflections, min/max curvature)
+    /// - Returns: The curvature extrema in the domain, empty for every `curveType` but 2. Never
+    ///   contains a ``CurvaturePointType/inflection``.
     public static func analyticCurvaturePoints(
         curveType: Int32, first: Double,
         last: Double

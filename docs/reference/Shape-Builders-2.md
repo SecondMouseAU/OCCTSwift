@@ -139,7 +139,12 @@ public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>]
 
 - **Parameters:** `u`, U parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
-- **OCCT:** `Adaptor3d_IsoCurve` (iso kind 0 = U)
+- **OCCT:** `Adaptor3d_IsoCurve`, selected with `GeomAbs_IsoU`/`GeomAbs_IsoV` (iso kind 0 = U)
+- **Note:** The samples are spread evenly over the iso curve's own parameter range, clamped to
+  `-1e6...1e6` when the surface is infinite in that direction (a plane, or a cylinder's V), so on
+  an unbounded face the points span that clamp rather than anything derived from the face's own
+  extent. When the shape is not a face, or its surface cannot be read, the bridge writes nothing
+  and the array comes back as `count` points at the origin rather than empty.
 - **Example:**
   ```swift
   let pts = face.uIsoCurvePoints(u: 0.5, count: 50)
@@ -157,7 +162,12 @@ public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>]
 
 - **Parameters:** `v`, V parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
-- **OCCT:** `Adaptor3d_IsoCurve` (iso kind 1 = V)
+- **OCCT:** `Adaptor3d_IsoCurve`, selected with `GeomAbs_IsoU`/`GeomAbs_IsoV` (iso kind 1 = V)
+- **Note:** The samples are spread evenly over the iso curve's own parameter range, clamped to
+  `-1e6...1e6` when the surface is infinite in that direction (a plane, or a cylinder's V), so on
+  an unbounded face the points span that clamp rather than anything derived from the face's own
+  extent. When the shape is not a face, or its surface cannot be read, the bridge writes nothing
+  and the array comes back as `count` points at the origin rather than empty.
 - **Example:**
   ```swift
   let pts = face.vIsoCurvePoints(v: 0.25)
@@ -863,16 +873,25 @@ public struct CurvatureSpecialPoint {
 
 ### `Shape.analyticCurvaturePoints(curveType:first:last:)`
 
-Compute curvature special points (inflections, min/max curvature) for an analytic curve type.
+Compute the curvature extrema of an analytic curve type, as parameter/kind pairs.
+
+Only `curveType: 2` (ellipse) ever produces a point: a line has zero curvature, a circle constant
+curvature, and a parabola and a hyperbola monotonic curvature, so none of them has an extremum,
+and every other value returns an empty array. An ellipse reports the four axis vertices that fall
+inside `first...last`, classified the way `LProp_CurAndInf` classifies them, by radius of
+curvature rather than by curvature: the major-axis vertices at `0` and `π` are
+`.minimumCurvature` (minimum radius) and the minor-axis vertices at `π/2` and `3π/2` are
+`.maximumCurvature`. `CurvaturePointType.inflection` is declared but never returned; an analytic
+conic has no inflection.
 
 ```swift
 public static func analyticCurvaturePoints(curveType: Int32, first: Double,
                                             last: Double) -> [CurvatureSpecialPoint]
 ```
 
-- **Parameters:** `curveType`, 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
-- **Returns:** Array of special points; empty if none found.
-- **OCCT:** `LProp_AnalyticCurInf`
+- **Parameters:** `curveType`, the `GeomAbs_CurveType` ordinal: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
+- **Returns:** Array of curvature extrema; empty for every `curveType` but 2, and for an ellipse whose domain excludes all four vertices.
+- **OCCT:** `LProp_CurAndInf` (the result container) and `LProp_CIType` (the kind enum). The extrema themselves are computed in the bridge rather than by an OCCT algorithm, since the closed form for a conic is four fixed parameters; `OCCTLPropAnalyticCurInf` fills the container with `AddExtCur` and reads it back with `Parameter`/`Type`.
 - **Example:**
   ```swift
   let pts = Shape.analyticCurvaturePoints(curveType: 2, first: 0, last: .pi)
