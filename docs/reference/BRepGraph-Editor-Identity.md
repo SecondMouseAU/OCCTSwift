@@ -982,7 +982,8 @@ public func uid(ofNodeKind kind: Int, index: Int) -> GraphUID?
 
 - **Parameters:** `kind`, raw `BRepGraph_NodeId::Kind` ordinal; `index`, per-kind node index.
 - **Returns:** `GraphUID` with a non-zero counter, or `nil` if the node is invalid, removed, or out of bounds.
-- **OCCT:** `BRepGraph_NodeId` UID query (via `OCCTBRepGraphNodeUID`).
+- **OCCT:** `BRepGraph_UID`, minted by the graph's own UID registry (`UIDs().Of(nodeId)`), keyed
+  by a `BRepGraph_NodeId` built from `kind` and `index` (via `OCCTBRepGraphNodeUID`).
 - **Example:**
   ```swift
   if let faceUID = graph.uid(ofNodeKind: 2, index: 0) {  // Face at index 0
@@ -1002,7 +1003,8 @@ public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)?
 
 - **Parameters:** `uid`, a `GraphUID` previously obtained from this graph's `uid(ofNodeKind:index:)`.
 - **Returns:** `(kind, index)` tuple if the UID resolves, or `nil` if this graph did not mint it or the node no longer exists. A UID minted by another graph returns `nil` even when its counter is in range here, which it usually is, since counters restart per graph.
-- **OCCT:** `BRepGraph_NodeId` reverse lookup (via `OCCTBRepGraphNodeFromUID`).
+- **OCCT:** `UIDs().NodeIdFrom(BRepGraph_UID)`, the registry's reverse lookup, returning a
+  `BRepGraph_NodeId` (via `OCCTBRepGraphNodeFromUID`).
 - **Example:**
   ```swift
   guard let faceUID = graph.uid(ofNodeKind: 2, index: 0) else { return }
@@ -1022,7 +1024,7 @@ Return `true` if this graph minted the `GraphUID` and the node it names still ex
 public func contains(uid: GraphUID) -> Bool
 ```
 
-- **OCCT:** `OCCTBRepGraphHasNodeUID`.
+- **OCCT:** `UIDs().Has(BRepGraph_UID)` (via `OCCTBRepGraphHasNodeUID`).
 
 ---
 
@@ -1036,7 +1038,8 @@ public func uid(ofRefKind kind: Int, index: Int) -> GraphRefUID?
 
 - **Parameters:** `kind`, raw `BRepGraph_RefId::Kind` ordinal; `index`, per-kind reference index.
 - **Returns:** `GraphRefUID`, or `nil` if invalid or removed.
-- **OCCT:** `BRepGraph_RefId` UID query (via `OCCTBRepGraphRefUID`).
+- **OCCT:** `BRepGraph_RefUID`, minted by `UIDs().Of(refId)` and keyed by a `BRepGraph_RefId`
+  (via `OCCTBRepGraphRefUID`).
 
 ---
 
@@ -1049,7 +1052,7 @@ public func ref(forUID uid: GraphRefUID) -> (kind: Int, index: Int)?
 ```
 
 - **Returns:** `(kind, index)` if the UID resolves, or `nil` if the reference no longer exists.
-- **OCCT:** `BRepGraph_RefId` reverse lookup (via `OCCTBRepGraphRefFromUID`).
+- **OCCT:** `UIDs().RefIdFrom(BRepGraph_RefUID)` (via `OCCTBRepGraphRefFromUID`).
 
 ---
 
@@ -1061,7 +1064,7 @@ Return `true` if this graph minted the `GraphRefUID` and the reference it names 
 public func contains(uid: GraphRefUID) -> Bool
 ```
 
-- **OCCT:** `OCCTBRepGraphHasRefUID`.
+- **OCCT:** `UIDs().Has(BRepGraph_RefUID)` (via `OCCTBRepGraphHasRefUID`).
 
 ---
 
@@ -1074,7 +1077,8 @@ public func itemUID(ofNodeKind kind: Int, index: Int) -> GraphItemUID?
 ```
 
 - **Returns:** `GraphItemUID` with `domain == 1`, or `nil` if the node is invalid or removed.
-- **OCCT:** `BRepGraph` item-UID layer (via `OCCTBRepGraphItemUIDOfNode`).
+- **OCCT:** `BRepGraph_ItemUID`, minted by `UIDs().Of(BRepGraph_ItemId)` (via
+  `OCCTBRepGraphItemUIDOfNode`).
 - **Example:**
   ```swift
   if let itemUID = graph.itemUID(ofNodeKind: 2, index: 0) {
@@ -1093,7 +1097,8 @@ public func item(forUID uid: GraphItemUID) -> (domain: Int, kind: Int, index: In
 ```
 
 - **Returns:** `(domain, kind, index)` if the UID resolves, or `nil` if the item no longer exists.
-- **OCCT:** `BRepGraph` item-UID reverse lookup (via `OCCTBRepGraphItemFromUID`).
+- **OCCT:** `UIDs().ItemIdFrom(BRepGraph_ItemUID)`, returning a `BRepGraph_ItemId` whose
+  `ItemDomain()` says whether it names a node or a reference (via `OCCTBRepGraphItemFromUID`).
 
 ---
 

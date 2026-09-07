@@ -1228,14 +1228,32 @@ public func updateInnerTolerances()
 
 ### `Shape.updateEdgeTolerance(edge:tolerance:)`
 
-Force the tolerance of a specific edge to the given value.
+Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
 
 ```swift
 @discardableResult
 public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool
 ```
 
-- **OCCT:** `BRepLib::UpdateEdgeTolerance`.
+**`tolerance` is not written to the edge.** It is `MinToleranceRequest`, the sampling tolerance
+OCCT starts testing at, and the tolerance the edge ends up with is computed from the measured
+curve-to-pcurve distances. An edge with no pcurves has nothing to measure, so its tolerance does
+not move at all. Measured on the pinned kernel across two edges and four requested values from
+1e-9 to 2 (`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): the
+tolerance stayed at 1e-07 every time. To set a tolerance outright, use
+[`setTolerance(_:)`](Shape-Measurement.md#settolerance_).
+
+**The `Bool` is not "the tolerance changed".** `BRepLib::UpdateEdgeTol` returns `false` only for a
+degenerate edge or one whose tolerance already exceeds the ceiling, and `true` on every other path,
+including the eight measured runs above where nothing moved.
+
+- **Parameters:** `edge`, the edge to measure; `tolerance`, the minimum tolerance worth testing
+  from. The bridge derives the `MaxToleranceToCheck` ceiling as `tolerance * 100`, which no caller
+  can override, see [#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639).
+- **Returns:** `true` unless the edge is degenerate or already looser than the derived ceiling.
+- **OCCT:** `BRepLib::UpdateEdgeTol(edge, tolerance, tolerance * 100)` (via
+  `OCCTBRepLibUpdateEdgeTolerance`). Not `BRepLib::UpdateEdgeTolerance`, which is the whole-shape
+  sweep over every edge and which the pinned header warns is "very slow".
 
 ---
 

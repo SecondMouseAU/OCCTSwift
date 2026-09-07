@@ -923,7 +923,10 @@ public func copy(copyGeometry: Bool = true) -> BRepGraph?
 
 - **Parameters:** `copyGeometry`, when `true` (default), geometry handles are also copied; when `false`, the new graph shares geometry with the original.
 - **Returns:** New `BRepGraph`, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphCopy`.
+- **OCCT:** `BRepGraph_Copy::Perform` (via `OCCTBRepGraphCopy`). `copyGeometry` selects between
+  `BRepGraph_Copy::GeomPolicy::Copy` and `::Share`. The copy transplants the source's UID counter
+  space, `Generation` and `GraphGUID`, so UIDs minted by the source keep resolving in the clone;
+  see [Durable Identity](BRepGraph-Editor-Identity.md#durable-identity-uid--refuid--itemuid).
 - **Example:**
   ```swift
   if let clone = graph.copy() {
@@ -945,7 +948,9 @@ public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> BRepGraph?
   - `faceIndex`: 0-based index of the face to extract.
   - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** New `BRepGraph` for the face sub-graph, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphCopyFace`.
+- **OCCT:** `BRepGraph_Copy::CopyNode` (via `OCCTBRepGraphCopyFace`). Unlike
+  [`copy(copyGeometry:)`](#copycopygeometry) this lifts one node without the counter space, so the
+  result has a fresh identity and the source's UIDs return `nil` against it.
 - **Example:**
   ```swift
   if let faceGraph = graph.copyFace(0) {
@@ -967,7 +972,9 @@ public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = 
   - `dx`, `dy`, `dz`, translation components in model units.
   - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** Translated `BRepGraph`, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphTransformTranslation`.
+- **OCCT:** `BRepGraph_Transform::Perform` with a translation `gp_Trsf` (via
+  `OCCTBRepGraphTransformTranslation`). It delegates to `BRepGraph_Copy::Perform`, so identity is
+  inherited exactly as it is for [`copy(copyGeometry:)`](#copycopygeometry).
 - **Example:**
   ```swift
   if let moved = graph.translated(dx: 10, dy: 0, dz: 0) {

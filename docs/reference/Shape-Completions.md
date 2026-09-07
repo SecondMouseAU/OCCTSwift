@@ -942,18 +942,36 @@ public struct AppSurfResult {
 
 ### `composeShell(precision:)`
 
-Splits a face into sub-faces using a composite surface grid, repairing topology at the seams.
+Rebuilds a face's wires against a composite surface and returns the resulting shell.
 
 ```swift
 public func composeShell(precision: Double = 1e-6) -> Shape?
 ```
 
-- **Returns:** A `Shape` containing the repaired/split faces, or `nil` on failure.
-- **OCCT:** `ShapeFix_ComposeShell`.
+**It cannot split the face.** The bridge wraps the face's own surface in a **1 x 1**
+`ShapeExtend_CompositeSurface`, and a one-patch grid has no joint lines for
+`ShapeFix_ComposeShell` to cut along. Measured on a cylinder's lateral face
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): `Perform()` returns
+true, and one face goes in and one comes out. To subdivide a face, use
+[`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) or
+[`dividedByArea(maxArea:)`](Shape-Measurement.md#dividedbyareamaxarea). Exposing a real grid is
+[#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638).
+
+What it is good for is the wire rebuild itself: `ShapeFix_ComposeShell` re-splits and re-orders the
+face's wires against the surface and returns them as a shell, which repairs seam and degenerate-edge
+ordering on a face whose boundary has drifted.
+
+- **Parameters:** `precision`, the tolerance `ShapeFix_ComposeShell::Init` receives.
+- **Returns:** A `Shape`, the composed shell, or `nil` if the receiver is not a face, carries no
+  surface, or `Perform()` fails.
+- **OCCT:** `ShapeFix_ComposeShell` over a 1 x 1 `ShapeExtend_CompositeSurface` (via
+  `OCCTShapeFixComposeShell`). The bridge sets a `ShapeBuild_ReShape` context before `Perform()`,
+  because 8.0.0p1 null-derefs without one.
 - **Example:**
   ```swift
-  if let fixed = myFace.composeShell() {
-      print(fixed.isValid)
+  if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
+     let composed = face.composeShell() {
+      print(composed.contents.faces)  // 1, the same face, wires rebuilt
   }
   ```
 

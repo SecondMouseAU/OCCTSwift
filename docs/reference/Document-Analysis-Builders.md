@@ -1279,7 +1279,7 @@ public static func line(origin: SIMD3<Double>, direction: SIMD3<Double>,
 ```
 
 - **Parameters:** `origin`, `direction`, line definition; `p1`, `p2`, parametric extents; `tolerance`, inflation.
-- **OCCT:** `BndLib_Add3dCurve` / `BndLib` line via `OCCTBndLibLine`.
+- **OCCT:** `BndLib::Add`, the `gp_Lin` overload taking two parameters (via `OCCTBndLibLine`).
 
 ---
 
@@ -1304,7 +1304,8 @@ Bounding box of a sphere.
 public static func sphere(center: SIMD3<Double>, radius: Double, tolerance: Double = 0) -> AnalyticBounds
 ```
 
-- **OCCT:** `BndLib_AddSurface` / sphere via `OCCTBndLibSphere`.
+- **OCCT:** `BndLib::Add`, the `gp_Sphere` overload (via `OCCTBndLibSphere`). `BndLib_AddSurface`
+  is what `BndLib.face(_:tolerance:)` reaches, through a `BRepAdaptor_Surface`.
 
 ---
 
@@ -1483,7 +1484,9 @@ Cylinder lateral surface area.
 public static func cylinderSurfaceArea(radius: Double, height: Double) -> Double
 ```
 
-- **OCCT:** `GProp_PGProps` cylinder surface via `OCCTGPropCylinderSurface`.
+- **OCCT:** `GProp_SelGProps`, the bounded-elementary-surface properties of a `gp_Cylinder` over
+  `alpha 0...2π`, `z 0...height` (via `OCCTGPropCylinderSurface`). Not `GProp_PGProps`, which is
+  the point-set class the `pointSetCentroid` family uses.
 
 ---
 
@@ -1495,7 +1498,8 @@ Cylinder volume.
 public static func cylinderVolume(radius: Double, height: Double) -> Double
 ```
 
-- **OCCT:** `GProp_PGProps` cylinder volume via `OCCTGPropCylinderVolume`.
+- **OCCT:** `GProp_VelGProps`, the elementary-solid volume properties of a `gp_Cylinder` (via
+  `OCCTGPropCylinderVolume`).
 
 ---
 
@@ -1508,7 +1512,7 @@ public static func coneSurfaceArea(semiAngle: Double, refRadius: Double, height:
 ```
 
 - **Parameters:** `semiAngle`, cone half-angle in radians; `refRadius`, radius at reference plane; `height`, cone height.
-- **OCCT:** `GProp_PGProps` cone surface via `OCCTGPropConeSurface`.
+- **OCCT:** `GProp_SelGProps` over a `gp_Cone` (via `OCCTGPropConeSurface`).
 
 ---
 
@@ -1520,7 +1524,7 @@ Cone volume.
 public static func coneVolume(semiAngle: Double, refRadius: Double, height: Double) -> Double
 ```
 
-- **OCCT:** `GProp_PGProps` cone volume via `OCCTGPropConeVolume`.
+- **OCCT:** `GProp_VelGProps` over a `gp_Cone` (via `OCCTGPropConeVolume`).
 - **Example:**
   ```swift
   let area = GeometryProperties.cylinderSurfaceArea(radius: 5, height: 10)
@@ -2000,7 +2004,7 @@ Sphere surface area (analytical).
 public static func sphereSurfaceArea(radius: Double) -> Double
 ```
 
-- **OCCT:** `GProp_PGProps` sphere surface via `OCCTGPropSphereSurface`.
+- **OCCT:** `GProp_SelGProps` over a `gp_Sphere` (via `OCCTGPropSphereSurface`).
 
 ---
 
@@ -2012,7 +2016,7 @@ Sphere volume (analytical).
 public static func sphereVolume(radius: Double) -> Double
 ```
 
-- **OCCT:** `GProp_PGProps` sphere volume via `OCCTGPropSphereVolume`.
+- **OCCT:** `GProp_VelGProps` over a `gp_Sphere` (via `OCCTGPropSphereVolume`).
 - **Example:**
   ```swift
   let seg = GeometryProperties.lineSegment(from: .zero, to: SIMD3(3, 4, 0))

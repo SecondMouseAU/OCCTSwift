@@ -254,7 +254,8 @@ public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirect
 
 - **Parameters:** `center`, ellipse center; `normal`, plane normal; `xDirection`, major-axis direction; `majorRadius`, `minorRadius`, semi-axes; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds` with `min` and `max` corners.
-- **OCCT:** `BndLib_Add3dCurve` (ellipse overload)
+- **OCCT:** `BndLib::Add`, the `gp_Elips` overload (via `OCCTBndLibEllipse`). The adaptor-driven
+  `BndLib_Add3dCurve` is what `BndLib.edge(_:tolerance:)` uses; nothing in this section reaches it.
 - **Example:**
   ```swift
   let b = BndLib.ellipse(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -275,7 +276,7 @@ public static func cone(center: SIMD3<Double>, axis: SIMD3<Double>,
 
 - **Parameters:** `center`, cone apex reference point; `axis`, cone axis direction; `semiAngle`, half-angle in radians; `refRadius`, radius at `center`; `vmin`, `vmax`, axial parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib_AddSurface` (cone overload)
+- **OCCT:** `BndLib::Add`, the `gp_Cone` overload taking `vmin`/`vmax` (via `OCCTBndLibCone`).
 - **Example:**
   ```swift
   let b = BndLib.cone(center: .zero, axis: SIMD3(0,0,1),
@@ -295,7 +296,7 @@ public static func circleArc(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 - **Parameters:** `center`, circle center; `normal`, plane normal; `radius`, circle radius; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib_Add3dCurve` (circle-arc overload)
+- **OCCT:** `BndLib::Add`, the `gp_Circ` overload taking `u1`/`u2` (via `OCCTBndLibCircleArc`).
 - **Example:**
   ```swift
   let b = BndLib.circleArc(center: .zero, normal: SIMD3(0,0,1),
@@ -316,7 +317,7 @@ public static func ellipseArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDir
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range (radians); `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib_Add3dCurve` (ellipse-arc overload)
+- **OCCT:** `BndLib::Add`, the `gp_Elips` overload taking `u1`/`u2` (via `OCCTBndLibEllipseArc`).
 - **Example:**
   ```swift
   let b = BndLib.ellipseArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -337,7 +338,7 @@ public static func parabolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xDi
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `focalDistance`, vertex-to-focus distance; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib_Add3dCurve` (parabola-arc overload)
+- **OCCT:** `BndLib::Add`, the `gp_Parab` overload (via `OCCTBndLibParabolaArc`).
 - **Example:**
   ```swift
   let b = BndLib.parabolaArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -358,7 +359,7 @@ public static func hyperbolaArc(center: SIMD3<Double>, normal: SIMD3<Double>, xD
 
 - **Parameters:** `center`, `normal`, `xDirection`, axis placement; `majorRadius`, `minorRadius`, semi-axes; `u1`, `u2`, parameter range; `tolerance`, optional inflation.
 - **Returns:** `AnalyticBounds`.
-- **OCCT:** `BndLib_Add3dCurve` (hyperbola-arc overload)
+- **OCCT:** `BndLib::Add`, the `gp_Hypr` overload (via `OCCTBndLibHyperbolaArc`).
 - **Example:**
   ```swift
   let b = BndLib.hyperbolaArc(center: .zero, normal: SIMD3(0,0,1), xDirection: SIMD3(1,0,0),
@@ -381,7 +382,9 @@ public static func torusSurfaceArea(majorRadius: Double, minorRadius: Double) ->
 
 - **Parameters:** `majorRadius`, distance from torus center to tube center; `minorRadius`, tube radius.
 - **Returns:** Surface area in square units.
-- **OCCT:** `GProp_PEquation` / `GProp_GProps` torus formulas
+- **OCCT:** `GProp_SelGProps` over a `gp_Torus` swept `0...2π` in both parameters (via
+  `OCCTGPropTorusSurface`). Not `GProp_PEquation`, which classifies a point cloud as
+  coincident/collinear/coplanar and computes no areas.
 - **Example:**
   ```swift
   let area = GeometryProperties.torusSurfaceArea(majorRadius: 5, minorRadius: 1)
@@ -400,7 +403,8 @@ public static func torusVolume(majorRadius: Double, minorRadius: Double) -> Doub
 
 - **Parameters:** `majorRadius`, major radius; `minorRadius`, tube radius.
 - **Returns:** Volume in cubic units.
-- **OCCT:** `GProp_GProps` torus formulas
+- **OCCT:** `GProp_VelGProps` over a `gp_Torus` (via `OCCTGPropTorusVolume`). `GProp_GProps` is
+  the base class both inherit; it accumulates properties and computes none of its own.
 - **Example:**
   ```swift
   let vol = GeometryProperties.torusVolume(majorRadius: 5, minorRadius: 1)
@@ -1091,7 +1095,7 @@ public func explorerIsAssembly(at index: Int) -> Bool
 ```
 
 - **Parameters:** `index`, 0-based node index.
-- **Returns:** `false`, always — leaf nodes are never assembly nodes.
+- **Returns:** `false`, always: leaf nodes are never assembly nodes.
 - **OCCT:** `XCAFPrs_DocumentExplorer::Current` + `XCAFDoc_ShapeTool::IsAssembly`
 - **To actually detect an assembly**, use `AssemblyNode.isAssembly` (via `Document.node(at:)`),
   which walks the real free-shape/component label tree rather than this flat leaf-only list:
@@ -1939,18 +1943,19 @@ Takes the wire, like every sibling above, and takes no precision, unlike any of 
 
 `APIMake` is likewise not exposed and stays at OCCT's own default of `true`. It selects `ShapeExtend_WireData::WireAPIMake` over `::Wire`, and gave the same verdict on all three fixtures, including one assembled with `BRep_Builder` from edges with unshared vertices, which is the case its own documentation distinguishes.
 
-**This is the only member of the family that returns an optional (#1058).** The other **fourteen** check members, the ten whole-wire ones above and the four per-edge ones, answer a plain `Bool`, so a refused call and a clean verdict are the same value for them; here they are not. `nil` covers four inputs:
+**This is the only member of the family that returns an optional (#1058).** The other **fourteen** check members, the ten whole-wire ones above and the four per-edge ones, answer a plain `Bool`, so a refused call and a clean verdict are the same value for them; here they are not. `nil` covers five inputs:
 
 | Input | Why it cannot be answered |
 |---|---|
 | A `Shape` that is not a wire, or not a face, **including a null shape** | The Swift signature takes two plain `Shape` values with no type constraint, so both are reachable. The bridge tests the type explicitly rather than letting the cast raise: `TopoDS::Wire` is written `IsNull() ? false : ...`, so it deliberately does **not** raise for a null shape and would pass one through to `EmptyCopied()`, which is CLAUDE.md's #1035 note |
 | A wire with no edges | `ShapeAnalysis_Wire::IsReady()` is false, so OCCT never runs the check |
 | A wire whose edges do not assemble | `ShapeExtend_WireData::WireAPIMake()` returns a **null** wire whenever `BRepBuilderAPI_MakeWire` cannot join the loaded edges, two edges sharing no vertex being enough, and `BRep_Builder::Add` dereferences its component with no null test. That was an uncatchable SIGSEGV rather than a wrong answer, and `ShapeAnalysis_Wire::CheckOuterBound` builds the same wire, so it crashed before this fix too |
-| A wire with no pcurve on the face | `ShapeAnalysis::TotCross2D` skips every edge whose pcurve on the face is null, so with none left its accumulator is never written and the `+0.0` it starts from signs as a positive area, reporting a foreign wire as the outer bound |
+| A wire where **any** edge has no pcurve on the face | `ShapeAnalysis::TotCross2D` skips every edge whose pcurve on the face is null, so it would sign an area only the pcurved subset contributed to, and with none left its accumulator is never written and the `+0.0` it starts from signs as a positive area, reporting a foreign wire as the outer bound. The bridge walks every edge of the rebuilt probe face and refuses if `BRep_Tool::CurveOnSurface` returns null for one (#1073) |
+| A wire whose signed area cancels to rounding | The magnitude is tested against the face's own UV area from `ShapeAnalysis::GetFaceUVBounds`, and anything under `1e-12` of it is refused rather than having its verdict decided by the sign of the noise (#1073) |
 
-The last one is OCCT's, not the bridge's, and it never announces itself: `CheckOuterBound` sets `ShapeExtend_OK` on entry and only raises it to `ShapeExtend_DONE1` for the `true` verdict. It needs a non-planar support face to show, because `BRep_Tool::CurveOnSurface` projects a 3D curve onto a plane when no pcurve is stored, so a foreign wire on a planar face is answered from the projection rather than refused.
+The last two are OCCT's behaviour, not the bridge's, and neither announces itself: `CheckOuterBound` sets `ShapeExtend_OK` on entry and only raises it to `ShapeExtend_DONE1` for the `true` verdict. The pcurve one needs a non-planar support face to show, because `BRep_Tool::CurveOnSurface` projects a 3D curve onto a plane when no pcurve is stored, so a foreign wire on a planar face is answered from the projection rather than refused. Both are refused by the bridge rather than passed on.
 
-**The guard is "nothing was consulted", not "the area means something", and two cases sit in the gap (#1073).** A wire where only some edges carry a pcurve on the face passes the guard, and `TotCross2D` then sums that subset. And a wire where every edge carries one but the contributions cancel gets its verdict from the sign of the rounding: a cylinder's seam wire projected onto a plane measures `-1.7802599672211983e-15`, against `+100` and `+125.66` for the answerable fixtures, and `checkOuterBound` reports `true` off it. Neither is fixed, because the fix is a magnitude threshold against the face's own UV scale and nobody has measured what it should be, which is the trap #726 exists to catch. The cancellation case is measured, and is the `cylinder's wire on the panel` row in [`Scripts/repro/1058-outer-bound-refusal/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1058-outer-bound-refusal). The partial-pcurve case is **not**: no fixture there produces a wire with some edges carrying a pcurve and some not, so it is read off `TotCross2D`'s own skip condition rather than observed, and #1073's first task is to build that fixture.
+**Both gaps #1073 named are closed, and the guard now says "the area means something".** Two cases used to sit past the original "nothing was consulted" guard. A wire where only some edges carried a pcurve on the face passed it, and `TotCross2D` then summed that subset. And a wire where every edge carried one but the contributions cancelled got its verdict from the sign of the rounding: a cylinder's seam wire projected onto a plane measures `-1.7802599672211983e-15`, against `+100` and `+125.66` for the answerable fixtures, and `checkOuterBound` reported `true` off it. PR #1140 fixed both, and they are the last two rows of the table above: every edge must carry a pcurve on the probe face, and `|TotCross2D|` must exceed `1e-12` of the face's own UV area, which `ShapeAnalysis::GetFaceUVBounds` supplies as the characteristic scale. The cancellation fixture is the `cylinder's wire on the panel` row in [`Scripts/repro/1058-outer-bound-refusal/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1058-outer-bound-refusal). The partial-pcurve case is still read off `TotCross2D`'s own skip condition rather than observed: no fixture there produces a wire with some edges carrying a pcurve and some not, so the guard exists and the fixture proving it fires does not.
 
 - **Parameters:** `wire`, the wire to test; `face`, the face it should bound.
 - **Returns:** `true` if a problem is found, `false` if none is, `nil` if the check could not be run. A face's own outer wire returns `false`; a hole wire on the same face returns `true`.
