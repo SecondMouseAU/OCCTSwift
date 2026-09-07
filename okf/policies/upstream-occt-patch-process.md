@@ -20,18 +20,41 @@ the clone-per-task pattern both footguns came from.
 
 ## 0. Where the work happens: one persistent checkout of the fork
 
-**Upstream work is done in a branch checkout of `gsdali/OCCT`, not in a clone made for the task and
-thrown away afterwards.** One tree, outside every OCCTSwift checkout, shared by every worktree:
+**Upstream work is done in a branch checkout of the org's fork, `SecondMouseAU/OCCT`, not in a
+clone made for the task and thrown away afterwards.** One tree, outside every OCCTSwift checkout,
+shared by every worktree:
 
 ```bash
 # Once per machine. Skip if the directory already exists.
-git clone --filter=blob:none https://github.com/gsdali/OCCT.git ~/Projects/occt-upstream
+git clone --filter=blob:none https://github.com/SecondMouseAU/OCCT.git ~/Projects/occt-upstream
 cd ~/Projects/occt-upstream
 git remote add upstream https://github.com/Open-Cascade-SAS/OCCT.git
 git config remote.upstream.partialclonefilter blob:none
 git config remote.upstream.promisor true
 git fetch upstream master
 ```
+
+**The fork moved from `gsdali/OCCT` to `SecondMouseAU/OCCT` on 2026-09-07**, for the same reason
+every other repo moved: the work belongs to the org, not to a personal account. It also removed a
+live blocker rather than a theoretical one. Two finished patches sat unpushable that day because
+`git push` to the personal fork answered `403 Permission to gsdali/OCCT.git denied to gsdali`
+while `gh` reported ADMIN on the same repo, an org-scoped credential meeting a personal remote.
+The same branches pushed to the org fork first try.
+
+An existing checkout is repointed rather than recloned:
+
+```bash
+git remote set-url origin https://github.com/SecondMouseAU/OCCT.git
+```
+
+then push each live branch once. Branches already pushed to the old fork keep their open upstream
+PRs, since a PR tracks the head repo it was opened from; move them only when a PR needs a new push.
+
+**Opening the PR against `Open-Cascade-SAS/OCCT` may not be possible from this machine.** A
+fine-grained token scoped to the org gets `Resource not accessible by personal access token
+(createPullRequest)` from `gh pr create` against a repo outside it. Push the branch, then open the
+PR from the compare URL in a browser:
+`https://github.com/Open-Cascade-SAS/OCCT/compare/master...SecondMouseAU:OCCT:<branch>?expand=1`.
 
 Measured on 2026-08-16 when this was set up: 367 MB total, 80 MB of it `.git`, and
 `git rev-parse --is-shallow-repository` answers `false` with 7136 commits reachable on
