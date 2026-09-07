@@ -1906,31 +1906,6 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape,
                                                     int32_t      edgeIndex,
                                                     double       parameter);
 
-// --- LocOpe_SplitDrafts ---
-
-/// Split a face with draft angles on both sides of a wire.
-/// @param shape Shape containing the face
-/// @param faceIndex Index of the face to split
-/// @param wire Wire defining the split
-/// @param dirX,dirY,dirZ Extraction direction
-/// @param planeOriginX,Y,Z Neutral plane origin
-/// @param planeNormalX,Y,Z Neutral plane normal
-/// @param angle Draft angle in radians
-/// @return Modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
-                                             int32_t      faceIndex,
-                                             OCCTShapeRef wire,
-                                             double       dirX,
-                                             double       dirY,
-                                             double       dirZ,
-                                             double       planeOriginX,
-                                             double       planeOriginY,
-                                             double       planeOriginZ,
-                                             double       planeNormalX,
-                                             double       planeNormalY,
-                                             double       planeNormalZ,
-                                             double       angle);
-
 // --- LocOpe_FindEdges ---
 
 // #613: both finders return a SELECTION of edges, not an enumeration, so the position of an entry

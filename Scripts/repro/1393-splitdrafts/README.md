@@ -51,7 +51,25 @@ the process**. Through the bridge it is catchable (the Swift call returns `nil`,
 regression test asserts), so this is a difference in where the throw crosses, not in whether it
 happens.
 
-## Disposition
+## Outcome: the wrapper is gone
+
+`Shape.splitDrafts` was removed in v4.0.0 rather than repaired, and no patch is carried.
+
+The deciding fact is not the defect, it is upstream's own verdict on the class. OCCT deleted
+`LocOpe_SplitDrafts` outright on 2026-08-07 in
+[OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442), a "clean up dead headers" pass, and
+`git grep SplitDrafts upstream/master` returns nothing. It had no caller anywhere in the OCCT tree,
+not even a DRAW command, which is also how a defect this total survived to 8.0.1 unnoticed.
+
+So there was no upstream PR to open, nothing to fix for anyone else's benefit, and a carried patch
+would have been this project reviving a class its own maintainer had just removed, with a guaranteed
+expiry at the first kernel bump past that commit. `okf/policies/scope-boundary.md` says stay
+faithful to OCCT; wrapping what OCCT has deleted is the opposite of that.
+
+The record below is kept because the investigation is what made the decision possible, and because
+the next reader who wonders why a 1996 class is missing deserves the answer.
+
+## Disposition, as it stood before the removal
 
 - **Test**: `Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift` asserts the refusal, and says
   in its own comment that a non-nil result means a repin fixed the kernel and the test should then
@@ -64,3 +82,19 @@ happens.
 - **Not done**: no bridge-side guard. Refusing the call up front would be refusing the whole
   operation, and the `nil` it already returns is the same answer with the kernel's own reason
   behind it.
+
+## What is kept from the fix that was not taken
+
+`upstream/LocOpe_SplitDrafts_Test.cxx` is the GTest written for an upstream PR that could not be
+filed, since the class it tests no longer exists upstream. It is kept for one reason: it is the
+only executable statement of what a working `LocOpe_SplitDrafts` should produce, proven both ways
+against a patched and an unpatched kernel (`IsDone=1`, seven faces, one of them tilted by exactly
+the requested draft angle, a 10-unit cube's volume rising 1000 to 1022.04 against the wedge's
+analytic 22.04).
+
+If OCCT ever restores the class, or a downstream fork keeps it, that file is the head start. If
+nobody ever does, it is the record of what was measured before the wrapper was removed, which is
+worth more than the diff that was discarded with it.
+
+The patch itself, `0034`, was never carried. It exists only in the closed PR
+[#1627](https://github.com/SecondMouseAU/OCCTSwift/pull/1627).

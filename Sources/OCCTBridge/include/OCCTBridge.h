@@ -539,7 +539,6 @@
 // LocOpe_Prism                        → OCCTLocOpePrism
 // LocOpe_Revol                        → OCCTLocOpeRevol
 // LocOpe_RevolutionForm               → OCCTLocOpeRevolutionForm
-// LocOpe_SplitDrafts                  → OCCTLocOpeSplitDrafts
 // LocOpe_SplitShape                   → OCCTLocOpeSplitShape*
 // LocOpe_Spliter                      → OCCTLocOpeSplitByWire*
 // LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
