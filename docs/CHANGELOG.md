@@ -45,6 +45,337 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### The unlaned refman-coverage lane (#1399)
+
+`Scripts/repro/1399-refman-coverage-unlaned/` audits the 643 wrapped classes #820 found in no
+lane's table. They split into 479 checked continuously by `census-doc-occt-attribution.py`, 138
+real algorithm classes read by hand in four families, and 26 containers. Across the 164 read by
+hand: `ok` 41, `deliberate, recorded` 64, `under` 11, `over` 48.
+
+`over` dominating is the opposite of what the pass expected. A class named nowhere in `docs/`
+almost always meant the capability was documented under its Swift name with the wrong OCCT class
+beside it: a neighbour, a base class, a header filename, or a sub-view of the right object.
+
+The larger finding is that the census's 431 findings had never been read; 212 were real. Fourteen
+code defects came out of an audit whose subject was documentation.
+
+### Fourteen OCCT attributions in `docs/reference/` named a class the bridge does not reach (#1399)
+
+The `healing` family of #1399's unlaned-coverage read (`ShapeFix`/`ShapeAnalysis`/`ShapeUpgrade`/
+`ShapeCustom`/`ShapeExtend`, `BRepTools`/`BRepLib`/`BRepTopAdaptor`, `BRepBndLib`/`BndLib`/`Bnd_*`,
+`BRepGProp`/`GProp_*`, `BRepGraph_*`) checked all 31 classes against the pinned 8.0.1 headers and
+the real bridge bodies. Documentation only; no API or behaviour changes.
+
+- **Eleven `GProp` attributions.** `GeometryProperties.cylinderSurfaceArea`, `cylinderVolume`,
+  `coneSurfaceArea`, `coneVolume`, `sphereSurfaceArea`, `sphereVolume`, `torusSurfaceArea` and
+  `torusVolume` were attributed to `GProp_PGProps`, `GProp_PEquation` or `GProp_GProps`. Every
+  surface member builds `GProp_SelGProps` and every volume member builds `GProp_VelGProps`.
+  `GProp_PGProps` is the point-set class the `pointSetCentroid` family really uses, on the same
+  page.
+- **Eight `BndLib` attributions.** `BndLib.ellipse`, `.cone`, `.circleArc`, `.ellipseArc`,
+  `.parabolaArc`, `.hyperbolaArc`, `.line` and `.sphere` named `BndLib_Add3dCurve` or
+  `BndLib_AddSurface`; all eight call `BndLib::Add` overloads directly. `BndLib.edge` and
+  `BndLib.face` are the only two entry points that really reach the adaptor classes, and they were
+  already correct.
+- **Eleven `BRepGraph` identity and copy attributions.** `copy`, `copyFace` and `translated` named
+  only their bridge function, and the eight UID entries named the *input* type (`BRepGraph_NodeId`,
+  `BRepGraph_RefId`) or "the item-UID layer". They now name `BRepGraph_Copy::Perform` /
+  `::CopyNode`, `BRepGraph_Transform::Perform`, and the `UIDs()` registry call each function makes,
+  with `BRepGraph_UID` / `_RefUID` / `_ItemUID` / `_ItemId` named for the first time outside the
+  changelog.
+- **`Shape.revolutionToElementary()` runs the inverse of what it says.** It calls
+  `ShapeCustom::ConvertToRevolution`, which the pinned header documents as converting elementary
+  periodic surfaces *into* surfaces of revolution. Measured: a cylinder's lateral face comes back
+  as a `Geom_SurfaceOfRevolution`, and `sweptToElementary()` puts it back. All three doc layers said
+  the opposite and no test covered it. `withSurfacesAsRevolution()` is a second wrapper of the
+  identical bridge call, correctly documented. The rename is [#1634](https://github.com/SecondMouseAU/OCCTSwift/issues/1634).
+- **`Shape.updateEdgeTolerance(edge:tolerance:)` does not set a tolerance.** It calls
+  `BRepLib::UpdateEdgeTol`, not the whole-shape `UpdateEdgeTolerance` the page named, and
+  `tolerance` is `MinToleranceRequest`, a sampling floor. Measured across two edges and four
+  requested values from `1e-9` to `2`, the edge tolerance stayed at `1e-07` every time while the
+  call returned `true`. The hardcoded `tolerance * 100` ceiling is [#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639).
+- **`Shape.composeShell(precision:)` cannot split a face.** The bridge wraps the face's own surface
+  in a 1 x 1 `ShapeExtend_CompositeSurface`, and `ShapeFix_ComposeShell` splits along joints
+  between patches. Measured: one face in, one face out, `Perform()` true. What it does perform, the
+  wire rebuild, is now what both doc surfaces describe. Taking a real grid is [#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638).
+- **`Shape.bsplineRestriction(...)` converts no elementary surface.** Both entry points pass a
+  default-built `ShapeCustom_RestrictionParameters`, whose defaults leave planes, cylinders, cones,
+  spheres, tori and Bezier surfaces alone and convert only revolution, extrusion and offset
+  surfaces plus curves. Measured: a cylinder comes back with three elementary faces and no BSpline.
+  Exposing the toggles is [#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637).
+- **`Shape.nearestPlane(to:)` is not a planarity test.** `ShapeAnalysis_Geom::NearestPlane` refuses
+  only when the smallest principal extent reaches half of one of the other two. Measured: one corner
+  of a 10 x 10 square lifted 8 units out of plane fits with a `maxDeviation` of 2.13, and the cutoff
+  on that sheet is a thickness of 5. Gate on `maxDeviation`. Attribution corrected from `gp_Pln`, its
+  out-parameter, to `ShapeAnalysis_Geom::NearestPlane` through `GProp_PEquation`.
+- **Four more single-class corrections.** `fixedFreeBounds` is `ShapeFix_FreeBounds`, not
+  `ShapeFix_Shape` ([#1636](https://github.com/SecondMouseAU/OCCTSwift/issues/1636) for its
+  returning a wire compound rather than the repaired shape); `purgedLocations` is
+  `BRepTools_PurgeLocations`, not `BRepLib::SameParameter`; `curveOnSurfaceCheck` is
+  `BRepLib_CheckCurveOnSurface`, not `ShapeAnalysis_Edge`; `recognizeCanonical` is
+  `ShapeAnalysis_CanonicalRecognition`, not `BRepGProp`.
+- **`dividedByNumber(_:)`'s entry was pre-#1491.** It said "approximately `parts` patches"; since
+  #1491 the count is exact and per-axis and lands on U. The Swift `///` was updated by that PR and
+  the reference page was not.
+- **`checkOuterBound`'s entry described two defects PR #1140 had already fixed.** It said the
+  cancellation and partial-pcurve gaps were open "because the fix is a magnitude threshold against
+  the face's own UV scale and nobody has measured what it should be"; that threshold has been in
+  `OCCTWireCheckOuterBound` since 2026-08-26, alongside an every-edge-pcurve requirement. `nil` now
+  covers five inputs, not four.
+
+`Scripts/repro/1399-refman-coverage-unlaned/probe_healing_claims.mm` and its committed transcript
+replay five of these bridge call sequences against the pinned kernel;
+`family-healing.md` beside them carries the 31-class table, the evidence per finding, and the six
+`census-doc-occt-attribution.py` candidates rejected after reading the bridge.
+
+### Read the `booleans` family of #1399's unlaned refman-coverage lane (#1399)
+
+31 OCCT classes with real bridge presence that sit in no #807 lane's table and that no claim
+`census-doc-occt-attribution.py` parses, given one verdict each with the evidence in
+`Scripts/repro/1399-refman-coverage-unlaned/family-booleans.md`: 19 `ok`, 6 `deliberate, recorded`,
+1 `under`, 5 `over`. Six findings, measured against the pinned 8.0.1 kernel by
+`Scripts/repro/1399-refman-coverage-unlaned/probe_booleans.mm` (transcript committed beside it).
+
+Four of the six are behaviour, and are filed rather than changed here:
+[#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631)
+(`Shape.edgeFaceIntersection(with:)` returns an empty array for every input, because
+`OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange` and `IntTools_Range`'s default is
+`(0, 0)`),
+[#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)
+(`ExtremaElSS.planeToSphere` and `sphereToSphere` always return `[]`, because
+`Extrema_ExtElSS::Perform` is `throw Standard_NotImplemented();` for both pairs in OCCT itself, and
+`planeToPlane` answers only its parallel case with zeroed points),
+[#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)
+(`Curve3D.minimumDistance(from:)` and `extrema` report interior extrema only, so a point past the
+end of a bounded curve gets `nil` rather than the distance to the nearer endpoint), and
+[#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635)
+(`ContapContourResult` has no reachable geometry for an analytic silhouette).
+
+The documentation corrections in this change:
+
+- `docs/reference/Curve3D-Analysis.md` attributed `Curve3D.extrema(from:)`,
+  `extrema(from:uMin:uMax:)` and `minimumDistance(from:)` to `Extrema_ExtPC` at six sites, one of
+  them "with bounded `GeomAdaptor_Curve`". The bridge constructs `ExtremaPC_Curve` from the
+  `Geom_Curve` handle and builds no adaptor. The three entries now name the real class and state
+  that the solve reports interior extrema only.
+- `Shape.FilletSurfaceInfo.startStatus`/`endStatus` were documented as
+  "(0 = ok, 1 = not ok, 2 = partial)", which is `FilletSurf_StatusDone`, the enum on the sibling
+  `FilletSurfaceResult.status`. They carry `FilletSurf_StatusType`, whose ordinals are
+  `TwoExtremityOnEdge`/`OneExtremityOnEdge`/`NoExtremityOnEdge`. `OCCTBridge_Modeling.h`'s own
+  field comment had the first two transposed and wrote "OnFace" for OCCT's "OnEdge".
+  `firstParameter`/`lastParameter` were undocumented, and come from `FirstParameter()`/
+  `LastParameter()`, which take no surface index, so the same pair is repeated into every element.
+- `Shape.CommonPart.param2Range` was documented as the parameter range "on the second edge". From
+  `edgeFaceIntersection(with:)` there is no second edge and the value is always `(0, 0)`:
+  `IntTools_EdgeFace` never calls `AppendRange2` or `SetVertexParameter2`, so `Ranges2()` is empty
+  and `VertexParameter2()` is the `0.0` its constructor set.
+- `ContapContourResult.pointCount(line:)`, `point(line:index:)` and `points(line:)` answer for
+  `.walking` contours only. `Contap_Line::NbPnts()` and `Point(Index)` throw
+  `Standard_DomainError` on any other type, so an analytic silhouette (a cylinder's two tangent
+  rulings, the common case) reports `0` points and `point(line:index:)` hands back
+  `SIMD3(0, 0, 0)`, a zero rather than a measurement.
+- `QuadricIntersection.coneSphere` was attributed to `IntAna_QuadQuadGeo`. The bridge builds an
+  `IntAna_Quadric` from the sphere and runs `IntAna_IntQuadQuad`.
+- `Shape.polygonInterference(poly1:poly2:)` and `polygonSelfInterference(polygon:)` cap their
+  output at 100 points and truncate silently, which is now stated as the sibling
+  `Curve2D.intersections(with:)` already states its own 128.
+
+The pass also adjudicated `census-doc-occt-attribution.py`'s own boolean and extrema findings,
+which are parsed on every run and had never been read. The census reported **431** findings at this
+branch's base commit and reports **421** here, with no new findings added: beyond the two above, it
+had been reporting that `Curve3D.projectPointAll` is `GeomAPI_ProjectPointOnCurve` rather than
+`GeomAPI_ExtremaCurveCurve`/`Extrema_ExtPC`, that `Surface.locateNearestPoint` is
+`Extrema_GenLocateExtPS` rather than the global `Extrema_ExtPS`, and that `Shape.split(by:)` and
+`split(atPlane:normal:)` run `BRepAlgoAPI_Splitter` rather than its base class
+`BRepAlgoAPI_BuilderAlgo`, which is General Fuse and returns a compound of split parts rather than
+splitting arguments by tools.
+
+### #1399 geometry family: 25 over-coverage corrections and a measured knot-splitting contract (#1399)
+
+Twenty-five documentation claims about the `Geom`/`Geom2d`/`Convert`/`Gcc`/`ProjLib`/`HelixGeom`/
+`Law`/`LProp` families corrected against the pinned OCCT 8.0.1 headers and the bridge, as part of
+#1399's reading of the 118 wrapped classes no #807 lane claims.
+
+- **Eight OCCT class names that do not exist** were named as the implementation of a public
+  member: `HelixGeom_Helix` and `HelixGeom_ApproxCurve` behind the `Helix` builders and
+  evaluators, `LProp_AnalyticCurInf` behind `Shape.analyticCurvaturePoints`, and
+  `Geom2dGcc_Circ2d2TanPt`, `Geom2dGcc_Circ2dTanPtRad`, `Geom2dGcc_Circ2d2PtRad`,
+  `Geom2dGcc_Circ2d3Pt` and `Geom2dGcc_Lin2dTanPt` behind five `Curve2DGcc` members. Each is the
+  bridge function's own name with an OCCT package prefix attached. They now name what the bridge
+  builds: `HelixGeom_BuilderHelix`, `HelixGeom_BuilderHelixCoil`, `HelixGeom_HelixCurve`,
+  `HelixGeom_Tools::ApprHelix`, `LProp_CurAndInf`, and the `Geom2dGcc_Circ2d3Tan` /
+  `Circ2d2TanRad` / `Lin2d2Tan` constructors that take a `Geom2dGcc_QualifiedCurve` or a
+  `Geom2d_CartesianPoint`.
+- **The `GeomEval` and `Geom2dEval` analytic factories are OCCT classes, not ours.** Twenty
+  entries across `docs/reference/Surface.md`, `Curve2D.md` and `Document-Completions.md` gave a
+  bridge C function under `- **OCCT:**`, and two preambles described the family as project-local
+  evaluators "backed by `Geom_CartesianPoint`-derived evaluator surfaces". Every entry now names
+  its real class, and the preambles say what these derive from.
+- **`Shape.analyticCurvaturePoints` never returns an inflection**, and only an ellipse produces
+  any point at all: a line, a circle, a parabola and a hyperbola have no curvature extremum. The
+  entry also now says that `LProp_CurAndInf` classifies by *radius* of curvature, so an ellipse's
+  major-axis vertices come back as `.minimumCurvature`.
+- **`BisecSolution`'s conic payload was described backwards.** `position` is the centre for an
+  ellipse or a hyperbola and the **vertex** for a parabola, never a focus; `radius` is `0` for
+  every conic and the semi-axes are in `secondary`, except for a parabola whose `secondary.x` is a
+  focal distance. Corrected in the reference page, in the `///`, and in
+  `Sources/OCCTBridge/include/OCCTBridge_Geom2d.h`.
+- **`LawFunction.knotSplitting(continuityOrder:)` and `knotSplitParameters(continuityOrder:)` read
+  four of the seven law factories**, not the one the docs named. `Law_Interpol` and `Law_S` derive
+  from `Law_BSpFunc`, so `interpolate(points:periodic:)` and `sCurve(from:to:parameterRange:)` are
+  readable alongside `bspline(...)` and `interpolated(...)`; `constant`, `linear` and `composite`
+  are not. A readable law always reports at least its two end knots, so an empty array means "not
+  a `Law_BSpFunc`-derived law" rather than "no discontinuities". Measured and covered by
+  `Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift`.
+- **`Curve2DQualifier`'s "inside" is orientation-dependent**: `GccEnt_Position.hxx` defines the
+  interior of a line or an open curve as its left-hand side relative to its own orientation, so
+  reversing a curve swaps what `.enclosing` and `.enclosed` select. The claim that a qualifier is
+  passed "in every `Curve2DGcc` solver call" is also gone: the all-point members take none.
+- **`Surface.hyperboloid(r1:r2:twoSheets:)` returns one sheet** when `twoSheets` is `true`;
+  `GeomEval_HyperboloidSurface` represents a single connected surface. Both parametrisations, and
+  the parametric ranges of the other four `GeomEval` surface factories, are now documented.
+- **`uIsoCurvePoints`/`vIsoCurvePoints` clamp an infinite iso to `-1e6...1e6`**, and return
+  `count` points at the origin rather than an empty array when the shape is not a face.
+- **`Curve3D.join(_:)` uses `GeomConvert::CurveToBSplineCurve` +
+  `GeomConvert_CompCurveToBSplineCurve::Add`**, not `GeomConvert::ConcatG1`, which the bridge never
+  calls.
+- **`Shape.uniformDeflection(_:)` uses `CPnts_UniformDeflection`**, not `GCPnts_UniformDeflection`;
+  this repo wraps that one separately, behind `Curve3D.drawDeflection` and
+  `Curve2D.drawDeflection`.
+- **The `ProjLib` projectors construct `ProjLib_Plane`/`ProjLib_Cylinder`** and read
+  `IsDone()`/`Line()`/`Circle()`, rather than calling `ProjLib::Project`.
+- **`Geom2dEval.circleInvoluteD0(origin:direction:radius:u:)` and its `D1` sibling** were public
+  and documented nowhere; both now have reference entries.
+- The ten `Geom2dEval_*` evaluators' current failure contract is documented and tracked as
+  [#1646](https://github.com/SecondMouseAU/OCCTSwift/issues/1646): they have no `try`/`catch` over
+  constructors that throw on out-of-range arguments.
+
+### Foundation-family documentation corrections from #1399's unlaned-class read (#1399)
+
+Seven documentation defects found by reading the 32 OCCT classes in #1399's `foundation` family
+against the pinned kernel, one at a time. No behaviour changed; every correction is a comment or a
+reference page.
+
+- **`MathSolver.eigenvalues` / `eigenvaluesAndVectors`: the ignored `subdiagonal` element is the
+  first, not the last.** `math_EigenValuesSearcher` shifts its working sub-diagonal down by one and
+  zeroes the tail, discarding the caller's element 0. `MathSolver.swift`,
+  `docs/reference/Document-Transforms.md` and `OCCTBridge_Spatial.h` all said "last element
+  unused", and the example shipped in the doc comment,
+  `eigenvalues(diagonal: [2, 2, 2], subdiagonal: [1, 1, 0])`, returns `[1, 3, 2]` rather than the
+  `2-sqrt(2), 2, 2+sqrt(2)` it implies. Both entries now state the real convention, note that the
+  return order is undefined by OCCT's own header, and carry a corrected runnable example. The
+  API-shape question is #1643.
+- **The same two entries named `math_EigenVectors`**, a class that does not exist in the pinned
+  kernel. They now name `math_EigenValuesSearcher::EigenValue` / `EigenVector`.
+- **The relative mesh deflection is the longest bounding-box side times four, not the diagonal.**
+  `Prs3d::GetDeflection` is `max(aDiag.maxComp() * coefficient * 4.0, Precision::Confusion())`.
+  `docs/reference/Drawing.md`, `docs/reference/Display.md`, `DisplayDrawer.deviationCoefficient`'s
+  doc comment and the bridge's #1418 comment are corrected, and the formula is written out with
+  the measured values (0.004 / 0.04 / 0.4 for 1-, 10- and 100-unit cubes at the 0.001 default).
+  `Display.md` also said the deflection was "read from `Prs3d_Drawer`"; for OCCT's default relative
+  type it is computed from a `Bnd_Box` the bridge builds.
+- **`Selector.pick` does not call `SelectMgr_ViewerSelector::Pick`.** All four `Pick` overloads
+  require a `V3d_View`, which the headless selector exists to avoid. The three `pick` entries and
+  `Selector.init()` now name `SelectMgr_SelectingVolumeManager`'s volume builders,
+  `SelectMgr_ViewerSelector::TraverseSensitives`, `SelectMgr_SortCriterion` and
+  `SelectMgr_EntityOwner`, and the rectangle entry names `PickBox` rather than the bridge
+  function's `PickRect`.
+- **`OCCTLengthUnit`'s documented declaration had the wrong raw values.**
+  `UnitsMethods_LengthUnit` skips `3`, so `foot` is `4`. The reference page's compressed case list
+  would have given `foot` the value `3` and shifted every case after it.
+- **`OCCTPrecision.pConfusion` is a constant 1e-9**, not "scaled by curve-space bounds":
+  `Precision::PConfusion()` takes no argument. `intersection` (1e-9) and `approximation` (1e-6)
+  gain their values, and `OCCTPrecision` gains the runnable snippet `docs-current` asks for.
+- **`Exporter.optimizeSTEP` deduplicates through `XSControl_WorkSession`.**
+  `StepTidy_DuplicateCleaner` runs on `STEPControl_Reader::WS()` before `TransferRoots`, which is
+  why the call takes a file path rather than a `Shape`. Neither class was named on the reference
+  page.
+- **`OSD::SetSignal` does not make OCCT's signals catchable in this build.** `OCC_CONVERT_SIGNALS`
+  is undefined, so `OCC_CATCH_SIGNALS` expands to nothing. The two bridge comments that claimed
+  otherwise now say what the handler does and cross-reference the #263 note in the same file that
+  already said so.
+
+Filed rather than fixed: #1641 (the attribution census cannot see any class whose name ends in an
+all-uppercase word: 45 claim sites, 14 real classes), #1642 (`reachable()`'s wrapper-type expansion
+is single-pass, so a correct attribution scores worse than the wrong one it replaced), #1643 (the
+`subdiagonal` API shape), #1644 (`IFSelect_ReturnStatus` collapsed to `Bool` at 44 sites), #1645
+(six `math_*` callback adapters compiled into five files and instantiated in one).
+
+### Reference pages attribute the OCCT class the bridge actually calls (#1399)
+
+Adjudicated all 431 findings from `Scripts/census-doc-occt-attribution.py`, a detector that had
+been running on every push with nobody reading its output. 212 were real and are corrected; the
+census now reports 230.
+
+The three `BRepGraph` reference pages named `BRepGraph_EditorView`, `BRepGraph_CoEdge`,
+`BRepGraph_RepStore` and six more classes that do not exist in the pinned kernel; the real ones are
+`BRepGraph::EditorView`'s `Ops` sub-views, `BRepGraph::Topo()`, `BRepGraph_Tool` and
+`BRepGraph_LayerHistory`. Eleven mutation entries named the wrong `Ops` sub-view. Eighteen further
+pages named a class absent from OCCT 8.0.1, among them `Geom2dGcc_Circ2d2TanPt` (the solver is
+`Geom2dGcc_Circ2d3Tan`), `math_Laguerre` (`MathPoly::Laguerre`), `HelixGeom_Helix`
+(`HelixGeom_BuilderHelix`) and `Draft_MakeDraft` (`BRepOffsetAPI_DraftAngle`). Sixty-nine more
+named a real class that is not the one running, such as `GProp_PGProps` for six analytic
+properties that use `GProp_SelGProps` and `GProp_VelGProps`.
+
+Eight `BRepGraph` setters and six matching getters are silent no-ops on the pinned kernel and were
+documented as if they worked; each now carries the note `setEdgeRegularity` already had, and the
+API-surface question is [#1652](https://github.com/SecondMouseAU/OCCTSwift/issues/1652).
+
+The adjudication, including all 210 false positives with the reason the detector was wrong and a
+measured 49.8% false-positive rate over the whole set, is in
+[`Scripts/repro/1399-refman-coverage-unlaned/census-findings.md`](Scripts/repro/1399-refman-coverage-unlaned/census-findings.md).
+
+### `Shape.edgeFaceIntersection` can find an intersection (#1631)
+
+`OCCTIntToolsEdgeFace` never called `IntTools_EdgeFace::SetRange`, whose default is `(0, 0)`, so the
+intersector was given an empty interval on the edge and returned zero common parts for every input
+while reporting `IsDone()`. It now sets the edge's own parameter range. On a 10-unit box with an
+edge through its middle, the two faces the edge crosses report a common part where all six
+previously reported none.
+
+The function also now checks that its two handles really are an edge and a face before casting
+them.
+
+### A gate for the repo's own counted claims about its inventories (#1408, #1066)
+
+`Scripts/check-inventory-prose.py` derives how many patches are carried, how many the pinned kernel
+holds, and how many gates, censuses and audits `ci.yml`'s `gate-scripts` job runs, then checks
+sixteen counted claims in `Package.swift`, `CLAUDE.md`, `ci.yml` and `okf/policies/static-gates.md`
+against them. A claim whose sentence no longer matches its regex fails as loudly as a wrong number,
+so a rewording cannot quietly drop a check.
+
+It found three live defects when first run: `ci.yml`'s `gate-scripts` comment claimed "all five"
+scripts against a job running thirteen and "the other four" against twelve (#1066), and
+`okf/references/carried-occt-patches.md` keyed a row `0010-Intf_Interference-…-319`, an ellipsis
+that names no file on disk. A fourth surfaced with it: the `0027` row was keyed to a name the patch
+file does not have. All fixed. The gate is the ninth in the `gate-scripts` job, and #819's
+gate-coverage audit moves `stale-self-referential-count` from `ungated-gap` to `gated`.
+
+### The attribution census sees a bullet that names no OCCT class (#1399)
+
+`Scripts/census-doc-occt-attribution.py` silently skipped any claim from which it could extract no
+class name, so a `- **OCCT:**` bullet answering with a bridge C symbol instead of an OCCT class was
+invisible to it. #1399's geometry family found twenty such entries on the `GeomEval`/`Geom2dEval`
+surfaces while the census called both packages clean. The census now reports them as their own
+category, 183 sites at time of writing, and its self-test gained three cases including the
+table-row case that pins the deliberate restriction to the `- **OCCT:**` bullet channel.
+
+Its summary line also counted from a literal (`total = 20`) while 23 cases printed; it is now
+derived from what ran.
+
+### A gate for throwing OCCT calls, and the live abort it found (#1407)
+
+`Scripts/check-throwing-calls.py` checks that every `gp_Dir`/`gp_Dir2d`/`gp_Ax*`/`Geom_Direction`
+construction and every `D1`/`D2` evaluator in `Sources/OCCTBridge/src` is inside a `try`, guarded by
+a length test the function already performs, or in a helper whose callers catch. This is the #345
+defect class, where an exception crossing into Swift is a process abort rather than an error, and
+where 49 sites were fixed by hand with nothing to keep them fixed.
+
+`GeneralTransform2D.affinity(axisOrigin:axisDirection:ratio:)` now returns `GeneralTransform2D?`.
+It was the one live site: a zero-length `axisDirection` reached `gp_Dir2d` unguarded and aborted the
+process. It returns `nil` for a direction shorter than `gp::Resolution()`, and the bridge function
+returns `bool`.
+
 ### `Shape.checkSolid()`, and `checkResult` localizes solid-level defects (#1392)
 
 `BRepCheck_Solid` is reachable from Swift for the first time: `OCCTCheckSolid` had been implemented
