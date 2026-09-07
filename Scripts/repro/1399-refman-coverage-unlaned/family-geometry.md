@@ -11,6 +11,31 @@ moved out of the "this project invented them" bucket. They are genuine OCCT 8.0.
 `TKG3d` and `TKG2d`, present in the pinned headers, and that misclassification is itself the
 subject of the largest finding below: the docs made the same mistake in prose.
 
+**Run on this branch, that command now prints 23, not 44, and this is the pass working rather
+than a stale number.** `derive_lane.py` puts a class in `machine-covered` when a claim the
+attribution census parses names it, and the fixes below gave twenty-one of the forty-four an
+`- **OCCT:**` bullet naming their real class for the first time. So they are now re-checked by
+`census-doc-occt-attribution.py` on every run, whole-tree, instead of sitting in the algorithm
+bucket waiting to be read by hand. The twenty-one, all of them `over` rows in the table:
+
+    CPnts_UniformDeflection       Geom2dGcc_QualifiedCurve   LProp_CurAndInf
+    LProp_CIType                  ProjLib_Plane              ProjLib_Cylinder
+    HelixGeom_HelixCurve          HelixGeom_BuilderHelix     HelixGeom_BuilderHelixCoil
+    GeomEval_EllipsoidSurface     GeomEval_HyperboloidSurface
+    GeomEval_ParaboloidSurface    GeomEval_HypParaboloidSurface
+    GeomEval_CircularHelicoidSurface  GeomEval_TBezierSurface  GeomEval_AHTBezierSurface
+    Geom2dEval_ArchimedeanSpiralCurve  Geom2dEval_LogarithmicSpiralCurve
+    Geom2dEval_SineWaveCurve      Geom2dEval_TBezierCurve    Geom2dEval_AHTBezierCurve
+
+23 + 21 = 44. To reproduce the reading list this pass worked from, run `--family geometry` at
+`2b714c83..0a2872e6` (the lane branch before this commit). The twenty-three that remain are the
+`ok` and `deliberate, recorded` rows plus `GeomConvert`, `GeomAbs_IsoType`, `GccEnt_Position`,
+`GccInt_IType` and `Law_BSpFunc`, whose corrections were prose rather than a new class name on an
+attribution bullet.
+
+`derive_lane.py --self-test` is **14/14** on this branch; it was 13/13 when this pass began, and
+12/12 when the pass was briefed. The count is the coordinator's to move, and it has moved twice.
+
 ## Result
 
 | verdict | count |
@@ -365,8 +390,8 @@ additions.
 ## Reproducing this pass
 
 ```bash
-python3 Scripts/repro/1399-refman-coverage-unlaned/derive_lane.py --family geometry
-python3 Scripts/repro/1399-refman-coverage-unlaned/derive_lane.py --self-test   # 13/13
+python3 Scripts/repro/1399-refman-coverage-unlaned/derive_lane.py --family geometry  # 23 now, see above
+python3 Scripts/repro/1399-refman-coverage-unlaned/derive_lane.py --self-test   # 14/14
 python3 Scripts/census-doc-occt-attribution.py                                  # 413 findings
 python3 Scripts/census-doc-occt-attribution.py --lane HelixGeom                 # 0
 python3 Scripts/census-doc-occt-attribution.py --lane Geom2dGcc                 # 0
