@@ -24,12 +24,32 @@ clang++ -std=c++17 -ObjC++ -w \
 | `under` | 3 |
 | `over` | 4 |
 
-Nine of the eleven doc-side corrections are in this branch. Five findings that are larger than a
-doc edit are filed: [#1641](https://github.com/SecondMouseAU/OCCTSwift/issues/1641),
+Seven doc-side defects are corrected in this branch. Five findings that are larger than a doc edit
+are filed: [#1641](https://github.com/SecondMouseAU/OCCTSwift/issues/1641),
 [#1642](https://github.com/SecondMouseAU/OCCTSwift/issues/1642),
 [#1643](https://github.com/SecondMouseAU/OCCTSwift/issues/1643),
 [#1644](https://github.com/SecondMouseAU/OCCTSwift/issues/1644),
 [#1645](https://github.com/SecondMouseAU/OCCTSwift/issues/1645).
+
+### The lane shrinks as a result, and that is the point
+
+`derive_lane.py --family foundation` printed **32** classes when this pass started and prints
+**28** now, on the same branch. Four moved out of the hand-reading lane into `machine-covered`,
+because the corrections name them in claims the attribution census parses:
+
+| class | was | now named by |
+|---|---|---|
+| `SelectMgr_SelectingVolumeManager` | `under` | `docs/reference/Selection.md`, three `pick` entries |
+| `SelectMgr_EntityOwner` | `deliberate, recorded` | `docs/reference/Selection.md`, the point-pick entry |
+| `math_EigenValuesSearcher` | `under` | `docs/reference/Document-Transforms.md`, both eigen entries |
+| `XSControl_WorkSession` | `under` | `docs/reference/Exporter.md`, `optimizeSTEP` |
+
+That is all three `under` verdicts plus one. Fixing an `under` does not just add a sentence: it
+moves the class from "a human read it once" to "re-checked on every census run", which is the
+disposition #1399 exists to hand out. The table below is of the 32 as the lane stood at the start
+of the pass, since that is what was read.
+
+`Precision` also moved 123 -> 124 `uses` and `Prs3d` 4 -> 5, from the corrected bridge comments.
 
 ## The table
 
