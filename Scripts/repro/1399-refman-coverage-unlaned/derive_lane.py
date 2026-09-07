@@ -11,11 +11,15 @@ by the only question that decides what work is left:
   substrate        NCollection/TColStd/TColgp/TCollection containers and Standard_ scalars. A
                    container carries no capability to over- or under-document, the same
                    disposition #1045's fifteen substrate packages got.
-  ours             classes this project invented (BRepGraph, GeomEval, Geom2dEval). There is no
-                   upstream refman to audit against, so the check is different in kind: is the
-                   capability reachable from Swift, and does anything document it.
   algorithm        real OCCT algorithm classes no parsed claim names. This is the lane's actual
                    reading list.
+
+A fourth bucket, "ours", stood here for the classes this project was assumed to have invented:
+BRepGraph, GeomEval, Geom2dEval. It was removed because the assumption was false, which is the
+point of auditing against the headers rather than against a memory of them. All three are genuine
+OCCT packages, present in the pinned kernel and on upstream master with their own GTests
+(BRepGraph in TKBRep, GeomEval and Geom2dEval in TKG3d and TKG2d). They are ordinary algorithm
+classes and are read as such: BRepGraph with the healing family, the evaluators with geometry.
 
 Nothing here is hand-typed: the 643 comes from #820's own union by import, and the machine-covered
 split from the census's own parser, so both move when the tree moves rather than when someone
@@ -43,8 +47,9 @@ PHASE6 = os.path.join(REPO, "Scripts", "repro", "820-refman-coverage-whole-surfa
 FAMILIES = {
     "healing": ("ShapeFix", "ShapeAnalysis", "ShapeUpgrade", "ShapeCustom", "ShapeExtend",
                 "BRepTools", "BRepLib", "BRepTopAdaptor", "BRepBndLib", "BndLib", "Bnd",
-                "BRepGProp", "GProp"),
-    "geometry": ("Geom", "Geom2d", "GeomConvert", "Geom2dConvert", "GeomAbs", "GeomProjLib",
+                "BRepGProp", "GProp", "BRepGraph"),
+    "geometry": ("Geom", "Geom2d", "GeomEval", "Geom2dEval", "GeomConvert", "Geom2dConvert",
+                 "GeomAbs", "GeomProjLib",
                  "GeomGridEval", "Geom2dGridEval", "Geom2dGcc", "GccEnt", "GccInt", "Convert",
                  "CPnts", "Adaptor3d", "Adaptor2d", "ElCLib", "ElSLib", "LProp", "Law",
                  "ProjLib", "FairCurve", "HelixGeom", "TColGeom", "gp"),
@@ -66,7 +71,6 @@ def family_of(cls):
 
 SUBSTRATE_PREFIXES = ("NCollection_", "TColStd_", "TColgp_", "TCollection_", "TShort_",
                       "TColQuaternion_", "Standard_")
-OUR_PACKAGES = ("BRepGraph", "GeomEval", "Geom2dEval")
 
 
 def _load(path, name):
@@ -132,8 +136,6 @@ def bucket_of(cls, machine_covered):
         return "machine-covered"
     if cls.startswith(SUBSTRATE_PREFIXES):
         return "substrate"
-    if cls.split("_")[0] in OUR_PACKAGES:
-        return "ours"
     return "algorithm"
 
 
@@ -173,7 +175,7 @@ def report(verbose=False, bucket_filter=None):
     print("#1399: wrapped classes claimed by no #807 lane")
     print("=" * 78)
     print("total: %d" % len(table))
-    for name in ("machine-covered", "algorithm", "substrate", "ours"):
+    for name in ("machine-covered", "algorithm", "substrate"):
         selected = [r for r in table if r["bucket"] == name]
         documented = sum(1 for r in selected if r["documented"])
         print("  %-16s %4d   (%d named somewhere in docs/)" % (name, counts[name], documented))
@@ -184,7 +186,7 @@ def report(verbose=False, bucket_filter=None):
     if verbose or bucket_filter:
         print()
         for name in ([bucket_filter] if bucket_filter else
-                     ("ours", "algorithm", "substrate", "machine-covered")):
+                     ("algorithm", "substrate", "machine-covered")):
             selected = sorted([r for r in table if r["bucket"] == name],
                               key=lambda r: (-r["bridge_uses"], r["class"]))
             print("-- %s (%d)" % (name, len(selected)))
@@ -207,7 +209,7 @@ def self_test():
     case("total-matches-phase-6", len(table) == len(unlaned_classes()),
          "%d rows" % len(table))
     case("every-class-has-a-bucket",
-         all(r["bucket"] in ("machine-covered", "substrate", "ours", "algorithm") for r in table))
+         all(r["bucket"] in ("machine-covered", "substrate", "algorithm") for r in table))
     case("buckets-partition", sum(counts.values()) == len(table))
     case("every-class-is-really-wrapped", all(r["bridge_uses"] > 0 for r in table),
          "min uses=%d" % min(r["bridge_uses"] for r in table))
@@ -224,8 +226,15 @@ def self_test():
     case("substrate-rule-is-prefix-based",
          bucket_of("NCollection_Sequence", set()) == "substrate"
          and bucket_of("BRepLib", set()) == "algorithm"
-         and bucket_of("BRepGraph_Copy", set()) == "ours"
          and bucket_of("BRepLib", {"BRepLib"}) == "machine-covered")
+    # The packages the removed "ours" bucket claimed are OCCT's, so they must read as algorithm
+    # classes and land in a family. Checked here because assuming otherwise is what put them in a
+    # bucket of their own in the first place.
+    case("packages-once-assumed-ours-are-occt-classes",
+         all(bucket_of(c, set()) == "algorithm" and family_of(c) in FAMILIES
+             for c in ("BRepGraph_Copy", "GeomEval_EllipsoidSurface", "Geom2dEval_SineWaveCurve")),
+         "BRepGraph->%s, GeomEval->%s" % (family_of("BRepGraph_Copy"),
+                                          family_of("GeomEval_EllipsoidSurface")))
 
     algorithm = [r for r in table if r["bucket"] == "algorithm"]
     case("every-algorithm-class-has-a-family",
@@ -249,7 +258,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--verbose", action="store_true", help="print every class, per bucket")
-    parser.add_argument("--bucket", choices=("machine-covered", "substrate", "ours", "algorithm"),
+    parser.add_argument("--bucket", choices=("machine-covered", "substrate", "algorithm"),
                         help="print one bucket's classes only")
     parser.add_argument("--family", choices=tuple(FAMILIES),
                         help="print one reading family of the algorithm bucket")
