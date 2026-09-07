@@ -1465,7 +1465,9 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
 // MARK: - math_EigenValuesSearcher (v0.116.0)
 
 /// Find eigenvalues of symmetric tridiagonal matrix.
-/// diagonal[n], subdiagonal[n] (last element unused). eigenvalues[n].
+/// diagonal[n], subdiagonal[n] whose FIRST element is the unused one (#1399: this said "last"
+/// until it was measured; math_EigenValuesSearcher shifts work(i-1) = work(i) over 2..n and
+/// then zeroes work(n)). eigenvalues[n], in no defined order.
 /// Returns number of eigenvalues found (n on success, 0 on failure).
 int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
                             const double* _Nonnull subdiagonal,

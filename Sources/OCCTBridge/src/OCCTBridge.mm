@@ -30,9 +30,16 @@ void OCCTSerialLockRelease(void)
 }
 
 // Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
-// SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so that
-// signals raised inside OCCT become catchable via OCC_CATCH_SIGNALS instead of aborting
-// the host process. Idempotent + thread-safe via std::once_flag.
+// SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so an OS signal
+// raised inside OCCT gets a named OCCT diagnostic (message + stack trace) rather than a bare
+// crash report. Idempotent + thread-safe via std::once_flag.
+//
+// #1399: this comment used to end "so that signals raised inside OCCT become catchable via
+// OCC_CATCH_SIGNALS instead of aborting the host process", which is not what this build does.
+// OCC_CONVERT_SIGNALS is not defined here, so Standard_ErrorHandler.hxx expands
+// OCC_CATCH_SIGNALS to nothing and Standard_ErrorHandler::Abort throws straight from the POSIX
+// signal handler, which does not unwind. See okf/references/known-occt-bugs.md (#345) and the
+// same correction at occtEnsureSignals' declaration in OCCTBridge_Internal.h.
 #include <OSD.hxx>
 
 void occtEnsureSignals()
