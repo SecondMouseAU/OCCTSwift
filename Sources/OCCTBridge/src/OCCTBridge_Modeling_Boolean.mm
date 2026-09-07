@@ -2639,6 +2639,12 @@ bool OCCTIntToolsEdgeFace(OCCTShapeRef _Nonnull edge,
                           OCCTCommonPart* _Nullable* _Nonnull outParts,
                           int32_t* _Nonnull outCount)
 {
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
+  {
+    *outParts = nullptr;
+    *outCount = 0;
+    return false;
+  }
   try
   {
     const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
@@ -2647,6 +2653,13 @@ bool OCCTIntToolsEdgeFace(OCCTShapeRef _Nonnull edge,
     IntTools_EdgeFace ef;
     ef.SetEdge(e);
     ef.SetFace(f);
+    // #1631: IntTools_EdgeFace::myRange defaults to (0, 0) and Perform() hands it straight to
+    // IntTools_BeanFaceIntersector::SetBeanParameters, so without this the search interval is
+    // empty and every input answers IsDone() with zero common parts. IntTools_EdgeEdge repairs
+    // the same default inside its own Prepare(); this entry point has no such repair.
+    double first = 0.0, last = 0.0;
+    BRep_Tool::Range(e, first, last);
+    ef.SetRange(IntTools_Range(first, last));
     ef.Perform();
     if (!ef.IsDone())
     {
