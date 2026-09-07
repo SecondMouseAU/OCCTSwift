@@ -10,28 +10,28 @@ extension Shape {
     ///
     /// A second, dedicated `ShapeFix_Shape` entry point beside ``ShapeFixer``: this one offers
     /// per-mode control (the four flags below) but no independent tolerance range, and
-    /// ``ShapeFixer`` offers `setMinTolerance`/`setMaxTolerance` but no mode control at all — the
+    /// ``ShapeFixer`` offers `setMinTolerance`/`setMaxTolerance` but no mode control at all: the
     /// two are not interchangeable (#837).
     ///
     /// - Parameters:
     ///   - tolerance: Tolerance for fixing operations
     ///   - fixSolid: Whether to fix solid orientation (`ShapeFix_Shape::FixSolidMode`)
-    ///   - fixShell: Whether to fix **free** shells — shells that aren't part of a solid
+    ///   - fixShell: Whether to fix **free** shells, shells that aren't part of a solid
     ///     (`ShapeFix_Shape::FixFreeShellMode`)
-    ///   - fixFace: Whether to fix **free** faces — faces that aren't part of a shell
+    ///   - fixFace: Whether to fix **free** faces, faces that aren't part of a shell
     ///     (`ShapeFix_Shape::FixFreeFaceMode`)
-    ///   - fixWire: Whether to fix **free** wires — wires that aren't part of a face
+    ///   - fixWire: Whether to fix **free** wires, wires that aren't part of a face
     ///     (`ShapeFix_Shape::FixFreeWireMode`)
     /// - Returns: Fixed shape, or nil on failure
     ///
-    /// `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically — a shell
-    /// not attached to a solid, a face not attached to a shell, a wire not attached to a face —
+    /// `fixShell`/`fixFace`/`fixWire` govern **free** (standalone) content specifically: a shell
+    /// not attached to a solid, a face not attached to a shell, a wire not attached to a face,
     /// not shell/face/wire fixing in general: content that *is* attached is always fixed by
     /// `Perform()`, regardless of these three flags. `ShapeFix_Shape` has no plain
     /// `FixShellMode`/`FixFaceMode`/`FixWireMode` in this OCCT version to offer broader control.
     ///
     /// Before #837 these three parameters were accepted but never passed to `ShapeFix_Shape` at
-    /// all — only `fixSolid` had any effect, and the other three silently behaved as if always
+    /// all: only `fixSolid` had any effect, and the other three silently behaved as if always
     /// `true` regardless of what was passed, with no error and nothing in the return value to
     /// reveal it.
     ///
@@ -66,19 +66,19 @@ extension Shape {
     /// that share the same underlying curve.
     ///
     /// The receiver is **not** modified: the merge runs on a private copy, so a caller who discards
-    /// the result still holds exactly the shape they started with (#446 — the underlying OCCT
+    /// the result still holds exactly the shape they started with (#446: the underlying OCCT
     /// algorithm rewrites sub-shapes of its input, which used to reach the receiver).
     ///
     /// The price of that copy is **identity**: the result shares no sub-shapes with the receiver,
     /// even where nothing was merged, so `isSame(as:)`/`isPartner(with:)`/`isEqual(to:)` answer
     /// `false` for faces that came through untouched. Code that maps selections or attributes from
     /// the input onto the result by sub-shape identity has to key off geometry instead. Before #446
-    /// an unmerged face came back identical — but so did the damage this method did to it.
+    /// an unmerged face came back identical, but so did the damage this method did to it.
     ///
     /// - Parameters:
     ///   - unifyEdges: Whether to merge edges on same curve (default: true)
     ///   - unifyFaces: Whether to merge faces on same surface (default: true)
-    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true — note
+    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true; note
     ///     ``UnifySameDomainBuilder/init(shape:unifyEdges:unifyFaces:concatBSplines:)`` defaults
     ///     this to `false`)
     /// - Returns: Unified shape, or nil on failure
@@ -134,11 +134,11 @@ extension Shape {
     /// Divide a shape wherever its geometry drops below the required continuity.
     ///
     /// Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together
-    /// to `continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing
+    /// to `continuity`, plus `SetSurfaceSegmentMode(true)`, the usage OCCT's own shape-healing
     /// guide demonstrates. Until #438 this was one of two public entry points over that same OCCT
     /// class: ``dividedByContinuity(criterion:tolerance:)`` (now deprecated, forwarding here) set
     /// only the boundary criterion, leaving pcurve/surface pinned at the class's own C1
-    /// constructor default regardless of the requested continuity — measured
+    /// constructor default regardless of the requested continuity, measured
     /// (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a
     /// fixture where this method's own three-criteria behaviour varies (nil/4/4/25 faces at
     /// C0/C1/C2/C3).
@@ -185,7 +185,7 @@ extension Shape {
 
     /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
+    /// This does **not** recognise analytic forms: nothing here converts a BSpline back to a plane,
     /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
     /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
     /// tolerances, capped at `maxDegree` and `maxSegments`.
@@ -193,7 +193,7 @@ extension Shape {
     /// Continuity is fixed at C1 here; use
     /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
     /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
-    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// requested one cannot meet the tolerance within `maxDegree`**, measured in #570, a face on an
     /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
     ///
     /// ```swift
@@ -262,7 +262,7 @@ extension Shape {
     /// multi-body part stays a multi-body part; it comes back as a compound of solids, and
     /// a single body as a bare solid. Body selection is the same rule as ``Shape/solid(from:)``:
     /// every shell that an **even** number of the other shells in its group enclose, where a
-    /// group is one solid's own shells, or all the shells belonging to no solid — so a free
+    /// group is one solid's own shells, or all the shells belonging to no solid, so a free
     /// shell that is itself an even-enclosed cavity is skipped, not turned into a body.
     ///
     /// ```swift
@@ -298,7 +298,7 @@ extension Shape {
     /// `BRepTools_NurbsConvertModification` pair, plus one more step: `CorrectVertexTol()`.
     /// Converting an analytic curve/surface to a BSpline approximation can enlarge an edge's
     /// tolerance to bound the approximation error, and a shared vertex's own tolerance is
-    /// expected to bound everything incident to it — `CorrectVertexTol()` raises a vertex's
+    /// expected to bound everything incident to it; `CorrectVertexTol()` raises a vertex's
     /// tolerance to cover any edge meeting it that the conversion touched.
     /// ``nurbsConvertViaModifier()`` skips that step, so its result can carry a vertex whose
     /// tolerance is smaller than an edge meeting it, a real (if usually small) conversion-fidelity
@@ -314,8 +314,8 @@ extension Shape {
     ///
     /// Faster than `sewn(tolerance:)` for large models, but requires every face's surface to
     /// be naturally bounded (e.g. a sphere, cylinder, cone, or torus). A face whose surface is
-    /// only trimmed by its wire — an ordinary planar `TopoDS_Face`, the common shape of a box or
-    /// any other polyhedral solid — is declined and produces no result, so this returns nil for
+    /// only trimmed by its wire (an ordinary planar `TopoDS_Face`, the common shape of a box or
+    /// any other polyhedral solid) is declined and produces no result, so this returns nil for
     /// most everyday B-Rep solids; use ``sewn(tolerance:)`` for those (#1475).
     ///
     /// ```swift
@@ -365,7 +365,7 @@ extension Shape {
     ///
     /// - Parameter toleranceDegrees: Angular tolerance in degrees. Defaults to
     ///   `1.0e-10 * 180.0 / Double.pi` (~5.7295779513e-9), OCCT's own default for
-    ///   `BRepLib::EncodeRegularity`'s `TolAng` (`1.0e-10`) converted from radians to degrees —
+    ///   `BRepLib::EncodeRegularity`'s `TolAng` (`1.0e-10`) converted from radians to degrees,
     ///   the bridge (`OCCTShapeEncodeRegularity`) converts this parameter back to radians before
     ///   calling it. Before #1545 this defaulted to the bare literal `1e-10` *degrees*, which
     ///   converts to ~1.745e-12 radians, about 172x (exactly 180/pi) stricter than OCCT's own
@@ -390,11 +390,12 @@ extension Shape {
     /// This always passes `nbV: 1` to the underlying bridge call `OCCTShapeDivideByNumber(shape,
     /// nbU, nbV)`, which (as of #1491, when that bridge function started honoring per-axis split
     /// counts instead of silently deriving its own roughly-square grid) means every split lands on
-    /// U specifically, not on whichever of a face's U/V extents happens to be geometrically longer
-    /// — a face's own U/V parameterization is arbitrary and has no fixed relationship to which
-    /// extent is larger. Useful when a face's U direction is already known to be the one you want
-    /// sliced (e.g. rings along a long extrusion, where U runs along the extrusion axis). For a
-    /// split along V instead, or an actual 2D grid, call `OCCTShapeDivideByNumber` directly (via
+    /// U specifically, not on whichever of a face's U/V extents happens to be geometrically
+    /// longer: a face's own U/V parameterization is arbitrary and has no fixed relationship to
+    /// which extent is larger. Useful when a face's U direction is already known to be the one
+    /// you want sliced (e.g. rings along a long extrusion, where U runs along the extrusion
+    /// axis). For a split along V instead, or an actual 2D grid, call
+    /// `OCCTShapeDivideByNumber` directly (via
     /// `import OCCTBridge`) with explicit `nbU`/`nbV`.
     ///
     /// - Parameter parts: Number of strips per face
@@ -534,7 +535,7 @@ extension Shape {
 
     // MARK: - BRepCheck_Face per-wire diagnostics (#266 follow-up)
 
-    /// `BRepCheck_Face` — do this face's boundary wires intersect one another?
+    /// `BRepCheck_Face`: do this face's boundary wires intersect one another?
     ///
     /// Returns `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
     /// if the shape isn't a single face. `geometricControls` enables the (costlier) geometric checks.
@@ -544,7 +545,7 @@ extension Shape {
             ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly nested (one outer, the rest enclosed as
+    /// `BRepCheck_Face`: are the face's wires correctly nested (one outer, the rest enclosed as
     /// holes)?
     ///
     /// Returns `.invalidImbricationOfWires` when nesting is wrong.
@@ -554,7 +555,7 @@ extension Shape {
             ?? .checkFail
     }
 
-    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)?
+    /// `BRepCheck_Face`: are the face's wires correctly oriented (outer CCW, holes CW)?
     ///
     /// Returns `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
     public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus {
@@ -599,7 +600,7 @@ extension Shape {
 
     /// Connect adjacent faces in **every** shell of this shape (`ShapeFix_FaceConnect`).
     ///
-    /// A shape with several shells — a compound of two solids, say — has each shell connected
+    /// A shape with several shells (a compound of two solids, say) has each shell connected
     /// independently and the results reassembled: one shell in, one shell out; several in, a
     /// compound out. Before #484 only the first shell an explorer yielded was processed and the
     /// rest were silently dropped.
@@ -714,7 +715,7 @@ extension Shape {
     ///
     /// ``Shape/bsplineRestrictionAdvanced(_:approxSurface:approxCurve3d:approxCurve2d:tol3d:tol2d:continuity3d:continuity2d:maxDegree:maxSegments:priorityDegree:convertRational:)``
     /// drives the same operation with per-geometry-kind switches, and takes the same continuity
-    /// vocabulary — `ShapeCustom::BSplineRestriction` is itself a `ShapeCustom_BSplineRestriction`
+    /// vocabulary: `ShapeCustom::BSplineRestriction` is itself a `ShapeCustom_BSplineRestriction`
     /// run through `BRepTools_Modifier`, which is what the advanced entry point builds by hand.
     ///
     /// - Parameters:
@@ -724,7 +725,7 @@ extension Shape {
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
+    ///     maximum. This is a **ceiling, not a guarantee**: OCCT reduces the continuity it
     ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
     ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
     ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
@@ -905,10 +906,24 @@ extension Shape {
 
     /// Fit the nearest plane to a set of 3D points.
     ///
-    /// Uses least-squares fitting to find the plane that best fits the points.
+    /// `ShapeAnalysis_Geom::NearestPlane` analyses the cloud with `GProp_PEquation` and returns
+    /// the plane through its barycentre normal to the principal axis of least extent.
+    ///
+    /// **A non-nil result is not a planarity test.** The fit is refused only when the smallest
+    /// principal extent is at least half of one of the other two, so a cloud nowhere near planar
+    /// still gets a plane. Measured on the pinned kernel, one corner of a 10 x 10 square lifted
+    /// 8 units out of plane fits with a `maxDeviation` of 2.13, and the eight corners of a cube
+    /// are refused. Gate on `maxDeviation`, not on the result being non-nil.
+    ///
+    /// ```swift
+    /// let pts = [SIMD3(0.0, 0, 0), SIMD3(10.0, 0, 0), SIMD3(10.0, 10, 0), SIMD3(0.0, 10, 8)]
+    /// if let p = Shape.nearestPlane(to: pts), p.maxDeviation < 1e-6 {
+    ///     // only here are the points really coplanar; this set is not, at 2.13
+    /// }
+    /// ```
     ///
     /// - Parameter points: Array of 3D points (minimum 3)
-    /// - Returns: Fitted plane with deviation, or nil if fitting fails
+    /// - Returns: Fitted plane with deviation, or nil for fewer than 3 points or a refused fit
     public static func nearestPlane(to points: [SIMD3<Double>]) -> NearestPlane? {
         guard points.count >= 3 else { return nil }
         var flatPoints = [Double]()
@@ -944,17 +959,17 @@ extension Shape {
     /// Convert shape to NURBS via `BRepTools_Modifier`, skipping the vertex-tolerance correction pass of ``convertedToNURBS()``.
     ///
     /// This drives the exact same `BRepTools_Modifier` + `BRepTools_NurbsConvertModification`
-    /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally — the two are
+    /// pair ``convertedToNURBS()`` (`BRepBuilderAPI_NurbsConvert`) uses internally; the two are
     /// not independent conversion mechanisms; this one is that method's own implementation minus
     /// its final `CorrectVertexTol()` step. That step matters: converting an analytic
     /// curve/surface to a BSpline approximation can enlarge an edge's tolerance to bound the
     /// approximation error, and without the correction a shared vertex's recorded tolerance can
-    /// end up smaller than an edge meeting it — a real, silent conversion-fidelity gap `.isValid`
+    /// end up smaller than an edge meeting it, a real, silent conversion-fidelity gap `.isValid`
     /// will not catch (#836).
     ///
     /// Prefer ``convertedToNURBS()`` for ordinary NURBS conversion. Use this method only when you
-    /// need the bare `BRepTools_Modifier` pipeline directly — e.g. composing the conversion with
-    /// other `BRepTools_Modification` passes in one `BRepTools_Modifier` pass — and will apply
+    /// need the bare `BRepTools_Modifier` pipeline directly (e.g. composing the conversion with
+    /// other `BRepTools_Modification` passes in one `BRepTools_Modifier` pass) and will apply
     /// your own vertex-tolerance correction afterward if the result's vertices need to stay
     /// consistent with their edges' tolerances.
     public func nurbsConvertViaModifier() -> Shape? {
@@ -1096,7 +1111,7 @@ extension Shape {
 
     /// Shape type for filtering compounds.
     ///
-    /// A typealias for the canonical ``ShapeType`` (#844) — this used to be an independent local
+    /// A typealias for the canonical ``ShapeType`` (#844); this used to be an independent local
     /// mirror of the same `TopAbs_ShapeEnum` ordinals, with its own, differently-cased `compsolid`
     /// case (`ShapeType` spells it `compSolid`). `ShapeExtend_Explorer` uses the identical ordinal
     /// convention every other sub-shape-type API in this package does, so there was no reason for
@@ -1120,7 +1135,7 @@ extension Shape {
     ///
     /// - Parameter lookInsideCompounds: If true, look inside sub-compounds
     /// - Returns: The predominant shape type, or ``ShapeType/unknown`` if the underlying
-    ///   `ShapeExtend_Explorer` walk throws (fixed in PR #870's aggregate review — this used to
+    ///   `ShapeExtend_Explorer` walk throws (fixed in PR #870's aggregate review; this used to
     ///   decode as ``ShapeType/vertex``, a real, legitimate case, indistinguishable from an actual
     ///   vertex-dominated shape).
     public func predominantShapeType(lookInsideCompounds: Bool = true) -> ShapeFilterType {
@@ -1259,7 +1274,7 @@ extension Shape {
     ///
     /// Same operation as
     /// ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
-    /// — both drive a `ShapeCustom_BSplineRestriction` through `BRepTools_Modifier` — with
+    /// (both drive a `ShapeCustom_BSplineRestriction` through `BRepTools_Modifier`) with
     /// switches for which geometry kinds to approximate.
     ///
     /// ```swift
@@ -1280,7 +1295,7 @@ extension Shape {
     ///   - tol2d: 2D tolerance (default: 0.01)
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     maximum, the same limit the non-advanced entry point has. Also the same ceiling-not-a-
     ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
     ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
@@ -1331,7 +1346,28 @@ extension Shape {
         else { return nil }
         return Shape(handle: ref)
     }
-    /// Compose shell: split a face into sub-faces using composite surface grid.
+    /// Rebuild a face's wires against a composite surface and return the resulting shell.
+    ///
+    /// **This cannot split the face**, whatever the name suggests. The bridge wraps the face's
+    /// own surface in a 1 x 1 `ShapeExtend_CompositeSurface`, and a one-patch grid has no joint
+    /// lines for `ShapeFix_ComposeShell` to cut along. Measured on a cylinder's lateral face,
+    /// `Perform()` returns true and one face goes in and one comes out. To subdivide a face use
+    /// ``dividedByNumber(_:)`` or ``dividedByArea(maxArea:)``. See #1638.
+    ///
+    /// What it does do is the wire rebuild: `ShapeFix_ComposeShell` re-splits and re-orders the
+    /// face's wires against the surface, which repairs seam and degenerate-edge ordering on a
+    /// face whose boundary has drifted.
+    ///
+    /// ```swift
+    /// if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
+    ///    let composed = face.composeShell() {
+    ///     print(composed.contents.faces)  // 1, the same face, wires rebuilt
+    /// }
+    /// ```
+    ///
+    /// - Parameter precision: Tolerance handed to `ShapeFix_ComposeShell::Init`.
+    /// - Returns: The composed shell, or nil if the receiver is not a face, carries no surface,
+    ///   or `Perform()` fails.
     public func composeShell(precision: Double = 1e-6) -> Shape? {
         guard let ref = OCCTShapeFixComposeShell(handle, precision) else { return nil }
         return Shape(handle: ref)
@@ -1343,7 +1379,7 @@ extension Shape {
     ///
     /// Every solid in the receiver is healed, not just the first: a single-body input
     /// comes back as a solid, a multi-body one as a compound of one result per input body,
-    /// in exploration order. A compound result is not new to this call — `ShapeFix_Solid`
+    /// in exploration order. A compound result is not new to this call: `ShapeFix_Solid`
     /// already returns one when a single solid's shells resolve into several bodies.
     ///
     /// Only the receiver's *solids* are visited. Loose shells, faces or wires sitting
@@ -1358,7 +1394,7 @@ extension Shape {
     ///   **unhealed** rather than discarded. So `result.solids.count` can be lower than the
     ///   number of input bodies even though nothing was lost.
     ///
-    ///   To spot an unclosed body, walk the result's **direct children** — not
+    ///   To spot an unclosed body, walk the result's **direct children**, not
     ///   ``Shape/subShapes(ofType:)``, which maps at every depth and so reports one shell
     ///   for every *healthy* solid too (a compound of two healed solids has two shells, and
     ///   a single healed solid has one):
@@ -1384,7 +1420,7 @@ extension Shape {
     /// let part = Shape.compound([a, b])!
     ///
     /// let healed = part.fixSolid()!
-    /// print(healed.solids.count)   // 2 — both bodies, not just the first
+    /// print(healed.solids.count)   // 2, both bodies, not just the first
     /// print(healed.volume!)        // 2000.0
     /// ```
     ///
@@ -1415,7 +1451,7 @@ extension Shape {
     /// ```swift
     /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies
     /// let solids = quilt.solidFromShellFixed()!
-    /// print(solids.solids.count)   // 2 — one solid per shell
+    /// print(solids.solids.count)   // 2, one solid per shell
     /// ```
     ///
     /// - Important: An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell`

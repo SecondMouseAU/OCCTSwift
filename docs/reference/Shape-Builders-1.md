@@ -274,8 +274,20 @@ public static func nearestPlane(to points: [SIMD3<Double>]) -> NearestPlane?
 ```
 
 - **Parameters:** `points`, array of at least 3 points.
-- **Returns:** `NearestPlane`, or `nil` if fewer than 3 points are provided or fitting fails.
-- **OCCT:** `gp_Pln` / `OCCTShapeNearestPlane`.
+- **Returns:** `NearestPlane`, or `nil` if fewer than 3 points are provided or the fit is refused,
+  see the refusal rule below.
+- **OCCT:** `ShapeAnalysis_Geom::NearestPlane`, which analyses the cloud with `GProp_PEquation` and
+  builds the plane through its barycentre normal to the principal axis of least extent (via
+  `OCCTShapeNearestPlane`). `gp_Pln` is the out-parameter that carries the answer back, not the
+  algorithm.
+- **A non-nil result is not a planarity test.** `ShapeAnalysis_Geom::NearestPlane` refuses only
+  when the smallest principal extent is at least half of one of the other two. On a 10 x 10 sheet
+  that means it answers for every thickness up to 5 and refuses above it, so a cloud that is
+  nowhere near planar still gets a plane. Measured on the pinned kernel
+  (`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): one corner of a
+  10 x 10 square lifted 8 units out of plane fits, with `maxDeviation` 2.13; the eight corners of a
+  cube are refused. **Gate on `maxDeviation`**, which is the largest distance from any input point
+  to the returned plane, rather than on the result being non-nil.
 - **Example:**
   ```swift
   let pts: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,0,0), SIMD3(0,1,0)]
@@ -897,7 +909,7 @@ public struct ContourResult {
 }
 ```
 
-- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre xyz + radius, `data[0...3]`; for lines: location xyz + direction xyz per contour, 6 doubles each). `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data` holds 8 doubles. `contourCylinderDir` can report two tangent lines (`count == 2`, the ordinary, non-degenerate case — a cylinder's silhouette against a non-axis-parallel view direction is always a pair of tangent rulings, never one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
+- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre xyz + radius, `data[0...3]`; for lines: location xyz + direction xyz per contour, 6 doubles each). `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data` holds 8 doubles. `contourCylinderDir` can report two tangent lines (`count == 2`, the ordinary, non-degenerate case, since a cylinder's silhouette against a non-axis-parallel view direction is always a pair of tangent rulings, never one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
 
 ---
 

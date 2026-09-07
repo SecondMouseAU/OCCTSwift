@@ -154,7 +154,22 @@ public func bsplineRestriction(surfaceTolerance: Double = 0.01,
                                maxSegments: Int = 10000) -> Shape?
 ```
 
-This does **not** recognise analytic forms, nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
+This does **not** recognise analytic forms, nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) is the operation that does.
+
+**Nor does it convert every geometry.** The bridge passes a default-constructed
+`ShapeCustom_RestrictionParameters`, and callers cannot reach its toggles through either entry
+point. Measured on the pinned kernel
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`), those defaults are:
+
+| converted | left alone |
+|---|---|
+| surfaces of revolution, surfaces of linear extrusion, offset surfaces | planes, cylinders, cones, spheres, tori, Bezier surfaces |
+| 3D curves, 2D curves, offset curves of both | |
+
+So a cylinder through this call comes back with all three faces still elementary and no BSpline at
+all. What is approximated is approximated no worse than the supplied tolerances, capped at
+`maxDegree` and `maxSegments`. See
+[#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637) for exposing the toggles.
 
 Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
@@ -197,19 +212,34 @@ Recognises surfaces of extrusion and revolution that degenerate into planes, cyl
 
 ### `revolutionToElementary()`
 
-Convert surfaces of revolution to elementary surfaces.
+Convert elementary periodic surfaces into surfaces of revolution.
 
 ```swift
 public func revolutionToElementary() -> Shape?
 ```
 
-Similar to `sweptToElementary()` but targets only surfaces of revolution.
+**The name says the opposite of what this runs, and the name is the part that is wrong.** The call
+is `ShapeCustom::ConvertToRevolution`, which the pinned header documents as "returns a new shape
+with all elementary periodic surfaces converted to `Geom_SurfaceOfRevolution`". Measured on a
+cylinder, the lateral face comes back as a `Geom_SurfaceOfRevolution` and the two planar caps are
+left alone; `sweptToElementary()` puts it back. See
+`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt` and
+[#1634](https://github.com/SecondMouseAU/OCCTSwift/issues/1634), which carries the rename.
 
-- **Returns:** Shape with elementary surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeRevolutionToElementary`).
+[`withSurfacesAsRevolution()`](Shape-Measurement.md#withsurfacesasrevolution) is a second wrapper
+of the same static, correctly named. Prefer it. For the direction this method's name suggests, use
+[`sweptToElementary()`](#swepttoelementary).
+
+- **Returns:** Shape whose elementary periodic surfaces are now surfaces of revolution, or nil on
+  failure.
+- **OCCT:** `ShapeCustom::ConvertToRevolution`, which drives a `ShapeCustom_ConvertToRevolution`
+  modifier through `BRepTools_Modifier` (via `OCCTShapeRevolutionToElementary`).
 - **Example:**
   ```swift
-  if let canonical = importedRevol.revolutionToElementary() { }
+  // a cylinder's lateral face, as a surface of revolution
+  if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.revolutionToElementary() {
+      print(asRevolution.contents.faces)  // 3, one of them Geom_SurfaceOfRevolution
+  }
   ```
 
 ---
@@ -595,8 +625,8 @@ public func fastSewn(tolerance: Double = 1e-6) -> Shape?
 
 Faster than `sewn(tolerance:)` for large models with many faces, but requires every face's
 surface to be naturally bounded (e.g. a sphere, cylinder, cone, or torus). A face whose surface
-is only trimmed by its wire — an ordinary planar `TopoDS_Face`, the common shape of a box or any
-other polyhedral solid — is declined and produces no result, so this returns nil for most
+is only trimmed by its wire (an ordinary planar `TopoDS_Face`, the common shape of a box or any
+other polyhedral solid) is declined and produces no result, so this returns nil for most
 everyday B-Rep solids; use [`sewn(tolerance:)`](#sewntolerance) for those (#1475).
 
 - **Parameters:** `tolerance`, sewing tolerance (default 1e-6).
@@ -1070,7 +1100,10 @@ Identifies whether the shape's geometry matches a canonical form (plane, cylinde
 
 - **Parameters:** `tolerance`, recognition tolerance (default 1e-4).
 - **Returns:** A `CanonicalForm` describing the recognised form, or nil if none is found.
-- **OCCT:** `ShapeAnalysis_Curve` / `BRepGProp` recognition (via `OCCTShapeRecognizeCanonical`).
+- **OCCT:** `ShapeAnalysis_CanonicalRecognition`, asked in order `IsPlane`, `IsCylinder`,
+  `IsCone`, `IsSphere`, `IsCircle`, `IsLine`, `IsEllipse`, with `GetGap()` read after each
+  accepted form (via `OCCTShapeRecognizeCanonical`). Neither `ShapeAnalysis_Curve` nor
+  `BRepGProp` is on this path.
 - **Example:**
   ```swift
   if let form = face.recognizeCanonical() {
@@ -2075,11 +2108,20 @@ Split faces into approximately the specified number of patches.
 public func dividedByNumber(_ parts: Int) -> Shape?
 ```
 
-Subdivides each face into approximately `parts` parametric patches. Useful for mesh preparation and parametric surface subdivision. Requires `parts > 1`.
+Splits each face into `parts` strips along its **U** parametric direction, leaving V undivided.
+Since #1491 the split count is exact and per-axis, not the "roughly square grid" the algorithm
+derives when the per-axis counts are left unset, and it lands on U specifically rather than on
+whichever of a face's extents is geometrically longer. Useful for mesh preparation and parametric
+surface subdivision. Requires `parts > 1`.
 
-- **Parameters:** `parts`, approximate number of patches per face.
+- **Parameters:** `parts`, number of U strips per face.
 - **Returns:** Shape with divided faces, or nil if `parts ≤ 1` or on failure.
-- **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByNumber`).
+- **OCCT:** `ShapeUpgrade_ShapeDivide` driving a `ShapeUpgrade_FaceDivideArea` split-face tool with
+  `SetSplittingByNumber(true)`, `NbParts() = parts`, `MaxArea() = -1` and
+  `SetNumbersUVSplits(parts, 1)` (via `OCCTShapeDivideByNumber`). Not
+  `ShapeUpgrade_ShapeDivideArea`, which is the class `dividedByArea(maxArea:)` and `dividedByParts(_:)` use.
+  `MaxArea() = -1` is load-bearing rather than cosmetic: its default is `Precision::Infinite()`,
+  against which `ShapeUpgrade_FaceDivideArea::Perform()` returns false for every finite face.
 - **Example:**
   ```swift
   if let subdivided = face.dividedByNumber(4) { }

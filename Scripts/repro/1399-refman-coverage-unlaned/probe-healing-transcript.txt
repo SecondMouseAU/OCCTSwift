@@ -1,0 +1,48 @@
+=== 1. BRepLib::UpdateEdgeTol, is the requested tolerance forced onto the edge?
+   box edge        asked 1e-09    before 1e-07      returned true  after 1e-07      forced: NO
+   box edge        asked 1e-05    before 1e-07      returned true  after 1e-07      forced: NO
+   box edge        asked 0.5      before 1e-07      returned true  after 1e-07      forced: NO
+   box edge        asked 2        before 1e-07      returned true  after 1e-07      forced: NO
+   free line edge  asked 1e-09    before 1e-07      returned true  after 1e-07      forced: NO
+   free line edge  asked 1e-05    before 1e-07      returned true  after 1e-07      forced: NO
+   free line edge  asked 0.5      before 1e-07      returned true  after 1e-07      forced: NO
+   free line edge  asked 2        before 1e-07      returned true  after 1e-07      forced: NO
+
+=== 2. ShapeFix_ComposeShell on a 1x1 grid, does the face split?
+   Perform()               : true
+   faces in: 1, faces out  : 1
+   grid patches            : 1 x 1
+
+=== 3. ShapeCustom::BSplineRestriction with default RestrictionParameters
+   ConvertPlane            : false
+   ConvertCylindricalSurf  : false
+   ConvertConicalSurf      : false
+   ConvertSphericalSurf    : false
+   ConvertToroidalSurf     : false
+   ConvertBezierSurf       : false
+   ConvertRevolutionSurf   : true
+   ConvertExtrusionSurf    : true
+   ConvertOffsetSurf       : true
+   GMaxDegree              : 15
+   GMaxSeg                 : 10000
+   cylinder out: 0 BSpline face(s), 3 still elementary
+
+=== 4. ShapeAnalysis_Geom::NearestPlane, least squares?
+   flat square                      -> fitted, maxDist 0.0000, normal (0.000, 0.000, 1.000)
+   square + one point 3 units off   -> fitted, maxDist 0.7652, normal (0.150, -0.150, 0.977)
+   square + one point 8 units off   -> fitted, maxDist 2.1319, normal (0.382, -0.382, 0.842)
+   cube corners                     -> REFUSED
+   -- refusal sweep, 10 x 10 corners lifted to +z --
+   thickness 0     -> fitted, maxDist 0.0000
+   thickness 1     -> fitted, maxDist 0.5000
+   thickness 4     -> fitted, maxDist 2.0000
+   thickness 4.9   -> fitted, maxDist 2.4500
+   thickness 5     -> fitted, maxDist 2.5000
+   thickness 5.1   -> REFUSED
+   thickness 9     -> REFUSED
+
+=== 5. ShapeCustom::ConvertToRevolution, which direction does it run?
+   cylinder, as built:          0 surface(s) of revolution, 3 elementary
+   after ConvertToRevolution:   1 surface(s) of revolution, 2 elementary
+   then SweptToElementary:      0 surface(s) of revolution, 3 elementary
+
