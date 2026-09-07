@@ -128,7 +128,7 @@ replay five of these bridge call sequences against the pinned kernel;
 `family-healing.md` beside them carries the 31-class table, the evidence per finding, and the six
 `census-doc-occt-attribution.py` candidates rejected after reading the bridge.
 
-### Read the `booleans` family of #1399's unlaned refman-coverage lane ([#1399](https://github.com/SecondMouseAU/OCCTSwift/issues/1399))
+### Read the `booleans` family of #1399's unlaned refman-coverage lane (#1399)
 
 31 OCCT classes with real bridge presence that sit in no #807 lane's table and that no claim
 `census-doc-occt-attribution.py` parses, given one verdict each with the evidence in
@@ -362,6 +362,7 @@ table-row case that pins the deliberate restriction to the `- **OCCT:**` bullet 
 
 Its summary line also counted from a literal (`total = 20`) while 23 cases printed; it is now
 derived from what ran.
+
 ### A gate for throwing OCCT calls, and the live abort it found (#1407)
 
 `Scripts/check-throwing-calls.py` checks that every `gp_Dir`/`gp_Dir2d`/`gp_Ax*`/`Geom_Direction`
