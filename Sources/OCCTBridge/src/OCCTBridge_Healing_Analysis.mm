@@ -1160,6 +1160,49 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape)
           }
         }
       }
+
+      // #1392: a solid- or shell-level defect (bad shell imbrication, an enclosed region no
+      // shell declares as a void) is reported by BRepCheck_Analyzer::IsValid but sits on the
+      // SOLID or SHELL result, so walking only faces and edges left errorCount at 0 while
+      // isValid was false: "no error found" and "nowhere I looked" spelled the same way.
+      for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next())
+      {
+        const Handle(BRepCheck_Result)& res = analyzer.Result(exp.Current());
+        if (!res.IsNull())
+        {
+          const auto& statusList = res->Status();
+          for (auto it = statusList.begin(); it != statusList.end(); ++it)
+          {
+            if (*it != BRepCheck_NoError)
+            {
+              if (result.errorCount == 0)
+              {
+                result.firstError = mapBRepCheckStatus(*it);
+              }
+              result.errorCount++;
+            }
+          }
+        }
+      }
+      for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More(); exp.Next())
+      {
+        const Handle(BRepCheck_Result)& res = analyzer.Result(exp.Current());
+        if (!res.IsNull())
+        {
+          const auto& statusList = res->Status();
+          for (auto it = statusList.begin(); it != statusList.end(); ++it)
+          {
+            if (*it != BRepCheck_NoError)
+            {
+              if (result.errorCount == 0)
+              {
+                result.firstError = mapBRepCheckStatus(*it);
+              }
+              result.errorCount++;
+            }
+          }
+        }
+      }
     }
     return result;
   }

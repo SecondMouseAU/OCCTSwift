@@ -2291,6 +2291,35 @@ public func checkVertex(at index: Int) -> CheckResult
 
 ---
 
+### `checkSolid()`
+
+Check every solid in this shape. There is no index: `errorCount` totals the statuses across all
+solids in the shape.
+
+```swift
+public func checkSolid() -> CheckResult
+```
+
+This answers what the per-sub-shape checks above cannot: shell imbrication, an enclosed region that
+no shell declares as a void, a subshape that is not in the shape. Those defects belong to the solid,
+so a shape whose every edge, wire, shell and vertex checks out can still fail here.
+
+```swift
+// A small box fully inside a large one, both shells forward.
+if let outer = Shape.box(width: 10, height: 10, depth: 10),
+   let inner = Shape.box(origin: SIMD3(2, 2, 2), width: 3, height: 3, depth: 3),
+   let outerShell = outer.subShapes(ofType: .shell).first,
+   let innerShell = inner.subShapes(ofType: .shell).first,
+   let bad = Shape.solidFromShells([outerShell, innerShell]) {
+    let check = bad.checkSolid()
+    print(check.isValid, check.firstError as Any)  // false, Optional(.enclosedRegion)
+}
+```
+
+- **OCCT:** `BRepCheck_Solid` (via `OCCTCheckSolid`).
+
+---
+
 ### `limitTolerance(min:max:)`
 
 Limit all tolerances in this shape to a given range.
