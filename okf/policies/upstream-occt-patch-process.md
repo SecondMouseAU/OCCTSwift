@@ -41,10 +41,14 @@ live blocker rather than a theoretical one. Two finished patches sat unpushable 
 while `gh` reported ADMIN on the same repo, an org-scoped credential meeting a personal remote.
 The same branches pushed to the org fork first try.
 
-An existing checkout is repointed rather than recloned: `git remote set-url origin
-https://github.com/SecondMouseAU/OCCT.git`, then push each live branch once. Branches already
-pushed to the old fork keep their open upstream PRs, since a PR tracks the head repo it was opened
-from; move them only when a PR needs a new push.
+An existing checkout is repointed rather than recloned:
+
+```bash
+git remote set-url origin https://github.com/SecondMouseAU/OCCT.git
+```
+
+then push each live branch once. Branches already pushed to the old fork keep their open upstream
+PRs, since a PR tracks the head repo it was opened from; move them only when a PR needs a new push.
 
 **Opening the PR against `Open-Cascade-SAS/OCCT` may not be possible from this machine.** A
 fine-grained token scoped to the org gets `Resource not accessible by personal access token
