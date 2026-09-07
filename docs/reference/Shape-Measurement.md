@@ -2108,13 +2108,42 @@ public func splitDrafts(faceIndex: Int, wire: Wire,
 - **Returns:** Modified shape with draft, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitDrafts` (via `OCCTLocOpeSplitDrafts`).
 - **Note:** `LocOpe_SplitDrafts::Perform()` can throw on incompatible geometry; the bridge wraps it in a try-catch.
-- **Returns `nil` on every input in OCCT 8.0.1 (#1393).** `LocOpe_SplitDrafts` accepts only a planar
-  face, and for a planar face it pipes along the intersection of two planes, which is always a
-  `Geom_Line`. `GeomConvert::CurveToBSplineCurve` has no line case and throws
-  `Standard_DomainError("No such curve")`, so the operation cannot complete on this kernel whatever
-  the caller passes. Measured in `Scripts/repro/1393-splitdrafts/`, with the fix queued upstream.
-  `Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift` asserts the refusal and will fail when
-  a repin makes it work.
+- **Returns `nil` on every input against the pinned kernel (#1393).** `LocOpe_SplitDrafts` accepts
+  only a planar face, and for a planar face it pipes along the intersection of two planes, which is
+  always an infinite `Geom_Line`, as is the pipe path it sweeps along. `GeomFill_Pipe` converts both
+  through `GeomConvert::CurveToBSplineCurve`, which refuses an infinite curve by documented design
+  ("Raises DomainError if the curve C is infinite"), so the operation threw
+  `Standard_DomainError("No such curve")` whatever the caller passed. Measured in
+  `Scripts/repro/1393-splitdrafts/`.
+
+  `Scripts/patches/0034` fixes it, by trimming both lines to the shape's own extent in
+  `LocOpe_SplitDrafts` before the pipe sees them. **The patch is not in `Package.swift`'s pinned
+  kernel asset**, so this method still returns `nil` for everyone consuming the released package;
+  it drafts the face against a kernel built from `Scripts/patches/`. On such a kernel the 10 mm box
+  example below goes from 6 faces to 7, one of them tilted by exactly `angle`, and gains the volume
+  of the wedge the draft adds. `Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift` asserts
+  both, one test per kernel.
+
+  ```swift
+  // A 10 mm box, its top face drafted 10 degrees about the plane x = 0.
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let top = box.faces().firstIndex { $0.isPlanar && $0.bounds.map { abs($0.min.z - 5) < 1e-6 } == true }!
+  let wire = Wire.line(from: SIMD3(0, -5, 5), to: SIMD3(0, 5, 5))!
+  if let drafted = box.splitDrafts(
+      faceIndex: top, wire: wire,
+      direction: SIMD3(1, 0, 0),
+      planeOrigin: SIMD3(0, 0, 0),
+      planeNormal: SIMD3(1, 0, 0),
+      angle: 10.0 * .pi / 180.0)
+  {
+      print(drafted.faces().count)  // 7, against the box's 6
+      print(drafted.volume!)        // 1022.04, against the box's 1000
+  }
+  ```
+
+  **This one never retires by a repin.** OCCT master deleted `LocOpe_SplitDrafts` outright in
+  [OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442) as dead code, so there is no
+  upstream fix to wait for, and a kernel bump past that tag removes the class this method wraps.
 
 ---
 

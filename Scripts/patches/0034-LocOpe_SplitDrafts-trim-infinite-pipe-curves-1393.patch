@@ -1,0 +1,147 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - trim the infinite lines LocOpe_SplitDrafts
+ hands to GeomFill_Pipe
+
+LocOpe_SplitDrafts::Perform() cannot complete for any input. Every call that
+gets past the planar-face check throws Standard_DomainError("No such curve").
+
+Perform() accepts only a planar face: its file-local NewPlane() helper
+intersects the neutral plane with the face's own plane and needs a real line.
+Past that it builds the two drafted planes, intersects them with GeomInt_IntSS,
+and sweeps the resulting curve along the face normal:
+
+  Handle(Geom_Line) theLinePipe = new Geom_Line(NormalFg);
+  ...
+  thePipe.Init(theLinePipe, i2s.Line(1));
+
+The intersection of two planes is always a Geom_Line, and Geom_Line is
+infinite, as is theLinePipe. GeomFill_Pipe::Init() puts the section through
+GeomFill_UniformSection, whose constructor calls
+GeomConvert::CurveToBSplineCurve(), and that function raises
+Standard_DomainError("No such curve") for an untrimmed line by design: its
+header documents "Raises DomainError if the curve C is infinite", and an
+infinite curve has no B-spline form. Its Geom_TrimmedCurve branch has handled
+Geom_Line since the function was written, so a trimmed line converts.
+
+The defect is therefore in the caller, not in GeomConvert: LocOpe_SplitDrafts
+passes curves to an API documented to reject them. The same mistake is made a
+second time further down Perform(), where the section is the basis curve of a
+wire edge, stripped of its Geom_TrimmedCurve wrapper two lines earlier.
+
+Fix: a file-local TrimInfinite() helper that leaves a finite curve alone and
+trims an infinite one, from its own origin, to the diagonal of the shape's
+bounding box enlarged by that origin, so the trim covers the shape wherever
+the line's origin falls. Applied to the pipe path once and to both sections.
+Bnd_Box and BRepBndLib are already reachable from TKFeat, TKTopAlgo being in
+its EXTERNLIB.
+
+Measured on a 10x10x10 box, splitting its top face along x = 5 with the
+neutral plane x = 5 and a 10 degree draft. Before: all four extraction
+directions tried throw "No such curve". After: IsDone() is true, the result
+has 7 faces against the box's 6, exactly one of them tilted 10 degrees off
+the axes, and the volume is 1022.04, which is 1000 plus the wedge the draft
+adds (0.5 * 5 * 5*tan(10 deg) * 10 = 22.04).
+
+NOT UPSTREAM-BOUND, and it cannot become so: OCCT master deleted
+LocOpe_SplitDrafts outright on 2026-08-07, in Open-Cascade-SAS/OCCT#1442
+("Coding, Modeling Algo - Clean up dead headers", 236 files, 24858 deletions,
+by maintainer dpasukhi). The class has no caller anywhere in the OCCT tree,
+not even a DRAW command, which is presumably why it was removed and why this
+defect survived to 8.0.1 unnoticed. This patch is therefore carried for the
+V8_0_1 pin alone, and retires by deletion rather than by an upstream merge:
+the first kernel bump past #1442 removes the class, and OCCTSwift's own
+Shape.splitDrafts has to go with it.
+
+A GTest was written and proven both ways all the same, and is kept at
+Scripts/repro/1393-splitdrafts/upstream/LocOpe_SplitDrafts_Test.cxx: it fails
+with the exact throw above against the unpatched translation unit and passes
+against the patched one.
+
+SecondMouseAU/OCCTSwift#1393.
+---
+ .../TKFeat/LocOpe/LocOpe_SplitDrafts.cxx           | 38 +++++++++++++++++++---
+ 1 file changed, 33 insertions(+), 5 deletions(-)
+
+--- a/src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_SplitDrafts.cxx
++++ b/src/ModelingAlgorithms/TKFeat/LocOpe/LocOpe_SplitDrafts.cxx
+@@ -16,8 +16,10 @@
+ 
+ #include <LocOpe_SplitDrafts.hxx>
+ 
++#include <Bnd_Box.hxx>
+ #include <BRep_Builder.hxx>
+ #include <BRep_Tool.hxx>
++#include <BRepBndLib.hxx>
+ #include <BRepGProp.hxx>
+ #include <BRepTools_Substitution.hxx>
+ #include <Extrema_ExtPC.hxx>
+@@ -81,6 +83,8 @@ static TopoDS_Edge NewEdge(const TopoDS_Edge&,
+ 
+ static bool Contains(const NCollection_List<TopoDS_Shape>&, const TopoDS_Shape&);
+ 
++static occ::handle<Geom_Curve> TrimInfinite(const occ::handle<Geom_Curve>&, const Bnd_Box&);
++
+ //=================================================================================================
+ 
+ void LocOpe_SplitDrafts::Init(const TopoDS_Shape& S)
+@@ -168,11 +172,17 @@ void LocOpe_SplitDrafts::Perform(const TopoDS_Face& F,
+   NCollection_List<TopoDS_Shape>::Iterator itl;
+   BRep_Builder                             B;
+ 
+-  occ::handle<Geom_Surface> NewSg       = new Geom_Plane(NewPlg);
+-  occ::handle<Geom_Surface> NewSd       = new Geom_Plane(NewPld);
+-  occ::handle<Geom_Line>    theLinePipe = new Geom_Line(NormalFg); // ou NormalFd
++  occ::handle<Geom_Surface> NewSg = new Geom_Plane(NewPlg);
++  occ::handle<Geom_Surface> NewSd = new Geom_Plane(NewPld);
+   GeomInt_IntSS             i2s(NewSg, NewSd, Precision::Confusion());
+ 
++  // GeomFill_Pipe converts its path and its section through GeomConvert::CurveToBSplineCurve,
++  // which rejects an infinite curve. Both are lines here, so trim them to the shape.
++  Bnd_Box aShapeBox;
++  BRepBndLib::Add(myShape, aShapeBox);
++  occ::handle<Geom_Curve> theLinePipe =
++    TrimInfinite(new Geom_Line(NormalFg), aShapeBox); // ou NormalFd
++
+   NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> theMap;
+   occ::handle<GeomAdaptor_Curve>                         HAC = new GeomAdaptor_Curve;
+   occ::handle<GeomAdaptor_Surface>                       HAS = new GeomAdaptor_Surface;
+@@ -185,7 +195,7 @@ void LocOpe_SplitDrafts::Perform(const TopoDS_Face& F,
+ 
+     GeomFill_Pipe thePipe;
+     thePipe.GenerateParticularCase(true);
+-    thePipe.Init(theLinePipe, i2s.Line(1));
++    thePipe.Init(theLinePipe, TrimInfinite(i2s.Line(1), aShapeBox));
+     thePipe.Perform(true);
+     if (!thePipe.IsDone())
+     {
+@@ -431,7 +441,7 @@ void LocOpe_SplitDrafts::Perform(const TopoDS_Face& F,
+ 
+         GeomFill_Pipe thePipe;
+         thePipe.GenerateParticularCase(true);
+-        thePipe.Init(theLinePipe, C);
++        thePipe.Init(theLinePipe, TrimInfinite(C, aShapeBox));
+         thePipe.Perform(true);
+         if (!thePipe.IsDone())
+         {
+@@ -1974,3 +1984,21 @@ static TopoDS_Edge NewEdge(const TopoDS_Edge&               edg,
+   }
+   return NewEdg;
+ }
++
++//=================================================================================================
++
++static occ::handle<Geom_Curve> TrimInfinite(const occ::handle<Geom_Curve>& theCurve,
++                                            const Bnd_Box&                 theBox)
++{
++  if (!Precision::IsInfinite(theCurve->FirstParameter())
++      && !Precision::IsInfinite(theCurve->LastParameter()))
++  {
++    return theCurve;
++  }
++  // The range is measured from the curve's own origin, so that the trim covers the box
++  // wherever that origin lies.
++  Bnd_Box aBox = theBox;
++  aBox.Add(theCurve->Value(0.));
++  const double anExtent = std::max(sqrt(aBox.SquareExtent()), Precision::Confusion());
++  return new Geom_TrimmedCurve(theCurve, -anExtent, anExtent);
++}

@@ -114,9 +114,9 @@ let occtTarget: Target = useLocalBinary
     // retired 0032 entry and CLAUDE.md's "Carrying OCCT source patches" section for the process
     // change this prompted: check upstream's own recent activity before opening a new investigation
     // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
-    // work already days old. Scripts/patches/ holds TWENTY-TWO patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 22 against a list of
-    // 17, and those five are the difference:
+    // work already days old. Scripts/patches/ holds TWENTY-THREE patches; the pinned asset holds
+    // the seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 23 against a
+    // list of 17, and those six are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
@@ -129,16 +129,24 @@ let occtTarget: Target = useLocalBinary
     //         (a partial fix, deliberately: closes the memory-safety hole, does not make
     //         two concurrent operations setting DIFFERENT values for the SAME named
     //         parameter produce correct output; see the patch's own doc comment)
+    //   0034  LocOpe_SplitDrafts hands GeomFill_Pipe two infinite Geom_Lines               #1393
+    //         (Shape.splitDrafts throws "No such curve" on EVERY input without it. The one
+    //         patch here that will never be retired by a repin: OCCT master DELETED
+    //         LocOpe_SplitDrafts in OCCT#1442 as dead code, so there is no upstream fix to
+    //         wait for, and the first bump past that tag removes the class and the wrapper)
     //
     // What that difference means is narrower than "untested", and the narrowing is worth having.
-    // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But
+    // ci.yml's build-and-test resolves this asset, so it never sees any of the six. But
     // kernel-integration.yml triggers on `Scripts/patches/**`, builds V8_0_1 plus every carried
     // patch from source, and runs the full swift test against that binary, so the PR that ADDS a
     // patch does get it built and the suite run against it. What that proves is that the patch
-    // applies, compiles, and regresses nothing; it cannot prove any of the five fixes works,
-    // because none has a Swift-reachable assertion (0030, 0031 and 0033 are all data races, not
-    // wrong answers, so even a Swift-level assertion wouldn't reliably catch any of the three races
-    // without TSan instrumentation the shipped xcframework doesn't carry). And it does not run on
+    // applies, compiles, and regresses nothing. For five of the six it cannot prove the fix works,
+    // because none of those has a Swift-reachable assertion (0030, 0031 and 0033 are all data
+    // races, not wrong answers, so even a Swift-level assertion wouldn't reliably catch any of the
+    // three races without TSan instrumentation the shipped xcframework doesn't carry). 0034 is the
+    // exception and the only one: Issue1393SplitDraftsTests.planarRequestDraftsTheFace asserts the
+    // drafted result itself, gated on OCCTSWIFT_LOCAL=1 so it runs there and nowhere else, exactly
+    // as 0027's test is. And it does not run on
     // any later PR that leaves Scripts/patches/ alone, which is nearly all of them. Do not read
     // this as "check kernel-integration.yml instead of ci.yml": that advice is what #585
     // discredited.
@@ -162,8 +170,11 @@ let occtTarget: Target = useLocalBinary
     // memory-safety hole in every OCCTSwift STEP/IGES consumer today, currently masked entirely by
     // the bridge's own igesMutex() (which already serializes the whole configure-then-run window
     // this patch's accessor-level lock cannot), so a rebuild buys defense-in-depth for anyone
-    // reaching Interface_Static outside that mutex, not a new capability inside it. See
-    // Scripts/patches/README.md's 0028, 0029, 0030, 0031 and 0033 entries.
+    // reaching Interface_Static outside that mutex, not a new capability inside it. 0034 is the
+    // only one of the six whose absence a consumer can see today without a debugger: Shape.splitDrafts
+    // returns nil for every input against this pinned asset, and returns a drafted solid against a
+    // kernel built from Scripts/patches/. See Scripts/patches/README.md's 0028, 0029, 0030, 0031,
+    // 0033 and 0034 entries.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
     // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its

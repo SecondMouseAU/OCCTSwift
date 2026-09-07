@@ -1421,6 +1421,25 @@ Not yet filed upstream (override-link validated, not yet in a rebuilt xcframewor
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393.patch
+
+**Fixes the upstream OCCT defect behind [#1393](https://github.com/SecondMouseAU/OCCTSwift/issues/1393)**: `Shape.splitDrafts` cannot succeed for any input on OCCT 8.0.1. Every call that gets past the planar-face check throws `Standard_DomainError("No such curve")`, so the wrapped operation has never once produced a result.
+
+`LocOpe_SplitDrafts::Perform` accepts only a planar face (its file-local `NewPlane()` helper intersects the neutral plane with the face's own plane and needs a real line back). Past that it builds the two drafted planes, intersects them with `GeomInt_IntSS`, and sweeps the result along the face normal: `thePipe.Init(theLinePipe, i2s.Line(1))`. The intersection of two planes is always a `Geom_Line`, `Geom_Line` is infinite, and `theLinePipe` is another one. `GeomFill_Pipe::Init` puts the section through `GeomFill_UniformSection`, whose constructor calls `GeomConvert::CurveToBSplineCurve`, and **that function refuses an infinite curve by documented design**: its header says "Raises DomainError if the curve C is infinite", and an infinite curve has no B-spline form. Its `Geom_TrimmedCurve` branch has handled `Geom_Line` since the function was written, at `GeomConvert.cxx:190`, so a *trimmed* line converts exactly, to a degree-1 two-pole B-spline.
+
+**The missing `Geom_Line` case is therefore not the bug, and adding one would be the wrong fix.** #1393's own writeup, and the first reading of the type chain, both stopped at the untrimmed branch's final `else` and concluded `GeomConvert` was at fault. It is not: the caller hands curves to an API documented to reject them. The same mistake is made a second time further down `Perform()`, where the section is a wire edge's basis curve, deliberately stripped of its `Geom_TrimmedCurve` wrapper two lines earlier.
+
+**Fix:** a file-local `TrimInfinite()` helper that returns a finite curve unchanged and trims an infinite one, measured from its own origin, to the diagonal of the shape's bounding box enlarged by that origin, so the trim covers the shape wherever the line's origin falls. Applied to the pipe path once and to both sections. `Bnd_Box`/`BRepBndLib` need no new toolkit dependency: `TKTopAlgo` is already in `TKFeat`'s `EXTERNLIB.cmake`.
+
+**Validation** (override-link, per [the patch process](../../okf/policies/upstream-occt-patch-process.md)): `Scripts/repro/1393-splitdrafts/probe.mm` linked against the pristine translation unit throws `No such curve` on all four extraction directions it tries; against the patched one it reports `IsDone=1 faces=7` on all four. Measured further on the 10x10x10 box splitting its top face along x = 5 with a 10 degree draft: 6 faces become 7, exactly one of them tilted 10.000 degrees off the axes, and the volume goes 1000 -> 1022.04, which is 1000 plus the wedge the draft adds (`0.5 * 5 * 5*tan(10 deg) * 10 = 22.04`) to five figures. Through the full Swift stack, with the patched TU spliced into the local `libOCCT-macos.a`, `Issue1393SplitDraftsTests.planarRequestDraftsTheFace` passes; against the restored archive the same test fails on `maybeResult -> nil`, which is the proof it measures the fix and not the absence of a throw.
+
+**NOT UPSTREAM-BOUND, and it cannot become so.** OCCT master **deleted `LocOpe_SplitDrafts` outright** on 2026-08-07 in [OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442) ("Coding, Modeling Algo - Clean up dead headers", 236 files, 24858 deletions, by maintainer dpasukhi). The class has no caller anywhere in the OCCT tree, not even a DRAW command, which is both why it was removed and why a defect this total survived to 8.0.1 unnoticed. `git grep SplitDrafts upstream/master` returns nothing. So there is no PR to open, and no upstream merge to retire this patch by.
+
+**Retire by deletion, not by a repin.** The first kernel bump past OCCT#1442 removes the class, at which point this patch stops applying and `Shape.splitDrafts` has to be removed from OCCTSwift with it. That is a separate decision and belongs in its own issue; until then, this patch is what makes a shipped, documented, public API do the thing it says it does.
+
+A GTest was written and proven both ways regardless, and is kept at [`Scripts/repro/1393-splitdrafts/upstream/LocOpe_SplitDrafts_Test.cxx`](../repro/1393-splitdrafts/upstream/LocOpe_SplitDrafts_Test.cxx) rather than discarded: `TKFeat`'s `GTests/FILES.cmake` is empty upstream, so it would have been that toolkit's first test. It fails with the exact `Standard_DomainError` above against the unpatched translation unit and passes against the patched one.
+
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so

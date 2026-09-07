@@ -52,6 +52,7 @@ without silently closing it, see
 | `0030-TopoDS_TShape-myState-atomic-1154` | `TopoDS_TShape::myState` mutated by non-atomic read-modify-write on a TShape shared between a boolean result and its inputs, a lost-update race in ordinary concurrent use ([#1154](https://github.com/SecondMouseAU/OCCTSwift/issues/1154)) | not yet filed | bundled OCCT includes the fix; also trim the `Scripts/tsan.supp` lines that suppress it |
 | `0031-bspline-adaptor-cache-thread-safety-1153` | `BSplCLib_Cache`/`BSplSLib_Cache` unsynchronised span cache, plus `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s check-then-act on the cache handle; a first attempt (PR #1322) self-deadlocked and was rejected ([#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)) | not yet filed; if [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076) ever merges, retarget at its renamed classes rather than dropping | bundled OCCT includes the fix |
 | `0033-Interface_Static-thread-safety-mutex-1157` | `Interface_Static`'s shared STEP/IGES parameter table mutated concurrently; a recursive mutex over all seventeen entry points. Partial by design: no accessor lock stops two operations setting the same parameter from cross-talking, so the bridge's `igesMutex()` stays ([#1157](https://github.com/SecondMouseAU/OCCTSwift/issues/1157)) | not yet filed | bundled OCCT includes the fix |
+| `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393` | `LocOpe_SplitDrafts::Perform` hands `GeomFill_Pipe` two infinite `Geom_Line`s (the pipe path and the plane/plane intersection it sweeps), and `GeomConvert::CurveToBSplineCurve` refuses an infinite curve by documented design, so `Shape.splitDrafts` throws `No such curve` on **every** input ([#1393](https://github.com/SecondMouseAU/OCCTSwift/issues/1393)) | **cannot be filed**: OCCT master deleted `LocOpe_SplitDrafts` outright in [OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442) (2026-08-07, dead code, no caller in the tree) | **never by a repin.** Retire by deletion: the first kernel bump past OCCT#1442 removes the class, and `Shape.splitDrafts` goes with it |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -71,8 +72,8 @@ recent activity first" step this prompted.
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-two patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The five it lacks, and why each matters, per
+`Scripts/patches/` holds twenty-three patches; the v3.0.0 release asset `Package.swift` pins holds
+seventeen. The six it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Patch | Exposure today |
@@ -82,6 +83,7 @@ seventeen. The five it lacks, and why each matters, per
 | `0030` (#1154) | Live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result; invisible to `swift test`, suppressed in `Scripts/tsan.supp` until a repin. |
 | `0031` (#1153) | Same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression exists, so nothing to retire. |
 | `0033` (#1157) | Memory-safety hole in `Interface_Static`, reachable by every STEP/IGES read or write, masked in practice by the bridge's `igesMutex()`. A repin buys defence in depth for callers outside that mutex. |
+| `0034` (#1393) | The only one of the six a consumer can see without a debugger: `Shape.splitDrafts` returns `nil` for every input against the pinned asset, and drafts the face against a kernel built from `Scripts/patches/`. Also the only one that will never be retired by a repin, see its row above. |
 
 `kernel-integration.yml` built each of these once, on the PR that added it. No later job has.
 
