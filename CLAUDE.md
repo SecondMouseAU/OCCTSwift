@@ -48,7 +48,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Nine gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
+Ten gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
