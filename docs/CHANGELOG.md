@@ -45,6 +45,77 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### `Shape.checkSolid()`, and `checkResult` localizes solid-level defects (#1392)
+
+`BRepCheck_Solid` is reachable from Swift for the first time: `OCCTCheckSolid` had been implemented
+and documented since v0.x with no Swift caller, so nothing could reach it. `Shape.checkSolid()`
+checks every solid in the shape and reports `isValid`, `errorCount` and `firstError` like the rest
+of the check family. It answers what the per-sub-shape checks cannot: shell imbrication, an enclosed
+region no shell declares as a void, a subshape not in the shape.
+
+`Shape.checkResult` no longer reports zero errors on a shape it has just called invalid. It set
+`isValid` from `BRepCheck_Analyzer` but localized the error by walking only faces and edges, so a
+solid- or shell-level defect left `errorCount` at 0 and `firstError` at `.noError`. It now walks
+shells and solids as well.
+
+### Curve-surface extrema carry both surface parameters (#1514)
+
+`Curve3D.extremaCSPoint(range:surface:index:)` returns a new `CurveSurfaceExtremaPoint` instead of
+`ExtremaPointPair`: the surface-side point of a curve-to-surface extremum has two parameters, and
+the old struct had room for one, so `OCCTExtremaExtCSPoint` computed V and discarded it. The
+surface point can now be re-evaluated from the parameters the call reports
+(`surface.point(atU: p.u2, v: p.v2) == p.point2`). The same call also now guards its null handles
+rather than dereferencing them, and the reference page's two conflicting descriptions of the old
+encoding (`(u, v, 0)` packing, and `point2.z` carrying V) are removed: neither was true.
+
+At the C bridge, `OCCTExtremaExtCSPoint` returns the new `OCCTExtremaCSPointPair`.
+
+### `Shape.splitDrafts` is covered, and documented as unusable on this kernel (#1393)
+
+`LocOpe_SplitDrafts` had no test anywhere in the tree. It has one now, and what it records is that
+the operation cannot succeed on OCCT 8.0.1: `LocOpe_SplitDrafts` accepts only a planar face and then
+pipes along the intersection of two planes, always a `Geom_Line`, and
+`GeomConvert::CurveToBSplineCurve` has no line case, so `GeomFill_Pipe` throws
+`Standard_DomainError("No such curve")` on every valid call. `Shape.splitDrafts` therefore returns
+`nil` for every input, which the bridge's existing `catch (...)` already did correctly.
+
+The reference page now says so, the defect is recorded in
+[`okf/references/known-occt-bugs.md`](okf/references/known-occt-bugs.md), and both reproducers are
+committed under `Scripts/repro/1393-splitdrafts/`. The upstream fix, a `Geom_Line` case in
+`GeomConvert` (a line is a degree-1 B-spline with two poles), is queued rather than carried as a
+patch. No behavior changes in this PR.
+
+### Twelve `TDataStd_*` OCAF suites move into `OCCTXCAFTests` (#1396)
+
+Ten suites inside the `OCCTFoundationTests` monolith and two files in `OCCTModelingTests` all test
+plain OCAF label-attribute round-trips, the same shape as the `TDataStd_*` suites already in
+`OCCTXCAFTests`. They move verbatim, one file per attribute. Test-only: no source, no public API
+and no test body changes, and the same 36 tests run in the same order. #817's coverage census, which
+reported all twelve as unreached by its lane, now reports `ok: 131, under: 0` where it reported
+`ok: 119, under: 12`.
+
+### Every duplicate `#include`/`#import` in the bridge sources removed (#1385)
+
+128 duplicate include directives across 36 `Sources/OCCTBridge/src/*.mm` files, first occurrence
+kept. Thirty-one came from the four merged `.mm` splits, whose migration script deduped the shared
+preamble by raw line text and so kept a header included once as `#import` and once as `#include`;
+the script was fixed when that was found, and this is the retroactive half. The other ninety-seven
+are pre-existing duplicates in five hand-written files (`OCCTBridge.mm`,
+`OCCTBridge_ProjLib_NLPlate.mm`, `OCCTBridge_Properties.mm`, `OCCTBridge_BRepGraph.mm`,
+`OCCTBridge_AIS.mm`), two of them holding a header three times. No behavior change: duplicate
+includes resolve through include guards.
+
+### `docs/thread-safety.md`'s #374 writeup corrected to the fix that actually shipped (#1400)
+
+The `Resource_Manager::Debug` / `Storage_Schema` current-data section described the first version of
+patch `0016`, an `ICurrentDataMutex()` recursive mutex around every touch point. That version was
+revised on upstream review: `0016` deletes the `ICurrentData()`/`ISetCurrentData()` statics and gives
+`Storage_Schema` a per-instance `myCurrentData` member instead, so there is no shared state left to
+guard. The suppression-policy paragraph also still named the `#353` `CDM_Application` suppression as
+its current example, which `tsan.supp` dropped in v1.15.11 once patch `0015` landed; it now names
+the live `TopoDS_TShape::myState` / #1154 / `0030` entry. `docs/occtswift-wrapping-gaps.md`'s
+carve-out entry, which recorded both as filed-not-fixed, is updated to match.
+
 ### CLAUDE.md moves its rules into `okf/` and its Known OCCT Bugs record into `okf/references/` (#1617)
 
 `CLAUDE.md` shrinks from 1,072 lines to 345, keeping commands, guard syntax and a short working list, with one pointer per section into `okf/`. New: `okf/references/known-occt-bugs.md` (one row per root-caused kernel defect, with fix location and writeup pointer) and four `okf/policies/` pages (`pinned-kernel-patch-check`, `required-status-checks`, `static-gates`, `null-handle-guards`). `okf/references/carried-occt-patches.md` gains rows for `0030`, `0031` and `0033`, the retired `0032`, and a table of the five patches the pinned `v3.0.0` asset does not hold. `Scripts/census-comment-staleness.py`'s patch-citation channel scans the two okf references as well as `CLAUDE.md`. Three stale claims fixed: #344/#345 are not "still uncharacterized", `gate-scripts` is required on `main` not `refactor/**`, and no step says to commit a release directly.
