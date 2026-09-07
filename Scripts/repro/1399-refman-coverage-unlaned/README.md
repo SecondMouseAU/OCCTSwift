@@ -58,4 +58,69 @@ exactly one class out of 643 and was worth having for that one.
 
 ## Result
 
-<!-- filled in at integration from the four family files -->
+| bucket | classes | `ok` | `deliberate, recorded` | `under` | `over` |
+|---|---|---|---|---|---|
+| healing | 31 | 5 | 6 | 6 | **14** |
+| geometry | 44 | 8 | 10 | 1 | **25** |
+| booleans | 31 | 19 | 6 | 1 | 5 |
+| foundation | 32 | 7 | 18 | 3 | 4 |
+| substrate | 26 | 2 | 24 | 0 | 0 |
+| **read by hand** | **164** | **41** | **64** | **11** | **48** |
+| machine-covered | 479 | adjudicated as findings, not as classes: 212 real, 210 false | | | |
+
+**`over` dominates, and every brief predicted `under`.** The reasoning behind the prediction was
+that 70 of the classes are named nowhere in `docs/`, which reads as a documentation gap. It was
+wrong in the same way in all four families: the *capability* was documented under its Swift name,
+and the OCCT class named beside it was the wrong one. A neighbouring class, a base class, a header
+filename, a sub-view of the right object. `measure-dont-assume.md` calls this "the adjacent
+identifier reads as the one you need"; here it is 48 times.
+
+## The finding that reframes the issue
+
+#1399 was filed as "643 classes nobody audited". The audit found that framing was the smaller
+half. **`census-doc-occt-attribution.py` was reporting 431 findings, and nobody had ever read its
+output.** Of the 422 in scope, **212 were real**, at a measured false-positive rate of 49.8% (the
+sample in `Scripts/repro/928-over-coverage-detector/` had measured 41.0% over 40 rows, so the rate
+holds up at eleven times the sample size).
+
+A detector nobody reads is not coverage. That is the durable lesson of this lane, and it is worth
+more than the class list that prompted it.
+
+## What the audit corrected in its own instruments
+
+Four, all recorded rather than quietly fixed, because a lane that hides its own errors is worth
+less than one that reports them.
+
+1. **The "ours" bucket was a false assumption.** `BRepGraph`, `GeomEval` and `Geom2dEval` are OCCT
+   packages, not this project's inventions.
+2. **The reachability check missed the bridge's private headers in `src/`**, which made `Prs3d`
+   look wrapped-by-nothing.
+3. **`docs/CHANGELOG.md` was counting as documentation**, so a class named only in a v0.x entry
+   read as documented. Eleven rows across the lane.
+4. **The `BRepGraph_EditorView` diagnosis in the census brief was wrong in its mechanism.** It said
+   the bridge functions reach entirely different classes; most reach it through `graph.Editor()`.
+   The finding was real for a different reason: `BRepGraph_EditorView` is a **header filename**, and
+   the class is `BRepGraph::EditorView`. Per-entry reading then separated 8 read-only lookups that
+   never touch the editor and 11 naming the wrong `Ops` sub-view, distinctions a blanket rewrite,
+   which is what the wrong diagnosis implied, would have erased.
+
+## Code defects found by an audit of documentation
+
+Documentation was the subject; fourteen issues came out of it, because a doc that cannot be made
+true against the code is often the code's fault. In rough order of what a caller would notice:
+
+- **#1631**, `Shape.edgeFaceIntersection` finds nothing for any input (fixed in PR #1651)
+- **#1652**, eight public `BRepGraph` setters and six getters are silent no-ops on the pinned kernel
+- **#1643**, `MathSolver.eigenvalues` discards the *first* subdiagonal element where three doc
+  layers said the last, so the documented example computes a different matrix with no error signal
+- **#1632**, `ExtremaElSS.planeToSphere` and `sphereToSphere` always return `[]`
+- **#1646**, ten `Geom2dEval_*` evaluators abort the process on ordinary arguments (guarded in
+  PR #1629)
+- **#1634**, `Shape.revolutionToElementary()` runs its own inverse
+- **#1638**, `Shape.composeShell` can never split a face
+- **#1636**, **#1637**, **#1639**, **#1640**, **#1644**, **#1645**, **#1633**, **#1635**
+
+Plus two defects in the census itself, which is the instrument the machine-covered verdict rests
+on: **#1641** (blind to any class whose name ends in an all-uppercase word: 45 claim sites, 14 real
+classes) and **#1642** (single-pass type expansion, so a correct attribution can score worse than
+the wrong one it replaced).
