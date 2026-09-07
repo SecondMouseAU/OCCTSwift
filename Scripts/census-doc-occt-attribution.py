@@ -579,8 +579,11 @@ class Finding:
         self.how = how
 
 
+BRIDGE_SYMBOL_SPAN = re.compile(r"`(OCCT[A-Za-z0-9_]+|occt[A-Za-z0-9_]+)`")
+
+
 def run(claims, reach, member_syms, prefixes, bare, header_names, lane=None):
-    findings, unresolved = [], []
+    findings, unresolved, symbol_only = [], [], []
     checked = 0
     for claim in claims:
         tokens = []
@@ -592,6 +595,19 @@ def run(claims, reach, member_syms, prefixes, bare, header_names, lane=None):
                     seen.add(tok)
                     tokens.append(tok)
         if not tokens:
+            # An attribution naming no OCCT class at all was silently skipped, so a bullet
+            # answering "which OCCT class is this?" with a bridge C symbol read as no claim rather
+            # than as an empty one. #1399's geometry family found twenty such entries across the
+            # GeomEval and Geom2dEval surfaces while this census reported both packages clean, and
+            # named the check that would have caught it on its own. This is that check.
+            #
+            # Restricted to the `- **OCCT:**` bullet channel on purpose. Applied to every channel
+            # it reports 210 sites, almost all of them correct: docs/naming-conventions.md lists
+            # bridge symbols BECAUSE they are bridge symbols, and one API_REFERENCE row says in
+            # words that its struct has no OCCT class behind it. A bullet under that heading has
+            # made a promise the others have not.
+            if claim.channel == "bullet" and BRIDGE_SYMBOL_SPAN.search(claim.text):
+                symbol_only.append(claim)
             continue
 
         targets = expand_targets(claim.named, reach)
@@ -617,7 +633,7 @@ def run(claims, reach, member_syms, prefixes, bare, header_names, lane=None):
             if attribution_names(cls, member) & reached:
                 continue
             findings.append(Finding(claim, cls, member, "unreached", sorted(targets), how))
-    return findings, unresolved, checked
+    return findings, unresolved, checked, symbol_only
 
 
 def in_scope_docs() -> list[str]:
@@ -674,8 +690,15 @@ _FIXTURE_REACH = {
 }
 
 
+# Every self-test case appends its name here, so the summary counts what ran rather than what
+# someone remembered to update. It read `total = 20` while 23 cases printed, which is the same
+# hand-maintained-count defect check-inventory-prose.py exists to catch (#1408), one level in.
+_RAN: list[str] = []
+
+
 def _self_test_case(name, claims, expect_classes, member_syms=None, headers=_FIXTURE_HEADERS):
-    findings, unresolved, _checked = run(
+    _RAN.append(name)
+    findings, unresolved, _checked, _so = run(
         claims, _FIXTURE_REACH, member_syms or {}, _FIXTURE_PREFIXES, _FIXTURE_BARE, headers
     )
     got = sorted({f.cls for f in findings})
@@ -685,6 +708,18 @@ def _self_test_case(name, claims, expect_classes, member_syms=None, headers=_FIX
     if not ok:
         print(f"          expected {want}")
         print(f"          got      {got}  (unresolved: {len(unresolved)})")
+    return 0 if ok else 1
+
+
+def _symbol_only_case(name, claims, expect_count):
+    _RAN.append(name)
+    _f, _u, _c, symbol_only = run(
+        claims, _FIXTURE_REACH, {}, _FIXTURE_PREFIXES, _FIXTURE_BARE, _FIXTURE_HEADERS
+    )
+    ok = len(symbol_only) == expect_count
+    print(f'  {"PASS" if ok else "FAIL"}  {name}')
+    if not ok:
+        print(f"          expected {expect_count}, got {len(symbol_only)}")
     return 0 if ok else 1
 
 
@@ -709,6 +744,34 @@ def self_test() -> int:
                "`BRepPrimAPI_MakePrism` (via `OCCTShapeExtrudeSemiInfinite`).", None,
                ["OCCTShapeExtrudeSemiInfinite"])],
         [],
+    )
+
+    # 2b. An `- **OCCT:**` bullet answering with a bridge symbol instead of an OCCT class. It
+    #     named no class, so every rule above skipped it silently and the class it should have
+    #     named was never checked by anything. #1399's geometry family found twenty of these on
+    #     the GeomEval surface while this census called both packages clean.
+    bad += _symbol_only_case(
+        "a bullet naming only a bridge symbol IS reported",
+        [Claim("d.md", 1, "bullet", "`OCCTGeom2dEvalSineWaveD0`.", "sineWaveD0", [])],
+        1,
+    )
+
+    # 2c. The same bullet once it names the class as well: no longer a symbol-only attribution,
+    #     and now checkable by the rules above, which is the point of reporting it.
+    bad += _symbol_only_case(
+        "the same bullet naming a class as well is NOT reported",
+        [Claim("d.md", 1, "bullet", "`Geom2d_Curve` (via `OCCTGeom2dEvalSineWaveD0`).",
+               "sineWaveD0", [])],
+        0,
+    )
+
+    # 2d. Restricted to the bullet channel on purpose: docs/naming-conventions.md lists bridge
+    #     symbols because they are bridge symbols, and applied to every channel this reports 210
+    #     sites, almost all correct.
+    bad += _symbol_only_case(
+        "a table row naming only a bridge symbol is NOT reported",
+        [Claim("d.md", 1, "table", "`OCCTGeom2dEvalSineWaveD0`", "sineWaveD0", [])],
+        0,
     )
 
     # 3. Resolution through the heading's Swift member, the path 2,455 of the 4,029 bullets need.
@@ -788,13 +851,14 @@ def self_test() -> int:
     # 8. A class absent from the pinned headers: #807's other over-coverage shape, a class that
     #    moved or vanished in a version bump. Reported even though the bridge cannot reach it
     #    either, and reported as `absent` rather than `unreached` so the two stay distinguishable.
-    findings, _u, _c = run(
+    findings, _u, _c, _so = run(
         [Claim("d.md", 1, "bullet", "`BRepPrimAPI_MakeVanished` (via `OCCTShapeQuilt`).",
                None, ["OCCTShapeQuilt"])],
         _FIXTURE_REACH, {}, _FIXTURE_PREFIXES, _FIXTURE_BARE, _FIXTURE_HEADERS,
     )
     ok = [(f.cls, f.kind) for f in findings] == [("BRepPrimAPI_MakeVanished", "absent")]
     print(f'  {"PASS" if ok else "FAIL"}  a class absent from the pinned headers is reported as absent')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
     # 9. A token that is not an OCCT class at all. `some_variable` has the `Prefix_Name` shape and
@@ -809,7 +873,7 @@ def self_test() -> int:
     # 9b. An enum VALUE is a parameter a method passes, not a class it is implemented by, and no
     #     header declares one. Leaving them in reports every correct
     #     `TopExp::MapShapes(shape, TopAbs_EDGE)` as naming a class absent from the pinned kernel.
-    findings, _u, _c = run(
+    findings, _u, _c, _so = run(
         [Claim("d.md", 1, "bullet",
                "`TopExp::MapShapes(shape, TopAbs_EDGE)` (via `OCCTShapeUniqueEdgeCount`).",
                None, ["OCCTShapeUniqueEdgeCount"])],
@@ -817,6 +881,7 @@ def self_test() -> int:
     )
     ok = not findings
     print(f'  {"PASS" if ok else "FAIL"}  an all-caps enum value is not treated as a class')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
     # 10. Only backtick-quoted text is read. Ordinary prose mentioning a class name unquoted is
@@ -831,12 +896,13 @@ def self_test() -> int:
 
     # 11. A claim that resolves to no bridge function is UNRESOLVED, not clean. A detector that
     #     drops what it cannot resolve reports zero for two different reasons (#510).
-    findings, unresolved, _c = run(
+    findings, unresolved, _c, _so = run(
         [Claim("d.md", 1, "bullet", "`BRepPrimAPI_MakeHalfSpace`.", "noSuchMember", [])],
         _FIXTURE_REACH, {}, _FIXTURE_PREFIXES, _FIXTURE_BARE, _FIXTURE_HEADERS,
     )
     ok = not findings and len(unresolved) == 1
     print(f'  {"PASS" if ok else "FAIL"}  an unresolvable claim is counted unresolved, not clean')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
     # 12. Channel B: a bridge header `///` comment, attributed to the declaration below it. This
@@ -886,6 +952,7 @@ def self_test() -> int:
     got = doc_claims_from_text("d.md", "\n".join(lines))
     ok = len(got) == 1 and "BRepPrimAPI_MakeHalfSpace" in got[0].text
     print(f'  {"PASS" if ok else "FAIL"}  a wrapped bullet is read as one claim, both lines')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
     # 15. The parser again: a fenced code block is not prose. A ```swift example naming a class
@@ -893,6 +960,7 @@ def self_test() -> int:
     text = "```swift\n- **OCCT:** `BRepPrimAPI_MakeHalfSpace`\n```\n"
     ok = doc_claims_from_text("d.md", text) == []
     print(f'  {"PASS" if ok else "FAIL"}  a fenced block yields no claims')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
     # 16. The heading tracker: a `###` heading sets the subject for the bullets under it, and a
@@ -903,9 +971,10 @@ def self_test() -> int:
     got = doc_claims_from_text("d.md", text)
     ok = [c.subject for c in got] == ["alpha", "beta"]
     print(f'  {"PASS" if ok else "FAIL"}  each bullet takes the subject of its own heading')
+    _RAN.append('inline')
     bad += 0 if ok else 1
 
-    total = 20
+    total = len(_RAN)
     print(f"\nself-test: {total - bad} passed, {bad} failed")
     return bad
 
@@ -997,7 +1066,7 @@ def main() -> int:
     member_syms = swift_member_symbols()
     claims = doc_claims(in_scope_docs()) + bridge_header_claims()
     lane = [p for p in args.lane.split(",") if p] if args.lane else None
-    findings, unresolved, checked = run(
+    findings, unresolved, checked, symbol_only = run(
         claims, reach, member_syms, prefixes, bare,
         header_names if have_headers else None, lane=lane
     )
@@ -1016,6 +1085,7 @@ def main() -> int:
     else:
         print(f"  pinned headers            : {OCCT_HEADERS} absent, existence check SKIPPED")
     print(f"  findings                  : {len(findings)}")
+    print(f"  attributions naming only a bridge symbol: {len(symbol_only)}")
 
     absent = [f for f in findings if f.kind == "absent"]
     unreached = [f for f in findings if f.kind == "unreached"]
@@ -1035,6 +1105,13 @@ def main() -> int:
             print(f"    via     : {_via(f)}")
             print(f"    claim   : {f.claim.text[:300]}")
         return 0
+
+    if symbol_only:
+        print("\nNAMES NO OCCT CLASS (the attribution answers with a bridge symbol instead):")
+        for c in symbol_only:
+            print(f"  {c.path}:{c.line}  subject={c.subject or '-'}  {c.text.strip()[:120]}")
+        print("  Each is an attribution that says which bridge function runs, not which OCCT class"
+              "\n  it reaches, so the class it should name has never been checked by anything.")
 
     if absent:
         print("\nABSENT from the pinned headers (the class the doc names does not exist):")
