@@ -3805,11 +3805,24 @@ void OCCTGeom2dEvalArchimedeanSpiralD0(double  initialRadius,
                                        double* px,
                                        double* py)
 {
-  gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_ArchimedeanSpiralCurve sp(ax, initialRadius, growthRate);
-  gp_Pnt2d                          p = sp.EvalD0(u);
-  *px                                 = p.X();
-  *py                                 = p.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_ArchimedeanSpiralCurve sp(ax, initialRadius, growthRate);
+    gp_Pnt2d                          p = sp.EvalD0(u);
+    *px                                 = p.X();
+    *py                                 = p.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalArchimedeanSpiralD1(double  initialRadius,
@@ -3820,13 +3833,28 @@ void OCCTGeom2dEvalArchimedeanSpiralD1(double  initialRadius,
                                        double* vx,
                                        double* vy)
 {
-  gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_ArchimedeanSpiralCurve sp(ax, initialRadius, growthRate);
-  auto                              res = sp.EvalD1(u);
-  *px                                   = res.Point.X();
-  *py                                   = res.Point.Y();
-  *vx                                   = res.D1.X();
-  *vy                                   = res.D1.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_ArchimedeanSpiralCurve sp(ax, initialRadius, growthRate);
+    auto                              res = sp.EvalD1(u);
+    *px                                   = res.Point.X();
+    *py                                   = res.Point.Y();
+    *vx                                   = res.D1.X();
+    *vy                                   = res.D1.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+    *vx = 0.0;
+    *vy = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalLogSpiralD0(double  scale,
@@ -3835,11 +3863,24 @@ void OCCTGeom2dEvalLogSpiralD0(double  scale,
                                double* px,
                                double* py)
 {
-  gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_LogarithmicSpiralCurve sp(ax, scale, growthExponent);
-  gp_Pnt2d                          p = sp.EvalD0(u);
-  *px                                 = p.X();
-  *py                                 = p.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_LogarithmicSpiralCurve sp(ax, scale, growthExponent);
+    gp_Pnt2d                          p = sp.EvalD0(u);
+    *px                                 = p.X();
+    *py                                 = p.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalLogSpiralD1(double  scale,
@@ -3850,22 +3891,50 @@ void OCCTGeom2dEvalLogSpiralD1(double  scale,
                                double* vx,
                                double* vy)
 {
-  gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_LogarithmicSpiralCurve sp(ax, scale, growthExponent);
-  auto                              res = sp.EvalD1(u);
-  *px                                   = res.Point.X();
-  *py                                   = res.Point.Y();
-  *vx                                   = res.D1.X();
-  *vy                                   = res.D1.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                           ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_LogarithmicSpiralCurve sp(ax, scale, growthExponent);
+    auto                              res = sp.EvalD1(u);
+    *px                                   = res.Point.X();
+    *py                                   = res.Point.Y();
+    *vx                                   = res.D1.X();
+    *vy                                   = res.D1.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+    *vx = 0.0;
+    *vy = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalCircleInvoluteD0(double radius, double u, double* px, double* py)
 {
-  gp_Ax2d                        ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_CircleInvoluteCurve inv(ax, radius);
-  gp_Pnt2d                       p = inv.EvalD0(u);
-  *px                              = p.X();
-  *py                              = p.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                        ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_CircleInvoluteCurve inv(ax, radius);
+    gp_Pnt2d                       p = inv.EvalD0(u);
+    *px                              = p.X();
+    *py                              = p.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalCircleInvoluteD1(double  radius,
@@ -3875,13 +3944,28 @@ void OCCTGeom2dEvalCircleInvoluteD1(double  radius,
                                     double* vx,
                                     double* vy)
 {
-  gp_Ax2d                        ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_CircleInvoluteCurve inv(ax, radius);
-  auto                           res = inv.EvalD1(u);
-  *px                                = res.Point.X();
-  *py                                = res.Point.Y();
-  *vx                                = res.D1.X();
-  *vy                                = res.D1.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                        ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_CircleInvoluteCurve inv(ax, radius);
+    auto                           res = inv.EvalD1(u);
+    *px                                = res.Point.X();
+    *py                                = res.Point.Y();
+    *vx                                = res.D1.X();
+    *vy                                = res.D1.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+    *vx = 0.0;
+    *vy = 0.0;
+  }
 }
 
 OCCTCurve2DRef OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX,
@@ -3987,11 +4071,24 @@ void OCCTGeom2dEvalSineWaveD0(double  amplitude,
                               double* px,
                               double* py)
 {
-  gp_Ax2d                  ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_SineWaveCurve sw(ax, amplitude, omega, phase);
-  gp_Pnt2d                 p = sw.EvalD0(u);
-  *px                        = p.X();
-  *py                        = p.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                  ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_SineWaveCurve sw(ax, amplitude, omega, phase);
+    gp_Pnt2d                 p = sw.EvalD0(u);
+    *px                        = p.X();
+    *py                        = p.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+  }
 }
 
 void OCCTGeom2dEvalSineWaveD1(double  amplitude,
@@ -4003,13 +4100,28 @@ void OCCTGeom2dEvalSineWaveD1(double  amplitude,
                               double* vx,
                               double* vy)
 {
-  gp_Ax2d                  ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
-  Geom2dEval_SineWaveCurve sw(ax, amplitude, omega, phase);
-  auto                     res = sw.EvalD1(u);
-  *px                          = res.Point.X();
-  *py                          = res.Point.Y();
-  *vx                          = res.D1.X();
-  *vy                          = res.D1.Y();
+  // #1646: these evaluator constructors validate their arguments and raise on
+  // ordinary caller values (amplitude 0, radius 0, growth rate 0). Uncaught, that
+  // reaches Swift as a process abort rather than an error (#345). Catching it here
+  // stops the abort; the outputs are zeroed, which is a value the caller cannot
+  // tell from a real answer, and giving these functions a success flag is #1646.
+  try
+  {
+    gp_Ax2d                  ax(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+    Geom2dEval_SineWaveCurve sw(ax, amplitude, omega, phase);
+    auto                     res = sw.EvalD1(u);
+    *px                          = res.Point.X();
+    *py                          = res.Point.Y();
+    *vx                          = res.D1.X();
+    *vy                          = res.D1.Y();
+  }
+  catch (...)
+  {
+    *px = 0.0;
+    *py = 0.0;
+    *vx = 0.0;
+    *vy = 0.0;
+  }
 }
 
 OCCTCurve2DRef OCCTGeom2dEvalTBezierCurveCreate(const double* poles, int32_t count, double alpha)

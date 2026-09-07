@@ -46,11 +46,17 @@ THROWING_TYPES = [
     "Geom2d_Direction", "Standard_GUID",
 ]
 
+# Whole packages whose constructors validate their arguments and raise. GeomEval and Geom2dEval
+# come from #1399's geometry read, which measured seven of them throwing on ordinary caller values:
+# a sine wave of amplitude 0, a circle involute of radius 0, an Archimedean spiral of growth rate 0.
+THROWING_PREFIXES = ("GeomEval_", "Geom2dEval_")
+
 # Evaluators that raise outside their parameter range.
 EVALUATOR_RE = re.compile(r"(?:\.|->)(D1|D2)\s*\(")
 
 CONSTRUCTION_RE = re.compile(
-    r"\b(" + "|".join(THROWING_TYPES) + r")\s*(?:\w+\s*)?\(([^;]*)")
+    r"\b(" + "|".join(THROWING_TYPES) + r"|(?:" + "|".join(THROWING_PREFIXES)
+    + r")\w+)\s*(?:\w+\s*)?\(([^;]*)")
 
 NUMERIC_ARG_RE = re.compile(r"^[\s\d.,+\-eE()]*$")
 
