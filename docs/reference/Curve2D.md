@@ -1222,7 +1222,7 @@ public static func circlesTangentToTwoCurvesAndPoint(
 
 - **Parameters:** `c1`/`c2`, input curves; `q1`/`q2`, qualifiers; `point`, required pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
-- **OCCT:** `Geom2dGcc_Circ2d2TanPt`.
+- **OCCT:** `Geom2dGcc_Circ2d3Tan` (two qualified curves and a `Geom2d_CartesianPoint`).
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesTangentToTwoCurvesAndPoint(
@@ -1290,7 +1290,7 @@ public static func circlesTangentToPointWithRadius(
 
 - **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
-- **OCCT:** `Geom2dGcc_Circ2dTanPtRad`.
+- **OCCT:** `Geom2dGcc_Circ2d2TanRad` (a qualified curve and a `Geom2d_CartesianPoint`).
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesTangentToPointWithRadius(
@@ -1313,7 +1313,7 @@ public static func circlesThroughTwoPoints(
 
 - **Parameters:** `p1`/`p2`, required pass-through points; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions (0, 1, or 2).
-- **OCCT:** `Geom2dGcc_Circ2d2PtRad`.
+- **OCCT:** `Geom2dGcc_Circ2d2TanRad` (two `Geom2d_CartesianPoint` passages).
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesThroughTwoPoints(SIMD2(-3, 0), SIMD2(3, 0), radius: 5)
@@ -1334,7 +1334,7 @@ public static func circleThroughThreePoints(
 
 - **Parameters:** `p1`/`p2`/`p3`, three points; `tolerance`, coincidence tolerance.
 - **Returns:** Array with one solution, or empty if collinear.
-- **OCCT:** `Geom2dGcc_Circ2d3Pt`.
+- **OCCT:** `Geom2dGcc_Circ2d3Tan` (three `Geom2d_CartesianPoint` passages).
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circleThroughThreePoints(
@@ -1385,7 +1385,7 @@ public static func linesTangentToPoint(
 
 - **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of line solutions.
-- **OCCT:** `Geom2dGcc_Lin2dTanPt`.
+- **OCCT:** `Geom2dGcc_Lin2d2Tan` (a qualified curve and a `gp_Pnt2d`).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 3)!

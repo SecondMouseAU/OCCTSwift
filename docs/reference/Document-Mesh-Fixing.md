@@ -3687,7 +3687,7 @@ public static func build(
   - `isClockwise`: `true` for left-hand helix winding.
   - `tolerance`: maximum approximation error.
 - **Returns:** `BuildResult` with the BSpline curve and the achieved error, or `nil` on failure.
-- **OCCT:** `HelixGeom_Helix` + `GeomAPI_PointsToBSpline` (via `OCCTHelixBuild`).
+- **OCCT:** `HelixGeom_BuilderHelix` (via `OCCTHelixBuild`).
 - **Example:**
   ```swift
   if let result = Helix.build(
@@ -3720,7 +3720,7 @@ public static func buildCoil(
 
 - **Parameters:** Same geometric parameters as `build`, minus origin/direction (defaults to Z-axis origin).
 - **Returns:** `BuildResult`, or `nil` on failure.
-- **OCCT:** `HelixGeom_Helix` coil variant (via `OCCTHelixCoilBuild`).
+- **OCCT:** `HelixGeom_BuilderHelixCoil` (via `OCCTHelixCoilBuild`).
 
 ---
 
@@ -3741,7 +3741,7 @@ public static func evaluate(
 
 - **Parameters:** `u`, the parameter value to evaluate.
 - **Returns:** The 3D point on the helix at `u`.
-- **OCCT:** `HelixGeom_Helix::Value` (via `OCCTHelixCurveEval`).
+- **OCCT:** `HelixGeom_HelixCurve::Value` (via `OCCTHelixCurveEval`).
 
 ---
 
@@ -3760,7 +3760,7 @@ public static func evaluateD1(
 ) -> (point: SIMD3<Double>, tangent: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_Helix::D1` (via `OCCTHelixCurveD1`).
+- **OCCT:** `HelixGeom_HelixCurve::D1` (via `OCCTHelixCurveD1`).
 
 ---
 
@@ -3779,7 +3779,7 @@ public static func evaluateD2(
 ) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_Helix::D2` (via `OCCTHelixCurveD2`).
+- **OCCT:** `HelixGeom_HelixCurve::D2` (via `OCCTHelixCurveD2`).
 
 ---
 
@@ -3799,7 +3799,7 @@ public static func approximateToBSpline(
 ```
 
 - **Returns:** `(curve, maxError)` or `nil` on failure. The returned BSpline is a direct approximation distinct from the helix-sampled interpolation used by `build`.
-- **OCCT:** `HelixGeom_ApproxCurve` or equivalent BSpline fitting (via `OCCTHelixApproxToBSpline`).
+- **OCCT:** `HelixGeom_Tools::ApprHelix` (via `OCCTHelixApproxToBSpline`).
 - **Example:**
   ```swift
   if let (bsp, err) = Helix.approximateToBSpline(

@@ -860,7 +860,7 @@ Heap allocated bytes for the current process.
 public static var heapUsage: Int64 { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo_Heap)` (via `OCCTMemInfoHeapUsage`).
+- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo::MemHeapUsage)` (via `OCCTMemInfoHeapUsage`).
 
 ---
 
@@ -872,7 +872,7 @@ Working set (resident memory) in bytes.
 public static var workingSet: Int64 { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo_WSet)` (via `OCCTMemInfoWorkingSet`).
+- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo::MemWorkingSet)` (via `OCCTMemInfoWorkingSet`).
 
 ---
 
@@ -884,7 +884,7 @@ Heap usage as a precise `Double` in mebibytes.
 public static var heapUsageMiB: Double { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::ValueMiB(OSD_MemInfo_Heap)` (via `OCCTMemInfoHeapUsageMiB`).
+- **OCCT:** `OSD_MemInfo::ValuePreciseMiB(OSD_MemInfo::MemHeapUsage)` (via `OCCTMemInfoHeapUsageMiB`).
 
 ---
 

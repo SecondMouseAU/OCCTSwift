@@ -1036,7 +1036,7 @@ public static func laguerreRoots(coefficients: [Double]) -> [Double]
 
 - **Parameters:** `coefficients`, polynomial coefficients in ascending power order: `[a0, a1, …, an]` for `a0 + a1·x + … + an·xⁿ`.
 - **Returns:** Sorted array of real roots (up to 20).
-- **OCCT:** `math_Laguerre` / `math_DirectPolynomialRoots` via `OCCTPolyLaguerreRoots`.
+- **OCCT:** `MathPoly::Laguerre` via `OCCTPolyLaguerreRoots`.
 - **Example:**
   ```swift
   // Roots of x³ - 6x² + 11x - 6 = 0  →  [1, 2, 3]
@@ -1055,7 +1055,7 @@ public static func laguerreComplexRoots(coefficients: [Double]) -> [(real: Doubl
 
 - **Parameters:** Same ascending-order convention as `laguerreRoots`.
 - **Returns:** Array of `(real, imaginary)` pairs (up to 20 roots).
-- **OCCT:** `math_Laguerre` complex variant via `OCCTPolyLaguerreComplexRoots`.
+- **OCCT:** `MathPoly::Laguerre`, reading its complex roots, via `OCCTPolyLaguerreComplexRoots`.
 - **Example:**
   ```swift
   // Roots of x² + 1 = 0  →  [(0, 1), (0, -1)]

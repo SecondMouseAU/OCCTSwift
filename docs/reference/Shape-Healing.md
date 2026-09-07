@@ -1785,7 +1785,7 @@ Useful for export to systems that cannot handle full 360° surfaces (e.g. splitt
 
 - **Parameters:** `maxAngleDegrees`, maximum surface angular span in degrees (e.g. 90 for quarter-turns).
 - **Returns:** Shape with surfaces split at angle boundaries, or nil on failure.
-- **OCCT:** `ShapeUpgrade_ShapeSplitAngle` (via `OCCTShapeSplitByAngle`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideAngle` (via `OCCTShapeSplitByAngle`).
 - **Example:**
   ```swift
   if let split = fullCylinder.splitByAngle(90) {

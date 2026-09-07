@@ -839,7 +839,7 @@ Points are uniformly sampled from start to end of the edge curve.
 
 - **Parameters:** `index`, edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints`, output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points along the edge curve.
-- **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
+- **OCCT:** `BRep_Tool::Curve`, sampled at uniform parameter with `Geom_Curve::Value` (via `OCCTShapeGetEdgePoints`).
 
 ---
 
@@ -1452,7 +1452,7 @@ public func drafted(
   - `angle`: draft angle in radians (typically 1–5°).
   - `neutralPlane`: point and normal of the plane where draft angle is zero.
 - **Returns:** Drafted shape, or `nil` on failure.
-- **OCCT:** `OCCTShapeDraft` (internal `Draft_MakeDraft`-based implementation).
+- **OCCT:** `BRepOffsetAPI_DraftAngle` (via `OCCTShapeDraft`).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
   here fails the whole call rather than being skipped (#568). Skipping was worse here than anywhere
   else in that sweep: `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no

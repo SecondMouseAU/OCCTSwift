@@ -872,7 +872,7 @@ public static func analyticCurvaturePoints(curveType: Int32, first: Double,
 
 - **Parameters:** `curveType`, 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
 - **Returns:** Array of special points; empty if none found.
-- **OCCT:** `LProp_AnalyticCurInf`
+- **OCCT:** `LProp_CurAndInf` and `LProp_CIType`, filled bridge-side
 - **Example:**
   ```swift
   let pts = Shape.analyticCurvaturePoints(curveType: 2, first: 0, last: .pi)
