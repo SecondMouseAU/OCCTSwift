@@ -406,5 +406,5 @@ Two entries, marked here rather than written into `docs/occtswift-wrapping-gaps.
 
 ## Files
 
-- `probe_foundation.mm`, `probe-transcript.txt`: the five measurements behind F1, F3 and F5, plus
+- `probe_foundation.mm`, `probe-foundation-transcript.txt`: the five measurements behind F1, F3 and F5, plus
   the `math_GaussMultipleIntegration` control that corrects the brief.
