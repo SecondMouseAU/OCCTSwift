@@ -1018,6 +1018,18 @@ extern "C"
     double param2;
   } OCCTExtremaPointPair;
 
+  // #1514: a curve-to-surface extremum has one parameter on the curve side and two on the
+  // surface side, so it cannot be carried by OCCTExtremaPointPair's single param2. Same reasoning
+  // as OCCTExtremaSSPointPair (#1502), which is the surface-surface case of the same gap.
+  typedef struct
+  {
+    double squareDistance;
+    double x1, y1, z1; // Point on the curve
+    double param1;
+    double x2, y2, z2; // Point on the surface
+    double u2, v2;
+  } OCCTExtremaCSPointPair;
+
   // --- Image_AlienPixMap ---
 
   /// Opaque handle to Image_AlienPixMap

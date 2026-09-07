@@ -828,7 +828,7 @@ public struct CurveCurveExtrema: Sendable {
 
 ### `ExtremaPointPair`
 
-A single extremal point pair returned by `extremaCCPoint(...)` or `extremaCSPoint(...)`.
+A single extremal point pair returned by `extremaCCPoint(...)`.
 
 ```swift
 public struct ExtremaPointPair: Sendable {
@@ -841,8 +841,11 @@ public struct ExtremaPointPair: Sendable {
 ```
 
 - `squareDistance`: squared distance between the two extremal points (take `sqrt` for actual distance).
-- `point1` / `param1`, point and parameter on the first curve (or query curve for curve-surface).
-- `point2` / `param2`, point and parameter on the second curve, or UV parameters packed as `(u, v, 0)` for curve-surface.
+- `point1` / `param1`, point and parameter on the first curve.
+- `point2` / `param2`, point and parameter on the second curve.
+
+Curve-surface extrema use `CurveSurfaceExtremaPoint` instead, since the surface-side point needs
+two parameters.
 
 ---
 
@@ -1034,12 +1037,48 @@ public func extremaCSPoint(
     range:   ClosedRange<Double>? = nil,
     surface: Surface,
     index:   Int
-) -> ExtremaPointPair
+) -> CurveSurfaceExtremaPoint
 ```
 
 - **Parameters:** `range`, optional parameter range on this curve; `surface`, the target surface; `index`, 1-based extremum index.
-- **Returns:** `ExtremaPointPair`; `param2` encodes the surface U parameter, and `point2.z` encodes V.
+- **Returns:** `CurveSurfaceExtremaPoint`, carrying the curve-side parameter as `param1` and both surface parameters as `u2` / `v2`.
 - **OCCT:** `Extrema_ExtCS`.
+- **Example:**
+  ```swift
+  if let line = Curve3D.line(through: SIMD3(6, 6, 6), direction: SIMD3(1, -1, 0)),
+     let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+      let cs = line.extremaCS(range: -5...5, surface: sphere)
+      if cs.isDone, !cs.isParallel, cs.count >= 1 {
+          let p = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
+          // point2 is exactly what the parameters evaluate to
+          print(sphere.point(atU: p.u2, v: p.v2), p.point2)
+      }
+  }
+  ```
+
+---
+
+### `CurveSurfaceExtremaPoint`
+
+A single extremal pair returned by `extremaCSPoint(...)`: one parameter on the curve side, two on
+the surface side.
+
+```swift
+public struct CurveSurfaceExtremaPoint: Sendable {
+    public let squareDistance: Double
+    public let point1:         SIMD3<Double>
+    public let param1:         Double
+    public let point2:         SIMD3<Double>
+    public let u2:             Double
+    public let v2:             Double
+}
+```
+
+- `squareDistance`: squared distance between the two extremal points (take `sqrt` for the distance).
+- `point1` / `param1`, point and parameter on the curve.
+- `point2` / `u2` / `v2`, point on the surface and the parameters that produce it.
+
+Before #1514 this returned `ExtremaPointPair`, whose single `param2` carried U and dropped V.
 
 ---
 

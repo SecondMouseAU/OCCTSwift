@@ -1030,12 +1030,17 @@ OCCTExtremaExtCSResult OCCTExtremaExtCS(OCCTCurve3DRef _Nonnull curve,
                                         double uLast,
                                         OCCTSurfaceRef _Nonnull surface);
 
-/// Get Nth extremum from curve-surface computation
-OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef _Nonnull curve,
-                                           double uFirst,
-                                           double uLast,
-                                           OCCTSurfaceRef _Nonnull surface,
-                                           int index);
+/// Get Nth extremum from curve-surface computation.
+///
+/// The surface-side point carries both of its parameters (`u2`, `v2`); the curve-side point
+/// carries its single `param1`. Returns a zeroed result for a null handle or an out-of-range
+/// index, which `squareDistance == 0` alone cannot be distinguished from, so callers gate on
+/// `OCCTExtremaExtCS`'s `isDone`/`nbExt` first.
+OCCTExtremaCSPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef _Nonnull curve,
+                                             double uFirst,
+                                             double uLast,
+                                             OCCTSurfaceRef _Nonnull surface,
+                                             int index);
 
 // --- Extrema_LocateExtCC: Local curve-curve distance ---
 typedef struct
