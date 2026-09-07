@@ -27,6 +27,40 @@ that shape. The class named is nearly always the one next door: `GProp_PGProps` 
 `measure-dont-assume.md`'s "the adjacent identifier reads as the one you need", found fourteen times
 in one family.
 
+## The corrections move 13 of the 31 into the machine-checked bucket
+
+Re-running the derivation **after** this PR's doc fixes:
+
+```
+#1399 reading family: healing (18 classes)
+```
+
+Thirteen classes left the `algorithm` bucket for `machine-covered`, because the corrected
+`- **OCCT:**` lines now name them in a claim `census-doc-occt-attribution.py` parses:
+
+```
+  BRepGraph_Copy                BRepLib_CheckCurveOnSurface   ShapeAnalysis_Geom
+  BRepGraph_ItemId              BRepTools_PurgeLocations      ShapeExtend_CompositeSurface
+  BRepGraph_ItemUID             GProp_SelGProps               ShapeFix_FreeBounds
+  BRepGraph_RefUID              GProp_VelGProps               ShapeUpgrade_ShapeDivide
+  BRepGraph_Transform
+```
+
+That is the part of this pass that outlives it. Those thirteen were in the reading list precisely
+because no parsed claim named them, so nothing re-checked them and a one-off read was the only
+coverage available. They are now checked on every census run, against the tree as it stands rather
+than as it stood today. Naming the right class does not just fix a sentence; it hands the class to
+the detector.
+
+The other eighteen stay hand-read, and the table below says why for each. Two of them
+(`ShapeCustom_RestrictionParameters`, `BRepGraph_UID`) flipped `docs=no` to `docs=yes` without
+moving bucket: they are now named in prose, which the `docs=` column sees and the claim parser does
+not.
+
+**The table below was taken before these fixes**, so its `uses`/`docs` columns are the state the
+reading started from. Re-running `derive_lane.py --family healing` on this branch gives 18 rows,
+not 31, and that is the intended outcome rather than drift.
+
 ## The table
 
 `docs=` is `derive_lane.py`'s own column, which counts `docs/CHANGELOG.md`; where that inflates it,
