@@ -122,10 +122,17 @@ def bridge_text():
 
 
 def docs_text():
+    """Every doc page except the changelog.
+
+    docs/CHANGELOG.md is release history, not documentation of the current surface: a class named
+    only in a v0.x entry is a record of what once happened, and counting it makes an undocumented
+    class read as documented. The healing family's read found three such rows. #811's lane excluded
+    docs/occtswift-wrapping-gaps.md from its own token cache for the same reason.
+    """
     parts = []
     for root, _, files in os.walk(os.path.join(REPO, "docs")):
         for name in sorted(files):
-            if name.endswith(".md"):
+            if name.endswith(".md") and name != "CHANGELOG.md":
                 with open(os.path.join(root, name), encoding="utf-8", errors="ignore") as handle:
                     parts.append(handle.read())
     return "\n".join(parts)
@@ -235,6 +242,15 @@ def self_test():
              for c in ("BRepGraph_Copy", "GeomEval_EllipsoidSurface", "Geom2dEval_SineWaveCurve")),
          "BRepGraph->%s, GeomEval->%s" % (family_of("BRepGraph_Copy"),
                                           family_of("GeomEval_EllipsoidSurface")))
+
+    # The changelog must not count as documentation: a class named only in a v0.x entry is a
+    # record of what once happened. Proven against a string that exists in docs/CHANGELOG.md and
+    # nowhere else, rather than against the exclusion rule restating itself.
+    changelog = open(os.path.join(REPO, "docs", "CHANGELOG.md"), encoding="utf-8").read()
+    marker = "## Unreleased"
+    case("changelog-does-not-count-as-documentation",
+         marker in changelog and marker not in docs_text(),
+         "marker present in the changelog, absent from the docs corpus")
 
     algorithm = [r for r in table if r["bucket"] == "algorithm"]
     case("every-algorithm-class-has-a-family",
