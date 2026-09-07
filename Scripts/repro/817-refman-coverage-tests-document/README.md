@@ -81,9 +81,9 @@ reports SKIPPED there rather than passing silently).
 
 | verdict | count |
 |---|---|
-| `ok` (tested) | **119** |
+| `ok` (tested) | **119** at the time of this pass, **131** since #1396 |
 | `deliberate, recorded` | 0 |
-| `under` | **12**, all twelve annotated: real tests exist, outside this lane (see below), filed as #1396 |
+| `under` | **12** at the time of this pass, all twelve annotated: real tests exist, outside this lane (see below), filed as #1396. **0 since #1396 moved them**, re-measured with this same script. |
 
 131 wrapped+documented classes, zero of them left as a genuine, unexplained gap. One real gap
 (`XCAFDoc_LengthUnit`) was found and closed with new tests in this branch; the remaining twelve
@@ -255,7 +255,11 @@ failed (`Expectation failed: (doc.lengthUnit → LengthUnit(scale: 1.0, name: "m
 `lengthUnitReadsBackFromSTEP` still passed. Both injections reverted; `swift test --filter
 DocumentTests` green (9 tests, 2 suites) after restoring the real implementation.
 
-## Twelve more mechanical `under` rows: tested, but not in this lane — filed as #1396
+## Twelve more mechanical `under` rows: tested, but not in this lane — filed as #1396, since fixed
+
+**Resolved.** #1396 moved all twelve suites into `OCCTXCAFTests`, where every other `TDataStd_*`
+test already lived, and a re-run of this script reports `ok: 131, under: 0`. The paragraph below is
+the finding as it stood when this pass ran, kept because the reasoning is what filed #1396.
 
 The remaining twelve `under` classes are all `TDataStd_*`: `BooleanArray`, `BooleanList`,
 `ByteArray`, `ExtStringArray`, `ExtStringList`, `IntPackedMap`, `IntegerList`, `NoteBook`,
