@@ -37,10 +37,13 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(REPO, "Sources", "OCCTBridge", "src")
 
-# Types whose construction from caller values can throw.
+# Types whose construction from caller values can throw. Each earned its place in an audit rather
+# than a guess: the gp_ axis and direction family from #345's own 49 sites, and Standard_GUID from
+# #1399's substrate read, which found the bridge building one from a caller-supplied string at
+# eight sites. Those eight are all inside a try already, so it was added for the next one.
 THROWING_TYPES = [
     "gp_Dir", "gp_Dir2d", "gp_Ax1", "gp_Ax2", "gp_Ax3", "gp_Ax22d", "Geom_Direction",
-    "Geom2d_Direction",
+    "Geom2d_Direction", "Standard_GUID",
 ]
 
 # Evaluators that raise outside their parameter range.
