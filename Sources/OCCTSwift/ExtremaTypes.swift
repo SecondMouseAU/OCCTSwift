@@ -7,8 +7,13 @@ public struct ExtremaResult: Sendable {
     /// Squared distance between the closest/farthest points.
     public let squareDistance: Double
     /// Point on the first element.
+    ///
+    /// Measured everywhere except ``ExtremaElSS``'s parallel-plane result, where OCCT computes no
+    /// points and this is `SIMD3(0, 0, 0)` (#1632).
     public let point1: SIMD3<Double>
     /// Point on the second element.
+    ///
+    /// Same caveat as ``point1``.
     public let point2: SIMD3<Double>
 }
 
@@ -206,10 +211,37 @@ public enum ExtremaElCS {
     }
 }
 
-/// Elementary surface-surface distance computations (Extrema_ExtElSS).
+/// Elementary surface-surface distance computations (`Extrema_ExtElSS`).
+///
+/// `Extrema_ExtElSS` implements one of the three pairs below, and only half of that one, on the
+/// pinned OCCT 8.0.1 kernel. Measured in
+/// `Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`, tracked as
+/// [#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632):
+///
+/// ```swift
+/// // The one call that answers, and the one field on it worth reading.
+/// let r = ExtremaElSS.planeToPlane(plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+///                                  plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
+/// // r.isParallel == true, r.results[0].squareDistance == 25
+/// // r.results[0].point1 and .point2 are SIMD3(0, 0, 0): OCCT computes no points here.
+///
+/// ExtremaElSS.planeToSphere(planePoint: .zero, planeNormal: SIMD3(0, 0, 1),
+///                           sphereCenter: SIMD3(0, 0, 20), sphereRadius: 5)  // []
+/// ExtremaElSS.sphereToSphere(center1: .zero, radius1: 5,
+///                            center2: SIMD3(20, 0, 0), radius2: 5)           // []
+/// ```
 public enum ExtremaElSS {
 
-    /// Distance between two planes.
+    /// Distance between two parallel planes.
+    ///
+    /// Answers the parallel case only. Crossing planes give `(isParallel: false, [])`, since their
+    /// distance is zero everywhere and `Extrema_ExtElSS` records no extremum for that.
+    ///
+    /// - Returns: `isParallel` is the usable half. When it is `true`, `results` holds one entry
+    ///   whose `squareDistance` is the plane-to-plane distance squared; its `point1`/`point2` are
+    ///   `SIMD3(0, 0, 0)` rather than points on the planes, because
+    ///   `Extrema_ExtElSS::Perform(gp_Pln, gp_Pln)` fills only its square-distance array and
+    ///   leaves the two point arrays as null handles (#1632).
     public static func planeToPlane(
         plane1Point: SIMD3<Double>, plane1Normal: SIMD3<Double>,
         plane2Point: SIMD3<Double>, plane2Normal: SIMD3<Double>
@@ -234,7 +266,13 @@ public enum ExtremaElSS {
         return (isParallel, results)
     }
 
-    /// Distance between a plane and a sphere.
+    /// Distance between a plane and a sphere, which **always returns `[]`**.
+    ///
+    /// `Extrema_ExtElSS::Perform(const gp_Pln&, const gp_Sphere&)` is
+    /// `throw Standard_NotImplemented();` in OCCT 8.0.1, and the throw happens inside the
+    /// constructor the bridge calls, so no input can produce a result. Use
+    /// ``Surface/extremaSS(other:)`` (`GeomAPI_ExtremaSurfaceSurface`) for a plane-sphere distance
+    /// ([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
     public static func planeToSphere(
         planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>,
         sphereCenter: SIMD3<Double>, sphereRadius: Double
@@ -256,7 +294,12 @@ public enum ExtremaElSS {
         }
     }
 
-    /// Distance between two spheres.
+    /// Distance between two spheres, which **always returns `[]`**.
+    ///
+    /// `Extrema_ExtElSS::Perform(const gp_Sphere&, const gp_Sphere&)` is
+    /// `throw Standard_NotImplemented();` in OCCT 8.0.1, the same kernel gap as
+    /// ``planeToSphere(planePoint:planeNormal:sphereCenter:sphereRadius:)``
+    /// ([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
     public static func sphereToSphere(
         center1: SIMD3<Double>, radius1: Double,
         center2: SIMD3<Double>, radius2: Double

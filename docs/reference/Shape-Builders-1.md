@@ -1830,6 +1830,19 @@ public class ContapContourResult {
 - All indices are 1-based.
 - **OCCT:** `Contap_Contour` via `OCCTContapContour*`.
 
+**`pointCount`, `point` and `points` answer for `.walking` lines only.** `Contap_Line::NbPnts()`
+and `Contap_Line::Point(Index)` both open with
+`if (typL != Contap_Walking) { throw Standard_DomainError(); }` (`Contap_Line.lxx`), so on a
+`.line`, `.circle` or `.restriction` contour `pointCount` is `0`, `points` is `[]`, and
+`point(line:index:)` returns `SIMD3(0, 0, 0)`, a zero rather than a measurement. Check
+`lineType(_:)` first.
+
+That is not an edge case: a cylinder's lateral face viewed along `(1, 0, 0)` gives two `.line`
+contours, and neither has a reachable point
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`). The analytic geometry OCCT
+holds for those lines (`Contap_Line::Line()`, `Circle()`, `Vertex()`) is not wrapped;
+[#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635) tracks adding it.
+
 ---
 
 #### `ContapContourResult.lineCount`

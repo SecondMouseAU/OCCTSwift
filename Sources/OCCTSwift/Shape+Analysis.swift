@@ -1606,6 +1606,9 @@ extension Shape {
     }
 
     /// Compute self-interference of a 2D polyline.
+    ///
+    /// Capped at 100 intersection points, and the truncation is silent, as it is for
+    /// ``polygonInterference(poly1:poly2:)`` (#1399).
     public static func polygonSelfInterference(
         polygon: [SIMD2<Double>]
     ) -> PolygonIntersection {
@@ -1639,6 +1642,12 @@ extension Shape {
         /// Parameter range on edge 1 (first, last), same for vertex type.
         public let param1Range: (first: Double, last: Double)
         /// Parameter range on edge 2 (first, last), same for vertex type.
+        ///
+        /// - Warning: only ``edgeEdgeIntersection(with:)`` has a second edge. From
+        ///   ``edgeFaceIntersection(with:)`` this is always `(0, 0)`, a default rather than a
+        ///   measurement: `IntTools_EdgeFace` never calls `AppendRange2` or
+        ///   `SetVertexParameter2`, so `IntTools_CommonPrt` hands back an empty `Ranges2()` and
+        ///   the `0.0` its own constructor set (#1399). Read ``param1Range`` and ``point``.
         public let param2Range: (first: Double, last: Double)
         /// Representative 3D point of the intersection.
         public let point: SIMD3<Double>
@@ -1668,7 +1677,21 @@ extension Shape {
 
     /// Intersect an edge with a face to find common vertices and edge overlaps.
     ///
-    /// Uses IntTools_EdgeFace to compute edge-face intersections.
+    /// Uses `IntTools_EdgeFace` to compute edge-face intersections.
+    ///
+    /// - Warning: this returns an **empty array for every input** on the current bridge, including
+    ///   an edge that genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls
+    ///   `IntTools_EdgeFace::SetRange`, and `IntTools_Range`'s default is `(0, 0)`, so the whole
+    ///   computation searches a degenerate window on the edge. Measured in
+    ///   `Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt` and tracked as
+    ///   [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631). `IsDone()` is `true`
+    ///   either way, so `nil` is not the signal.
+    ///
+    /// ```swift
+    /// if let parts = edge.edgeFaceIntersection(with: face) {
+    ///     for p in parts { print(p.type, p.param1Range, p.point) }  // param2Range is (0, 0)
+    /// }
+    /// ```
     ///
     /// - Parameter face: Face to intersect with
     /// - Returns: Array of common parts, or nil if intersection failed

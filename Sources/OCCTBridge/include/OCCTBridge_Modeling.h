@@ -2997,10 +2997,17 @@ typedef struct
   OCCTSurfaceRef _Nullable surface;
   OCCTShapeRef _Nullable supportFace1;
   OCCTShapeRef _Nullable supportFace2;
-  double  tolerance;
-  double  firstParam;
-  double  lastParam;
-  int32_t startStatus; // FilletSurf_StatusType: 0=OneExtremityOnFace, 1=TwoExtremityOnFace, etc.
+  double tolerance;
+  // FilletSurf_Builder::FirstParameter/LastParameter take no index: they are the fillet's
+  // parameters on the first and last edge of the whole request, not per-surface values, and this
+  // struct repeats them into every element (#1399).
+  double firstParam;
+  double lastParam;
+  // FilletSurf_StatusType, from Start/EndSectionStatus(): 0=TwoExtremityOnEdge,
+  // 1=OneExtremityOnEdge, 2=NoExtremityOnEdge. NOT FilletSurf_StatusDone
+  // (IsOk/IsNotOk/IsPartial), which is what OCCTFilletSurfBuild's own return value carries
+  // (#1399).
+  int32_t startStatus;
   int32_t endStatus;
 } OCCTFilletSurfInfo;
 

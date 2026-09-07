@@ -1144,6 +1144,10 @@ public struct PolygonIntersection: Sendable {
 }
 ```
 
+`points` is capped at 100 entries, and the truncation is silent: both entry points below size a
+fixed 100-element buffer and pass its length to `Intf_InterferencePolygon2d` as the maximum. A
+polyline pair with more than 100 crossings loses the rest with no signal (#1399).
+
 ---
 
 ### `Shape.polygonInterference(poly1:poly2:)`
@@ -1407,8 +1411,17 @@ public struct CommonPart: Sendable {
 |---|---|
 | `type` | `.vertex` or `.edge`: the kind of intersection found. |
 | `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
-| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. |
+| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
 | `point` | Representative 3D point of the intersection. |
+
+**`param2Range` is always `(0, 0)` from `edgeFaceIntersection(with:)`.** A face is not an edge, and
+`IntTools_EdgeFace` reflects that: `IntTools_EdgeFace.cxx` never calls `AppendRange2` or
+`SetVertexParameter2`, so `IntTools_CommonPrt::Ranges2()` comes back empty and
+`VertexParameter2()` comes back as the `0.0` its default constructor set
+(`IntTools_CommonPrt.cxx:33`). The bridge reads those and passes them on, so the pair reads as a
+measurement and is not one. Measured in
+`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt` (#1399). Read `param1Range`, the
+range on the edge, and `point`.
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -1446,6 +1459,12 @@ public func edgeFaceIntersection(with face: Shape) -> [CommonPart]?
 
 - **Parameters:** `face`, face to intersect with.
 - **Returns:** Array of common parts, or `nil` on failure.
+- **Warning:** this currently returns an **empty array for every input**, including an edge that
+  genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange`, and
+  `IntTools_Range`'s default is `(0, 0)`, so the search window is degenerate.
+  [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631) has the measurement and the fix.
+- **Note:** `CommonPart.param2Range` is `(0, 0)` on this path whatever the result, see the
+  `CommonPart` entry above.
 - **OCCT:** `IntTools_EdgeFace`
 - **Example:**
   ```swift
@@ -2531,8 +2550,25 @@ public struct FilletSurfaceInfo: Sendable {
 | `supportFace1` | The first of the two original faces this fillet surface blends between. |
 | `supportFace2` | The second of the two original faces this fillet surface blends between. |
 | `tolerance` | Geometric tolerance achieved for this fillet surface. |
-| `startStatus` | `FilletSurf_Builder` status code at the fillet's start extremity (0 = ok, 1 = not ok, 2 = partial). |
-| `endStatus` | `FilletSurf_Builder` status code at the fillet's end extremity (0 = ok, 1 = not ok, 2 = partial). |
+| `firstParameter` | The fillet's parameter on the **first edge of the whole request**, not a per-surface value; see the note below. |
+| `lastParameter` | The fillet's parameter on the last edge of the whole request; per request, not per surface, for the same reason. |
+| `startStatus` | Where the fillet's start section sits relative to the edge it was built on: both extremities on the edge (`0`), one extremity on the edge (`1`), or neither (`2`); see the note below. |
+| `endStatus` | The same scale at the fillet's end section. |
+
+`firstParameter` and `lastParameter` come from `FilletSurf_Builder::FirstParameter()` and
+`LastParameter()`, which take no surface index. They are the fillet's parameters on the first and
+last edge of the whole request, and this struct repeats the same pair into every element rather
+than measuring one per surface.
+
+`startStatus`/`endStatus` come from `FilletSurf_Builder::StartSectionStatus()` and
+`EndSectionStatus()`, whose enum is `FilletSurf_StatusType`
+(`0` = `FilletSurf_TwoExtremityOnEdge`, `1` = `FilletSurf_OneExtremityOnEdge`,
+`2` = `FilletSurf_NoExtremityOnEdge`). **They are not on `FilletSurfaceResult.status`'s scale**, and
+reading them as if they were is a silent misread rather than an error: that field carries
+`FilletSurf_StatusDone` (`0` = ok, `1` = not ok, `2` = partial). The two enums are unrelated and
+share the ordinals `0...2`. This table described both as the ok/not-ok/partial scale until #1399
+measured the ordinals against the pinned `FilletSurf_StatusType.hxx`
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`).
 
 #### `Shape.FilletSurfaceInfo.endStatus`
 
@@ -2552,6 +2588,11 @@ public struct FilletSurfaceResult: Sendable {
 | Field | Meaning |
 |---|---|
 | `surfaces` | One `FilletSurfaceInfo` per requested edge that produced a fillet surface. |
+| `status` | Overall outcome of the whole computation: `0` = ok, `1` = not ok, `2` = partial. |
+
+That is `FilletSurf_Builder::IsDone()`'s `FilletSurf_StatusDone`, and it is unrelated to
+`FilletSurfaceInfo.startStatus`/`endStatus`, which carry `FilletSurf_StatusType` on the same
+ordinals.
 
 #### `Shape.FilletSurfaceResult.surfaces`
 

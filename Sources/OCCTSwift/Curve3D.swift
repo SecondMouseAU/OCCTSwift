@@ -2754,9 +2754,27 @@ extension Curve3D {
         public let point: SIMD3<Double>
     }
 
-    /// Find all extrema (closest/farthest points) from a point to this curve.
+    /// Find all interior extrema (closest and farthest points) from a point to this curve.
+    ///
+    /// Backed by `ExtremaPC_Curve`, OCCT 8.0's variant-dispatching point-curve solver, over the
+    /// curve's own domain. Up to 64 results.
+    ///
+    /// **Endpoints are not reported.** `ExtremaPC_Curve::Perform` is the interior solve, and this
+    /// method does not call `PerformWithEndpoints`, so a query point with no perpendicular foot on
+    /// the curve gives an empty array rather than the nearer endpoint
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+    ///
+    /// ```swift
+    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+    ///     let results = arc.extrema(from: SIMD3(3, 4, 0))
+    ///     if let nearest = results.min(by: { $0.distance < $1.distance }) {
+    ///         print(nearest.point, nearest.distance)
+    ///     }
+    /// }
+    /// ```
+    ///
     /// - Parameter point: the query point
-    /// - Returns: array of extrema results, or empty on failure
+    /// - Returns: array of interior extrema, empty when there are none
     public func extrema(from point: SIMD3<Double>) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2775,12 +2793,26 @@ extension Curve3D {
         }
     }
 
-    /// Find all extrema from a point to a bounded segment of this curve.
+    /// Find all interior extrema from a point to a bounded segment of this curve.
+    ///
+    /// `uMin`/`uMax` go to `ExtremaPC_Curve`'s own three-argument constructor. They bound the
+    /// interior search, and are themselves endpoints, which ``extrema(from:)`` explains are not
+    /// reported ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)). Up to 64
+    /// results.
+    ///
+    /// ```swift
+    /// if let c = Curve3D.bspline(points: myPoints) {
+    ///     let lo = c.domain.lowerBound
+    ///     let mid = (lo + c.domain.upperBound) / 2
+    ///     let results = c.extrema(from: SIMD3(1, 2, 3), uMin: lo, uMax: mid)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - point: the query point
     ///   - uMin: lower parameter bound
     ///   - uMax: upper parameter bound
-    /// - Returns: array of extrema results
+    /// - Returns: array of interior extrema within the bounds, empty when there are none
     public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2800,9 +2832,26 @@ extension Curve3D {
         }
     }
 
-    /// Find minimum distance from a point to this curve.
+    /// Find the minimum distance from a point to this curve's interior.
+    ///
+    /// Reads `ExtremaPC::Result::MinSquareDistance()` from `ExtremaPC_Curve::Perform`.
+    ///
+    /// `nil` is not only "the computation failed": it is also what a point with no perpendicular
+    /// foot on the curve gets, because the interior solve has no extremum to report there and the
+    /// endpoints are never consulted. Measured, a segment `[0, 10]` along +X queried from
+    /// `(20, 0, 0)` returns `nil` rather than `10`
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+    ///
+    /// ```swift
+    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+    ///    let d = arc.minimumDistance(from: SIMD3(0, 10, 0)) {
+    ///     print(d)  // about 5.0
+    /// }
+    /// ```
+    ///
     /// - Parameter point: the query point
-    /// - Returns: the minimum distance, or nil on failure
+    /// - Returns: the minimum distance over the interior, or `nil` when there is no interior
+    ///   extremum
     public func minimumDistance(from point: SIMD3<Double>) -> Double? {
         let d = OCCTExtremaPCMinDistance(handle, point.x, point.y, point.z)
         return d >= 0 ? d : nil

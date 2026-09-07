@@ -11,6 +11,22 @@ public enum ContourLineType: Int32, Sendable {
 }
 
 /// Contour computation result.
+///
+/// `lineCount` and ``lineType(_:)`` answer for every contour. ``pointCount(line:)``,
+/// ``point(line:index:)`` and ``points(line:)`` answer for `.walking` lines only, because
+/// `Contap_Line::NbPnts()` and `Point(Index)` both throw `Standard_DomainError` on any other type.
+/// Check the type first:
+///
+/// ```swift
+/// if let contour = face.contapContourDirection(SIMD3(1, 0, 0)) {
+///     for line in 1...max(contour.lineCount, 1) where contour.lineCount > 0 {
+///         switch contour.lineType(line) {
+///         case .walking: print(contour.points(line: line))   // traced, has points
+///         default:       print(contour.lineType(line) as Any) // analytic, has none yet (#1635)
+///         }
+///     }
+/// }
+/// ```
 public class ContapContourResult {
     let ref: OCCTContapContourRef
 
@@ -27,12 +43,21 @@ public class ContapContourResult {
         Int(OCCTContapContourLineCount(ref))
     }
 
-    /// Number of points on a specific contour line (1-based index).
+    /// Number of traced points on a `.walking` contour line (1-based index).
+    ///
+    /// `0` for a `.line`, `.circle` or `.restriction` contour: `Contap_Line::NbPnts()` throws
+    /// `Standard_DomainError` unless the line is `Contap_Walking`, and the bridge reports the
+    /// refusal as zero ([#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635)).
     public func pointCount(line: Int) -> Int {
         Int(OCCTContapContourLinePointCount(ref, Int32(line)))
     }
 
-    /// Get a point on a contour line (1-based indices).
+    /// Get a traced point on a `.walking` contour line (1-based indices).
+    ///
+    /// - Warning: `SIMD3(0, 0, 0)` is what this returns when the line is not `.walking` or the
+    ///   index is out of range, and it is a placeholder rather than a measured point. Gate on
+    ///   ``lineType(_:)`` and ``pointCount(line:)``
+    ///   ([#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635)).
     public func point(line: Int, index: Int) -> SIMD3<Double> {
         var x: Double = 0
         var y: Double = 0
@@ -41,7 +66,10 @@ public class ContapContourResult {
         return SIMD3(x, y, z)
     }
 
-    /// Get all points on a contour line (1-based line index).
+    /// Get all traced points on a `.walking` contour line (1-based line index).
+    ///
+    /// `[]` for a `.line`, `.circle` or `.restriction` contour, for the reason
+    /// ``pointCount(line:)`` gives.
     public func points(line: Int) -> [SIMD3<Double>] {
         let count = pointCount(line: line)
         guard count > 0 else { return [] }
