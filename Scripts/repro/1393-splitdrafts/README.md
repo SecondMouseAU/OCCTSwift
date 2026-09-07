@@ -51,7 +51,25 @@ the process**. Through the bridge it is catchable (the Swift call returns `nil`,
 regression test asserts), so this is a difference in where the throw crosses, not in whether it
 happens.
 
-## Disposition
+## Outcome: the wrapper is gone
+
+`Shape.splitDrafts` was removed in v4.0.0 rather than repaired, and no patch is carried.
+
+The deciding fact is not the defect, it is upstream's own verdict on the class. OCCT deleted
+`LocOpe_SplitDrafts` outright on 2026-08-07 in
+[OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442), a "clean up dead headers" pass, and
+`git grep SplitDrafts upstream/master` returns nothing. It had no caller anywhere in the OCCT tree,
+not even a DRAW command, which is also how a defect this total survived to 8.0.1 unnoticed.
+
+So there was no upstream PR to open, nothing to fix for anyone else's benefit, and a carried patch
+would have been this project reviving a class its own maintainer had just removed, with a guaranteed
+expiry at the first kernel bump past that commit. `okf/policies/scope-boundary.md` says stay
+faithful to OCCT; wrapping what OCCT has deleted is the opposite of that.
+
+The record below is kept because the investigation is what made the decision possible, and because
+the next reader who wonders why a 1996 class is missing deserves the answer.
+
+## Disposition, as it stood before the removal
 
 - **Test**: `Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift` asserts the refusal, and says
   in its own comment that a non-nil result means a repin fixed the kernel and the test should then

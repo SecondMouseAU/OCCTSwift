@@ -220,7 +220,6 @@ the reproducer). What a bridge author needs without opening it:
 
 - `BRepExtrema_ExtCC` crashes on parallel edges: `if (result.isParallel) { return result; }`
   before reading points. `Extrema_ExtCC::Points` itself over-reads on the same input (patch `0024`).
-- `LocOpe_SplitDrafts::Perform()` throws on incompatible geometry: always `try`/`catch` it.
 - `OCC_CATCH_SIGNALS` is inert in this build (no `OCC_CONVERT_SIGNALS`). An OS signal raised
   inside OCCT is uncatchable in-process, and so is a C++ exception that reaches the Swift boundary
   (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction` construction from caller doubles

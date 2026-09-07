@@ -373,7 +373,6 @@ void occtEnsureSignals()
 #include <LocOpe_LinearForm.hxx>
 #include <LocOpe_RevolutionForm.hxx>
 #include <LocOpe_SplitShape.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_FindEdges.hxx>
 #include <LocOpe_FindEdgesInFace.hxx>
 #include <LocOpe_CSIntersector.hxx>

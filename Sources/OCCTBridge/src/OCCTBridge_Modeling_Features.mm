@@ -61,7 +61,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -1703,67 +1702,6 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
       builder.Add(compound, *it);
     }
     return new OCCTShape(compound);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
-                                   int32_t      faceIndex,
-                                   OCCTShapeRef wire,
-                                   double       dirX,
-                                   double       dirY,
-                                   double       dirZ,
-                                   double       planeOriginX,
-                                   double       planeOriginY,
-                                   double       planeOriginZ,
-                                   double       planeNormalX,
-                                   double       planeNormalY,
-                                   double       planeNormalZ,
-                                   double       angle)
-{
-  // #1026: the wire's ShapeType() read below is an unguarded myTShape dereference.
-  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(wire))
-    return nullptr;
-  try
-  {
-    LocOpe_SplitDrafts splitDrafts;
-    splitDrafts.Init(shape->shape);
-
-    // #541: the shared face enumeration, so this names the face face(at:) names.
-    TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
-    if (face.IsNull())
-      return nullptr;
-
-    // Extract wire
-    TopoDS_Wire w;
-    if (wire->shape.ShapeType() == TopAbs_WIRE)
-    {
-      w = TopoDS::Wire(wire->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(wire->shape, TopAbs_WIRE); exp.More(); exp.Next())
-      {
-        w = TopoDS::Wire(exp.Current());
-        break;
-      }
-    }
-    if (w.IsNull())
-      return nullptr;
-
-    gp_Dir dir(dirX, dirY, dirZ);
-    gp_Pln plane(gp_Pnt(planeOriginX, planeOriginY, planeOriginZ),
-                 gp_Dir(planeNormalX, planeNormalY, planeNormalZ));
-
-    splitDrafts.Perform(face, w, dir, plane, angle);
-
-    TopoDS_Shape result = splitDrafts.Shape();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
   }
   catch (...)
   {

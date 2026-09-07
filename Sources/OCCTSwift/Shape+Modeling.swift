@@ -2035,37 +2035,6 @@ extension Shape {
 
     // MARK: - LocOpe_SplitDrafts
 
-    /// Split a face with draft angles on both sides of a wire.
-    ///
-    /// Uses LocOpe_SplitDrafts to create draft surfaces on a shape.
-    ///
-    /// - Parameters:
-    ///   - faceIndex: Index of the face to split (0-based)
-    ///   - wire: Wire defining the split line
-    ///   - direction: Extraction direction
-    ///   - planeOrigin: Origin of the neutral plane
-    ///   - planeNormal: Normal of the neutral plane
-    ///   - angle: Draft angle in radians
-    /// - Returns: Modified shape with draft, or nil on failure
-    public func splitDrafts(
-        faceIndex: Int, wire: Wire,
-        direction: SIMD3<Double>,
-        planeOrigin: SIMD3<Double>,
-        planeNormal: SIMD3<Double>,
-        angle: Double
-    ) -> Shape? {
-        let wireShape = Shape(handle: OCCTShapeFromWire(wire.handle))
-        guard
-            let ref = OCCTLocOpeSplitDrafts(
-                handle, Int32(faceIndex), wireShape.handle,
-                direction.x, direction.y, direction.z,
-                planeOrigin.x, planeOrigin.y, planeOrigin.z,
-                planeNormal.x, planeNormal.y, planeNormal.z,
-                angle)
-        else { return nil }
-        return Shape(handle: ref)
-    }
-
     /// Shape modification history for tracking what happened during operations.
     public class History {
         let historyRef: OCCTHistoryRef
