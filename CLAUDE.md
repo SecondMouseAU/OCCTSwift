@@ -48,7 +48,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Eight gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
+Nine gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
@@ -71,6 +71,7 @@ python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values re
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
 python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
 ```
 

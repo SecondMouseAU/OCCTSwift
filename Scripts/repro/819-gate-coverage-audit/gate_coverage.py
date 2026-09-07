@@ -566,26 +566,25 @@ DEFECT_CLASSES = [
                        "1->.2->.3, at #1032, and again within a single session at #1157/#1402 -- "
                        "CLAUDE.md's own patch-count paragraph names itself as 'the proof the "
                        "count check matters' after going stale the moment #1371's patch landed. "
-                       "#1066 (open) is an INDEPENDENT, still-live instance of the same class: "
-                       "ci.yml's gate-scripts comment block states 'all five'/'three of the "
-                       "five' against a job that measurably runs thirteen scripts today, and the "
-                       "exact sentence #1066 flagged is still in ci.yml as of this audit.",
+                       "#1066 was an INDEPENDENT instance of the same class (ci.yml's "
+                       "gate-scripts comment stating 'all five' against a job running thirteen "
+                       "scripts), fixed with #1408's gate.",
         mechanism="An English sentence stating a number, rewritten by hand every time the number "
                    "changes, with no derivation step forcing agreement.",
-        covered_by="count-operations.py covers exactly ONE instance of this general pattern (the "
-                   "operation-count headline); nothing covers the Scripts/patches/ count vs. "
-                   "CLAUDE.md prose vs. Package.swift's own comment, or ci.yml's own comment "
-                   "block against its own step count (#1066)",
-        disposition="ungated-gap",
-        notes="Genuinely gateable in principle (compare `ls Scripts/patches/*.patch | wc -l` "
-              "against a number parsed out of CLAUDE.md prose and Package.swift's comment), but "
-              "NOT judged 'small and obviously correct' to build in this PR: parsing an arbitrary "
-              "English number word out of prose that gets reworded every time it drifts (as this "
-              "very paragraph has been, repeatedly) is fragile in exactly the way "
-              "count-operations.py's regex-on-a-fixed-headline-format is not. This script's own "
-              "CLAUDE_COUNT_RE above is a small demonstration of the same fragility, scoped to "
-              "one sentence whose wording this audit controls. Filed as #1408, not built here; "
-              "see README.",
+        covered_by="check-inventory-prose.py (#1408), which derives the patch counts from "
+                   "Scripts/patches/ and Package.swift's enumerated pin list, and the gate/census/"
+                   "audit counts from ci.yml's own job, then checks every registered claim in "
+                   "Package.swift, CLAUDE.md, ci.yml and okf/policies/static-gates.md against "
+                   "them; count-operations.py continues to cover the operation-count headline",
+        disposition="gated",
+        notes="Built as check-inventory-prose.py. This audit's worry, that parsing an English "
+              "number out of prose which gets reworded whenever it drifts is fragile, was right "
+              "and is answered rather than dismissed: a claim is registered as a (file, regex, "
+              "derived-fact) triple and the gate fails when its regex matches NOTHING, so a "
+              "rewording that escapes the check is itself the failure. Building it immediately "
+              "found four live defects: #1066's two ci.yml sentences, plus two carried-patch rows "
+              "whose keys named no file on disk (0010, written with an ellipsis, and 0027, keyed "
+              "to a name the patch file does not have). Neither row defect had been filed.",
     ),
     DefectClass(
         id="stale-tsan-suppression",

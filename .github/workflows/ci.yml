@@ -38,23 +38,23 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all five are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all fourteen are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other four. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other thirteen. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
-  # Three of the five (check-bridge-index, check-null-handle-guards, derive-bridge-header-split)
-  # resolve their inputs relative to the working directory and exit 2 with "run from the repo root"
-  # elsewhere; the other two resolve from __file__. A GitHub Actions step starts at the repo root,
-  # so both kinds are satisfied.
+  # Some of these resolve their inputs relative to the working directory and exit 2 with "run from
+  # the repo root" elsewhere (#625); the rest resolve from __file__. A GitHub Actions step starts at
+  # the repo root, so both kinds are satisfied. The counts in this comment are gated by
+  # check-inventory-prose.py, which is why they are worth stating at all.
   #
-  # derive-bridge-header-split.py joined as the fifth in #673: --verify answers a question that
+  # derive-bridge-header-split.py joined in #673: --verify answers a question that
   # keeps mattering after the one-time #395 split it was written for -- does each bridge
   # declaration still sit in the header its .mm owns -- and every ~100-operation release adds
   # declarations by hand, so the drift this checks for is ongoing, not a one-off migration risk.
@@ -165,6 +165,14 @@ jobs:
       - name: count-operations.py
         if: '!cancelled()'
         run: python3 Scripts/count-operations.py
+
+      - name: check-inventory-prose.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-inventory-prose.py --self-test
+
+      - name: check-inventory-prose.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-inventory-prose.py
 
       # A hand-resolved conflict can leave a marker behind, and this repo sets
       # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
