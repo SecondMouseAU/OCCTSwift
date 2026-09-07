@@ -2005,7 +2005,7 @@ public var colorNOCAttribute: Int32
 ```
 
 - **Returns:** Named-colour integer, or `-1` if not set as a named colour.
-- **OCCT:** `XCAFDoc_Color::GetColor` → `Quantity_Color::Name`.
+- **OCCT:** `XCAFDoc_Color::GetNOC`, which returns the `Quantity_NameOfColor` directly.
 
 ---
 

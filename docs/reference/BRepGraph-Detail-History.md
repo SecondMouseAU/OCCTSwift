@@ -25,7 +25,7 @@ public func coedgeEdge(_ coedgeIndex: Int) -> Int
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Edge index.
-- **OCCT:** `BRepGraph_CoEdge::Edge` via `OCCTBRepGraphCoEdgeEdge`.
+- **OCCT:** `BRepGraph::Topo().CoEdges().Edge(BRepGraph_CoEdgeId)` via `OCCTBRepGraphCoEdgeEdge`.
 - **Example:**
   ```swift
   let edgeIdx = graph.coedgeEdge(0)
@@ -43,7 +43,7 @@ public func coedgeFace(_ coedgeIndex: Int) -> Int
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Face index.
-- **OCCT:** `BRepGraph_CoEdge::Face` via `OCCTBRepGraphCoEdgeFace`.
+- **OCCT:** `BRepGraph::Topo().CoEdges().Face(BRepGraph_CoEdgeId)` via `OCCTBRepGraphCoEdgeFace`.
 - **Example:**
   ```swift
   let faceIdx = graph.coedgeFace(0)
@@ -61,7 +61,7 @@ public func coedgeSeamPair(_ coedgeIndex: Int) -> Int?
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Paired coedge index, or `nil` when none.
-- **OCCT:** `BRepGraph_CoEdge::SeamPair` via `OCCTBRepGraphCoEdgeSeamPair`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::SeamPair` via `OCCTBRepGraphCoEdgeSeamPair`.
 - **Example:**
   ```swift
   if let pair = graph.coedgeSeamPair(0) {
@@ -80,7 +80,7 @@ public func coedgeHasPCurve(_ coedgeIndex: Int) -> Bool
 ```
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
-- **OCCT:** `BRepGraph_CoEdge::HasPCurve` via `OCCTBRepGraphCoEdgeHasPCurve`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::HasPCurve` via `OCCTBRepGraphCoEdgeHasPCurve`.
 - **Example:**
   ```swift
   if graph.coedgeHasPCurve(0) {
@@ -100,7 +100,7 @@ public func coedgeRange(_ coedgeIndex: Int) -> (first: Double, last: Double)
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Tuple of `(first, last)` parameter values.
-- **OCCT:** `BRepGraph_CoEdge::Range` via `OCCTBRepGraphCoEdgeRange`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::Range` via `OCCTBRepGraphCoEdgeRange`.
 - **Example:**
   ```swift
   let (u0, u1) = graph.coedgeRange(0)
@@ -119,7 +119,7 @@ public func shellSolidCount(_ shellIndex: Int) -> Int
 ```
 
 - **Parameters:** `shellIndex`, 0-based shell index.
-- **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidCount`.
+- **OCCT:** `BRepGraph::Topo().Shells().Relations(BRepGraph_ShellId)`, counted through `BRepGraph_SolidsOfShell`, via `OCCTBRepGraphShellSolidCount`.
 - **Example:**
   ```swift
   let n = graph.shellSolidCount(0)
@@ -137,7 +137,7 @@ public func shellSolids(_ shellIndex: Int) -> [Int]
 
 - **Parameters:** `shellIndex`, 0-based shell index.
 - **Returns:** Array of solid indices (may be empty for free shells).
-- **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidIndices`.
+- **OCCT:** `BRepGraph::Topo().Shells().Relations(BRepGraph_ShellId)`, iterated with `BRepGraph_SolidsOfShell`, via `OCCTBRepGraphShellSolidIndices`.
 - **Example:**
   ```swift
   let solidIndices = graph.shellSolids(0)
@@ -156,7 +156,7 @@ public func solidCompSolidCount(_ solidIndex: Int) -> Int
 ```
 
 - **Parameters:** `solidIndex`, 0-based solid index.
-- **OCCT:** `BRepGraph_Solid` upward links via `OCCTBRepGraphSolidCompSolidCount`.
+- **OCCT:** `BRepGraph::Topo().Solids().Relations(BRepGraph_SolidId)`, counted through `BRepGraph_CompSolidsOfSolid`, via `OCCTBRepGraphSolidCompSolidCount`.
 - **Example:**
   ```swift
   let n = graph.solidCompSolidCount(0)
@@ -174,7 +174,7 @@ Number of history records currently stored in the graph.
 public var historyRecordCount: Int { get }
 ```
 
-- **OCCT:** `BRepGraph_History::NbRecords` via `OCCTBRepGraphHistoryNbRecords`.
+- **OCCT:** `BRepGraph_LayerHistory::NbRecords` via `OCCTBRepGraphHistoryNbRecords`.
 - **Example:**
   ```swift
   print("history records: \(graph.historyRecordCount)")
@@ -190,7 +190,7 @@ Whether history recording is enabled.
 public var isHistoryEnabled: Bool { get set }
 ```
 
-- **OCCT:** `BRepGraph_History::IsEnabled` / `SetEnabled` via `OCCTBRepGraphHistoryIsEnabled` / `OCCTBRepGraphHistorySetEnabled`.
+- **OCCT:** `BRepGraph_LayerHistory::IsEnabled` / `SetEnabled` via `OCCTBRepGraphHistoryIsEnabled` / `OCCTBRepGraphHistorySetEnabled`.
 - **Example:**
   ```swift
   graph.isHistoryEnabled = true
@@ -206,7 +206,7 @@ Removes all history records from the graph.
 public func clearHistory()
 ```
 
-- **OCCT:** `BRepGraph_History::Clear` via `OCCTBRepGraphHistoryClear`.
+- **OCCT:** `BRepGraph_LayerHistory::Clear` via `OCCTBRepGraphHistoryClear`.
 - **Example:**
   ```swift
   graph.clearHistory()
@@ -903,7 +903,7 @@ public func sameDomainFaces(of faceIndex: Int) -> [Int]
 
 - **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Array of co-domain face indices (empty if none).
-- **OCCT:** `BRepGraph_Face::SameDomain` via `OCCTBRepGraphFaceSameDomainIndices`.
+- **OCCT:** `BRepGraph_Tool::Face::Surface` over the `BRepGraph_FacesOfEdge` neighbours, compared bridge-side, via `OCCTBRepGraphFaceSameDomainIndices`.
 - **Example:**
   ```swift
   let coplanar = graph.sameDomainFaces(of: 0)

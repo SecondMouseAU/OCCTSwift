@@ -1242,7 +1242,7 @@ public static func shellFromPlane(
 
 - **Parameters:** `origin`, point on the plane; `normal`, plane normal; `uRange`, `vRange`, parameter bounds.
 - **Returns:** Shell shape, or `nil` on failure.
-- **OCCT:** `BRepLib_MakeShell(gp_Pln, ...)` via `OCCTBRepLibMakeShellFromPlane`.
+- **OCCT:** `BRepLib_MakeShell(Handle(Geom_Plane), uMin, uMax, vMin, vMax)` via `OCCTBRepLibMakeShellFromPlane`.
 
 ---
 

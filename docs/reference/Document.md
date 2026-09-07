@@ -270,7 +270,7 @@ Transform matrix (position/rotation relative to parent), as a column-major `simd
 public var transform: simd_float4x4 { get }
 ```
 
-- **OCCT:** `XCAFDoc_Location` attribute (via `OCCTDocumentGetLocation`).
+- **OCCT:** `XCAFDoc_ShapeTool::GetLocation` (via `OCCTDocumentGetLocation`).
 
 ---
 
@@ -696,7 +696,7 @@ public var lengthUnit: LengthUnit? { get }
 Common `scale` values: `1.0` = mm, `10.0` = cm, `1000.0` = m, `25.4` = inch.
 
 - **Returns:** `LengthUnit` with scale and name, or `nil` if not set.
-- **OCCT:** `STEPCAFControl_Reader` unit info (via `OCCTDocumentGetLengthUnit`).
+- **OCCT:** the `XCAFDoc_LengthUnit` attribute on the root or main label (via `OCCTDocumentGetLengthUnit`).
 - **Example:**
   ```swift
   if let unit = doc.lengthUnit {

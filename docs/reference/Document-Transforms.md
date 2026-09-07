@@ -849,7 +849,7 @@ public static func linearRc4(a: Double, b: Double) -> [Double]?
 ```
 
 - **Returns:** Array of roots (0 or 1 elements), or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyLinear` → `math_Polynomial` rc4 linear.
+- **OCCT:** `OCCTMathPolyLinear` → `MathPoly::Linear`.
 
 ---
 
@@ -862,7 +862,7 @@ public static func quadraticRc4(a: Double, b: Double, c: Double) -> [Double]?
 ```
 
 - **Returns:** Up to 2 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyQuadratic` → `math_Polynomial` rc4 quadratic.
+- **OCCT:** `OCCTMathPolyQuadratic` → `MathPoly::Quadratic`.
 
 ---
 
@@ -875,7 +875,7 @@ public static func cubicRc4(a: Double, b: Double, c: Double, d: Double) -> [Doub
 ```
 
 - **Returns:** Up to 3 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyCubic` → `math_Polynomial` rc4 cubic.
+- **OCCT:** `OCCTMathPolyCubic` → `MathPoly::Cubic`.
 
 ---
 
@@ -888,7 +888,7 @@ public static func quarticRc4(a: Double, b: Double, c: Double, d: Double, e: Dou
 ```
 
 - **Returns:** Up to 4 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyQuartic` → `math_Polynomial` rc4 quartic.
+- **OCCT:** `OCCTMathPolyQuartic` → `MathPoly::Quartic`.
 
 ---
 
@@ -908,7 +908,7 @@ public static func integGauss(
 ) -> (value: Double, error: Double)?
 ```
 
-- **OCCT:** `OCCTMathIntegGauss` → rc4 `math_IntegGauss`.
+- **OCCT:** `OCCTMathIntegGauss` → `MathInteg::Gauss`.
 
 ---
 

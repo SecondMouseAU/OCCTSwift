@@ -3430,7 +3430,7 @@ The total number of named OCCT colours available.
 public static var namedColorCount: Int { get }
 ```
 
-- **OCCT:** `Quantity_Color` named-colour registry (via `OCCTNamedColorCount`).
+- **OCCT:** the `Quantity_NameOfColor` enumeration, counted to its last named entry (via `OCCTNamedColorCount`).
 
 ---
 

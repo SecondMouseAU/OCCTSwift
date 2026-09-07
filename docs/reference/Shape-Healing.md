@@ -111,7 +111,7 @@ public func directFaces() -> Shape?
 Applies `ShapeCustom_DirectModification` to replace indirect or offset surface references with direct canonical geometry, normalising outward face normals.
 
 - **Returns:** Shape with canonical surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom_DirectModification` (via `OCCTShapeDirectFaces`).
+- **OCCT:** `ShapeCustom::DirectFaces` (via `OCCTShapeDirectFaces`).
 - **Example:**
   ```swift
   if let direct = imported.directFaces() {
@@ -133,7 +133,7 @@ Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the un
 
 - **Parameters:** `factor`, uniform scale factor applied to all geometry definitions.
 - **Returns:** Scaled shape, or nil on failure.
-- **OCCT:** `ShapeCustom_TrsfModification` (via `OCCTShapeScaleGeometry`).
+- **OCCT:** `ShapeCustom::ScaleShape` (via `OCCTShapeScaleGeometry`).
 - **Example:**
   ```swift
   if let mmShape = inchShape.scaledGeometry(factor: 25.4) {
@@ -890,7 +890,7 @@ Moves each face by a constant distance without filleting intersections. Faster t
 
 - **Parameters:** `distance`, offset distance; positive moves outward.
 - **Returns:** Offset shape, or nil on failure.
-- **OCCT:** `BRepOffset_SimpleOffset` (via `OCCTShapeSimpleOffset`).
+- **OCCT:** `BRepOffset_MakeSimpleOffset` (via `OCCTShapeSimpleOffset`).
 - **Example:**
   ```swift
   if let thick = sheet.simpleOffset(by: 1.5) { }
@@ -935,7 +935,7 @@ public func fusedEdges() -> Shape?
 Removes unnecessary edge splits introduced by boolean operations or sewing, simplifying topology for downstream algorithms and display.
 
 - **Returns:** Shape with fused edges, or nil on failure.
-- **OCCT:** `ShapeUpgrade_UnifySameDomain` / `BRepAlgo_FaceRestrictor` (via `OCCTShapeFuseEdges`).
+- **OCCT:** `BRepLib_FuseEdges` (via `OCCTShapeFuseEdges`).
 - **Example:**
   ```swift
   if let clean = boolResult.fusedEdges() { }
@@ -1180,7 +1180,7 @@ Drops holes in faces whose area is below `minArea`. Useful for cleaning up small
 
 - **Parameters:** `minArea`, minimum area threshold; holes smaller than this are removed.
 - **Returns:** Shape with small holes removed, or nil on failure.
-- **OCCT:** `ShapeFix_Shape` / hole-removal pass (via `OCCTShapeRemoveInternalWires`).
+- **OCCT:** `ShapeUpgrade_RemoveInternalWires` (via `OCCTShapeRemoveInternalWires`).
 - **Example:**
   ```swift
   if let clean = sheet.removingInternalWires(minArea: 0.25) { }
@@ -1202,7 +1202,7 @@ Returns the count of edge pairs that are geometrically coincident (within `toler
 
 - **Parameters:** `tolerance`, contiguity tolerance (default 1e-6).
 - **Returns:** Number of contiguous (but unsewn) edge pairs found.
-- **OCCT:** `BRepBuilderAPI_Sewing` probe (via `OCCTShapeFindContiguousEdges`).
+- **OCCT:** `BRepOffsetAPI_FindContigousEdges` (via `OCCTShapeFindContiguousEdges`).
 - **Example:**
   ```swift
   let gaps = faceSoup.contiguousEdgeCount(tolerance: 0.01)
@@ -1818,7 +1818,7 @@ Useful for export to systems that cannot handle full 360° surfaces (e.g. splitt
 
 - **Parameters:** `maxAngleDegrees`, maximum surface angular span in degrees (e.g. 90 for quarter-turns).
 - **Returns:** Shape with surfaces split at angle boundaries, or nil on failure.
-- **OCCT:** `ShapeUpgrade_ShapeSplitAngle` (via `OCCTShapeSplitByAngle`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideAngle` (via `OCCTShapeSplitByAngle`).
 - **Example:**
   ```swift
   if let split = fullCylinder.splitByAngle(90) {

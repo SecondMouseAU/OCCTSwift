@@ -28,7 +28,8 @@ public func setCoEdgeUVBox(_ coedgeIndex: Int, u1: Double, v1: Double, u2: Doubl
 ```
 
 - **Parameters:** `coedgeIndex`, per-kind coedge index; `u1/v1`, UV at the first parameter; `u2/v2`, UV at the last parameter.
-- **OCCT:** `BRepGraph_CoEdgeDef` UV-box field (via `OCCTBRepGraphSetCoEdgeUVBox`).
+- **OCCT:** no OCCT call on the pinned kernel; a coedge's UV box is not a settable definition field in 8.0.0p1, its endpoints are derived from the PCurve by `BRepGraph_Tool` (via `OCCTBRepGraphSetCoEdgeUVBox`).
+- **Note:** **This setter does nothing on the pinned kernel.** The bridge function is a no-op kept for ABI compatibility. Read the derived UV endpoints instead of setting them.
 - **Example:**
   ```swift
   graph.setCoEdgeUVBox(0, u1: 0.0, v1: 0.0, u2: 1.0, v2: 1.0)
@@ -52,7 +53,7 @@ Pass the same index for `face1` and `face2` to set the seam continuity across a 
   - `face1`, `face2`, adjacent face indices (equal for seam).
   - `continuity`: ignored; see the note below.
 - **Returns:** Always `false` on OCCT 8.0.0p1.
-- **OCCT:** `BRepGraph_LayerRegularity` (via `OCCTBRepGraphSetEdgeRegularity`).
+- **OCCT:** none; the GA write path `BRepGraph_LayerRegularity` does not exist in the pinned kernel (via `OCCTBRepGraphSetEdgeRegularity`).
 
 > **This setter does not work on the pinned kernel.** `BRepGraph_LayerRegularity`, the only write
 > path in the GA continuity model, does not compile in 8.0.0p1 and is absent from `libOCCT`, so the
@@ -80,7 +81,7 @@ public func setFaceTriangulationRep(_ faceIndex: Int, triRepId: Int)
 Also see `appendCachedTriangulation` for cache-tier writes.
 
 - **Parameters:** `faceIndex`, per-kind face index; `triRepId`, rep-store triangulation id.
-- **OCCT:** `BRepGraph_FaceDef` triangulation-rep field (via `OCCTBRepGraphSetFaceTriangulationRep`).
+- **OCCT:** `BRepGraph::Mesh().Editor().Faces().SetCachedTriangulation(BRepGraph_FaceId, Handle(Poly_Triangulation))` (via `OCCTBRepGraphSetFaceTriangulationRep`).
 
 ---
 
@@ -94,7 +95,7 @@ public func coEdgeCreateCurve2DRep(_ curve2D: Curve2D) -> Int?
 
 - **Parameters:** `curve2D`, the 2D curve to wrap in a new rep entry.
 - **Returns:** Non-negative rep id on success, or `nil` on failure.
-- **OCCT:** `BRepGraph_RepStore` curve-2D entry (via `OCCTBRepGraphCoEdgeCreateCurve2DRep`).
+- **OCCT:** none; 8.0.0p1 removed standalone curve-2D rep creation, so the bridge stashes the `Geom2d_Curve` handle in a side registry and returns its index as the legacy rep id (via `OCCTBRepGraphCoEdgeCreateCurve2DRep`).
 - **Example:**
   ```swift
   if let repId = graph.coEdgeCreateCurve2DRep(myCurve2D) {
@@ -113,7 +114,7 @@ public func coEdgeSetPCurve(_ coedgeIndex: Int, curve2D: Curve2D?)
 ```
 
 - **Parameters:** `coedgeIndex`, per-kind coedge index; `curve2D`, the curve to assign, or `nil` to clear the binding.
-- **OCCT:** `BRepGraph_CoEdgeDef` curve-2D field (via `OCCTBRepGraphCoEdgeSetPCurve`).
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetPCurve(BRepGraph_CoEdgeId, Handle(Geom2d_Curve))` (via `OCCTBRepGraphCoEdgeSetPCurve`).
 
 ---
 
@@ -152,8 +153,8 @@ public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double])
 `matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention, rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `BRepGraph.identityLocationMatrix` for a no-op placement.
 
 - **Parameters:** `vertexRefIndex`, per-kind vertex-ref index; `matrix`, 12-element row-major 3×4 transform.
-- **OCCT:** `TopLoc_Location` via `gp_Trsf::SetValues` (via `OCCTBRepGraphSetVertexRefLocalLocation`).
-- **Note:** Precondition: `matrix.count == 12`.
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetVertexRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one. Precondition: `matrix.count == 12`.
 
 ---
 
@@ -166,7 +167,8 @@ public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double])
 ```
 
 - **Parameters:** `coedgeRefIndex`, per-kind coedge-ref index; `matrix`, 12-element 3×4 row-major transform.
-- **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetCoEdgeRefLocalLocation`).
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetCoEdgeRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
 
 ---
 
@@ -178,7 +180,8 @@ Set the local `TopLoc_Location` of a wire reference entry.
 public func setWireRefLocalLocation(_ wireRefIndex: Int, matrix: [Double])
 ```
 
-- **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetWireRefLocalLocation`).
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetWireRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
 
 ---
 
@@ -190,7 +193,8 @@ Set the local `TopLoc_Location` of a face reference entry.
 public func setFaceRefLocalLocation(_ faceRefIndex: Int, matrix: [Double])
 ```
 
-- **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetFaceRefLocalLocation`).
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetFaceRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
 
 ---
 
@@ -202,7 +206,8 @@ Set the local `TopLoc_Location` of a shell reference entry.
 public func setShellRefLocalLocation(_ shellRefIndex: Int, matrix: [Double])
 ```
 
-- **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetShellRefLocalLocation`).
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetShellRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
 
 ---
 
@@ -214,7 +219,8 @@ Set the local `TopLoc_Location` of a solid reference entry.
 public func setSolidRefLocalLocation(_ solidRefIndex: Int, matrix: [Double])
 ```
 
-- **OCCT:** `TopLoc_Location` (via `OCCTBRepGraphSetSolidRefLocalLocation`).
+- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetSolidRefLocalLocation`).
+- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
 
 ---
 
@@ -367,7 +373,7 @@ public func productRemoveShapeRoot(_ productIndex: Int) -> Bool
 
 ## EditorView RepOps Non-Guard Setters
 
-*(v0.164.0)* In-place swaps of the geometry object bound to an existing rep-store entry. These do not recreate the rep, they update the pointer in-place, allowing dependent coedges/edges/faces to pick up new geometry without structural graph changes.
+*(v0.164.0)* In-place swaps of the geometry object bound to an existing rep id. 8.0.0p1 removed the standalone representation editor addressed by rep id, so these write into the bridge-side registry that backs the legacy rep-id ABI: a later `set*RepId()` call resolves the updated handle and hands it to the per-kind editor. They do not recreate the rep, and they make no structural graph change.
 
 ---
 
@@ -380,7 +386,7 @@ public func repSetSurface(_ surfaceRepId: Int, surface: Surface)
 ```
 
 - **Parameters:** `surfaceRepId`, rep-store surface rep id; `surface`, the replacement `Surface`.
-- **OCCT:** `BRepGraph_RepStore` surface entry (via `OCCTBRepGraphRepSetSurface`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetSurface`).
 
 ---
 
@@ -392,7 +398,7 @@ Swap the 3D curve bound to an existing curve-3D rep id.
 public func repSetCurve3D(_ curve3DRepId: Int, curve: Curve3D)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` curve-3D entry (via `OCCTBRepGraphRepSetCurve3D`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetCurve3D`).
 
 ---
 
@@ -404,7 +410,7 @@ Swap the 2D curve bound to an existing curve-2D rep id.
 public func repSetCurve2D(_ curve2DRepId: Int, curve: Curve2D)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` curve-2D entry (via `OCCTBRepGraphRepSetCurve2D`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetCurve2D`).
 
 ---
 
@@ -416,7 +422,7 @@ Swap the triangulation bound to an existing triangulation rep id.
 public func repSetTriangulation(_ triRepId: Int, triangulation: Triangulation)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` triangulation entry (via `OCCTBRepGraphRepSetTriangulation`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetTriangulation`).
 
 ---
 
@@ -428,7 +434,7 @@ Swap the `Polygon3D` bound to an existing polygon-3D rep id.
 public func repSetPolygon3D(_ polyRepId: Int, polygon: Polygon3D)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` polygon-3D entry (via `OCCTBRepGraphRepSetPolygon3D`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetPolygon3D`).
 
 ---
 
@@ -440,7 +446,7 @@ Swap the `Polygon2D` bound to an existing polygon-2D rep id.
 public func repSetPolygon2D(_ polyRepId: Int, polygon: Polygon2D)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` polygon-2D entry (via `OCCTBRepGraphRepSetPolygon2D`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetPolygon2D`).
 
 ---
 
@@ -452,7 +458,7 @@ Swap the `PolygonOnTriangulation` bound to an existing polygon-on-triangulation 
 public func repSetPolygonOnTri(_ polyRepId: Int, polygon: PolygonOnTriangulation)
 ```
 
-- **OCCT:** `BRepGraph_RepStore` polygon-on-tri entry (via `OCCTBRepGraphRepSetPolygonOnTri`).
+- **OCCT:** none; the write lands in the bridge-side rep-id registry, and the handle reaches the graph on the next `set*RepId()` call (via `OCCTBRepGraphRepSetPolygonOnTri`).
 
 ---
 
@@ -465,7 +471,8 @@ public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: I
 ```
 
 - **Parameters:** `polyOnTriRepId`, the polygon-on-tri rep to update; `triRepId`, the new triangulation rep id.
-- **OCCT:** `BRepGraph_RepStore` polygon-on-tri triangulation-id field (via `OCCTBRepGraphRepSetPolygonOnTriTriangulationId`).
+- **OCCT:** none on the pinned kernel; 8.0.0p1 resolves a polygon-on-triangulation's owning triangulation at attach time rather than storing a rebindable rep-id link (via `OCCTBRepGraphRepSetPolygonOnTriTriangulationId`).
+- **Note:** **This setter does nothing on the pinned kernel.** The bridge function is a no-op kept for ABI compatibility; rebind by re-attaching the polygon-on-triangulation instead.
 - **Example:**
   ```swift
   // After replacing a triangulation, rebind the polygon-on-tri to the new rep:
@@ -489,7 +496,7 @@ Whether a cached mesh entry exists for the given face.
 public func cachedFaceMeshIsPresent(_ faceIndex: Int) -> Bool
 ```
 
-- **OCCT:** `BRepGraph_MeshCache` face entry (via `OCCTBRepGraphCachedFaceMeshIsPresent`).
+- **OCCT:** `BRepGraph::Mesh().Cache().Faces().Has(BRepGraph_FaceId)` (via `OCCTBRepGraphCachedFaceMeshIsPresent`).
 
 ---
 
@@ -806,7 +813,7 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
   - `edgeIndex`: edge definition index.
   - `count`: number of points to sample, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the edge curve, in parameter order; empty if the edge has no curve or sampling fails.
-- **OCCT:** `GeomAdaptor_Curve` (via `OCCTBRepGraphSampleEdgeCurve`).
+- **OCCT:** `BRepGraph_Tool::Edge::Curve` and `BRepGraph_Tool::Edge::Range`, sampled with `Geom_Curve::Value` (via `OCCTBRepGraphSampleEdgeCurve`).
 - **Example:**
   ```swift
   let pts = graph.sampleEdgeCurve(edgeIndex: 0, count: 20)

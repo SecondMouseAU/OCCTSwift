@@ -2162,7 +2162,7 @@ public static func boundUV(_ edge: Shape, face: Shape) -> (uFirst: Double, vFirs
 ```
 
 - **Returns:** Tuple of `(uFirst, vFirst, uLast, vLast)`, or `nil` if the edge has no PCurve on the face.
-- **OCCT:** `ShapeAnalysis_Edge::GetEndTangent2d` / `BRep_Tool::CurveOnSurface`
+- **OCCT:** `ShapeAnalysis_Edge::BoundUV`
 - **Example:**
   ```swift
   if let uv = EdgeAnalysis.boundUV(e, face: f) {

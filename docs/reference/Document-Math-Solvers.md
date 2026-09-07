@@ -710,7 +710,7 @@ public static func findRoot(
 
 - **Parameters:** `range`, hard bounds for the search; other parameters as above.
 - **Returns:** Root within `range`, or `nil` if not converged.
-- **OCCT:** `math_FunctionRoots` (bounded) via `OCCTMathFunctionRootBounded`.
+- **OCCT:** `math_FunctionRoot` (bounded) via `OCCTMathFunctionRootBounded`.
 - **Example:**
   ```swift
   let root = MathSolver.findRoot(near: 1.2, in: 1.0...2.0) { x in
@@ -1036,7 +1036,7 @@ public static func laguerreRoots(coefficients: [Double]) -> [Double]
 
 - **Parameters:** `coefficients`, polynomial coefficients in ascending power order: `[a0, a1, …, an]` for `a0 + a1·x + … + an·xⁿ`.
 - **Returns:** Sorted array of real roots (up to 20).
-- **OCCT:** `math_Laguerre` / `math_DirectPolynomialRoots` via `OCCTPolyLaguerreRoots`.
+- **OCCT:** `MathPoly::Laguerre` via `OCCTPolyLaguerreRoots`.
 - **Example:**
   ```swift
   // Roots of x³ - 6x² + 11x - 6 = 0  →  [1, 2, 3]
@@ -1055,7 +1055,7 @@ public static func laguerreComplexRoots(coefficients: [Double]) -> [(real: Doubl
 
 - **Parameters:** Same ascending-order convention as `laguerreRoots`.
 - **Returns:** Array of `(real, imaginary)` pairs (up to 20 roots).
-- **OCCT:** `math_Laguerre` complex variant via `OCCTPolyLaguerreComplexRoots`.
+- **OCCT:** `MathPoly::Laguerre`, reading its complex roots, via `OCCTPolyLaguerreComplexRoots`.
 - **Example:**
   ```swift
   // Roots of x² + 1 = 0  →  [(0, 1), (0, -1)]
@@ -1073,7 +1073,7 @@ public static func quinticRoots(a: Double, b: Double, c: Double, d: Double, e: D
 ```
 
 - **Returns:** Up to 5 real roots (sorted).
-- **OCCT:** `math_DirectPolynomialRoots` (degree 5) via `OCCTPolyQuinticRoots`.
+- **OCCT:** `MathPoly::Quintic` via `OCCTPolyQuinticRoots`.
 - **Example:**
   ```swift
   let r = PolynomialSolver.quinticRoots(a: 1, b: 0, c: 0, d: 0, e: 0, f: -32)

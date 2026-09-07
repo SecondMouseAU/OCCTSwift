@@ -586,7 +586,7 @@ int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef _Nonnull graph,
 ///
 /// `inputRootKinds` / `inputRootIndices` name the nodes in `graph` whose subshapes
 /// should be tracked; the input map is collected via
-/// BRepGraph_ShapesView::CollectHistoryInputs, so those roots must already be in
+/// BRepGraph::ShapesView::CollectHistoryInputs, so those roots must already be in
 /// `graph` (i.e. the graph the operation's input shape was built from).
 ///
 /// Only VERTEX / EDGE / FACE / SOLID are carried (BRepTools_History::IsSupportedType).
@@ -1265,7 +1265,8 @@ void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef _Nonnull graph,
 /// Set the geometric regularity (C^k continuity) for an edge across a pair of faces.
 /// face1Index == face2Index sets the seam continuity across a closed-surface seam line.
 /// Continuity uses GeomAbs_Shape: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
-/// Returns 1 if written, 0 if the LayerRegularity layer is not registered.
+/// Always returns 0 on the pinned kernel: BRepGraph_LayerRegularity, the only write path in
+/// the GA continuity model, is absent from libOCCT in 8.0.0p1, and `continuity` is not read.
 /// (OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity / SetSeamPairId
 ///  with this per-(edge, face1, face2) layer model. Seam-pair-id is structural in GA,
 ///  no setter exists; query via BRepGraph_Tool::CoEdge::SeamPair.)
@@ -1299,6 +1300,9 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef _Nonnull graph,
                                   int32_t orientation);
 
 // Location setters (12-double 3x4 matrix, gp_Trsf::SetValues convention; row-major).
+// OCCT 8.0.0p1: only the occurrence and child setters below write anything. Per-topology
+// references (vertex/coedge/wire/face/shell/solid) store no location in p1, so those six are
+// no-ops kept for ABI compatibility.
 void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                             int32_t vertexRefIndex,
                                             const double* _Nonnull matrix);
@@ -1327,6 +1331,7 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
 // MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
 
 /// Get the local TopLoc_Location of a vertex reference entry.
+/// OCCT 8.0.0p1: vertex references store no location, so this always returns false.
 /// @param graph The BRepGraph instance
 /// @param vertexRefIndex The vertex reference index
 /// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
@@ -1336,26 +1341,31 @@ bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                             double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a coedge reference entry.
+/// OCCT 8.0.0p1: coedge references store no location, so this always returns false.
 bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                             int32_t coedgeRefIndex,
                                             double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a wire reference entry.
+/// OCCT 8.0.0p1: wire references store no location, so this always returns false.
 bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                           int32_t wireRefIndex,
                                           double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a face reference entry.
+/// OCCT 8.0.0p1: face references store no location, so this always returns false.
 bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                           int32_t faceRefIndex,
                                           double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a shell reference entry.
+/// OCCT 8.0.0p1: shell references store no location, so this always returns false.
 bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                            int32_t shellRefIndex,
                                            double* _Nonnull outMatrix);
 
 /// Get the local TopLoc_Location of a solid reference entry.
+/// OCCT 8.0.0p1: solid references store no location, so this always returns false.
 bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                            int32_t solidRefIndex,
                                            double* _Nonnull outMatrix);

@@ -121,7 +121,7 @@ Torsion is zero for planar curves. Non-zero values indicate the curve is twistin
 
 - **Parameters:** `u`, curve parameter.
 - **Returns:** Torsion value (signed); `0` for planar curves, which is a real answer, and `nil` where there is no osculating plane to twist out of, a straight stretch, where the first two derivatives are parallel. Those two were the same `0` until #595 (every circle and ellipse is planar, so the collision was as ordinary as `curvature(at:)`'s).
-- **OCCT:** `GeomLProp_CLProps::Torsion`.
+- **OCCT:** `Geom_Curve::D3`, with the torsion formed bridge-side from the three derivatives.
 - **Example:**
   ```swift
   if let helix = Curve3D.circularHelix(radius: 5, pitch: 2) {

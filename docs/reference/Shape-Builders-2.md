@@ -185,7 +185,7 @@ public func uIsoCurveEdge(u: Double, vMin: Double, vMax: Double) -> Shape?
 
 - **Parameters:** `u`, U parameter. `vMin`/`vMax`, V parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
-- **OCCT:** `Adaptor3d_IsoCurve`
+- **OCCT:** `Geom_Surface::UIso` / `VIso` turned into an edge by `BRepBuilderAPI_MakeEdge` (no `Adaptor3d_IsoCurve`, unlike the point samplers above)
 - **Example:**
   ```swift
   if let e = face.uIsoCurveEdge(u: 0.5, vMin: 0, vMax: 1) { }
@@ -203,7 +203,7 @@ public func vIsoCurveEdge(v: Double, uMin: Double, uMax: Double) -> Shape?
 
 - **Parameters:** `v`, V parameter. `uMin`/`uMax`, U parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
-- **OCCT:** `Adaptor3d_IsoCurve`
+- **OCCT:** `Geom_Surface::UIso` / `VIso` turned into an edge by `BRepBuilderAPI_MakeEdge` (no `Adaptor3d_IsoCurve`, unlike the point samplers above)
 - **Example:**
   ```swift
   if let e = face.vIsoCurveEdge(v: 0.5, uMin: 0, uMax: 1) { }
@@ -675,7 +675,7 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
 
 - **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles. `conicMode`, convert other conics.
 - **Returns:** Shape with Bezier curves, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertCurve3dToBezier`
+- **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with 3D-curve conversion enabled
 - **Example:**
   ```swift
   if let bez = shape.convertCurves3dToBezier(lineMode: false) { }
@@ -696,7 +696,7 @@ public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool
 
 - **Parameters:** `planeMode`, convert planes. `revolutionMode`, convert revolution surfaces. `extrusionMode`, convert extrusions. `bsplineMode`, convert BSpline surfaces.
 - **Returns:** Shape with Bezier surfaces, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertSurfaceToBezierBasis`
+- **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with surface conversion enabled
 - **Example:**
   ```swift
   if let bez = shape.convertSurfacesToBezier(bsplineMode: false) { }
@@ -762,7 +762,7 @@ Magnitude of a 2D vector.
 public static func vector2DMagnitude(_ v: SIMD2<Double>) -> Double
 ```
 
-- **OCCT:** `gp_Vec2d::Magnitude`
+- **OCCT:** inline arithmetic `sqrt(x * x + y * y)` (no `gp_Vec2d` constructed)
 - **Example:**
   ```swift
   let m = Shape.vector2DMagnitude(SIMD2(3, 4))  // 5.0
@@ -778,7 +778,7 @@ Return a normalized copy of a 2D vector.
 public static func vector2DNormalized(_ v: SIMD2<Double>) -> SIMD2<Double>
 ```
 
-- **OCCT:** `gp_Vec2d::Normalized`
+- **OCCT:** inline arithmetic dividing each component by the magnitude (no `gp_Vec2d` constructed)
 - **Example:**
   ```swift
   let n = Shape.vector2DNormalized(SIMD2(3, 4))
