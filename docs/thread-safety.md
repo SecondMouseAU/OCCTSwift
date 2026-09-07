@@ -338,8 +338,9 @@ construction, so our own bridge can no longer trip over those specific mechanism
 per thread/round, zero shared state, no serialization, found two previously-uncharacterized races
 when run unguarded against the real TSan-instrumented kernel: `Resource_Manager::
 Resource_Manager()` writes an unsynchronized file-scope global (`Debug`) on every construction, and
-`Storage_Schema::ICurrentData()` is a process-wide mutable `Handle` every `Storage_Schema`
-constructor nullifies and every (de)serialization call reads, also unsynchronized. Neither had ever
+the current-data handle then reached through `Storage_Schema`'s private `ICurrentData()` static
+was a process-wide mutable `Handle` every constructor nullified and every (de)serialization call
+read, also unsynchronized (the static no longer exists, see the #374 section below). Neither had ever
 been caught by this project's prior TSan gates, because every prior investigation (and all of
 production, until this change) shared one application instance, `Resources()`'s own per-instance
 lazy-init mutex (from the #344 fix) accidentally serialized `Resource_Manager`/`Storage_Schema`
@@ -365,20 +366,26 @@ following that guidance is exposed to. Moving our own bridge off the singleton s
 exposure to those specific mechanisms; it doesn't make the bugs stop existing for anyone still
 using the pattern.
 
-### `Resource_Manager::Debug` / `Storage_Schema::ICurrentData()` races, fixed (issue #374)
+### `Resource_Manager::Debug` / `Storage_Schema`'s current-data races, fixed (issue #374)
 
 The two races #371's confirmation harness found (previous section) are fixed in v1.15.18, filed
 upstream as [OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398). `Resource_Manager::
 Debug` (a file-scope `static bool` written on every construction) becomes `std::atomic<bool>`, a
 plain process-wide flag, not per-instance intent, so atomic is sufficient (unlike #341's
-`theAutoNaming`, which needed a deeper per-instance redesign). `Storage_Schema::ICurrentData()` (a
-function-local static `Handle` every constructor's `Clear()` nulls and `Write()`/`BindType()`/
-`TypeBinding()`/`AddPersistent()`/`PersistentToAdd()`/`HasTypeBinding()` read or write) gets a new
-`ICurrentDataMutex()`: a `std::recursive_mutex` (recursive because `Write()`'s own critical section
-re-enters `BindType()`/`AddPersistent()`/`PersistentToAdd()` on the same thread via per-type
-`Storage_CallBack::Write()` callbacks) guarding every one of those touch points, held for `Write()`'s
-entire body rather than per-access, since one `Write()` call is a single atomic "session" against
-that global. No public API changes; only the pinned `OCCT.xcframework` kernel binary changed
+`theAutoNaming`, which needed a deeper per-instance redesign). The shared current-data handle
+(reached through the `ICurrentData()`/`ISetCurrentData()` statics, a function-local static `Handle`
+every constructor's `Clear()` nulled and `Write()`/`BindType()`/`TypeBinding()`/`AddPersistent()`/
+`PersistentToAdd()`/`HasTypeBinding()` read or wrote) is **removed rather than locked**: patch `0016`
+deletes both statics and replaces them with a `mutable occ::handle<Storage_Data> myCurrentData`
+member on `Storage_Schema` itself, so each schema instance owns the data it is writing and there is
+no shared state left to guard. Both statics were private with no callers outside the class, so
+nothing outside the kernel could observe the change.
+
+**This supersedes the first version of the fix**, an `ICurrentDataMutex()` recursive mutex around
+every touch point, which is what this section described until #1400. That version was revised on
+upstream review, and the per-instance field is what `Scripts/patches/0016` actually carries and what
+the pinned headers declare: `ICurrentData` is not a member of `Storage_Schema` in this build, and a
+census that looks for it will correctly report it as undeclared. No public API changes; only the pinned `OCCT.xcframework` kernel binary changed
 (`Scripts/patches/0016`), `OCCTBridge.xcframework` was not rebuilt. Confirmed via a dedicated TSan
 reproducer (`Scripts/repro/374-resource-manager-storage-schema-race/occt_374_stress.cpp`, the
 "unguarded" variant of #371's own confirmation harness): 13 races + SIGABRT before the fix, 0/4
@@ -484,8 +491,10 @@ looks exactly like a race that is fixed.
 
 `Scripts/tsan.supp` may contain only (a) confirmed-benign races reviewed and documented,
 or (b) already-filed open kernel findings, each with an issue link and a removal
-condition (current example: the `CDM_Application` metadata-map race, #353, suppressed
-until its patch is carried so the gate stays green for new code). An unsuppressed race is
+condition (current example: the `TopoDS_TShape::myState` flag-mutation race, #1154,
+suppressed until a rebuilt xcframework carries patch `0030` so the gate stays green for new
+code; the `CDM_Application` metadata-map suppression this sentence used to name was removed in
+v1.15.11 once patch `0015` landed). An unsuppressed race is
 a gate failure: fix it or file it first. When a suppressed finding's fix lands, remove
 the suppression; the gate then verifies the fix.
 
