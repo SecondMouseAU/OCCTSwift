@@ -1169,6 +1169,36 @@ extension Shape {
         )
     }
 
+    /// Check every solid in this shape with `BRepCheck_Solid`.
+    ///
+    /// This is the solid-level check that ``checkEdge(at:)``, ``checkWire(at:)``,
+    /// ``checkShell(at:)`` and ``checkVertex(at:)`` cannot answer: shell imbrication, an enclosed
+    /// region no shell declares as a void, a subshape that is not in the shape. Every solid in
+    /// the shape is checked, so there is no index; `errorCount` totals the statuses across all
+    /// of them.
+    ///
+    /// ```swift
+    /// // A small box fully inside a large one, both shells forward, is not a valid solid:
+    /// // the inner region is enclosed but declared as material rather than as a void.
+    /// if let outer = Shape.box(width: 10, height: 10, depth: 10),
+    ///    let inner = Shape.box(origin: SIMD3(2, 2, 2), width: 3, height: 3, depth: 3),
+    ///    let outerShell = outer.subShapes(ofType: .shell).first,
+    ///    let innerShell = inner.subShapes(ofType: .shell).first,
+    ///    let bad = Shape.solidFromShells([outerShell, innerShell]) {
+    ///     let check = bad.checkSolid()
+    ///     print(check.isValid, check.firstError as Any)  // false, .enclosedRegion
+    /// }
+    /// ```
+    public func checkSolid() -> CheckResult {
+        let result = OCCTCheckSolid(handle)
+        let status = CheckStatus(rawValue: Int32(result.firstError.rawValue))
+        return CheckResult(
+            isValid: result.isValid,
+            errorCount: Int(result.errorCount),
+            firstError: result.errorCount > 0 ? status : nil
+        )
+    }
+
     /// Check validity of a vertex by index.
     public func checkVertex(at index: Int) -> CheckResult {
         let result = OCCTCheckVertex(handle, Int32(index))
