@@ -82,3 +82,19 @@ the next reader who wonders why a 1996 class is missing deserves the answer.
 - **Not done**: no bridge-side guard. Refusing the call up front would be refusing the whole
   operation, and the `nil` it already returns is the same answer with the kernel's own reason
   behind it.
+
+## What is kept from the fix that was not taken
+
+`upstream/LocOpe_SplitDrafts_Test.cxx` is the GTest written for an upstream PR that could not be
+filed, since the class it tests no longer exists upstream. It is kept for one reason: it is the
+only executable statement of what a working `LocOpe_SplitDrafts` should produce, proven both ways
+against a patched and an unpatched kernel (`IsDone=1`, seven faces, one of them tilted by exactly
+the requested draft angle, a 10-unit cube's volume rising 1000 to 1022.04 against the wedge's
+analytic 22.04).
+
+If OCCT ever restores the class, or a downstream fork keeps it, that file is the head start. If
+nobody ever does, it is the record of what was measured before the wrapper was removed, which is
+worth more than the diff that was discarded with it.
+
+The patch itself, `0034`, was never carried. It exists only in the closed PR
+[#1627](https://github.com/SecondMouseAU/OCCTSwift/pull/1627).
