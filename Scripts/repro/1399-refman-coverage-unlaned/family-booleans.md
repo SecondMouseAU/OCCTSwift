@@ -1,7 +1,7 @@
 # #1399, the `booleans` reading family
 
 31 classes, read by hand against the bridge, the pinned 8.0.1 headers, OCCT's own sources under
-`Libraries/occt-src`, and a probe (`probe_booleans.mm`, transcript in `probe-transcript.txt`).
+`Libraries/occt-src`, and a probe (`probe_booleans.mm`, transcript in `probe-booleans-transcript.txt`).
 
 ```bash
 python3 Scripts/repro/1399-refman-coverage-unlaned/derive_lane.py --family booleans

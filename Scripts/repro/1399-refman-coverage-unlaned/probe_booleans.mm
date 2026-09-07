@@ -9,7 +9,7 @@
 //     Scripts/repro/1399-refman-coverage-unlaned/probe_booleans.mm -o /tmp/occt_1399_booleans
 //   /tmp/occt_1399_booleans
 //
-// Output is committed beside this file as probe-transcript.txt.
+// Output is committed beside this file as probe-booleans-transcript.txt.
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
