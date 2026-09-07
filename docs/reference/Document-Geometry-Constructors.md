@@ -972,7 +972,8 @@ public static func coneSphere(semiAngle: Double, refRadius: Double,
 
 - **Parameters:** `semiAngle`, cone half-angle (radians); `refRadius`, cone radius at its reference plane; `sphereCenter`, `sphereRadius`, sphere definition; `tolerance`, intersection tolerance.
 - **Returns:** Number of intersection curves (0, 1, or 2), or `nil` on error (e.g. identical surfaces).
-- **OCCT:** `IntAna_QuadQuadGeo` (cone-sphere)
+- **OCCT:** `IntAna_IntQuadQuad` on an `IntAna_Quadric` built from the sphere. The three
+  `coneSphere*` entries below read the curves it produces.
 - **Example:**
   ```swift
   if let n = QuadricIntersection.coneSphere(semiAngle: .pi/4, refRadius: 0,

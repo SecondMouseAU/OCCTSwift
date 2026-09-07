@@ -1330,7 +1330,20 @@ public static func deserializeCurves(_ data: String) -> [Curve3D]?
 
 ## ExtremaPC. Point-Curve Distance (v0.130.0)
 
-All-extrema and minimum-distance computation from a point to a curve, backed by `Extrema_ExtPC`.
+All-extrema and minimum-distance computation from a point to a curve, backed by `ExtremaPC_Curve`,
+OCCT 8.0's variant-dispatching point-curve solver. The bridge hands it the `Geom_Curve` handle
+directly, through `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)`, and reads
+`ExtremaPC::Result`. Not `Extrema_ExtPC`, which these entries named until #1399 and which the
+bridge does not construct anywhere.
+
+**Every entry here reports interior extrema only.** `ExtremaPC_Curve::Perform` is the interior
+solve; the endpoints of a bounded curve are `PerformWithEndpoints`'s business and nothing on this
+page calls it. So a query point that has no perpendicular foot on the curve, which is every point
+past the end of a bounded curve, comes back empty rather than reporting the nearer endpoint.
+Measured on a segment `[0, 10]` along +X queried from `(20, 0, 0)`: `Perform` reports
+`NbExt() == 0`, `PerformWithEndpoints` reports two extrema with the correct minimum of 10
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`). Tracked as
+[#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633).
 
 ---
 
@@ -1360,11 +1373,13 @@ Finds all extrema (closest and farthest points) from a query point to this curve
 public func extrema(from point: SIMD3<Double>) -> [ExtremumResult]
 ```
 
-Uses `Extrema_ExtPC` over the full curve domain. Returns up to 64 results. The minimum-distance result is the `ExtremumResult` with the smallest `distance`.
+Uses `ExtremaPC_Curve` over the curve's own domain. Returns up to 64 results. The
+minimum-distance result is the `ExtremumResult` with the smallest `distance`, and it is a minimum
+over the interior only, see the note at the top of this section.
 
 - **Parameters:** `point`, the query point.
 - **Returns:** Array of `ExtremumResult` values (empty on failure or no extrema found).
-- **OCCT:** `Extrema_ExtPC`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)` then `Perform`.
 - **Example:**
   ```swift
   if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
@@ -1385,11 +1400,14 @@ Finds all extrema from a point to a bounded segment of this curve.
 public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [ExtremumResult]
 ```
 
-Restricts the search to `[uMin, uMax]` using `Extrema_ExtPC` with bounded adaptor. Returns up to 64 results.
+Restricts the search to `[uMin, uMax]` by handing those bounds to `ExtremaPC_Curve`'s own
+three-argument constructor. Returns up to 64 results. `uMin`/`uMax` bound the interior search; the
+bounds themselves are endpoints, and endpoints are not reported, see the note at the top of this
+section.
 
 - **Parameters:** `point`, query point; `uMin`, lower parameter bound; `uMax`, upper parameter bound.
 - **Returns:** Array of `ExtremumResult` values within the specified range (empty on failure).
-- **OCCT:** `Extrema_ExtPC` with bounded `GeomAdaptor_Curve`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&, double, double)` then `Perform`.
 - **Example:**
   ```swift
   if let c = Curve3D.bspline(points: myPoints) {
@@ -1409,11 +1427,18 @@ Returns the minimum distance from a point to this curve.
 public func minimumDistance(from point: SIMD3<Double>) -> Double?
 ```
 
-Convenience method backed by `Extrema_ExtPC`. Returns `nil` when the algorithm fails to find any extremum.
+Convenience method backed by `ExtremaPC_Curve`, reading `ExtremaPC::Result::MinSquareDistance()`.
+
+`nil` means the interior solve found no extremum, which is not the same as "the computation
+failed". A point past the end of a bounded curve has no perpendicular foot on it, so this returns
+`nil` there even though the distance to the nearer endpoint is a perfectly good answer: measured, a
+segment `[0, 10]` along +X queried from `(20, 0, 0)` returns `nil` rather than `10`
+([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
 
 - **Parameters:** `point`, the query point.
-- **Returns:** Minimum distance, or `nil` on failure.
-- **OCCT:** `Extrema_ExtPC` via `OCCTExtremaPCMinDistance`.
+- **Returns:** Minimum distance over the curve's interior, or `nil` when there is no interior
+  extremum (which includes, but is not limited to, a genuine failure).
+- **OCCT:** `ExtremaPC_Curve::Perform` via `OCCTExtremaPCMinDistance`.
 - **Example:**
   ```swift
   if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),

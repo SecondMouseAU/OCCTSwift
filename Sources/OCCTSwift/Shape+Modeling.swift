@@ -3059,13 +3059,28 @@ extension Shape {
         public let supportFace2: Shape
         /// Approximation tolerance achieved.
         public let tolerance: Double
-        /// First parameter on edge.
+        /// The fillet's parameter on the first edge of the whole request.
+        ///
+        /// `FilletSurf_Builder::FirstParameter()` takes no surface index, so this is one value for
+        /// the whole computation, repeated into every element rather than measured per surface
+        /// (#1399).
         public let firstParameter: Double
-        /// Last parameter on edge.
+        /// The fillet's parameter on the last edge of the whole request.
+        ///
+        /// Per request, not per surface, for the same reason as ``firstParameter``.
         public let lastParameter: Double
-        /// Start section status.
+        /// Where the fillet's start section sits relative to the edge it was built on.
+        ///
+        /// `FilletSurf_StatusType`, from `FilletSurf_Builder::StartSectionStatus()`: `0` = both
+        /// extremities on the edge, `1` = one extremity on the edge, `2` = neither.
+        ///
+        /// This is **not** ``FilletSurfaceResult/status``'s scale. That one is
+        /// `FilletSurf_StatusDone` (`0` = ok, `1` = not ok, `2` = partial); the two enums share
+        /// the ordinals `0...2` and mean unrelated things (#1399).
         public let startStatus: Int
-        /// End section status.
+        /// Where the fillet's end section sits relative to the edge it was built on.
+        ///
+        /// Same `FilletSurf_StatusType` scale as ``startStatus``.
         public let endStatus: Int
     }
 
@@ -3073,7 +3088,12 @@ extension Shape {
     public struct FilletSurfaceResult: Sendable {
         /// Fillet surface info for each computed surface.
         public let surfaces: [FilletSurfaceInfo]
-        /// Status: 0=ok, 1=notOk, 2=partial.
+        /// Overall outcome of the whole computation.
+        ///
+        /// `FilletSurf_Builder::IsDone()`'s `FilletSurf_StatusDone`: `0` = ok, `1` = not ok,
+        /// `2` = partial. Unrelated to ``FilletSurfaceInfo/startStatus`` and
+        /// ``FilletSurfaceInfo/endStatus``, which carry a different enum on the same ordinals
+        /// (#1399).
         public let status: Int
     }
 

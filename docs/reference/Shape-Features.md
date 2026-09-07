@@ -259,7 +259,10 @@ public func split(by tool: Shape) -> [Shape]?
 
 - **Parameters:** `tool`, shape to use as cutting tool (typically a face or solid).
 - **Returns:** Array of result shapes after the split, or `nil` on failure. The array will have at least two elements when the cut produces distinct pieces.
-- **OCCT:** `BRepAlgoAPI_BuilderAlgo` (multi-split general cutter).
+- **OCCT:** `BRepAlgoAPI_Splitter`, whose arguments are split by its tools. Not its base class
+  `BRepAlgoAPI_BuilderAlgo`, which these entries named until #1399: that one is General Fuse, which
+  treats every argument symmetrically and returns a compound of all the split parts, a different
+  operation with a different result (#367).
 - **Example:**
   ```swift
   let box = Shape.box(width: 20, height: 20, depth: 20)
@@ -283,7 +286,8 @@ public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape
 
 - **Parameters:** `point`, a point on the cutting plane; `normal`, plane normal direction.
 - **Returns:** Array of result shapes, or `nil` on failure.
-- **OCCT:** `BRepBuilderAPI_MakeFace` (build cutting plane) + `BRepAlgoAPI_BuilderAlgo`.
+- **OCCT:** `BRepBuilderAPI_MakeFace` (build the cutting face) + `BRepAlgoAPI_Splitter`, the same
+  splitter `split(by:)` uses, not `BRepAlgoAPI_BuilderAlgo`.
 - **Example:**
   ```swift
   let cube = Shape.box(width: 20, height: 20, depth: 20)

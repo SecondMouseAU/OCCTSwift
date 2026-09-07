@@ -1721,6 +1721,10 @@ public struct ExtremaResult: Sendable {
 - `point1`: closest/farthest point on the first geometric element.
 - `point2`: closest/farthest point on the second geometric element.
 
+`point1`/`point2` are measured points on every entry point on this page except
+`ExtremaElSS.planeToPlane`'s parallel branch, where they are `SIMD3(0, 0, 0)` because OCCT computes
+no points for that case; see the `ExtremaElSS` section below.
+
 ---
 
 #### `point2`
@@ -1849,9 +1853,29 @@ public static func lineToCylinder(
 
 ---
 
+**`Extrema_ExtElSS` implements one of the three pairs this namespace exposes, and only half of
+that one.** Measured against the pinned 8.0.1 kernel in
+`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`, and tracked as
+[#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632):
+
+| call | result |
+|---|---|
+| `planeToPlane`, parallel planes | one `ExtremaResult` with the right `squareDistance` and `point1 == point2 == SIMD3(0, 0, 0)` |
+| `planeToPlane`, crossing planes | `(isParallel: false, [])` |
+| `planeToSphere` | always `[]` |
+| `sphereToSphere` | always `[]` |
+
+`Extrema_ExtElSS::Perform(gp_Pln, gp_Sphere)` and `Perform(gp_Sphere, gp_Sphere)` are
+`throw Standard_NotImplemented();` in OCCT itself, so the last two rows are a kernel gap rather
+than a wrapper one. The plane/plane `Perform` fills only its square-distance array and leaves the
+two point arrays as null handles, which is why the parallel row's points are zeros: the bridge
+writes them rather than calling `Points()`, which would fault.
+
 ### `ExtremaElSS.planeToPlane(plane1Point:plane1Normal:plane2Point:plane2Normal:)`
 
-Closed-form extrema between two planes.
+Closed-form extrema between two planes. **Answers only the parallel case**, and then with
+`point1`/`point2` zeroed rather than measured; two crossing planes give `(false, [])` because their
+distance is zero everywhere and `Extrema_ExtElSS` records no extremum for that.
 
 ```swift
 public static func planeToPlane(
@@ -1860,13 +1884,20 @@ public static func planeToPlane(
 ) -> (isParallel: Bool, results: [ExtremaResult])
 ```
 
+- **Returns:** `isParallel` is the usable half of this result. When it is `true`, `results` holds
+  one entry whose `squareDistance` is the plane-to-plane distance squared; read that and ignore its
+  `point1`/`point2`.
 - **OCCT:** `Extrema_ExtElSS` (plane–plane).
 
 ---
 
 ### `ExtremaElSS.planeToSphere(planePoint:planeNormal:sphereCenter:sphereRadius:)`
 
-Closed-form extrema between a plane and a sphere.
+**Always returns `[]`.** `Extrema_ExtElSS::Perform(const gp_Pln&, const gp_Sphere&)` is
+`throw Standard_NotImplemented();` in OCCT 8.0.1; the throw happens in the constructor the bridge
+calls, so the call cannot produce a result on any input. Use
+`Surface.extremaSS(...)`/`GeomAPI_ExtremaSurfaceSurface` for a plane-sphere distance
+([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
 
 ```swift
 public static func planeToSphere(
@@ -1875,13 +1906,16 @@ public static func planeToSphere(
 ) -> [ExtremaResult]
 ```
 
-- **OCCT:** `Extrema_ExtElSS` (plane–sphere).
+- **OCCT:** `Extrema_ExtElSS` (plane–sphere), which is unimplemented.
 
 ---
 
 ### `ExtremaElSS.sphereToSphere(center1:radius1:center2:radius2:)`
 
-Closed-form extrema between two spheres.
+**Always returns `[]`**, for the same reason as `planeToSphere`:
+`Extrema_ExtElSS::Perform(const gp_Sphere&, const gp_Sphere&)` is
+`throw Standard_NotImplemented();` in OCCT 8.0.1
+([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
 
 ```swift
 public static func sphereToSphere(
@@ -1890,7 +1924,7 @@ public static func sphereToSphere(
 ) -> [ExtremaResult]
 ```
 
-- **OCCT:** `Extrema_ExtElSS` (sphere–sphere).
+- **OCCT:** `Extrema_ExtElSS` (sphere–sphere), which is unimplemented.
 
 ---
 
