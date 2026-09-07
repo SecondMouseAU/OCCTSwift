@@ -2033,8 +2033,6 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    // MARK: - LocOpe_SplitDrafts
-
     /// Shape modification history for tracking what happened during operations.
     public class History {
         let historyRef: OCCTHistoryRef
