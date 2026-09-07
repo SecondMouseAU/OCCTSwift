@@ -98,7 +98,13 @@ def claim_named_classes():
     claims = census.doc_claims(census.in_scope_docs()) + census.bridge_header_claims()
     named = set()
     for claim in claims:
-        for token in census.class_tokens(claim.text, prefixes, bare, set()):
+        # The census's own rule, rather than a value of this script's choosing: a header doc
+        # comment is scanned whole, everything else only inside backticks. Passing a falsy
+        # placeholder here (it was `set()`) made every claim read as a header doc, which found 30
+        # FEWER classes, not more, so the machine-covered bucket was undercounted and a handful of
+        # classes were read by hand that a detector was already checking. Conservative, and wrong.
+        quoted_only = claim.channel != "header-doc"
+        for token in census.class_tokens(claim.text, prefixes, bare, quoted_only):
             named.add(token if isinstance(token, str) else token[0])
     return named
 
