@@ -45,6 +45,24 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 
 ## Unreleased
 
+### `Shape.splitDrafts` is removed (#1393)
+
+The operation could not succeed on any input. `LocOpe_SplitDrafts` accepts only a planar face and
+then pipes along the intersection of two planes, always an infinite line, which
+`GeomConvert::CurveToBSplineCurve` refuses by documented design, so every valid call threw and the
+bridge returned `nil`.
+
+It is removed rather than repaired because OCCT removed it first: the class was deleted upstream on
+2026-08-07 in [OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442) as dead code with no
+caller in the OCCT tree. Carrying a kernel patch to revive it would have expired at the next repin
+and could never have been filed upstream.
+
+Gone with it: `OCCTLocOpeSplitDrafts`, its declaration and cross-reference index row, eleven unused
+`#include`s, the reference-page section and the API_REFERENCE entry. The investigation is kept in
+`Scripts/repro/1393-splitdrafts/`, including the GTest written for the upstream PR that could not
+be filed, since it is the only executable statement of what a working `LocOpe_SplitDrafts`
+produces.
+
 ### The unlaned refman-coverage lane (#1399)
 
 `Scripts/repro/1399-refman-coverage-unlaned/` audits the 643 wrapped classes #820 found in no
