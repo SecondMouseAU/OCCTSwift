@@ -1322,9 +1322,10 @@ OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef _Nonnull surface1,
                                         OCCTSurfaceRef _Nonnull surface2);
 
 // #1502: both extremal points here sit on a surface, so each needs a full (u, v), not the
-// single `param` OCCTExtremaPointPair carries (that struct is correct for OCCTExtremaExtCCPoint
-// and OCCTExtremaExtCSPoint's curve-side point, one parameter per point). Mirrors
-// OCCTExtremaPointOnSurf's (x, y, z, u, v) shape above, doubled for the two surfaces.
+// single `param` OCCTExtremaPointPair carries (that struct is correct for OCCTExtremaExtCCPoint,
+// where both points are on a curve). Mirrors OCCTExtremaPointOnSurf's (x, y, z, u, v) shape
+// above, doubled for the two surfaces. The curve-surface case has the same gap on its
+// surface-side point and is carried by OCCTExtremaCSPointPair since #1514.
 typedef struct
 {
   double squareDistance;

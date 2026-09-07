@@ -1066,17 +1066,21 @@ OCCTExtremaExtCSResult OCCTExtremaExtCS(OCCTCurve3DRef curve,
   return result;
 }
 
-OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
-                                           double         uFirst,
-                                           double         uLast,
-                                           OCCTSurfaceRef surface,
-                                           int            index)
+OCCTExtremaCSPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
+                                             double         uFirst,
+                                             double         uLast,
+                                             OCCTSurfaceRef surface,
+                                             int            index)
 {
-  OCCTExtremaPointPair result = {};
+  OCCTExtremaCSPointPair result = {};
+  auto*                  c      = (OCCTCurve3D*)curve;
+  auto*                  s      = (OCCTSurface*)surface;
+  if (!c || c->curve.IsNull() || !s || s->surface.IsNull())
+  {
+    return result;
+  }
   try
   {
-    auto*                       c  = (OCCTCurve3D*)curve;
-    auto*                       s  = (OCCTSurface*)surface;
     Handle(GeomAdaptor_Curve)   ac = new GeomAdaptor_Curve(c->curve, uFirst, uLast);
     Handle(GeomAdaptor_Surface) as = new GeomAdaptor_Surface(s->surface);
     Extrema_ExtCS               ext(*ac, *as, 1e-6, 1e-6);
@@ -1093,9 +1097,7 @@ OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
       result.x2     = ps.Value().X();
       result.y2     = ps.Value().Y();
       result.z2     = ps.Value().Z();
-      double u, v;
-      ps.Parameter(u, v);
-      result.param2 = u; // Store U in param2; V not directly available in this struct
+      ps.Parameter(result.u2, result.v2);
     }
   }
   catch (...)

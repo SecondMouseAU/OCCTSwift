@@ -1736,20 +1736,52 @@ extension Curve3D {
         return CurveSurfaceExtrema(isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
+    /// One extremum of a curve-to-surface computation.
+    ///
+    /// The surface-side point carries both of its parameters. `ExtremaPointPair`, which this
+    /// replaced in `extremaCSPoint(range:surface:index:)`, has room for only one and dropped `v`.
+    public struct CurveSurfaceExtremaPoint: Sendable {
+        public let squareDistance: Double
+        /// The extremal point on the curve.
+        public let point1: SIMD3<Double>
+        /// Its curve parameter.
+        public let param1: Double
+        /// The extremal point on the surface.
+        public let point2: SIMD3<Double>
+        /// The surface parameters of `point2`.
+        public let u2: Double
+        public let v2: Double
+    }
+
     /// Get Nth extremum from curve-surface computation.
+    ///
+    /// `index` is 1-based, and valid up to the `count` reported by
+    /// ``extremaCS(range:surface:)``, which is also where `isDone`/`isParallel` are answered.
+    ///
+    /// ```swift
+    /// if let line = Curve3D.line(through: SIMD3(10, 0, 0), direction: SIMD3(0, 0, 1)),
+    ///    let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+    ///     let cs = line.extremaCS(range: -5...5, surface: sphere)
+    ///     if cs.isDone, !cs.isParallel, cs.count >= 1 {
+    ///         let p = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
+    ///         // p.point2 is sphere.point(atU: p.u2, v: p.v2)
+    ///         print(p.param1, p.u2, p.v2)
+    ///     }
+    /// }
+    /// ```
     public func extremaCSPoint(
         range: ClosedRange<Double>? = nil,
         surface: Surface,
         index: Int
-    ) -> ExtremaPointPair {
+    ) -> CurveSurfaceExtremaPoint {
         let d = range ?? domain
         let r = OCCTExtremaExtCSPoint(
             handle, d.lowerBound, d.upperBound,
             surface.handle, Int32(index))
-        return ExtremaPointPair(
+        return CurveSurfaceExtremaPoint(
             squareDistance: r.squareDistance,
             point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+            point2: SIMD3(r.x2, r.y2, r.z2), u2: r.u2, v2: r.v2)
     }
 
     /// Project this curve onto a surface, returning BSpline approximation.
