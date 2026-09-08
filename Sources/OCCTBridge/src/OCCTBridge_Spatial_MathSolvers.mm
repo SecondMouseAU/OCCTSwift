@@ -210,6 +210,17 @@ static void fillBounds6(const Bnd_Box& box, double* bounds6)
   bounds6[5] = z1;
 }
 
+// #1645: the six math_* callback adapters below were emitted into all five
+// OCCTBridge_Spatial_*.mm split files by #1380's shared preamble, and instantiated only here.
+// The four dead copies are gone; the anonymous namespace is what makes a future re-duplication
+// harmless, since internal linkage is the same reasoning that already makes the `static`
+// helpers above safe to repeat per TU (see Scripts/repro/396-bridge-mm-split/README.md). A
+// file-scope `class` has external linkage, which is why these six, unlike those helpers, were
+// one edit away from a silent ODR violation: #1418 is the same shape with the copies already
+// diverged.
+namespace
+{
+
 // C++ adapter: wraps a C callback into math_FunctionWithDerivative
 class OCCTMathFuncAdapter : public math_FunctionWithDerivative
 {
@@ -445,6 +456,8 @@ public:
     return ok;
   }
 };
+
+} // namespace
 
 struct OCCTIntfTool
 {
