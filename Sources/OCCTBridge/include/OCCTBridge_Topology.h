@@ -1474,8 +1474,25 @@ void OCCTBRepLibUpdateTolerances(OCCTShapeRef _Nonnull shape);
 /// Update inner tolerances of all sub-shapes.
 void OCCTBRepLibUpdateInnerTolerances(OCCTShapeRef _Nonnull shape);
 
-/// Update tolerance of a specific edge.
-bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef _Nonnull edge, double tol);
+/// Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
+/// @param edge The edge to measure. Nothing else is accepted.
+/// @param minToleranceRequest `MinToleranceRequest`, the tolerance OCCT starts testing from. Never
+///        written to the edge; the resulting tolerance is measured, not requested.
+/// @param maxToleranceToCheck `MaxToleranceToCheck`. An edge whose current tolerance already
+///        exceeds this is left alone and the call returns false. Was hardcoded as
+///        `minToleranceRequest * 100` until #1639, which made a loose edge unmeasurable at a tight
+///        sampling tolerance.
+/// @param outToleranceBefore The edge's tolerance before the call (output, always written).
+/// @param outToleranceAfter The edge's tolerance after the call (output, always written). Equal to
+///        `outToleranceBefore` when nothing moved, which `BRepLib::UpdateEdgeTol`'s own return
+///        value does not report: it is true on every path that is not a refusal.
+/// @return false when the edge is degenerate or already looser than `maxToleranceToCheck`, or the
+///         input is not an edge; true otherwise, whether or not the tolerance moved.
+bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef _Nonnull edge,
+                                    double minToleranceRequest,
+                                    double maxToleranceToCheck,
+                                    double* _Nonnull outToleranceBefore,
+                                    double* _Nonnull outToleranceAfter);
 
 // MARK: - Edge/Face Extraction (v0.107.0)
 
