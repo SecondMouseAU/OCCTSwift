@@ -893,14 +893,37 @@ public func withSurfacesAsBSpline(extrusion: Bool = true, revolution: Bool = tru
 
 ### `withSurfacesAsRevolution()`
 
-Convert surfaces to revolution form where possible.
+Convert elementary periodic surfaces into surfaces of revolution.
 
 ```swift
 public func withSurfacesAsRevolution() -> Shape?
 ```
 
-- **Returns:** Shape with surfaces converted to surfaces of revolution, or `nil` on failure.
+`ShapeCustom::ConvertToRevolution` runs in the direction its OCCT name states. Measured on a
+cylinder, the lateral face comes back as a `Geom_SurfaceOfRevolution` and the two planar caps are
+left alone, so the face count is unchanged and the surface-of-revolution count goes from 0 to 1.
+[`sweptToElementary()`](Shape-Healing.md#swepttoelementary) is the inverse.
+
+`Face.surfaceType` will not show the change: it is `BRepAdaptor_Surface::GetType()`, which
+canonicalises a surface of revolution built on a line back to `GeomAbs_Cylinder`. Read
+`Shape.extractFaceSurface()?.typeName` for the Geom subclass.
+
+Until #1634 a second method, `revolutionToElementary()`, wrapped the same static under a name that
+said the opposite. It is removed; this is the spelling that survives.
+
+- **Returns:** Shape whose elementary periodic surfaces are now surfaces of revolution, or `nil` on
+  failure.
 - **OCCT:** `ShapeCustom::ConvertToRevolution` (via `OCCTShapeCustomConvertToRevolution`).
+- **Example:**
+  ```swift
+  if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.withSurfacesAsRevolution() {
+      let kinds = asRevolution.subShapes(ofType: .face).compactMap {
+          $0.extractFaceSurface()?.typeName
+      }
+      // ["Geom_Plane", "Geom_Plane", "Geom_SurfaceOfRevolution"], in some order
+      print(kinds)
+  }
+  ```
 
 ---
 

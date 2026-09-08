@@ -903,24 +903,6 @@ OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape)
   }
 }
 
-OCCTShapeRef OCCTShapeRevolutionToElementary(OCCTShapeRef shape)
-{
-  if (!shape)
-    return nullptr;
-
-  try
-  {
-    TopoDS_Shape result = ShapeCustom::ConvertToRevolution(shape->shape);
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape)
 {
   if (!shape)

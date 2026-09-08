@@ -186,9 +186,9 @@ extension Shape {
     /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
     /// This does **not** recognise analytic forms: nothing here converts a BSpline back to a plane,
-    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
-    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
-    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    /// cylinder, cone, sphere or torus (``sweptToElementary()`` is the operation that does). It
+    /// approximates each geometry as a BSpline no worse than the supplied tolerances, capped at
+    /// `maxDegree` and `maxSegments`.
     ///
     /// Continuity is fixed at C1 here; use
     /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
@@ -225,14 +225,6 @@ extension Shape {
     /// - Returns: Shape with elementary surfaces, or nil on failure
     public func sweptToElementary() -> Shape? {
         guard let handle = OCCTShapeSweptToElementary(self.handle) else { return nil }
-        return Shape(handle: handle)
-    }
-
-    /// Convert surfaces of revolution to elementary surfaces.
-    ///
-    /// - Returns: Shape with elementary surfaces, or nil on failure
-    public func revolutionToElementary() -> Shape? {
-        guard let handle = OCCTShapeRevolutionToElementary(self.handle) else { return nil }
         return Shape(handle: handle)
     }
 
@@ -512,11 +504,26 @@ extension Shape {
         return Shape(handle: h)
     }
 
-    /// Convert surfaces to revolution form.
+    /// Convert elementary periodic surfaces into surfaces of revolution.
     ///
-    /// Uses ShapeCustom::ConvertToRevolution to convert surfaces that can be
-    /// represented as surfaces of revolution.
-    /// - Returns: Shape with surfaces converted, or nil on failure
+    /// `ShapeCustom::ConvertToRevolution` runs in the direction its OCCT name states: a cylinder,
+    /// cone, sphere or torus face comes back as a `Geom_SurfaceOfRevolution`, and a planar face is
+    /// left alone. Measured on a cylinder, the lateral face converts and the two caps do not.
+    ///
+    /// ``sweptToElementary()`` is the inverse and puts the elementary form back.
+    ///
+    /// ```swift
+    /// if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.withSurfacesAsRevolution() {
+    ///     let kinds = asRevolution.subShapes(ofType: .face).compactMap {
+    ///         $0.extractFaceSurface()?.typeName
+    ///     }
+    ///     // ["Geom_Plane", "Geom_Plane", "Geom_SurfaceOfRevolution"], in some order
+    ///     print(kinds)
+    /// }
+    /// ```
+    ///
+    /// - Returns: Shape whose elementary periodic surfaces are now surfaces of revolution, or nil
+    ///   on failure.
     public func withSurfacesAsRevolution() -> Shape? {
         guard let h = OCCTShapeCustomConvertToRevolution(handle) else { return nil }
         return Shape(handle: h)
