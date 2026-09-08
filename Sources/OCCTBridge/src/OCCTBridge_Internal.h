@@ -91,6 +91,7 @@
 #include <GCPnts_AbscissaPoint.hxx>    // occtAdaptorLengthBetween, the shared ranged arc length
 #include <CPnts_AbscissaPoint.hxx>     // occtArcQuadrature's per-span integrator (#603)
 #include <TColStd_Array1OfReal.hxx>    // the GeomAbs_CN interval array the same helpers walk
+#include <IFSelect_ReturnStatus.hxx>   // occtRecordReturnStatus (#1644)
 #include <Aspect_TypeOfDeflection.hxx> // occtDrawerGetEffectiveDeflection (#1418)
 #include <Prs3d.hxx>        // occtDrawerGetEffectiveDeflection: Prs3d::GetDeflection (#1418)
 #include <Prs3d_Drawer.hxx> // occtDrawerGetEffectiveDeflection (#1418)
@@ -3251,6 +3252,44 @@ inline double occtDrawerGetEffectiveDeflection(const Handle(Prs3d_Drawer)& drawe
   return Prs3d::GetDeflection(box,
                               drawer->DeviationCoefficient(),
                               drawer->MaximalChordialDeviation());
+}
+
+// === #1644: IFSelect_ReturnStatus, reported instead of discarded ===
+//
+// Every STEP/IGES read, transfer and write step in the bridge used to end in
+// `if (status != IFSelect_RetDone) return false;`, which is one bit of a five-valued answer. These
+// two record it into the caller's optional out-parameter instead, so "the path is wrong", "the
+// file is malformed" and "the model is empty" stop arriving as the same `nil`.
+//
+// The static_asserts are the point of doing the conversion here rather than casting at 50 call
+// sites: OCCTReturnStatus's ordinals are IFSelect_ReturnStatus's own, and an OCCT repin that
+// renumbers or reorders that enum has to fail this compile rather than silently relabel every
+// status the bridge reports.
+static_assert(static_cast<int>(OCCTReturnStatusVoid) == static_cast<int>(IFSelect_RetVoid),
+              "OCCTReturnStatusVoid tracks IFSelect_RetVoid");
+static_assert(static_cast<int>(OCCTReturnStatusDone) == static_cast<int>(IFSelect_RetDone),
+              "OCCTReturnStatusDone tracks IFSelect_RetDone");
+static_assert(static_cast<int>(OCCTReturnStatusError) == static_cast<int>(IFSelect_RetError),
+              "OCCTReturnStatusError tracks IFSelect_RetError");
+static_assert(static_cast<int>(OCCTReturnStatusFail) == static_cast<int>(IFSelect_RetFail),
+              "OCCTReturnStatusFail tracks IFSelect_RetFail");
+static_assert(static_cast<int>(OCCTReturnStatusStop) == static_cast<int>(IFSelect_RetStop),
+              "OCCTReturnStatusStop tracks IFSelect_RetStop");
+
+//! Writes `theStatus` into `theOut` when the caller asked for it.
+inline void occtSetReturnStatus(OCCTReturnStatus* theOut, OCCTReturnStatus theStatus)
+{
+  if (theOut)
+    *theOut = theStatus;
+}
+
+//! Records an OCCT data-exchange status and reports whether it was IFSelect_RetDone, so a call
+//! site reads `if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus)) return nullptr;`
+//! and neither drops the status nor forgets the Done test.
+inline bool occtRecordReturnStatus(IFSelect_ReturnStatus theStatus, OCCTReturnStatus* theOut)
+{
+  occtSetReturnStatus(theOut, static_cast<OCCTReturnStatus>(static_cast<int>(theStatus)));
+  return theStatus == IFSelect_RetDone;
 }
 
 #endif /* OCCTBridge_Internal_h */

@@ -39,6 +39,18 @@ public enum Exporter {
         case invalidShape
         /// The export was cancelled cooperatively via `ImportProgress.shouldCancel()`.
         case cancelled
+        /// OCCT's writer refused the transfer or the write, and this is the reason it gave
+        /// (#1644).
+        ///
+        /// Thrown instead of ``exportFailed(_:)`` by the STEP writers, so a caller can tell a
+        /// write-permission failure from a shape OCCT could not transfer. A function that runs
+        /// both a transfer and a write reports the status of the step that failed. `status` is
+        /// ``IOStatus/notReached`` when neither step ran.
+        ///
+        /// ```swift
+        /// catch Exporter.ExportError.writeFailed(let path, .fail) { /* the write itself failed */ }
+        /// ```
+        case writeFailed(path: String, status: IOStatus)
 
         public var errorDescription: String? {
             switch self {
@@ -50,6 +62,8 @@ public enum Exporter {
                 return "Shape is invalid or empty"
             case .cancelled:
                 return "Export cancelled"
+            case .writeFailed(let path, let status):
+                return "Export to \(path) failed: \(status)"
             }
         }
     }
@@ -214,15 +228,16 @@ public enum Exporter {
         try validateExportInputs(shape: shape, url: url)
 
         let path = url.path
+        var status = OCCTReturnStatusNotReached
         let success: Bool
         if let name = name {
-            success = OCCTExportSTEPWithName(shape.handle, path, name)
+            success = OCCTExportSTEPWithName(shape.handle, path, name, &status)
         } else {
-            success = OCCTExportSTEP(shape.handle, path)
+            success = OCCTExportSTEP(shape.handle, path, &status)
         }
 
         if !success {
-            throw ExportError.exportFailed("STEP export to \(url.lastPathComponent) failed")
+            throw ExportError.writeFailed(path: path, status: IOStatus(status))
         }
     }
 
@@ -240,8 +255,8 @@ public enum Exporter {
             to: url,
             progress: progress,
             formatName: "STEP",
-            bridgeCall: { handle, path, ctx, cancelled in
-                OCCTExportSTEPProgress(handle, path, ctx, &cancelled)
+            bridgeCall: { handle, path, ctx, cancelled, status in
+                OCCTExportSTEPProgress(handle, path, ctx, &cancelled, &status)
             }
         )
     }
@@ -257,7 +272,9 @@ public enum Exporter {
             to: url,
             progress: progress,
             formatName: "IGES",
-            bridgeCall: { handle, path, ctx, cancelled in
+            // IGES's writer produces no IFSelect_ReturnStatus, so this leaves `status` at
+            // OCCTReturnStatusNotReached and writeWithProgress falls back to `.exportFailed`.
+            bridgeCall: { handle, path, ctx, cancelled, _ in
                 OCCTExportIGESProgress(handle, path, ctx, &cancelled)
             }
         )
@@ -274,19 +291,28 @@ public enum Exporter {
         to url: URL,
         progress: ImportProgress?,
         formatName: String,
-        bridgeCall: (OCCTShapeRef, String, UnsafePointer<OCCTImportProgress>?, inout Bool) -> Bool
+        bridgeCall: (
+            OCCTShapeRef, String, UnsafePointer<OCCTImportProgress>?, inout Bool,
+            inout OCCTReturnStatus
+        ) -> Bool
     ) throws {
         try validateExportInputs(shape: shape, url: url)
         let path = url.path
 
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let success: Bool = withImportProgress(progress) { ctx in
-            bridgeCall(shape.handle, path, ctx, &cancelled)
+            bridgeCall(shape.handle, path, ctx, &cancelled, &status)
         }
         if cancelled { throw ExportError.cancelled }
         if !success {
-            throw ExportError.exportFailed(
-                "\(formatName) export to \(url.lastPathComponent) failed")
+            // A format whose writer produces no IFSelect_ReturnStatus (IGES here) leaves status
+            // at notReached, and keeps the format-naming message it always had (#1644).
+            if status == OCCTReturnStatusNotReached {
+                throw ExportError.exportFailed(
+                    "\(formatName) export to \(url.lastPathComponent) failed")
+            }
+            throw ExportError.writeFailed(path: path, status: IOStatus(status))
         }
     }
 
@@ -554,8 +580,9 @@ public enum Exporter {
     public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType) throws {
         try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        if !OCCTExportSTEPWithMode(shape.handle, path, modelType.rawValue) {
-            throw ExportError.exportFailed("STEP export with mode \(modelType) failed")
+        var status = OCCTReturnStatusNotReached
+        if !OCCTExportSTEPWithMode(shape.handle, path, modelType.rawValue, &status) {
+            throw ExportError.writeFailed(path: path, status: IOStatus(status))
         }
     }
 
@@ -572,8 +599,11 @@ public enum Exporter {
     ) throws {
         try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        if !OCCTExportSTEPWithModeAndTolerance(shape.handle, path, modelType.rawValue, tolerance) {
-            throw ExportError.exportFailed("STEP export with mode and tolerance failed")
+        var status = OCCTReturnStatusNotReached
+        if !OCCTExportSTEPWithModeAndTolerance(
+            shape.handle, path, modelType.rawValue, tolerance, &status)
+        {
+            throw ExportError.writeFailed(path: path, status: IOStatus(status))
         }
     }
 
@@ -591,8 +621,9 @@ public enum Exporter {
     ) throws {
         try validateExportInputs(shape: shape, url: url)
         let path = url.path
-        if !OCCTExportSTEPCleanDuplicates(shape.handle, path, modelType.rawValue) {
-            throw ExportError.exportFailed("STEP export with clean duplicates failed")
+        var status = OCCTReturnStatusNotReached
+        if !OCCTExportSTEPCleanDuplicates(shape.handle, path, modelType.rawValue, &status) {
+            throw ExportError.writeFailed(path: path, status: IOStatus(status))
         }
     }
 
@@ -657,8 +688,9 @@ public enum Exporter {
         guard !inPath.isEmpty, !outPath.isEmpty else {
             throw ExportError.invalidPath
         }
-        if !OCCTStepTidyOptimize(inPath, outPath) {
-            throw ExportError.exportFailed("STEP optimization failed")
+        var status = OCCTReturnStatusNotReached
+        if !OCCTStepTidyOptimize(inPath, outPath, &status) {
+            throw ExportError.writeFailed(path: outPath, status: IOStatus(status))
         }
     }
 }

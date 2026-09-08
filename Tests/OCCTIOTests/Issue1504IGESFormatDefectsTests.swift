@@ -55,7 +55,7 @@ struct Issue1504IGESFormatDefectsTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         OCCTDebugSetReadMaxPrecisionVal(Self.sentinel)
-        let handle = OCCTImportIGESRobust(url.path)
+        let handle = OCCTImportIGESRobust(url.path, nil)
         #expect(handle != nil)
         if let handle {
             OCCTShapeRelease(handle)

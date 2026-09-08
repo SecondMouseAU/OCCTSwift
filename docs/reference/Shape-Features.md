@@ -580,18 +580,23 @@ Error type for failed STEP/IGES/BREP imports.
 public enum ImportError: Error, LocalizedError {
     case importFailed(String)
     case cancelled
+    case readFailed(path: String, status: IOStatus)
     public var errorDescription: String? { get }
 }
 ```
 
-- `importFailed`: carries a human-readable message describing why the import failed.
+- `importFailed`: carries a human-readable message describing why the import failed. Still the
+  case for the BREP and STL loaders, whose readers produce no `IFSelect_ReturnStatus`.
 - `cancelled`: the import was cancelled via `ImportProgress.shouldCancel()`.
+- `readFailed`: a STEP or IGES reader rejected the file, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 
 | Case / Property | Meaning |
 |---|---|
 | `.importFailed(_:)` | The import failed; the associated string is a human-readable reason. |
 | `.cancelled` | The import was cancelled via `ImportProgress.shouldCancel()`. |
-| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, or a fixed string for `.cancelled`. |
+| `.readFailed(path:status:)` | A STEP or IGES read failed, and `status` is the reason OCCT gave, so "check the path" (`.error`) is distinguishable from "this file is not STEP" (`.fail`). `.notReached` means the read never ran. |
+| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, the path and status for `.readFailed`, or a fixed string for `.cancelled`. |
 
 #### `ImportError.errorDescription`
 

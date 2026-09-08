@@ -38,12 +38,13 @@ public final class Document: @unchecked Sendable {
     /// - Throws: `DocumentError` if loading fails.
     public static func load(from url: URL, progress: ImportProgress? = nil) throws -> Document {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTDocumentRef? = withImportProgress(progress) { ctx in
-            OCCTDocumentLoadSTEPProgress(url.path, ctx, &cancelled)
+            OCCTDocumentLoadSTEPProgress(url.path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw DocumentError.loadFailed(url: url)
+            throw DocumentError.exchangeFailed(url: url, status: IOStatus(status))
         }
         return Document(handle: handle)
     }
@@ -63,12 +64,13 @@ public final class Document: @unchecked Sendable {
     /// - Throws: `ImportError.cancelled` if cancelled cooperatively,
     public func writeSTEP(to url: URL, progress: ImportProgress?) throws {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let success: Bool = withImportProgress(progress) { ctx in
-            OCCTDocumentWriteSTEPProgress(handle, url.path, ctx, &cancelled)
+            OCCTDocumentWriteSTEPProgress(handle, url.path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         if !success {
-            throw ImportError.importFailed("STEP write to \(url.lastPathComponent) failed")
+            throw DocumentError.exchangeFailed(url: url, status: IOStatus(status))
         }
     }
 
@@ -181,8 +183,9 @@ public final class Document: @unchecked Sendable {
     /// - Parameter url: Output file URL.
     /// - Throws: `DocumentError` if writing fails
     public func write(to url: URL) throws {
-        if !OCCTDocumentWriteSTEP(handle, url.path) {
-            throw DocumentError.writeFailed(url: url)
+        var status = OCCTReturnStatusNotReached
+        if !OCCTDocumentWriteSTEP(handle, url.path, &status) {
+            throw DocumentError.exchangeFailed(url: url, status: IOStatus(status))
         }
     }
 }
@@ -711,7 +714,7 @@ extension Document {
             let ref = OCCTDocumentLoadSTEPWithModes(
                 url.path,
                 modes.color, modes.name, modes.layer,
-                modes.props, modes.gdt, modes.material)
+                modes.props, modes.gdt, modes.material, nil)
         else { return nil }
         return Document(handle: ref)
     }
@@ -722,7 +725,7 @@ extension Document {
             let ref = OCCTDocumentLoadSTEPWithModes(
                 path,
                 modes.color, modes.name, modes.layer,
-                modes.props, modes.gdt, modes.material)
+                modes.props, modes.gdt, modes.material, nil)
         else { return nil }
         return Document(handle: ref)
     }
@@ -734,16 +737,17 @@ extension Document {
         throws -> Document
     {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTDocumentRef? = withImportProgress(progress) { ctx in
             OCCTDocumentLoadSTEPWithModesProgress(
                 url.path,
                 modes.color, modes.name, modes.layer,
                 modes.props, modes.gdt, modes.material,
-                ctx, &cancelled)
+                ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to load STEP document: \(url.lastPathComponent)")
+            throw DocumentError.exchangeFailed(url: url, status: IOStatus(status))
         }
         return Document(handle: handle)
     }
@@ -764,7 +768,7 @@ extension Document {
             handle, url.path,
             modelType.rawValue,
             modes.color, modes.name, modes.layer,
-            modes.dimTol, modes.material)
+            modes.dimTol, modes.material, nil)
     }
 
     /// Write the document to a STEP file with model type and mode control.
@@ -777,7 +781,7 @@ extension Document {
             handle, path,
             modelType.rawValue,
             modes.color, modes.name, modes.layer,
-            modes.dimTol, modes.material)
+            modes.dimTol, modes.material, nil)
     }
 }
 

@@ -764,8 +764,9 @@ OCCTDocumentRef OCCTDocumentCreate(void)
   }
 }
 
-OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
+OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -791,8 +792,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
     reader.SetMatMode(Standard_True); // Enable material reading
 
     // Read the file
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
     {
       delete document;
       return nullptr;
@@ -814,8 +814,11 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
   }
 }
 
-bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path)
+bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc,
+                           const char*     path,
+                           OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!doc || !path)
     return false;
 
@@ -836,8 +839,7 @@ bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path)
       return false;
     }
 
-    IFSelect_ReturnStatus status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {

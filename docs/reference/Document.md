@@ -27,7 +27,9 @@ public static func load(from url: URL, progress: ImportProgress? = nil) throws -
 
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** `Document` containing the assembly structure.
-- **Throws:** `DocumentError.loadFailed` if loading fails; `ImportError.cancelled` if cancelled cooperatively.
+- **Throws:** `DocumentError.exchangeFailed(url:status:)` if loading fails, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644); `ImportError.cancelled` if
+  cancelled cooperatively.
 - **OCCT:** `STEPCAFControl_Reader` with color, name, layer, props, and material modes enabled; `XCAFDoc_DocumentTool::ShapeTool/ColorTool/VisMaterialTool`.
 - **Example:**
   ```swift
@@ -176,7 +178,8 @@ public func write(to url: URL) throws
 ```
 
 - **Parameters:** `url`, output file URL.
-- **Throws:** `DocumentError.writeFailed` if writing fails.
+- **Throws:** `DocumentError.exchangeFailed(url:status:)` if writing fails, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Writer` with color, name, layer, props, and material modes.
 - **Example:**
   ```swift
@@ -195,7 +198,9 @@ public func writeSTEP(to url: URL, progress: ImportProgress?) throws
 ```
 
 - **Parameters:** `url`, output URL; `progress`, optional progress/cancellation channel.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on other failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `DocumentError.exchangeFailed(url:status:)`
+  on other failure, carrying OCCT's own `IFSelect_ReturnStatus` as an
+  [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Writer` (via `OCCTDocumentWriteSTEPProgress`).
 
 ---
@@ -652,6 +657,7 @@ Errors that can occur when working with XDE documents.
 public enum DocumentError: Error, LocalizedError {
     case loadFailed(url: URL)
     case writeFailed(url: URL)
+    case exchangeFailed(url: URL, status: IOStatus)
     public var errorDescription: String? { get }
 }
 ```
@@ -660,8 +666,9 @@ public enum DocumentError: Error, LocalizedError {
 
 | Case / property | Meaning |
 |---|---|
-| `loadFailed(url:)` | A STEP file at `url` failed to load (`Document.load(from:progress:)` / `loadSTEP(from:progress:)`). |
-| `writeFailed(url:)` | A STEP file at `url` failed to write (`Document.write(to:)` / `writeSTEP(to:progress:)`). |
+| `loadFailed(url:)` | A STEP file at `url` failed to load (`Document.load(from:progress:)` / `loadSTEP(from:progress:)`). Kept for the entry points that reach no OCCT reader. |
+| `writeFailed(url:)` | A STEP file at `url` failed to write (`Document.write(to:)` / `writeSTEP(to:progress:)`). Kept for the same reason. |
+| `exchangeFailed(url:status:)` | A STEP read or write at `url` failed, and `status` is OCCT's own `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md), so a missing or unwritable path is distinguishable from a malformed file (#1644). Thrown by the load and write entry points that run a reader or a writer. |
 | `errorDescription` | `LocalizedError` conformance: a human-readable message naming the file (by last path component) and the failed operation. |
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*

@@ -39,13 +39,15 @@ public enum ExportError: Error, LocalizedError {
     case invalidPath
     case invalidShape
     case cancelled
+    case writeFailed(path: String, status: IOStatus)
     public var errorDescription: String? { get }
 }
 ```
 
 | Case / member | Meaning |
 |---|---|
-| `exportFailed(String)` | The underlying OCCT writer returned false or threw; the associated string names the failing file. |
+| `exportFailed(String)` | The underlying OCCT writer returned false or threw; the associated string names the failing file. Still the case for a format whose writer produces no `IFSelect_ReturnStatus`, which is every writer here except STEP. |
+| `writeFailed(path:status:)` | A STEP writer refused the transfer or the write, and `status` is the [`IOStatus`](IOStatus.md) it gave, so a write-permission failure (`.stop`) is distinguishable from a shape OCCT could not transfer (#1644). A method that runs both a transfer and a write reports the step that failed. |
 | `invalidPath` | The destination URL resolved to an empty path string. |
 | `invalidShape` | `shape.isValid` returned `false` before the write was attempted. |
 | `cancelled` | The export was cooperatively cancelled via `ImportProgress.shouldCancel()`. Only thrown by the progress-overloads `writeSTEP(shape:to:progress:)` and `writeIGES(shape:to:progress:)`. |
@@ -147,7 +149,8 @@ and most CAM tools. When `name` is supplied it is embedded as the product name i
   `name`: optional product name.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
-  `ExportError.exportFailed` if `STEPControl_Writer` transfer or write fails.
+  `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), if `STEPControl_Writer` transfer or write fails.
 - **OCCT:** `STEPControl_Writer::Transfer` + `Write` (AP214, `STEPControl_AsIs` model type when no name; `STEPControl_AsIs` via `OCCTExportSTEPWithName` when a name is given).
 - **Example:**
   ```swift
@@ -178,7 +181,8 @@ Pass `nil` for `progress` to disable cancellation; otherwise the export polls
   cancellation/progress token.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.cancelled` if `progress.shouldCancel()` fires;
-  `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
+  `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644),.
 - **OCCT:** `STEPControl_Writer::Transfer` with a `Message_ProgressRange` derived from the
   `ImportProgress` context.
 - **Example:**
@@ -224,7 +228,8 @@ Use `modelType` to control how geometry is encoded in the STEP file. See
 
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, STEP representation type.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644),.
 - **OCCT:** `STEPControl_Writer::Transfer` with the given `STEPControl_StepModelType`.
 - **Example:**
   ```swift
@@ -244,7 +249,8 @@ public static func writeSTEP(shape: Shape, to url: URL, modelType: StepModelType
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type;
   `tolerance`: geometric tolerance written into the STEP file header.
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644),.
 - **OCCT:** `STEPControl_Writer::Transfer` with explicit tolerance.
 - **Example:**
   ```swift
@@ -267,7 +273,8 @@ assemblies or swept shapes where many faces share the same underlying geometry.
 
 - **Parameters:** `shape`, shape; `url`, output URL; `modelType`, representation type (default `.asIs`).
 - **Returns:** `Void`.
-- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.exportFailed`.
+- **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`; `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644),.
 - **OCCT:** `STEPControl_Writer` with a pre-transfer deduplication pass.
 - **Example:**
   ```swift
@@ -658,7 +665,8 @@ features). The input file is read fresh, no in-memory shape is required.
 - **Parameters:** `input`, URL of the source STEP file; `output`, URL for the deduplicated output.
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidPath` if either path is empty;
-  `ExportError.exportFailed` if the read-deduplicate-write cycle fails.
+  `ExportError.writeFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), if the read-deduplicate-write cycle fails.
 - **OCCT:** `STEPControl_Reader::ReadFile`, then `StepTidy_DuplicateCleaner::Perform` on the
   reader's own `XSControl_WorkSession` (`STEPControl_Reader::WS()`) **before** `TransferRoots`,
   then `STEPControl_Writer::Transfer` / `Write`. The deduplication happens on the STEP entity
