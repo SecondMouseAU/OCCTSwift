@@ -44,7 +44,12 @@ indirectly" fails on correct entries and gets switched off.
 
 1. **Wrapper-type fields**: `XCAFDoc_ShapeTool` is held as `OCCTDocument::shapeTool`,
    so 66 call sites reach it without naming the type. A function that names a bridge
-   wrapper struct reaches the OCCT classes that struct holds.
+   wrapper struct reaches the OCCT classes that struct holds, and the classes held by
+   any wrapper struct THAT one holds, to a fixpoint. The expansion ran exactly once
+   until #1642, so `OCCTSelector` -> `OCCTHeadlessSelector` ->
+   `SelectMgr_SelectingVolumeManager` stopped after the first hop and the class was
+   reported unreached. That direction matters: a corrected attribution naming what the
+   bridge really calls scored worse than the wrong one it replaced.
 2. **Helper indirection**: `TDataStd_NamedData` is reached only through two lowercase
    `static` helpers, so no `OCCT`-prefixed function body names it. A function reaches
    what its file-local helpers (and the shared `OCCTBridge_Internal.h` ones) reach.
@@ -313,6 +318,27 @@ def reachable():
         for name, names in fns.items():
             target.setdefault(name, set()).update(names)
 
+    # A wrapper type's own fields name other wrapper types, so a class held by a type held by a
+    # type is two hops from any function that spells the outer one. Closing `types` over itself
+    # here is what takes the second hop (#1642). The per-function pass below was a single
+    # `for t in list(names)` over a snapshot, so a type name that ENTERED `names` during that pass
+    # was never expanded in turn, and `OCCTSelectorPick` was reported as not reaching
+    # `SelectMgr_SelectingVolumeManager` through `OCCTSelector` -> `OCCTHeadlessSelector`. Bounded
+    # by the same `range(4)` as the helper loop below, so a type cycle terminates.
+    for _ in range(4):
+        grew = False
+        for name, held in types.items():
+            for t in list(held):
+                base = t[:-3] if t.endswith('Ref') else t
+                if base == name:
+                    continue
+                inner = types.get(base)
+                if inner and not inner <= held:
+                    held |= inner
+                    grew = True
+        if not grew:
+            break
+
     # a function that names a bridge wrapper type reaches the OCCT classes that type holds
     for fns in per_file.values():
         for names in fns.values():
@@ -436,6 +462,16 @@ DIRECTION_TEST = [
     ('one wrong symbol among correct neighbours', [
         '// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTBOPAlgoSplit'],
         'OCCTBOPAlgoSplit'),
+    # The other half of #1642's fixpoint, on the very function whose reach grew. Following a
+    # wrapper type into a wrapper type widens what `OCCTSelectorPick` reaches from 1 SelectMgr
+    # class to 7, and an expansion that pulled in every wrapper type rather than the ones a
+    # function names would pass the indirection row below while making the direction check
+    # vacuous. `BRepBuilderAPI_Sewing` is held by a wrapper type the selector never names, so
+    # this row goes quiet exactly when that happens. Measured: it does, and the class has to be
+    # one a type holds. A class the bridge only ever names in a function body stays reported
+    # under that injection and isolates nothing.
+    ('a class held by a wrapper type the function never names is still reported', [
+        '// BRepBuilderAPI_Sewing               → OCCTSelectorPick']),
 ]
 
 # The four indirection forms, plus the two shapes carrying an explicit exemption. A
@@ -462,6 +498,12 @@ INDIRECTION_TEST = [
         '//                                       (via ShapeUpgrade_ShapeConvertToBezier)']),
     ('entry naming no symbol', [
         '// gp_Pnt/gp_Vec/gp_Dir               → (used throughout all bridge functions)']),
+    # Two wrapper-type hops (#1642). `OCCTSelectorPick` names `OCCTSelectorRef`, `OCCTSelector`
+    # holds `OCCTHeadlessSelector`, and that class holds the volume manager it calls
+    # `InitPointSelectingVolume` on. The single-pass expansion took the first hop and not the
+    # second, so this correct entry was reported misfiled.
+    ('class held two wrapper-type hops away', [
+        '// SelectMgr_SelectingVolumeManager    → OCCTSelectorPick']),
 ]
 
 

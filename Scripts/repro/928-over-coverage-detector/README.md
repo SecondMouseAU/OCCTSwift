@@ -74,6 +74,15 @@ numbers separately.
 - **An accessor chain whose type is never spelled.** `OCCTBRepGraphSetFaceSurfaceRepId` calls
   `g->graph.Editor().Faces().SetSurface(...)`; `BRepGraph::Editor()` returns `EditorView&`, so
   `BRepGraph_EditorView` is genuinely in the chain and the identifier appears nowhere.
+
+  One mechanical subset of this is **fixed**, not a category any more (#1642): a chain whose
+  intermediate type *is* spelled, as a wrapper-type field, one hop further out than the walker
+  looked. `reachable()`'s type expansion ran once over a snapshot of the name set, so
+  `OCCTSelector` -> `OCCTHeadlessSelector` -> `SelectMgr_SelectingVolumeManager` stopped after the
+  first hop, and the census penalised the corrected `docs/reference/Selection.md` attributions
+  while passing the wrong ones they replaced. `types` is now closed over itself before the
+  per-function expansion, which removed five findings and added none. The category above stands
+  for chains whose intermediate type is never written down at all; those are still invisible here.
 - **A base-class virtual on a subclass-typed field.** `Geom_Vector::Magnitude` is correct for a
   wrapper holding a `Handle(Geom_VectorWithMagnitude)`; `Geom_Geometry::Copy` is correct for
   `surface->surface->Copy()`, since `Copy()` is pure virtual only on `Geom_Geometry`.
