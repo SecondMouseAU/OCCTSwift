@@ -672,27 +672,33 @@ public static func uzawa(
 
 ---
 
-### `MathSolver.eigenvalues(diagonal:subdiagonal:)`
+### `MathSolver.eigenvalues(diagonal:offDiagonal:)`
 
 Find eigenvalues of a symmetric tridiagonal matrix.
 
 ```swift
 public static func eigenvalues(
-    diagonal: [Double], subdiagonal: [Double]
+    diagonal: [Double], offDiagonal: [Double]
 ) -> [Double]?
 ```
 
-- **Parameters:** `diagonal`, n diagonal entries; `subdiagonal`, n entries of which
-  **`subdiagonal[0]` is the ignored one**, so the n-1 real off-diagonal entries go in
-  `subdiagonal[1...]`. This entry said "last unused" until #1399 measured it: OCCT's
+- **Parameters:** `diagonal`, the n diagonal entries, n at least 1; `offDiagonal`, the n-1
+  entries either side of the diagonal, in matrix order. For
+  `[[d0, e0, 0], [e0, d1, e1], [0, e1, d2]]` pass `diagonal: [d0, d1, d2]` and
+  `offDiagonal: [e0, e1]`. Nothing is discarded and there is no filler slot.
+- **Returns:** Array of n eigenvalues, or `nil` on failure.
+- **Bounds:** `offDiagonal.count` must equal `diagonal.count - 1` exactly and `diagonal` must
+  be non-empty, or this returns `nil` (#640, #1643). The length relation was documentation
+  only until #640: the bridge read `subdiagonal[i]` for `i in 0..<diagonal.count`
+  unconditionally, so a short array returned heap garbage as eigenvalues.
+- **History:** the parameter was `subdiagonal` and took n elements until #1643, matching
+  `math_EigenValuesSearcher`, which throws one of those elements away:
   `shiftSubdiagonalElements` copies `work(i-1) = work(i)` for `i` in `2...n` and then zeroes
-  `work(n)`, discarding the caller's first element. Poisoning `subdiagonal[0]` leaves the
-  eigenvalues unchanged; poisoning the last element changes them.
-- **Returns:** Array of eigenvalues, or `nil` on failure.
-- **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
-  (#640). This "must be same length" was documentation only until #640: the bridge reads
-  `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
-  used to read out of bounds rather than fail.
+  `work(n)`, so the caller's **first** element never reached the matrix. Three doc layers
+  said the last one was the dead slot until #1399 measured it, and this page's own example
+  described off-diagonals `(-1, -1)` while passing them in the n-element shape. The label
+  changed with the shape so that a call written against the old convention fails to compile
+  rather than returning a plausible spectrum of a matrix nobody meant.
 - **OCCT:** `OCCTMathEigenValues` → `math_EigenValuesSearcher::EigenValue`. There is no
   `math_EigenVectors` in the pinned kernel; this entry named one until #1399 measured it.
 - **Ordering:** unspecified. `math_EigenValuesSearcher.hxx` states that eigenvalues come back
@@ -701,37 +707,42 @@ public static func eigenvalues(
 - **Example:**
   ```swift
   // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
-  let lambdas = MathSolver.eigenvalues(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1])
+  let lambdas = MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1])
   print(lambdas?.sorted() ?? [])   // [0.585..., 2.0, 3.414...]
+
+  MathSolver.eigenvalues(diagonal: [5], offDiagonal: [])          // [5.0], a 1x1
+  MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1, 0])   // nil, too long
   ```
 
 ---
 
-### `MathSolver.eigenvaluesAndVectors(diagonal:subdiagonal:)`
+### `MathSolver.eigenvaluesAndVectors(diagonal:offDiagonal:)`
 
 Find eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
 
 ```swift
 public static func eigenvaluesAndVectors(
-    diagonal: [Double], subdiagonal: [Double]
+    diagonal: [Double], offDiagonal: [Double]
 ) -> (eigenvalues: [Double], eigenvectors: [[Double]])?
 ```
 
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
-- **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
-  `diagonal.count` exactly (#640).
+- **Bounds:** Same as `eigenvalues(diagonal:offDiagonal:)`: `offDiagonal.count` must equal
+  `diagonal.count - 1` exactly (#640, #1643).
 - **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenValuesSearcher::EigenValue` /
   `EigenVector`. There is no `math_EigenVectors` in the pinned kernel; this entry named one
   until #1399 measured it.
-- **Ordering:** unspecified, as for `eigenvalues(diagonal:subdiagonal:)`. Each eigenvector
-  keeps its own eigenvalue's index, so the pairing survives a sort you apply yourself.
+- **Ordering:** unspecified, as for `eigenvalues(diagonal:offDiagonal:)`. Each eigenvector
+  keeps its own eigenvalue's index, so the pairing survives a sort you apply yourself:
+  `eigenvectors[i]` is the unit vector for `eigenvalues[i]`.
 - **Example:**
   ```swift
   // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
   if let r = MathSolver.eigenvaluesAndVectors(
-      diagonal: [2, 2, 2], subdiagonal: [0, -1, -1]
+      diagonal: [2, 2, 2], offDiagonal: [-1, -1]
   ) {
       print(r.eigenvalues.sorted())   // [0.585..., 2.0, 3.414...]
+      print(r.eigenvectors[0].count)  // 3
   }
   ```
 

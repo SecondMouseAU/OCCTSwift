@@ -136,13 +136,13 @@ public enum MathSolver {
     /// `variables` (#640). Neither was checked before: a negative `variables` reached
     /// `Array(repeating:count:)` and trapped, and a positive `variables` that did not match
     /// `startPoint`'s real length reached the bridge's unconditional `startPoint[i]` loop and
-    /// read out of bounds -- silently, since the loop has no way to fail other than reading
+    /// read out of bounds, silently, since the loop has no way to fail other than reading
     /// whatever memory happens to follow `startPoint`.
     ///
     /// `values` and `jacobian`'s own **returned** arrays are checked the same way (review
     /// finding 3/4 on #640): a `values` closure returning fewer than `equations` elements, or
     /// a `jacobian` closure returning fewer than `equations * variables`, used to index the
-    /// short array and trap -- the identical failure #640 fixes for `startPoint`, relocated
+    /// short array and trap: the identical failure #640 fixes for `startPoint`, relocated
     /// from the caller's arguments to the caller's closure. A closure that returns the wrong
     /// length now fails the call (`nil`), not the process.
     ///
@@ -488,7 +488,7 @@ public enum MathSolver {
     /// is bounded the same way rather than left to trap `Int32(samples)` past `Int32.max`.
     /// The valid range is `1...10,000,000` (review finding 1): a search over one sample is
     /// still a search, just a coarse one, so the minimum is `1`, not `Sampling.requested`'s
-    /// own default floor of `2` -- passing the default floor silently rejected the
+    /// own default floor of `2`: passing the default floor silently rejected the
     /// documented-valid `samples: 1` and returned `[]` without ever calling `function`.
     ///
     /// ```swift
@@ -875,7 +875,7 @@ extension MathSolver {
     /// minimum here is `1`, not `Sampling.requested`'s own default floor of `2`.
     ///
     /// ```swift
-    /// // samples: 1 is accepted rather than rejected outright -- whether such a coarse
+    /// // samples: 1 is accepted rather than rejected outright. Whether such a coarse
     /// // sampling actually brackets a root is then the algorithm's decision, not the guard's.
     /// _ = MathSolver.findAllRoots(in: -1.0...1.0, samples: 1, function: { x in (x, 1) })
     /// ```
@@ -915,9 +915,9 @@ extension MathSolver {
     /// Solve overdetermined linear system Ax=b in least-squares sense.
     ///
     /// `rows` and `cols` must both be positive and match `matrix`/`rhs`'s real lengths
-    /// exactly (#640). Before this guard there was no consistency check at all -- unlike
+    /// exactly (#640). Before this guard there was no consistency check at all (unlike
     /// `MathSVD.solve`/`MathHouseholder.solve`, which already checked `matrix.count ==
-    /// rows * cols` -- so a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
+    /// rows * cols`), so a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
     /// length reached the bridge's unconditional `matA[i*nCols+j]`/`b[i]` loops and read out
     /// of bounds: not a trap, a silent wrong answer built from whatever memory happened to
     /// follow the two arrays. `rows * cols` is itself checked for overflow (review finding
@@ -1018,68 +1018,90 @@ extension MathSolver {
 
     /// Find eigenvalues of a symmetric tridiagonal matrix.
     ///
-    /// `diagonal` and `subdiagonal` must be the same length, and **`subdiagonal[0]` is the
-    /// element OCCT ignores**: the n-1 real off-diagonal entries go in `subdiagonal[1...]`.
-    /// This comment said "last subdiagonal element unused" until #1399 measured it against the
-    /// pinned kernel. `math_EigenValuesSearcher`'s own `shiftSubdiagonalElements` copies
-    /// `work(i-1) = work(i)` for `i` in `2...n` and then zeroes `work(n)`, so the caller's
-    /// first element is discarded and the caller's last element is used. The example this
-    /// comment used to carry, `subdiagonal: [1.0, 1.0, 0.0]`, therefore does not describe
-    /// off-diagonals `(1, 1)`: measured, it returns `[1, 3, 2]`, the spectrum of
-    /// off-diagonals `(1, 0)`. See `Scripts/repro/1399-refman-coverage-unlaned/`.
+    /// `offDiagonal` holds the `n - 1` entries that sit either side of the diagonal, in
+    /// matrix order: for `[[d0, e0, 0], [e0, d1, e1], [0, e1, d2]]` pass
+    /// `diagonal: [d0, d1, d2]` and `offDiagonal: [e0, e1]`. Nothing is discarded and there
+    /// is no filler slot.
+    ///
+    /// - Parameters:
+    ///   - diagonal: The `n` diagonal entries. `n` must be at least 1.
+    ///   - offDiagonal: The `n - 1` off-diagonal entries, in matrix order.
+    /// - Returns: `n` eigenvalues in no defined order, or `nil` if
+    ///   `offDiagonal.count != diagonal.count - 1`, `diagonal` is empty, or the QL iteration
+    ///   did not converge.
+    ///
+    /// The parameter was `subdiagonal` and took `n` elements until #1643, because that is
+    /// the shape `math_EigenValuesSearcher` takes, and OCCT throws one of those elements
+    /// away: `shiftSubdiagonalElements` copies `work(i-1) = work(i)` for `i` in `2...n` and
+    /// then zeroes `work(n)`, so the caller's **first** element never reaches the matrix.
+    /// Three doc layers said the last one was the dead slot until #1399 measured it, and the
+    /// example this comment itself carried, `subdiagonal: [1.0, 1.0, 0.0]`, described
+    /// off-diagonals `(1, 1)` while computing the spectrum of `(1, 0)`: `[1, 3, 2]` rather
+    /// than `2 - sqrt(2), 2, 2 + sqrt(2)`. The label changed with the shape so that a call
+    /// written against the old convention fails to compile rather than returning `nil` or,
+    /// worse, a plausible spectrum of a matrix nobody meant. See
+    /// `Scripts/repro/1399-refman-coverage-unlaned/`.
     ///
     /// Eigenvalues come back **in no defined order**. `math_EigenValuesSearcher.hxx`: "in the
-    /// order they were computed by the algorithm, which may not be sorted."
+    /// order they were computed by the algorithm, which may not be sorted." The wrapper
+    /// passes that through rather than sorting, so the index pairing with
+    /// ``eigenvaluesAndVectors(diagonal:offDiagonal:)``' vectors is OCCT's own.
     ///
-    /// The "same length" requirement was only ever documentation until #640: the bridge loops
-    /// `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter
-    /// `subdiagonal` read out of bounds rather than failing. `diagonal.count` is never
-    /// negative (it is a real array's own length), so unlike most of this family there is no
-    /// positivity bound to add -- only the consistency check.
+    /// The length relation is checked, not assumed. It was documentation only until #640,
+    /// when the bridge still read `subdiagonal[i]` for `i in 0..<diagonal.count`
+    /// unconditionally and a short array returned heap garbage as eigenvalues.
     ///
     /// ```swift
     /// // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
-    /// MathSolver.eigenvalues(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1])?.sorted()
+    /// MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1])?.sorted()
     /// // [0.5857864376269049, 2.0, 3.414213562373095]
-    /// MathSolver.eigenvalues(diagonal: [Double](repeating: 1, count: 50), subdiagonal: [1.0])   // nil
+    /// MathSolver.eigenvalues(diagonal: [5], offDiagonal: [])            // [5.0], a 1x1
+    /// MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0])   // nil, too long
     /// ```
     public static func eigenvalues(
-        diagonal: [Double], subdiagonal: [Double]
+        diagonal: [Double], offDiagonal: [Double]
     ) -> [Double]? {
-        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else {
+        guard MathDimension.tridiagonal(diagonal.count, offDiagonal: offDiagonal.count) else {
             return nil
         }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
-        let count = OCCTMathEigenValues(diagonal, subdiagonal, Int32(n), &eigenvalues)
+        let count = OCCTMathEigenValues(diagonal, offDiagonal, Int32(n), &eigenvalues)
         return count > 0 ? Array(eigenvalues.prefix(Int(count))) : nil
     }
 
     /// Find eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
     ///
-    /// Same guard as `eigenvalues`, and for the same reason (#640), and the same two
-    /// conventions: `subdiagonal[0]` is the ignored element, and the returned order is
-    /// whatever the QR iteration produced. Each eigenvector keeps its own eigenvalue's index,
-    /// so the pairing survives a sort you apply yourself.
+    /// Same arguments and same guard as ``eigenvalues(diagonal:offDiagonal:)``, including
+    /// the `n - 1` `offDiagonal` shape #1643 moved to, and the same unsorted return order.
+    /// Each eigenvector keeps its own eigenvalue's index, so the pairing survives a sort you
+    /// apply yourself. `eigenvectors[i]` is the unit vector for `eigenvalues[i]`.
+    ///
+    /// - Parameters:
+    ///   - diagonal: The `n` diagonal entries. `n` must be at least 1.
+    ///   - offDiagonal: The `n - 1` off-diagonal entries, in matrix order.
+    /// - Returns: `n` eigenvalues and their `n` eigenvectors, or `nil` on the same three
+    ///   failures ``eigenvalues(diagonal:offDiagonal:)`` reports.
     ///
     /// ```swift
     /// // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
-    /// if let r = MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1]) {
+    /// if let r = MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], offDiagonal: [-1, -1]) {
     ///     print(r.eigenvalues.sorted())   // [0.5857864376269049, 2.0, 3.414213562373095]
+    ///     print(r.eigenvectors[0].count)  // 3
     /// }
-    /// MathSolver.eigenvaluesAndVectors(diagonal: [Double](repeating: 1, count: 50), subdiagonal: [1.0])   // nil
+    /// MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0])   // nil
     /// ```
     public static func eigenvaluesAndVectors(
-        diagonal: [Double], subdiagonal: [Double]
+        diagonal: [Double], offDiagonal: [Double]
     ) -> (eigenvalues: [Double], eigenvectors: [[Double]])? {
-        guard MathDimension.consistent(diagonal.count, matches: subdiagonal.count) else {
+        guard MathDimension.tridiagonal(diagonal.count, offDiagonal: offDiagonal.count) else {
             return nil
         }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
         var eigenvectors = [Double](repeating: 0, count: n * n)
         let count = OCCTMathEigenValuesAndVectors(
-            diagonal, subdiagonal, Int32(n), &eigenvalues, &eigenvectors)
+            diagonal, offDiagonal, Int32(n), &eigenvalues, &eigenvectors)
         guard count > 0 else { return nil }
         let evs = (0..<Int(count)).map { i in Array(eigenvectors[(i * n)..<(i * n + n)]) }
         return (Array(eigenvalues.prefix(Int(count))), evs)
@@ -1202,7 +1224,7 @@ extension MathSolver {
     /// elsewhere), so instead of failing it silently integrates the wrong thing. Measured
     /// directly against the pinned kernel: `gaussSetIntegration(nEquations: 1, lower: [0, 0],
     /// upper: [1, 1], order: [10, 10]) { x in [x[0] + x[1]] }` returned `0.5`, which is
-    /// `INT x dx` over `[0, 1]` with the second variable silently pinned at `0` -- not
+    /// `INT x dx` over `[0, 1]` with the second variable silently pinned at `0`, not
     /// `INT INT (x + y) dx dy` over the unit square, which is `1.0`. Rejecting
     /// `lower.count != 1` turns that silent wrong answer into `nil`, the same shape as every
     /// other guard in this family. For genuinely multi-variable integration of a single
@@ -1218,7 +1240,7 @@ extension MathSolver {
     /// }   // [2.0, 2.666...]
     /// MathSolver.gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]) { x in
     ///     [x[0] + x[1]]
-    /// }   // nil -- lower.count != 1, not the silent 0.5 this used to return
+    /// }   // nil: lower.count != 1, not the silent 0.5 this used to return
     /// ```
     public static func gaussSetIntegration(
         nEquations: Int,
