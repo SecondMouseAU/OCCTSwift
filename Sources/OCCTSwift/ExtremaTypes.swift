@@ -7,13 +7,8 @@ public struct ExtremaResult: Sendable {
     /// Squared distance between the closest/farthest points.
     public let squareDistance: Double
     /// Point on the first element.
-    ///
-    /// Measured everywhere except ``ExtremaElSS``'s parallel-plane result, where OCCT computes no
-    /// points and this is `SIMD3(0, 0, 0)` (#1632).
     public let point1: SIMD3<Double>
     /// Point on the second element.
-    ///
-    /// Same caveat as ``point1``.
     public let point2: SIMD3<Double>
 }
 
@@ -213,111 +208,71 @@ public enum ExtremaElCS {
 
 /// Elementary surface-surface distance computations (`Extrema_ExtElSS`).
 ///
-/// `Extrema_ExtElSS` implements one of the three pairs below, and only half of that one, on the
-/// pinned OCCT 8.0.1 kernel. Measured in
-/// `Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`, tracked as
-/// [#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632):
+/// Plane to plane is the only pair `Extrema_ExtElSS` implements. Its `Perform` overloads for
+/// plane/sphere, sphere/sphere, sphere/cylinder, sphere/cone and sphere/torus are all
+/// `throw Standard_NotImplemented();` in OCCT itself, measured against the pinned 8.0.1 kernel in
+/// `Scripts/repro/1632-extremaelss-refusal/`. `planeToSphere` and `sphereToSphere` wrapped the
+/// first two and could not return a result on any input; they were removed in
+/// [#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632) rather than left as methods
+/// that answer `[]` for a kernel gap, since `[]` is how this namespace spells "no extrema found".
+///
+/// For a plane-sphere or sphere-sphere distance use ``Surface/extremaSS(other:)``, which is
+/// `GeomAPI_ExtremaSurfaceSurface` and answers both numerically.
 ///
 /// ```swift
-/// // The one call that answers, and the one field on it worth reading.
-/// let r = ExtremaElSS.planeToPlane(plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
-///                                  plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
-/// // r.isParallel == true, r.results[0].squareDistance == 25
-/// // r.results[0].point1 and .point2 are SIMD3(0, 0, 0): OCCT computes no points here.
+/// let r = ExtremaElSS.planeToPlane(
+///     plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+///     plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
+/// // r.isParallel == true, r.squareDistance == 25
 ///
-/// ExtremaElSS.planeToSphere(planePoint: .zero, planeNormal: SIMD3(0, 0, 1),
-///                           sphereCenter: SIMD3(0, 0, 20), sphereRadius: 5)  // []
-/// ExtremaElSS.sphereToSphere(center1: .zero, radius1: 5,
-///                            center2: SIMD3(20, 0, 0), radius2: 5)           // []
+/// let crossing = ExtremaElSS.planeToPlane(
+///     plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+///     plane2Point: .zero, plane2Normal: SIMD3(1, 0, 0))
+/// // crossing.isParallel == false, crossing.squareDistance == nil
 /// ```
 public enum ExtremaElSS {
 
-    /// Distance between two parallel planes.
+    /// Distance between two planes.
     ///
-    /// Answers the parallel case only. Crossing planes give `(isParallel: false, [])`, since their
-    /// distance is zero everywhere and `Extrema_ExtElSS` records no extremum for that.
+    /// Two parallel planes have one extremal distance. Two crossing planes have none: their
+    /// distance is zero all along their intersection line, and `Extrema_ExtElSS` reports
+    /// `NbExt() == 0` for that rather than an extremum.
     ///
-    /// - Returns: `isParallel` is the usable half. When it is `true`, `results` holds one entry
-    ///   whose `squareDistance` is the plane-to-plane distance squared; its `point1`/`point2` are
-    ///   `SIMD3(0, 0, 0)` rather than points on the planes, because
-    ///   `Extrema_ExtElSS::Perform(gp_Pln, gp_Pln)` fills only its square-distance array and
-    ///   leaves the two point arrays as null handles (#1632).
+    /// No point pair is reported, because OCCT computes none.
+    /// `Extrema_ExtElSS::Perform(gp_Pln, gp_Pln)` fills its square-distance array and leaves both
+    /// point arrays as null handles, so `Points()` there is an uncatchable fault rather than a
+    /// value the bridge could read. Nor is there a pair worth fabricating: for two parallel planes
+    /// every point of one, paired with its own projection onto the other, is a minimum, so any
+    /// single pair would be an arbitrary choice presented as a measurement. Before #1632 this
+    /// returned `[ExtremaResult]` whose `point1`/`point2` were `SIMD3(0, 0, 0)`.
+    ///
+    /// ```swift
+    /// let r = ExtremaElSS.planeToPlane(
+    ///     plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+    ///     plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
+    /// if let sq = r.squareDistance {
+    ///     print(sq.squareRoot())  // 5.0
+    /// }
+    /// ```
+    ///
+    /// - Returns: `isParallel`, and `squareDistance`, which is non-`nil` exactly when the planes
+    ///   are parallel. `(false, nil)` covers both crossing planes and a refused input, such as a
+    ///   zero-length normal.
     public static func planeToPlane(
         plane1Point: SIMD3<Double>, plane1Normal: SIMD3<Double>,
         plane2Point: SIMD3<Double>, plane2Normal: SIMD3<Double>
-    ) -> (isParallel: Bool, results: [ExtremaResult]) {
+    ) -> (isParallel: Bool, squareDistance: Double?) {
         var isParallel = false
-        var buf = [OCCTExtremaElResult](repeating: OCCTExtremaElResult(), count: 10)
+        var squareDistance = 0.0
         let n = OCCTExtremaElSSPlanePlane(
             plane1Point.x, plane1Point.y, plane1Point.z,
             plane1Normal.x, plane1Normal.y, plane1Normal.z,
             plane2Point.x, plane2Point.y, plane2Point.z,
             plane2Normal.x, plane2Normal.y, plane2Normal.z,
-            &isParallel, &buf, 10
+            &isParallel, &squareDistance
         )
-        guard n > 0 else { return (isParallel, []) }
-        let results = (0..<Int(n)).map { i in
-            ExtremaResult(
-                squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
-            )
-        }
-        return (isParallel, results)
-    }
-
-    /// Distance between a plane and a sphere, which **always returns `[]`**.
-    ///
-    /// `Extrema_ExtElSS::Perform(const gp_Pln&, const gp_Sphere&)` is
-    /// `throw Standard_NotImplemented();` in OCCT 8.0.1, and the throw happens inside the
-    /// constructor the bridge calls, so no input can produce a result. Use
-    /// ``Surface/extremaSS(other:)`` (`GeomAPI_ExtremaSurfaceSurface`) for a plane-sphere distance
-    /// ([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
-    public static func planeToSphere(
-        planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>,
-        sphereCenter: SIMD3<Double>, sphereRadius: Double
-    ) -> [ExtremaResult] {
-        var buf = [OCCTExtremaElResult](repeating: OCCTExtremaElResult(), count: 10)
-        let n = OCCTExtremaElSSPlaneSphere(
-            planePoint.x, planePoint.y, planePoint.z,
-            planeNormal.x, planeNormal.y, planeNormal.z,
-            sphereCenter.x, sphereCenter.y, sphereCenter.z, sphereRadius,
-            &buf, 10
-        )
-        guard n > 0 else { return [] }
-        return (0..<Int(n)).map { i in
-            ExtremaResult(
-                squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
-            )
-        }
-    }
-
-    /// Distance between two spheres, which **always returns `[]`**.
-    ///
-    /// `Extrema_ExtElSS::Perform(const gp_Sphere&, const gp_Sphere&)` is
-    /// `throw Standard_NotImplemented();` in OCCT 8.0.1, the same kernel gap as
-    /// ``planeToSphere(planePoint:planeNormal:sphereCenter:sphereRadius:)``
-    /// ([#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)).
-    public static func sphereToSphere(
-        center1: SIMD3<Double>, radius1: Double,
-        center2: SIMD3<Double>, radius2: Double
-    ) -> [ExtremaResult] {
-        var buf = [OCCTExtremaElResult](repeating: OCCTExtremaElResult(), count: 10)
-        let n = OCCTExtremaElSSSphereSphere(
-            center1.x, center1.y, center1.z, radius1,
-            center2.x, center2.y, center2.z, radius2,
-            &buf, 10
-        )
-        guard n > 0 else { return [] }
-        return (0..<Int(n)).map { i in
-            ExtremaResult(
-                squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
-            )
-        }
+        guard n == 1 else { return (isParallel, nil) }
+        return (isParallel, squareDistance)
     }
 }
 

@@ -563,21 +563,20 @@ struct OCCTIntCS
   GeomAPI_IntCS intcs;
 };
 
-int32_t OCCTExtremaElSSPlanePlane(double               pl1x,
-                                  double               pl1y,
-                                  double               pl1z,
-                                  double               pn1x,
-                                  double               pn1y,
-                                  double               pn1z,
-                                  double               pl2x,
-                                  double               pl2y,
-                                  double               pl2z,
-                                  double               pn2x,
-                                  double               pn2y,
-                                  double               pn2z,
-                                  bool*                outIsParallel,
-                                  OCCTExtremaElResult* out,
-                                  int32_t              max)
+int32_t OCCTExtremaElSSPlanePlane(double  pl1x,
+                                  double  pl1y,
+                                  double  pl1z,
+                                  double  pn1x,
+                                  double  pn1y,
+                                  double  pn1z,
+                                  double  pl2x,
+                                  double  pl2y,
+                                  double  pl2z,
+                                  double  pn2x,
+                                  double  pn2y,
+                                  double  pn2z,
+                                  bool*   outIsParallel,
+                                  double* outSquareDistance)
 {
   *outIsParallel = false;
   try
@@ -588,120 +587,15 @@ int32_t OCCTExtremaElSSPlanePlane(double               pl1x,
     if (!ext.IsDone())
       return -1;
     *outIsParallel = ext.IsParallel();
-    if (ext.IsParallel())
-    {
-      if (max > 0)
-      {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
-      }
-      return (max > 0) ? 1 : 0;
-    }
-    int n     = ext.NbExt();
-    int count = 0;
-    for (int i = 1; i <= n && count < max; i++)
-    {
-      Extrema_POnSurf ps1, ps2;
-      ext.Points(i, ps1, ps2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = ps1.Value().X();
-      out[count].y1             = ps1.Value().Y();
-      out[count].z1             = ps1.Value().Z();
-      out[count].x2             = ps2.Value().X();
-      out[count].y2             = ps2.Value().Y();
-      out[count].z2             = ps2.Value().Z();
-      count++;
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return -1;
-  }
-}
-
-int32_t OCCTExtremaElSSPlaneSphere(double               plx,
-                                   double               ply,
-                                   double               plz,
-                                   double               pnx,
-                                   double               pny,
-                                   double               pnz,
-                                   double               cx,
-                                   double               cy,
-                                   double               cz,
-                                   double               radius,
-                                   OCCTExtremaElResult* out,
-                                   int32_t              max)
-{
-  try
-  {
-    gp_Pln          pl(gp_Pnt(plx, ply, plz), gp_Dir(pnx, pny, pnz));
-    gp_Sphere       sp(gp_Ax3(gp_Pnt(cx, cy, cz), gp_Dir(0, 0, 1)), radius);
-    Extrema_ExtElSS ext(pl, sp);
-    if (!ext.IsDone())
-      return -1;
-    int n     = ext.NbExt();
-    int count = 0;
-    for (int i = 1; i <= n && count < max; i++)
-    {
-      Extrema_POnSurf ps1, ps2;
-      ext.Points(i, ps1, ps2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = ps1.Value().X();
-      out[count].y1             = ps1.Value().Y();
-      out[count].z1             = ps1.Value().Z();
-      out[count].x2             = ps2.Value().X();
-      out[count].y2             = ps2.Value().Y();
-      out[count].z2             = ps2.Value().Z();
-      count++;
-    }
-    return count;
-  }
-  catch (...)
-  {
-    return -1;
-  }
-}
-
-int32_t OCCTExtremaElSSSphereSphere(double               c1x,
-                                    double               c1y,
-                                    double               c1z,
-                                    double               r1,
-                                    double               c2x,
-                                    double               c2y,
-                                    double               c2z,
-                                    double               r2,
-                                    OCCTExtremaElResult* out,
-                                    int32_t              max)
-{
-  try
-  {
-    gp_Sphere       sp1(gp_Ax3(gp_Pnt(c1x, c1y, c1z), gp_Dir(0, 0, 1)), r1);
-    gp_Sphere       sp2(gp_Ax3(gp_Pnt(c2x, c2y, c2z), gp_Dir(0, 0, 1)), r2);
-    Extrema_ExtElSS ext(sp1, sp2);
-    if (!ext.IsDone())
-      return -1;
-    int n     = ext.NbExt();
-    int count = 0;
-    for (int i = 1; i <= n && count < max; i++)
-    {
-      Extrema_POnSurf ps1, ps2;
-      ext.Points(i, ps1, ps2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = ps1.Value().X();
-      out[count].y1             = ps1.Value().Y();
-      out[count].z1             = ps1.Value().Z();
-      out[count].x2             = ps2.Value().X();
-      out[count].y2             = ps2.Value().Y();
-      out[count].z2             = ps2.Value().Z();
-      count++;
-    }
-    return count;
+    // #1632: the square distance is the whole answer. This never calls Points(): the parallel
+    // branch of Perform(gp_Pln, gp_Pln) fills mySqDist alone and leaves myPOnS1/myPOnS2 null,
+    // so Points() faults uncatchably (#345, OCC_CATCH_SIGNALS is inert in this build), and the
+    // non-parallel branch reports NbExt() == 0 so there is nothing to read there either. The
+    // zeros this used to write into the point fields were a value that read as a measurement.
+    if (!ext.IsParallel() || ext.NbExt() < 1)
+      return 0;
+    *outSquareDistance = ext.SquareDistance(1);
+    return 1;
   }
   catch (...)
   {

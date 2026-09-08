@@ -2054,7 +2054,23 @@ OCCTCurve3DRef _Nullable OCCTSurfaceSweptBasisCurve(OCCTSurfaceRef _Nonnull surf
 // MARK: - Extrema_ExtElSS: Elementary Surface-Surface Distance (v0.109.0)
 
 /// Distance between two planes (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
+///
+/// Plane/plane is the only pair Extrema_ExtElSS implements: its Perform overloads for
+/// plane/sphere, sphere/sphere, sphere/cylinder, sphere/cone and sphere/torus are all
+/// `throw Standard_NotImplemented();` in OCCT itself, so the bridge functions that wrapped the
+/// first two were removed in #1632.
+///
+/// Only the square distance is reported, because it is the only thing OCCT computes here.
+/// Perform(gp_Pln, gp_Pln) sets myNbExt = 1 in its parallel branch and fills mySqDist alone,
+/// leaving myPOnS1/myPOnS2 as null handles, so Points() is an uncatchable fault and this
+/// function never calls it. Two parallel planes have no unique closest pair anyway: every point
+/// of one plane, paired with its own projection, is a minimum.
+///
+/// @param outIsParallel set on every non-error path, true only for parallel planes.
+/// @param outSquareDistance written ONLY when the return value is 1; untouched otherwise.
+/// @return 1 when a square distance was computed (parallel planes), 0 when the kernel records no
+///         extremum (crossing planes: distance is zero all along their intersection line, and
+///         Extrema_ExtElSS reports NbExt() == 0), -1 on error.
 int32_t OCCTExtremaElSSPlanePlane(double pl1x,
                                   double pl1y,
                                   double pl1z,
@@ -2068,36 +2084,7 @@ int32_t OCCTExtremaElSSPlanePlane(double pl1x,
                                   double pn2y,
                                   double pn2z,
                                   bool* _Nonnull outIsParallel,
-                                  OCCTExtremaElResult* _Nonnull out,
-                                  int32_t max);
-
-/// Distance between a plane and sphere (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
-int32_t OCCTExtremaElSSPlaneSphere(double plx,
-                                   double ply,
-                                   double plz,
-                                   double pnx,
-                                   double pny,
-                                   double pnz,
-                                   double cx,
-                                   double cy,
-                                   double cz,
-                                   double radius,
-                                   OCCTExtremaElResult* _Nonnull out,
-                                   int32_t max);
-
-/// Distance between two spheres (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
-int32_t OCCTExtremaElSSSphereSphere(double c1x,
-                                    double c1y,
-                                    double c1z,
-                                    double r1,
-                                    double c2x,
-                                    double c2y,
-                                    double c2z,
-                                    double r2,
-                                    OCCTExtremaElResult* _Nonnull out,
-                                    int32_t max);
+                                  double* _Nonnull outSquareDistance);
 
 // MARK: - Extrema_ExtPElS: Point to Elementary Surface Distance (v0.109.0)
 
