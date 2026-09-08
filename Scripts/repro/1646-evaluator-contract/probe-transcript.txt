@@ -1,0 +1,24 @@
+1. Can EvalD0/EvalD1 refuse a parameter the constructor accepted?
+    u = 0                                                  (0, 0)
+    u = 1e300                                              (1e+300, -0.817882)
+    u = NaN                                                (nan, nan)   <- NOT FINITE
+    u = +inf                                               (nan, nan)   <- NOT FINITE
+    u = NaN, point                                         (nan, nan)   <- NOT FINITE
+    u = -1e6                                               (-1.74996e+06, 4.68376e+06)
+
+2. Does a non-finite ARGUMENT get past the constructor's own validation?
+    constructed, EvalD0(0.5)                               (nan, nan)   <- NOT FINITE
+    constructed, EvalD0(0.5)                               (nan, nan)   <- NOT FINITE
+    constructed, EvalD0(0.5)                               (nan, inf)   <- NOT FINITE
+    constructed, EvalD0(0.5)                               (nan, nan)   <- NOT FINITE
+    constructed, EvalD0(0.5)                               (nan, nan)   <- NOT FINITE
+    constructed, EvalD0(0.5)                               (nan, nan)   <- NOT FINITE
+
+3. Does a curve built from finite arguments ever evaluate to a non-finite point?
+    u = 1000                                               (nan, nan)   <- NOT FINITE
+    u = 1e308                                              (-8.91309e+307, 4.53396e+307)
+
+4. gp_Dir2d from a NaN direction, which the placement overloads normalise first.
+   hypot(NaN, NaN) = nan; NaN < 1e-12 is false, so a length guard written as a comparison
+   lets it through.
+    constructed                                            (nan, nan)
