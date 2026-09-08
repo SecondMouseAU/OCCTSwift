@@ -998,29 +998,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, 
   }
 }
 
-OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int32_t nbSplitPoints)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    ShapeUpgrade_ShapeDivide              sd(shape->shape);
-    Handle(ShapeUpgrade_ClosedFaceDivide) cfd = new ShapeUpgrade_ClosedFaceDivide();
-    cfd->SetNbSplitPoints(nbSplitPoints > 0 ? nbSplitPoints : 1);
-    sd.SetSplitFaceTool(cfd);
-    if (!sd.Perform())
-      return nullptr;
-    TopoDS_Shape result = sd.Result();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, double maxAngleDegrees)
 {
   if (!shape)
@@ -1028,28 +1005,6 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, dou
   try
   {
     ShapeUpgrade_ShapeDivideAngle sd(maxAngleDegrees * M_PI / 180.0, shape->shape);
-    if (!sd.Perform())
-      return nullptr;
-    TopoDS_Shape result = sd.Result();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceArea(OCCTShapeRef shape, int32_t nbParts)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    ShapeUpgrade_ShapeDivideArea sd(shape->shape);
-    sd.SetSplittingByNumber(true);
-    sd.NbParts() = (nbParts > 0 ? nbParts : 4);
     if (!sd.Perform())
       return nullptr;
     TopoDS_Shape result = sd.Result();

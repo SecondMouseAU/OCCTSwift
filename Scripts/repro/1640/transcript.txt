@@ -1,0 +1,45 @@
+=== 1. OCCTShapeUpgradeSplitSurfaceArea's body, exactly as it stands today
+   Perform() with MaxArea left at its default : true , faces in 6, faces out 24
+   ... and with the #1491 fix (MaxArea() = -1) applied:
+   Perform() with MaxArea() = -1              : true, faces in 6, faces out 24
+
+=== 2. OCCTShapeUpgradeSplitSurfaceAngle vs OCCTShapeSplitByAngle (same body?)
+      45 deg: SplitSurfaceAngle ok  faces 10 | SplitByAngle ok  faces 10
+      90 deg: SplitSurfaceAngle ok  faces 6 | SplitByAngle ok  faces 6
+     180 deg: SplitSurfaceAngle ok  faces 4 | SplitByAngle ok  faces 4
+
+=== 3. ShapeUpgrade_ClosedFaceDivide, the one #1640 called a real capability
+   nbSplitPoints 1: Perform true , cylinder faces in 3, faces out 4
+   nbSplitPoints 2: Perform true , cylinder faces in 3, faces out 5
+   nbSplitPoints 3: Perform true , cylinder faces in 3, faces out 6
+
+=== 3b. ... next to ShapeUpgrade_ShapeDivideClosed, already wrapped as Shape.dividedClosedFaces
+   nbSplitPoints 1: Perform true , cylinder faces in 3, faces out 4
+   nbSplitPoints 2: Perform true , cylinder faces in 3, faces out 5
+   nbSplitPoints 3: Perform true , cylinder faces in 3, faces out 6
+   sphere, nbSplitPoints 2: ClosedFaceDivide 3 faces | ShapeDivideClosed 3 faces
+
+=== 4. BRepLib_MakePolygon vs BRepBuilderAPI_MakePolygon on the same points
+   BRepLib_MakePolygon        : edges 4, length 40.000000000, closed true
+   BRepBuilderAPI_MakePolygon : edges 4, length 40.000000000, closed true
+   same geometry              : yes
+
+=== 5. ShapeUpgrade_ShapeDivideArea (dividedByParts) vs OCCTShapeDivideByNumber's own
+       tool, and which results BRepCheck_Analyzer accepts
+   input cube: 6 faces, valid YES
+   dividedByParts(2)    : 12 faces, valid YES
+   dividedByParts(4)    : 24 faces, valid no
+   dividedByParts(9)    : 54 faces, valid no
+   DivideByNumber(4, 1)  : 24 faces, valid YES
+   DivideByNumber(2, 2)  : 24 faces, valid no
+   DivideByNumber(1, 4)  : 24 faces, valid YES
+   DivideByNumber(2, 1)  : 12 faces, valid YES
+   -> the invalidity tracks splitting on BOTH axes at once, not the class:
+      DivideByNumber(2, 2) is invalid too, and dividedByParts(2), a 2 x 1 split, is valid.
+
+=== 6. OCCTShapeUpgradeSplitSurfaceArea's body vs OCCTShapeDivideByParts's body
+       (the latter is already reachable as Shape.dividedByParts)
+   parts 2: SplitSurfaceArea ok 12 faces vol 1000.000000 | DivideByParts ok 12 faces vol 1000.000000 | same yes
+   parts 3: SplitSurfaceArea ok 12 faces vol 1000.000000 | DivideByParts ok 12 faces vol 1000.000000 | same yes
+   parts 4: SplitSurfaceArea ok 24 faces vol 1000.000000 | DivideByParts ok 24 faces vol 1000.000000 | same yes
+   parts 9: SplitSurfaceArea ok 54 faces vol 1000.000000 | DivideByParts ok 54 faces vol 1000.000000 | same yes

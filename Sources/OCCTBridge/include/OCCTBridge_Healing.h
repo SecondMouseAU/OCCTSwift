@@ -880,14 +880,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectModification(OCCTShapeRef shape);
 /// @param sz Scale Z
 OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, double scaleFactor);
 
-// --- ShapeUpgrade_ClosedFaceDivide ---
-
-/// Divide closed faces (e.g., full cylinders) into multiple faces.
-/// @param shape The shape containing closed faces
-/// @param nbSplitPoints Number of splitting lines (result = nbSplitPoints+1 faces per closed face)
-/// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int32_t nbSplitPoints);
-
 // --- ShapeUpgrade_SplitSurfaceAngle ---
 
 /// Split surfaces of revolution so each segment covers no more than maxAngle degrees.
@@ -896,14 +888,6 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int3
 /// @return The modified shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape,
                                                          double       maxAngleDegrees);
-
-// --- ShapeUpgrade_SplitSurfaceArea ---
-
-/// Split faces into approximately nbParts equal-area parts.
-/// @param shape The shape to process
-/// @param nbParts Target number of parts per face
-/// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceArea(OCCTShapeRef shape, int32_t nbParts);
 
 // --- ShapeAnalysis_TransferParametersProj ---
 // Transfer a parameter from edge 3D curve to face 2D representation

@@ -2009,17 +2009,6 @@ void OCCTHistoryDestroy(OCCTHistoryRef history);
 
 // MARK: - v0.51.0: BRepLib makers, GC geometry, GC 2D, ChFi2d_AnaFilletAlgo
 
-// --- BRepLib_MakePolygon ---
-
-/// Create a polygonal wire from an array of 3D points.
-/// @param coords Array of point coordinates (x,y,z triples), length = nPoints * 3
-/// @param nPoints Number of points (must be >= 2)
-/// @param close If true, close the polygon
-/// @return Wire shape, or NULL on failure
-OCCTWireRef _Nullable OCCTWireMakePolygonFromPoints(const double* coords,
-                                                    int32_t       nPoints,
-                                                    bool          close);
-
 // --- BRepLib_MakeWire ---
 
 /// Create a wire from an array of OCCTEdgeRef objects.
