@@ -46,7 +46,7 @@ struct Issue1479HealingFixNullGuardsTests {
     @Test("a genuinely-null OCCTShapeRef passed to OCCTShapeFixComposeShell returns nil, not a crash")
     func composeShellNullRawPointerReturnsNil() {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
-        let result = OCCTShapeFixComposeShell(nullShape, 1e-6)
+        let result = OCCTShapeFixComposeShell(nullShape, 1e-6, 1, 1)
         #expect(result == nil)
     }
 
