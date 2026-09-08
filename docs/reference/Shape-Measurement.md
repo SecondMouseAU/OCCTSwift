@@ -1066,15 +1066,39 @@ public func dividedByArea(maxArea: Double) -> Shape?
 
 ### `dividedByParts(_:)`
 
-Subdivide faces into a target number of parts.
+Subdivide faces into a target number of roughly equal-area parts.
 
 ```swift
 public func dividedByParts(_ parts: Int) -> Shape?
 ```
 
+`ShapeUpgrade_ShapeDivideArea` in splitting-by-number mode derives its own roughly-square U/V grid
+from the part count, so a face can be cut on both axes.
+[`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) is the other choice: it forces every cut
+onto U. They are different tools, measured, not two spellings of one: on a 10 x 20 x 10 box at 2
+parts this gives 18 faces and `dividedByNumber(2)` gives 10
+(`Scripts/repro/1640/transcript.txt`).
+
+Measured on a 10 x 10 x 10 cube: `parts: 4` gives 24 faces of 25 each and `parts: 2` gives 12. The
+volume is preserved exactly in both cases.
+
 - **Parameters:** `parts`, Target number of parts per face.
-- **Returns:** Shape with subdivided faces, or `nil` on failure.
+- **Returns:** Shape with subdivided faces, or `nil` on failure. `parts: 1` is a failure, not a
+  no-op: `ShapeUpgrade_ShapeDivideArea::Perform()` returns false when there is nothing to split.
+- **Warning:** a result that was split on **both** axes comes back `BRepCheck_Analyzer`-invalid,
+  with its volume preserved exactly. On the cube, `parts: 2` is a 2 x 1 split and is valid,
+  `parts: 4` is 2 x 2 and is not. It is the two-axis split rather than this entry point that does
+  it: `OCCTShapeDivideByNumber(shape, 2, 2)` is equally invalid, and `dividedByNumber(_:)` never
+  meets it only because it pins `nbV` to 1. Run
+  [`fixed(...)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire) over the result
+  if a valid shape is what you need.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` in splitting-by-number mode (via `OCCTShapeDivideByParts`).
+- **Example:**
+  ```swift
+  if let split = Shape.box(width: 10, height: 10, depth: 10)?.dividedByParts(4) {
+      print(split.subShapes(ofType: .face).count)  // 24, four pieces per cube face
+  }
+  ```
 
 ---
 
@@ -2551,11 +2575,23 @@ Divide closed (wrapping) faces in this shape.
 public func dividedClosedFaces(splitPoints: Int = 1) -> Shape?
 ```
 
-Uses `ShapeUpgrade_ShapeDivideClosed` to split faces that wrap completely around (e.g., the lateral face of a cylinder).
+Uses `ShapeUpgrade_ShapeDivideClosed` to split faces that wrap completely around (e.g., the lateral
+face of a cylinder). Faces that are not closed are left alone.
+
+Measured on a cylinder, whose three faces are two planar caps and one closed lateral face:
+`splitPoints` of 1, 2 and 3 give 4, 5 and 6 faces, and the volume is unchanged.
 
 - **Parameters:** `splitPoints`, Number of split points per closed face.
-- **Returns:** Shape with divided faces, or `nil` on failure.
+- **Returns:** Shape with divided faces, or `nil` on failure. A shape with **no** closed face is a
+  `nil`, not an unchanged shape: `Perform()` returns false when there is nothing to divide, so a
+  box comes back `nil` at any `splitPoints`.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosed` (via `OCCTShapeUpgradeDivideClosed`).
+- **Example:**
+  ```swift
+  if let split = Shape.cylinder(radius: 5, height: 10)?.dividedClosedFaces(splitPoints: 1) {
+      print(split.subShapes(ofType: .face).count)  // 4: two caps, lateral face halved
+  }
+  ```
 
 ---
 

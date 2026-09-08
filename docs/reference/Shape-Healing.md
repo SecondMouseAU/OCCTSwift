@@ -2119,7 +2119,10 @@ surface subdivision. Requires `parts > 1`.
 - **OCCT:** `ShapeUpgrade_ShapeDivide` driving a `ShapeUpgrade_FaceDivideArea` split-face tool with
   `SetSplittingByNumber(true)`, `NbParts() = parts`, `MaxArea() = -1` and
   `SetNumbersUVSplits(parts, 1)` (via `OCCTShapeDivideByNumber`). Not
-  `ShapeUpgrade_ShapeDivideArea`, which is the class `dividedByArea(maxArea:)` and `dividedByParts(_:)` use.
+  `ShapeUpgrade_ShapeDivideArea`, which is the class `dividedByArea(maxArea:)` and
+  [`dividedByParts(_:)`](Shape-Measurement.md#dividedbyparts_) use, and which derives its own
+  roughly-square grid instead. Measured on a 10 x 20 x 10 box at 2 parts, the two give 10 faces and
+  18 (`Scripts/repro/1640/transcript.txt`).
   `MaxArea() = -1` is load-bearing rather than cosmetic: its default is `Precision::Infinite()`,
   against which `ShapeUpgrade_FaceDivideArea::Perform()` returns false for every finite face.
 - **Example:**

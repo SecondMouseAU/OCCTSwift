@@ -2180,34 +2180,7 @@ OCCTWireRef OCCTWireCreateFastPolygon(const double* coords, int32_t pointCount, 
   }
 }
 
-// MARK: - BRepLib MakePolygon / MakeWire (v0.51)
-OCCTWireRef _Nullable OCCTWireMakePolygonFromPoints(const double* coords,
-                                                    int32_t       nPoints,
-                                                    bool          close)
-{
-  if (!coords || nPoints < 2)
-    return nullptr;
-  try
-  {
-    BRepLib_MakePolygon poly;
-    for (int32_t i = 0; i < nPoints; i++)
-    {
-      poly.Add(gp_Pnt(coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2]));
-    }
-    if (close)
-      poly.Close();
-    if (!poly.IsDone())
-      return nullptr;
-    auto* wire = new OCCTWire();
-    wire->wire = poly.Wire();
-    return wire;
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
+// MARK: - BRepLib MakeWire (v0.51)
 OCCTWireRef _Nullable OCCTWireMakeWireFromEdgeRefs(const OCCTEdgeRef _Nonnull* _Nonnull edges,
                                                    int32_t count)
 {
