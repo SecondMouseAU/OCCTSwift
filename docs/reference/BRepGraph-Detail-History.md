@@ -758,7 +758,7 @@ public func createPolygon3DRep(_ polygon: Polygon3D) -> Int?
 
 ### `createPolygonOnTriRep(_:triRepId:)`
 
-Creates a polygon-on-triangulation rep linked to an existing triangulation rep.
+Creates a polygon-on-triangulation rep.
 
 ```swift
 public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: Int) -> Int?
@@ -766,7 +766,10 @@ public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: I
 
 - **Parameters:**
   - `polygon`: the `PolygonOnTriangulation` to store.
-  - `triRepId`: id of the parent triangulation rep.
+  - `triRepId`: **accepted and not read** (#1652). OCCT 8.0.1 keeps no rep-id link from a
+    polygon-on-triangulation to a triangulation; the owning triangulation is resolved at attach
+    time through `CoEdgeDef.FaceId` to `FaceDef.TriangulationRepId`. Bind it with
+    `setFaceTriangulationRep(_:triRepId:)`.
 - **Returns:** Rep id, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphMeshCreatePolygonOnTriRep`.
 - **Example:**
@@ -1206,13 +1209,16 @@ public var wireRefCount: Int { get }
 
 ### `coedgeRefCount`
 
-Number of coedge reference entries.
+Number of coedge definitions, not references (#1652). OCCT 8.0.1 has no coedge reference kind:
+`BRepGraph_RefId::Kind` runs Shell, Face, Wire, Vertex, Solid, Child, Occurrence, because a coedge
+usage is stored directly on `CoEdgeDef`. The value is `BRepGraph::TopoView::CoEdges().Nb()`, the
+same figure as `coedgeCount`.
 
 ```swift
 public var coedgeRefCount: Int { get }
 ```
 
-- **OCCT:** `OCCTBRepGraphNbCoEdgeRefs`.
+- **OCCT:** `BRepGraph::TopoView::CoEdgeOps::Nb` (via `OCCTBRepGraphNbCoEdgeRefs`).
 
 ---
 
