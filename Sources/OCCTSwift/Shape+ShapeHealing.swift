@@ -1346,30 +1346,46 @@ extension Shape {
         else { return nil }
         return Shape(handle: ref)
     }
-    /// Rebuild a face's wires against a composite surface and return the resulting shell.
+    /// Split a face along the joint lines of a composite surface, and rebuild its wires.
     ///
-    /// **This cannot split the face**, whatever the name suggests. The bridge wraps the face's
-    /// own surface in a 1 x 1 `ShapeExtend_CompositeSurface`, and a one-patch grid has no joint
-    /// lines for `ShapeFix_ComposeShell` to cut along. Measured on a cylinder's lateral face,
-    /// `Perform()` returns true and one face goes in and one comes out. To subdivide a face use
-    /// ``dividedByNumber(_:)`` or ``dividedByArea(maxArea:)``. See #1638.
+    /// The grid is the face's own surface tiled `uPatches` x `vPatches` over the face's UV box, so
+    /// no extra caller input is needed to subdivide it. `ShapeFix_ComposeShell` cuts along the
+    /// joints **between** patches, which is why the defaults, a 1 x 1 grid, split nothing: one
+    /// face goes in and one comes out. That was the only behaviour available until #1638, so the
+    /// defaults preserve it exactly.
     ///
-    /// What it does do is the wire rebuild: `ShapeFix_ComposeShell` re-splits and re-orders the
-    /// face's wires against the surface, which repairs seam and degenerate-edge ordering on a
-    /// face whose boundary has drifted.
+    /// Measured on a 10 x 10 planar face: 2 x 1 gives 2 faces, 3 x 2 gives 6. On a cylinder's
+    /// lateral face, 2 x 1 gives 2 and 1 x 2 gives 2.
+    ///
+    /// Even at 1 x 1 the call does the wire rebuild: `ShapeFix_ComposeShell` re-splits and
+    /// re-orders the face's wires against the surface, which repairs seam and degenerate-edge
+    /// ordering on a face whose boundary has drifted. To subdivide a whole shape rather than one
+    /// face, ``dividedByNumber(_:)`` and ``dividedByArea(maxArea:)`` are the shape-level tools.
     ///
     /// ```swift
     /// if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
-    ///    let composed = face.composeShell() {
-    ///     print(composed.contents.faces)  // 1, the same face, wires rebuilt
+    ///     let quarters = face.composeShell(uPatches: 4)
+    /// {
+    ///     print(quarters.subShapes(ofType: .face).count)  // 4
     /// }
     /// ```
     ///
-    /// - Parameter precision: Tolerance handed to `ShapeFix_ComposeShell::Init`.
+    /// - Parameters:
+    ///   - precision: Tolerance handed to `ShapeFix_ComposeShell::Init`.
+    ///   - uPatches: Patches along U. Must be at least 1; 1 means no cut on U.
+    ///   - vPatches: Patches along V. Must be at least 1; 1 means no cut on V.
     /// - Returns: The composed shell, or nil if the receiver is not a face, carries no surface,
-    ///   or `Perform()` fails.
-    public func composeShell(precision: Double = 1e-6) -> Shape? {
-        guard let ref = OCCTShapeFixComposeShell(handle, precision) else { return nil }
+    ///   a patch count is below 1, or `Perform()` fails.
+    public func composeShell(
+        precision: Double = 1e-6,
+        uPatches: Int = 1,
+        vPatches: Int = 1
+    ) -> Shape? {
+        guard uPatches >= 1, vPatches >= 1 else { return nil }
+        guard
+            let ref = OCCTShapeFixComposeShell(
+                handle, precision, Int32(uPatches), Int32(vPatches))
+        else { return nil }
         return Shape(handle: ref)
     }
 }

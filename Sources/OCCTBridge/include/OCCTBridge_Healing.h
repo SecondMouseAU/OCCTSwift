@@ -1131,9 +1131,28 @@ int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef,
                          int* _Nullable outVSplitCount);
 
 // --- ShapeFix_ComposeShell ---
-/// Perform compose shell on a face with composite surface grid
-/// Returns the result shape (shell or compound of faces)
-OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, double precision);
+/// Split a face along the joint lines of a composite surface, and rebuild its wires.
+///
+/// The grid is the face's own surface tiled `uPatches` x `vPatches` over the face's UV box, as
+/// `Geom_RectangularTrimmedSurface` patches. `ShapeFix_ComposeShell` cuts along the joints between
+/// patches, so a 1 x 1 grid has nothing to cut along and one face comes in and one comes out,
+/// which is what this function did unconditionally until #1638. Measured on a planar face, a 3 x 2
+/// grid gives 6 faces, and on a cylinder's lateral face a 2 x 1 grid gives 2.
+///
+/// The patches are sub-ranges of the face's own surface, so `ShapeExtend_Natural` reproduces the
+/// face's own parametrisation exactly and the face's pcurves line up with the composite's global
+/// UV. That is why the parametrisation is not a parameter: the other two modes renumber the joints
+/// away from the pcurves the face already carries.
+///
+/// @param faceRef The face to split. Anything else is refused.
+/// @param precision Tolerance handed to ShapeFix_ComposeShell::Init
+/// @param uPatches Patches along U, at least 1
+/// @param vPatches Patches along V, at least 1
+/// @return The result shape (shell or compound of faces), or NULL on failure
+OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef,
+                                                double  precision,
+                                                int32_t uPatches,
+                                                int32_t vPatches);
 
 // MARK: - ShapeFix_Solid
 

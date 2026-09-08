@@ -940,38 +940,57 @@ public struct AppSurfResult {
 
 ## ShapeFix_ComposeShell
 
-### `composeShell(precision:)`
+### `composeShell(precision:uPatches:vPatches:)`
 
-Rebuilds a face's wires against a composite surface and returns the resulting shell.
+Splits a face along the joint lines of a composite surface, and rebuilds its wires.
 
 ```swift
-public func composeShell(precision: Double = 1e-6) -> Shape?
+public func composeShell(precision: Double = 1e-6,
+                         uPatches: Int = 1,
+                         vPatches: Int = 1) -> Shape?
 ```
 
-**It cannot split the face.** The bridge wraps the face's own surface in a **1 x 1**
-`ShapeExtend_CompositeSurface`, and a one-patch grid has no joint lines for
-`ShapeFix_ComposeShell` to cut along. Measured on a cylinder's lateral face
-(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): `Perform()` returns
-true, and one face goes in and one comes out. To subdivide a face, use
-[`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) or
-[`dividedByArea(maxArea:)`](Shape-Measurement.md#dividedbyareamaxarea). Exposing a real grid is
-[#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638).
+The grid is the face's own surface tiled `uPatches` x `vPatches` over the face's UV box, as
+`Geom_RectangularTrimmedSurface` patches, so subdividing needs no extra caller input.
+`ShapeFix_ComposeShell` cuts along the joints **between** patches, which is why the defaults, a
+1 x 1 grid, split nothing: one face goes in and one comes out. That was the only behaviour
+available until [#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638), so the defaults
+preserve it exactly.
 
-What it is good for is the wire rebuild itself: `ShapeFix_ComposeShell` re-splits and re-orders the
-face's wires against the surface and returns them as a shell, which repairs seam and degenerate-edge
-ordering on a face whose boundary has drifted.
+Measured (`Scripts/repro/1638/transcript.txt`), on a 10 x 10 planar face and on a cylinder's
+lateral face:
 
-- **Parameters:** `precision`, the tolerance `ShapeFix_ComposeShell::Init` receives.
+| grid | planar face out | cylinder wall out |
+|---|---|---|
+| 1 x 1 | 1 | 1 |
+| 2 x 1 | 2 | 2 |
+| 1 x 2 | 2 | 2 |
+| 3 x 2 | 6 | |
+
+Even at 1 x 1 the call does the wire rebuild: `ShapeFix_ComposeShell` re-splits and re-orders the
+face's wires against the surface and returns them as a shell, which repairs seam and
+degenerate-edge ordering on a face whose boundary has drifted. To subdivide a whole shape rather
+than one face, [`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) and
+[`dividedByArea(maxArea:)`](Shape-Measurement.md#dividedbyareamaxarea) are the shape-level tools.
+
+- **Parameters:** `precision`, the tolerance `ShapeFix_ComposeShell::Init` receives; `uPatches` and
+  `vPatches`, the grid, each at least 1.
 - **Returns:** A `Shape`, the composed shell, or `nil` if the receiver is not a face, carries no
-  surface, or `Perform()` fails.
-- **OCCT:** `ShapeFix_ComposeShell` over a 1 x 1 `ShapeExtend_CompositeSurface` (via
+  surface, a patch count is below 1, or `Perform()` fails.
+- **OCCT:** `ShapeFix_ComposeShell` over a `ShapeExtend_CompositeSurface` of
+  `Geom_RectangularTrimmedSurface` patches, initialised with `ShapeExtend_Natural` (via
   `OCCTShapeFixComposeShell`). The bridge sets a `ShapeBuild_ReShape` context before `Perform()`,
   because 8.0.0p1 null-derefs without one.
+- **Note:** `ShapeExtend_Parametrisation` is not a parameter. Because the patches are sub-ranges of
+  the face's own surface, `ShapeExtend_Natural` reproduces the face's own parametrisation exactly
+  and the face's pcurves line up with the composite's global UV; the other two modes renumber the
+  joints away from the pcurves the face already carries.
 - **Example:**
   ```swift
   if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
-     let composed = face.composeShell() {
-      print(composed.contents.faces)  // 1, the same face, wires rebuilt
+      let quarters = face.composeShell(uPatches: 4)
+  {
+      print(quarters.subShapes(ofType: .face).count)  // 4, quarter cylinders
   }
   ```
 
