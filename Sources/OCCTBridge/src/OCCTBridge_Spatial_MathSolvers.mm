@@ -2013,19 +2013,23 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
 }
 
 int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
-                            const double* _Nonnull subdiagonal,
+                            const double* _Nullable offDiagonal,
                             int32_t n,
                             double* _Nonnull eigenvalues)
 {
+  if (n < 1 || (n > 1 && !offDiagonal))
+    return 0;
   try
   {
     NCollection_Array1<double> diag(1, n);
     NCollection_Array1<double> subdiag(1, n);
+    // Slot 1 is the one math_EigenValuesSearcher discards, so the caller's n - 1 real
+    // off-diagonal entries go in 2..n and this fills the dead slot itself (#1643).
+    subdiag(1) = 0.0;
     for (int i = 0; i < n; i++)
-    {
-      diag(i + 1)    = diagonal[i];
-      subdiag(i + 1) = subdiagonal[i];
-    }
+      diag(i + 1) = diagonal[i];
+    for (int i = 1; i < n; i++)
+      subdiag(i + 1) = offDiagonal[i - 1];
     math_EigenValuesSearcher evs(diag, subdiag);
     if (!evs.IsDone())
       return 0;
@@ -2041,20 +2045,23 @@ int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
 }
 
 int32_t OCCTMathEigenValuesAndVectors(const double* _Nonnull diagonal,
-                                      const double* _Nonnull subdiagonal,
+                                      const double* _Nullable offDiagonal,
                                       int32_t n,
                                       double* _Nonnull eigenvalues,
                                       double* _Nonnull eigenvectors)
 {
+  if (n < 1 || (n > 1 && !offDiagonal))
+    return 0;
   try
   {
     NCollection_Array1<double> diag(1, n);
     NCollection_Array1<double> subdiag(1, n);
+    // Same dead-slot-first convention as OCCTMathEigenValues (#1643).
+    subdiag(1) = 0.0;
     for (int i = 0; i < n; i++)
-    {
-      diag(i + 1)    = diagonal[i];
-      subdiag(i + 1) = subdiagonal[i];
-    }
+      diag(i + 1) = diagonal[i];
+    for (int i = 1; i < n; i++)
+      subdiag(i + 1) = offDiagonal[i - 1];
     math_EigenValuesSearcher evs(diag, subdiag);
     if (!evs.IsDone())
       return 0;

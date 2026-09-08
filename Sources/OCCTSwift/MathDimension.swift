@@ -9,15 +9,15 @@
 //  sampling-shaped result buffers and deliberately left this family unfixed: its numbers
 //  are problem dimensions that must agree with the caller's OWN arrays, not sampling
 //  capacities, so `Sampling.requested`/`capacity` was the wrong tool. #640 then fixed 18
-//  call sites by hand, each repeating one of two shapes -- "n is positive and every array
+//  call sites by hand, each repeating one of two shapes ("n is positive and every array
 //  n sizes is exactly that long", or "rows and cols are both positive and a flat array is
-//  exactly their product" -- with no shared validator: the same "no compiler help across
+//  exactly their product") with no shared validator: the same "no compiler help across
 //  N hand-duplicated sites" gap #634's own ad hoc guards left before it (5 of 20 invisible
 //  to review once). This file is that validator.
 //
 //  It also closes a defect the hand-written guards shared (review finding 8): `n * n` and
 //  `rows * cols` are plain `Int` multiplications, and a large enough positive dimension
-//  overflows that multiplication before the guard can reject it -- the exact process trap
+//  overflows that multiplication before the guard can reject it, the exact process trap
 //  #640 exists to eliminate, reintroduced by the guard meant to prevent it.
 //  `Sampling.gridTotal` already carries the overflow-safe idiom
 //  (`multipliedReportingOverflow(by:)`); this reuses it rather than inventing another.
@@ -38,8 +38,8 @@ enum MathDimension {
     ///
     /// ```swift
     /// MathDimension.valid(3, matches: 3, 3)   // true
-    /// MathDimension.valid(-1, matches: 0)     // false -- not positive
-    /// MathDimension.valid(3, matches: 1)      // false -- length mismatch
+    /// MathDimension.valid(-1, matches: 0)     // false, not positive
+    /// MathDimension.valid(3, matches: 1)      // false, length mismatch
     /// ```
     static func valid(_ n: Int, matches counts: Int...) -> Bool {
         guard n > 0 else { return false }
@@ -54,20 +54,20 @@ enum MathDimension {
     /// reject a legitimate empty input the original, unguarded code accepted.
     ///
     /// ```swift
-    /// MathDimension.consistent(0, matches: 0)    // true -- two empty arrays agree
-    /// MathDimension.consistent(50, matches: 1)   // false -- length mismatch
+    /// MathDimension.consistent(0, matches: 0)    // true, two empty arrays agree
+    /// MathDimension.consistent(50, matches: 1)   // false, length mismatch
     /// ```
     static func consistent(_ n: Int, matches counts: Int...) -> Bool {
         counts.allSatisfy { $0 == n }
     }
 
-    /// `n` must be positive, and `count` must equal `n * n` exactly -- checked without
+    /// `n` must be positive, and `count` must equal `n * n` exactly, checked without
     /// overflowing the multiplication (review finding 8): a large enough positive `n` makes
     /// `n * n` trap before a plain `==` guard ever runs.
     ///
     /// ```swift
     /// MathDimension.validSquare(2, count: 4)      // true
-    /// MathDimension.validSquare(.max, count: 1)   // false -- rejected, not trapped
+    /// MathDimension.validSquare(.max, count: 1)   // false: rejected, not trapped
     /// ```
     static func validSquare(_ n: Int, count: Int) -> Bool {
         guard n > 0 else { return false }
@@ -76,13 +76,33 @@ enum MathDimension {
         return count == product
     }
 
+    /// A tridiagonal pair: `n` diagonal entries against exactly `n - 1` off-diagonal
+    /// entries, with `n` at least 1.
+    ///
+    /// The odd one out in this family, because the two arrays are deliberately *not* the
+    /// same length. `math_EigenValuesSearcher` takes an `n`-element sub-diagonal and throws
+    /// its first element away, so OCCTSwift used to demand `n` elements and quietly discard
+    /// one of them (#1643). Asking for the `n - 1` entries the matrix actually has removes
+    /// the dead slot, and this is the check that shape needs.
+    ///
+    /// ```swift
+    /// MathDimension.tridiagonal(3, offDiagonal: 2)   // true
+    /// MathDimension.tridiagonal(3, offDiagonal: 3)   // false, the old n-element shape
+    /// MathDimension.tridiagonal(1, offDiagonal: 0)   // true, a 1x1 has no off-diagonal
+    /// MathDimension.tridiagonal(0, offDiagonal: 0)   // false, no matrix at all
+    /// ```
+    static func tridiagonal(_ n: Int, offDiagonal count: Int) -> Bool {
+        guard n >= 1 else { return false }
+        return count == n - 1
+    }
+
     /// `rows` and `cols` must both be positive, and `count` must equal `rows * cols`
-    /// exactly -- checked without overflowing the multiplication (same reason as
+    /// exactly, checked without overflowing the multiplication (same reason as
     /// ``validSquare(_:count:)``).
     ///
     /// ```swift
     /// MathDimension.validRectangle(rows: 3, cols: 2, count: 6)          // true
-    /// MathDimension.validRectangle(rows: .max, cols: 2, count: 1)       // false -- rejected, not trapped
+    /// MathDimension.validRectangle(rows: .max, cols: 2, count: 1)       // false: rejected, not trapped
     /// ```
     static func validRectangle(rows: Int, cols: Int, count: Int) -> Bool {
         guard rows > 0, cols > 0 else { return false }
