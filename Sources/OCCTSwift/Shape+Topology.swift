@@ -2404,10 +2404,71 @@ extension Shape {
         OCCTBRepLibUpdateInnerTolerances(handle)
     }
 
-    /// Update tolerance of a specific edge.
+    /// What ``updateEdgeTolerance(edge:tolerance:maxToleranceToCheck:)`` measured.
+    ///
+    /// `BRepLib::UpdateEdgeTol` returns `true` whether or not it moved anything, so the pair of
+    /// tolerances is the only thing that reports whether the call did any work (#1639).
+    public struct EdgeToleranceUpdate: Sendable, Equatable {
+        /// The edge's tolerance before the call.
+        public let toleranceBefore: Double
+
+        /// The edge's tolerance after the call.
+        ///
+        /// OCCT can lower it as well as raise it.
+        public let toleranceAfter: Double
+
+        /// Whether the measurement moved the edge's tolerance at all.
+        public var changed: Bool { toleranceAfter != toleranceBefore }
+    }
+
+    /// Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
+    ///
+    /// **`tolerance` is not written to the edge.** It is OCCT's `MinToleranceRequest`, the
+    /// tolerance the measurement starts testing from; the tolerance the edge ends up with is
+    /// computed from the measured curve-to-pcurve distances and can be larger or smaller than the
+    /// one it had. An edge whose pcurves match its 3D curve, which is every edge of a
+    /// freshly built primitive, has nothing to measure and does not move. To set a tolerance
+    /// outright, use ``setTolerance(_:)``.
+    ///
+    /// `maxToleranceToCheck` is the ceiling: an edge already looser than it is left alone and the
+    /// call returns `nil`. Until #1639 the bridge derived it as `tolerance * 100`, so a loose edge
+    /// could not be measured at a tight sampling tolerance at all. The default examines every
+    /// edge.
+    ///
+    /// The result reports the tolerance on both sides of the call, because
+    /// `BRepLib::UpdateEdgeTol`'s own `Bool` does not: it is `true` on every path that is not a
+    /// refusal, including runs that move nothing.
+    ///
+    /// ```swift
+    /// let edge = imported.subShapes(ofType: .edge)[0]
+    /// if let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-7),
+    ///     update.changed
+    /// {
+    ///     print("tolerance \(update.toleranceBefore) -> \(update.toleranceAfter)")
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - edge: The edge to measure. Anything else returns `nil`.
+    ///   - tolerance: `MinToleranceRequest`, the tolerance worth starting the measurement from.
+    ///     OCCT's own guidance is around 1e-5.
+    ///   - maxToleranceToCheck: The ceiling above which the edge is not examined at all. Defaults
+    ///     to `.infinity`, which examines every edge.
+    /// - Returns: The tolerance before and after the call, or `nil` when the edge is degenerate,
+    ///   already looser than `maxToleranceToCheck`, or not an edge.
     @discardableResult
-    public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool {
-        OCCTBRepLibUpdateEdgeTolerance(edge.handle, tolerance)
+    public static func updateEdgeTolerance(
+        edge: Shape,
+        tolerance: Double,
+        maxToleranceToCheck: Double = .infinity
+    ) -> EdgeToleranceUpdate? {
+        var before: Double = 0
+        var after: Double = 0
+        guard
+            OCCTBRepLibUpdateEdgeTolerance(
+                edge.handle, tolerance, maxToleranceToCheck, &before, &after)
+        else { return nil }
+        return EdgeToleranceUpdate(toleranceBefore: before, toleranceAfter: after)
     }
 }
 

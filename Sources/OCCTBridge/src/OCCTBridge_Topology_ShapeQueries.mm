@@ -1341,16 +1341,33 @@ void OCCTBRepLibUpdateInnerTolerances(OCCTShapeRef shape)
   }
 }
 
-bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef edge, double tol)
+bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef edge,
+                                    double       minToleranceRequest,
+                                    double       maxToleranceToCheck,
+                                    double*      outToleranceBefore,
+                                    double*      outToleranceAfter)
 {
-  if (!edge)
+  if (!outToleranceBefore || !outToleranceAfter)
+    return false;
+  *outToleranceBefore = 0.0;
+  *outToleranceAfter  = 0.0;
+  if (!occtShapeIsType(edge, TopAbs_EDGE))
     return false;
   try
   {
-    return BRepLib::UpdateEdgeTol(TopoDS::Edge(edge->shape), tol, tol * 100.0);
+    const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
+    *outToleranceBefore  = BRep_Tool::Tolerance(e);
+    // Both bounds are the caller's. The second one used to be minToleranceRequest * 100, a factor
+    // that appeared in no header, doc or changelog and that decides whether the call does anything
+    // at all: BRepLib::UpdateEdgeTol returns false without measuring when the edge's own tolerance
+    // is already above it (#1639).
+    bool examined      = BRepLib::UpdateEdgeTol(e, minToleranceRequest, maxToleranceToCheck);
+    *outToleranceAfter = BRep_Tool::Tolerance(e);
+    return examined;
   }
   catch (...)
   {
+    *outToleranceAfter = *outToleranceBefore;
     return false;
   }
 }

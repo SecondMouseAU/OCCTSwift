@@ -1226,34 +1226,57 @@ public func updateInnerTolerances()
 
 ---
 
-### `Shape.updateEdgeTolerance(edge:tolerance:)`
+### `Shape.updateEdgeTolerance(edge:tolerance:maxToleranceToCheck:)`
 
 Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
 
 ```swift
 @discardableResult
-public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool
+public static func updateEdgeTolerance(edge: Shape,
+                                       tolerance: Double,
+                                       maxToleranceToCheck: Double = .infinity)
+    -> Shape.EdgeToleranceUpdate?
 ```
 
 **`tolerance` is not written to the edge.** It is `MinToleranceRequest`, the sampling tolerance
 OCCT starts testing at, and the tolerance the edge ends up with is computed from the measured
-curve-to-pcurve distances. An edge with no pcurves has nothing to measure, so its tolerance does
-not move at all. Measured on the pinned kernel across two edges and four requested values from
-1e-9 to 2 (`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): the
-tolerance stayed at 1e-07 every time. To set a tolerance outright, use
+curve-to-pcurve distances. It can go down as well as up. An edge whose pcurves already match its
+3D curve, which is every edge of a freshly built primitive, has nothing to measure and does not
+move: measured across two edges and four requested values from 1e-9 to 2
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`), the tolerance stayed
+at 1e-07 every time. To set a tolerance outright, use
 [`setTolerance(_:)`](Shape-Measurement.md#settolerance_).
 
-**The `Bool` is not "the tolerance changed".** `BRepLib::UpdateEdgeTol` returns `false` only for a
-degenerate edge or one whose tolerance already exceeds the ceiling, and `true` on every other path,
-including the eight measured runs above where nothing moved.
+**`maxToleranceToCheck` decides whether the call does anything at all.** `BRepLib::UpdateEdgeTol`
+returns `false` without measuring when the edge's own tolerance already exceeds it. Until
+[#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639) the bridge derived it as
+`tolerance * 100` and no caller could override it, so a loose edge could not be examined at a tight
+sampling tolerance. Measured on a box whose edges were forced to 0.05: at the default ceiling the
+call brings the tolerance back down to 1e-07, and at the old `1e-7 * 100` ceiling it refuses
+outright (`Scripts/repro/1639/probe.mm`).
 
-- **Parameters:** `edge`, the edge to measure; `tolerance`, the minimum tolerance worth testing
-  from. The bridge derives the `MaxToleranceToCheck` ceiling as `tolerance * 100`, which no caller
-  can override, see [#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639).
-- **Returns:** `true` unless the edge is degenerate or already looser than the derived ceiling.
-- **OCCT:** `BRepLib::UpdateEdgeTol(edge, tolerance, tolerance * 100)` (via
+**The result reports what moved, because OCCT's own `Bool` does not.**
+`BRepLib::UpdateEdgeTol` returns `false` only for a degenerate edge or one already looser than the
+ceiling, and `true` on every other path, including runs that move nothing.
+`Shape.EdgeToleranceUpdate` carries `toleranceBefore`, `toleranceAfter` and the derived `changed`,
+which is the only thing that answers the question.
+
+- **Parameters:** `edge`, the edge to measure, and nothing else is accepted; `tolerance`,
+  `MinToleranceRequest`, the minimum tolerance worth testing from (OCCT's own guidance is around
+  1e-5); `maxToleranceToCheck`, the ceiling above which the edge is not examined, defaulting to
+  `.infinity`, which examines every edge.
+- **Returns:** the tolerance before and after the call, or `nil` when the edge is degenerate,
+  already looser than `maxToleranceToCheck`, or not an edge.
+- **OCCT:** `BRepLib::UpdateEdgeTol(edge, tolerance, maxToleranceToCheck)` (via
   `OCCTBRepLibUpdateEdgeTolerance`). Not `BRepLib::UpdateEdgeTolerance`, which is the whole-shape
   sweep over every edge and which the pinned header warns is "very slow".
+- **Example:**
+  ```swift
+  let edge = imported.subShapes(ofType: .edge)[0]
+  if let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-7), update.changed {
+      print("tolerance \(update.toleranceBefore) -> \(update.toleranceAfter)")
+  }
+  ```
 
 ---
 

@@ -1,0 +1,23 @@
+=== 1. box edge (exact pcurves), sweep of both bounds
+   box edge                   minReq 1e-05     maxCheck 0.001     before 1e-07       returned true  after 1e-07       moved: no
+   box edge                   minReq 1e-05     maxCheck 1e-09     before 1e-07       returned false after 1e-07       moved: no
+   box edge                   minReq 1e-05     maxCheck 1e+300    before 1e-07       returned true  after 1e-07       moved: no
+
+=== 2. edge with a pcurve that drifts from its 3D curve
+   skew 0.001                 minReq 1e-07     maxCheck 1         before 1e-07       returned true  after 0.0014      moved: YES
+   skew 0.01                  minReq 1e-07     maxCheck 1         before 1e-07       returned true  after 0.014       moved: YES
+   skew 0.1                   minReq 1e-07     maxCheck 1         before 1e-07       returned true  after 0.139995    moved: YES
+
+=== 3. the same drifting edge, MaxToleranceToCheck below the edge's own tolerance
+   coded 0.05, maxCheck 0.01  minReq 1e-07     maxCheck 0.01      before 0.05        returned false after 0.05        moved: no
+   coded 0.05, maxCheck 1.0   minReq 1e-07     maxCheck 1         before 0.05        returned true  after 0.014       moved: YES
+
+=== 4. what the bridge's hardcoded maxCheck = tol * 100 refuses
+   tol 1e-5 -> maxCheck 1e-3  minReq 1e-05     maxCheck 0.001     before 0.05        returned false after 0.05        moved: no
+   tol 1e-5, maxCheck 1.0     minReq 1e-05     maxCheck 1         before 0.05        returned true  after 0.014       moved: YES
+
+=== 5. the Swift tests' fixture: a box whose edges were forced to a loose tolerance
+   forced 0.05, maxCheck inf  minReq 1e-07     maxCheck inf       before 0.05        returned true  after 1e-07       moved: YES
+   forced 0.05, maxCheck tol*100 minReq 1e-07     maxCheck 1e-05     before 0.05        returned false after 0.05        moved: no
+   forced 0.5, maxCheck inf   minReq 1e-07     maxCheck inf       before 0.5         returned true  after 1e-07       moved: YES
+   forced 0.5, maxCheck tol*100 minReq 1e-07     maxCheck 1e-05     before 0.5         returned false after 0.5         moved: no
