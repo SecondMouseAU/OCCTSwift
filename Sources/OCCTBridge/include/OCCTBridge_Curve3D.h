@@ -2888,6 +2888,8 @@ OCCTCurve3DRef _Nullable OCCTGeomEvalSineWaveCurveCreate(double amplitude,
 /// Find closest point on a Geom_Curve to a query point.
 /// Returns number of extrema found (0 on failure).
 /// outParams[i] = parameter on curve, outDistances[i] = distance.
+/// Calls ExtremaPC_Curve::PerformWithEndpoints, so the domain's two ends are reported alongside
+/// the interior extrema and a query point with no perpendicular foot still gets an answer (#1633).
 int32_t OCCTExtremaPCCurve(OCCTCurve3DRef _Nonnull curve,
                            double px,
                            double py,
@@ -2900,6 +2902,7 @@ int32_t OCCTExtremaPCCurve(OCCTCurve3DRef _Nonnull curve,
                            int32_t maxResults);
 
 /// Find closest point on a bounded Geom_Curve segment to a query point.
+/// uMin/uMax are themselves reported as extrema, see OCCTExtremaPCCurve above (#1633).
 int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef _Nonnull curve,
                                   double px,
                                   double py,
@@ -2914,6 +2917,8 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef _Nonnull curve,
                                   int32_t maxResults);
 
 /// Find minimum distance from point to curve (convenience, returns distance, -1 on error).
+/// The minimum is over the whole domain, endpoints included, and therefore agrees with the
+/// smallest distance OCCTExtremaPCCurve reports (#1633).
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef _Nonnull curve, double px, double py, double pz);
 
 /// Create a least-squares B-spline approximation solver.

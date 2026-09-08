@@ -477,10 +477,17 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
     // degenerate [0, 0] domain instead of the curve's natural range. Share the
     // Perform()+collect logic via a lambda and pick the right constructor with a real
     // if/else; ExtremaPC_Curve has deleted copy/move, so each branch constructs its own.
+    // #1633: PerformWithEndpoints, not Perform. Perform is the interior solve alone, so a
+    // query point with no perpendicular foot on the curve, which is every point past the end
+    // of a bounded one, reported nothing where the nearer endpoint is the answer. Measured on
+    // the pinned kernel (Scripts/repro/1633-extremapc-endpoints/probe.mm), PerformWithEndpoints is
+    // a superset of Perform on every curve kind ExtremaPC_Curve dispatches over: it adds the two
+    // domain ends to a bounded curve, adds nothing to an unbounded or closed one, and reports
+    // IsDone on a Bezier/BSpline/offset past-the-end query where Perform reports IsDone false.
     auto collect = [&](const ExtremaPC_Curve& extPC) -> int32_t {
       if (!extPC.IsInitialized())
         return 0;
-      const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
+      const auto& result = extPC.PerformWithEndpoints(gp_Pnt(px, py, pz), 1e-9);
       if (!result.IsDone())
         return 0;
       int n = std::min((int)result.NbExt(), (int)maxResults);
@@ -5627,7 +5634,11 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve, double px, double py, doub
     ExtremaPC_Curve extPC(curve->curve);
     if (!extPC.IsInitialized())
       return -1.0;
-    const auto& result = extPC.Perform(gp_Pnt(px, py, pz), 1e-9);
+    // #1633: PerformWithEndpoints, so the minimum is taken over the whole domain rather than
+    // its interior. See occtExtremaPCCurveImpl above; the two must agree, because the
+    // documented way to read a minimum out of OCCTExtremaPCCurve is to take the smallest
+    // distance it reports.
+    const auto& result = extPC.PerformWithEndpoints(gp_Pnt(px, py, pz), 1e-9);
     if (!result.IsDone() || result.NbExt() == 0)
       return -1.0;
     return std::sqrt(result.MinSquareDistance());
