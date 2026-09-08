@@ -301,9 +301,6 @@ OCCTShapeRef OCCTShapeBSplineRestriction(OCCTShapeRef shape,
 /// Convert swept surfaces to elementary (canonical) surfaces
 OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape);
 
-/// Convert surfaces of revolution to elementary surfaces
-OCCTShapeRef OCCTShapeRevolutionToElementary(OCCTShapeRef shape);
-
 /// Convert all surfaces to BSpline
 OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape);
 

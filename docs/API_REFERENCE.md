@@ -26,7 +26,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,325** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,323** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -47,7 +47,7 @@ a map of the major areas, and the `Total` as the count.
 | **Face Analysis** | 22 | uvBounds, point(atU:v:), normal, orientation, gaussianCurvature, meanCurvature, principalCurvatures, surfaceType, area, project, allProjections, intersection, orientedFaces |
 | **Edge Analysis** | 26 | parameterBounds, curveType, point(at:), curvature, tangent, normal, centerOfCurvature, torsion, project, hasCurve3D, isClosed3D, isSeam, adjacentFaces, dihedralAngle, split |
 | **Feature-Based** | 36 | boss, pocket, prism, drilled, split, glue, evolved, evolvedAdvanced, linearPattern, circularPattern, linearRib, revolutionForm, draftPrism, draftPrismThruAll, revolFeature, revolFeatureThruAll, pipeFeature, extrudedSemiInfinite, prismUntilFace, pipeFeatureFromProfile, localRevolution, localRevolutionWithOffset, locOpeDraftPrism, localPipe, localLinearForm, localRevolutionForm, splitFace, splitEdge, commonEdges, edgesInFace, cylindricalHole, cylindricalHole(extent:), cylindricalHoleBlind, cylindricalHoleThruNext, cylindricalHoleStatus, locOpeGlue |
-| **Healing/Analysis** | 69 | analyze, fixed, unified, simplified, withoutSmallFaces, wire.fixed, face.fixed, divided, directFaces, scaledGeometry, bsplineRestriction, sweptToElementary, revolutionToElementary, convertedToBSpline, sewn, upgraded, fastSewn, normalProjection, fixedWireframe, removingInternalWires, fusedEdges, simpleOffset, fixingSmallFaces, removingLocations, quilt, splitByAngle, droppingSmallEdges, splittingFace, freeBounds, fixedFreeBounds, withSurfacesAsBSpline, withSurfacesAsRevolution, checkSmallFaces, purgedLocations, curveOnSurfaceCheck, connectedEdges, convertedToBezier, limitTolerance, setTolerance, splitCommonVertices, connectedFaces, fixEdgeSameParameter, fixEdgeVertexTolerance, fixWireVertices, removeSmallSolids, mergeSmallSolids, bsplineRestriction(advanced), freeBoundsAnalysis, closedFreeBoundInfo, openFreeBoundInfo, closedFreeBoundWire, openFreeBoundWire, wireVertexAnalysis, wireVertexStatus, nearestPlane, shellSewing, trsfModification, gtrsfModification, deepCopy(modifier), bsplineRestrictionConfigurable, convertToBSplineConfigurable |
+| **Healing/Analysis** | 68 | analyze, fixed, unified, simplified, withoutSmallFaces, wire.fixed, face.fixed, divided, directFaces, scaledGeometry, bsplineRestriction, sweptToElementary, convertedToBSpline, sewn, upgraded, fastSewn, normalProjection, fixedWireframe, removingInternalWires, fusedEdges, simpleOffset, fixingSmallFaces, removingLocations, quilt, splitByAngle, droppingSmallEdges, splittingFace, freeBounds, fixedFreeBounds, withSurfacesAsBSpline, withSurfacesAsRevolution, checkSmallFaces, purgedLocations, curveOnSurfaceCheck, connectedEdges, convertedToBezier, limitTolerance, setTolerance, splitCommonVertices, connectedFaces, fixEdgeSameParameter, fixEdgeVertexTolerance, fixWireVertices, removeSmallSolids, mergeSmallSolids, bsplineRestriction(advanced), freeBoundsAnalysis, closedFreeBoundInfo, openFreeBoundInfo, closedFreeBoundWire, openFreeBoundWire, wireVertexAnalysis, wireVertexStatus, nearestPlane, shellSewing, trsfModification, gtrsfModification, deepCopy(modifier), bsplineRestrictionConfigurable, convertToBSplineConfigurable |
 | **Measurement** | 36 | volume, surfaceArea, centerOfMass, properties, distance, distance(wire/edge/face), minDistance, intersects, intersects(wire/edge/face), inertiaProperties, surfaceInertiaProperties, allDistanceSolutions, isInside, findSurfaceEx, findPlane, analyzePointCloud, edgeEdgeExtrema, pointFaceExtrema, faceFaceExtrema, pointEdgeExtrema, edgeFaceExtrema, polyhedralDistance |
 | **Point Classification** | 3 | classify(point:) on solid, classify(point:) on face, classify(u:v:) on face |
 | **Shape Proximity** | 2 | proximityFaces, selfIntersects |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,365** | |
+| **Total** | **4,364** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 

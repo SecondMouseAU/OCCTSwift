@@ -201,44 +201,12 @@ Recognises surfaces of extrusion and revolution that degenerate into planes, cyl
 
 - **Returns:** Shape with elementary surfaces, or nil on failure.
 - **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeSweptToElementary`).
+- **Inverse:** [`withSurfacesAsRevolution()`](Shape-Measurement.md#withsurfacesasrevolution) runs
+  the other direction, elementary periodic surfaces into surfaces of revolution.
 - **Example:**
   ```swift
   if let canonical = swept.sweptToElementary() {
       // cylindrical extrusion is now a true Geom_CylindricalSurface
-  }
-  ```
-
----
-
-### `revolutionToElementary()`
-
-Convert elementary periodic surfaces into surfaces of revolution.
-
-```swift
-public func revolutionToElementary() -> Shape?
-```
-
-**The name says the opposite of what this runs, and the name is the part that is wrong.** The call
-is `ShapeCustom::ConvertToRevolution`, which the pinned header documents as "returns a new shape
-with all elementary periodic surfaces converted to `Geom_SurfaceOfRevolution`". Measured on a
-cylinder, the lateral face comes back as a `Geom_SurfaceOfRevolution` and the two planar caps are
-left alone; `sweptToElementary()` puts it back. See
-`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt` and
-[#1634](https://github.com/SecondMouseAU/OCCTSwift/issues/1634), which carries the rename.
-
-[`withSurfacesAsRevolution()`](Shape-Measurement.md#withsurfacesasrevolution) is a second wrapper
-of the same static, correctly named. Prefer it. For the direction this method's name suggests, use
-[`sweptToElementary()`](#swepttoelementary).
-
-- **Returns:** Shape whose elementary periodic surfaces are now surfaces of revolution, or nil on
-  failure.
-- **OCCT:** `ShapeCustom::ConvertToRevolution`, which drives a `ShapeCustom_ConvertToRevolution`
-  modifier through `BRepTools_Modifier` (via `OCCTShapeRevolutionToElementary`).
-- **Example:**
-  ```swift
-  // a cylinder's lateral face, as a surface of revolution
-  if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.revolutionToElementary() {
-      print(asRevolution.contents.faces)  // 3, one of them Geom_SurfaceOfRevolution
   }
   ```
 
