@@ -168,10 +168,12 @@ point. Measured on the pinned kernel
 
 So a cylinder through this call comes back with all three faces still elementary and no BSpline at
 all. What is approximated is approximated no worse than the supplied tolerances, capped at
-`maxDegree` and `maxSegments`. See
-[#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637) for exposing the toggles.
+`maxDegree` and `maxSegments`. To choose the toggles, use
+[`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:parameters:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrationalparameters),
+whose `parameters` argument reaches every one of them (#1637); this entry point keeps OCCT's own
+defaults deliberately.
 
-Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
+Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:parameters:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrationalparameters) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
 - **Parameters:**
   - `surfaceTolerance`: maximum allowable deviation for surface approximation (default 0.01).

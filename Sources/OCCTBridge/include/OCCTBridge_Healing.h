@@ -789,6 +789,40 @@ OCCTShapeRef _Nullable OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape,
 /// @return Shape with all surfaces made direct, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeCustomDirectFaces(OCCTShapeRef shape);
 
+/// Which geometry kinds `ShapeCustom::BSplineRestriction` is allowed to convert.
+///
+/// Mirrors `ShapeCustom_RestrictionParameters`. Every field is a per-kind switch, and a kind whose
+/// switch is off is returned untouched with no diagnostic: with the class's own defaults, which
+/// the bridge used to pass unconditionally, a cylinder comes back with 0 BSpline faces and 3 still
+/// elementary (#1637). The defaults below are the class's own, read off the pinned kernel
+/// (`Scripts/repro/1637/transcript.txt`), so `occtDefaultBSplineRestrictionParameters()` reproduces
+/// the previous behaviour exactly.
+///
+/// `GMaxDegree` and `GMaxSeg` are deliberately absent. They are the class's two global caps and
+/// they are measured to have **no effect** next to the per-call `maxDegree` / `maxSegments`: on a
+/// torus, `GMaxDegree` of 3, 5 and 15 all produce degree 7, while the per-call `maxDegree` of 3, 5
+/// and 9 produces 3, 5 and 7. Exposing them would be exposing a no-op.
+typedef struct
+{
+  bool convertPlane;           // ShapeCustom_RestrictionParameters::ConvertPlane, default false
+  bool convertBezierSurf;      // ConvertBezierSurf, default false
+  bool convertRevolutionSurf;  // ConvertRevolutionSurf, default true
+  bool convertExtrusionSurf;   // ConvertExtrusionSurf, default true
+  bool convertOffsetSurf;      // ConvertOffsetSurf, default true
+  bool convertCylindricalSurf; // ConvertCylindricalSurf, default false
+  bool convertConicalSurf;     // ConvertConicalSurf, default false
+  bool convertToroidalSurf;    // ConvertToroidalSurf, default false
+  bool convertSphericalSurf;   // ConvertSphericalSurf, default false
+  bool segmentSurfaceMode;     // SegmentSurfaceMode, default true
+  bool convertCurve3d;         // ConvertCurve3d, default true
+  bool convertOffsetCurv3d;    // ConvertOffsetCurv3d, default true
+  bool convertCurve2d;         // ConvertCurve2d, default true
+  bool convertOffsetCurv2d;    // ConvertOffsetCurv2d, default true
+} OCCTBSplineRestrictionParameters;
+
+/// `ShapeCustom_RestrictionParameters`'s own defaults, as a value.
+OCCTBSplineRestrictionParameters occtDefaultBSplineRestrictionParameters(void);
+
 /// Simplify BSpline surfaces and curves by restricting degree and segment count.
 /// @param shape Shape to process
 /// @param tol3d 3D tolerance
@@ -799,16 +833,22 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectFaces(OCCTShapeRef shape);
 /// @param continuity2d 2D continuity (0=C0, 1=C1, 2=C2)
 /// @param degreePriority If true, prioritize degree reduction over segment count
 /// @param rational If true, allow rational BSplines
+/// @param parameters Which geometry kinds may be converted. NULL means
+///        `ShapeCustom_RestrictionParameters`'s own defaults, which convert surfaces of revolution,
+///        extrusion and offset and leave planes, cylinders, cones, spheres, tori and Bezier
+///        surfaces alone.
 /// @return Simplified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
-                                                         double       tol3d,
-                                                         double       tol2d,
-                                                         int32_t      maxDegree,
-                                                         int32_t      maxSegments,
-                                                         int32_t      continuity3d,
-                                                         int32_t      continuity2d,
-                                                         bool         degreePriority,
-                                                         bool         rational);
+OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(
+  OCCTShapeRef                            shape,
+  double                                  tol3d,
+  double                                  tol2d,
+  int32_t                                 maxDegree,
+  int32_t                                 maxSegments,
+  int32_t                                 continuity3d,
+  int32_t                                 continuity2d,
+  bool                                    degreePriority,
+  bool                                    rational,
+  const OCCTBSplineRestrictionParameters* parameters);
 
 /// Result of wire vertex analysis.
 typedef struct

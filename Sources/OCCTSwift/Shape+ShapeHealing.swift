@@ -762,6 +762,161 @@ extension Shape {
     // nested `BSplineContinuity` copy this file used to declare is now a deprecated alias
     // of it. See #398.
 
+    /// Which geometry kinds ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:parameters:)``
+    /// is allowed to convert.
+    ///
+    /// Mirrors `ShapeCustom_RestrictionParameters`, whose per-kind switches decide whether
+    /// `ShapeCustom::BSplineRestriction` touches a surface at all. A kind whose switch is off is
+    /// returned untouched with no diagnostic, which is why a cylinder used to come back from
+    /// `bsplineRestriction` entirely unconverted (#1637): the object was default-built and
+    /// unreachable from Swift.
+    ///
+    /// ```swift
+    /// // OCCT's defaults leave a cylinder's analytic faces alone.
+    /// let untouched = cylinder.bsplineRestriction()
+    ///
+    /// // Every surface kind, which is what "restrict this to BSplines" usually means.
+    /// let converted = cylinder.bsplineRestriction(parameters: .allSurfaceTypes)
+    ///
+    /// // Or one kind at a time.
+    /// var onlyCylinders = Shape.BSplineRestrictionParameters.occtDefaults
+    /// onlyCylinders.convertCylindricalSurface = true
+    /// let wallOnly = cylinder.bsplineRestriction(parameters: onlyCylinders)
+    /// ```
+    ///
+    /// `GMaxDegree` and `GMaxSeg`, the class's two global caps, are deliberately not here. They
+    /// are measured to have no effect next to the per-call `maxDegree` and `maxSegments`: on a
+    /// torus, `GMaxDegree` of 3, 5 and 15 all deliver degree 7, while the per-call `maxDegree` of
+    /// 3, 5 and 9 delivers 3, 5 and 7. See `Scripts/repro/1637/transcript.txt`.
+    public struct BSplineRestrictionParameters: Sendable, Equatable {
+        /// Convert `Geom_Plane`.
+        ///
+        /// OCCT default: `false`.
+        public var convertPlane: Bool
+        /// Convert `Geom_BezierSurface`.
+        ///
+        /// OCCT default: `false`.
+        public var convertBezierSurface: Bool
+        /// Convert `Geom_SurfaceOfRevolution`.
+        ///
+        /// OCCT default: `true`.
+        public var convertRevolutionSurface: Bool
+        /// Convert `Geom_SurfaceOfLinearExtrusion`.
+        ///
+        /// OCCT default: `true`.
+        public var convertExtrusionSurface: Bool
+        /// Convert `Geom_OffsetSurface`.
+        ///
+        /// OCCT default: `true`.
+        public var convertOffsetSurface: Bool
+        /// Convert `Geom_CylindricalSurface`.
+        ///
+        /// OCCT default: `false`.
+        public var convertCylindricalSurface: Bool
+        /// Convert `Geom_ConicalSurface`.
+        ///
+        /// OCCT default: `false`.
+        public var convertConicalSurface: Bool
+        /// Convert `Geom_ToroidalSurface`.
+        ///
+        /// OCCT default: `false`.
+        public var convertToroidalSurface: Bool
+        /// Convert `Geom_SphericalSurface`.
+        ///
+        /// OCCT default: `false`.
+        public var convertSphericalSurface: Bool
+        /// Approximate each surface only within the bounds of the face lying on it.
+        ///
+        /// OCCT default: `true`.
+        public var segmentSurfaceMode: Bool
+        /// Convert 3D curves.
+        ///
+        /// OCCT default: `true`.
+        public var convertCurve3d: Bool
+        /// Convert offset 3D curves.
+        ///
+        /// OCCT default: `true`.
+        public var convertOffsetCurve3d: Bool
+        /// Convert pcurves.
+        ///
+        /// OCCT default: `true`.
+        public var convertCurve2d: Bool
+        /// Convert offset pcurves.
+        ///
+        /// OCCT default: `true`.
+        public var convertOffsetCurve2d: Bool
+
+        /// Build a set of switches, defaulting each to OCCT's own value for it.
+        public init(
+            convertPlane: Bool = false,
+            convertBezierSurface: Bool = false,
+            convertRevolutionSurface: Bool = true,
+            convertExtrusionSurface: Bool = true,
+            convertOffsetSurface: Bool = true,
+            convertCylindricalSurface: Bool = false,
+            convertConicalSurface: Bool = false,
+            convertToroidalSurface: Bool = false,
+            convertSphericalSurface: Bool = false,
+            segmentSurfaceMode: Bool = true,
+            convertCurve3d: Bool = true,
+            convertOffsetCurve3d: Bool = true,
+            convertCurve2d: Bool = true,
+            convertOffsetCurve2d: Bool = true
+        ) {
+            self.convertPlane = convertPlane
+            self.convertBezierSurface = convertBezierSurface
+            self.convertRevolutionSurface = convertRevolutionSurface
+            self.convertExtrusionSurface = convertExtrusionSurface
+            self.convertOffsetSurface = convertOffsetSurface
+            self.convertCylindricalSurface = convertCylindricalSurface
+            self.convertConicalSurface = convertConicalSurface
+            self.convertToroidalSurface = convertToroidalSurface
+            self.convertSphericalSurface = convertSphericalSurface
+            self.segmentSurfaceMode = segmentSurfaceMode
+            self.convertCurve3d = convertCurve3d
+            self.convertOffsetCurve3d = convertOffsetCurve3d
+            self.convertCurve2d = convertCurve2d
+            self.convertOffsetCurve2d = convertOffsetCurve2d
+        }
+
+        /// The kernel's own defaults, passed unconditionally by both bridge entry points
+        /// before #1637.
+        ///
+        /// Surfaces of revolution, extrusion and offset convert; planes, cylinders, cones,
+        /// spheres, tori and Bezier surfaces do not.
+        public static let occtDefaults = BSplineRestrictionParameters()
+
+        /// Every surface kind on, which is usually what "restrict this to BSplines" means.
+        ///
+        /// The four curve switches and `segmentSurfaceMode` keep OCCT's defaults, which are
+        /// already on.
+        public static let allSurfaceTypes = BSplineRestrictionParameters(
+            convertPlane: true,
+            convertBezierSurface: true,
+            convertCylindricalSurface: true,
+            convertConicalSurface: true,
+            convertToroidalSurface: true,
+            convertSphericalSurface: true)
+
+        var bridgeValue: OCCTBSplineRestrictionParameters {
+            OCCTBSplineRestrictionParameters(
+                convertPlane: convertPlane,
+                convertBezierSurf: convertBezierSurface,
+                convertRevolutionSurf: convertRevolutionSurface,
+                convertExtrusionSurf: convertExtrusionSurface,
+                convertOffsetSurf: convertOffsetSurface,
+                convertCylindricalSurf: convertCylindricalSurface,
+                convertConicalSurf: convertConicalSurface,
+                convertToroidalSurf: convertToroidalSurface,
+                convertSphericalSurf: convertSphericalSurface,
+                segmentSurfaceMode: segmentSurfaceMode,
+                convertCurve3d: convertCurve3d,
+                convertOffsetCurv3d: convertOffsetCurve3d,
+                convertCurve2d: convertCurve2d,
+                convertOffsetCurv2d: convertOffsetCurve2d)
+        }
+    }
+
     /// Simplify BSpline surfaces and curves by restricting degree and segment count.
     ///
     /// Uses ShapeCustom::BSplineRestriction to approximate geometry with simpler BSplines.
@@ -779,6 +934,13 @@ extension Shape {
     /// vocabulary: `ShapeCustom::BSplineRestriction` is itself a `ShapeCustom_BSplineRestriction`
     /// run through `BRepTools_Modifier`, which is what the advanced entry point builds by hand.
     ///
+    /// **The `parameters` argument is what decides which surfaces are converted at all.** Its
+    /// default is `ShapeCustom_RestrictionParameters`'s own, which converts surfaces of revolution,
+    /// extrusion and offset and leaves planes, cylinders, cones, spheres, tori and Bezier surfaces
+    /// exactly as they were, with no diagnostic. Measured, a cylinder through this call at the
+    /// default comes back with 0 BSpline faces and 3 still elementary. Pass
+    /// ``BSplineRestrictionParameters/allSurfaceTypes`` to convert everything (#1637).
+    ///
     /// - Parameters:
     ///   - tol3d: 3D tolerance (default: 0.01)
     ///   - tol2d: 2D tolerance (default: 0.01)
@@ -793,19 +955,24 @@ extension Shape {
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
+    ///   - parameters: Which geometry kinds may be converted (default: OCCT's own defaults)
     /// - Returns: Simplified shape, or nil on failure
     public func bsplineRestriction(
         tol3d: Double = 0.01, tol2d: Double = 0.01,
         maxDegree: Int = 8, maxSegments: Int = 100,
         continuity3d: ParametricContinuity = .c1, continuity2d: ParametricContinuity = .c1,
-        degreePriority: Bool = true, rational: Bool = false
+        degreePriority: Bool = true, rational: Bool = false,
+        parameters: BSplineRestrictionParameters = .occtDefaults
     ) -> Shape? {
-        guard
-            let ref = OCCTShapeCustomBSplineRestriction(
+        var bridgeParameters = parameters.bridgeValue
+        let ref = withUnsafePointer(to: &bridgeParameters) { pointer in
+            OCCTShapeCustomBSplineRestriction(
                 handle, tol3d, tol2d, Int32(maxDegree), Int32(maxSegments),
-                continuity3d.rawValue, continuity2d.rawValue, degreePriority, rational
+                continuity3d.rawValue, continuity2d.rawValue, degreePriority, rational,
+                pointer
             )
-        else { return nil }
+        }
+        guard let ref else { return nil }
         return Shape(handle: ref)
     }
 
