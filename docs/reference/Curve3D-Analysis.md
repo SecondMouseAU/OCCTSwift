@@ -1336,14 +1336,23 @@ directly, through `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)`, and reads
 `ExtremaPC::Result`. Not `Extrema_ExtPC`, which these entries named until #1399 and which the
 bridge does not construct anywhere.
 
-**Every entry here reports interior extrema only.** `ExtremaPC_Curve::Perform` is the interior
-solve; the endpoints of a bounded curve are `PerformWithEndpoints`'s business and nothing on this
-page calls it. So a query point that has no perpendicular foot on the curve, which is every point
-past the end of a bounded curve, comes back empty rather than reporting the nearer endpoint.
-Measured on a segment `[0, 10]` along +X queried from `(20, 0, 0)`: `Perform` reports
-`NbExt() == 0`, `PerformWithEndpoints` reports two extrema with the correct minimum of 10
-(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`). Tracked as
-[#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633).
+**Every entry here reports the domain's two ends alongside the interior extrema.** The bridge
+calls `ExtremaPC_Curve::PerformWithEndpoints`, not `Perform`. So a bounded curve normally reports
+two more extrema than it has perpendicular feet, and a query point with no perpendicular foot at
+all still gets an answer: measured on a segment `[0, 10]` along +X queried from `(20, 0, 0)`,
+`Perform` reports `NbExt() == 0` while `PerformWithEndpoints` reports two extrema with the correct
+minimum of 10. An unbounded curve and a closed one have no ends to add, and are unchanged: a full
+circle of radius 5 queried from `(0, 10, 0)` reports the same two extrema either way.
+
+`PerformWithEndpoints` is a superset of `Perform` on every curve kind `ExtremaPC_Curve` dispatches
+over, measured in `Scripts/repro/1633-extremapc-endpoints/probe.mm`, and on a Bezier, B-spline or offset curve queried
+past its end it also reports `IsDone()` where `Perform` does not.
+
+**Changed in [#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633).** These entries used
+to call `Perform`, the interior solve alone, so `extrema(from:)` answered `[]` and
+`minimumDistance(from:)` answered `nil` for every point past the end of a bounded curve. This is
+the same distinction #580 settled for
+[`Shape.pointEdgeExtrema(point:edgeIndex:)`](Shape-Measurement.md).
 
 ---
 
@@ -1375,11 +1384,11 @@ public func extrema(from point: SIMD3<Double>) -> [ExtremumResult]
 
 Uses `ExtremaPC_Curve` over the curve's own domain. Returns up to 64 results. The
 minimum-distance result is the `ExtremumResult` with the smallest `distance`, and it is a minimum
-over the interior only, see the note at the top of this section.
+over the whole domain, the two ends included, see the note at the top of this section.
 
 - **Parameters:** `point`, the query point.
 - **Returns:** Array of `ExtremumResult` values (empty on failure or no extrema found).
-- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)` then `Perform`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)` then `PerformWithEndpoints`.
 - **Example:**
   ```swift
   if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
@@ -1387,6 +1396,11 @@ over the interior only, see the note at the top of this section.
       if let nearest = results.min(by: { $0.distance < $1.distance }) {
           print(nearest.point, nearest.distance)
       }
+  }
+
+  if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+      let results = seg.extrema(from: SIMD3(20, 0, 0))
+      print(results.map(\.distance).min()!)  // 10.0. Was [] before #1633.
   }
   ```
 
@@ -1401,13 +1415,13 @@ public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [E
 ```
 
 Restricts the search to `[uMin, uMax]` by handing those bounds to `ExtremaPC_Curve`'s own
-three-argument constructor. Returns up to 64 results. `uMin`/`uMax` bound the interior search; the
-bounds themselves are endpoints, and endpoints are not reported, see the note at the top of this
-section.
+three-argument constructor. Returns up to 64 results. `uMin` and `uMax` are themselves reported as
+extrema, see the note at the top of this section.
 
 - **Parameters:** `point`, query point; `uMin`, lower parameter bound; `uMax`, upper parameter bound.
 - **Returns:** Array of `ExtremumResult` values within the specified range (empty on failure).
-- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&, double, double)` then `Perform`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&, double, double)` then
+  `PerformWithEndpoints`.
 - **Example:**
   ```swift
   if let c = Curve3D.bspline(points: myPoints) {
@@ -1429,20 +1443,21 @@ public func minimumDistance(from point: SIMD3<Double>) -> Double?
 
 Convenience method backed by `ExtremaPC_Curve`, reading `ExtremaPC::Result::MinSquareDistance()`.
 
-`nil` means the interior solve found no extremum, which is not the same as "the computation
-failed". A point past the end of a bounded curve has no perpendicular foot on it, so this returns
-`nil` there even though the distance to the nearer endpoint is a perfectly good answer: measured, a
-segment `[0, 10]` along +X queried from `(20, 0, 0)` returns `nil` rather than `10`
-([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+The minimum is over the whole domain, the two ends of a bounded curve included, so it agrees with
+the smallest `distance` in `extrema(from:)`'s array. `nil` means the solver reported no extremum at
+all, which on a curve it could build is rare.
 
 - **Parameters:** `point`, the query point.
-- **Returns:** Minimum distance over the curve's interior, or `nil` when there is no interior
-  extremum (which includes, but is not limited to, a genuine failure).
-- **OCCT:** `ExtremaPC_Curve::Perform` via `OCCTExtremaPCMinDistance`.
+- **Returns:** Minimum distance over the whole curve, or `nil` when the solver reports no extremum.
+- **OCCT:** `ExtremaPC_Curve::PerformWithEndpoints` via `OCCTExtremaPCMinDistance`.
 - **Example:**
   ```swift
   if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
      let d = c.minimumDistance(from: SIMD3(0, 10, 0)) {
-      print(d)  // ≈ 5.0
+      print(d)  // about 5.0
+  }
+
+  if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+      print(seg.minimumDistance(from: SIMD3(20, 0, 0)) ?? -1)  // 10.0. Was nil before #1633.
   }
   ```

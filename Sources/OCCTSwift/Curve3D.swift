@@ -2754,14 +2754,17 @@ extension Curve3D {
         public let point: SIMD3<Double>
     }
 
-    /// Find all interior extrema (closest and farthest points) from a point to this curve.
+    /// Find all extrema (closest and farthest points) from a point to this curve.
     ///
     /// Backed by `ExtremaPC_Curve`, OCCT 8.0's variant-dispatching point-curve solver, over the
     /// curve's own domain. Up to 64 results.
     ///
-    /// **Endpoints are not reported.** `ExtremaPC_Curve::Perform` is the interior solve, and this
-    /// method does not call `PerformWithEndpoints`, so a query point with no perpendicular foot on
-    /// the curve gives an empty array rather than the nearer endpoint
+    /// **The domain's two ends are reported alongside the interior extrema**, because this calls
+    /// `ExtremaPC_Curve::PerformWithEndpoints`. So a bounded curve normally has two more results
+    /// than there are perpendicular feet, and a query point with no perpendicular foot at all
+    /// still gets an answer: a segment `[0, 10]` along +X queried from `(20, 0, 0)` reports the
+    /// end at `u = 10`, distance 10. An unbounded curve, and a closed one such as a full circle,
+    /// have no ends to add and are unchanged
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
     ///
     /// ```swift
@@ -2771,10 +2774,15 @@ extension Curve3D {
     ///         print(nearest.point, nearest.distance)
     ///     }
     /// }
+    ///
+    /// if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+    ///     let results = seg.extrema(from: SIMD3(20, 0, 0))
+    ///     print(results.map(\.distance).min()!)  // 10.0. Was [] before #1633.
+    /// }
     /// ```
     ///
     /// - Parameter point: the query point
-    /// - Returns: array of interior extrema, empty when there are none
+    /// - Returns: array of extrema, empty when there are none
     public func extrema(from point: SIMD3<Double>) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2793,12 +2801,11 @@ extension Curve3D {
         }
     }
 
-    /// Find all interior extrema from a point to a bounded segment of this curve.
+    /// Find all extrema from a point to a bounded segment of this curve.
     ///
-    /// `uMin`/`uMax` go to `ExtremaPC_Curve`'s own three-argument constructor. They bound the
-    /// interior search, and are themselves endpoints, which ``extrema(from:)`` explains are not
-    /// reported ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)). Up to 64
-    /// results.
+    /// `uMin`/`uMax` go to `ExtremaPC_Curve`'s own three-argument constructor, and are themselves
+    /// reported as extrema, the same way ``extrema(from:)`` reports the curve's own ends
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)). Up to 64 results.
     ///
     /// ```swift
     /// if let c = Curve3D.bspline(points: myPoints) {
@@ -2812,7 +2819,7 @@ extension Curve3D {
     ///   - point: the query point
     ///   - uMin: lower parameter bound
     ///   - uMax: upper parameter bound
-    /// - Returns: array of interior extrema within the bounds, empty when there are none
+    /// - Returns: array of extrema within the bounds, empty when there are none
     public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2832,26 +2839,30 @@ extension Curve3D {
         }
     }
 
-    /// Find the minimum distance from a point to this curve's interior.
+    /// Find the minimum distance from a point to this curve.
     ///
-    /// Reads `ExtremaPC::Result::MinSquareDistance()` from `ExtremaPC_Curve::Perform`.
-    ///
-    /// `nil` is not only "the computation failed": it is also what a point with no perpendicular
-    /// foot on the curve gets, because the interior solve has no extremum to report there and the
-    /// endpoints are never consulted. Measured, a segment `[0, 10]` along +X queried from
-    /// `(20, 0, 0)` returns `nil` rather than `10`
+    /// Reads `ExtremaPC::Result::MinSquareDistance()` from
+    /// `ExtremaPC_Curve::PerformWithEndpoints`, so the minimum is over the whole domain, the two
+    /// ends of a bounded curve included, and agrees with the smallest `distance` in
+    /// ``extrema(from:)``'s array
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+    ///
+    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
     ///
     /// ```swift
     /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
     ///    let d = arc.minimumDistance(from: SIMD3(0, 10, 0)) {
     ///     print(d)  // about 5.0
     /// }
+    ///
+    /// if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+    ///     print(seg.minimumDistance(from: SIMD3(20, 0, 0)) ?? -1)  // 10.0. Was nil before #1633.
+    /// }
     /// ```
     ///
     /// - Parameter point: the query point
-    /// - Returns: the minimum distance over the interior, or `nil` when there is no interior
-    ///   extremum
+    /// - Returns: the minimum distance over the curve, or `nil` when the solver reports no
+    ///   extremum at all
     public func minimumDistance(from point: SIMD3<Double>) -> Double? {
         let d = OCCTExtremaPCMinDistance(handle, point.x, point.y, point.z)
         return d >= 0 ? d : nil
