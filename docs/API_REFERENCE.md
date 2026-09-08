@@ -26,7 +26,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,324** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,330** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -107,7 +107,7 @@ a map of the major areas, and the `Total` as the count.
 | **BRepOffset** | 1 | simpleOffsetShape |
 | **Approx** | 1 | curvilinearParameter |
 | **GeomInt** | 1 | surfaceSurfaceIntersection |
-| **Contap** | 2 | contapContourDirection, contapContourEye |
+| **Contap** | 8 | contapContourDirection, contapContourEye, geometry, arcRange, arcPoint, vertexCount, vertex, vertices |
 | **BRepFeat** | 6 | featFuse, featCut, splitByEdge, splitByWire, splitWithSides, glue |
 | **GeomFill Filling** | 3 | coonsFilling, curvedFilling, coonsAlgPatch |
 | **GeomFill Sweep** | 1 | geomFillSweep |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,364** | |
+| **Total** | **4,370** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 

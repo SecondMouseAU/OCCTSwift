@@ -1820,10 +1820,16 @@ Contour computation result (reference-counted class).
 ```swift
 public class ContapContourResult {
     public var lineCount: Int { get }
+    public func lineType(_ line: Int) -> ContourLineType?
+    public func geometry(line: Int) -> ContourGeometry?
     public func pointCount(line: Int) -> Int
     public func point(line: Int, index: Int) -> SIMD3<Double>
     public func points(line: Int) -> [SIMD3<Double>]
-    public func lineType(_ line: Int) -> ContourLineType?
+    public func arcRange(line: Int) -> ClosedRange<Double>?
+    public func arcPoint(line: Int, parameter: Double) -> SIMD2<Double>?
+    public func vertexCount(line: Int) -> Int
+    public func vertex(line: Int, index: Int) -> ContourVertex?
+    public func vertices(line: Int) -> [ContourVertex]
 }
 ```
 
@@ -1838,10 +1844,161 @@ and `Contap_Line::Point(Index)` both open with
 `lineType(_:)` first.
 
 That is not an edge case: a cylinder's lateral face viewed along `(1, 0, 0)` gives two `.line`
-contours, and neither has a reachable point
-(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`). The analytic geometry OCCT
-holds for those lines (`Contap_Line::Line()`, `Circle()`, `Vertex()`) is not wrapped;
-[#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635) tracks adding it.
+contours, and neither has a reachable point.
+
+**Added in [#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635):** `geometry(line:)`
+reads the type first and returns the accessor that applies, so an analytic contour has geometry.
+`vertexCount`/`vertex`/`vertices` are `Contap_Line::NbVertex()`/`Vertex(Index)`, which are valid on
+every type, and `arcRange`/`arcPoint` evaluate a `.restriction` contour's boundary arc. Measured
+across all four types in `Scripts/repro/1635-contap-analytic-geometry/`.
+
+---
+
+### `ContourGeometry`
+
+The geometry of one contour line, in whichever form `Contap_Line` holds it.
+
+```swift
+public enum ContourGeometry: Sendable {
+    case line(origin: SIMD3<Double>, direction: SIMD3<Double>)
+    case circle(
+        center: SIMD3<Double>, axis: SIMD3<Double>, xDirection: SIMD3<Double>, radius: Double)
+    case walking(points: [SIMD3<Double>])
+    case restriction(parameterRange: ClosedRange<Double>)
+}
+```
+
+| case | OCCT accessor | what it is |
+|---|---|---|
+| `.line` | `Contap_Line::Line()` | a tangent ruling, as an infinite `gp_Lin`; the stretch on the face is delimited by the line's vertices |
+| `.circle` | `Contap_Line::Circle()` | a silhouette circle, as a `gp_Circ` |
+| `.walking` | `Contap_Line::Point(Index)` | a numerically traced contour, in 3D |
+| `.restriction` | `Contap_Line::Arc()` | a stretch of the face's own boundary, as the arc's parameter range |
+
+---
+
+### `ContourVertex`
+
+A vertex on a contour line (`Contap_Point`). Unlike the traced points, vertices exist on every
+contour type: a cylinder's tangent ruling has two, where it meets the face's boundary.
+
+```swift
+public struct ContourVertex: Sendable {
+    public let point: SIMD3<Double>
+    public let uv: SIMD2<Double>
+    public let parameterOnLine: Double
+    public let parameterOnArc: Double?
+    public let isFaceVertex: Bool
+    public let isMultiple: Bool
+    public let isInternal: Bool
+}
+```
+
+- `point`: `Contap_Point::Value()`.
+- `uv`: `Contap_Point::Parameters()`, in the face's UV space.
+- `parameterOnLine`: `Contap_Point::ParameterOnLine()`.
+- `parameterOnArc`: `Contap_Point::ParameterOnArc()`, or `nil` when the vertex sits on no arc.
+  `nil` rather than zero, because `ParameterOnArc()` throws `Standard_DomainError` when
+  `IsOnArc()` is false and zero is a valid parameter.
+- `isFaceVertex`: `Contap_Point::IsVertex()`, the point is a vertex of the original face.
+- `isMultiple`: `Contap_Point::IsMultiple()`, the point belongs to several contour lines.
+- `isInternal`: `Contap_Point::IsInternal()`, the contour is tangent to the restriction here.
+
+---
+
+#### `ContapContourResult.geometry(line:)`
+
+The geometry of a contour line (1-based index), in whichever form `Contap_Line` holds it.
+
+```swift
+public func geometry(line: Int) -> ContourGeometry?
+```
+
+- **Returns:** the geometry, or `nil` when the index is out of range or the contour failed.
+- **OCCT:** `Contap_Line::TypeContour()`, then `Line()`, `Circle()`, `Point(Index)` or `Arc()`.
+- **Example:**
+  ```swift
+  // A cylinder's lateral face, viewed across its axis: two tangent rulings.
+  if let contour = face.contapContourDirection(SIMD3(1, 0, 0)), contour.lineCount > 0 {
+      for line in 1...contour.lineCount {
+          switch contour.geometry(line: line) {
+          case let .line(origin, direction):
+              print("ruling through \(origin) along \(direction)")
+          case let .circle(center, axis, _, radius):
+              print("silhouette circle r=\(radius) at \(center) about \(axis)")
+          case let .walking(points):
+              print("traced contour, \(points.count) points")
+          case let .restriction(range):
+              print("boundary arc over \(range)")
+          case nil:
+              break
+          }
+      }
+  }
+  ```
+
+#### `ContapContourResult.arcRange(line:)`
+
+The parameter range of the face-boundary arc a `.restriction` contour follows.
+
+```swift
+public func arcRange(line: Int) -> ClosedRange<Double>?
+```
+
+- **Returns:** the range, or `nil` when the line is not `.restriction`, the index is out of range,
+  or `Contap_Line::Arc()` is a null handle.
+- **OCCT:** `Contap_Line::Arc()`, then `Adaptor2d_Curve2d::FirstParameter`/`LastParameter`.
+
+#### `ContapContourResult.arcPoint(line:parameter:)`
+
+A point on that arc, in the face's UV space.
+
+```swift
+public func arcPoint(line: Int, parameter: Double) -> SIMD2<Double>?
+```
+
+- **Parameters:** `line`, 1-based contour line index; `parameter`, a value from `arcRange(line:)`.
+- **Returns:** the UV point, or `nil` on the same refusals as `arcRange(line:)`.
+- **OCCT:** `Adaptor2d_Curve2d::Value`.
+- **Example:**
+  ```swift
+  if let range = contour.arcRange(line: 1),
+     let uv = contour.arcPoint(line: 1, parameter: range.lowerBound) {
+      print(uv)
+  }
+  ```
+
+#### `ContapContourResult.vertexCount(line:)`
+
+The number of vertices on a contour line (1-based index). Valid on every contour type, unlike
+`pointCount(line:)`.
+
+```swift
+public func vertexCount(line: Int) -> Int
+```
+
+- **OCCT:** `Contap_Line::NbVertex()`.
+
+#### `ContapContourResult.vertex(line:index:)`
+
+A vertex on a contour line (1-based indices).
+
+```swift
+public func vertex(line: Int, index: Int) -> ContourVertex?
+```
+
+- **Returns:** the vertex, or `nil` when either index is out of range.
+- **OCCT:** `Contap_Line::Vertex(Index)`.
+
+#### `ContapContourResult.vertices(line:)`
+
+Every vertex on a contour line (1-based line index).
+
+```swift
+public func vertices(line: Int) -> [ContourVertex]
+```
+
+- **OCCT:** `Contap_Line::NbVertex()` and `Vertex(Index)`.
 
 ---
 
