@@ -813,6 +813,66 @@ void OCCTContapContourLinePoint(OCCTContapContourRef ref,
 int  OCCTContapContourLineType(OCCTContapContourRef ref, int lineIndex);
 void OCCTContapContourRelease(OCCTContapContourRef ref);
 
+// --- Contap_Line geometry for the non-walking contour types, and Contap_Point vertices (#1635) ---
+//
+// Contap_Line::NbPnts()/Point() throw Standard_DomainError unless the line is Contap_Walking, so
+// OCCTContapContourLinePointCount/LinePoint above answer for a traced contour only. An ANALYTIC
+// contour, which is what a cylinder or a sphere produces, carries its geometry in Line(), Circle()
+// or Arc() instead, and every type carries NbVertex()/Vertex(). Each accessor below refuses a line
+// of the wrong type rather than returning a value, because Contap_Line refuses it too.
+
+/// A vertex on a contour line (Contap_Point). Valid on every Contap_IType.
+typedef struct
+{
+  double x, y, z;         // Value()
+  double u, v;            // Parameters(): the vertex in the face's UV space
+  double parameterOnLine; // ParameterOnLine()
+  double parameterOnArc;  // ParameterOnArc(), which throws unless isOnArc; NaN when !isOnArc
+  bool   isOnArc;         // IsOnArc()
+  bool   isVertex;        // IsVertex(): the point is a vertex of the original face
+  bool   isMultiple;      // IsMultiple(): the point belongs to several contour lines
+  bool   isInternal;      // IsInternal(): the contour is tangent to the restriction here
+} OCCTContapVertex;
+
+/// Contap_Line::Line() for a Contap_Lin contour: the infinite line the tangent ruling lies on.
+/// Writes 6 doubles into out: origin xyz, then unit direction xyz.
+/// @return false, writing nothing, when the line is not Contap_Lin or the index is out of range.
+bool OCCTContapContourLineAsLine(OCCTContapContourRef ref, int lineIndex, double* _Nonnull out);
+
+/// Contap_Line::Circle() for a Contap_Circle contour: the circle the silhouette lies on.
+/// Writes 10 doubles into out: centre xyz, axis direction xyz, X direction xyz, then the radius.
+/// @return false, writing nothing, when the line is not Contap_Circle or the index is out of range.
+bool OCCTContapContourLineAsCircle(OCCTContapContourRef ref, int lineIndex, double* _Nonnull out);
+
+/// Contap_Line::Arc()'s parameter range for a Contap_Restriction contour, the stretch of the
+/// face's own boundary that lies on the silhouette. The parameters are the arc's, in the face's
+/// UV space; evaluate them with OCCTContapContourLineArcPoint.
+/// @return false, writing nothing, when the line is not Contap_Restriction, the index is out of
+///         range, or the arc handle is null.
+bool OCCTContapContourLineArcRange(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double* _Nonnull outFirst,
+                                   double* _Nonnull outLast);
+
+/// Adaptor2d_Curve2d::Value on the arc of a Contap_Restriction contour: the UV point at a
+/// parameter from OCCTContapContourLineArcRange's range.
+/// @return false, writing nothing, on the same refusals as OCCTContapContourLineArcRange.
+bool OCCTContapContourLineArcPoint(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double               parameter,
+                                   double* _Nonnull outU,
+                                   double* _Nonnull outV);
+
+/// Contap_Line::NbVertex(), which is valid on every contour type, unlike NbPnts().
+int OCCTContapContourLineVertexCount(OCCTContapContourRef ref, int lineIndex);
+
+/// Contap_Line::Vertex(Index) (1-based), as a Contap_Point.
+/// @return false, writing nothing, when the index is out of range.
+bool OCCTContapContourLineVertex(OCCTContapContourRef ref,
+                                 int                  lineIndex,
+                                 int                  vertexIndex,
+                                 OCCTContapVertex* _Nonnull out);
+
 // --- GeomFill Trihedron Laws ---
 // Evaluate trihedron frame (tangent, normal, binormal) on an edge at parameter
 typedef struct

@@ -269,6 +269,8 @@
 // --- Contap ---
 // Contap_ContAna                      → OCCTContapSphereDir, OCCTContapCylinderDir,
 // OCCTContapSphereEye Contap_Contour                      → OCCTContapContour*
+// Contap_Line                         → OCCTContapContourLineAs*, OCCTContapContourLineArc*
+// Contap_Point                        → OCCTContapContourLineVertex*
 //
 // --- CPnts ---
 // CPnts_UniformDeflection             → OCCTCPntsUniformDeflection*

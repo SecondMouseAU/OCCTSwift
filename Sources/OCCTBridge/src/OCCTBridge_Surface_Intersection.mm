@@ -106,10 +106,12 @@
 #include <TColStd_Array2OfReal.hxx>
 #include <Adaptor3d_CurveOnSurface.hxx>
 #include <BRepTopAdaptor_TopolTool.hxx>
+#include <Adaptor2d_Curve2d.hxx>
 #include <Contap_ContAna.hxx>
 #include <Contap_Contour.hxx>
 #include <Contap_IType.hxx>
 #include <Contap_Line.hxx>
+#include <Contap_Point.hxx>
 #include <Approx_MCurvesToBSpCurve.hxx>
 #include <GeomFill_Coons.hxx>
 #include <GeomFill_CoonsAlgPatch.hxx>
@@ -201,6 +203,8 @@
 #include <GeomEval_AHTBezierSurface.hxx>
 #include <GeomFill_NetworkSurface.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>
+
+#include <limits>
 
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
@@ -886,4 +890,178 @@ void OCCTContapContourRelease(OCCTContapContourRef ref)
 {
   if (ref)
     delete static_cast<OCCTContapContour*>(ref);
+}
+
+// #1635: geometry for the contour types Contap_Line::NbPnts()/Point() refuse.
+//
+// Every accessor here goes through this helper, which is the only place the line index is
+// validated. It returns nullptr rather than throwing, so a caller that gets nullptr refuses
+// without writing to its out-parameters: absence must not be spelled as a zero on this API,
+// which is the defect the walking-only accessors above already had reported against them.
+static const Contap_Line* occtContapLineAt(OCCTContapContourRef ref, int lineIndex)
+{
+  if (!ref)
+    return nullptr;
+  auto* r = static_cast<OCCTContapContour*>(ref);
+  if (!r->valid || r->empty)
+    return nullptr;
+  if (lineIndex < 1 || lineIndex > r->contour.NbLines())
+    return nullptr;
+  return &r->contour.Line(lineIndex);
+}
+
+bool OCCTContapContourLineAsLine(OCCTContapContourRef ref, int lineIndex, double* out)
+{
+  if (!out)
+    return false;
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line || line->TypeContour() != Contap_Lin)
+      return false;
+    const gp_Lin l = line->Line();
+    out[0]         = l.Location().X();
+    out[1]         = l.Location().Y();
+    out[2]         = l.Location().Z();
+    out[3]         = l.Direction().X();
+    out[4]         = l.Direction().Y();
+    out[5]         = l.Direction().Z();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTContapContourLineAsCircle(OCCTContapContourRef ref, int lineIndex, double* out)
+{
+  if (!out)
+    return false;
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line || line->TypeContour() != Contap_Circle)
+      return false;
+    const gp_Circ c = line->Circle();
+    out[0]          = c.Location().X();
+    out[1]          = c.Location().Y();
+    out[2]          = c.Location().Z();
+    out[3]          = c.Axis().Direction().X();
+    out[4]          = c.Axis().Direction().Y();
+    out[5]          = c.Axis().Direction().Z();
+    out[6]          = c.XAxis().Direction().X();
+    out[7]          = c.XAxis().Direction().Y();
+    out[8]          = c.XAxis().Direction().Z();
+    out[9]          = c.Radius();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTContapContourLineArcRange(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double*              outFirst,
+                                   double*              outLast)
+{
+  if (!outFirst || !outLast)
+    return false;
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line || line->TypeContour() != Contap_Restriction)
+      return false;
+    const occ::handle<Adaptor2d_Curve2d>& arc = line->Arc();
+    if (arc.IsNull())
+      return false;
+    *outFirst = arc->FirstParameter();
+    *outLast  = arc->LastParameter();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+bool OCCTContapContourLineArcPoint(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double               parameter,
+                                   double*              outU,
+                                   double*              outV)
+{
+  if (!outU || !outV)
+    return false;
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line || line->TypeContour() != Contap_Restriction)
+      return false;
+    const occ::handle<Adaptor2d_Curve2d>& arc = line->Arc();
+    if (arc.IsNull())
+      return false;
+    const gp_Pnt2d p = arc->Value(parameter);
+    *outU            = p.X();
+    *outV            = p.Y();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+
+int OCCTContapContourLineVertexCount(OCCTContapContourRef ref, int lineIndex)
+{
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line)
+      return 0;
+    return line->NbVertex();
+  }
+  catch (...)
+  {
+    return 0;
+  }
+}
+
+bool OCCTContapContourLineVertex(OCCTContapContourRef ref,
+                                 int                  lineIndex,
+                                 int                  vertexIndex,
+                                 OCCTContapVertex*    out)
+{
+  if (!out)
+    return false;
+  try
+  {
+    const Contap_Line* line = occtContapLineAt(ref, lineIndex);
+    if (!line)
+      return false;
+    if (vertexIndex < 1 || vertexIndex > line->NbVertex())
+      return false;
+    const Contap_Point& p = line->Vertex(vertexIndex);
+    out->x                = p.Value().X();
+    out->y                = p.Value().Y();
+    out->z                = p.Value().Z();
+    p.Parameters(out->u, out->v);
+    out->parameterOnLine = p.ParameterOnLine();
+    out->isOnArc         = p.IsOnArc();
+    // ParameterOnArc() throws Standard_DomainError when the point is not on an arc. NaN rather
+    // than 0 so a caller that reads it without checking isOnArc gets something that cannot be
+    // mistaken for a parameter.
+    out->parameterOnArc =
+      p.IsOnArc() ? p.ParameterOnArc() : std::numeric_limits<double>::quiet_NaN();
+    out->isVertex   = p.IsVertex();
+    out->isMultiple = p.IsMultiple();
+    out->isInternal = p.IsInternal();
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
 }
