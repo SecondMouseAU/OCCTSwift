@@ -696,10 +696,12 @@ _FIXTURE_REACH = {
 _RAN: list[str] = []
 
 
-def _self_test_case(name, claims, expect_classes, member_syms=None, headers=_FIXTURE_HEADERS):
+def _self_test_case(name, claims, expect_classes, member_syms=None, headers=_FIXTURE_HEADERS,
+                    reach=None):
     _RAN.append(name)
     findings, unresolved, _checked, _so = run(
-        claims, _FIXTURE_REACH, member_syms or {}, _FIXTURE_PREFIXES, _FIXTURE_BARE, headers
+        claims, reach or _FIXTURE_REACH, member_syms or {}, _FIXTURE_PREFIXES, _FIXTURE_BARE,
+        headers
     )
     got = sorted({f.cls for f in findings})
     want = sorted(expect_classes)
@@ -974,6 +976,36 @@ def self_test() -> int:
     _RAN.append('inline')
     bad += 0 if ok else 1
 
+    # 17. The reachability walker itself, not the fixture dict every row above uses. A bridge
+    #     function names a wrapper type, that type holds a second wrapper type, and the second
+    #     holds the OCCT class the doc attributes the method to. `reachable()`'s type expansion
+    #     ran once over a snapshot of the name set, so the second hop was never taken and this
+    #     CORRECT attribution was reported as over-coverage (#1642): the census penalised the
+    #     corrected `docs/reference/Selection.md` entries and rewarded the wrong ones they
+    #     replaced.
+    #
+    #     Two claims in one row, and both halves are load-bearing. The first fails without the
+    #     fixpoint. The second names a class held by a THIRD wrapper type the function never
+    #     spells, so an expansion that pulled in every wrapper type rather than the ones a
+    #     function names would stop reporting it and fail the row. Measured: the second claim has
+    #     to be a type-held class for that. A class no wrapper type holds stays reported under
+    #     the same injection and isolates nothing.
+    two_hop_source = (
+        "struct OCCTInnerPart\n{\n  Poly_Triangulation mesh;\n};\n\n"
+        "struct OCCTOuterPart\n{\n  OCCTInnerPart inner;\n};\n\n"
+        "struct OCCTUnrelatedPart\n{\n  BRepBuilderAPI_Sewing sewer;\n};\n\n"
+        "void OCCTHopTwice(OCCTOuterPartRef part)\n{\n  part->inner.mesh.Deflection();\n}\n"
+    )
+    bad += _self_test_case(
+        "a class held two wrapper-type hops away is reached, one held elsewhere is reported",
+        [Claim("d.md", 1, "bullet", "`Poly_Triangulation` (via `OCCTHopTwice`).", None,
+               ["OCCTHopTwice"]),
+         Claim("d.md", 2, "bullet", "`BRepBuilderAPI_Sewing` (via `OCCTHopTwice`).", None,
+               ["OCCTHopTwice"])],
+        ["BRepBuilderAPI_Sewing"],
+        reach=reach_from_bridge_source(two_hop_source),
+    )
+
     total = len(_RAN)
     print(f"\nself-test: {total - bad} passed, {bad} failed")
     return bad
@@ -987,6 +1019,33 @@ def doc_claims_from_text(rel: str, text: str) -> list[Claim]:
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(text)
         return doc_claims([path])
+
+
+def reach_from_bridge_source(text: str) -> dict[str, set[str]]:
+    """`check-bridge-index.py`'s `reachable()` over one in-memory bridge source file.
+
+    The self-test rows above run against `_FIXTURE_REACH`, a hand-written dict, so none of them
+    can say anything about the walker that produces the real one. This builds the tree
+    `reachable()` reads (`Sources/OCCTBridge/src/*.mm`, resolved from the cwd) and runs it, which
+    is what lets a row exercise the reachability rules themselves.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "_cbi_fixture", os.path.join(SCRIPTS, "check-bridge-index.py")
+    )
+    cbi = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cbi)
+    import tempfile
+    cwd = os.getcwd()
+    with tempfile.TemporaryDirectory() as d:
+        src = os.path.join(d, "Sources", "OCCTBridge", "src")
+        os.makedirs(src)
+        with open(os.path.join(src, "OCCTBridge_Fixture.mm"), "w", encoding="utf-8") as fh:
+            fh.write(text)
+        os.chdir(d)
+        try:
+            return cbi.reachable()
+        finally:
+            os.chdir(cwd)
 
 
 def bridge_header_claims_from_text(rel: str, text: str) -> list[Claim]:
