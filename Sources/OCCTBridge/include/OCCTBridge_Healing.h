@@ -423,16 +423,32 @@ OCCTShapeRef OCCTShapeFreeBounds(OCCTShapeRef shape,
                                  int32_t*     outClosedCount,
                                  int32_t*     outOpenCount);
 
-/// Fix free boundary wires by closing gaps.
-/// @param shape The shape whose free boundaries to fix
-/// @param sewingTolerance Tolerance for sewing free edges
-/// @param closingTolerance Maximum distance to close a gap
-/// @param outFixedCount Number of wires that were fixed (output)
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
-                                    double       sewingTolerance,
-                                    double       closingTolerance,
-                                    int32_t*     outFixedCount);
+/// Connect a shape's free boundary wires, closing gaps within `closingTolerance`.
+///
+/// Returns `ShapeFix_FreeBounds::GetShape()`, the modified source shape. Connecting several open
+/// wires into one replaces their previous end vertices with new connecting vertices and updates
+/// every edge in the shape that shared them, so the source shape can come back changed. Until
+/// #1636 this returned a compound of the wires instead and `GetShape()` was never read, so a
+/// caller asking for the repaired shape received something with no faces in it at all.
+///
+/// @param shape The shape whose free boundaries to connect. Should be a compound of faces.
+/// @param sewingTolerance Tolerance the sewing analyser is initialised with
+/// @param closingTolerance Maximum distance to close a gap. The pinned header requires this to be
+///        greater than `sewingTolerance` or no connection is performed.
+/// @param outClosedWireCount Number of closed free-bound wires (output)
+/// @param outOpenWireCount Number of open free-bound wires (output)
+/// @param outClosedWires Compound of the closed free-bound wires, NULL if there is none (output,
+///        caller owns and must release)
+/// @param outOpenWires Compound of the open free-bound wires, NULL if there is none (output,
+///        caller owns and must release)
+/// @return The modified source shape, or NULL on failure
+OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef  shape,
+                                    double        sewingTolerance,
+                                    double        closingTolerance,
+                                    int32_t*      outClosedWireCount,
+                                    int32_t*      outOpenWireCount,
+                                    OCCTShapeRef* outClosedWires,
+                                    OCCTShapeRef* outOpenWires);
 
 /// Split closed (periodic) edges in a shape
 /// @param shape Shape containing closed edges

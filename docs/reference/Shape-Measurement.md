@@ -437,27 +437,44 @@ Free boundaries indicate gaps in a shell. A watertight shell has no free boundar
 
 ### `fixedFreeBounds(sewingTolerance:closingTolerance:)`
 
-Fix free boundary wires by closing gaps.
+Connect free boundary wires, closing gaps within `closingTolerance`.
 
 ```swift
 public func fixedFreeBounds(sewingTolerance: Double = 1e-6,
-                             closingTolerance: Double = 1e-4) -> (shape: Shape, fixedCount: Int)?
+                            closingTolerance: Double = 1e-4) -> Shape.FreeBoundsRepair?
 ```
 
 - **Parameters:**
-  - `sewingTolerance`: Tolerance for sewing free edges.
+  - `sewingTolerance`: Tolerance the sewing analyser is initialised with.
   - `closingTolerance`: Maximum distance to close a gap.
-- **Returns:** Tuple of `(wires, closed-wire count)`, or `nil` on failure. The first member is a
-  compound of the connected free-bound wires, closed ones then open ones, **not** the repaired
-  input shape: `ShapeFix_FreeBounds::GetShape()`, which is the modified source shape, is not on
-  this path. The count is the number of closed wires the connection step produced, so it is a
-  measure of how many gaps closed rather than of how many wires were touched.
-- **OCCT:** `ShapeFix_FreeBounds`, the four-argument `(shape, sewtoler, closetoler, splitclosed,
+- **Returns:** A `Shape.FreeBoundsRepair`, or `nil` on failure.
+  - `shape`: `ShapeFix_FreeBounds::GetShape()`, the modified source shape. Connecting several open
+    wires into one replaces their previous end vertices with new connecting vertices and updates
+    every edge that shared them, so it can differ from the input; when nothing is connected it is
+    the input shape. Until [#1636](https://github.com/SecondMouseAU/OCCTSwift/issues/1636) this
+    member was a compound of the free-bound wires and `GetShape()` was never read, so the shape a
+    caller received had **no faces in it**.
+  - `closedWires` / `openWires`: compounds of the free-bound wires, `nil` when the kernel produced
+    none.
+  - `closedWireCount` / `openWireCount`: how many wires are in each.
+- **OCCT:** `ShapeFix_FreeBounds`, the five-argument `(shape, sewtoler, closetoler, splitclosed,
   splitopen)` constructor (via `OCCTShapeFixFreeBounds`). It builds free bounds with
   `ShapeAnalysis_FreeBounds` internally and adds the open-wire connection step;
   `ShapeFix_Shape` is not involved.
 - **Note:** `closingTolerance` must exceed `sewingTolerance` or OCCT performs no connection at
-  all, which is the pinned header's own stated precondition.
+  all, which is the pinned header's own stated precondition. Nothing enforces it; the defaults
+  satisfy it.
+- **Note:** pass a **compound of faces**, which is what the pinned header asks for. A bare face
+  gives the sewing-based analyser nothing to forecast and comes back with zero wires of either
+  kind.
+- **Example:**
+  ```swift
+  let openShell = Shape.compound(box.subShapes(ofType: .face).dropLast())!
+  if let repair = openShell.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) {
+      print(repair.shape.subShapes(ofType: .face).count)  // 5, the faces are still there
+      print(repair.closedWireCount, repair.openWireCount) // 1 0
+  }
+  ```
 
 ---
 

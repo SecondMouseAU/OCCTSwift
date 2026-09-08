@@ -1,0 +1,30 @@
+=== single face in a compound   sewtol 1e-06  closetol 0.0001
+   input                 : COMPOUND  faces 1  wires 1  edges 4  vertices 8
+   bridge result today   : COMPOUND  faces 0  wires 1  (closed 1, open 0)
+   GetShape()            : COMPOUND  faces 1  wires 1  edges 4  vertices 8
+   GetShape().IsSame(in) : true
+
+=== two adjacent faces   sewtol 1e-06  closetol 0.0001
+   input                 : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   bridge result today   : COMPOUND  faces 0  wires 1  (closed 1, open 0)
+   GetShape()            : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   GetShape().IsSame(in) : true
+
+=== two faces, 5e-5 gap   sewtol 1e-06  closetol 0.001
+   input                 : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   bridge result today   : COMPOUND  faces 0  wires 2  (closed 2, open 0)
+   GetShape()            : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   GetShape().IsSame(in) : true
+
+=== two faces, 5e-5 gap, equal tolerances (the silent no-op)   sewtol 0.0001  closetol 0.0001
+   input                 : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   bridge result today   : COMPOUND  faces 0  wires 1  (closed 1, open 0)
+   GetShape()            : COMPOUND  faces 2  wires 2  edges 8  vertices 16
+   GetShape().IsSame(in) : true
+
+=== open box shell, five faces   sewtol 1e-06  closetol 0.0001
+   input                 : COMPOUND  faces 5  wires 5  edges 20  vertices 40
+   bridge result today   : COMPOUND  faces 0  wires 1  (closed 1, open 0)
+   GetShape()            : COMPOUND  faces 5  wires 5  edges 20  vertices 40
+   GetShape().IsSame(in) : true
+
