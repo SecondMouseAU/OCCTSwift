@@ -16,13 +16,15 @@ OCCTDocumentRef OCCTDocumentCreate(void);
 /// Load STEP file into XDE document with assembly structure, names, colors, materials
 /// @param path Path to STEP file
 /// @return Document reference, or NULL on failure
-OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path);
+OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Write document to STEP file (preserves assembly structure, colors, materials)
 /// @param doc Document to write
 /// @param path Output file path
 /// @return true on success
-bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path);
+bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc,
+                           const char*     path,
+                           OCCTReturnStatus* _Nullable outStatus);
 
 /// Release document and all internal resources
 void OCCTDocumentRelease(OCCTDocumentRef doc);

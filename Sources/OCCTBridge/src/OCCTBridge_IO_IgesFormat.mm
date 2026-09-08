@@ -511,8 +511,10 @@ struct OCCTSharedLib
 
 OCCTShapeRef OCCTImportIGESProgress(const char*               path,
                                     const OCCTImportProgress* ctx,
-                                    bool*                     outCancelled)
+                                    bool*                     outCancelled,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -521,9 +523,8 @@ OCCTShapeRef OCCTImportIGESProgress(const char*               path,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator                   = new BridgeProgressIndicator(ctx);
@@ -549,8 +550,10 @@ OCCTShapeRef OCCTImportIGESProgress(const char*               path,
 
 OCCTShapeRef OCCTImportIGESRobustProgress(const char*               path,
                                           const OCCTImportProgress* ctx,
-                                          bool*                     outCancelled)
+                                          bool*                     outCancelled,
+                                          OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -569,8 +572,7 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char*               path,
     Interface_Static::SetIVal("read.precision.mode", 0);
     Interface_Static::SetRVal("read.maxprecision.val", 0.1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator = new BridgeProgressIndicator(ctx);
@@ -657,16 +659,16 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
   }
 }
 
-int32_t OCCTIGESReaderNbRoots(const char* path)
+int32_t OCCTIGESReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     return reader.NbRootsForTransfer();
   }
@@ -676,16 +678,18 @@ int32_t OCCTIGESReaderNbRoots(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESRoot(const char* path, int32_t rootIndex)
+OCCTShapeRef OCCTImportIGESRoot(const char* path,
+                                int32_t     rootIndex,
+                                OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path || rootIndex < 1)
     return nullptr;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     int nbRoots = reader.NbRootsForTransfer();
     if (rootIndex > nbRoots)
@@ -703,16 +707,16 @@ OCCTShapeRef OCCTImportIGESRoot(const char* path, int32_t rootIndex)
   }
 }
 
-int32_t OCCTIGESReaderNbShapes(const char* path)
+int32_t OCCTIGESReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     reader.TransferRoots();
     return reader.NbShapes();
@@ -723,8 +727,9 @@ int32_t OCCTIGESReaderNbShapes(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESVisible(const char* path)
+OCCTShapeRef OCCTImportIGESVisible(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
   std::lock_guard<std::mutex> igesLock(igesMutex());
@@ -732,8 +737,7 @@ OCCTShapeRef OCCTImportIGESVisible(const char* path)
   {
     IGESControl_Reader reader;
     reader.SetReadVisible(true);
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     reader.TransferRoots();
     TopoDS_Shape shape = reader.OneShape();
@@ -843,17 +847,17 @@ std::mutex& igesMutex()
   return mutex;
 }
 
-OCCTShapeRef OCCTImportIGES(const char* path)
+OCCTShapeRef OCCTImportIGES(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     // Transfer all roots
@@ -872,8 +876,9 @@ OCCTShapeRef OCCTImportIGES(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESRobust(const char* path)
+OCCTShapeRef OCCTImportIGESRobust(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -891,8 +896,7 @@ OCCTShapeRef OCCTImportIGESRobust(const char* path)
     Interface_Static::SetIVal("read.precision.mode", 0);
     Interface_Static::SetRVal("read.maxprecision.val", 0.1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     if (reader.TransferRoots() == 0)

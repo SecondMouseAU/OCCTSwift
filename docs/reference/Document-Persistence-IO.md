@@ -790,7 +790,9 @@ public static func loadSTEP(from url: URL, modes: STEPReaderModes, progress: Imp
   - `modes`: mode flags.
   - `progress`: optional `ImportProgress` closure for progress updates and cancellation.
 - **Returns:** A `Document` on success.
-- **Throws:** `ImportError.cancelled` if the user cancelled; `ImportError.importFailed` on other failure.
+- **Throws:** `ImportError.cancelled` if the user cancelled;
+  `DocumentError.exchangeFailed(url:status:)` on other failure, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Reader` with `Message_ProgressRange`.
 
 ---

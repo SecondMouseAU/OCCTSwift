@@ -14,12 +14,15 @@
 
 bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection);
 bool OCCTExportSTLWithMode(OCCTShapeRef shape, const char* path, double deflection, bool ascii);
-bool OCCTExportSTEP(OCCTShapeRef shape, const char* path);
-bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* name);
+bool OCCTExportSTEP(OCCTShapeRef shape, const char* path, OCCTReturnStatus* _Nullable outStatus);
+bool OCCTExportSTEPWithName(OCCTShapeRef shape,
+                            const char*  path,
+                            const char*  name,
+                            OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - Import
 
-OCCTShapeRef OCCTImportSTEP(const char* path);
+OCCTShapeRef OCCTImportSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - Import progress + cancellation (v0.168.0, issue #98)
 //
@@ -58,24 +61,29 @@ typedef struct OCCTImportProgress
 
 OCCTShapeRef _Nullable OCCTImportSTEPProgress(const char* _Nonnull path,
                                               const OCCTImportProgress* _Nullable ctx,
-                                              bool* _Nullable outCancelled);
+                                              bool* _Nullable outCancelled,
+                                              OCCTReturnStatus* _Nullable outStatus);
 
 OCCTShapeRef _Nullable OCCTImportSTEPRobustProgress(const char* _Nonnull path,
                                                     const OCCTImportProgress* _Nullable ctx,
-                                                    bool* _Nullable outCancelled);
+                                                    bool* _Nullable outCancelled,
+                                                    OCCTReturnStatus* _Nullable outStatus);
 
 OCCTShapeRef _Nullable OCCTImportSTEPWithUnitProgress(const char* _Nonnull path,
                                                       double unitInMeters,
                                                       const OCCTImportProgress* _Nullable ctx,
-                                                      bool* _Nullable outCancelled);
+                                                      bool* _Nullable outCancelled,
+                                                      OCCTReturnStatus* _Nullable outStatus);
 
 OCCTShapeRef _Nullable OCCTImportIGESProgress(const char* _Nonnull path,
                                               const OCCTImportProgress* _Nullable ctx,
-                                              bool* _Nullable outCancelled);
+                                              bool* _Nullable outCancelled,
+                                              OCCTReturnStatus* _Nullable outStatus);
 
 OCCTShapeRef _Nullable OCCTImportIGESRobustProgress(const char* _Nonnull path,
                                                     const OCCTImportProgress* _Nullable ctx,
-                                                    bool* _Nullable outCancelled);
+                                                    bool* _Nullable outCancelled,
+                                                    OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - Mesh + export progress (v0.169.0, follow-up to issue #98)
 //
@@ -97,14 +105,16 @@ OCCTShapeRef _Nullable OCCTShapeIncrementalMeshProgress(OCCTShapeRef _Nonnull sh
 bool OCCTExportSTEPProgress(OCCTShapeRef _Nonnull shape,
                             const char* _Nonnull path,
                             const OCCTImportProgress* _Nullable ctx,
-                            bool* _Nullable outCancelled);
+                            bool* _Nullable outCancelled,
+                            OCCTReturnStatus* _Nullable outStatus);
 
 /// Export a shape to STEP with explicit model type + progress.
 bool OCCTExportSTEPWithModeProgress(OCCTShapeRef _Nonnull shape,
                                     const char* _Nonnull path,
                                     int32_t modelType,
                                     const OCCTImportProgress* _Nullable ctx,
-                                    bool* _Nullable outCancelled);
+                                    bool* _Nullable outCancelled,
+                                    OCCTReturnStatus* _Nullable outStatus);
 
 /// Export a shape to IGES with optional progress + cancellation.
 bool OCCTExportIGESProgress(OCCTShapeRef _Nonnull shape,
@@ -129,10 +139,11 @@ typedef struct
 } OCCTSTEPImportResult;
 
 /// Import STEP file with robust handling: sewing, solid creation, and shape healing
-OCCTShapeRef OCCTImportSTEPRobust(const char* path);
+OCCTShapeRef OCCTImportSTEPRobust(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Import STEP file with diagnostic information
-OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path);
+OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path,
+                                                   OCCTReturnStatus* _Nullable outStatus);
 
 /// Get shape type (TopAbs_ShapeEnum value)
 int OCCTShapeGetType(OCCTShapeRef shape);
@@ -142,7 +153,8 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape);
 
 OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPProgress(const char* _Nonnull path,
                                                        const OCCTImportProgress* _Nullable ctx,
-                                                       bool* _Nullable outCancelled);
+                                                       bool* _Nullable outCancelled,
+                                                       OCCTReturnStatus* _Nullable outStatus);
 
 OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPWithModesProgress(
   const char* _Nonnull path,
@@ -153,25 +165,27 @@ OCCTDocumentRef _Nullable OCCTDocumentLoadSTEPWithModesProgress(
   bool gdtMode,
   bool matMode,
   const OCCTImportProgress* _Nullable ctx,
-  bool* _Nullable outCancelled);
+  bool* _Nullable outCancelled,
+  OCCTReturnStatus* _Nullable outStatus);
 
 /// Write a Document to STEP with optional progress + cancellation.
 bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef _Nonnull doc,
                                    const char* _Nonnull path,
                                    const OCCTImportProgress* _Nullable ctx,
-                                   bool* _Nullable outCancelled);
+                                   bool* _Nullable outCancelled,
+                                   OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - IGES Import/Export (v0.10.0)
 
 /// Import IGES file
 /// @param path Path to IGES file
 /// @return Shape reference, or NULL on failure
-OCCTShapeRef OCCTImportIGES(const char* path);
+OCCTShapeRef OCCTImportIGES(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Import IGES file with automatic repair (sewing, healing)
 /// @param path Path to IGES file
 /// @return Shape reference with healing applied, or NULL on failure
-OCCTShapeRef OCCTImportIGESRobust(const char* path);
+OCCTShapeRef OCCTImportIGESRobust(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Test-only introspection of the shared `read.maxprecision.val` `Interface_Static` parameter
 /// (#1504). `Interface_Static` is a process-wide global shared with STEP (#1157), so a test
@@ -245,37 +259,50 @@ bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection);
 /// @param inputPath Path to input STEP file
 /// @param outputPath Path to output STEP file
 /// @return true on success
-bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath);
+bool OCCTStepTidyOptimize(const char* inputPath,
+                          const char* outputPath,
+                          OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - STEP Full Coverage — STEPControl_Writer (v0.58.0)
 
 /// Export shape to STEP with specific model type.
 /// modelType: 0=AsIs, 1=ManifoldSolidBrep, 2=BrepWithVoids, 3=FacetedBrep,
 ///            5=ShellBasedSurfaceModel, 6=GeometricCurveSet
-bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelType);
+bool OCCTExportSTEPWithMode(OCCTShapeRef shape,
+                            const char*  path,
+                            int32_t      modelType,
+                            OCCTReturnStatus* _Nullable outStatus);
 
 /// Export shape to STEP with model type and tolerance.
 bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
                                         const char*  path,
                                         int32_t      modelType,
-                                        double       tolerance);
+                                        double       tolerance,
+                                        OCCTReturnStatus* _Nullable outStatus);
 
 /// Export shape to STEP and clean duplicate entities before writing.
-bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t modelType);
+bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape,
+                                   const char*  path,
+                                   int32_t      modelType,
+                                   OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - STEP Full Coverage — STEPControl_Reader (v0.58.0)
 
 /// Read a STEP file and return the number of transferable roots.
-int32_t OCCTSTEPReaderNbRoots(const char* path);
+int32_t OCCTSTEPReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Import a specific root from a STEP file (1-based index).
-OCCTShapeRef OCCTImportSTEPRoot(const char* path, int32_t rootIndex);
+OCCTShapeRef OCCTImportSTEPRoot(const char* path,
+                                int32_t     rootIndex,
+                                OCCTReturnStatus* _Nullable outStatus);
 
 /// Import a STEP file with a specific system length unit (in meters, e.g. 0.001 for mm).
-OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters);
+OCCTShapeRef OCCTImportSTEPWithUnit(const char* path,
+                                    double      unitInMeters,
+                                    OCCTReturnStatus* _Nullable outStatus);
 
 /// Read a STEP file and return the number of shapes after full transfer.
-int32_t OCCTSTEPReaderNbShapes(const char* path);
+int32_t OCCTSTEPReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - STEP Full Coverage — STEPCAFControl Modes (v0.58.0)
 
@@ -287,7 +314,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
                                               bool        layerMode,
                                               bool        propsMode,
                                               bool        gdtMode,
-                                              bool        matMode);
+                                              bool        matMode,
+                                              OCCTReturnStatus* _Nullable outStatus);
 
 /// Write XDE document to STEP with model type and individual mode control.
 /// modelType: 0=AsIs, 1=ManifoldSolidBrep, etc.
@@ -298,21 +326,24 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
                                     bool            nameMode,
                                     bool            layerMode,
                                     bool            dimTolMode,
-                                    bool            materialMode);
+                                    bool            materialMode,
+                                    OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - IGES Full Coverage — Reader (v0.59.0)
 
 /// Read an IGES file and return the number of transferable roots.
-int32_t OCCTIGESReaderNbRoots(const char* path);
+int32_t OCCTIGESReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Import a specific root from an IGES file (1-based index).
-OCCTShapeRef OCCTImportIGESRoot(const char* path, int32_t rootIndex);
+OCCTShapeRef OCCTImportIGESRoot(const char* path,
+                                int32_t     rootIndex,
+                                OCCTReturnStatus* _Nullable outStatus);
 
 /// Read an IGES file and return the number of shapes after full transfer.
-int32_t OCCTIGESReaderNbShapes(const char* path);
+int32_t OCCTIGESReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Import only visible entities from an IGES file.
-OCCTShapeRef OCCTImportIGESVisible(const char* path);
+OCCTShapeRef OCCTImportIGESVisible(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 // MARK: - IGES Full Coverage — Writer (v0.59.0)
 

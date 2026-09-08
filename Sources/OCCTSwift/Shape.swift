@@ -1361,12 +1361,13 @@ public final class Shape: @unchecked Sendable {
         -> Shape
     {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
-            OCCTImportSTEPProgress(path, ctx, &cancelled)
+            OCCTImportSTEPProgress(path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to import STEP file: \(path)")
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1380,12 +1381,12 @@ public final class Shape: @unchecked Sendable {
     /// - Parameter url: URL to the STEP file
     /// - Returns: Number of roots (0 if file can't be read)
     public static func stepRootCount(url: URL) -> Int {
-        Int(OCCTSTEPReaderNbRoots(url.path))
+        Int(OCCTSTEPReaderNbRoots(url.path, nil))
     }
 
     /// Get the number of transferable roots in a STEP file.
     public static func stepRootCount(path: String) -> Int {
-        Int(OCCTSTEPReaderNbRoots(path))
+        Int(OCCTSTEPReaderNbRoots(path, nil))
     }
 
     /// Import a specific root from a STEP file.
@@ -1396,17 +1397,18 @@ public final class Shape: @unchecked Sendable {
     /// - Returns: The imported shape
     /// - Throws: ImportError if import fails
     public static func loadSTEPRoot(from url: URL, rootIndex: Int) throws -> Shape {
-        guard let handle = OCCTImportSTEPRoot(url.path, Int32(rootIndex)) else {
-            throw ImportError.importFailed(
-                "Failed to import root \(rootIndex) from: \(url.lastPathComponent)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportSTEPRoot(url.path, Int32(rootIndex), &status) else {
+            throw ImportError.readFailed(path: url.path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
 
     /// Import a specific root from a STEP file.
     public static func loadSTEPRoot(fromPath path: String, rootIndex: Int) throws -> Shape {
-        guard let handle = OCCTImportSTEPRoot(path, Int32(rootIndex)) else {
-            throw ImportError.importFailed("Failed to import root \(rootIndex) from: \(path)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportSTEPRoot(path, Int32(rootIndex), &status) else {
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1443,12 +1445,13 @@ public final class Shape: @unchecked Sendable {
         fromPath path: String, unitInMeters: Double, progress: ImportProgress? = nil
     ) throws -> Shape {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
-            OCCTImportSTEPWithUnitProgress(path, unitInMeters, ctx, &cancelled)
+            OCCTImportSTEPWithUnitProgress(path, unitInMeters, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to import with unit from: \(path)")
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1458,12 +1461,12 @@ public final class Shape: @unchecked Sendable {
     /// - Parameter url: URL to the STEP file
     /// - Returns: Number of shapes (0 if file can't be read)
     public static func stepShapeCount(url: URL) -> Int {
-        Int(OCCTSTEPReaderNbShapes(url.path))
+        Int(OCCTSTEPReaderNbShapes(url.path, nil))
     }
 
     /// Get the number of shapes in a STEP file after full transfer.
     public static func stepShapeCount(path: String) -> Int {
-        Int(OCCTSTEPReaderNbShapes(path))
+        Int(OCCTSTEPReaderNbShapes(path, nil))
     }
 
     // MARK: - Robust STEP Import
@@ -1532,12 +1535,13 @@ public final class Shape: @unchecked Sendable {
         -> Shape
     {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
-            OCCTImportSTEPRobustProgress(path, ctx, &cancelled)
+            OCCTImportSTEPRobustProgress(path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to import: \(path)")
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1558,9 +1562,10 @@ public final class Shape: @unchecked Sendable {
     /// let shape = result.shape
     /// ```
     public static func loadWithDiagnostics(from url: URL) throws -> ImportResult {
-        let result = OCCTImportSTEPWithDiagnostics(url.path)
+        var status = OCCTReturnStatusNotReached
+        let result = OCCTImportSTEPWithDiagnostics(url.path, &status)
         guard let handle = result.shape else {
-            throw ImportError.importFailed("Failed to import: \(url.lastPathComponent)")
+            throw ImportError.readFailed(path: url.path, status: IOStatus(status))
         }
         return ImportResult(
             shape: Shape(handle: handle),
@@ -1594,12 +1599,13 @@ public final class Shape: @unchecked Sendable {
         -> Shape
     {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
-            OCCTImportIGESProgress(path, ctx, &cancelled)
+            OCCTImportIGESProgress(path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to import IGES file: \(path)")
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1659,12 +1665,13 @@ public final class Shape: @unchecked Sendable {
         -> Shape
     {
         var cancelled: Bool = false
+        var status = OCCTReturnStatusNotReached
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
-            OCCTImportIGESRobustProgress(path, ctx, &cancelled)
+            OCCTImportIGESRobustProgress(path, ctx, &cancelled, &status)
         }
         if cancelled { throw ImportError.cancelled }
         guard let handle else {
-            throw ImportError.importFailed("Failed to import IGES file: \(path)")
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
@@ -1673,54 +1680,56 @@ public final class Shape: @unchecked Sendable {
 
     /// Get the number of transferable roots in an IGES file.
     public static func igesRootCount(url: URL) -> Int {
-        Int(OCCTIGESReaderNbRoots(url.path))
+        Int(OCCTIGESReaderNbRoots(url.path, nil))
     }
 
     /// Get the number of transferable roots in an IGES file.
     public static func igesRootCount(path: String) -> Int {
-        Int(OCCTIGESReaderNbRoots(path))
+        Int(OCCTIGESReaderNbRoots(path, nil))
     }
 
     /// Import a specific root from an IGES file (1-based index).
     public static func loadIGESRoot(from url: URL, rootIndex: Int) throws -> Shape {
-        guard let handle = OCCTImportIGESRoot(url.path, Int32(rootIndex)) else {
-            throw ImportError.importFailed(
-                "Failed to import IGES root \(rootIndex) from: \(url.lastPathComponent)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportIGESRoot(url.path, Int32(rootIndex), &status) else {
+            throw ImportError.readFailed(path: url.path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
 
     /// Import a specific root from an IGES file (1-based index).
     public static func loadIGESRoot(fromPath path: String, rootIndex: Int) throws -> Shape {
-        guard let handle = OCCTImportIGESRoot(path, Int32(rootIndex)) else {
-            throw ImportError.importFailed("Failed to import IGES root \(rootIndex) from: \(path)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportIGESRoot(path, Int32(rootIndex), &status) else {
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
 
     /// Get the number of shapes in an IGES file after full transfer.
     public static func igesShapeCount(url: URL) -> Int {
-        Int(OCCTIGESReaderNbShapes(url.path))
+        Int(OCCTIGESReaderNbShapes(url.path, nil))
     }
 
     /// Get the number of shapes in an IGES file after full transfer.
     public static func igesShapeCount(path: String) -> Int {
-        Int(OCCTIGESReaderNbShapes(path))
+        Int(OCCTIGESReaderNbShapes(path, nil))
     }
 
     /// Import only visible entities from an IGES file.
     public static func loadIGESVisible(from url: URL) throws -> Shape {
-        guard let handle = OCCTImportIGESVisible(url.path) else {
-            throw ImportError.importFailed(
-                "Failed to import visible IGES entities from: \(url.lastPathComponent)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportIGESVisible(url.path, &status) else {
+            throw ImportError.readFailed(path: url.path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }
 
     /// Import only visible entities from an IGES file.
     public static func loadIGESVisible(fromPath path: String) throws -> Shape {
-        guard let handle = OCCTImportIGESVisible(path) else {
-            throw ImportError.importFailed("Failed to import visible IGES entities from: \(path)")
+        var status = OCCTReturnStatusNotReached
+        guard let handle = OCCTImportIGESVisible(path, &status) else {
+            throw ImportError.readFailed(path: path, status: IOStatus(status))
         }
         return Shape(handle: handle)
     }

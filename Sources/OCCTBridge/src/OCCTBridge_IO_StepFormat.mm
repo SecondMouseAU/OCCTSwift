@@ -509,8 +509,9 @@ struct OCCTSharedLib
   }
 };
 
-bool OCCTExportSTEP(OCCTShapeRef shape, const char* path)
+bool OCCTExportSTEP(OCCTShapeRef shape, const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!shape || !path)
     return false;
 
@@ -524,14 +525,12 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path)
       STEPControl_Writer writer;
       Interface_Static::SetCVal("write.step.schema", "AP214");
 
-      IFSelect_ReturnStatus status = writer.Transfer(shape->shape, STEPControl_AsIs);
-      if (status != IFSelect_RetDone)
+      if (!occtRecordReturnStatus(writer.Transfer(shape->shape, STEPControl_AsIs), outStatus))
       {
         return false;
       }
 
-      status  = writer.Write(path);
-      success = (status == IFSelect_RetDone);
+      success = occtRecordReturnStatus(writer.Write(path), outStatus);
 
       // Writer goes out of scope here and is automatically destroyed
     }
@@ -543,8 +542,12 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path)
   }
 }
 
-bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* name)
+bool OCCTExportSTEPWithName(OCCTShapeRef shape,
+                            const char*  path,
+                            const char*  name,
+                            OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!shape || !path)
     return false;
 
@@ -562,14 +565,12 @@ bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* na
         Interface_Static::SetCVal("write.step.product.name", name);
       }
 
-      IFSelect_ReturnStatus status = writer.Transfer(shape->shape, STEPControl_AsIs);
-      if (status != IFSelect_RetDone)
+      if (!occtRecordReturnStatus(writer.Transfer(shape->shape, STEPControl_AsIs), outStatus))
       {
         return false;
       }
 
-      status  = writer.Write(path);
-      success = (status == IFSelect_RetDone);
+      success = occtRecordReturnStatus(writer.Write(path), outStatus);
 
       // Writer goes out of scope here and is automatically destroyed
     }
@@ -583,8 +584,10 @@ bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* na
 
 OCCTShapeRef OCCTImportSTEPProgress(const char*               path,
                                     const OCCTImportProgress* ctx,
-                                    bool*                     outCancelled)
+                                    bool*                     outCancelled,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -594,9 +597,8 @@ OCCTShapeRef OCCTImportSTEPProgress(const char*               path,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator                   = new BridgeProgressIndicator(ctx);
@@ -622,8 +624,10 @@ OCCTShapeRef OCCTImportSTEPProgress(const char*               path,
 
 OCCTShapeRef OCCTImportSTEPRobustProgress(const char*               path,
                                           const OCCTImportProgress* ctx,
-                                          bool*                     outCancelled)
+                                          bool*                     outCancelled,
+                                          OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -639,8 +643,7 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char*               path,
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator = new BridgeProgressIndicator(ctx);
@@ -732,8 +735,10 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char*               path,
 OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
                                             double                    unitInMeters,
                                             const OCCTImportProgress* ctx,
-                                            bool*                     outCancelled)
+                                            bool*                     outCancelled,
+                                            OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -743,9 +748,8 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     // SetSystemLengthUnit() is a guarded no-op until ReadFile() has populated StepModel() (#1548),
     // so it must run after ReadFile() and before the transfer below that consumes it. Its own
@@ -778,8 +782,10 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
 
 OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
                                              const OCCTImportProgress* ctx,
-                                             bool*                     outCancelled)
+                                             bool*                     outCancelled,
+                                             OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -805,8 +811,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
     reader.SetPropsMode(Standard_True);
     reader.SetMatMode(Standard_True);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
     {
       delete document;
       return nullptr;
@@ -841,8 +846,10 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
 bool OCCTExportSTEPProgress(OCCTShapeRef              shape,
                             const char*               path,
                             const OCCTImportProgress* ctx,
-                            bool*                     outCancelled)
+                            bool*                     outCancelled,
+                            OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!shape || !path)
     return false;
@@ -854,17 +861,19 @@ bool OCCTExportSTEPProgress(OCCTShapeRef              shape,
     std::lock_guard<std::mutex> deLock(igesMutex());
     STEPControl_Writer          writer;
     Interface_Static::SetCVal("write.step.schema", "AP214");
-    indicator                    = new BridgeProgressIndicator(ctx);
-    Message_ProgressRange range  = indicator->Start();
-    IFSelect_ReturnStatus status = writer.Transfer(shape->shape, STEPControl_AsIs, true, range);
+    indicator                   = new BridgeProgressIndicator(ctx);
+    Message_ProgressRange range = indicator->Start();
+    const bool            transferred =
+      occtRecordReturnStatus(writer.Transfer(shape->shape, STEPControl_AsIs, true, range),
+                             outStatus);
     if (indicator->UserBreak())
     {
       setCancelOut(outCancelled, indicator);
       return false;
     }
-    if (status != IFSelect_RetDone)
+    if (!transferred)
       return false;
-    return writer.Write(path) == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -877,8 +886,10 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef              shape,
                                     const char*               path,
                                     int32_t                   modelType,
                                     const OCCTImportProgress* ctx,
-                                    bool*                     outCancelled)
+                                    bool*                     outCancelled,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!shape || !path)
     return false;
@@ -890,18 +901,19 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef              shape,
   {
     STEPControl_Writer writer;
     Interface_Static::SetCVal("write.step.schema", "AP214");
-    indicator                        = new BridgeProgressIndicator(ctx);
-    Message_ProgressRange     range  = indicator->Start();
-    STEPControl_StepModelType mode   = static_cast<STEPControl_StepModelType>(modelType);
-    IFSelect_ReturnStatus     status = writer.Transfer(shape->shape, mode, true, range);
+    indicator                       = new BridgeProgressIndicator(ctx);
+    Message_ProgressRange     range = indicator->Start();
+    STEPControl_StepModelType mode  = static_cast<STEPControl_StepModelType>(modelType);
+    const bool                transferred =
+      occtRecordReturnStatus(writer.Transfer(shape->shape, mode, true, range), outStatus);
     if (indicator->UserBreak())
     {
       setCancelOut(outCancelled, indicator);
       return false;
     }
-    if (status != IFSelect_RetDone)
+    if (!transferred)
       return false;
-    return writer.Write(path) == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -913,8 +925,10 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef              shape,
 bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef           doc,
                                    const char*               path,
                                    const OCCTImportProgress* ctx,
-                                   bool*                     outCancelled)
+                                   bool*                     outCancelled,
+                                   OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!doc || !path)
     return false;
@@ -946,8 +960,7 @@ bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef           doc,
       setCancelOut(outCancelled, indicator);
       return false;
     }
-    IFSelect_ReturnStatus status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -964,8 +977,10 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
                                                       bool                      gdtMode,
                                                       bool                      matMode,
                                                       const OCCTImportProgress* ctx,
-                                                      bool*                     outCancelled)
+                                                      bool*                     outCancelled,
+                                                      OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -992,8 +1007,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
     reader.SetGDTMode(gdtMode);
     reader.SetMatMode(matMode);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
     {
       delete document;
       return nullptr;
@@ -1025,8 +1039,9 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
   }
 }
 
-OCCTShapeRef OCCTImportSTEP(const char* path)
+OCCTShapeRef OCCTImportSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -1034,9 +1049,8 @@ OCCTShapeRef OCCTImportSTEP(const char* path)
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     // Transfer all roots
@@ -1055,8 +1069,9 @@ OCCTShapeRef OCCTImportSTEP(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportSTEPRobust(const char* path)
+OCCTShapeRef OCCTImportSTEPRobust(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -1072,8 +1087,7 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path)
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     if (reader.TransferRoots() == 0)
@@ -1134,8 +1148,10 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path)
   }
 }
 
-OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path)
+OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path,
+                                                   OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   OCCTSTEPImportResult result = {nullptr, -1, -1, false, false, false, 0};
   if (!path)
     return result;
@@ -1152,7 +1168,7 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path)
     Interface_Static::SetIVal("read.surfacecurve.mode", 3);
     Interface_Static::SetIVal("read.step.product.mode", 1);
 
-    if (reader.ReadFile(path) != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return result;
     if (reader.TransferRoots() == 0)
       return result;
@@ -1212,8 +1228,11 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path)
   }
 }
 
-bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath)
+bool OCCTStepTidyOptimize(const char* inputPath,
+                          const char* outputPath,
+                          OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!inputPath || !outputPath)
     return false;
   // Serialize all DE reads/writes: STEP/IGES share Interface_Static globals (#181-B, #359).
@@ -1221,7 +1240,7 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath)
   try
   {
     STEPControl_Reader reader;
-    if (reader.ReadFile(inputPath) != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(inputPath), outStatus))
       return false;
 
     // Run tidy on the work session before transferring
@@ -1237,7 +1256,7 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath)
     {
       writer.Transfer(reader.Shape(i), STEPControl_AsIs);
     }
-    return writer.Write(outputPath) == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(outputPath), outStatus);
   }
   catch (...)
   {
@@ -1245,8 +1264,12 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath)
   }
 }
 
-bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelType)
+bool OCCTExportSTEPWithMode(OCCTShapeRef shape,
+                            const char*  path,
+                            int32_t      modelType,
+                            OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!shape || !path)
     return false;
   try
@@ -1255,12 +1278,10 @@ bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelT
     std::lock_guard<std::mutex> deLock(igesMutex());
     STEPControl_Writer          writer;
     Interface_Static::SetCVal("write.step.schema", "AP214");
-    STEPControl_StepModelType mode   = static_cast<STEPControl_StepModelType>(modelType);
-    IFSelect_ReturnStatus     status = writer.Transfer(shape->shape, mode);
-    if (status != IFSelect_RetDone)
+    STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
+    if (!occtRecordReturnStatus(writer.Transfer(shape->shape, mode), outStatus))
       return false;
-    status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -1271,8 +1292,10 @@ bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelT
 bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
                                         const char*  path,
                                         int32_t      modelType,
-                                        double       tolerance)
+                                        double       tolerance,
+                                        OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!shape || !path)
     return false;
   try
@@ -1282,12 +1305,10 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
     STEPControl_Writer          writer;
     Interface_Static::SetCVal("write.step.schema", "AP214");
     writer.SetTolerance(tolerance);
-    STEPControl_StepModelType mode   = static_cast<STEPControl_StepModelType>(modelType);
-    IFSelect_ReturnStatus     status = writer.Transfer(shape->shape, mode);
-    if (status != IFSelect_RetDone)
+    STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
+    if (!occtRecordReturnStatus(writer.Transfer(shape->shape, mode), outStatus))
       return false;
-    status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -1295,8 +1316,12 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
   }
 }
 
-bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t modelType)
+bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape,
+                                   const char*  path,
+                                   int32_t      modelType,
+                                   OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!shape || !path)
     return false;
   try
@@ -1305,13 +1330,11 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t
     std::lock_guard<std::mutex> deLock(igesMutex());
     STEPControl_Writer          writer;
     Interface_Static::SetCVal("write.step.schema", "AP214");
-    STEPControl_StepModelType mode   = static_cast<STEPControl_StepModelType>(modelType);
-    IFSelect_ReturnStatus     status = writer.Transfer(shape->shape, mode);
-    if (status != IFSelect_RetDone)
+    STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
+    if (!occtRecordReturnStatus(writer.Transfer(shape->shape, mode), outStatus))
       return false;
     writer.CleanDuplicateEntities();
-    status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -1319,17 +1342,17 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t
   }
 }
 
-int32_t OCCTSTEPReaderNbRoots(const char* path)
+int32_t OCCTSTEPReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     return reader.NbRootsForTransfer();
   }
@@ -1339,17 +1362,19 @@ int32_t OCCTSTEPReaderNbRoots(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportSTEPRoot(const char* path, int32_t rootIndex)
+OCCTShapeRef OCCTImportSTEPRoot(const char* path,
+                                int32_t     rootIndex,
+                                OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path || rootIndex < 1)
     return nullptr;
   // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     int nbRoots = reader.NbRootsForTransfer();
     if (rootIndex > nbRoots)
@@ -1367,17 +1392,19 @@ OCCTShapeRef OCCTImportSTEPRoot(const char* path, int32_t rootIndex)
   }
 }
 
-OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters)
+OCCTShapeRef OCCTImportSTEPWithUnit(const char* path,
+                                    double      unitInMeters,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
   // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     // See OCCTImportSTEPWithUnitProgress above: SetSystemLengthUnit() must follow ReadFile()
     // (#1548), and its own scale is millimeter-based, so unitInMeters is converted before use.
@@ -1394,17 +1421,17 @@ OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters)
   }
 }
 
-int32_t OCCTSTEPReaderNbShapes(const char* path)
+int32_t OCCTSTEPReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    STEPControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    STEPControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     reader.TransferRoots();
     return reader.NbShapes();
@@ -1421,8 +1448,10 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
                                               bool        layerMode,
                                               bool        propsMode,
                                               bool        gdtMode,
-                                              bool        matMode)
+                                              bool        matMode,
+                                              OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -1447,8 +1476,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
     reader.SetGDTMode(gdtMode);
     reader.SetMatMode(matMode);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
     {
       delete document;
       return nullptr;
@@ -1477,8 +1505,10 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
                                     bool            nameMode,
                                     bool            layerMode,
                                     bool            dimTolMode,
-                                    bool            materialMode)
+                                    bool            materialMode,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!doc || !path || doc->doc.IsNull())
     return false;
 
@@ -1497,8 +1527,7 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
     if (!writer.Transfer(doc->doc, mode))
       return false;
 
-    IFSelect_ReturnStatus status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {

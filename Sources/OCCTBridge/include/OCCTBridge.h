@@ -46,6 +46,38 @@
 //     analysis order above, which shares the numbering but stops at 4. Spoken by
 //     OCCTCurve3D/2D/SurfaceGetContinuity (#485) and OCCTBRepLibContinuityOfFaces.
 //
+// MARK: - Data-exchange return status
+//
+// IFSelect_ReturnStatus is the five-valued answer every STEP and IGES read, transfer and write
+// step gives, and until #1644 the bridge compared it to IFSelect_RetDone and threw the rest away,
+// so a caller could not tell a missing file from a malformed one from an empty model. Every entry
+// point that runs one of those steps now takes a trailing `OCCTReturnStatus* _Nullable outStatus`;
+// passing NULL is exactly the old behaviour.
+//
+// The five ordinals are IFSelect_ReturnStatus's own, in its own declaration order, and
+// OCCTBridge_Internal.h static_asserts each one so a kernel repin that renumbers the OCCT enum is
+// a compile error rather than five silently relabelled values.
+//
+//   OCCTReturnStatusNotReached  the call failed before OCCT produced a status at all: a rejected
+//                               argument, a null handle, a caught exception. Not an OCCT value.
+//   OCCTReturnStatusVoid        IFSelect_RetVoid, nothing to do, an empty model
+//   OCCTReturnStatusDone        IFSelect_RetDone, success
+//   OCCTReturnStatusError       IFSelect_RetError, bad input, the file is not what it claims
+//   OCCTReturnStatusFail        IFSelect_RetFail, the step ran and failed
+//   OCCTReturnStatusStop        IFSelect_RetStop, interrupted
+//
+// A function that runs more than one such step (transfer then write) reports the status of the
+// last step it attempted, so a failure names the step that failed.
+typedef enum
+{
+  OCCTReturnStatusNotReached = -1,
+  OCCTReturnStatusVoid       = 0,
+  OCCTReturnStatusDone       = 1,
+  OCCTReturnStatusError      = 2,
+  OCCTReturnStatusFail       = 3,
+  OCCTReturnStatusStop       = 4
+} OCCTReturnStatus;
+
 // MARK: - OCCT Class Cross-Reference Index
 //
 // Maps OCCT C++ classes to their OCCTBridge function names.
