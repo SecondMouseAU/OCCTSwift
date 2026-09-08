@@ -462,23 +462,77 @@ extension Shape {
             openCount: Int(openCount))
     }
 
-    /// Fix free boundary wires by closing gaps.
+    /// What ``fixedFreeBounds(sewingTolerance:closingTolerance:)`` produced.
+    ///
+    /// `ShapeFix_FreeBounds` has two outputs and the method used to return only a mangled version
+    /// of the second one (#1636), so this carries both: the modified source shape, and the
+    /// free-bound wires the connection step built.
+    public struct FreeBoundsRepair: Sendable {
+        /// `ShapeFix_FreeBounds::GetShape()`, the modified source shape.
+        ///
+        /// Connecting several open wires into one replaces their previous end vertices with new
+        /// connecting vertices, and every edge in the shape that shared them is updated, so this
+        /// can differ from the input. When nothing was connected it is the input shape.
+        public let shape: Shape
+
+        /// Compound of the closed free-bound wires, or `nil` when the kernel produced none.
+        public let closedWires: Shape?
+
+        /// Compound of the open free-bound wires, or `nil` when the kernel produced none.
+        public let openWires: Shape?
+
+        /// Number of wires in ``closedWires``.
+        public let closedWireCount: Int
+
+        /// Number of wires in ``openWires``.
+        public let openWireCount: Int
+    }
+
+    /// Connect this shape's free boundary wires, closing gaps within `closingTolerance`.
+    ///
+    /// The primary result is `ShapeFix_FreeBounds::GetShape()`, the modified source shape, which
+    /// is what the method's name promises. Until #1636 it was a compound of the free-bound wires,
+    /// so a caller asking for the repaired shape received something with no faces in it, and
+    /// `GetShape()` was never read at all. The wires are still available on the result.
+    ///
+    /// `closingTolerance` must be **greater than** `sewingTolerance`, which is the pinned header's
+    /// own stated precondition: at or below it, no connection is performed and the call is a
+    /// silent no-op. The defaults satisfy it.
+    ///
+    /// This is `ShapeFix_FreeBounds`, not `ShapeFix_Shape`. Nothing here repairs geometry; the
+    /// only edit it makes is the vertex rewrite that connecting open wires requires.
+    ///
+    /// ```swift
+    /// let shell = Shape.compound(box.subShapes(ofType: .face).dropLast())!
+    /// if let repair = shell.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) {
+    ///     print(repair.shape.subShapes(ofType: .face).count)  // the faces are still there
+    ///     print(repair.closedWireCount, repair.openWireCount)
+    /// }
+    /// ```
     ///
     /// - Parameters:
-    ///   - sewingTolerance: Tolerance for sewing free edges
-    ///   - closingTolerance: Maximum distance to close a gap
-    /// - Returns: Tuple of (fixed shape, number of wires fixed), or nil on failure
+    ///   - sewingTolerance: Tolerance the sewing analyser is initialised with.
+    ///   - closingTolerance: Maximum distance to close a gap. Must exceed `sewingTolerance`.
+    /// - Returns: The modified source shape and the free-bound wires, or nil on failure.
     public func fixedFreeBounds(
         sewingTolerance: Double = 1e-6,
         closingTolerance: Double = 1e-4
-    ) -> (shape: Shape, fixedCount: Int)? {
-        var fixedCount: Int32 = 0
+    ) -> FreeBoundsRepair? {
+        var closedCount: Int32 = 0
+        var openCount: Int32 = 0
+        var closedWires: OCCTShapeRef?
+        var openWires: OCCTShapeRef?
         guard
             let h = OCCTShapeFixFreeBounds(
-                handle, sewingTolerance,
-                closingTolerance, &fixedCount)
+                handle, sewingTolerance, closingTolerance,
+                &closedCount, &openCount, &closedWires, &openWires)
         else { return nil }
-        return (shape: Shape(handle: h), fixedCount: Int(fixedCount))
+        return FreeBoundsRepair(
+            shape: Shape(handle: h),
+            closedWires: closedWires.map { Shape(handle: $0) },
+            openWires: openWires.map { Shape(handle: $0) },
+            closedWireCount: Int(closedCount),
+            openWireCount: Int(openCount))
     }
 
     // MARK: - Geometry Conversion (v0.41.0)

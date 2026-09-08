@@ -949,12 +949,35 @@ OCCTShapeRef OCCTShapeDropSmallEdges(OCCTShapeRef shape, double tolerance)
   }
 }
 
-OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
-                                    double       sewingTolerance,
-                                    double       closingTolerance,
-                                    int32_t*     outFixedCount)
+static int32_t occtCountWires(const TopoDS_Shape& shape)
 {
-  if (!shape || !outFixedCount)
+  if (shape.IsNull())
+    return 0;
+  int32_t         count = 0;
+  TopExp_Explorer exp(shape, TopAbs_WIRE);
+  while (exp.More())
+  {
+    count++;
+    exp.Next();
+  }
+  return count;
+}
+
+OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef  shape,
+                                    double        sewingTolerance,
+                                    double        closingTolerance,
+                                    int32_t*      outClosedWireCount,
+                                    int32_t*      outOpenWireCount,
+                                    OCCTShapeRef* outClosedWires,
+                                    OCCTShapeRef* outOpenWires)
+{
+  if (!outClosedWireCount || !outOpenWireCount || !outClosedWires || !outOpenWires)
+    return nullptr;
+  *outClosedWireCount = 0;
+  *outOpenWireCount   = 0;
+  *outClosedWires     = nullptr;
+  *outOpenWires       = nullptr;
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -964,28 +987,24 @@ OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
                               Standard_True,
                               Standard_True);
 
+    // GetShape() is the point of ShapeFix_FreeBounds over ShapeAnalysis_FreeBounds: connecting
+    // open wires rewrites the end vertices and every edge in the source shape that shared them.
+    // Returning the wire compound instead handed the caller something with no faces in it (#1636).
+    const TopoDS_Shape& modified = fixer.GetShape();
+    if (modified.IsNull())
+      return nullptr;
+
     TopoDS_Compound closedWires = fixer.GetClosedWires();
     TopoDS_Compound openWires   = fixer.GetOpenWires();
 
-    int32_t         closedCount = 0;
-    TopExp_Explorer exp(closedWires, TopAbs_WIRE);
-    while (exp.More())
-    {
-      closedCount++;
-      exp.Next();
-    }
-
-    *outFixedCount = closedCount;
-
-    BRep_Builder    builder;
-    TopoDS_Compound result;
-    builder.MakeCompound(result);
+    *outClosedWireCount = occtCountWires(closedWires);
+    *outOpenWireCount   = occtCountWires(openWires);
     if (!closedWires.IsNull())
-      builder.Add(result, closedWires);
+      *outClosedWires = new OCCTShape(closedWires);
     if (!openWires.IsNull())
-      builder.Add(result, openWires);
+      *outOpenWires = new OCCTShape(openWires);
 
-    return new OCCTShape(result);
+    return new OCCTShape(modified);
   }
   catch (...)
   {
