@@ -19,21 +19,21 @@ This page covers the final sections of `BRepGraph`: geometric setters for the Ed
 
 ---
 
-### `setCoEdgeUVBox(_:u1:v1:u2:v2:)`
+### `setCoEdgeUVBox(_:u1:v1:u2:v2:)` *(removed in #1652)*
 
-Set the UV bounding box (UV1 at `ParamFirst`, UV2 at `ParamLast`) of a coedge definition.
+OCCT 8.0.1 stores no per-coedge UV box. `BRepGraphInc::CoEdgeDef` carries no UV field, and
+`BRepGraph_Tool::CoEdge::UVPoints` derives the endpoints from the PCurve, so this setter wrote
+nothing and no reader would have consulted it. Set the PCurve instead, and the UV endpoints follow
+it:
 
 ```swift
-public func setCoEdgeUVBox(_ coedgeIndex: Int, u1: Double, v1: Double, u2: Double, v2: Double)
+let graph = BRepGraph(shape: box)!
+let pcurve = Curve2D.line(through: SIMD2(2, 3), direction: SIMD2(1, 0))!
+graph.coEdgeSetPCurve(0, curve2D: pcurve)
 ```
 
-- **Parameters:** `coedgeIndex`, per-kind coedge index; `u1/v1`, UV at the first parameter; `u2/v2`, UV at the last parameter.
-- **OCCT:** no OCCT call on the pinned kernel; a coedge's UV box is not a settable definition field in 8.0.0p1, its endpoints are derived from the PCurve by `BRepGraph_Tool` (via `OCCTBRepGraphSetCoEdgeUVBox`).
-- **Note:** **This setter does nothing on the pinned kernel.** The bridge function is a no-op kept for ABI compatibility. Read the derived UV endpoints instead of setting them.
-- **Example:**
-  ```swift
-  graph.setCoEdgeUVBox(0, u1: 0.0, v1: 0.0, u2: 1.0, v2: 1.0)
-  ```
+Measured in [`Scripts/repro/1652-brepgraph-noop-setters/`](../../Scripts/repro/1652-brepgraph-noop-setters/transcript.txt):
+rebinding the PCurve moves the reported UV endpoints from `(0, 0)-(10, 0)` to `(2, 3)-(6, 3)`.
 
 ---
 
@@ -142,85 +142,18 @@ public func coEdgeAddPCurve(edgeIndex: Int, faceIndex: Int, curve2D: Curve2D,
 
 ---
 
-### `setVertexRefLocalLocation(_:matrix:)`
+### `setVertexRefLocalLocation`, `setCoEdgeRefLocalLocation`, `setWireRefLocalLocation`, `setFaceRefLocalLocation`, `setShellRefLocalLocation`, `setSolidRefLocalLocation` *(removed in #1652)*
 
-Set the local `TopLoc_Location` of a vertex reference entry.
+A `BRepGraph` reference carries a location only if its storage struct declares one, and in OCCT
+8.0.1 only `BRepGraphInc::ChildRef` and `BRepGraphInc::OccurrenceRef` do. The six per-topology
+setters had no field to write, and their six `get`-side siblings (`vertexRefLocalLocation(_:)` and
+family) had none to read, so each could only ever return `nil`. `BRepGraph_RefId::Kind` has no
+coedge case at all, so a coedge reference never existed to place.
 
-```swift
-public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double])
-```
+Place topology through the occurrence or child reference that owns it, with
+`setOccurrenceRefLocalLocation(_:matrix:)` or `setChildRefLocalLocation(_:matrix:)` below.
 
-`matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention, rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `BRepGraph.identityLocationMatrix` for a no-op placement.
-
-- **Parameters:** `vertexRefIndex`, per-kind vertex-ref index; `matrix`, 12-element row-major 3×4 transform.
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetVertexRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one. Precondition: `matrix.count == 12`.
-
----
-
-### `setCoEdgeRefLocalLocation(_:matrix:)`
-
-Set the local `TopLoc_Location` of a coedge reference entry.
-
-```swift
-public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double])
-```
-
-- **Parameters:** `coedgeRefIndex`, per-kind coedge-ref index; `matrix`, 12-element 3×4 row-major transform.
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetCoEdgeRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
-
----
-
-### `setWireRefLocalLocation(_:matrix:)`
-
-Set the local `TopLoc_Location` of a wire reference entry.
-
-```swift
-public func setWireRefLocalLocation(_ wireRefIndex: Int, matrix: [Double])
-```
-
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetWireRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
-
----
-
-### `setFaceRefLocalLocation(_:matrix:)`
-
-Set the local `TopLoc_Location` of a face reference entry.
-
-```swift
-public func setFaceRefLocalLocation(_ faceRefIndex: Int, matrix: [Double])
-```
-
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetFaceRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
-
----
-
-### `setShellRefLocalLocation(_:matrix:)`
-
-Set the local `TopLoc_Location` of a shell reference entry.
-
-```swift
-public func setShellRefLocalLocation(_ shellRefIndex: Int, matrix: [Double])
-```
-
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetShellRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
-
----
-
-### `setSolidRefLocalLocation(_:matrix:)`
-
-Set the local `TopLoc_Location` of a solid reference entry.
-
-```swift
-public func setSolidRefLocalLocation(_ solidRefIndex: Int, matrix: [Double])
-```
-
-- **OCCT:** none on the pinned kernel; per-topology reference entries do not store a location in 8.0.0p1 (via `OCCTBRepGraphSetSolidRefLocalLocation`).
-- **Note:** **This setter does nothing on the pinned kernel.** In 8.0.0p1 only occurrence and child references carry a local location; per-topology references store none, so the bridge function is a no-op kept for ABI compatibility. Use `setOccurrenceRefLocalLocation(_:matrix:)`, which does write one.
+Measured in [`Scripts/repro/1652-brepgraph-noop-setters/`](../../Scripts/repro/1652-brepgraph-noop-setters/transcript.txt).
 
 ---
 
@@ -250,7 +183,7 @@ public func setChildRefLocalLocation(_ childRefIndex: Int, matrix: [Double])
 
 ### `identityLocationMatrix`
 
-Identity matrix (3×4) suitable for all `set*LocalLocation` calls.
+Identity matrix (3×4) suitable for the `set*LocalLocation` calls and for the `placement:` arguments of the ProductOps methods below.
 
 ```swift
 public static var identityLocationMatrix: [Double] { get }
@@ -260,7 +193,7 @@ Returns `[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]`, a row-major identity with zero t
 
 - **Example:**
   ```swift
-  graph.setFaceRefLocalLocation(0, matrix: BRepGraph.identityLocationMatrix)
+  graph.setChildRefLocalLocation(childRefIndex, matrix: BRepGraph.identityLocationMatrix)
   ```
 
 ---
@@ -462,23 +395,20 @@ public func repSetPolygonOnTri(_ polyRepId: Int, polygon: PolygonOnTriangulation
 
 ---
 
-### `repSetPolygonOnTriTriangulationId(_:triRepId:)`
+### `repSetPolygonOnTriTriangulationId(_:triRepId:)` *(removed in #1652)*
 
-Update the triangulation id referenced by an existing polygon-on-triangulation rep.
+`BRepGraphInc::CoEdgePolygonOnTriRep` is `{ParentCoEdgeId, Polygon}`: there is no triangulation id
+on the rep to rebind. A polygon-on-triangulation resolves its owning triangulation at attach time,
+through `CoEdgeDef.FaceId` to `FaceDef.TriangulationRepId`, so changing the face's triangulation is
+what changes what the polygon resolves against:
 
 ```swift
-public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: Int)
+let graph = BRepGraph(shape: box)!
+let newTriRepId = graph.createTriangulationRep(updatedTri)!
+graph.setFaceTriangulationRep(faceIndex, triRepId: newTriRepId)
 ```
 
-- **Parameters:** `polyOnTriRepId`, the polygon-on-tri rep to update; `triRepId`, the new triangulation rep id.
-- **OCCT:** none on the pinned kernel; 8.0.0p1 resolves a polygon-on-triangulation's owning triangulation at attach time rather than storing a rebindable rep-id link (via `OCCTBRepGraphRepSetPolygonOnTriTriangulationId`).
-- **Note:** **This setter does nothing on the pinned kernel.** The bridge function is a no-op kept for ABI compatibility; rebind by re-attaching the polygon-on-triangulation instead.
-- **Example:**
-  ```swift
-  // After replacing a triangulation, rebind the polygon-on-tri to the new rep:
-  graph.repSetTriangulation(newTriRepId, triangulation: updatedTri)
-  graph.repSetPolygonOnTriTriangulationId(polyOnTriRepId, triRepId: newTriRepId)
-  ```
+Measured in [`Scripts/repro/1652-brepgraph-noop-setters/`](../../Scripts/repro/1652-brepgraph-noop-setters/transcript.txt).
 
 ---
 

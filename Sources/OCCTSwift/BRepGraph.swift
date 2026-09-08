@@ -29,7 +29,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Per-node attribute store (see `BRepGraph+Attributes.swift`).
     ///
-    /// Holds arbitrary typed metadata keyed by ``NodeRef`` — fit residuals, provenance,
+    /// Holds arbitrary typed metadata keyed by ``NodeRef``: fit residuals, provenance,
     /// mesh-region sets, etc. Pure Swift sidecar; never touches the underlying C++ graph.
     /// Serialized via ``snapshot()`` / ``init(snapshot:)``.
     public var attributes = NodeAttributeStore()
@@ -689,7 +689,7 @@ public final class BRepGraph: @unchecked Sendable {
                         Int32(replCap))
                 }
             }
-            if total < 0 { continue }  // original not bound — skip
+            if total < 0 { continue }  // original not bound, skip
             if Int(total) > replCap {
                 replCap = Int(total)
                 replKinds = [Int32](repeating: 0, count: replCap)
@@ -759,7 +759,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// back to `[original]` when the node was untouched and `[]` when the node
     /// was explicitly deleted.
     ///
-    /// `findDerived(of:)` returns `[]` for both untouched and deleted nodes —
+    /// `findDerived(of:)` returns `[]` for both untouched and deleted nodes,
     /// callers can't tell "this face survived the mutation unchanged" from
     /// "this face was cut away". This entry point disambiguates by checking
     /// whether any history record names the node as an `original` key:
@@ -769,7 +769,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// - empty result + no record       → `[original]` (untouched, same index)
     ///
     /// Use this when you want a single deterministic answer to "where did
-    /// this node end up?" — the typical selection-remap case. Use
+    /// this node end up?", the typical selection-remap case. Use
     /// `findDerived` + `hasHistoryRecord` directly if you need to distinguish
     /// the deleted-vs-untouched cases at the call site.
     public func findDerivedOrSelf(of original: NodeRef) -> [NodeRef] {
@@ -886,7 +886,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// entities you were already holding keep resolving to their successors.
     ///
     /// This is the supported way to carry a picked face (or edge, or vertex)
-    /// across an operation that rebuilds the shape — a boolean, a fillet, a
+    /// across an operation that rebuilds the shape: a boolean, a fillet, a
     /// chamfer. Because the input and the result live in the *same* graph
     /// instance, the `NodeRef`s and `GraphUID`s you already hold stay valid:
     /// there is no second graph to look them up in, and a UID only ever means
@@ -896,7 +896,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// successors, and the ``TopologyRef`` recipes (`.splitOf`, `.createdBy`)
     /// resolve against the records this emits.
     ///
-    /// Build the graph from the operation's *input* shape, not its result — the
+    /// Build the graph from the operation's *input* shape, not its result: the
     /// input roots must already be in this graph.
     ///
     /// ```swift
@@ -904,7 +904,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
     /// let graph = BRepGraph(shape: base)!
     ///
-    /// // The topology root. Note this is findNode(for:), NOT rootNodes — that
+    /// // The topology root. Note this is findNode(for:), NOT rootNodes, that
     /// // enumerates Products and is empty for a graph built from a Shape.
     /// let rootNode = graph.findNode(for: base)!
     /// let root = BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index)
@@ -937,7 +937,7 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - result: The operation's result shape.
     ///   - history: The history handle returned alongside it by any
     ///     `*WithFullHistory` operation.
-    ///   - inputRoots: Nodes in this graph whose subshapes should be tracked —
+    ///   - inputRoots: Nodes in this graph whose subshapes should be tracked,
     ///     normally the root(s) the input shape was added as.
     ///   - operationName: Label recorded on every emitted record; the same string
     ///     `TopologyRef.createdBy(operationName:)` matches on.
@@ -952,7 +952,7 @@ public final class BRepGraph: @unchecked Sendable {
     ) -> NodeRef? {
         guard !inputRoots.isEmpty else { return nil }
         // Synthesize a BRepTools_History from the retained builder. Owned here and
-        // released once absorbed — the graph copies what it needs into its log.
+        // released once absorbed: the graph copies what it needs into its log.
         guard let btHistory = OCCTBooleanHistoryAsBRepToolsHistory(history.handle) else {
             return nil
         }
@@ -1029,7 +1029,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Whether a coedge has cached mesh data (polygon-on-tri or polygon-2D).
     ///
-    /// Cache-only check — does not consult the persistent tier.
+    /// Cache-only check, does not consult the persistent tier.
     public func meshCoEdgeHasMesh(_ coedgeIndex: Int) -> Bool {
         OCCTBRepGraphMeshCoEdgeHasMesh(handle, Int32(coedgeIndex))
     }
@@ -1052,9 +1052,14 @@ public final class BRepGraph: @unchecked Sendable {
         return id >= 0 ? id : nil
     }
 
-    /// Create a polygon-on-triangulation rep linked to an existing triangulation rep.
+    /// Create a polygon-on-triangulation rep and return its rep id, or nil.
     ///
-    /// Returns the rep id, or nil.
+    /// - Important: `triRepId` is accepted and not read (#1652). OCCT 8.0.1 has no rep-id link
+    ///   from a polygon-on-triangulation to a triangulation: `BRepGraphInc::CoEdgePolygonOnTriRep`
+    ///   is `{ParentCoEdgeId, Polygon}`, and the owning triangulation is resolved at attach time
+    ///   through `BRepGraphInc::CoEdgeDef::FaceId` to
+    ///   `BRepGraphInc::FaceDef::TriangulationRepId`. Bind the face's triangulation with
+    ///   ``setFaceTriangulationRep(_:triRepId:)``.
     public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: Int) -> Int? {
         let id = Int(
             OCCTBRepGraphMeshCreatePolygonOnTriRep(handle, polygon.handle, Int32(triRepId)))
@@ -1214,7 +1219,13 @@ public final class BRepGraph: @unchecked Sendable {
     /// Number of wire reference entries.
     public var wireRefCount: Int { Int(OCCTBRepGraphNbWireRefs(handle)) }
 
-    /// Number of coedge reference entries.
+    /// Number of coedge definitions.
+    ///
+    /// - Important: This is not a reference count, despite the name (#1652). OCCT 8.0.1 has no
+    ///   coedge reference kind at all (`BRepGraph_RefId::Kind` runs Shell, Face, Wire, Vertex,
+    ///   Solid, Child, Occurrence), because a coedge usage is stored directly on `CoEdgeDef`.
+    ///   The value returned is `BRepGraph::TopoView::CoEdges().Nb()`, the same figure as
+    ///   ``coedgeCount``.
     public var coedgeRefCount: Int { Int(OCCTBRepGraphNbCoEdgeRefs(handle)) }
 
     /// Number of vertex reference entries.
@@ -2001,14 +2012,10 @@ public final class BRepGraph: @unchecked Sendable {
 
     // MARK: - EditorView geometric setters & PCurve API (v0.162.0)
 
-    /// Set the UV box (UV1 at ParamFirst, UV2 at ParamLast) of a coedge definition.
-    ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A per-coedge UV bounding box is no longer
-    ///   a settable definition field; UV endpoints are derived from the PCurve via
-    ///   `BRepGraph_Tool::CoEdge::UVPoints`. Kept for ABI compatibility.
-    public func setCoEdgeUVBox(_ coedgeIndex: Int, u1: Double, v1: Double, u2: Double, v2: Double) {
-        OCCTBRepGraphSetCoEdgeUVBox(handle, Int32(coedgeIndex), u1, v1, u2, v2)
-    }
+    // `setCoEdgeUVBox(_:u1:v1:u2:v2:)` was removed in #1652. OCCT 8.0.1 stores no per-coedge UV
+    // box: `BRepGraphInc::CoEdgeDef` carries no UV field, and `BRepGraph_Tool::CoEdge::UVPoints`
+    // derives the endpoints from the PCurve, so the call wrote nothing and no reader consulted
+    // it. Set the PCurve instead, with ``coEdgeSetPCurve(_:curve2D:)``.
 
     /// Set the geometric regularity (C^k continuity) for an edge across a pair of faces.
     ///
@@ -2018,12 +2025,12 @@ public final class BRepGraph: @unchecked Sendable {
     /// OCCT 8.0.0 GA reshaped the continuity model: it lives on the (edge, face1, face2)
     /// triple in `BRepGraph_LayerRegularity`, replacing the per-coedge setters present in
     /// pre-1.0 (`setCoEdgeContinuity`, `setCoEdgeSeamContinuity`). The explicit seam-pair-id
-    /// setter was removed — seam-pair-id is structural in GA (derived from two coedges on
+    /// setter was removed: seam-pair-id is structural in GA (derived from two coedges on
     /// the same edge/face with opposite orientations).
     ///
     /// - Important: This always returns `false` against OCCT 8.0.0p1 and `continuity` is not
-    ///   read at all. `BRepGraph_LayerRegularity` — the only write path in the GA continuity
-    ///   model — does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
+    ///   read at all. `BRepGraph_LayerRegularity`, the only write path in the GA continuity
+    ///   model, does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
     ///   stub that reports failure. There is no replacement writer; to *read* continuity, use
     ///   ``Shape/continuity(edge:face1:face2:)`` or ``Shape/maxContinuity(edge:)``, both of which
     ///   go through the shape-based `BRepLib`/`BRep_Tool` path and are unaffected. Tracked
@@ -2083,126 +2090,84 @@ public final class BRepGraph: @unchecked Sendable {
         matrix.withUnsafeBufferPointer { buf in call(buf.baseAddress!) }
     }
 
-    // The six per-topology-reference setters below (vertex/coedge/wire/face/shell/solid) are
-    // no-ops against OCCT 8.0.0p1 (#1001). Only occurrence and child references carry a local
-    // location in p1; the per-topology references no longer store one, so their editors expose
-    // no `SetRefLocalLocation`. Kept for ABI compatibility. (CoEdge refs were removed entirely,
-    // coedges are not reference-counted.) Their getter siblings below already say so; see
-    // ``vertexRefLocalLocation(_:)`` etc. `setOccurrenceRefLocalLocation`/`setChildRefLocalLocation`
-    // just below are real, unaffected setters.
+    // A BRepGraph reference carries a location only if its storage struct declares one, and in
+    // OCCT 8.0.1 only `BRepGraphInc::ChildRef` and `BRepGraphInc::OccurrenceRef` do. #1652
+    // therefore removed the six per-topology setters and their six getters
+    // (`set`/`get` `Vertex`/`CoEdge`/`Wire`/`Face`/`Shell`/`SolidRefLocalLocation`): they had no
+    // field to write or read, and `BRepGraph_RefId::Kind` has no coedge member at all, so a
+    // coedge reference never existed to place. The two writers below, and their two readers, are
+    // the whole of the model. The measurement is in
+    // `Scripts/repro/1652-brepgraph-noop-setters/`.
 
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) {
-            OCCTBRepGraphSetVertexRefLocalLocation(handle, Int32(vertexRefIndex), $0)
-        }
-    }
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setCoEdgeRefLocalLocation(_ coedgeRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) {
-            OCCTBRepGraphSetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), $0)
-        }
-    }
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setWireRefLocalLocation(_ wireRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetWireRefLocalLocation(handle, Int32(wireRefIndex), $0) }
-    }
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setFaceRefLocalLocation(_ faceRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetFaceRefLocalLocation(handle, Int32(faceRefIndex), $0) }
-    }
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setShellRefLocalLocation(_ shellRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetShellRefLocalLocation(handle, Int32(shellRefIndex), $0) }
-    }
-    /// - Important: No-op against OCCT 8.0.0p1. See the note above this group.
-    public func setSolidRefLocalLocation(_ solidRefIndex: Int, matrix: [Double]) {
-        passLoc(matrix) { OCCTBRepGraphSetSolidRefLocalLocation(handle, Int32(solidRefIndex), $0) }
-    }
+    /// Set the local placement of an occurrence reference, relative to its parent product.
+    ///
+    /// This is one of the two reference kinds that carries a location in OCCT 8.0.1; the other is
+    /// the child reference, below. Read the value back with
+    /// ``occurrenceRefLocalLocation(_:)``.
+    ///
+    /// ```swift
+    /// let graph = BRepGraph(shape: box)!
+    /// let parent = graph.createEmptyProduct()!
+    /// let child = graph.linkProductToTopology(
+    ///     shapeRootKind: 0, shapeRootIndex: 0,
+    ///     placement: BRepGraph.identityLocationMatrix)!
+    /// let link = graph.linkProducts(
+    ///     parentProductIndex: parent, referencedProductIndex: child,
+    ///     placement: BRepGraph.identityLocationMatrix)!
+    /// graph.setOccurrenceRefLocalLocation(
+    ///     link.occurrenceRefIndex,
+    ///     matrix: [1, 0, 0, 5, 0, 1, 0, 6, 0, 0, 1, 7])
+    /// let placed = graph.occurrenceRefLocalLocation(link.occurrenceRefIndex)
+    /// // placed?[3], placed?[7], placed?[11] == 5, 6, 7
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - occurrenceRefIndex: The occurrence reference index, as returned by
+    ///     ``linkProducts(parentProductIndex:referencedProductIndex:placement:parentOccurrenceIndex:)``.
+    ///   - matrix: A 3x4 row-major matrix, exactly 12 doubles.
     public func setOccurrenceRefLocalLocation(_ occurrenceRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) {
             OCCTBRepGraphSetOccurrenceRefLocalLocation(handle, Int32(occurrenceRefIndex), $0)
         }
     }
+
+    /// Set the local placement of a compound child reference, relative to its parent compound.
+    ///
+    /// Read the value back with ``childRefLocalLocation(_:)``.
+    ///
+    /// ```swift
+    /// let graph = BRepGraph(shape: box)!
+    /// let compound = graph.addCompound(children: [(kind: .solid, index: 0)])!
+    /// let childRef = graph.compoundAddChild(compound, childKind: 2, childIndex: 0)!
+    /// graph.setChildRefLocalLocation(childRef, matrix: [1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3])
+    /// let placed = graph.childRefLocalLocation(childRef)
+    /// // placed?[3], placed?[7], placed?[11] == 1, 2, 3
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - childRefIndex: The child reference index, as returned by
+    ///     ``compoundAddChild(_:childKind:childIndex:orientation:)``.
+    ///   - matrix: A 3x4 row-major matrix, exactly 12 doubles.
     public func setChildRefLocalLocation(_ childRefIndex: Int, matrix: [Double]) {
         passLoc(matrix) { OCCTBRepGraphSetChildRefLocalLocation(handle, Int32(childRefIndex), $0) }
     }
 
     // MARK: - EditorView Ref LocalLocation getters (v0.165.0)
 
-    /// Get the local `TopLoc_Location` of a vertex reference entry.
-    ///
-    /// - Parameter vertexRefIndex: The vertex reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (vertex refs do not store a local location).
-    public func vertexRefLocalLocation(_ vertexRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetVertexRefLocalLocation(handle, Int32(vertexRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
+    // The six per-topology getters (vertex/coedge/wire/face/shell/solid) were removed in #1652
+    // with their setters; see the note above `setOccurrenceRefLocalLocation(_:matrix:)`.
 
-    /// Get the local `TopLoc_Location` of a coedge reference entry.
+    /// Get the local placement of an occurrence reference, relative to its parent product.
     ///
-    /// - Parameter coedgeRefIndex: The coedge reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (coedge refs do not store a local location).
-    public func coEdgeRefLocalLocation(_ coedgeRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetCoEdgeRefLocalLocation(handle, Int32(coedgeRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
-
-    /// Get the local `TopLoc_Location` of a wire reference entry.
+    /// Occurrence and child references are the only two kinds that carry a location in OCCT
+    /// 8.0.1; see the note above ``setOccurrenceRefLocalLocation(_:matrix:)``.
     ///
-    /// - Parameter wireRefIndex: The wire reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (wire refs do not store a local location).
-    public func wireRefLocalLocation(_ wireRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetWireRefLocalLocation(handle, Int32(wireRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
-
-    /// Get the local `TopLoc_Location` of a face reference entry.
-    ///
-    /// - Parameter faceRefIndex: The face reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (face refs do not store a local location).
-    public func faceRefLocalLocation(_ faceRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetFaceRefLocalLocation(handle, Int32(faceRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
-
-    /// Get the local `TopLoc_Location` of a shell reference entry.
-    ///
-    /// - Parameter shellRefIndex: The shell reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (shell refs do not store a local location).
-    public func shellRefLocalLocation(_ shellRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetShellRefLocalLocation(handle, Int32(shellRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
-
-    /// Get the local `TopLoc_Location` of a solid reference entry.
-    ///
-    /// - Parameter solidRefIndex: The solid reference index.
-    /// - Returns: Always returns nil in OCCT 8.0.0p1 (solid refs do not store a local location).
-    public func solidRefLocalLocation(_ solidRefIndex: Int) -> [Double]? {
-        var matrix = [Double](repeating: 0, count: 12)
-        let ok = matrix.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphGetSolidRefLocalLocation(handle, Int32(solidRefIndex), buf.baseAddress!)
-        }
-        return ok ? matrix : nil
-    }
-
-    /// Get the local `TopLoc_Location` of an occurrence reference entry.
+    /// ```swift
+    /// let graph = BRepGraph(shape: box)!
+    /// if let placed = graph.occurrenceRefLocalLocation(link.occurrenceRefIndex) {
+    ///     print(placed[3], placed[7], placed[11])  // the translation column
+    /// }
+    /// ```
     ///
     /// - Parameter occurrenceRefIndex: The occurrence reference index (as returned by `linkProducts`'s `occurrenceRefIndex`).
     /// - Returns: A 3x4 row-major matrix (12 doubles), or nil if the reference is invalid.
@@ -2215,9 +2180,17 @@ public final class BRepGraph: @unchecked Sendable {
         return ok ? matrix : nil
     }
 
-    /// Get the local `TopLoc_Location` of a child reference entry.
+    /// Get the local placement of a compound child reference, relative to its parent compound.
     ///
-    /// - Parameter childRefIndex: The child reference index.
+    /// ```swift
+    /// let graph = BRepGraph(shape: box)!
+    /// if let placed = graph.childRefLocalLocation(childRef) {
+    ///     print(placed[3], placed[7], placed[11])  // the translation column
+    /// }
+    /// ```
+    ///
+    /// - Parameter childRefIndex: The child reference index, as returned by
+    ///   ``compoundAddChild(_:childKind:childIndex:orientation:)``.
     /// - Returns: A 3x4 row-major matrix (12 doubles), or nil if the reference is invalid.
     public func childRefLocalLocation(_ childRefIndex: Int) -> [Double]? {
         var matrix = [Double](repeating: 0, count: 12)
@@ -2339,14 +2312,11 @@ public final class BRepGraph: @unchecked Sendable {
     public func repSetPolygonOnTri(_ polyRepId: Int, polygon: PolygonOnTriangulation) {
         OCCTBRepGraphRepSetPolygonOnTri(handle, Int32(polyRepId), polygon.handle)
     }
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A polygon-on-tri's owning triangulation is
-    ///   resolved at attach time (`CoEdgeDef.FaceId` -> `FaceDef` triangulation) in p1, not stored
-    ///   as a rep-id link on the polygon rep, so there is no slot to rebind by id. Kept for ABI
-    ///   compatibility.
-    public func repSetPolygonOnTriTriangulationId(_ polyOnTriRepId: Int, triRepId: Int) {
-        OCCTBRepGraphRepSetPolygonOnTriTriangulationId(
-            handle, Int32(polyOnTriRepId), Int32(triRepId))
-    }
+    // `repSetPolygonOnTriTriangulationId(_:triRepId:)` was removed in #1652. A polygon-on-tri's
+    // owning triangulation is resolved at attach time (`CoEdgeDef.FaceId` ->
+    // `FaceDef.TriangulationRepId`), and `BRepGraphInc::CoEdgePolygonOnTriRep` is
+    // `{ParentCoEdgeId, Polygon}`: there is no rep-id link to rebind. Change the face's
+    // triangulation with ``setFaceTriangulationRep(_:triRepId:)``.
 
     // MARK: - MeshView cache entry inspection (v0.164.0)
 
@@ -2450,7 +2420,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// Result of sampling a face surface on a regular UV grid.
     ///
     /// All four parallel arrays share one layout: **U-major**, u varying slowest and v fastest,
-    /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v` — the same
+    /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v`, the same
     /// index ``SurfaceGrid`` and ``SurfaceGridD1`` use (#404/#486).
     ///
     /// Prefer ``at(u:v:)`` over spelling the index out, because the two ways to get it wrong fail
@@ -2521,7 +2491,7 @@ public final class BRepGraph: @unchecked Sendable {
                     + "(uSamples: \(uSamples), vSamples: \(vSamples))")
             let i = surfaceGridIndex(u: u, v: v, vCount: vSamples)
             // The buffers carry the count the bridge actually wrote, which #419 deliberately does
-            // not assume equals uSamples * vSamples — so the grid bounds above are necessary but
+            // not assume equals uSamples * vSamples, so the grid bounds above are necessary but
             // not sufficient.
             precondition(
                 i < positions.count,
@@ -2579,7 +2549,7 @@ public final class BRepGraph: @unchecked Sendable {
 
         guard result > 0 else { return nil }
 
-        // Unpack only the actually-written count (`result`), not the requested `total` — today
+        // Unpack only the actually-written count (`result`), not the requested `total`: today
         // the bridge is all-or-nothing so the two coincide, but nothing should assume that stays
         // true (see #419). Truncate the scalar buffers to match for the same reason: all four
         // outputs must agree on how many samples are actually valid.
@@ -2615,10 +2585,10 @@ public final class BRepGraph: @unchecked Sendable {
         return unpackSIMD3(buffer, count: Int(result))
     }
 
-    // MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1
+    // MARK: - Durable Identity (UID / RefUID / ItemUID), OCCT 8.0.0p1
 
     /// A durable node identifier: a `(kind, counter)` pair that persists across mutations of
-    /// **the one graph instance that minted it** — compaction, node removal — where a
+    /// **the one graph instance that minted it**, across compaction and node removal, where a
     /// `(kind, index)` ``NodeRef`` does not.
     ///
     /// The counter never repeats within a kind and is stable when vector indices shift.
@@ -2626,12 +2596,12 @@ public final class BRepGraph: @unchecked Sendable {
     ///
     /// The scope is the graph *instance*, not the shape and not a "generation". Every graph
     /// allocates counters from 1 independently, so the same `(kind, counter)` names some
-    /// unrelated node in every other graph — a box's face UID would otherwise resolve happily
+    /// unrelated node in every other graph: a box's face UID would otherwise resolve happily
     /// against a cylinder. ``graphID`` records which instance minted the UID, and
     /// ``BRepGraph/node(forUID:)`` rejects one that came from anywhere else (#295).
     ///
     /// To carry a selection across a *modelling operation* rather than across mutations of one
-    /// graph, absorb the operation's history — see
+    /// graph, absorb the operation's history, see
     /// ``BRepGraph/add(_:absorbing:inputRoots:operationName:)``.
     ///
     /// `kind` is the raw `BRepGraph_NodeId::Kind` ordinal
@@ -2657,7 +2627,7 @@ public final class BRepGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``.
+        /// The instance that minted this UID: its ``BRepGraph/instanceID``.
         ///
         /// `0` means unstamped: built by hand, or decoded from a payload written before
         /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
@@ -2681,7 +2651,7 @@ public final class BRepGraph: @unchecked Sendable {
 
         /// True if this UID has a non-zero counter.
         ///
-        /// It may still fail to resolve — because it was minted by a different graph,
+        /// It may still fail to resolve, because it was minted by a different graph,
         /// or because its node has since been removed.
         public var isValid: Bool { counter > 0 }
     }
@@ -2705,7 +2675,7 @@ public final class BRepGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``.
+        /// The instance that minted this UID: its ``BRepGraph/instanceID``.
         ///
         /// `0` means unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
@@ -2744,7 +2714,7 @@ public final class BRepGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``BRepGraph/instanceID``.
+        /// The instance that minted this UID: its ``BRepGraph/instanceID``.
         ///
         /// `0` means unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
@@ -2786,7 +2756,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// or its node no longer exists here.
     ///
     /// A UID minted by another graph returns `nil` even when its counter is in range for this
-    /// one — which it usually is, since counters restart per graph (#295).
+    /// one, which it usually is, since counters restart per graph (#295).
     public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)? {
         guard uid.graphID == instanceID else { return nil }
         var nodeKind: Int32 = 0
@@ -2869,8 +2839,8 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Identifies this graph instance for as long as it lives.
     ///
-    /// Unique among every graph this process builds, and — because the sequence starts at a random
-    /// point — distinct from any other process's ids with overwhelming probability. Every UID this
+    /// Unique among every graph this process builds, and, because the sequence starts at a random
+    /// point, distinct from any other process's ids with overwhelming probability. Every UID this
     /// graph mints carries it, which is how ``node(forUID:)`` tells one of its own nodes from a node
     /// of some other graph (#295).
     ///
@@ -2879,18 +2849,18 @@ public final class BRepGraph: @unchecked Sendable {
     /// graph by the same token.
     ///
     /// ``copy()`` and ``translated(dx:dy:dz:copyGeometry:)`` **inherit** this id, because the kernel
-    /// copies the graph wholesale — it transplants the UID counter space itself, so a copy genuinely
+    /// copies the graph wholesale: it transplants the UID counter space itself, so a copy genuinely
     /// is the same identity and every UID keeps naming the same node. ``copyFace(_:copyGeometry:)``
     /// does not: it lifts one face into a new graph, which gets its own id.
     ///
     /// ```swift
     /// let graph = BRepGraph(shape: box)!
     /// let uid = graph.uid(ofNodeKind: 2, index: 0)!
-    /// print(uid.graphID == graph.instanceID)      // true — this graph minted it
+    /// print(uid.graphID == graph.instanceID)      // true, this graph minted it
     ///
     /// let copy = graph.copy()!
-    /// print(copy.instanceID == graph.instanceID)  // true — a copy is the same identity
-    /// print(copy.node(forUID: uid) != nil)        // true — and names the same face
+    /// print(copy.instanceID == graph.instanceID)  // true, a copy is the same identity
+    /// print(copy.node(forUID: uid) != nil)        // true, and names the same face
     ///
     /// let rebuilt = BRepGraph(shape: box)!    // same shape, new graph
     /// print(rebuilt.node(forUID: uid))            // nil

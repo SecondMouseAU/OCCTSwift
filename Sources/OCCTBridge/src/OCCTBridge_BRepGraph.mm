@@ -4537,9 +4537,11 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g,
 
 // CoEdge geometric setters
 
-// OCCT 8.0.0p1: per-coedge UV bounding box is no longer a settable definition field
-// (UV endpoints are derived from the PCurve via BRepGraph_Tool::CoEdge::UVPoints). No-op.
-void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, double, double) {}
+// #1652 removed OCCTBRepGraphSetCoEdgeUVBox: BRepGraphInc::CoEdgeDef carries no UV field in
+// 8.0.1 and BRepGraph_Tool::CoEdge::UVPoints derives the endpoints from the PCurve, so the
+// stub had nothing to write and nothing that would have read it back. Measured in
+// Scripts/repro/1652-brepgraph-noop-setters/: rebinding the PCurve moves the reported UV
+// endpoints with it. OCCTBRepGraphCoEdgeSetPCurve is the write path.
 
 // OCCT 8.0.0p1: edge regularity would live in BRepGraph_LayerRegularity, but that class is broken
 // in p1 (uncompilable header / absent from libOCCT, see the include note near the top of this
@@ -4645,22 +4647,11 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g,
 // the same twelve doubles. The layout is in the name: see that header for why a Matrix12Grouped
 // array must not be handed to it.
 
-// OCCT 8.0.0p1: only occurrence and child references carry a local location; the per-topology
-// references (vertex/coedge/wire/face/shell/solid) no longer store a location, so their editors
-// expose no SetRefLocalLocation. These are no-ops for ABI compatibility. (CoEdge refs were removed
-// entirely, coedges are not reference-counted.)
-void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
+// #1652 removed the six per-topology location setters (vertex/coedge/wire/face/shell/solid).
+// Only BRepGraphInc::ChildRef and BRepGraphInc::OccurrenceRef declare a LocalLocation field in
+// 8.0.1, so the other reference structs had no slot to write, and BRepGraph_RefId::Kind has no
+// CoEdge member at all, so a coedge reference never existed to place. The two writers below are
+// the whole of the model. Measured in Scripts/repro/1652-brepgraph-noop-setters/.
 void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
                                                 int32_t          occurrenceRefIndex,
                                                 const double*    matrix)
@@ -4696,41 +4687,8 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
 
 // MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
 
-bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: vertex refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: coedge refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: wire refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: face refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: shell refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: solid refs do not store a local location
-  return false;
-}
+// #1652 removed the six per-topology getters with their setters: with no LocalLocation field on
+// those reference structs there is nothing to read, and each could only ever report failure.
 
 bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
                                                 int32_t          occurrenceRefIndex,
@@ -4978,10 +4936,11 @@ void OCCTBRepGraphRepSetPolygonOnTri(OCCTBRepGraphRef        g,
          : Handle(Poly_PolygonOnTriangulation)();
 }
 
-// OCCT 8.0.0p1: a polygon-on-tri's owning triangulation is resolved at attach time
-// (CoEdgeDef.FaceId -> FaceDef triangulation), not stored as a rep-id link on the polygon rep.
-// There is no slot to rebind by id; no-op for ABI compatibility.
-void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef, int32_t, int32_t) {}
+// #1652 removed OCCTBRepGraphRepSetPolygonOnTriTriangulationId. A polygon-on-tri's owning
+// triangulation is resolved at attach time (CoEdgeDef.FaceId -> FaceDef.TriangulationRepId),
+// and BRepGraphInc::CoEdgePolygonOnTriRep is {ParentCoEdgeId, Polygon}: no rep-id link exists
+// to rebind. OCCTBRepGraphSetFaceTriangulationRep is what changes the triangulation a
+// polygon-on-tri resolves against.
 
 // MARK: - BRepGraph MeshView v0.164.0, cache entry inspection
 
