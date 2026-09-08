@@ -2569,17 +2569,26 @@ bool OCCTCurve2DTransform(OCCTCurve2DRef _Nonnull curve,
                           double  p4);
 
 // --- Geom2dEval 2D Curve Evaluators ---
+//
+// Every one of these returns whether its out-parameters hold a measurement (#1646). `false` means
+// the call was refused: the arguments were rejected by the OCCT constructor (amplitude 0, radius 0,
+// growth rate 0, all of which raise), or the evaluation produced a non-finite value, which a
+// non-finite argument does silently because OCCT's `<= 0` validation is false for NaN. On `false`
+// every output is set to 0, so an ignoring caller reads a deterministic value; 0 is a refusal there
+// and never an answer, since the origin is a point these curves legitimately return.
 
 /// Evaluate Archimedean spiral D0 at parameter u. Returns 2D point.
 /// C(t) = O + (a + b*t)*cos(t)*XDir + (a + b*t)*sin(t)*YDir
-void OCCTGeom2dEvalArchimedeanSpiralD0(double initialRadius,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalArchimedeanSpiralD0(double initialRadius,
                                        double growthRate,
                                        double u,
                                        double* _Nonnull px,
                                        double* _Nonnull py);
 
 /// Evaluate Archimedean spiral D1: point + first derivative.
-void OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
                                        double growthRate,
                                        double u,
                                        double* _Nonnull px,
@@ -2589,14 +2598,16 @@ void OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
 
 /// Evaluate logarithmic spiral D0 at parameter u.
 /// C(t) = O + a*exp(b*t)*cos(t)*XDir + a*exp(b*t)*sin(t)*YDir
-void OCCTGeom2dEvalLogSpiralD0(double scale,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalLogSpiralD0(double scale,
                                double growthExponent,
                                double u,
                                double* _Nonnull px,
                                double* _Nonnull py);
 
 /// Evaluate logarithmic spiral D1: point + derivative.
-void OCCTGeom2dEvalLogSpiralD1(double scale,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalLogSpiralD1(double scale,
                                double growthExponent,
                                double u,
                                double* _Nonnull px,
@@ -2606,13 +2617,15 @@ void OCCTGeom2dEvalLogSpiralD1(double scale,
 
 /// Evaluate circle involute D0 at parameter u.
 /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
-void OCCTGeom2dEvalCircleInvoluteD0(double radius,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalCircleInvoluteD0(double radius,
                                     double u,
                                     double* _Nonnull px,
                                     double* _Nonnull py);
 
 /// Evaluate circle involute D1: point + derivative.
-void OCCTGeom2dEvalCircleInvoluteD1(double radius,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalCircleInvoluteD1(double radius,
                                     double u,
                                     double* _Nonnull px,
                                     double* _Nonnull py,
@@ -2630,7 +2643,9 @@ OCCTCurve2DRef _Nullable OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX,
 
 /// Evaluate circle involute D0 at parameter u with caller-supplied placement.
 /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
-void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused,
+///         which includes a radius <= 0 and a direction of no length.
+bool OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
                                                  double originY,
                                                  double dirX,
                                                  double dirY,
@@ -2640,7 +2655,9 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
                                                  double* _Nonnull py);
 
 /// Evaluate circle involute D1 at parameter u with caller-supplied placement: point + derivative.
-void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
+/// @return true when all four outputs hold a finite result, false when the call was refused,
+///         which includes a radius <= 0 and a direction of no length.
+bool OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
                                                  double originY,
                                                  double dirX,
                                                  double dirY,
@@ -2653,7 +2670,8 @@ void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
 
 /// Evaluate 2D sine wave D0 at parameter u.
 /// C(t) = O + t*XDir + A*sin(omega*t + phi)*YDir
-void OCCTGeom2dEvalSineWaveD0(double amplitude,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalSineWaveD0(double amplitude,
                               double omega,
                               double phase,
                               double u,
@@ -2661,7 +2679,8 @@ void OCCTGeom2dEvalSineWaveD0(double amplitude,
                               double* _Nonnull py);
 
 /// Evaluate 2D sine wave D1: point + derivative.
-void OCCTGeom2dEvalSineWaveD1(double amplitude,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalSineWaveD1(double amplitude,
                               double omega,
                               double phase,
                               double u,
