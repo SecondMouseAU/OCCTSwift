@@ -2858,8 +2858,24 @@ public func bsplineRestriction(
     tol3d: Double = 0.01, tol2d: Double = 0.01,
     maxDegree: Int = 8, maxSegments: Int = 100,
     continuity3d: ParametricContinuity = .c1, continuity2d: ParametricContinuity = .c1,
-    degreePriority: Bool = true, rational: Bool = false
+    degreePriority: Bool = true, rational: Bool = false,
+    parameters: Shape.BSplineRestrictionParameters = .occtDefaults
 ) -> Shape?
+```
+
+**`parameters` is what decides which surfaces are converted at all.** Its default is
+`ShapeCustom_RestrictionParameters`'s own, which converts surfaces of revolution, extrusion and
+offset and leaves planes, cylinders, cones, spheres, tori and Bezier surfaces exactly as they were,
+with no diagnostic. Measured, a cylinder through this call at the default comes back with 0 BSpline
+faces and 3 still elementary. Pass `.allSurfaceTypes` to convert everything, or flip one switch:
+
+```swift
+let untouched = cylinder.bsplineRestriction()                              // 0 BSpline faces
+let converted = cylinder.bsplineRestriction(parameters: .allSurfaceTypes)  // 3 BSpline faces
+
+var onlyCylinders = Shape.BSplineRestrictionParameters.occtDefaults
+onlyCylinders.convertCylindricalSurface = true
+let wallOnly = cylinder.bsplineRestriction(parameters: onlyCylinders)      // 1, the wall
 ```
 
 - **Parameters:**
@@ -2875,8 +2891,49 @@ public func bsplineRestriction(
   - `continuity2d`: 2D continuity requirement, same ceiling and same `.c3` limit.
   - `degreePriority`: If `true`, prioritize degree reduction over segment reduction.
   - `rational`: Allow rational BSplines.
+  - `parameters`: which geometry kinds may be converted. Defaults to OCCT's own values, which is
+    the behaviour this call had before [#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637)
+    and which converts almost nothing analytic.
 - **Returns:** Simplified shape, or `nil` on failure.
-- **OCCT:** `ShapeCustom::BSplineRestriction` (via `OCCTShapeCustomBSplineRestriction`).
+- **OCCT:** `ShapeCustom::BSplineRestriction` with a caller-supplied
+  `ShapeCustom_RestrictionParameters` (via `OCCTShapeCustomBSplineRestriction`).
+
+---
+
+### `Shape.BSplineRestrictionParameters`
+
+Which geometry kinds `bsplineRestriction` is allowed to convert. Mirrors
+`ShapeCustom_RestrictionParameters`.
+
+```swift
+public struct BSplineRestrictionParameters: Sendable, Equatable {
+    public var convertPlane: Bool               // OCCT default: false
+    public var convertBezierSurface: Bool       // false
+    public var convertRevolutionSurface: Bool   // true
+    public var convertExtrusionSurface: Bool    // true
+    public var convertOffsetSurface: Bool       // true
+    public var convertCylindricalSurface: Bool  // false
+    public var convertConicalSurface: Bool      // false
+    public var convertToroidalSurface: Bool     // false
+    public var convertSphericalSurface: Bool    // false
+    public var segmentSurfaceMode: Bool         // true
+    public var convertCurve3d: Bool             // true
+    public var convertOffsetCurve3d: Bool       // true
+    public var convertCurve2d: Bool             // true
+    public var convertOffsetCurve2d: Bool       // true
+
+    public static let occtDefaults: BSplineRestrictionParameters
+    public static let allSurfaceTypes: BSplineRestrictionParameters
+}
+```
+
+The defaults above are the kernel's own, read off the pinned build
+(`Scripts/repro/1637/transcript.txt`), and a test compares them field by field against
+`occtDefaultBSplineRestrictionParameters()` so they cannot drift.
+
+`GMaxDegree` and `GMaxSeg`, the class's two global caps, are **not** exposed. They are measured to
+have no effect next to the per-call `maxDegree` and `maxSegments`: on a torus, `GMaxDegree` of 3, 5
+and 15 all deliver degree 7, while the per-call `maxDegree` of 3, 5 and 9 delivers 3, 5 and 7.
 
 ---
 

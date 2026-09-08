@@ -922,6 +922,54 @@ OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoi
   }
 }
 
+OCCTBSplineRestrictionParameters occtDefaultBSplineRestrictionParameters(void)
+{
+  Handle(ShapeCustom_RestrictionParameters) defaults = new ShapeCustom_RestrictionParameters();
+  OCCTBSplineRestrictionParameters          out;
+  out.convertPlane           = defaults->ConvertPlane();
+  out.convertBezierSurf      = defaults->ConvertBezierSurf();
+  out.convertRevolutionSurf  = defaults->ConvertRevolutionSurf();
+  out.convertExtrusionSurf   = defaults->ConvertExtrusionSurf();
+  out.convertOffsetSurf      = defaults->ConvertOffsetSurf();
+  out.convertCylindricalSurf = defaults->ConvertCylindricalSurf();
+  out.convertConicalSurf     = defaults->ConvertConicalSurf();
+  out.convertToroidalSurf    = defaults->ConvertToroidalSurf();
+  out.convertSphericalSurf   = defaults->ConvertSphericalSurf();
+  out.segmentSurfaceMode     = defaults->SegmentSurfaceMode();
+  out.convertCurve3d         = defaults->ConvertCurve3d();
+  out.convertOffsetCurv3d    = defaults->ConvertOffsetCurv3d();
+  out.convertCurve2d         = defaults->ConvertCurve2d();
+  out.convertOffsetCurv2d    = defaults->ConvertOffsetCurv2d();
+  return out;
+}
+
+// Build the OCCT parameter object from the caller's switches. A null `parameters` keeps the
+// class's own defaults, which is what both BSplineRestriction entry points passed unconditionally
+// until #1637: with them a cylinder comes back with 0 BSpline faces and 3 still elementary,
+// because ConvertCylindricalSurf and friends default to false.
+static Handle(ShapeCustom_RestrictionParameters) occtRestrictionParameters(
+  const OCCTBSplineRestrictionParameters* parameters)
+{
+  Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
+  if (!parameters)
+    return params;
+  params->ConvertPlane()           = parameters->convertPlane;
+  params->ConvertBezierSurf()      = parameters->convertBezierSurf;
+  params->ConvertRevolutionSurf()  = parameters->convertRevolutionSurf;
+  params->ConvertExtrusionSurf()   = parameters->convertExtrusionSurf;
+  params->ConvertOffsetSurf()      = parameters->convertOffsetSurf;
+  params->ConvertCylindricalSurf() = parameters->convertCylindricalSurf;
+  params->ConvertConicalSurf()     = parameters->convertConicalSurf;
+  params->ConvertToroidalSurf()    = parameters->convertToroidalSurf;
+  params->ConvertSphericalSurf()   = parameters->convertSphericalSurf;
+  params->SegmentSurfaceMode()     = parameters->segmentSurfaceMode;
+  params->ConvertCurve3d()         = parameters->convertCurve3d;
+  params->ConvertOffsetCurv3d()    = parameters->convertOffsetCurv3d;
+  params->ConvertCurve2d()         = parameters->convertCurve2d;
+  params->ConvertOffsetCurv2d()    = parameters->convertOffsetCurv2d;
+  return params;
+}
+
 OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
                                                double       tol3d,
                                                double       tol2d,
@@ -930,13 +978,14 @@ OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
                                                int32_t      continuity3d,
                                                int32_t      continuity2d,
                                                bool         degreePriority,
-                                               bool         rational)
+                                               bool         rational,
+                                               const OCCTBSplineRestrictionParameters* parameters)
 {
   if (!shape)
     return nullptr;
   try
   {
-    Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
+    Handle(ShapeCustom_RestrictionParameters) params = occtRestrictionParameters(parameters);
     TopoDS_Shape                              result =
       ShapeCustom::BSplineRestriction(shape->shape,
                                       tol3d,

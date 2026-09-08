@@ -1,0 +1,45 @@
+=== 0. every ShapeCustom_RestrictionParameters default, read off the pinned kernel
+   ConvertPlane            0
+   ConvertBezierSurf       0
+   ConvertRevolutionSurf   1
+   ConvertExtrusionSurf    1
+   ConvertOffsetSurf       1
+   ConvertCylindricalSurf  0
+   ConvertConicalSurf      0
+   ConvertToroidalSurf     0
+   ConvertSphericalSurf    0
+   SegmentSurfaceMode      1
+   ConvertCurve3d          1
+   ConvertOffsetCurv3d     1
+   ConvertCurve2d          1
+   ConvertOffsetCurv2d     1
+   GMaxDegree              15
+   GMaxSeg                 10000
+
+=== 1. defaults, which is what both bridge entry points pass today
+   cylinder, default params                     -> 0 BSpline face(s), 3 other; max degree 0, max spans 0
+   sphere, default params                       -> 0 BSpline face(s), 1 other; max degree 0, max spans 0
+   torus, default params                        -> 0 BSpline face(s), 1 other; max degree 0, max spans 0
+
+=== 2. every surface-type flag on
+   cylinder, all flags                          -> 3 BSpline face(s), 0 other; max degree 7, max spans 2
+   sphere, all flags                            -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, all flags                             -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+
+=== 3. one flag at a time, on the cylinder (2 planes + 1 cylindrical face)
+   cylinder, ConvertCylindricalSurf only        -> 1 BSpline face(s), 2 other; max degree 7, max spans 2
+   cylinder, ConvertPlane only                  -> 2 BSpline face(s), 1 other; max degree 1, max spans 1
+
+=== 4. SegmentSurfaceMode
+   cylinder, all flags + SegmentSurfaceMode     -> 3 BSpline face(s), 0 other; max degree 7, max spans 2
+
+=== 5. GMaxDegree / GMaxSeg next to the per-call maxDegree / maxSegments
+   torus, GMaxDegree 3, call maxDegree 9        -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxDegree 5, call maxDegree 9        -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxDegree 15, call maxDegree 9       -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxDegree 15, call maxDegree 3       -> 1 BSpline face(s), 0 other; max degree 3, max spans 32
+   torus, GMaxDegree 15, call maxDegree 5       -> 1 BSpline face(s), 0 other; max degree 5, max spans 4
+   torus, GMaxDegree 15, call maxDegree 9       -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxSeg 1, call maxSegments 10000     -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxSeg 2, call maxSegments 10000     -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
+   torus, GMaxSeg 10000, call maxSegments 10000 -> 1 BSpline face(s), 0 other; max degree 7, max spans 2
