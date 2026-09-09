@@ -54,6 +54,9 @@ MAJOR / MINOR / PATCH / NONE. <what a consumer sees, and the migration if any.>
 - [ ] The CHANGELOG entry above is complete, and `docs/CHANGELOG.md` is **not** in this diff.
 - [ ] The SemVer impact above is stated, and `docs/SEMVER.md` is **not** in this diff.
       It is assessed at release on `main`, not per PR.
+- [ ] Every issue this PR resolves is named on its own `Closes #<n>` line above. GitHub reads the
+      keyword per issue, not per list, so `Closes #1 and #2` closes only the first. Four PRs merged
+      on 2026-09-08 dropped the line entirely and left their issues open behind merged work.
       Tick this for a release commit or a PR that fixes the CHANGELOG itself too: those are the
       policy's two exceptions and the file is expected in their diff. Say which one applies in
       "Notes for the reviewer".
