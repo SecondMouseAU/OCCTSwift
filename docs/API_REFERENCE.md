@@ -26,7 +26,7 @@ two files desynced by 882 across 11 releases before this rule existed, see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,330** of the entry points (~76% of the `Total` below); the rest are real, callable,
+categorisation covering **3,328** of the entry points (~76% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -414,7 +414,7 @@ a map of the major areas, and the `Total` as the count.
 | **Geom2d_OffsetCurve Properties** | 3 | offset, setOffset, basisCurve |
 | **Extrema_ExtElC** | 4 | lineToLine, lineToCircle, circleToCircle, lineToEllipse |
 | **Extrema_ExtElCS** | 3 | lineToPlane, lineToSphere, lineToCylinder |
-| **Extrema_ExtElSS** | 3 | planeToPlane, planeToSphere, sphereToSphere |
+| **Extrema_ExtElSS** | 1 | planeToPlane |
 | **Extrema_ExtPElC** | 4 | pointToLine, pointToCircle, pointToEllipse, pointToParabola |
 | **Extrema_ExtPElS** | 5 | pointToPlane, pointToSphere, pointToCylinder, pointToCone, pointToTorus |
 | **math_TrigonometricFunctionRoots** | 2 | solve, hasInfiniteRoots |
