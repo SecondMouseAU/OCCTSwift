@@ -1087,6 +1087,375 @@ resolver calls `perpendicularBasis(to:)`, a pure function of the direction vecto
 `docs/reference/Construction.md` and `Issue881PerpendicularBasisTests` both already described the
 real behaviour; the inline comment predates #881's basis unification. Doc-only.
 
+### Share DXF group-code formatter via DrawingTestFixtures.DXFTestFormat (#1271)
+
+- New `DXFTestFormat` enum in `DrawingTestFixtures.swift` mirrors `DXFExporter.swift`'s internal formatting
+- `Issue1173ArrowheadTriangleGeometryTests` now uses `DXFTestFormat.lineEntity` instead of private duplicate
+- `OCCTDrawingTests.swift` formatter not yet migrated (separate follow-up)
+
+### Deduplicate `overlappingBoxes`/`stackedBoxes` boolean fixtures into BooleanTestFixtures (#1273)
+
+- New `BooleanTestFixtures` enum in `Tests/OCCTModelingTests/BooleanTestFixtures.swift`
+- `Issue206BooleanTimeoutTests`, `Issue1067BooleanOutcomeTests`, `Issue832BooleanDelegationTests`, `Issue202BooleanOptionsTests` all reference the shared fixtures
+- `overlappingBoxes()`: two 10mm boxes at (0,0,0) and (5,0,0)
+- `stackedBoxes()`: two 10mm boxes at (0,0,0) and (0,0,10)
+
+### Deduplicate `openShell`/`declinedIndices` fillet fixtures into FilletTestFixtures (#1272)
+
+- New `FilletTestFixtures` enum in `Tests/OCCTModelingTests/FilletTestFixtures.swift`
+- `Issue612FilletContourSelectionTests`, `Issue633BlendedEdgesDuplicateReportTests`, `Issue639FilletDeclinedEdgeReportTests` all reference the shared fixture
+- `acceptedIndices` kept local to `Issue639` (only used there)
+
+### Fixed data races in BSpline adaptor evaluation caches (Issue #1153)
+
+Multiple data races existed when multiple threads concurrently evaluated the same
+`GeomAdaptor_Curve` or `GeomAdaptor_Surface` wrapping BSpline curves/surfaces.
+The mutable `BSplCLib_Cache`/`BSplSLib_Cache` inside the adaptors were accessed
+without synchronization across `Value`, `D0`, `D1`, `D2`, `D3` evaluation methods.
+
+Added `std::mutex` protection at three levels:
+- `BSplCLib_Cache`: all const evaluation methods lock internal mutex
+- `BSplSLib_Cache`: all const evaluation methods lock internal mutex  
+- `GeomAdaptor_Curve`/`GeomAdaptor_Surface`: BSpline/Bezier `EvalD0`-`EvalD3` lock mutex
+
+Verified with ThreadSanitizer: **0 races** under maximum stress (8 threads × 1000 
+iterations = 32,000 evaluations per test type), down from **5 confirmed races** before.
+
+### Fixed data races in TopoDS_TShape flag mutations (Issue #1154)
+
+TopoDS_TShape::myState was a plain `uint16_t` modified via non-atomic bitwise
+operations (`|=`, `&=`, `^=`). Concurrent flag mutations on shared TShapes
+(common after boolean operations where result shares TShapes with inputs)
+caused data races.
+
+Changed `myState` to `std::atomic<uint16_t>` with `compare_exchange_weak`
+loop in `setBit()` for lock-free atomic bit operations. All flag getters now
+use `load(std::memory_order_acquire)` and `setBit` uses atomic RMW with
+`memory_order_release/acquire` semantics.
+
+Verified with ThreadSanitizer reproducer at
+`Scripts/repro/1154-topology-flag-race/occt_1154_stress.cpp`, and with a new
+GTest (`TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost`).
+
+### Factor five-of-six-faces open-shell fixture into shared helper (#1296)
+
+### Factor void-shape and zero-size-vertex test fixtures into shared helpers (#1295)
+
+### Fix doc comment citing non-existent test suite (#1294)
+
+### Remove duplicate curvature test, tighten circleRadius tolerance (#1293)
+
+### Merge duplicate Surface-Surface Intersection test suites into one (#1292)
+
+### Merge duplicate Curve-Surface Intersection test suites into one (#1291)
+
+### Test-only: consolidated the four independent `makeBSplineSurface()` fixtures (#1254)
+
+`BSplineSurfaceManipulationTests`, `BSplineSurfaceExtrasTests`,
+`BSplineSurfaceRemoveVKnotTests` and `BSplineSurfaceCompletionsV121Tests`
+each had their own private `makeBSplineSurface()` reusing the same name for
+four different fixtures. Moved into `SurfaceTestFixtures.swift` under
+distinct names; no production code or test behavior changed.
+
+### `classifyPoint2DInside` now actually tests `.inside` (#1284)
+
+Internal only, no public API change. `BRepClassFClassifierTests.classifyPoint2DInside` asserted
+`.outside` against a point far outside the face's UV bounds, so `Shape.classifyPoint2D` returning
+`.inside` was never exercised anywhere in the suite. It now classifies the midpoint of the face's
+own UV bounds, a genuinely interior point.
+
+### `hollowSolid()` test fixture consolidated onto one shared helper (#1265)
+
+Internal only, no public API change. The 20-cube-minus-8-cube-cavity fixture used across
+`Issue211OuterShellTests.swift`, `Issue439OuterShellMultiSolidTests.swift`, and
+`Issue502SubShapeTraversalTests.swift` was rebuilt independently five times; all five sites now call
+one shared `Issue211OuterShell.hollowSolid()`.
+
+### `lBracket()` test fixture naming collision resolved (#1280)
+
+Internal only, no public API change. `Issue613IndexContractTests.swift`'s `lBracket()` (a fused-box
+construction) is renamed `fusedLBracket()` to stop colliding with the differently-shaped, unrelated
+`lBracket()` in `GeometricEdgeSelectionTests.swift` (an extruded polygon).
+
+### `WireAnalyzerV124Tests` factored its 9x-inlined fixture into one helper (#1285)
+
+Internal only, no public API change. `WireAnalyzerV124Tests.swift`'s nine tests each independently
+rebuilt the same rectangle-wire-to-`WireAnalyzer` construction inside a triple-nested `if let`; now
+factored into one `rectangleAnalyzer(precision:)` helper, called via `guard let`.
+
+### Extracted locateLocalSpan helper in Curve2DBSplineLocalTests (#1258)
+
+All 5 tests in `Curve2DBSplineLocalTests` repeated an identical 8-line preamble (build a
+BSpline via interpolation, locate its local knot span, guard both steps) before diverging only
+in which local-evaluation accessor each exercises. Extracted to a private `locateLocalSpan`
+helper. Test-only, no behavior change.
+
+### Hoisted expectSameCurve into a shared fixture across the Curve2D interpolation parity suites (#1256)
+
+`Curve2DInterpolatePeriodicParityTests` and `Curve2DInterpolateTangentsParityTests` each
+reimplemented an identical `expectSameCurve` assertion helper instead of sharing one. Moved to
+`Curve2DInterpolateParityTestFixtures.swift`, matching this target's existing shared-fixture
+convention (`SurfaceTestFixtures.swift`). Test-only, no behavior change.
+
+### Removed IntToolsFClass2dTests' pointInside/pointOutside, strictly subsumed by Issue840ClassifyPoint2dToleranceTests (#1257)
+
+`IntToolsFClass2dTests.pointInside`/`.pointOutside` duplicated the identical fixture and the
+identical two assertions `Issue840ClassifyPoint2dToleranceTests.wellInsideUnaffected`/
+`.wellOutsideUnaffected` already cover, which additionally cross-check `Face.classify`.
+`IntToolsFClass2dTests.isHoleCheck`, unrelated coverage, stays. Test-only, no behavior change.
+
+### Folded DocumentMainLabelTests into TDFLabelPropertyTests.labelTag (#1247)
+
+`DocumentMainLabelTests.getMainLabel` duplicated three assertions already covered by
+`TDFLabelPropertyTests` (`labelTag`, `labelDepth`, `labelIsRoot`). Its one real value, an
+explicit `main != nil` assertion (the `TDFLabelPropertyTests` suite's tests use bare `if let`
+with no `else`, so they'd vacuously pass if `mainLabel` were ever nil), is now folded into
+`labelTag`. The redundant suite is deleted. Test-only, no behavior change.
+
+### `splitBoxCompound()` test fixture naming collision resolved (#1255)
+
+Internal only, no public API change. `Tests/OCCTTopologyTests/Issue541FaceIndexContractTests.swift`
+and `Issue614FaceOrientationTests.swift` carried byte-identical `splitBoxCompound()` fixtures; #541
+now calls #614's copy instead of keeping its own. `Issue979SubShapeIndexIdentityTests.swift`'s
+`splitBoxCompound()` named a structurally different fixture (a plane split, not a face split) under
+the same name; renamed to `planeSplitBoxCompound()` to remove the collision.
+
+### Deduplicated the C-string decode closure across two XCAF test suites (#1246)
+
+`Issue1078LayerNameLengthTests` and `Issue1055DatumNameLengthTests` each reimplemented the
+NUL-terminated buffer decode `Document.string(fromCString:)` already provides, instead of
+calling it. No behavior change (all three copies were byte-identical to the helper), test-only.
+
+### Test-only: shared BSpline continuity fixture across `Issue485SurfaceContinuityTests`/`Issue619SurfaceContinuityEncodingTests` (#1253)
+
+`bsplineSurface(interiorMultiplicityU:)`, previously duplicated verbatim in
+both suites, now lives once in `SurfaceTestFixtures.swift` as
+`makeContinuityBSplineSurface(interiorMultiplicityU:)`. No production code
+changed; no test behavior changed.
+
+### `MathSolverFunctionRootTests.findRoot(near:)` test pair parameterized with `@Test(arguments:)` (#1250)
+
+`MathSolverFunctionRootTests.findRootNewton()`/`findRootNegative()` are now one `@Test(arguments:)`-parameterized test. Test-only; no production behavior change.
+
+### `ElCLibTests.valueOnCircle` test pair parameterized with `@Test(arguments:)` (#1249)
+
+`ElCLibTests.valueOnCircle()`/`valueOnCircleAtPiOver2()` are now one `@Test(arguments:)`-parameterized test. Test-only; no production behavior change.
+
+### `OSDPathTests` removed, fully subsumed by `PathParsingContractTests` (#1286)
+
+`OSDPathTests` predated #499's path-parsing unification (`PathParsingContractTests`) and was
+never removed once its replacement landed. Confirmed case-by-case that every assertion it made is
+already covered, with equal or greater strength, by `PathParsingContractTests`. Test-only; no
+production code or public API changes.
+
+### `Issue640MathDimensionBoundsTests` Gauss/Crout determinant tolerance tightened to match its source fixtures (#1248)
+
+`Issue640MathDimensionBoundsTests`'s Gauss/Crout determinant control assertions now use the same `1e-10` tolerance as the `MathGaussTests`/`MathCroutTests` fixtures they were copied from, instead of a 10x looser `1e-9`. Test-only; no production behavior change.
+
+### Test-only dedup: `FreeBoundsPropertiesTests`' three earlier tests now call its own `twoFaces()` helper (#1289)
+
+Internal dedup only, no observable behavior change: `freeBoundsOnFaces`, `closedBoundInfo`, and
+`freeBoundWire` inlined the identical two-stacked-10x10-faces fixture that `twoFaces()` (added
+later in the same struct, #504) already factors out. All three now call the helper.
+
+### `Tests/OCCTModelingTests/OCCTModelingTests.swift` split by `@Suite` (#1308)
+
+`OCCTModelingTests.swift` carried 129 `@Suite` structs across 6853 lines. Split into one file per
+struct, named after the struct, matching the sibling `Issue*Tests.swift` files already in the
+directory. The file-scope `SIMD3.normalized` helper (used by exactly one suite,
+`ShapeSplittingTests`) moved with it as a `fileprivate extension`; no shared fixtures file was
+needed, since every other helper in the file was already struct-scoped. No test behavior changed:
+same assertions, same tolerances, same `@Test` count (682 across the directory, before and after).
+
+### `OCCTSurfaceTests.swift` split by `@Suite` into 130 files + shared fixtures (#1300)
+
+`OCCTSurfaceTests.swift` carried 7,049 lines across 130 `@Suite` structs. Split one file per suite,
+named after the struct, matching the target's existing `Issue*Tests.swift` convention. The
+`SIMD3.normalized` extension and the `#645` quarter-cylinder Gordon fixture (shared by
+`GeomFillGordonTests` and `GeomFillGordonReportTests`) move to a new `SurfaceTestFixtures.swift`,
+matching the `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API
+changes: same types, same signatures, same module, same test count (560 `@Test`s), just relocated.
+
+### `OCCTXCAFTests.swift` split by `@Suite` into one file per suite (#1307)
+
+`Tests/OCCTXCAFTests/OCCTXCAFTests.swift` carried 5,641 lines across 107 `@Suite` structs (423
+`@Test`s). Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in that directory. The file's one file-scope helper
+(`SIMD3.normalized`, unused by any suite here) moves to a new `XCAFTestFixtures.swift`, matching
+the `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API changes:
+same types, same signatures, same module, just relocated. `@Test` count is unchanged (423 before
+and after).
+
+### `OCCTCurveTests.swift` split by `@Suite` into one file per suite (#1305)
+
+`Tests/OCCTCurveTests/OCCTCurveTests.swift` carried 92 `@Suite` structs across 5195 lines. Split
+into 92 files, one per suite, named after the struct, matching the sibling `Issue*Tests.swift`
+files already in the directory. The file-scope `SIMD3.normalized` extension (the target-wide
+helper `CLAUDE.md`'s Test Layout section documents, unused within this file) moves to a new
+`Tests/OCCTCurveTests/CurveTestFixtures.swift`, following the
+`Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API changes:
+same types, same signatures, same module, just relocated. `@Test` count unchanged: 555 before, 555
+after.
+
+### `OCCTIOTests.swift` split into one file per `@Suite` (#1302)
+
+`Tests/OCCTIOTests/OCCTIOTests.swift` carried 5740 lines across 44 `@Suite` structs, the only file
+in the target. Split one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files in every other domain test target. Shared fixtures used by 2+ suites
+(`invalidBowtieShape()`, the SIMD3 `.normalized` helper, and the `#795` golden-drawing fixture)
+moved to a new `IOTestFixtures.swift`, matching the `Tests/OCCTShapeHealingTests/
+ShapeHealingTestFixtures.swift` precedent. No public API changes: same types, same signatures,
+same module, just relocated.
+
+### `Tests/OCCTAnalysisTests/OCCTAnalysisTests.swift` split by `@Suite` (#1309)
+
+`OCCTAnalysisTests.swift` carried 143 `@Suite` structs across 7,376 lines, the largest file in the
+repo. Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in the directory. The shared `SIMD3.normalized` helper moves to
+a new `AnalysisTestFixtures.swift`. No public API changes: same tests, same module, just relocated;
+`@Test` count unchanged (547 before and after).
+
+### `OCCTTopologyTests.swift` split by `@Suite`, one file per suite (#1304)
+
+`OCCTTopologyTests.swift` carried 106 `@Suite`s across 5,256 lines. Split into 106 files, one per
+suite, named after the struct, matching the sibling `Issue*Tests.swift` files already in
+`Tests/OCCTTopologyTests/`. The file-scope `SIMD3.normalized` helper (unused within this target)
+moves to a new `TopologyTestFixtures.swift`, matching the `ShapeHealingTestFixtures.swift`
+precedent. No public API changes: same types, same signatures, same module, just relocated.
+`@Test` count is unchanged (556 across the directory, before and after). No `Package.swift` change
+needed, its `path:` already covers the whole directory.
+
+### `OCCTMathTests.swift` split by `@Suite`, one file per suite (#1306)
+
+`OCCTMathTests.swift` carried 100 `@Suite` structs across 3557 lines. Split into 100 per-suite
+files, each named after its struct (matching the sibling `Issue640MathDimensionBoundsTests.swift`
+convention already in the directory), plus `MathTestFixtures.swift` for the one file-scope helper
+(`SIMD3.normalized`, unused by any suite today and not owned by one, so it isn't moved with a
+particular suite). No public API changes: same types, same signatures, same module, just
+relocated. `@Test` count unchanged (352 across the directory, before and after).
+
+### `OCCTGeom2dTests.swift` split into 110 per-suite files (#1298)
+
+`Tests/OCCTGeom2dTests/OCCTGeom2dTests.swift` (5,120 lines, 110 `@Suite` structs) split into one
+file per suite, matching the sibling `Issue*Tests.swift` convention already in that directory. A
+new `Geom2dTestFixtures.swift` holds the one file-scope declaration shared across the original file
+(an unused `SIMD3.normalized` extension), following the `ShapeHealingTestFixtures.swift` precedent.
+No public API changes: internal test reorganization only, same tests, same module, just relocated.
+
+### `OCCTBRepGraphTests.swift` split by `@Suite` (#1303)
+
+`Tests/OCCTBRepGraphTests/OCCTBRepGraphTests.swift` carried 4496 lines across 64 `@Suite`
+structs. Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in the directory. The shared `SIMD3.normalized` helper
+(declared once per module, not currently called by any suite in this target) moves to a new
+`BRepGraphTestFixtures.swift`, matching the `ShapeHealingTestFixtures.swift` precedent.
+Verbatim move: no assertion, tolerance, or test body changed, and the `@Test` count is
+unchanged (226, before and after).
+
+### `OCCTShapeHealingTests.swift` split by `@Suite` into 78 files (#1301)
+
+`Tests/OCCTShapeHealingTests/OCCTShapeHealingTests.swift` carried 2,984 lines across 78 `@Suite`
+structs. Split one file per suite, named after the struct, matching the sibling `Issue*Tests.swift`
+files already in the directory. The file-scope `SIMD3.normalized` helper (CLAUDE.md's Test Layout
+section documents it as the one shared helper per target) moved into the existing
+`ShapeHealingTestFixtures.swift`. No public API changes: same types, same signatures, same module,
+same test count (326 before and after), just relocated.
+
+### `OCCTDrawingTests.swift` split by `@Suite` into per-suite files (#1299)
+
+`OCCTDrawingTests.swift` carried 2780 lines across 33 `@Suite` structs. Split into one file per
+suite, named after the struct, matching the sibling `Issue*Tests.swift` files already in
+`Tests/OCCTDrawingTests/`. The one file-scope helper used by no suite in this file
+(`SIMD3.normalized`, kept for parity with every other domain test target's own copy, per
+`CLAUDE.md`'s Test Layout) moves to a new `DrawingTestFixtures.swift`, matching the
+`Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. The one helper used by a
+single suite (`RecordingSink`) moves with it, onto `DrawingTransformUnificationTests.swift`,
+`private` -> `fileprivate`. `OCCTDrawingTests.swift` itself is now empty and removed. No public API
+changes: same types, same signatures, same module, just relocated. `@Test` count is unchanged (197
+before and after).
+
+### Refman coverage audit, Pass 4d: Mesh, presentation and misc lane (#814)
+
+The largest of #807's lane audits: 368 headers across nine packages (`BRepMesh_`, `Poly_`,
+`IMeshData_`, `IMeshTools_`, `AIS_`, `Graphic3d_`, `Image_`, `StdPrs_`, `StdSelect_`). 45 classes
+were already wrapped or documented; the other 320 are now recorded in
+`docs/occtswift-wrapping-gaps.md` across 32 family-level buckets (mostly OCCT's own OpenGl-based
+live-viewer pipeline and its own internal meshing-engine machinery, neither reached by this
+project's Metal renderer or its `BRepMesh_IncrementalMesh` entry point). One real, narrow gap
+recorded rather than wrapped: `Poly_TriangulationParameters` (a triangulation's own record of the
+deflection/angle/minSize it was built with, never read or written by this bridge).
+
+Twelve documentation errors found and fixed: eleven doc lines across `docs/reference/
+Document-Mesh-Fixing.md` and `docs/reference/Document.md` cited `Poly_Triangulation` for methods
+actually implemented by `RWMesh_FaceIterator` or `TDataXtd_Triangulation`; `docs/API_REFERENCE.md`'s
+`PointCloud` Swift type is now correctly described as having no OCCT class backing it at all
+(previously wrongly attributed to `AIS_PointCloud`).
+
+`StdPrs_` (28 classes, OCCT's default presentation-builder toolkit) is confirmed genuinely unwrapped
+and undocumented; `StdSelect_`'s two already-wrapped classes are #809's own Swift surface, not
+re-derived here.
+
+### Deduplicated `writeSTEP(progress:)`/`writeIGES(progress:)` dispatch (#1231)
+
+`Exporter.writeSTEP(shape:to:progress:)` and `writeIGES(shape:to:progress:)` now share one
+private `writeWithProgress` helper instead of reimplementing the identical validate/dispatch/
+translate body twice. No public API or behavior change.
+
+### `Exporter`: deduplicated the `*Data` temp-file round trip (#1230)
+
+`stlData`, `stepData`, `igesData` and `brepData` reimplemented the identical "write to a temp file,
+read it back as `Data`, clean up" five-statement pattern four times. Extracted into one private
+`Exporter.dataViaTempFile(extension:write:)` helper. No public API or behavior change: same
+signatures, same `throws` contracts, same output (confirmed byte-identical for all four formats,
+see "Notes for the reviewer" below).
+
+### `DXFError`/`PDFError`'s dead `.drawingEmpty` case removed (#1229)
+
+`DXFError` and `PDFError` no longer declare a `.drawingEmpty` case. Neither writer's `write(to:)`
+has ever thrown it -- both already write a valid, empty DXF/PDF file for an empty `Drawing`,
+silently, matching `SVGWriter`'s own (documented, tested) behavior. `SVGError` never had the case
+in the first place. A consumer with an exhaustive `switch` over either enum must remove the
+`.drawingEmpty` arm; there is nothing to migrate to, since the case was never produced.
+
+### PDFWriter/SVGWriter share one per-layer dash-pattern table (#1228)
+
+`PDFWriter` and `SVGWriter` each independently maintained a switch statement over the identical
+per-layer dash lengths (HIDDEN: 3/2mm, CENTER: 8/2/2/2mm), formatted into each format's own syntax.
+A new internal `dashLengths(for:)` in `DrawingDispatch.swift` now owns those values once, alongside
+the sibling `strokeWidthMM(for:)` table #795 centralized for the same reason; each writer's dash
+formatting is now a two-line wrapper around it. No public API change, no behavior change.
+
+### `Exporter`: 8 of 15 `Shape`-taking export functions were missing the `isValid` guard (#1226)
+
+`writeIGES(shape:to:unit:)`, `writeIGESBRep`, `writeIGES(shapes:to:)`,
+`writePLY(shape:to:deflection:normals:colors:texCoords:)`, `writeSTEP(shape:to:modelType:)`,
+`writeSTEP(shape:to:modelType:tolerance:)`, `writeSTEPCleanDuplicates`, and `writeGLTF` now throw
+`ExportError.invalidShape` for an invalid shape before attempting the write, matching every other
+`Exporter` write method. Previously: the three STEP overloads and the PLY-with-options overload had
+no validity check anywhere in the call chain and silently exported an invalid shape; `writeGLTF` had
+no guard of any kind, Swift-side or bridge-side; the two IGES overloads (`unit:`, BRep mode) were
+already rejected by the bridge's own check but surfaced as `.exportFailed` instead of
+`.invalidShape`; `writeIGES(shapes:to:)` silently dropped an invalid shape from a batch and exported
+the rest instead of rejecting the call. The shared guard is now a single private helper
+(`Exporter.validateExportInputs(shape:url:)`) so a future overload can't drop it the same way.
+
+### DXFWriter/PDFWriter/SVGWriter share one entity-buffer implementation (#1227)
+
+`DXFWriter`, `PDFWriter` and `SVGWriter` each independently declared the same five entity arrays
+(`lines`/`polylines`/`circles`/`arcs`/`texts`) and the same `addLine`/`addPolyline`/`addCircle`/
+`addArc`/`addText`/`entityCounts` staging logic, byte-for-byte identical apart from a cosmetic arc
+tuple field-name difference. A new internal `DrawingEntityBuffer` type now owns that storage and
+staging once, shared via a `DrawingPrimitiveSink` protocol-required property (mirroring the
+existing `cachedPrimitiveOps` pattern); each writer's public methods are unchanged in signature and
+behavior and now forward into it in one line. No public API change.
+
+### `writeSTLBinary`/`writeSTLAscii` no longer silently drop every face but the first (#1225)
+
+`Shape.writeSTLBinary(to:deflection:)`/`writeSTLAscii(to:deflection:)` used to return `true` after
+writing only the first face's triangulation for any multi-face shape (a box, a cylinder, a filleted
+part), silently discarding the rest. Both now delegate to the same whole-shape `StlAPI_Writer`-based
+writer `Exporter.writeSTL` already uses, so every face is written.
+
 ### `Shape.shadedMesh`/`Shape.edgeMesh` overload pairs share one deinterleave implementation (#1224)
 
 `shadedMesh(deflection:)`/`shadedMesh(drawer:)` and `edgeMesh(deflection:)`/`edgeMesh(drawer:)` no
