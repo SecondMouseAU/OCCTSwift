@@ -1087,6 +1087,233 @@ resolver calls `perpendicularBasis(to:)`, a pure function of the direction vecto
 `docs/reference/Construction.md` and `Issue881PerpendicularBasisTests` both already described the
 real behaviour; the inline comment predates #881's basis unification. Doc-only.
 
+### `Shape.shadedMesh`/`Shape.edgeMesh` overload pairs share one deinterleave implementation (#1224)
+
+`shadedMesh(deflection:)`/`shadedMesh(drawer:)` and `edgeMesh(deflection:)`/`edgeMesh(drawer:)` no
+longer independently reimplement the same mesh-buffer deinterleave and construction logic. Each
+pair now converges on a shared private helper (`buildShadedMeshData(from:)` /
+`buildEdgeMeshData(from:)`), differing only in which bridge call populates the buffer, mirroring the
+delegation `OCCTShapeGetShadedMeshWithDrawer`/`OCCTShapeGetEdgeMeshWithDrawer` already use one layer
+down. No public API or behavior change. Elevated from #796's census by #388 (Pass 4d of #377).
+
+### Refman coverage audit: OCAF persistence and format drivers, family-level (#983)
+
+Pass 3c of the refman-coverage epic (#807): audited the 38-package, 342-class OCAF
+persistence/format-driver layer against the pinned refman. 9 classes are individually
+wrapped or documented (the eight format-registration classes the bridge names, plus `PCDM`'s
+package header); the other 333 are curated in thirteen family-level buckets in
+`docs/occtswift-wrapping-gaps.md`, per the lane's own predicted shape ("an attribute driver
+is not a callable capability, it is what makes an attribute survive a round trip"). One
+genuine, narrow under-coverage finding recorded: `StdDrivers_`/`StdLDrivers_` register two
+legacy, read-only OCAF formats (`"MDTV-Standard"`, `"OCC-StdLite"`) that `Document` never
+registers. Two stale claims found in `docs/thread-safety.md`'s `#349`/`#353`/`#374` writeup
+(a superseded fix mechanism and a removed suppression it still describes as current) were
+filed as #1232 rather than fixed in this PR, since a human was concurrently working in that
+same file. Census artifact:
+[`Scripts/repro/983-ocaf-persistence-drivers/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/983-ocaf-persistence-drivers).
+
+### OCAF framework layer audited against the pinned refman, in both directions (#982)
+
+Pass 3b of #807. Five OCCT packages (`TFunction_`, `TPrsStd_`, `TObj_`, `AppStd_`, `AppStdL_`), 51
+classes, compared against `occt-refman@8.0.1` and the pinned headers.
+
+**Under-coverage.** 42 of the 51 were neither wrapped nor documented and none carried a recorded
+reason. `docs/occtswift-wrapping-gaps.md` gains an OCAF-framework-layer section covering all 42,
+grouped by measured mechanism: 8 collection aliases deprecated at file scope since OCCT 8.0.0, 4
+classes requiring an application-specific subclass (protected constructor or pure-virtual method,
+each confirmed directly), 17 `TObj_` classes that are internal machinery of that same subclassing
+framework, 10 `TPrsStd_` classes that populate an `AIS_InteractiveObject` through OCCT's own
+live-viewer pipeline (`AIS_InteractiveContext`/`V3d_Viewer`, confirmed unreferenced anywhere in this
+bridge or its docs: OCCTSwift's display layer is Metal instead), and 2 legacy
+`TDocStd_Application` resource-name subclasses superseded by #371's direct instantiation. The 42nd,
+`TFunction_Iterator`, is a genuine capability gap recorded as one rather than squeezed into a
+curated excuse: it walks the regeneration dependency graph in execution order, needs no subclass,
+and is never constructed anywhere in this bridge despite being `#include`d.
+
+**Over-coverage.** 2 findings, both fixed. `docs/reference/Document-XCAF-Notes.md` attributed
+`TObjApplication.createDocument()` to `TObj_Application::NewDocument`, a real but *different*
+method, inherited from `TDocStd_Application` and never called; the bridge actually calls
+`TObj_Application`'s own `CreateNewDocument` override. Neither `census-doc-occt-attribution.py` nor
+this pass's own method-attribution checker can catch that shape (the cited method genuinely exists,
+just isn't the one reached), so it was found reading the header directly. The same doc also
+attributed `DriverTable.initStandard()` to `TPrsStd_DriverTable::Get` + "`TPrsStd_AISPresentation`
+standard driver registration"; `InitStandardDrivers()`'s own body registers six `TPrsStd_Driver`
+subclasses and never touches `TPrsStd_AISPresentation` at all, the textbook shape
+`census-doc-occt-attribution.py --lane` is built to catch, and did.
+
+**Artifact.** `Scripts/repro/982-refman-coverage-ocaf-framework/`: the by-call lane derivation, the
+census with a self-test and a family-count assertion, and a removal matrix that proves each
+detector shape load-bearing (and found one design inconsistency of its own on first run: a
+`declares_member` propagation branch inherited from #812's template with no case in this lane that
+could ever exercise it, removed rather than left unproven).
+
+### Drawing/2D-annotation lane audited against the pinned refman, in both directions (#812)
+
+Pass 4b of #807. Three OCCT packages (`HLRAlgo_`, `HLRBRep_`, `HLRAppli_`), 93 classes, compared against `occt-refman@8.0.1` and the pinned headers. `Prs3d_` contributes zero classes: the only construction sites are behind `DisplayDrawer.swift`'s 3D Metal-display tessellation control, not this lane's 2D output.
+
+**Under-coverage.** 86 of the 93 were neither wrapped nor documented and none carried a recorded reason. `docs/occtswift-wrapping-gaps.md` gains a Drawing/2D-annotation-lane section covering all 86, grouped by measured mechanism: 2 bare package-utility classes, 15 collection aliases deprecated at file scope since OCCT 8.0.0, 5 alias templates to `GeomLProp_*Base` instantiations, 1 header declaring no class of its own name, 1 unread bit-flag enum, and 62 internal engine helpers across four sub-mechanisms (16 poly-HLR internal mesh/edge-status data, 21 exact-HLR internal edge/face/interference cursor state, 7 template-policy "Tool" adaptors, 18 `HLRBRep_The<X>Of<Y>`/`My<X>Of<Y>` curve/curve and curve/surface intersection-engine template instantiations). Unlike #811's lane, almost none of the 86 is a genuine capability gap: HLR is one algorithm with five public entry classes and the rest is its own internal machinery.
+
+**Over-coverage.** 0 findings. `census-doc-occt-attribution.py --lane` surfaced 5 candidates at 3 locations, all in `docs/reference/Drawing.md`, all one shape (`HLRBRep_HLRToShape`/`HLRBRep_PolyHLRToShape` attributed to `OCCTDrawingGetEdges`) and all rejected on read: the doc's "selected via `OCCTEdgeType` in `OCCTDrawingGetEdges`" phrasing accurately describes a two-function mechanism (a sibling function extracts the compounds, this one selects among them), not a false claim about which function constructs either class. A hand read of every remaining `- **OCCT:**` bullet touching this lane (`HLRAlgo_Projector`'s constructors, `HLRBRep_TypeOfResultingEdge`'s six ordinals, `HLREdgeCategory`'s eleven cases, both `reflectLines*` descriptions) found nothing further.
+
+**Artifact.** `Scripts/repro/812-refman-coverage-drawing/`: the by-call lane derivation, the census with a self-test and a family-count assertion, and a removal matrix that proves each detector shape load-bearing.
+
+### `emitOrdinate`'s dx/dy leader/tick/tolerance-text recipe unified into one axis-generic helper (#1192)
+
+`emitOrdinate` (`DrawingDispatch.swift`) drew its per-feature X and Y extension-leader/tick/
+tolerance-text geometry as two independent, axis-swapped copies of the same recipe. Both now share
+a new `emitOrdinateAxisFeature(...)` (private, parametrized by which axis is "along"). No output
+values changed, confirmed byte-identical against the existing DXF/SVG/PDF golden-output tests.
+
+### `DrawingDimension.Radial`/`.Diameter` share one `Circular` payload struct (#1185)
+
+`Radial` and `.Diameter` were two field-for-field-identical structs (7 fields + memberwise init),
+hand-duplicated across six switch-arm pairs in `DrawingAnnotation.swift`, `DrawingComposition.swift`
+and `Drawing.swift`, and already drifted (`Diameter.leaderAngle` had lost the doc comment
+`Radial.leaderAngle` still carried). Both are now public typealiases of a new
+`DrawingDimension.Circular`, which holds the shared fields once. Existing code compiles unchanged
+(`.radial(...)`, `.diameter(...)`, `DrawingDimension.Radial(...)`, `.Diameter(...)`, field access,
+`DrawingDimension.value` all work exactly as before).
+
+**Breaking**: `DrawingDimension.Radial.value` and `.Diameter.value` (the struct-level computed
+properties) are removed; `radius`/`2 * radius` now compute only inside `DrawingDimension.value`'s
+own switch (unchanged output there). Read `dimension.value` on the `DrawingDimension` enum case
+instead of `.value` on a bare `Radial`/`Diameter` struct.
+
+### Four independent `scale * p + translate` transform sites unified, `TransformedDrawing.apply(_:)` is no longer dead code (#1183)
+
+`DrawingDimension.transformed`, `DrawingAnnotation.transformed` (both `DrawingComposition.swift`)
+and `collectProjectedEdges` (`DrawingDispatch.swift`) each independently re-derived the 2D affine
+transform `scale * p + translate` in a local closure, while `TransformedDrawing.apply(_:)` --
+documented as the canonical implementation -- had no callers at all. All four now share a new
+`TransformedDrawing.apply(_:translate:scale:)` (internal static). No output values changed. Public
+API unchanged (`TransformedDrawing.apply(_:)` keeps its existing signature and behavior).
+
+### Six independent 2D left-perpendicular derivations unified into `leftPerpendicular2D(of:)` (#1182)
+
+`emitLinear`/`emitRadial`/`emitDiameter` (`DrawingDispatch.swift`), `breakLine`
+(`DrawingSymbols.swift`), `cosmeticThreadSideView` (`DrawingThreadAnnotation.swift`), and
+`arrowheadBasePoints` (`DrawingStyle.swift`, itself already shared by `emitCuttingPlaneLine` and
+`datumFeature` since #1173) each independently re-derived the 2D "rotate 90° counter-clockwise"
+perpendicular of a direction vector, some as `SIMD2(-d.y, d.x)` on a named vector and some as the
+trig-form equivalent `SIMD2(-sin(θ), cos(θ))`; the latter is why a prior audit pass missed two of
+them. All six now share a new `leftPerpendicular2D(of:)` helper (`DrawingStyle.swift`, internal),
+distinct from the unrelated 3D `perpendicularBasis(to:)` (#881). No output values changed. Internal
+only.
+
+### `Sheet`/`ProjectionSymbol`/`StandardLayout` can now render onto `PDFWriter` and `SVGWriter`, not just `DXFWriter` (#1180)
+
+`Sheet.render(into:)`, `ProjectionSymbol.render(_:at:into:)`, and `StandardLayout.render(into:)`
+gain `PDFWriter` and `SVGWriter` overloads alongside their existing `DXFWriter` one. Previously a
+`Sheet`'s ISO 5457 border, ISO 7200 title block, and ISO 5456-2 projection symbol, and a
+`standardLayout(of:)` result's placed views, could only be emitted onto a `DXFWriter`; a PDF or
+SVG sheet had to be composed without any of that scaffolding. All three writers already implement
+the underlying primitives identically, so PDF/SVG output is pixel-for-pixel the same scaffolding
+DXF has always drawn, just staged onto a different writer.
+
+```swift
+let sheet = Sheet(size: .a4, title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
+try Exporter.writePDF(sheet: sheet, to: url) { pdf in
+    sheet.render(into: pdf)          // now works -- used to only accept DXFWriter
+}
+```
+
+No existing signature changes; the `DXFWriter` overloads are unchanged.
+
+### ISO 6410 cosmetic-thread end-view arcs now reach PDF/SVG and `Drawing.bounds()`, not just DXF (#1179)
+
+`DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)` used to return a bespoke
+`ArcSegment` type that was never a `DrawingAnnotation`, reachable only through
+`DXFWriter.addCosmeticThreadEndView`'s own bypass of the shared annotation dispatch. It now
+returns `[DrawingAnnotation]` (three `.arc(DrawingAnnotation.Arc)` cases), a full
+`DrawingAnnotation` factory like its sibling `cosmeticThreadSideView`. A new
+`Drawing.addCosmeticThreadEndView(centre:majorDiameter:pitch:)` stores the arcs on a `Drawing`,
+so a thread end-view now exports identically to DXF, PDF and SVG, and participates in
+`Drawing.bounds()`/`detailView()`. `DXFWriter.addCosmeticThreadEndView` is unchanged in behaviour.
+
+Migration: any caller reading `DrawingAnnotation.ArcSegment` (removed) or the old
+`[ArcSegment]` return of `cosmeticThreadEndView` should switch to pattern-matching
+`case .arc(let a) = annotation`, reading `a.centre`/`a.radius`/`a.startAngle`/`a.endAngle` (same
+fields, plus a new `layer`/`id`). Any exhaustive `switch` over `DrawingAnnotation` needs a new
+`.arc` arm.
+
+### Arrowhead/triangle-pointer geometry unified between cutting-plane-line arrows and datum-feature triangles (#1173)
+
+`emitCuttingPlaneLine`'s arrowhead and `datumFeature`'s triangle pointer independently
+re-implemented the same "unit direction, its perpendicular, two base points offset by a
+half-width from a point set back along that direction" vector geometry with unrelated naming and
+independently-chosen proportions (a 0.4x shouldered arrowhead vs. a 1.0x full wedge). Both now
+share a new `arrowheadBasePoints(apex:direction:backset:halfWidth:)` helper (`DrawingStyle.swift`,
+internal); each site still supplies its own proportions, since the two are legitimately different
+symbols, but the shared point-offset math now lives in one place. No output values changed.
+Internal only.
+
+### Polygon hatch-fill's duplicated implementations unified onto `Hatch_Hatcher` (#1172)
+
+`Drawing.addHatch`'s rendering path (`emitHatch`, used by every `DrawingWriter`: DXF/SVG/PDF) reimplemented, in hand-rolled Swift, exactly what `HatchPattern.generate`'s OCCT-native `Hatch_Hatcher` call already does, and the two had drifted: a bare, five-orders-looser near-horizontal tolerance (`1e-12` vs `Hatch_Hatcher`'s own `1e-7`), no allocation bound on `emitHatch`'s scanline output, and `HatchPattern.generate` had no way to trim against island (hole) polygons at all even though `emitHatch` already supported them. `OCCTHatchLines` now accepts an optional flattened array of island polygons and `Trim()`s the hatcher against each island edge, same even/odd rule as the outer boundary; `HatchPattern.generate` gains a matching `islands:` parameter (default `[]`, existing calls unaffected); and `emitHatch` is now a thin wrapper over `HatchPattern.generate` instead of a second implementation, inheriting `Hatch_Hatcher`'s tolerance, island support and allocation bound.
+
+### Deduplicate OCCTDrawingGetEdges's eight guard-then-add sites (#1190)
+
+- New shared `occtAddShapeIfPresent` helper in `OCCTBridge_Internal.h`
+- `OCCTDrawingGetEdges` (`OCCTBridge_HLR.mm`) now calls it at all eight sites instead of
+  reimplementing `if (!x.IsNull()) { builder.Add(compound, x); }` per field
+- Internal bridge refactor only, no behavior change
+
+### `Drawing.addCuttingPlaneLine`'s duplicated direction-projection recipe de-duplicated (#1193)
+
+`addCuttingPlaneLine`'s trace and arrow direction blocks each projected a 3D direction as `projectPointToPlane(direction, ...) - projectPointToPlane(.zero, ...)`, a roundabout point-difference idiom that only produced the right answer because `projectPointToPlane` has no translation term of its own; a future change to `projectPointToPlane`/`perpendicularBasis` picking up an affine origin would have silently broken both blocks with nothing to catch it. Both now share a new `projectDirectionToPlane(_:viewDirection:)` helper (a direct `simd_dot` against `perpendicularBasis(to:)`'s `(right, up)`), and `projectAxisToPlane`'s equivalent `dir2` computation now routes through the same helper too, so there is one canonical "project a direction into the view plane" recipe instead of three. No output values changed. Internal only.
+
+### Add `DrawingAnnotation.rectangleCentrelines(min:max:style:)` helper, dedupe FCF/datum boxes (#1188)
+
+- New public function `DrawingAnnotation.rectangleCentrelines(min:max:style:)`, building the four
+  `.centreline` edges of an axis-aligned rectangle on top of `rectanglePoints(min:max:)`
+- `featureControlFrame`'s outer box and `datumFeature`'s label box both now call it instead of
+  hand-rolling the same four `.centreline` appends
+- No behavior change: identical winding order, style and geometry at both call sites
+
+### Added `packSIMD3`, the write-direction sibling of `unpackSIMD3`, and deduplicated `PointCloud`'s pack loops onto it (#1186)
+
+### Unify LengthDimension/RadiusDimension/AngleDimension/DiameterDimension behind shared DimensionMeasurement base (#1178)
+
+### Add `rectanglePoints(min:max:)` helper for CCW rectangle corners (#1189)
+
+- New public function `rectanglePoints(min:max:)` in `DrawingSheet.swift`
+- Replaces 4 hand-built corner arrays with single shared helper
+- Ensures consistent CCW winding order across all rectangle uses
+
+### Deduplicate HLR bridge 6-field drawing population (#1184)
+
+- Extracted `occtDrawingPopulate` template helper in `OCCTBridge_HLR.mm`
+- Both `OCCTDrawingCreate` and `OCCTDrawingCreatePoly` now use the shared helper
+- Reduces code duplication and ensures consistent field population
+
+### Rename 2D `DrawingAnnotation.TextLabel` to `DrawingTextLabel` (#1175)
+
+- Renamed `DrawingAnnotation.TextLabel` struct to `DrawingAnnotation.DrawingTextLabel`
+- No public API surface change: `Drawing.addTextLabel()` and the `.textLabel` enum case remain unchanged
+- Internal references updated automatically via enum case inference
+
+### Remove duplicate ISO 128-20 line-width table; unify on `strokeWidthMM` (#1170)
+
+- Deleted `DrawingLineStyle.defaultWidth` and `boldWidth` computed properties (dead code)
+- `strokeWidthMM(for:)` in `DrawingDispatch.swift` is now the canonical line-width table
+- Tests updated to verify `strokeWidthMM` values match ISO 128-20
+
+### Fix surfaceFinish machiningProhibited to emit circle as centreline segments (#1177)
+
+- `.machiningProhibited` case now produces 24 connected `.centreline` segments forming a circle
+- Removed the text label "O" fallback that was previously emitted
+- Consistent with `datumFeature` (triangle as 3 lines) and `breakLine` (zigzag as 5 lines)
+
+### Remove shadowing compound(from:) and use compound(_:) in Section2D (#1171)
+
+### refactor(drawing): share cosmetic thread minor-diameter formula (#1187)
+
+### refactor(drawing): unify circle-visibility test between addAutoDimensions and addAutoCentermarks (#1181)
+
+### Fix false GDTSymbol doc comment claiming round-trip with GeomToleranceType (#1176)
+
+### #1174 HLR bridge deflection doc omission
+
 ### `Curve2D.swift`'s Gcc/analytic-intersection/extrema families split into their own files (#687)
 
 `Curve2D.swift` carried 962 lines across 13 declarations belonging to other type families. Split
@@ -1130,6 +1357,82 @@ occurrence-shape reader exercised it.
 
 The `.a4` arm was returning `(20, 10, 10, 10)` instead of `(7, 7, 7, 10)` per the doc comment.
 
+### Compute qualifier for GCC 2D tangent solvers and intersection parameters (#781)
+
+### `Shape.withPrism`/`withBoss`/`withPocket` documentation corrected (#1047)
+
+The methods were documented as feature-based operations but actually use extrusion + boolean. Section renamed to "Extrusion-Based Features", doc comments updated to name `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse`/`Cut` and cross-reference `prismUntilFace` for true feature prisms.
+
+### Teach `check-null-handle-guards.py` to detect OCAF handle dereferences from `FindAttribute` / `GetObject` patterns (#1052)
+
+- New `OCAF_DEREF_RECEIVERS` table listing OCAF attribute types (`XCAFDoc_Datum`, `XCAFDoc_Dimension`, `XCAFDoc_GeomTolerance`) and their methods that internally dereference OCAF-fetched handles (`GetObject`).
+- New regexes `OCAF_FINDATTRIBUTE` and `OCAF_HANDLE_DECL` to detect handle acquisition via `label.FindAttribute(Type::GetID(), handle)` and declare-then-assign forms.
+- New `OCAF_GUARD_HELPERS` named-helper allowlist (`occtDatumLabelIsReadable`, `occtDocumentGdtAlwaysReadable`) for structural label guards instead of `IsNull()`.
+- Self-test fixtures for both unguarded and guarded OCAF patterns (declare-then-assign and direct init forms).
+
+### Fix: derive-gdt-enums.py now fails on unknown GD&T enums (#1063)
+
+The `--reverify-headers` mode now treats any `XCAFDimTolObjects_*` enum header not listed in `BOUND` or `KNOWN_UNBOUND` as a hard error. This prevents a new OCCT enum from being silently ignored by the gate.
+
+### Add regression tests for naming trace iterator behavior (#950)
+
+### Unify OBJ/PLY XDE export pipeline via shared helper `occtExportCafImpl` (#976)
+
+- Add `occtExportCafImpl` template in `Sources/OCCTBridge/src/OCCTBridge_IO.mm`
+- Refactor `OCCTExportOBJ` and `occtExportPLYImpl` to use shared helper
+- Net reduction: 13 lines (30 added, 43 removed)
+
+### Fix Construction.md: correct basis algorithm docs, remove deleted helper reference, add Placement.lift entry (#1060)
+
+### Document `Edge.split(at:vertex:)` out-of-range refusal and fix incorrect caveat (#1061)
+
+### Fix doc comment discrepancies for Curve2D polynomial pole count and GD&T plural accessors (#1062)
+
+### Fix #1085: bisectorIntersections validates non-finite and large coordinates (#1085)
+
+Adds `BisectorIntersection.maxSafeMagnitude` (1e150) threshold and early validation in `bisectorIntersections` to reject NaN, ±Infinity, and coordinates exceeding the safe magnitude. Includes comprehensive test suite `Issue1085BisectorNonFiniteTests`.
+
+### `SAWireAnalysis` check functions now return `Bool?` so refusal is distinguishable from a clean verdict (#1074)
+
+The ten whole-wire checks (`checkOrder`, `checkConnected`, `checkSmall`, `checkDegenerated`, `checkClosed`, `checkSelfIntersection`, `checkGaps3d`, `checkGaps2d`, `checkEdgeCurves`, `checkLacking`) and four per-edge checks (`checkConnectedEdge`, `checkSmallEdge`, `checkDegeneratedEdge`, `checkGap3dEdge`) now return `Bool?` instead of `Bool`. A `nil` return means the check could not run (wrong type, null shape, edgeless wire, or unassemblable wire). The pcurve guard remains specific to `checkOuterBound`.
+
+### `bisectorIntersections(a:b:c:d:)` now reports segment endpoints for coincident bisectors (#1070)
+
+Two coincident half-lines (the same bisector constructed from identical or collinear point pairs) previously returned an empty array because OCCT reports their intersection as a segment, not a point. The bridge now reads the segment endpoints and returns them: the shared midpoint (parameter 0 on both rays) and the point at infinity (`Precision::Infinite()`).
+
+```swift
+// Before: [] (indistinguishable from "no crossing")
+// After: 2 points, the midpoint and the point at infinity
+let coincident = bisectorIntersections(a: (0, 0), b: (4, 0),
+                                        c: (0, 0), d: (4, 0))
+// coincident.count == 2
+// coincident[0] == (2, 0), paramOnFirst == 0
+// coincident[1].paramOnFirst > 1e99 (≈ Precision::Infinite())
+```
+
+### Consolidate three near-identical GD&T label-lookup helpers (#1065)
+
+### Document investigation concluding #345 SIGABRT was not caused by #1057 toolchain defect (#1072)
+
+### Fix inventory mismatches in ci.yml and carried-occt-patches.md (#1066)
+
+- ci.yml: update gate script count from "five" to "eleven" with accurate breakdown
+- okf/references/carried-occt-patches.md: fix patch 0027 row key to match actual filename
+
+### Fix OCCTBridge.h class index for OCCTWireCheckOuterBound (#1075)
+
+### Fix #1064: Strengthen three Pass 4a test suites to avoid false positives and exercise all parameters (#1064)
+
+- `Issue1009Matrix12GroupedTests`: Added second discriminator for translation test to distinguish success from the bridge's error sentinel.
+- `Issue999NLPlateParametersTests`: Added `g2ToleranceIsLive` and `g3ToleranceIsLive` tests proving the `tolerance` parameter is live.
+- `Issue1017NLPlateResolutionOrderTests`: Strengthened `inRangeOrderStillBuilds` to verify actual deformation (`maxAbsZ > 1.0`) not just non-nil return.
+
+### Consolidate BRepCheck tri-state decoder into shared helper; add census of tri-state return functions (#1077)
+
+- New shared helper `occtBRepCheckSubShapeStatus` in `OCCTBridge_Internal.h` consolidates logic previously duplicated in `OCCTCheckFaceStatus`, `OCCTCheckEdgeStatus`, `OCCTCheckVertexStatus`
+- Added `docs/tri-state-census.md` documenting 15+ tri-state `int32_t` functions across Healing, Modeling, Properties, Document, and Advanced Modeling domains
+- No behavioral change; all 5922 tests pass, all 8 gate scripts pass
+
 ### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
 
 The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.
@@ -1153,6 +1456,14 @@ No public Swift API changes. The C bridge headers are re-exported through `OCCTB
 - Duplicate includes removed from `OCCTBridge_AdvancedModeling.mm`
 - Misleading comment for `OCCTShapeCreateRuled` corrected (uses `BRepFill::Shell`, not `BRepFill::Face`)
 - `occtPipeShellSetMode` parameter changed from `int32_t` to `OCCTPipeMode` enum for compile-time safety
+
+### Bridge string returns report full length, support length query (#1078)
+
+- `OCCTDocumentGetLayerName`, `OCCTBRepGraphHistoryGetRecordInfo`, `OCCTUnicodeConvertFromUnicode` return `int32_t` (full length or -1) instead of `bool`
+- All three support `out=NULL, max=0` to query required buffer size
+- Swift wrappers updated: `Document.layerName(at:)`, `BRepGraph.historyRecord(at:)`, `UnicodeUtils.convertFromUnicode(_:maxSize:)`
+
+### Add `Hashable` conformance to `GraphSnapshotError` and `CylindricalHoleExtent` enums (#1076)
 
 ### Install the pinned clang-format without pip or venv, and document how (#1123)
 
