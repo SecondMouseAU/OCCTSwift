@@ -188,13 +188,15 @@
 |------|-----------------|--------|-----------|------|--------|-------|
 | C3 produces a different result from C1, proving the surface criterion is observable | `Face.divided(at:)` / `dividedByContinuity` → `ShapeUpgrade_SplitSurface` | Wrong continuity handling | Revert continuity logic |  |  | Wrong surface split |
 
-### #837: fixed() Mode-Flag Wiring
+### #837: fixed() Mode-Flag Wiring (bridge fix)
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| Fixture actually has the wire-orientation defect it claims to | `Face.fixed` → `ShapeFix_Face` | Mode flag not passed | Remove `fixFace` parameter handling |  |  | Wire orientation not fixed |
-| fixFace: false leaves a free face's wire-orientation defect uncorrected | `Face.fixed` → `ShapeFix_Face` | Mode flag not passed | Remove `fixFace` parameter handling |  |  | Wire orientation not fixed |
-| fixFace: true corrects a free face's wire-orientation defect | `Face.fixed` → `ShapeFix_Face` | Mode flag not passed | Remove `fixFace` parameter handling |  |  | Wire orientation not fixed |
+| Fixture actually has the wire-orientation defect it claims to | `OCCTShapeFixDetailed` → `ShapeFix_Shape` | Control test | No injection needed | N/A | ✅ Pass | Verifies fixture validity |
+| fixFace: false leaves a free face's wire-orientation defect uncorrected | `OCCTShapeFixDetailed` → `ShapeFix_Shape` | fixFace parameter ignored | Remove `FixFreeFaceMode()` assignment | ✅ FAIL | ✅ Pass | ShapeFix_Shape default fixed it |
+| fixFace: true corrects a free face's wire-orientation defect | `OCCTShapeFixDetailed` → `ShapeFix_Shape` | fixFace parameter ignored | Remove `FixFreeFaceMode()` assignment | ✅ PASS (always worked) | ✅ Pass | Both branches ran fix before fix |
+
+**Finding**: The test's own "Prove-the-test-fails record" documented exactly this behavior. The pre-fix bridge had `FixFreeFaceMode` defaulting to on (always), so `fixFace: false` was ignored. The injection confirmed this by reproducing the failure.
 
 ### #570: Healing Approximations Accepted on Zeroed Error
 
