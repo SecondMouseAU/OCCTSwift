@@ -429,6 +429,9 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) for why this is a
   policy here rather than a preference, including the two occasions a `--self-test` passed 6/6
   while one of its cases proved nothing.
+- **Gate: `Scripts/check-test-validity.py`** — CI gate that verifies every `@Test` has a linked
+  injection record in `okf/references/766-test-validity/`. Runs a sample of injections on CI.
+  Add to CI: `python3 Scripts/check-test-validity.py --strict`
 - **A `@Test(arguments:)` element pairing a reference-counted member with a builtin vector of 32
   bytes or more cannot be written at all** (#1057). `(String, SIMD3<Double>)` corrupts the Swift
   task allocator whatever the test body does: it crashes with an empty body, with a single case,

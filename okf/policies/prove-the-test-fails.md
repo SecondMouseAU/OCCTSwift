@@ -116,3 +116,33 @@ difference between a reviewer trusting the suite and taking your word for it.
 - [Documentation updates are mandatory](docs-current.md)
 - [Search before building](search-before-building.md)
 - `CLAUDE.md` → Test Conventions, for the repo-specific test rules this sits alongside.
+
+---
+
+## Tooling (Epic #766)
+
+**`Scripts/check-test-validity.py`** — CI gate script that verifies:
+- Every `@Test` function has a linked injection record in `okf/references/766-test-validity/`
+- Runs a sample of injections on CI (time-boxed) to confirm they still fail
+- Fails if coverage drops below 100%
+
+**Usage:**
+```bash
+python3 Scripts/check-test-validity.py --strict    # Fails if coverage < 100%
+python3 Scripts/check-test-validity.py --sample 10 # Runs 10 sample injections
+```
+
+**Evidence location:** `okf/references/766-test-validity/`
+- `inventory.json` — Complete test inventory
+- `phase1/*.md` — High-risk boundary injection matrices
+- `phase2/*.md` — Gate/census self-test removal matrices
+- `phase3/*.md` — Per-domain injection matrices
+- `dashboard.md` — Aggregated view
+
+**CI Integration** (`.github/workflows/ci.yml`):
+```yaml
+- name: Check test validity
+  run: python3 Scripts/check-test-validity.py --strict
+```
+
+**Dashboard:** `okf/references/766-test-validity/dashboard.md` — Aggregated status
