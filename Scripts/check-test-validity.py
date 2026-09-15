@@ -21,7 +21,7 @@ EVIDENCE_DIR = REPO_ROOT / "okf" / "references" / "766-test-validity"
 EXECUTION_DIR = REPO_ROOT / "okf" / "references" / "766-execution"
 INVENTORY_FILE = EVIDENCE_DIR / "inventory.json"
 
-COVERAGE_THRESHOLD = 1.0  # 100% required
+COVERAGE_THRESHOLD = 1.0  # 100 percent required
 
 def load_inventory() -> List[Dict]:
     """Load test inventory from JSON."""
@@ -137,7 +137,7 @@ def main():
     parser = argparse.ArgumentParser(description="Check test validity evidence coverage (Red→Green + Bridge-Kernel Parity)")
     parser.add_argument("--sample-rg", type=int, default=10, help="Number of sample Red→Green injections to run")
     parser.add_argument("--sample-kp", type=int, default=5, help="Number of sample Kernel Parity checks to run")
-    parser.add_argument("--strict", action="store_true", help="Fail if coverage < 100%")
+    parser.add_argument("--strict", action="store_true", help="Fail if coverage less than 100 percent")
     parser.add_argument("--gate", choices=["red-green", "kernel-parity", "both"], default="both", help="Which gate to check")
     args = parser.parse_args()
     
