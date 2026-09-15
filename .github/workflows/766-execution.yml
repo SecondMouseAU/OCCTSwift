@@ -1,0 +1,29 @@
+name: 766-Execution Gates
+on:
+  pull_request:
+    paths:
+      - 'Tests/**'
+      - 'Sources/OCCTSwift/**'
+      - 'Sources/OCCTBridge/**'
+      - 'Scripts/766-execution/**'
+
+jobs:
+  red-green-sample:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        domain: [Stress, Modeling, ShapeHealing, Surface, Curve, Geom2d, Analysis, Topology, XCAF, Math, Drawing, Mesh, BRepGraph, Foundation, Integration, Misc, Thread]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Red→Green sample
+        run: python3 Scripts/check-test-validity.py --sample-rg 5 --gate red-green
+  
+  kernel-parity-sample:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        domain: [Stress, Modeling, ShapeHealing, Surface, Curve, Geom2d, Analysis, Topology, XCAF, Math, Drawing, Mesh, BRepGraph, Foundation, Integration, Misc, Thread]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Kernel Parity sample
+        run: python3 Scripts/check-test-validity.py --sample-kp 3 --gate kernel-parity
