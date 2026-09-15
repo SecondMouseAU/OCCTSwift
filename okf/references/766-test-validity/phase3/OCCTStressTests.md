@@ -264,11 +264,11 @@ swift build --target OCCTStressTests
 | Stress: Nil Propagation | 7 |  |  |  |  |
 | Stress: Zero-Dimension Shapes | 7 |  |  |  |  |
 | Stress: Empty Containers | 6 |  |  |  |  |
-| Stress: Invalid Parameters | 14 |  |  |  |  |
+| Stress: Invalid Parameters | 14 | 3 | 3 | 3 | ✅ |
 | Stress: Post-Operation State | 5 |  |  |  |  |
 | Stress: Unusual Input Combinations | 10 |  |  |  |  |
-| Stress: UnifySameDomain Null PCurve | 1 |  |  |  |  |
-| Stress: evalAndUpdateTol Null PCurve | 2 |  |  |  |  |
+| Stress: UnifySameDomain Null PCurve | 1 | 1 | 1 | 1 | ✅ |
+| Stress: evalAndUpdateTol Null PCurve | 2 | 2 | 2 | 2 | ✅ |
 | Stress: Micro/Macro/Mixed Scale | 17 |  |  |  |  |
 | Stress: Coincident Geometry | 8 |  |  |  |  |
 | Stress: Degenerate Operations | 11 |  |  |  |  |
