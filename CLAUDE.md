@@ -195,8 +195,14 @@ one domain never recompiles the rest. Each is `Tests/OCCT<Domain>Tests/`, declar
 - Edge indices may vary across runs, iterate edges to find a working one when testing edge-specific operations
 - Wrap OCCT calls that may throw `StdFail_NotDone` in try-catch on the C bridge side
 - **Prove the test fails.** Every new test, and every new `--self-test` case, is run once with its
-  subject broken: inject the defect, confirm the failure, restore, confirm the pass, report both.
-  See [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md).
+    subject broken: inject the defect, confirm the failure, restore, confirm the pass, report both.
+   Adding a self-test is not the rule, watching it fail is. See
+   [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) for why this is a
+   policy here rather than a preference, including the two occasions a `--self-test` passed 6/6
+   while one of its cases proved nothing.
+- **Gate: `Scripts/check-test-validity.py`** — CI gate that verifies every `@Test` has a linked
+   injection record in `okf/references/766-test-validity/`. Runs a sample of injections on CI.
+   Add to CI: `python3 Scripts/check-test-validity.py --strict`
 - **A `@Test(arguments:)` element pairing a reference-counted member with a builtin vector of 32
   bytes or more cannot be written at all** (#1057). `(String, SIMD3<Double>)` corrupts the Swift
   task allocator whatever the test body does: it crashes with an empty body, with a single case,
