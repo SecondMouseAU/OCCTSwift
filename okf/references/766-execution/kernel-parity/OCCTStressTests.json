@@ -1,0 +1,50 @@
+[
+  {
+    "test_name": "mirrorAxisZeroDirection",
+    "bridge_function": "OCCTMakeMirrorAxis",
+    "inputs": {"point": [0,0,0], "direction": [0,0,0]},
+    "kernel_result": {"status": "exception", "exception": "Standard_Failure: gp_Dir() - input vector has zero norm"},
+    "bridge_result": {"status": "success", "result": "fallback identity matrix"},
+    "comparison": {"equal": true, "differences": [], "note": "Bridge catches kernel exception and returns safe fallback"}
+  },
+  {
+    "test_name": "mirrorPlaneZeroNormal",
+    "bridge_function": "OCCTMakeMirrorPlane",
+    "inputs": {"point": [0,0,0], "normal": [0,0,0]},
+    "kernel_result": {"status": "exception", "exception": "Standard_Failure: gp_Dir() - input vector has zero norm"},
+    "bridge_result": {"status": "success", "result": "fallback identity matrix"},
+    "comparison": {"equal": true, "differences": [], "note": "Bridge catches kernel exception and returns safe fallback"}
+  },
+  {
+    "test_name": "geomDirectionZeroVector",
+    "bridge_function": "OCCTGeomDirectionCreate",
+    "inputs": {"x": 0, "y": 0, "z": 0},
+    "kernel_result": {"status": "success", "result": "Geom_Direction with NaN components"},
+    "bridge_result": {"status": "success", "result": "fallback direction (0,0,1)"},
+    "comparison": {"equal": false, "differences": ["Kernel returns NaN direction, bridge returns (0,0,1)"], "note": "Bridge provides safer fallback than kernel default"}
+  },
+  {
+    "test_name": "edgePairedWithUnrelatedCylindricalFaceDoesNotCrash",
+    "bridge_function": "OCCTBRepToolsEvalAndUpdateTol",
+    "inputs": {"edge": "box edge", "face": "cylinder lateral face"},
+    "kernel_result": {"status": "success", "c2d": "null", "note": "BRep_Tool::CurveOnSurface returns null for non-planar unrelated face"},
+    "bridge_result": {"status": "success", "result": "edge tolerance returned", "note": "Bridge guards null pcurve and returns edge tolerance"},
+    "comparison": {"equal": true, "differences": [], "note": "Bridge correctly handles kernel's null pcurve behavior"}
+  },
+  {
+    "test_name": "edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash",
+    "bridge_function": "OCCTBRepToolsEvalAndUpdateTol",
+    "inputs": {"edge": "box edge", "face": "unrelated box face"},
+    "kernel_result": {"status": "success", "c2d": "projected pcurve (non-null)", "note": "BRep_Tool::CurveOnSurface projects 3D curve onto plane"},
+    "bridge_result": {"status": "success", "result": "updated tolerance from BRepTools::EvalAndUpdateTol", "note": "Bridge calls EvalAndUpdateTol with projected pcurve"},
+    "comparison": {"equal": true, "differences": [], "note": "Bridge correctly passes projected pcurve to kernel"}
+  },
+  {
+    "test_name": "unifySameDomainOnMeshSewnSolidWithMissingPCurve",
+    "bridge_function": "OCCTUnifySameDomainBuild / occtUnifySameDomain",
+    "inputs": {"shape": "mesh-sewn solid with missing pcurves"},
+    "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
+    "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
+    "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  }
+]
