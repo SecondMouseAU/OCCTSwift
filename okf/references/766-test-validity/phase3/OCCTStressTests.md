@@ -87,13 +87,18 @@
 | mirrorPlaneZeroNormal | `OCCTMakeMirrorPlane` → `gp_Dir` ctor | Zero normal vector | Remove `try/catch` in bridge | ✅ SIGABRT | ✅ Pass | Uncaught `Standard_ConstructionError` |
 | geomDirectionZeroVector | `OCCTGeomDirectionCreate` → `Geom_Direction` ctor | Zero vector handled gracefully | N/A (no crash) | N/A | ✅ Pass | `Geom_Direction` returns NaN, no exception |
 
-### #348: UnifySameDomain Null PCurve Crash
+### #348: evalAndUpdateTolerance Null PCurve (Bridge Fix)
+
+**Issue**: `OCCTBRepToolsEvalAndUpdateTol` calls `BRep_Tool::CurveOnSurface` which returns null pcurve on non-planar faces → `BRepTools::EvalAndUpdateTol` dereferences unconditionally → SIGSEGV.
+
+**Bridge Fix**: Guard with `if (c3d.IsNull() || c2d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);`
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| unifySameDomainOnMeshSewnSolidWithMissingPCurve | `UnifySameDomainBuilder.build` → `ShapeUpgrade_UnifySameDomain` | Missing pcurve on edge | Revert kernel patch `0013` |  |  | Should SIGSEGV |
-| edgePairedWithUnrelatedCylindricalFaceDoesNotCrash | `Shape.evalAndUpdateTolerance` → `BRep_Tool::CurveOnSurface` | Null pcurve on non-planar face | Remove null guard in bridge |  |  | Should SIGSEGV |
-| edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash | `Shape.evalAndUpdateTolerance` → `BRep_Tool::CurveOnPlane` | Null pcurve on planar face | Remove null guard in bridge |  |  | Should SIGSEGV |
+| edgePairedWithUnrelatedCylindricalFaceDoesNotCrash | `OCCTBRepToolsEvalAndUpdateTol` → `BRep_Tool::CurveOnSurface` | Null pcurve on non-planar face | Remove null guard | ✅ SIGSEGV | ✅ Pass | SIGSEGV on cylindrical face |
+| edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash | `OCCTBRepToolsEvalAndUpdateTol` → `BRep_Tool::CurveOnPlane` | Null pcurve on planar face (OCCT 8.0.1+) | Remove null guard | ✅ SIGSEGV | ✅ Pass | SIGSEGV on planar face (OCCT 8.0.1+) |
+
+**Finding**: Both tests confirmed SIGSEGV when null guard removed. The bridge fix correctly handles null pcurves on both non-planar (cylinder) and planar (OCCT 8.0.1+) faces by returning edge's own tolerance.
 
 ### #344: CDF_Directory Race (Stress: Concurrent Document Creation)
 
