@@ -170,7 +170,7 @@ public struct AAGEdge: Sendable {
 /// 2. **A per-pair swap is measurably slower, and the gap widens with model size.** `BRepGraph`'s
 ///    own `adjacentFaces(of:)`/`sharedEdges(between:and:)` (`bgAdjacentFaces`/`bgSharedEdges`,
 ///    `OCCTBridge_BRepGraph.mm`) each linearly scan every edge in the WHOLE graph, because OCCT
-///    8.0.0p1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
+///    8.0.1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
 ///    face-to-face incidence to query instead. The direct call compares only the two
 ///    faces' own (small, typically 4-6) edge sets. Measured on a plate with a grid of drilled
 ///    holes: replacing the inner call, same O(n^2) outer loop, cost 2.4x more wall time at 22

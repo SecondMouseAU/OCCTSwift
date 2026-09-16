@@ -7,7 +7,7 @@ import simd
 /// Fits a B-spline curve to the points, minimising the 3D deviation. Inspect
 /// ``maxError`` for the worst-case residual.
 ///
-/// > Note: OCCT 8.0.0p1 removed the `Approx_BSplineApproxInterp` solver this type
+/// > Note: OCCT 8.0.1 removed the `Approx_BSplineApproxInterp` solver this type
 /// > originally wrapped, so it is now backed by `GeomAPI_PointsToBSpline`. The API is kept
 /// > source-compatible, but several controls the old solver offered have no equivalent and
 /// > are now **no-ops**: ``interpolatePoint(_:withKink:)``,
@@ -83,7 +83,7 @@ public final class BSplineApproxInterp: @unchecked Sendable {
     ///
     /// Originally marked a point to be exactly interpolated (0-based index).
     ///
-    /// > Note: No-op since OCCT 8.0.0p1. `GeomAPI_PointsToBSpline` has no per-point exact
+    /// > Note: No-op since OCCT 8.0.1. `GeomAPI_PointsToBSpline` has no per-point exact
     /// > interpolation or C0-break control. The approximation still passes near every point.
     ///
     /// - Parameters:

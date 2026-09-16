@@ -475,9 +475,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Get the maximum continuity order of an edge (GeomAbs_Shape enum as Int).
     ///
-    /// - Important: This always returns 0 (`GeomAbs_C0`) against OCCT 8.0.0p1, regardless of the
+    /// - Important: This always returns 0 (`GeomAbs_C0`) against OCCT 8.0.1, regardless of the
     ///   edge's real continuity. Edge continuity is conceptually the `BRepGraph_LayerRegularity`
-    ///   layer, but that class does not compile in p1 and is absent from `libOCCT`, so the graph
+    ///   layer, but that class does not compile in 8.0.1 and is absent from `libOCCT`, so the graph
     ///   path is unavailable and this is a stub (#1001). Use
     ///   ``Shape/maxContinuity(edge:)`` instead, which goes through the shape-based
     ///   `BRep_Tool::MaxContinuity` and is unaffected.
@@ -1615,7 +1615,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the SameParameter flag of an edge definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). SameParameter is now a derived per-CoEdge
+    /// - Important: No-op against OCCT 8.0.1 (#1001). SameParameter is now a derived per-CoEdge
     ///   property (computed from the pcurve vs the 3D curve), not a settable edge flag; the Edges
     ///   editor no longer exposes a setter. Kept for ABI compatibility. Use
     ///   ``isEdgeSameParameter(_:)`` to read the derived value.
@@ -1625,7 +1625,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the SameRange flag of an edge definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). SameRange is now a derived per-CoEdge
+    /// - Important: No-op against OCCT 8.0.1 (#1001). SameRange is now a derived per-CoEdge
     ///   property (computed from the pcurve vs the 3D curve), not a settable edge flag; the Edges
     ///   editor no longer exposes a setter. Kept for ABI compatibility. Use
     ///   ``isEdgeSameRange(_:)`` to read the derived value.
@@ -1635,7 +1635,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the IsDegenerate flag of an edge definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Edge degeneracy is now derived from
+    /// - Important: No-op against OCCT 8.0.1 (#1001). Edge degeneracy is now derived from
     ///   geometry/topology, not a settable `EdgeDef` flag; the Edges editor exposes no setter.
     ///   Kept for ABI compatibility. Use ``isEdgeDegenerated(_:)`` to read the derived value.
     /// - Parameters:
@@ -1647,7 +1647,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the IsClosed flag (StartVertex == EndVertex topology) of an edge.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Edge closure is now derived from
+    /// - Important: No-op against OCCT 8.0.1 (#1001). Edge closure is now derived from
     ///   geometry/topology, not a settable `EdgeDef` flag; the Edges editor exposes no setter.
     ///   Kept for ABI compatibility. Use ``isEdgeClosed(_:)`` to read the derived value.
     public func setEdgeIsClosed(_ edgeIndex: Int, isClosed: Bool) {
@@ -1670,7 +1670,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the IsClosed flag of a wire definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Wire closure is derived from the ordered
+    /// - Important: No-op against OCCT 8.0.1 (#1001). Wire closure is derived from the ordered
     ///   coedge chain, not a settable flag. Kept for ABI compatibility. Use ``isWireClosed(_:)``
     ///   to read the derived value.
     public func setWireIsClosed(_ wireIndex: Int, isClosed: Bool) {
@@ -1684,7 +1684,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the natural-restriction flag of a face definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A face's natural-restriction flag is no
+    /// - Important: No-op against OCCT 8.0.1 (#1001). A face's natural-restriction flag is no
     ///   longer stored or settable. Kept for ABI compatibility. Use
     ///   ``isFaceNaturalRestriction(_:)`` to read the derived value.
     /// - Parameters:
@@ -1696,7 +1696,7 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Set the IsClosed flag of a shell definition.
     ///
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Shell closure is derived from
+    /// - Important: No-op against OCCT 8.0.1 (#1001). Shell closure is derived from
     ///   face-boundary edge incidence, not a settable flag. Kept for ABI compatibility. Use
     ///   ``isShellClosed(_:)`` to read the derived value.
     public func setShellIsClosed(_ shellIndex: Int, isClosed: Bool) {
@@ -1709,7 +1709,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// supplement attachment.
     ///
     /// Returns the layer-local attachment uid, or nil on failure.
-    /// - Note: Edge-internal vertices are a supplemental, runtime concept in OCCT 8.0.0p1
+    /// - Note: Edge-internal vertices are a supplemental, runtime concept in OCCT 8.0.1
     ///   (`BRepGraph_LayerTopoSupplement`); a clean shape has none until one is added here.
     /// - Parameters:
     ///   - edgeIndex: The edge index.
@@ -1729,7 +1729,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// attachment.
     ///
     /// Returns the layer-local attachment uid, or nil on failure.
-    /// - Note: Face-direct vertices are a supplemental, runtime concept in OCCT 8.0.0p1
+    /// - Note: Face-direct vertices are a supplemental, runtime concept in OCCT 8.0.1
     ///   (`BRepGraph_LayerTopoSupplement`); a clean box has none until one is added here.
     /// - Parameters:
     ///   - faceIndex: The face index.
@@ -1890,7 +1890,7 @@ public final class BRepGraph: @unchecked Sendable {
     public func setEdgePolygon3DRepId(_ edgeIndex: Int, polygon3DRepId: Int) {
         OCCTBRepGraphSetEdgePolygon3DRepId(handle, Int32(edgeIndex), Int32(polygon3DRepId))
     }
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). Coedges are not reference-counted in p1
+    /// - Important: No-op against OCCT 8.0.1 (#1001). Coedges are not reference-counted in 8.0.1
     ///   (no `CoEdgeRefId` / `SetRefCoEdgeDefId`). Kept for ABI compatibility.
     public func setCoEdgeRefCoEdgeDefId(_ coedgeRefIndex: Int, coedgeIndex: Int) {
         OCCTBRepGraphSetCoEdgeRefCoEdgeDefId(handle, Int32(coedgeRefIndex), Int32(coedgeIndex))
@@ -1914,7 +1914,7 @@ public final class BRepGraph: @unchecked Sendable {
     public func clearCoEdgePCurveBinding(_ coedgeIndex: Int) {
         OCCTBRepGraphClearCoEdgePCurveBinding(handle, Int32(coedgeIndex))
     }
-    /// - Important: No-op against OCCT 8.0.0p1 (#1001). A wire reference's "is outer" flag is no
+    /// - Important: No-op against OCCT 8.0.1 (#1001). A wire reference's "is outer" flag is no
     ///   longer settable (the outer wire is derived as the first active wire of the owning face).
     ///   Kept for ABI compatibility.
     public func setWireRefIsOuter(_ wireRefIndex: Int, isOuter: Bool) {
@@ -2028,9 +2028,9 @@ public final class BRepGraph: @unchecked Sendable {
     /// setter was removed: seam-pair-id is structural in GA (derived from two coedges on
     /// the same edge/face with opposite orientations).
     ///
-    /// - Important: This always returns `false` against OCCT 8.0.0p1 and `continuity` is not
+    /// - Important: This always returns `false` against OCCT 8.0.1 and `continuity` is not
     ///   read at all. `BRepGraph_LayerRegularity`, the only write path in the GA continuity
-    ///   model, does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
+    ///   model, does not compile in 8.0.1 and is absent from `libOCCT`, so the bridge function is a
     ///   stub that reports failure. There is no replacement writer; to *read* continuity, use
     ///   ``Shape/continuity(edge:face1:face2:)`` or ``Shape/maxContinuity(edge:)``, both of which
     ///   go through the shape-based `BRepLib`/`BRep_Tool` path and are unaffected. Tracked
@@ -2041,7 +2041,7 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - face1: The first face index.
     ///   - face2: The second face index.
     ///   - continuity: Ignored (see above). Was documented as a GeomAbs_Shape value.
-    /// - Returns: Always `false` on OCCT 8.0.0p1.
+    /// - Returns: Always `false` on OCCT 8.0.1.
     @discardableResult
     public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool
     {
@@ -2585,7 +2585,7 @@ public final class BRepGraph: @unchecked Sendable {
         return unpackSIMD3(buffer, count: Int(result))
     }
 
-    // MARK: - Durable Identity (UID / RefUID / ItemUID), OCCT 8.0.0p1
+    // MARK: - Durable Identity (UID / RefUID / ItemUID), OCCT 8.0.1
 
     /// A durable node identifier: a `(kind, counter)` pair that persists across mutations of
     /// **the one graph instance that minted it**, across compaction and node removal, where a
