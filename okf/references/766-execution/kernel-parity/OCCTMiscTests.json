@@ -1,0 +1,74 @@
+[
+  {
+    "test_name": "Point projection capacities clamp rather than trap",
+    "bridge_function": "OCCTShapeProject",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape.allDistanceSolutions clamps maxSolutions rather than trapping",
+    "bridge_function": "OCCTShapeAllDistanceSolutions",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape.selfIntersectionPairs clamps maxPairs rather than trapping",
+    "bridge_function": "OCCTShapeSelfIntersectionPairs",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "KDTree search capacities clamp rather than trap",
+    "bridge_function": "OCCTKDTreeSearch",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "all three Selector.pick overloads clamp maxResults rather than trapping",
+    "bridge_function": "OCCTSelectorPick",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "HatchPattern.generate clamps maxSegments rather than trapping",
+    "bridge_function": "OCCTHatchPatternGenerate",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnicodeUtils.convertFromUnicode clamps its output buffer rather than trapping",
+    "bridge_function": "OCCTUnicodeConvert",
+    "bridge_output": {"type": "string", "data": ""},
+    "kernel_output": {"type": "string", "data": ""},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "directory and file listing clamp maxCount rather than trapping",
+    "bridge_function": "OCCTDirectoryListing",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "LogSample.sample fills its buffer exactly, so its count is a request, not a capacity",
+    "bridge_function": "OCCTLogSample",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]

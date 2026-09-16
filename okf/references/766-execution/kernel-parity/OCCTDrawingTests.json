@@ -1,0 +1,226 @@
+[
+  {
+    "test_name": "Display Drawer",
+    "bridge_function": "OCCTDrawingDrawer",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Projection Tests",
+    "bridge_function": "OCCTPointProjection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "perpendicularBasis unification: Drawing projection",
+    "bridge_function": "OCCTPerpendicularBasis",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.144 ISO drawing style constants",
+    "bridge_function": "OCCTDrawingStyle",
+    "bridge_output": {"type": "string", "data": ""},
+    "kernel_output": {"type": "string", "data": ""},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing dimensions",
+    "bridge_function": "OCCTDrawingDimensions",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Perspective eye anchor and the regime beyond it (#1036)",
+    "bridge_function": "OCCTPerspectiveEyeAnchor",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.148 Drawing.append(_:) unified dispatcher",
+    "bridge_function": "OCCTDrawingAppend",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "HLR ReflectLines Tests",
+    "bridge_function": "OCCTHLRReflectLines",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Normal Projection",
+    "bridge_function": "OCCTNormalProjection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building",
+    "bridge_function": "OCCTEditorViewProductOps",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1183 Drawing transform sites share one formula",
+    "bridge_function": "OCCTDrawingTransform",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.147 Drawing.addAutoCentermarks",
+    "bridge_function": "OCCTDrawingAutoCentermarks",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1173: arrowhead/triangle-pointer shared geometry",
+    "bridge_function": "OCCTArrowheadTriangle",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Drawing auto-centrelines (#64 ↔ #65)",
+    "bridge_function": "OCCTDrawingAutoCentrelines",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Radius Dimension",
+    "bridge_function": "OCCTDrawingRadiusDimension",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "emitAngular sweep matches Angular.value for reflex ray pairs (#1169)",
+    "bridge_function": "OCCTEmitAngular",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Length Dimension",
+    "bridge_function": "OCCTLengthDimension",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing Tests",
+    "bridge_function": "OCCTDrawingTests",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.addRadialDimension/addDiameterDimension route through Circular correctly",
+    "bridge_function": "OCCTDrawingRadialDiameter",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1185 DrawingDimension.Radial/.Diameter share Circular",
+    "bridge_function": "OCCTDrawingRadialDiameterShare",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 DrawingTolerance",
+    "bridge_function": "OCCTDrawingTolerance",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Y-only feature (dx == 0) draws only the Y leader/tick/text, isolated from the X block",
+    "bridge_function": "OCCTDrawingYOnly",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.149 DrawingDimension.ordinate",
+    "bridge_function": "OCCTDrawingOrdinate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Selector Tests",
+    "bridge_function": "OCCTSelectorTests",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Polygon-Based HLR",
+    "bridge_function": "OCCTPolygonHLR",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fast projection has hidden edges",
+    "bridge_function": "OCCTFastProjectionHiddenEdges",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fast vs exact projection both succeed",
+    "bridge_function": "OCCTFastExactProjection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Custom deflection affects result",
+    "bridge_function": "OCCTCustomDeflection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]
