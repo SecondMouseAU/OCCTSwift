@@ -2019,6 +2019,12 @@ no-ops, only the documentation was missing.
 - Confirmed currently unreachable from `BRepFilletAPI_MakeFillet`/`MakeChamfer`; fixed ahead of
   reachability, not in response to an observed failure
 - Kernel-only (`Scripts/patches/0032`), no public API change, not yet in a rebuilt xcframework
+- **Retired before it ever shipped (#1472).** Upstream fixed the same globals better, and more
+  widely, in OCCT#1505 and OCCT#1509, four days after this patch landed. `0032` is deleted rather
+  than carried, so nothing in this release note describes code that exists. No xcframework was ever
+  built with it, so no consumer saw either state. `Scripts/patches/README.md` and
+  `okf/references/carried-occt-patches.md` record the retirement, and `CLAUDE.md` gains the
+  "check upstream's own recent activity first" step this cost bought
 
 ### Share DXF group-code formatter via DrawingTestFixtures.DXFTestFormat (#1271)
 
@@ -4326,6 +4332,128 @@ changed for a consumer, which for this pass is nothing.
 - `Document.assemblyItemCount(maxDepth:)` gained a `- Warning:` recording that the bridge stops
   counting at 100,001 and returns that as the total, filed as #964. Superseded within this same
   release by the fix below, which makes the truncation reportable.
+
+### `symmetryAxes` honours `fractionalTolerance` in its existence gate (#1497)
+
+`OCCTShapeSymmetryAxes` took a `fractionalTolerance` argument, passed it to the per-axis comparisons,
+and then called `GProp_PrincipalProps::HasSymmetryPoint()` and `HasSymmetryAxis()` with no argument
+at all. Both take an optional tolerance and default to `Precision::Confusion()`, so the gate deciding
+*whether a shape has symmetry* ran at a fixed tolerance while the gate deciding *which axes to report*
+ran at the caller's. A shape symmetric only within a loosened tolerance was refused before the
+caller's tolerance was ever consulted.
+
+Both calls now take `fractionalTolerance`. A caller passing a larger tolerance gets the axes it asks
+for; a caller passing the default sees no change.
+
+### `Sheet` and `ProjectionSymbol` render onto a writer chosen at runtime (#1267)
+
+`Sheet.render(into:)` and `ProjectionSymbol.render(_:at:into:)` existed only as three concrete
+overloads over `DXFWriter`, `PDFWriter` and `SVGWriter`, so code picking a format at runtime had no
+type to hold the writer in.
+
+New public protocol `DrawingWriter` (`DrawingDispatch.swift`) declares the subset those two render
+paths need, plus `entityCounts`:
+
+```swift
+let writer: DrawingWriter = useSVG ? SVGWriter() : DXFWriter()
+sheet.render(into: writer)
+ProjectionSymbol.render(.first, at: .zero, into: writer)
+```
+
+`DrawingWriter` and the internal `DrawingPrimitiveSink` are two separately declared protocols with
+identical requirements rather than one refining the other: a `public` protocol cannot inherit an
+`internal` one, and #1180's visibility constraint on `renderScaffolding` is why `DrawingPrimitiveSink`
+cannot be widened. The two new overloads therefore switch on the concrete type onto the three
+existing overloads. That switch is exact rather than a fallback guess, because `DXFWriter`,
+`PDFWriter` and `SVGWriter` are the protocol's only conformers.
+
+Additive. The three concrete overloads are unchanged.
+
+### Sixty-five `OCCT:` attributions in `docs/reference/` named a method the bridge never calls (#1044)
+
+The #928 census checks every ``Class::Member`` attribution in the docs against that class's own
+pinned header. Outside the features lane it had never been run to completion, and sixty-five
+attributions across twenty `docs/reference/` pages named something that does not exist or does not
+do the work. `gp_Quaternion::GetVectorPart` stood where `GetMatrix` belonged, `math_Householder::Solve`
+where `Perform` belonged, `OSD_Path::IsRelative`/`IsAbsolute` where `IsRelativePath`/`IsAbsolutePath`
+belonged, and `BRepGProp_Domain::NbEdges`, which has no such member, stood for an `Init`/`More`/`Next`
+iteration.
+
+`refman_census.py` now checks attributions for **every** class rather than only lane classes, and
+carries a `METHOD_ATTRIBUTION_ALLOWED` set of fifteen pairs that are deliberate: enum values
+(`Graphic3d_Camera::Projection_Perspective`), documented kernel internals in `docs/thread-safety.md`,
+members removed by a version bump and recorded in `docs/occt-upgrades.md`, and doc-level concepts
+that stand for a Swift wrapper rather than one OCCT call (`ShapeAnalysis_CanonicalRecognition::IsCanonicalSurface`).
+Each carries its reason inline.
+
+Documentation only. No API or behaviour change.
+
+### `checkOuterBound` refuses a partial pcurve set and an area that cancels to rounding (#1073)
+
+`OCCTWireCheckOuterBound` guarded against a wire where **no** edge carried a pcurve on the face,
+because `ShapeAnalysis::TotCross2D` would then sign an area nothing contributed to. The quantifier
+was wrong. `TotCross2D` skips an edge with no pcurve rather than failing on it, so a wire where
+*some* edges carry one produces a signed area contributed by only the pcurved subset, and the
+verdict reads as geometry when it is an artefact of which edges happened to project.
+
+The guard now requires every edge to carry a pcurve. A second refusal is added for the case the
+first cannot see: a wire whose projected area cancels to rounding. The returned `TotCross2D`
+magnitude is tested against the face's own UV bounds from `ShapeAnalysis::GetFaceUVBounds`, and an
+area below `1e-12` of that scale is refused, which is far below any real outer/inner distinction
+and far above cancellation noise.
+
+Both refusals return `-1`, which `Shape.checkOuterBound` already surfaces as `nil` under #1058's
+tri-state encoding. A wire that previously received a verdict whose sign was numerical noise now
+receives no verdict. Callers already unwrapping the Optional need no change.
+
+### `Edge.adjacentFaces(in:)` returns every adjacent face, not the first two (#1087)
+
+**Breaking.** The return type changes from `(Face, Face?)?` to `[Face]?`.
+
+```swift
+// before
+if let (f1, f2) = edge.adjacentFaces(in: shape) { ... }
+
+// after
+if let faces = edge.adjacentFaces(in: shape) { ... }
+```
+
+An edge can bound three or more faces in a compound whose solids share a face. The old signature
+could express two, and returned whichever two `TopExp::MapShapesAndAncestors` listed first with no
+signal that it had truncated. Measured on two solids sharing one cut face, each of the four shared
+edges is bounded by four face occurrences, and the caller was handed two of them.
+
+New bridge entry point `OCCTEdgeGetAdjacentFacesArray` fills a caller-allocated array and returns
+the true count, so the truncation point is the caller's buffer rather than the signature. `Edge.swift`
+passes 64. `OCCTEdgeGetAdjacentFaces` is kept and marked deprecated in the header for the same reason
+it always worked: two faces is the right answer for a manifold edge.
+
+Migration: destructure the array instead of the tuple. `faces[0]` for the old `face1`, and
+`faces.count > 1 ? faces[1] : nil` for the old `face2`, or handle the whole set where the shape can
+be non-manifold.
+
+### Null-wire guards on nineteen `ShapeAnalysis_Wire` bridge functions (#1099)
+
+Nineteen bridge functions calling `ShapeAnalysis_Wire::Init` tested only that their `OCCTShapeRef`
+pointers were non-null, then handed the wrapped `TopoDS_Shape` to OCCT. A nullified or wrong-typed
+shape reached `Init` and took the process down with an uncatchable SIGSEGV, since `OCC_CATCH_SIGNALS`
+is inert in this build.
+
+All nineteen now guard with `occtShapeIsType(wire, TopAbs_WIRE)` and
+`occtShapeIsType(face, TopAbs_FACE)`, which is the guard #1058 already applied to
+`OCCTWireCheckOuterBound`:
+
+```
+OCCTWireCheckOrder            OCCTWireCheckLacking          OCCTWireMaxDistance2d
+OCCTWireCheckConnected        OCCTWireEdgeCount             OCCTWireCheckConnectedEdge
+OCCTWireCheckSmall            OCCTWireMinDistance3d         OCCTWireCheckSmallEdge
+OCCTWireCheckDegenerated      OCCTWireMaxDistance3d         OCCTWireCheckDegeneratedEdge
+OCCTWireCheckClosed           OCCTWireMinDistance2d         OCCTWireCheckGap3dEdge
+OCCTWireCheckSelfIntersection OCCTWireCheckGaps2d
+OCCTWireCheckGaps3d           OCCTWireCheckEdgeCurves
+```
+
+Each returns the refusal it already gave a wrong-typed input, so no correct call changes behaviour.
 
 ---
 
