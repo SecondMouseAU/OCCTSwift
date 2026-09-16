@@ -1,0 +1,202 @@
+[
+  {
+    "test_name": "Deflection consistency check",
+    "bridge_function": "OCCTBRepMeshDeflection",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepMesh Deflection",
+    "bridge_function": "OCCTBRepMeshDeflection",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Poly_Polygon3D",
+    "bridge_function": "OCCTPolyPolygon3D",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Poly_MergeNodesTool",
+    "bridge_function": "OCCTPolyMergeNodesTool",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Poly Copy & Mutators",
+    "bridge_function": "OCCTPolyCopyMutate",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepMesh ShapeTool Tests",
+    "bridge_function": "OCCTBRepMeshShapeTool",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Deflection consistency check (2)",
+    "bridge_function": "OCCTBRepMeshDeflection",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh face indices",
+    "bridge_function": "OCCTMeshFaceIndex",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh boolean union",
+    "bridge_function": "OCCTMeshBooleanUnion",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Merged mesh nodes outward",
+    "bridge_function": "OCCTMeshMergedNodesOutward",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh parameterised entry",
+    "bridge_function": "OCCTMeshParameterisedEntry",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh boolean subtraction",
+    "bridge_function": "OCCTMeshBooleanSubtraction",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh boolean intersection",
+    "bridge_function": "OCCTMeshBooleanIntersection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh face indices address faces()",
+    "bridge_function": "OCCTMeshFaceIndicesAddressFaces",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh boolean intersection (2)",
+    "bridge_function": "OCCTMeshBooleanIntersection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh face indices address faces() (2)",
+    "bridge_function": "OCCTMeshFaceIndicesAddressFaces",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh Tests",
+    "bridge_function": "OCCTMeshTests",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction",
+    "bridge_function": "OCCTDrawerMeshExtraction",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Finer deviation",
+    "bridge_function": "OCCTBRepMeshDeflection",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh face indices (2)",
+    "bridge_function": "OCCTMeshFaceIndex",
+    "bridge_output": {"type": "int", "data": 0},
+    "kernel_output": {"type": "int", "data": 0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepMesh ShapeTool Tests (2)",
+    "bridge_function": "OCCTBRepMeshShapeTool",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh Tests outward",
+    "bridge_function": "OCCTMeshMergedNodesOutward",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh Tests union",
+    "bridge_function": "OCCTMeshBooleanUnion",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh Tests subtraction",
+    "bridge_function": "OCCTMeshBooleanSubtraction",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Mesh Tests intersection",
+    "bridge_function": "OCCTMeshBooleanIntersection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]

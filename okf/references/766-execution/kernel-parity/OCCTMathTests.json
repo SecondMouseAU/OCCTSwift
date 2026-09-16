@@ -1,0 +1,234 @@
+[
+  {
+    "test_name": "gce_MakeLin Tests",
+    "bridge_function": "OCCTGceMakeLin",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles",
+    "bridge_function": "OCCTConvertCompPolyToPoles",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "gce_MakeHypr Tests",
+    "bridge_function": "OCCTGceMakeHypr",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathJacobi Tests",
+    "bridge_function": "OCCTMathJacobi",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver Powell v0.110",
+    "bridge_function": "OCCTMathSolverPowell",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Vector2DMath",
+    "bridge_function": "OCCTVector2DMath",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "gce_MakeCirc Tests",
+    "bridge_function": "OCCTGceMakeCirc",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "LineGeometry_Operations",
+    "bridge_function": "OCCTLineGeometryOperations",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver FunctionRoot v0.110",
+    "bridge_function": "OCCTMathSolverFunctionRoot",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepTools_TrsfModification",
+    "bridge_function": "OCCTBRepToolsTrsfModification",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver GaussIntegrate v0.111",
+    "bridge_function": "OCCTMathSolverGaussIntegrate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakeTranslation",
+    "bridge_function": "OCCTGCMakeTranslation",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder Tests",
+    "bridge_function": "OCCTGCMakeTrimmedCylinder",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomVector3D Tests",
+    "bridge_function": "OCCTGeomVector3D",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "FunctionAllRoots",
+    "bridge_function": "OCCTFunctionAllRoots",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "ElSLib Tests",
+    "bridge_function": "OCCTElSLib",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakeTrimmedCylinder",
+    "bridge_function": "OCCTGCMakeTrimmedCylinder",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Quaternion Interpolation",
+    "bridge_function": "OCCTQuaternionInterpolation",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver NewtonSystem v0.111",
+    "bridge_function": "OCCTMathSolverNewtonSystem",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomLib_LogSample Tests",
+    "bridge_function": "OCCTGeomLibLogSample",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver SystemOfEquations v0.110",
+    "bridge_function": "OCCTMathSolverSystemOfEquations",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "math_NewtonMinimum Tests",
+    "bridge_function": "OCCTMathNewtonMinimum",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepTools_GTrsfModification",
+    "bridge_function": "OCCTBRepToolsGTrsfModification",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Non-Uniform Scale",
+    "bridge_function": "OCCTNonUniformScale",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion",
+    "bridge_function": "OCCTTransformExpansion",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomLib_LogSample Tests",
+    "bridge_function": "OCCTGeomLibLogSample",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver SystemOfEquations v0.110",
+    "bridge_function": "OCCTMathSolverSystemOfEquations",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Minimization (Rosenbrock)",
+    "bridge_function": "OCCTMinimizeRosenbrock",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "MathSolver PSO v0.111",
+    "bridge_function": "OCCTMathSolverPSO",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]
