@@ -25,7 +25,7 @@
   },
   {
     "test_name": "XCAF Document Save/Load",
-    "bridge_function": "OCCTDocumentSaveOCAF",
+"bridge_function": "OCCTDocumentSaveOCAF/LoadOCAF",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -119,4 +119,8 @@
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   }
+<<<<<<< HEAD
 ]
+=======
+]
+>>>>>>> 999edc3d (chore(766): Phase B - OCCTXCAFTests (#1982) Red→Green + Kernel Parity)
