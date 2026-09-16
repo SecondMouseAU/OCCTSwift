@@ -1,29 +1,202 @@
 name: 766-Execution Gates
+
 on:
   pull_request:
+    branches:
+      - v5.0.0-766-execution
     paths:
       - 'Tests/**'
       - 'Sources/OCCTSwift/**'
       - 'Sources/OCCTBridge/**'
-      - 'Scripts/766-execution/**'
+      - 'Scripts/**'
+      - 'okf/references/766-test-validity/**'
+      - 'okf/references/766-execution/**'
+      - '.github/workflows/766-execution.yml'
+  push:
+    branches:
+      - v5.0.0-766-execution
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  red-green-sample:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        domain: [Stress, Modeling, ShapeHealing, Surface, Curve, Geom2d, Analysis, Topology, XCAF, Math, Drawing, Mesh, BRepGraph, Foundation, Integration, Misc, Thread]
+  # The repo's static gate scripts - same as main CI
+  gate-scripts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - name: Run Red→Green sample
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: check-bridge-index.py --self-test
+        run: python3 Scripts/check-bridge-index.py --self-test
+      - name: check-bridge-index.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-index.py
+      - name: check-null-handle-guards.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py --self-test
+      - name: check-null-handle-guards.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py
+      - name: check-docs-defaults.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py --self-test
+      - name: check-docs-defaults.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py
+      - name: check-docs-existence.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py --self-test
+      - name: check-docs-existence.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py
+      - name: check-borrowed-handles.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-borrowed-handles.py --self-test
+      - name: check-borrowed-handles.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-borrowed-handles.py
+      - name: derive-bridge-header-split.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --self-test
+      - name: derive-bridge-header-split.py --verify
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --verify
+      - name: derive-gdt-enums.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/derive-gdt-enums.py --self-test
+      - name: derive-gdt-enums.py --verify
+        if: '!cancelled()'
+        run: python3 Scripts/derive-gdt-enums.py --verify
+      - name: count-operations.py
+        if: '!cancelled()'
+        run: python3 Scripts/count-operations.py
+      - name: no conflict markers in tracked files
+        if: '!cancelled()'
+        run: |
+          if git grep -nE '^(<<<<<<< |\|\|\|\|\|\|\| |>>>>>>> )' -- . ; then
+            echo "::error::merge conflict markers found in tracked files (see matches above)"
+            exit 1
+          fi
+          echo "no conflict markers in tracked files"
+      - name: census-unmeasured-values.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-unmeasured-values.py --self-test
+      - name: check-changelog-transcription.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py --self-test
+      - name: check-changelog-transcription.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py
+      - name: census-doc-occt-attribution.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-doc-occt-attribution.py --self-test
+      - name: census-arguments-tuple-shapes.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-arguments-tuple-shapes.py --self-test
+      - name: census-comment-staleness.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-comment-staleness.py --self-test
+
+  # 766-specific test execution gate
+  test-execution:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+      - name: swift build
+        run: swift build
+      - name: swift test (sample)
         run: python3 Scripts/check-test-validity.py --sample-rg 5 --gate red-green
-  
-  kernel-parity-sample:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        domain: [Stress, Modeling, ShapeHealing, Surface, Curve, Geom2d, Analysis, Topology, XCAF, Math, Drawing, Mesh, BRepGraph, Foundation, Integration, Misc, Thread]
+
+  # 766-specific kernel parity gate
+  kernel-parity:
+    runs-on: macos-15
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+      - name: swift build
+        run: swift build
       - name: Run Kernel Parity sample
         run: python3 Scripts/check-test-validity.py --sample-kp 3 --gate kernel-parity
+
+  # Full test suite (same as main CI)
+  build-and-test:
+    name: swift build + test (macOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+      - name: swift build
+        run: swift build
+      - name: swift test
+        run: swift test
+
+  # iOS simulator build (same as main CI)
+  ios-simulator-build:
+    name: swift build (iOS Simulator, smoke)
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-ios-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-ios-
+      - name: xcodebuild for iOS Simulator
+        run: |
+          xcodebuild build \
+            -scheme OCCTSwift \
+            -destination 'generic/platform=iOS Simulator'
