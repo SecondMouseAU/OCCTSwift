@@ -1,0 +1,122 @@
+[
+  {
+    "test_name": "XCAF Color Tests",
+    "bridge_function": "OCCTXCAFColor",
+    "bridge_output": {"type": "color", "data": {}},
+    "kernel_output": {"type": "color", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Layer Tests",
+    "bridge_function": "OCCTXCAFLayer",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Assembly Tests",
+    "bridge_function": "OCCTXCAFAssembly",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Document Save/Load",
+    "bridge_function": "OCCTDocumentSaveOCAF/LoadOCAF",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Material Tests",
+    "bridge_function": "OCCTXCAFMaterial",
+    "bridge_output": {"type": "color", "data": {}},
+    "kernel_output": {"type": "color", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Shape Addition/Removal",
+    "bridge_function": "OCCTXCAFShapeAddRemove",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF GDT Tests",
+    "bridge_function": "OCCTXCAFGDT",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Validation Tests",
+    "bridge_function": "OCCTXCAFValidation",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Style Tests",
+    "bridge_function": "OCCTXCAFStyle",
+    "bridge_output": {"type": "color", "data": {}},
+    "kernel_output": {"type": "color", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Area/Volume Tests",
+    "bridge_function": "OCCTXCAFAreaVolume",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Location/Transformation",
+    "bridge_function": "OCCTXCAFLocationTransform",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Bounding Box Tests",
+    "bridge_function": "OCCTXCAFBoundingBox",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Document Creation",
+    "bridge_function": "OCCTXCAFDocumentCreation",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Mesh Tests",
+    "bridge_function": "OCCTXCAFMesh",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Note/Annotation Tests",
+    "bridge_function": "OCCTXCAFNoteAnnotation",
+    "bridge_output": {"type": "string", "data": ""},
+    "kernel_output": {"type": "string", "data": ""},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]
