@@ -1,0 +1,154 @@
+[
+  {
+    "test_name": "integrateSin",
+    "bridge_function": "OCCTKronrodIntegrate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "adaptive",
+    "bridge_function": "OCCTKronrodIntegrate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "integrate2D",
+    "bridge_function": "OCCTGaussMultipleIntegrate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "integrateSet",
+    "bridge_function": "OCCTGaussSetIntegrate",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "mountingBracketFullWorkflow",
+    "bridge_function": "OCCTShapeExtrude/Revolve",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "fluentChainVolumeDecreases",
+    "bridge_function": "OCCTShapeFuse/Transform",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "cylinderWithHolesSlicing",
+    "bridge_function": "OCCTShapeSection",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "plateWithHolesSection",
+    "bridge_function": "OCCTShapeHoles",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "oversizedFilletReturnsNil",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {"type": "null", "data": null},
+    "kernel_output": {"type": "null", "data": null},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "zeroDepthDrill",
+    "bridge_function": "OCCTShapeDrill",
+    "bridge_output": {"type": "null", "data": null},
+    "kernel_output": {"type": "null", "data": null},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "selfUnion",
+    "bridge_function": "OCCTShapeFuse",
+    "bridge_output": {"type": "null", "data": null},
+    "kernel_output": {"type": "null", "data": null},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "obbTighterThanAABBForRotatedShape",
+    "bridge_function": "OCCTShapeOBB",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "thousandBoxesNoLeak",
+    "bridge_function": "OCCTShapeBox",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "pocketSectionAndOffset",
+    "bridge_function": "OCCTShapePocket",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "surfaceCurvatureVariation",
+    "bridge_function": "OCCTSurfaceCurvature",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "bottleShapeWorkflow",
+    "bridge_function": "OCCTShapeRevolve",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "cylinderConsistentCircularSections",
+    "bridge_function": "OCCTShapeSection",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "booleanWithSharedEdgeAndGap",
+    "bridge_function": "OCCTShapeFuse",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "brepStringRoundTrip",
+    "bridge_function": "OCCTShapeWriteBREP",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]
