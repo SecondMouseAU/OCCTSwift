@@ -969,6 +969,31 @@ public:
   std::vector<gp_Pnt> pts;
   std::vector<gp_Vec> norms;
 
+  // #1452: resolve auto-density HERE rather than letting the kernel do it.
+  //
+  // BRepLib_PointCloudShape::NbPointsByDensity computes
+  //   aDensity = (theDensity < Precision::Confusion() ? computeDensity() : theDensity)
+  // validates aDensity, and then divides each face's area by theDensity, the caller's original
+  // argument, not by the aDensity it just validated. At an exact density of 0.0, which is the
+  // documented way to ask for auto-density, that is anArea / 0.0 = +Infinity, and
+  // (int)std::ceil(+Infinity) is undefined behaviour. Measured on arm64 macOS it saturates to
+  // INT_MAX, so every face requests ~2.1 billion points and the call does not return
+  // (Scripts/repro/1440-pointcloud-density-int-overflow/). That is reachable from
+  // Shape.pointCloudByDensity(0.0) on an ordinary box.
+  //
+  // computeDensity() is protected and this is a subclass, so we can run the kernel's own line
+  // ourselves and then hand it an explicit positive density. theDensity then equals aDensity
+  // inside NbPointsByDensity and the divide is the one the author meant. This keeps auto-density
+  // working rather than refusing 0.0, which is what a pure input guard would have cost.
+  //
+  // Retire when the kernel is repinned with the one-word upstream fix.
+  double resolveDensity(double theDensity)
+  {
+    if (theDensity >= Precision::Confusion())
+      return theDensity;
+    return computeDensity();
+  }
+
 protected:
   void addPoint(const gp_Pnt& thePoint,
                 const gp_Vec& theNorm,
@@ -1039,7 +1064,18 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
   try
   {
     OCCTPointCloudCollector pcs(shape->shape);
-    if (!pcs.GeneratePointsByDensity(density))
+    // #1452: never pass a sub-Confusion density through to the kernel, see resolveDensity above.
+    const double effectiveDensity = pcs.resolveDensity(density);
+    // computeDensity() answers 2e+99 for a shape with no usable face area: it is a minimum-area
+    // search whose accumulator starts enormous and is never reduced when the face loop finds
+    // nothing (measured, Scripts/repro/1452-pointcloud-auto-density/). So this guard does NOT
+    // fire for such a shape, 2e+99 being far above Confusion; a vertex is refused one call later
+    // by copyPointCloudResults' zero point count. The guard covers the other case, where
+    // computeDensity() does answer near zero and passing it on would put the kernel's divide back
+    // where it started.
+    if (effectiveDensity < Precision::Confusion())
+      return false;
+    if (!pcs.GeneratePointsByDensity(effectiveDensity))
       return false;
     return copyPointCloudResults(pcs, outPoints, outNormals, outCount);
   }
