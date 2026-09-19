@@ -1066,15 +1066,13 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
     OCCTPointCloudCollector pcs(shape->shape);
     // #1452: never pass a sub-Confusion density through to the kernel, see resolveDensity above.
     const double effectiveDensity = pcs.resolveDensity(density);
-    // computeDensity() answers 2e+99 for a shape with no usable face area (the min-area
-    // search accumulator starts enormous and is never reduced when the face loop finds
-    // nothing). The kernel would produce 0 points for that; the guard here would not fire
-    // (2e+99 >> Confusion), and refusal happens one call later in copyPointCloudResults.
-    // would return 0 points for that; refusing here says the same thing one call earlier, and
-    // computeDensity() answers 2e+99 for a shape with no usable face area (the min-area
-    // search accumulator starts enormous and is never reduced when the face loop finds
-    // nothing). The kernel would produce 0 points for that; the guard here would not fire
-    // (2e+99 >> Confusion), and refusal happens one call later in copyPointCloudResults.
+    // computeDensity() answers 2e+99 for a shape with no usable face area: it is a minimum-area
+    // search whose accumulator starts enormous and is never reduced when the face loop finds
+    // nothing (measured, Scripts/repro/1452-pointcloud-auto-density/). So this guard does NOT
+    // fire for such a shape, 2e+99 being far above Confusion; a vertex is refused one call later
+    // by copyPointCloudResults' zero point count. The guard covers the other case, where
+    // computeDensity() does answer near zero and passing it on would put the kernel's divide back
+    // where it started.
     if (effectiveDensity < Precision::Confusion())
       return false;
     if (!pcs.GeneratePointsByDensity(effectiveDensity))
