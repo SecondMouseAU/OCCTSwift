@@ -87,7 +87,7 @@
 | PeriodicNormalization tests | 28 |  |  |  |  |
 | StepData_StepWriter tests | 22 |  |  |  |  |
 | Handle lifecycle tests | 20 |  |  |  |  |
-| Handle lifecycle tests | 20 |  |  |  |  |
+| Borrowed handles audit | 18 |  |  |  |  |
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
