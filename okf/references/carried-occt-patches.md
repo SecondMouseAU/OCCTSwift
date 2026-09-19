@@ -53,6 +53,7 @@ without silently closing it, see
 | `0031-bspline-adaptor-cache-thread-safety-1153` | `BSplCLib_Cache`/`BSplSLib_Cache` unsynchronised span cache, plus `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s check-then-act on the cache handle; a first attempt (PR #1322) self-deadlocked and was rejected ([#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)) | not yet filed; if [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076) ever merges, retarget at its renamed classes rather than dropping | bundled OCCT includes the fix |
 | `0033-Interface_Static-thread-safety-mutex-1157` | `Interface_Static`'s shared STEP/IGES parameter table mutated concurrently; a recursive mutex over all seventeen entry points. Partial by design: no accessor lock stops two operations setting the same parameter from cross-talking, so the bridge's `igesMutex()` stays ([#1157](https://github.com/SecondMouseAU/OCCTSwift/issues/1157)) | not yet filed | bundled OCCT includes the fix |
 | `0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515` | `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]`/`bound[2]` are the U-direction sides. For any boundary set with straight V-direction sides the surface is independent of `U` and collapses onto the `U == V` diagonal; only `U == V` samples were right. Two lines, coefficients untouched, and `D1U` is exactly its derivative ([#1515](https://github.com/SecondMouseAU/OCCTSwift/issues/1515)) | not yet filed | bundled OCCT includes the fix |
+| `0035-STEPControl-Writer-drop-per-transfer-init-1259` | `STEPControl_Writer::Transfer` called `InitializeMissingParameters()` per transfer, writing through to the process-shared `STEPControl_ActorWrite`. A **backport** of upstream [OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259), which is otherwise already in this pin; byte-identical to their change. Nearly inert, since the controller constructor pre-populates what it would write ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | already merged upstream, nothing to file | bundled OCCT includes #1259 in full |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -72,8 +73,8 @@ recent activity first" step this prompted.
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-three patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The six it lacks, and why each matters, per
+`Scripts/patches/` holds twenty-four patches; the v3.0.0 release asset `Package.swift` pins holds
+seventeen. The seven it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Patch | Exposure today |
@@ -84,6 +85,7 @@ seventeen. The six it lacks, and why each matters, per
 | `0031` (#1153) | Same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression exists, so nothing to retire. |
 | `0033` (#1157) | Memory-safety hole in `Interface_Static`, reachable by every STEP/IGES read or write, masked in practice by the bridge's `igesMutex()`. A repin buys defence in depth for callers outside that mutex. |
 | `0034` (#1515) | `Shape.coonsAlgPatch` returns a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently: the array shape and the API are unaffected, so nothing reads as an error. The one kernel consumer, `GeomFill_ConstrainedFilling`, never calls `Value()` and is not affected. |
+| `0035` (#1403) | Almost nothing, and it is listed for completeness rather than exposure. The call it removes writes nothing in the default path because the controller constructor has already populated both fields it guards on; it bites only a caller that has customised shape-fix parameters while another thread writes. The real #1403 exposure is the `errhand` global and the shared write actor, neither of which this patch touches. |
 
 `kernel-integration.yml` built each of these once, on the PR that added it. No later job has.
 

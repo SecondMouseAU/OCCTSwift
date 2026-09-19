@@ -114,9 +114,9 @@ let occtTarget: Target = useLocalBinary
     // retired 0032 entry and CLAUDE.md's "Carrying OCCT source patches" section for the process
     // change this prompted: check upstream's own recent activity before opening a new investigation
     // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
-    // work already days old. Scripts/patches/ holds TWENTY-THREE patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 23 against a list of
-    // 17, and those six are the difference:
+    // work already days old. Scripts/patches/ holds TWENTY-FOUR patches; the pinned asset holds the
+    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 24 against a list of
+    // 17, and those seven are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
@@ -132,6 +132,10 @@ let occtTarget: Target = useLocalBinary
     //   0034  GeomFill_CoonsAlgPatch::Value samples bound[0]/bound[2] at V, not U        #1515
     //         (the first carried patch whose fix IS a Swift-reachable wrong answer rather
     //         than a race or an unreachable accessor; see the paragraph below)
+    //   0035  STEPControl_Writer::Transfer's per-call InitializeMissingParameters         #1403
+    //         (a BACKPORT of upstream #1259, already merged there and three quarters
+    //         already in this pin; nearly inert, because the constructor pre-populates what
+    //         it would write. Not the fix for #1403, which is measured separately)
     //
     // What that difference means is narrower than "untested", and the narrowing is worth having.
     // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But
