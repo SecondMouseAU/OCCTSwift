@@ -71,6 +71,17 @@
 | HLR/Drawing bridge tests | 38 |  |  |  |  |
 | Display Drawer tests | 22 |  |  |  |  |
 | Point Projection tests | 20 |  |  |  |  |
+| Drawing projection tests | 18 |  |  |  |  |
+| ISO drawing style constants | 16 |  |  |  |  |
+| Drawing dimensions | 14 |  |  |  |  |
+| Perspective eye anchor (#1036) | 12 |  |  |  |  |
+| Drawing.append dispatcher | 11 |  |  |  |  |
+| HLR ReflectLines | 10 |  |  |  |  |
+| Normal Projection | 9 |  |  |  |  |
+| EditorView ProductOps | 8 |  |  |  |  |
+| Drawing transform (#1183) | 7 |  |  |  |  |
+| Drawing auto centermarks | 6 |  |  |  |  |
+| Arrowhead/triangle-pointer | 6 |  |  |  |  |
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
