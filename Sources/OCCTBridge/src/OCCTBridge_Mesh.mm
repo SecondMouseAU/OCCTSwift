@@ -1068,7 +1068,10 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
     const double effectiveDensity = pcs.resolveDensity(density);
     // computeDensity() answers 0.0 for a shape it can find no usable face area on. The kernel
     // would return 0 points for that; refusing here says the same thing one call earlier, and
-    // keeps the divide below from ever seeing a zero.
+    // computeDensity() answers 2e+99 for a shape with no usable face area (the min-area
+    // search accumulator starts enormous and is never reduced when the face loop finds
+    // nothing). The kernel would produce 0 points for that; the guard here would not fire
+    // (2e+99 >> Confusion), and refusal happens one call later in copyPointCloudResults.
     if (effectiveDensity < Precision::Confusion())
       return false;
     if (!pcs.GeneratePointsByDensity(effectiveDensity))
