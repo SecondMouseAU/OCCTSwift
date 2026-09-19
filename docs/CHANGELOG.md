@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Eighteen doc snippets called a `Curve3D.arc` factory that does not exist (#1675)
+
+`Curve3D.arc(center:radius:startAngle:endAngle:)` appeared in 18 places across `docs/reference/` and
+two `///` comments. No such factory exists; `Curve3D` offers `arcOfCircle(start:interior:end:)` and
+`arc(through:_:_:)`, both three-point. Every one of those snippets failed to compile, which matters
+because `docs-current.md` asks for runnable snippets so context7 indexes real code, and eighteen
+copies of one wrong spelling read as authoritative.
+
+All 18 are translated to `arcOfCircle`, and the canonical translation is now pinned by a test that
+confirms it produces the curve the surrounding prose describes: curvature `0.2`, centre of curvature
+at the origin, endpoints at `(±5,0,0)`. `Document-Geometry-Constructors.md`'s concatenation example
+also gains a correction it always needed, since its arc started a unit away from the line it was
+concatenated onto and would not have joined even with a working factory.
+
 ### `TObjApplication`'s shared singleton is serialized (#1404)
 
 `TObj_Application::GetInstance()` returns one process-wide object, and two of its own fields were
