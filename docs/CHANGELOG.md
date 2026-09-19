@@ -21,6 +21,43 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `TObjApplication`'s shared singleton is serialized (#1404)
+
+`TObj_Application::GetInstance()` returns one process-wide object, and two of its own fields were
+mutated with no synchronization: `myIsVerbose`, behind `isVerbose`'s getter and setter, and
+`myIsError`, which `CreateNewDocument` writes before calling `NewDocument` and reads back as its
+return value. Two concurrent `createDocument()` calls could each clear the other's in-flight error
+signal, so a failed creation could be reported as a success.
+
+Both are measured, not inferred: ThreadSanitizer reports a write-write race at
+`TObj_Application.hxx:77` and a race at `TObj_Application.cxx:172` against the pinned kernel
+(`Scripts/repro/1404-tobjapplication/`). In 800 operations the corruption never surfaced as a wrong
+answer, which is why it needed a sanitizer to find.
+
+`OCCTTObjApplicationSetVerbose`, `OCCTTObjApplicationIsVerbose` and
+`OCCTTObjApplicationCreateDocument` now share `tobjApplicationMutex()`, held across the whole
+`CreateNewDocument` call rather than around the field writes. `TObjApplication` remains
+`@unchecked Sendable`, and that claim is now sound rather than aspirational: its doc comment used to
+tell callers to serialize the members themselves with `OCCTSerial.withLock { }`, which is no longer
+necessary.
+
+This is distinct from the kernel races fixed by #341/#344/#349/#353/#371/#374, none of which touched
+this class. No kernel patch was needed and none is carried.
+
+### `Scripts/tsan-stress.sh`'s swift mode can fail (found during #1404)
+
+`do_swift` ran `swift test --sanitize=thread` with no `TSAN_OPTIONS`, so ThreadSanitizer printed a
+detected race and the process still exited 0, because every suite in that mode's filter is
+deliberately an exerciser asserting "did not deadlock, did not crash". Measured on a tree with
+#1404's lock removed: a run reporting a data race in `TObj_Application::SetVerbose` exited 0 and the
+gate called it a pass. `do_run`, the C++ half, has always set
+`halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE`; the swift half never had it, for as long as
+the mode has existed, under a gate CLAUDE.md marks required for concurrency-touching changes.
+
+Both halves now fail the same way under the same suppression file. Verified against #1404's
+known-racy tree in both directions, and the full default filter (509 tests across 123 suites) is
+clean, so no suppression was added. Tooling only, no shipped behaviour change.
+
 ### Removed fourteen `BRepGraph` entry points with no kernel path (#1652)
 
 Eight `BRepGraph` setters silently discarded their arguments on the pinned kernel and six matching
