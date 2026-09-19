@@ -46,6 +46,38 @@
 //     analysis order above, which shares the numbering but stops at 4. Spoken by
 //     OCCTCurve3D/2D/SurfaceGetContinuity (#485) and OCCTBRepLibContinuityOfFaces.
 //
+// MARK: - Data-exchange return status
+//
+// IFSelect_ReturnStatus is the five-valued answer every STEP and IGES read, transfer and write
+// step gives, and until #1644 the bridge compared it to IFSelect_RetDone and threw the rest away,
+// so a caller could not tell a missing file from a malformed one from an empty model. Every entry
+// point that runs one of those steps now takes a trailing `OCCTReturnStatus* _Nullable outStatus`;
+// passing NULL is exactly the old behaviour.
+//
+// The five ordinals are IFSelect_ReturnStatus's own, in its own declaration order, and
+// OCCTBridge_Internal.h static_asserts each one so a kernel repin that renumbers the OCCT enum is
+// a compile error rather than five silently relabelled values.
+//
+//   OCCTReturnStatusNotReached  the call failed before OCCT produced a status at all: a rejected
+//                               argument, a null handle, a caught exception. Not an OCCT value.
+//   OCCTReturnStatusVoid        IFSelect_RetVoid, nothing to do, an empty model
+//   OCCTReturnStatusDone        IFSelect_RetDone, success
+//   OCCTReturnStatusError       IFSelect_RetError, bad input, the file is not what it claims
+//   OCCTReturnStatusFail        IFSelect_RetFail, the step ran and failed
+//   OCCTReturnStatusStop        IFSelect_RetStop, interrupted
+//
+// A function that runs more than one such step (transfer then write) reports the status of the
+// last step it attempted, so a failure names the step that failed.
+typedef enum
+{
+  OCCTReturnStatusNotReached = -1,
+  OCCTReturnStatusVoid       = 0,
+  OCCTReturnStatusDone       = 1,
+  OCCTReturnStatusError      = 2,
+  OCCTReturnStatusFail       = 3,
+  OCCTReturnStatusStop       = 4
+} OCCTReturnStatus;
+
 // MARK: - OCCT Class Cross-Reference Index
 //
 // Maps OCCT C++ classes to their OCCTBridge function names.
@@ -269,6 +301,8 @@
 // --- Contap ---
 // Contap_ContAna                      → OCCTContapSphereDir, OCCTContapCylinderDir,
 // OCCTContapSphereEye Contap_Contour                      → OCCTContapContour*
+// Contap_Line                         → OCCTContapContourLineAs*, OCCTContapContourLineArc*
+// Contap_Point                        → OCCTContapContourLineVertex*
 //
 // --- CPnts ---
 // CPnts_UniformDeflection             → OCCTCPntsUniformDeflection*
@@ -440,7 +474,8 @@
 // Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
 //                                       OCCTCurve2DJoinToBSpline
 // Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments,
-// OCCTCurve2DToArcsAndSegments Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+// OCCTCurve2DToArcsAndSegments Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate,
+//                                       OCCTGeomConvertApproxCurve2D (#1474)
 // Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
 //                                       since #562 deleted the second family that wrapped it)
 // Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers
@@ -538,7 +573,6 @@
 // LocOpe_Prism                        → OCCTLocOpePrism
 // LocOpe_Revol                        → OCCTLocOpeRevol
 // LocOpe_RevolutionForm               → OCCTLocOpeRevolutionForm
-// LocOpe_SplitDrafts                  → OCCTLocOpeSplitDrafts
 // LocOpe_SplitShape                   → OCCTLocOpeSplitShape*
 // LocOpe_Spliter                      → OCCTLocOpeSplitByWire*
 // LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
@@ -639,8 +673,14 @@
 //                                       driver that owns it; no direct wrap)
 // ShapeUpgrade_ConvertSurfaceToBezierBasis → OCCTShapeUpgradeConvertSurfaceToBezier
 //                                       (via ShapeUpgrade_ShapeConvertToBezier, as above)
-// ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
-// ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
+// ShapeUpgrade_FixSmallBezierCurves   → no direct wrap (#1491: no standalone Perform()/Compute();
+//                                       already exercised internally by
+//                                       ShapeUpgrade_ShapeConvertToBezier, see that entry below)
+// ShapeUpgrade_FixSmallCurves         → no direct wrap (#1491: no standalone Perform()/Compute();
+//                                       only ShapeUpgrade_WireDivide plugs it in, and only as a
+//                                       byproduct of an active curve split. The real standalone
+//                                       "fix small edges" op is a different class, see
+//                                       ShapeFix_Wireframe below)
 // ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeConvertToBezier,
 //                                       OCCTShapeUpgradeConvertCurves3dToBezier,
 //                                       OCCTShapeUpgradeConvertSurfaceToBezier
@@ -1010,6 +1050,18 @@ extern "C"
     double x2, y2, z2; // Point on curve 2
     double param2;
   } OCCTExtremaPointPair;
+
+  // #1514: a curve-to-surface extremum has one parameter on the curve side and two on the
+  // surface side, so it cannot be carried by OCCTExtremaPointPair's single param2. Same reasoning
+  // as OCCTExtremaSSPointPair (#1502), which is the surface-surface case of the same gap.
+  typedef struct
+  {
+    double squareDistance;
+    double x1, y1, z1; // Point on the curve
+    double param1;
+    double x2, y2, z2; // Point on the surface
+    double u2, v2;
+  } OCCTExtremaCSPointPair;
 
   // --- Image_AlienPixMap ---
 

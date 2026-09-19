@@ -139,7 +139,9 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape,
 /// @param face1 First face
 /// @param face2 Second face
 /// @param parameter Parameter along edge (0.0 to 1.0) where to measure angle
-/// @return Dihedral angle in radians (0 to 2*PI), or -1 on error
+/// @return The interior/material dihedral angle in radians (0 to 2*PI): less than PI for a
+///         convex edge, greater than PI for a concave one, or -1 on error. Classification uses
+///         ChFi3d::DefineConnectType, the same classifier OCCTEdgeGetConvexity calls (#1434).
 double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
                                 OCCTFaceRef face1,
                                 OCCTFaceRef face2,
@@ -584,7 +586,7 @@ int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef _Nonnull graph,
 ///
 /// `inputRootKinds` / `inputRootIndices` name the nodes in `graph` whose subshapes
 /// should be tracked; the input map is collected via
-/// BRepGraph_ShapesView::CollectHistoryInputs, so those roots must already be in
+/// BRepGraph::ShapesView::CollectHistoryInputs, so those roots must already be in
 /// `graph` (i.e. the graph the operation's input shape was built from).
 ///
 /// Only VERTEX / EDGE / FACE / SOLID are carried (BRepTools_History::IsSupportedType).
@@ -1254,16 +1256,17 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef _Nonnull graph,
 // MARK: - BRepGraph EditorView v0.162.0, geometric setters, location setters, PCurve API
 
 // CoEdge geometric setters
-void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef _Nonnull graph,
-                                 int32_t coedgeIndex,
-                                 double  u1,
-                                 double  v1,
-                                 double  u2,
-                                 double  v2);
+//
+// #1652 removed OCCTBRepGraphSetCoEdgeUVBox. There is no per-coedge UV box in 8.0.1:
+// BRepGraphInc::CoEdgeDef carries no UV field and BRepGraph_Tool::CoEdge::UVPoints derives the
+// endpoints from the PCurve, so the entry point had nothing to write and no reader that would
+// have consulted it. Set the PCurve instead (OCCTBRepGraphCoEdgeSetPCurve below).
+
 /// Set the geometric regularity (C^k continuity) for an edge across a pair of faces.
 /// face1Index == face2Index sets the seam continuity across a closed-surface seam line.
 /// Continuity uses GeomAbs_Shape: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
-/// Returns 1 if written, 0 if the LayerRegularity layer is not registered.
+/// Always returns 0 on the pinned kernel: BRepGraph_LayerRegularity, the only write path in
+/// the GA continuity model, is absent from libOCCT in 8.0.0p1, and `continuity` is not read.
 /// (OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity / SetSeamPairId
 ///  with this per-(edge, face1, face2) layer model. Seam-pair-id is structural in GA,
 ///  no setter exists; query via BRepGraph_Tool::CoEdge::SeamPair.)
@@ -1297,24 +1300,13 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef _Nonnull graph,
                                   int32_t orientation);
 
 // Location setters (12-double 3x4 matrix, gp_Trsf::SetValues convention; row-major).
-void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                            int32_t vertexRefIndex,
-                                            const double* _Nonnull matrix);
-void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                            int32_t coedgeRefIndex,
-                                            const double* _Nonnull matrix);
-void OCCTBRepGraphSetWireRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                          int32_t wireRefIndex,
-                                          const double* _Nonnull matrix);
-void OCCTBRepGraphSetFaceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                          int32_t faceRefIndex,
-                                          const double* _Nonnull matrix);
-void OCCTBRepGraphSetShellRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                           int32_t shellRefIndex,
-                                           const double* _Nonnull matrix);
-void OCCTBRepGraphSetSolidRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                           int32_t solidRefIndex,
-                                           const double* _Nonnull matrix);
+//
+// A reference carries a location only if its storage struct has a LocalLocation field, and in
+// 8.0.1 only BRepGraphInc::ChildRef and BRepGraphInc::OccurrenceRef do. #1652 therefore removed
+// the six per-topology setters (vertex/coedge/wire/face/shell/solid), which had no field to
+// write; there is not even a coedge reference kind (BRepGraph_RefId::Kind runs Shell, Face,
+// Wire, Vertex, Solid, Child, Occurrence). Place topology through the occurrence or child
+// reference that owns it. Measured in Scripts/repro/1652-brepgraph-noop-setters/.
 void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
                                                 int32_t occurrenceRefIndex,
                                                 const double* _Nonnull matrix);
@@ -1324,39 +1316,9 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
 
 // MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
 
-/// Get the local TopLoc_Location of a vertex reference entry.
-/// @param graph The BRepGraph instance
-/// @param vertexRefIndex The vertex reference index
-/// @param outMatrix Output buffer for 12 doubles (3x4 row-major matrix), must not be NULL
-/// @return true on success, false if the reference is invalid or an error occurred
-bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                            int32_t vertexRefIndex,
-                                            double* _Nonnull outMatrix);
-
-/// Get the local TopLoc_Location of a coedge reference entry.
-bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                            int32_t coedgeRefIndex,
-                                            double* _Nonnull outMatrix);
-
-/// Get the local TopLoc_Location of a wire reference entry.
-bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                          int32_t wireRefIndex,
-                                          double* _Nonnull outMatrix);
-
-/// Get the local TopLoc_Location of a face reference entry.
-bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                          int32_t faceRefIndex,
-                                          double* _Nonnull outMatrix);
-
-/// Get the local TopLoc_Location of a shell reference entry.
-bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                           int32_t shellRefIndex,
-                                           double* _Nonnull outMatrix);
-
-/// Get the local TopLoc_Location of a solid reference entry.
-bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef _Nonnull graph,
-                                           int32_t solidRefIndex,
-                                           double* _Nonnull outMatrix);
+// #1652 removed the six per-topology getters (vertex/coedge/wire/face/shell/solid) alongside
+// their setters: with no LocalLocation field on those reference structs there is nothing to
+// read, and each one could only ever report failure. See the setter note above.
 
 /// Get the local TopLoc_Location of an occurrence reference entry.
 /// @param graph The BRepGraph instance
@@ -1431,9 +1393,10 @@ void OCCTBRepGraphRepSetPolygon2D(OCCTBRepGraphRef _Nonnull graph,
 void OCCTBRepGraphRepSetPolygonOnTri(OCCTBRepGraphRef _Nonnull graph,
                                      int32_t polyRepId,
                                      OCCTPolyPolygonOnTriRef _Nonnull poly);
-void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef _Nonnull graph,
-                                                    int32_t polyOnTriRepId,
-                                                    int32_t triRepId);
+// #1652 removed OCCTBRepGraphRepSetPolygonOnTriTriangulationId. BRepGraphInc::
+// CoEdgePolygonOnTriRep is {ParentCoEdgeId, Polygon}: there is no triangulation id on the rep
+// to rebind. The owning triangulation is resolved at attach time through CoEdgeDef.FaceId ->
+// FaceDef.TriangulationRepId, so it follows OCCTBRepGraphSetFaceTriangulationRep.
 
 // MARK: - BRepGraph MeshView cache entry inspection (v0.164.0)
 //

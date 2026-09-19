@@ -1,0 +1,36 @@
+=== planar face, natural, 1 x 1 grid
+   face UV box            : u [0, 10]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 1
+   status DONE2 (split)   : false
+=== planar face, natural, 2 x 1 grid
+   face UV box            : u [0, 10]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 2
+   status DONE2 (split)   : false
+=== planar face, natural, 3 x 2 grid
+   face UV box            : u [0, 10]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 6
+   status DONE2 (split)   : false
+=== planar face, uniform, 3 x 2 grid
+   face UV box            : u [0, 10]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 6
+   status DONE2 (split)   : false
+=== cylinder lateral face, natural, 2 x 1 grid
+   face UV box            : u [0, 6.28319]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 2
+   status DONE2 (split)   : false
+=== cylinder lateral face, natural, 1 x 2 grid
+   face UV box            : u [0, 6.28319]  v [0, 10]
+   Init() connectivity ok : true
+   Perform()              : true
+   faces in: 1, faces out : 2
+   status DONE2 (split)   : false

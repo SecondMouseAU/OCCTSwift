@@ -2033,39 +2033,6 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    // MARK: - LocOpe_SplitDrafts
-
-    /// Split a face with draft angles on both sides of a wire.
-    ///
-    /// Uses LocOpe_SplitDrafts to create draft surfaces on a shape.
-    ///
-    /// - Parameters:
-    ///   - faceIndex: Index of the face to split (0-based)
-    ///   - wire: Wire defining the split line
-    ///   - direction: Extraction direction
-    ///   - planeOrigin: Origin of the neutral plane
-    ///   - planeNormal: Normal of the neutral plane
-    ///   - angle: Draft angle in radians
-    /// - Returns: Modified shape with draft, or nil on failure
-    public func splitDrafts(
-        faceIndex: Int, wire: Wire,
-        direction: SIMD3<Double>,
-        planeOrigin: SIMD3<Double>,
-        planeNormal: SIMD3<Double>,
-        angle: Double
-    ) -> Shape? {
-        let wireShape = Shape(handle: OCCTShapeFromWire(wire.handle))
-        guard
-            let ref = OCCTLocOpeSplitDrafts(
-                handle, Int32(faceIndex), wireShape.handle,
-                direction.x, direction.y, direction.z,
-                planeOrigin.x, planeOrigin.y, planeOrigin.z,
-                planeNormal.x, planeNormal.y, planeNormal.z,
-                angle)
-        else { return nil }
-        return Shape(handle: ref)
-    }
-
     /// Shape modification history for tracking what happened during operations.
     public class History {
         let historyRef: OCCTHistoryRef
@@ -2359,13 +2326,42 @@ extension Shape {
 
     // MARK: - BRepFeat_Builder
 
-    /// Feature-based fuse (union with part selection).
+    /// Feature-based fuse (union) of this shape with `tool`, via `BRepFeat_Builder`.
+    ///
+    /// Runs the full local-operation pipeline (`Init` → `SetOperation` → `Perform` →
+    /// `PerformResult`), so the returned shape is the real geometric union, matching
+    /// `BRepAlgoAPI_Fuse` on the same pair. For a plain fuse there is nothing to select, so unlike
+    /// ``featCut(with:)`` the whole tool is always kept.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+    /// let fused = box.featFuse(with: sphere)
+    /// print(fused?.volume ?? 0)   // 1261.799388
+    /// ```
+    ///
+    /// - Parameter tool: The shape to fuse into this one.
+    /// - Returns: The union shape, or nil on failure.
     public func featFuse(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderFuse(handle, tool.handle) else { return nil }
         return Shape(handle: h)
     }
 
-    /// Feature-based cut (subtraction with part selection).
+    /// Feature-based cut (subtraction) of `tool` from this shape, via `BRepFeat_Builder`.
+    ///
+    /// Runs the full local-operation pipeline (`Init` → `SetOperation` → `Perform` →
+    /// `PerformResult`) and keeps no parts of the split tool, so the returned shape is the real
+    /// geometric difference, matching `BRepAlgoAPI_Cut` on the same pair.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+    /// let cut = box.featCut(with: sphere)
+    /// print(cut?.volume ?? 0)   // 738.200612
+    /// ```
+    ///
+    /// - Parameter tool: The shape to subtract from this one.
+    /// - Returns: The difference shape, or nil on failure.
     public func featCut(with tool: Shape) -> Shape? {
         guard let h = OCCTBRepFeatBuilderCut(handle, tool.handle) else { return nil }
         return Shape(handle: h)
@@ -3030,13 +3026,28 @@ extension Shape {
         public let supportFace2: Shape
         /// Approximation tolerance achieved.
         public let tolerance: Double
-        /// First parameter on edge.
+        /// The fillet's parameter on the first edge of the whole request.
+        ///
+        /// `FilletSurf_Builder::FirstParameter()` takes no surface index, so this is one value for
+        /// the whole computation, repeated into every element rather than measured per surface
+        /// (#1399).
         public let firstParameter: Double
-        /// Last parameter on edge.
+        /// The fillet's parameter on the last edge of the whole request.
+        ///
+        /// Per request, not per surface, for the same reason as ``firstParameter``.
         public let lastParameter: Double
-        /// Start section status.
+        /// Where the fillet's start section sits relative to the edge it was built on.
+        ///
+        /// `FilletSurf_StatusType`, from `FilletSurf_Builder::StartSectionStatus()`: `0` = both
+        /// extremities on the edge, `1` = one extremity on the edge, `2` = neither.
+        ///
+        /// This is **not** ``FilletSurfaceResult/status``'s scale. That one is
+        /// `FilletSurf_StatusDone` (`0` = ok, `1` = not ok, `2` = partial); the two enums share
+        /// the ordinals `0...2` and mean unrelated things (#1399).
         public let startStatus: Int
-        /// End section status.
+        /// Where the fillet's end section sits relative to the edge it was built on.
+        ///
+        /// Same `FilletSurf_StatusType` scale as ``startStatus``.
         public let endStatus: Int
     }
 
@@ -3044,7 +3055,12 @@ extension Shape {
     public struct FilletSurfaceResult: Sendable {
         /// Fillet surface info for each computed surface.
         public let surfaces: [FilletSurfaceInfo]
-        /// Status: 0=ok, 1=notOk, 2=partial.
+        /// Overall outcome of the whole computation.
+        ///
+        /// `FilletSurf_Builder::IsDone()`'s `FilletSurf_StatusDone`: `0` = ok, `1` = not ok,
+        /// `2` = partial. Unrelated to ``FilletSurfaceInfo/startStatus`` and
+        /// ``FilletSurfaceInfo/endStatus``, which carry a different enum on the same ordinals
+        /// (#1399).
         public let status: Int
     }
 
@@ -3453,12 +3469,17 @@ extension Shape {
 
     /// Check if two shapes are valid for a boolean operation.
     ///
-    /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
+    /// Operation: matches `BOPAlgo_Operation`'s real ordinals, not a convenient-looking sequence:
+    /// 0=common, 1=fuse, 2=cut, 3=cut21 (`other` minus `self`), 4=section, 5=unknown. The bridge
+    /// passes `operation` straight through an unconditional `static_cast<BOPAlgo_Operation>`, so an
+    /// out-of-range or mismatched value silently selects the wrong check rather than failing
+    /// (#1540). The default, 5 (unknown), is the generic pairwise check with no operation-specific
+    /// dimension-compatibility test.
     ///
     /// `isValidForBoolean(with:)` is the same check at these defaults (#1297: the two used to
     /// reach independent bridge implementations; `isValidForBoolean(with:)` now forwards here).
     public func isBooleanValidWith(
-        _ other: Shape, operation: Int32 = 0,
+        _ other: Shape, operation: Int32 = 5,
         testSmallEdges: Bool = true,
         testSelfInterference: Bool = true
     ) -> Bool {

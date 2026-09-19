@@ -61,7 +61,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -197,7 +196,6 @@
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <ShapeFix_Solid.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax1.hxx>
@@ -221,8 +219,6 @@
 #include <gp_Vec.hxx>
 
 #include <TColgp_Array2OfPnt.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
 
 #include <TopAbs.hxx>
 #include <TopExp.hxx>
@@ -1307,6 +1303,9 @@ OCCTChamfer2DResult OCCTChFi2dChamferEdges(OCCTShapeRef _Nonnull edge1,
 
 OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
                                          OCCTShapeRef _Nonnull edge2,
+                                         double planeOx,
+                                         double planeOy,
+                                         double planeOz,
                                          double planeNx,
                                          double planeNy,
                                          double planeNz,
@@ -1320,7 +1319,7 @@ OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
   {
     TopoDS_Edge      e1 = TopoDS::Edge(edge1->shape);
     TopoDS_Edge      e2 = TopoDS::Edge(edge2->shape);
-    gp_Pln           plane(gp_Pnt(0, 0, 0), gp_Dir(planeNx, planeNy, planeNz));
+    gp_Pln           plane(gp_Pnt(planeOx, planeOy, planeOz), gp_Dir(planeNx, planeNy, planeNz));
     ChFi2d_FilletAPI fillet(e1, e2, plane);
     if (!fillet.Perform(radius))
       return result;

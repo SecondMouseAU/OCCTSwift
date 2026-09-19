@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v3.0.1
+## Current: v3.0.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the seventeen carried patches `0010`-`0012` and
 `0014`-`0027`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
@@ -19,41 +19,2739 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ---
 
-## v3.0.1
-
-### OCCTBridge_Modeling split into HLR and AdvancedModeling domains (#1071)
-
-The monolithic `OCCTBridge_Modeling.h/.mm` (62K lines) is split into three domain-specific files:
-
-- `OCCTBridge_HLR.h/.mm` — Hidden Line Removal / Drawing (HLRBRep, HLRAlgo, BRepMesh)
-- `OCCTBridge_AdvancedModeling.h/.mm` — Filleting, drafting, defeaturing, pipe sweeps, thread cutters, B-spline/ruled surfaces, shell-with-open-faces
-- `OCCTBridge_Modeling.h/.mm` — Remaining core modeling (booleans, offsets, sweeps, features, healing, etc.)
-
-No public Swift API changes. The C bridge headers are re-exported through `OCCTBridge.h`, so existing imports continue to work. Internal only.
-
-### Deflection validation added to `OCCTDrawingCreatePoly` (#1130 review)
-
-`OCCTDrawingCreatePoly` now validates `deflection > 0` before passing to `BRepMesh_IncrementalMesh`, returning `NULL` for non-positive values instead of risking undefined behaviour.
-
-### Internal comment and type safety fixes (#1130 review)
-
-- Duplicate includes removed from `OCCTBridge_AdvancedModeling.mm`
-- Misleading comment for `OCCTShapeCreateRuled` corrected (uses `BRepFill::Shell`, not `BRepFill::Face`)
-- `occtPipeShellSetMode` parameter changed from `int32_t` to `OCCTPipeMode` enum for compile-time safety
-
----
-
 ## Unreleased
+
+### Removed fourteen `BRepGraph` entry points with no kernel path (#1652)
+
+Eight `BRepGraph` setters silently discarded their arguments on the pinned kernel and six matching
+getters could only ever return `nil`. Measured against OCCT 8.0.1 rather than inferred from the
+bridge's comments (probe and transcript in `Scripts/repro/1652-brepgraph-noop-setters/`), none of
+the fourteen has a kernel path, and none is reachable another way, so all fourteen are removed:
+
+```
+setCoEdgeUVBox(_:u1:v1:u2:v2:)
+setVertexRefLocalLocation(_:matrix:)     vertexRefLocalLocation(_:)
+setCoEdgeRefLocalLocation(_:matrix:)     coEdgeRefLocalLocation(_:)
+setWireRefLocalLocation(_:matrix:)       wireRefLocalLocation(_:)
+setFaceRefLocalLocation(_:matrix:)       faceRefLocalLocation(_:)
+setShellRefLocalLocation(_:matrix:)      shellRefLocalLocation(_:)
+setSolidRefLocalLocation(_:matrix:)      solidRefLocalLocation(_:)
+repSetPolygonOnTriTriangulationId(_:triRepId:)
+```
+
+A `BRepGraph` reference carries a location only if its storage struct declares a `LocalLocation`
+field, and in 8.0.1 only `BRepGraphInc::ChildRef` and `BRepGraphInc::OccurrenceRef` do; there is no
+coedge reference kind at all. A coedge's UV endpoints are derived from its PCurve, not stored. A
+polygon-on-triangulation resolves its triangulation through the owning face, not through a rep id.
+
+Migration: use `setOccurrenceRefLocalLocation(_:matrix:)` or `setChildRefLocalLocation(_:matrix:)`
+to place topology, `coEdgeSetPCurve(_:curve2D:)` or
+`coEdgeAddPCurve(edgeIndex:faceIndex:curve2D:first:last:orientation:)` to move UV endpoints, and
+`setFaceTriangulationRep(_:triRepId:)` to change the triangulation a polygon-on-triangulation
+resolves against. Calls to the removed members were no-ops, so deleting them changes no behaviour.
+
+Two adjacent doc comments in the same family were corrected against the same measurement:
+`createPolygonOnTriRep(_:triRepId:)` accepts a `triRepId` the bridge does not read, and
+`coedgeRefCount` returns the coedge *definition* count because no coedge reference kind exists.
+
+Operation count: 4,365 to 4,351.
+
+### STEP and IGES failures now say why (#1644)
+
+`IFSelect_ReturnStatus`, OCCT's five-valued answer for every data-exchange step, reaches Swift as
+a new `IOStatus` enum instead of being collapsed to a `Bool` at all 33 entry points that produce
+one. Three error cases carry it:
+
+```swift
+do {
+    let shape = try Shape.loadSTEP(fromPath: path)
+} catch ImportError.readFailed(let path, .error) {
+    print("\(path): check the path, OCCT could not open it")
+} catch ImportError.readFailed(let path, .fail) {
+    print("\(path): opened, but this is not a STEP file")
+}
+```
+
+- `ImportError.readFailed(path:status:)`, thrown by the STEP and IGES loaders on `Shape`.
+- `Exporter.ExportError.writeFailed(path:status:)`, thrown by the STEP writers and
+  `optimizeSTEP`.
+- `DocumentError.exchangeFailed(url:status:)`, thrown by the document STEP load and write entry
+  points.
+
+`IOStatus` keeps OCCT's own names (`void`, `done`, `error`, `fail`, `stop`) and adds `notReached`
+for a call that failed before OCCT produced a status. The BREP, STL and IGES **writers** produce
+no such status and keep the `importFailed`/`exportFailed` cases they always threw.
+
+In the bridge, 33 entry points take a trailing `OCCTReturnStatus* _Nullable outStatus`; passing
+`NULL` is exactly the old behaviour, which is what the counting entry points
+(`Shape.stepRootCount` and siblings) still do. `OCCTBridge_Internal.h` `static_assert`s each
+`OCCTReturnStatus` value against its `IFSelect_ReturnStatus` constant, so a kernel repin that
+renumbers that enum is a compile error rather than five silently relabelled values.
+
+New reference page: [`docs/reference/IOStatus.md`](docs/reference/IOStatus.md).
+
+### An analytic Contap contour carries its geometry (#1635)
+
+`ContapContourResult` could report a contour as points, which is what `Contap_Line` holds for a
+numerically traced contour and for nothing else. A tangent ruling, a silhouette circle and a stretch
+of the face's own boundary each live in a different `Contap_Line` accessor, and every one of those
+throws `Standard_DomainError` on a line of the wrong type, so a caller had to guess.
+
+Six operations are added. `geometry(line:)` reads the line's type first and returns the
+`ContourGeometry` case that applies: `.line` from `Contap_Line::Line()`, `.circle` from `Circle()`,
+`.walking` from the traced points, `.restriction` from `Arc()`. `arcRange(line:)` and
+`arcPoint(line:parameter:)` evaluate a boundary arc in the face's own UV space.
+`vertexCount(line:)`, `vertex(line:index:)` and `vertices(line:)` read the `Contap_Point` vertices,
+which exist on every contour type: a cylinder's tangent ruling has two, where it meets the face's
+boundary.
+
+`ContourVertex.parameterOnArc` is `Double?` rather than `Double`, because
+`Contap_Point::ParameterOnArc()` throws `Standard_DomainError` when `IsOnArc()` is false and zero is
+itself a valid parameter. Measured against the pinned kernel in
+`Scripts/repro/1635-contap-analytic-geometry/`.
+
+### `bsplineRestriction` can convert planes, cylinders, cones, spheres, tori and Bezier surfaces (#1637)
+
+`ShapeCustom_RestrictionParameters` was default-built inside the bridge and unreachable from Swift.
+Its fourteen per-kind switches decide whether `ShapeCustom::BSplineRestriction` touches a surface
+at all, and six of them default to `false`, so a cylinder came back with 0 BSpline faces and 3
+still elementary with no diagnostic.
+
+`Shape.bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`
+gains a `parameters:` argument, defaulting to `.occtDefaults`, so existing calls are unchanged:
+
+```swift
+let untouched = cylinder.bsplineRestriction()                              // 0 BSpline faces
+let converted = cylinder.bsplineRestriction(parameters: .allSurfaceTypes)  // 3 BSpline faces
+
+var onlyCylinders = Shape.BSplineRestrictionParameters.occtDefaults
+onlyCylinders.convertCylindricalSurface = true
+let wallOnly = cylinder.bsplineRestriction(parameters: onlyCylinders)      // 1, the wall
+```
+
+`Shape.BSplineRestrictionParameters` carries all fourteen switches, each defaulting to the kernel's
+own value, plus `.occtDefaults` and `.allSurfaceTypes`. A test compares the Swift defaults field by
+field against `occtDefaultBSplineRestrictionParameters()`, so they cannot drift from the kernel.
+
+`GMaxDegree` and `GMaxSeg` are **not** exposed. They are the class's two global caps and they are
+measured to have no effect next to the per-call `maxDegree` / `maxSegments`: on a torus,
+`GMaxDegree` of 3, 5 and 15 all deliver degree 7, while the per-call `maxDegree` of 3, 5 and 9
+delivers 3, 5 and 7. Exposing them would be exposing a no-op.
+
+The simpler `bsplineRestriction(surfaceTolerance:curveTolerance:maxDegree:maxSegments:)` keeps
+OCCT's defaults deliberately, and its reference page now points at the configurable entry point.
+
+### `ExtremaElSS` reports only what `Extrema_ExtElSS` computes (#1632)
+
+**Breaking.** `ExtremaElSS.planeToSphere` and `ExtremaElSS.sphereToSphere` are removed, and
+`ExtremaElSS.planeToPlane` returns `(isParallel: Bool, squareDistance: Double?)` in place of
+`(isParallel: Bool, results: [ExtremaResult])`.
+
+Plane to plane is the only pair `Extrema_ExtElSS` implements. Its `Perform` overloads for
+plane/sphere, sphere/sphere, sphere/cylinder, sphere/cone and sphere/torus are all
+`throw Standard_NotImplemented();` in OCCT itself, measured against the pinned 8.0.1 kernel in
+`Scripts/repro/1632-extremaelss-refusal/`. The two removed methods could not return a result on any
+input, and leaving them in to answer `[]` would have spelled a kernel gap exactly the way this
+namespace spells "no extrema found". For either pair use `Surface.extremaSS(other:)`, which is
+`GeomAPI_ExtremaSurfaceSurface` and answers both numerically.
+
+`planeToPlane` reports no point pair because OCCT computes none.
+`Extrema_ExtElSS::Perform(gp_Pln, gp_Pln)` fills its square-distance array and leaves both point
+arrays as null handles, so `Points()` there is an uncatchable fault, and the pair the old shape
+handed back was `SIMD3(0, 0, 0)` rather than a measurement. Nor is there a pair worth fabricating:
+for two parallel planes every point of one, paired with its own projection onto the other, is a
+minimum. Crossing planes answer `squareDistance == nil`, since their distance is zero all along
+their intersection line and `Extrema_ExtElSS` records no extremum for that.
+
+`ExtremaResult.point1` and `point2` lose the caveat that named this case, since it was the only one.
+
+```swift
+let r = ExtremaElSS.planeToPlane(
+    plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+    plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
+// r.isParallel == true, r.squareDistance == 25
+```
+
+### `Shape.updateEdgeTolerance` takes the ceiling that decides whether it runs, and reports what moved (#1639)
+
+`OCCTBRepLibUpdateEdgeTolerance` hardcoded `BRepLib::UpdateEdgeTol`'s `MaxToleranceToCheck` as
+`tolerance * 100`. That bound is what decides whether the call measures anything at all: OCCT
+returns `false` untouched when the edge's own tolerance is already above it. Measured on a box
+whose edge tolerances were forced to 0.05 (`Scripts/repro/1639/probe.mm`):
+
+```
+   forced 0.05, maxCheck inf       before 0.05   returned true   after 1e-07   moved: YES
+   forced 0.05, maxCheck tol*100   before 0.05   returned false  after 0.05    moved: no
+```
+
+`maxToleranceToCheck` is now a parameter, defaulting to `.infinity`, which examines every edge.
+
+The return type changes from `Bool` to `Shape.EdgeToleranceUpdate?`. `BRepLib::UpdateEdgeTol`'s own
+`Bool` is `true` on every path that is not a refusal, so it never answered "did the tolerance
+change"; the new type carries `toleranceBefore`, `toleranceAfter` and the derived `changed`, and
+`nil` means the kernel refused (degenerate edge, or one already looser than the ceiling) or the
+input was not an edge.
+
+```swift
+let edge = imported.subShapes(ofType: .edge)[0]
+if let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-7), update.changed {
+    print("tolerance \(update.toleranceBefore) -> \(update.toleranceAfter)")
+}
+```
+
+`tolerance` is still `MinToleranceRequest` and is still never written to the edge. OCCT can lower
+the tolerance as well as raise it.
+
+### `Shape.composeShell` can split a face (#1638)
+
+The bridge wrapped the face's own surface in a 1 x 1 `ShapeExtend_CompositeSurface`, and
+`ShapeFix_ComposeShell` cuts along the joints **between** patches, so a one-patch grid had nothing
+to cut along: one face went in and one came out, at any precision, with `Perform()` returning true.
+
+`composeShell` gains `uPatches` and `vPatches`, both defaulting to 1, so existing calls behave
+exactly as before. The grid is the face's own surface tiled over the face's UV box as
+`Geom_RectangularTrimmedSurface` patches, so no extra caller input is needed:
+
+```swift
+if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
+    let quarters = face.composeShell(uPatches: 4)
+{
+    print(quarters.subShapes(ofType: .face).count)  // 4, quarter cylinders
+}
+```
+
+Measured on a 10 x 10 planar face: 2 x 1 gives 2 faces, 1 x 2 gives 2, 3 x 2 gives 6, 4 x 4 gives
+16, and the pieces tile the original area exactly. On a cylinder's lateral face, 2 x 1 gives 2 and
+1 x 2 gives 2.
+
+Even at the 1 x 1 default the call still does the wire rebuild, which is what it was documented as
+being good for.
+
+`ShapeExtend_Parametrisation` is deliberately not exposed. The patches are sub-ranges of the face's
+own surface, so `ShapeExtend_Natural` reproduces the face's own parametrisation exactly and the
+face's pcurves line up with the composite's global UV; the other two modes renumber the joints away
+from the pcurves the face already carries.
+
+### `Geom2dEval`'s ten evaluators return optionals, so a refused call is not the origin (#1646)
+
+Every `Geom2dEval` evaluator now returns an optional, and `nil` means the call was refused rather
+than answered. They were non-optional functions over `void` bridge calls that wrote out-parameters,
+so when #1629 caught the `Standard_ConstructionError` these curves raise on amplitude 0, radius 0
+or growth rate 0, the caller was handed the origin and no way to tell it from a real answer.
+`Geom2dEval.sineWaveD0(amplitude: 1, omega: 1, phase: 0, u: 0)` is exactly `(0, 0)`.
+
+```swift
+// A well-formed call answers.
+if let p = Geom2dEval.sineWaveD0(amplitude: 1, omega: 2 * .pi, phase: 0, u: 0.25) {
+    print(p)
+}
+
+// A zero amplitude is refused, not answered with the origin.
+let refused = Geom2dEval.sineWaveD0(amplitude: 0, omega: 1, phase: 0, u: 0.5)
+print(refused == nil)  // true
+```
+
+The affected methods are `archimedeanSpiralD0`/`D1`, `logarithmicSpiralD0`/`D1`,
+`circleInvoluteD0`/`D1` in both the origin and the placement overloads, and `sineWaveD0`/`D1`. The
+ten corresponding `OCCTGeom2dEval*` bridge functions return `bool` instead of `void`.
+
+A refusal covers more than a throw. Measured against the pinned kernel in
+`Scripts/repro/1646-evaluator-contract/`, OCCT's own argument checks are written `<= 0`, and every
+comparison against NaN is false, so a non-finite argument constructs successfully and evaluates to
+a NaN point; and `Geom2dEval_LogarithmicSpiralCurve(ax, 1, 1).EvalD0(1000)` is NaN from arguments
+the constructor accepts. The flag is therefore taken from the outputs: a finite result is a
+measurement and nothing else is.
+
+### `Shape.fixedFreeBounds` returns the repaired shape, and the wires alongside it (#1636)
+
+`ShapeFix_FreeBounds::GetShape()` was never read. The `shape` member of the result was a compound
+of the free-bound wires, so a caller asking for the repaired shape got something with no faces in
+it, and the `fixedCount` member was the number of closed wires rather than a count of repairs.
+
+The return type changes from `(shape: Shape, fixedCount: Int)?` to `Shape.FreeBoundsRepair?`:
+
+| member | what it is |
+|---|---|
+| `shape` | `ShapeFix_FreeBounds::GetShape()`, the modified source shape |
+| `closedWires` / `openWires` | compounds of the free-bound wires, `nil` when there is none |
+| `closedWireCount` / `openWireCount` | how many wires are in each |
+
+```swift
+let openShell = Shape.compound(box.subShapes(ofType: .face).dropLast())!
+if let repair = openShell.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) {
+    print(repair.shape.subShapes(ofType: .face).count)   // 5, the faces are still there
+    print(repair.closedWireCount, repair.openWireCount)  // 1 0
+}
+```
+
+Migration: `result.shape` is now the repaired shape rather than the wires, and the old
+`result.fixedCount` is `result.closedWireCount`. To keep the previous behaviour exactly, read
+`result.closedWires` and `result.openWires`.
+
+Two behaviours are documented rather than changed. `closingTolerance` must exceed
+`sewingTolerance` or OCCT performs no connection at all, which is the pinned header's own
+precondition and is still unenforced. And the analyser wants a **compound of faces**: a bare face
+comes back with zero wires of either kind.
+
+### `MathSolver.eigenvalues` / `.eigenvaluesAndVectors` take the n-1 real off-diagonal entries (#1643)
+
+The `subdiagonal` parameter is now `offDiagonal`, and it takes `diagonal.count - 1` entries
+rather than `diagonal.count`:
+
+```swift
+// Before: n entries, and OCCT silently discarded subdiagonal[0].
+MathSolver.eigenvalues(diagonal: [2, 2, 2], subdiagonal: [0, -1, -1])
+// After: the n - 1 entries the matrix has, in matrix order.
+MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1])   // 2 - sqrt(2), 2, 2 + sqrt(2)
+```
+
+`math_EigenValuesSearcher`'s `shiftSubdiagonalElements` copies `work(i-1) = work(i)` over
+`2...n` and then zeroes `work(n)`, so the caller's first element never reached the matrix.
+Three doc layers said the last one was the dead slot until #1399 measured it, and the example
+that shipped in `MathSolver.eigenvalues`' own doc comment, `subdiagonal: [1.0, 1.0, 0.0]`,
+therefore computed the spectrum of off-diagonals `(1, 0)` while claiming `(1, 1)`: `[1, 3, 2]`
+rather than `2 - sqrt(2), 2, 2 + sqrt(2)`. Renaming the label with the shape makes an
+un-migrated call a compile error rather than a silently different matrix.
+
+A 1x1 matrix now takes an empty `offDiagonal`, and `diagonal` must be non-empty. The bridge's
+`OCCTMathEigenValues` / `OCCTMathEigenValuesAndVectors` changed the same way, with
+`offDiagonal` nullable only when `n == 1`.
+
+### `Shape.revolutionToElementary()` is removed; it ran its own inverse (#1634)
+
+`ShapeCustom::ConvertToRevolution` converts elementary periodic surfaces **into** surfaces of
+revolution, the opposite of what `revolutionToElementary()` said and of what all three doc layers
+claimed. It called the identical OCCT static as
+[`withSurfacesAsRevolution()`](docs/reference/Shape-Measurement.md#withsurfacesasrevolution),
+through a second bridge function (`OCCTShapeRevolutionToElementary`) whose body was byte-identical
+to `OCCTShapeCustomConvertToRevolution`'s.
+
+Both the Swift method and the bridge function are removed. Migration:
+
+- for the direction the method actually ran, call `withSurfacesAsRevolution()`;
+- for the direction its name promised, call `sweptToElementary()`, which has always been
+  `ShapeCustom::SweptToElementary`.
+
+Measured on a cylinder, `withSurfacesAsRevolution()` takes the surface-of-revolution face count
+from 0 to 1 (the lateral face; the two planar caps are left alone) and `sweptToElementary()` takes
+it back to 0. `Face.surfaceType` cannot see this: it is `BRepAdaptor_Surface::GetType()`, which
+canonicalises a surface of revolution built on a line back to `GeomAbs_Cylinder`. Read
+`Shape.extractFaceSurface()?.typeName` instead.
+
+### `Curve3D.extrema` and `minimumDistance` take the curve's endpoints into account (#1633)
+
+`Curve3D.extrema(from:)`, `Curve3D.extrema(from:uMin:uMax:)` and
+`Curve3D.minimumDistance(from:)` reported interior extrema only. The bridge called
+`ExtremaPC_Curve::Perform`, the interior solve, rather than `PerformWithEndpoints`, so a query
+point with no perpendicular foot on the curve, which is every point past the end of a bounded one,
+came back `[]` and `nil`. A segment `[0, 10]` along +X queried from `(20, 0, 0)` answered `nil`
+where the distance to the nearer end is 10.
+
+```swift
+let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+seg.minimumDistance(from: SIMD3(20, 0, 0))   // 10.0. Was nil.
+seg.extrema(from: SIMD3(20, 0, 0)).count     // 2, the domain's two ends. Was 0.
+```
+
+The interior solve's only extremum can also be a *maximum*, so this was not only a missing value: a
+half circle of radius 5 queried from `(0, -6, 0)` reported its minimum distance as 11, the far side
+of the arc, where the true minimum is either end at `sqrt(61)` = 7.8102.
+
+A closed curve such as a full circle, and an unbounded one such as a line, have no domain ends to
+add and are unchanged. This is the distinction #580 settled for
+`Shape.pointEdgeExtrema(point:edgeIndex:)`. Measured across every curve kind `ExtremaPC_Curve`
+dispatches over in `Scripts/repro/1633-extremapc-endpoints/`.
+
+### Three unreachable bridge functions removed, and the functions they duplicated got real tests (#1640)
+
+`OCCTWireMakePolygonFromPoints`, `OCCTShapeUpgradeClosedFaceDivide` and
+`OCCTShapeUpgradeSplitSurfaceArea` were compiled into every build and called from nothing. Measured
+against the entry point each duplicates, on the pinned kernel, all three are exact duplicates:
+
+- `OCCTWireMakePolygonFromPoints` and `OCCTWireCreateFastPolygon` build the same 4-edge, closed,
+  length-40 wire. `BRepBuilderAPI_MakePolygon` holds a `BRepLib_MakePolygon` member and delegates
+  to it.
+- `OCCTShapeUpgradeClosedFaceDivide` and `OCCTShapeUpgradeDivideClosed` give the same 4, 5 and 6
+  faces on a cylinder at 1, 2 and 3 split points, and the same 3 on a sphere.
+- `OCCTShapeUpgradeSplitSurfaceArea` and `OCCTShapeDivideByParts` give the same face count and the
+  same volume at 2, 3, 4 and 9 parts.
+
+No Swift API changes. The C surface loses three symbols that nothing in this repo, and nothing that
+could have been tested, ever called.
+
+`Shape.dividedByParts(_:)` and `Shape.dividedClosedFaces(splitPoints:)` gain real assertions and
+two measured behaviours in their reference pages: `dividedByParts(1)` and
+`dividedClosedFaces` on a shape with no closed face both return **nil**, which means "nothing to
+do" rather than "failed"; and a `dividedByParts` result that was split on both axes comes back
+`BRepCheck_Analyzer`-invalid with its volume preserved exactly, which is a property of the two-axis
+split rather than of the entry point (`OCCTShapeDivideByNumber(shape, 2, 2)` is equally invalid).
+
+### The four dead `math_*` adapter copies in the Spatial bridge split are gone (#1645)
+
+`OCCTMathFuncAdapter`, `OCCTMathFuncSetAdapter`, `OCCTMathMultiVarAdapter`,
+`OCCTMathMultiVarGradAdapter`, `OCCTMathHessianAdapter` and `OCCTMathSimpleFuncAdapter` were
+defined in all five `OCCTBridge_Spatial_*.mm` files and instantiated only in
+`_MathSolvers.mm`. The four unused copies (944 lines) are deleted, and the live definitions
+now sit in an anonymous namespace, which drops 68 externally visible weak vtable and
+type-info symbols from the link and makes the identical-copies-across-TUs shape that produced
+#1418 impossible for these six. Internal only: no bridge function, Swift API or behaviour
+changed.
+
+### `reachable()`'s wrapper-type expansion follows a chain, not one hop (#1642)
+
+`check-bridge-index.py`'s reachability walker expanded bridge wrapper types exactly once, over a
+snapshot of each function's name set, so a class held by a type held by a type was reported as not
+reached. `OCCTSelectorPick` names `OCCTSelectorRef`, `OCCTSelector` holds `OCCTHeadlessSelector`,
+and that class holds the `SelectMgr_SelectingVolumeManager` it calls `InitPointSelectingVolume` on;
+hop one was taken and hop two was not.
+
+`census-doc-occt-attribution.py` borrows the same walker, so the effect there was to score a
+corrected attribution worse than the wrong one it replaced: naming what the bridge actually calls
+removed three `docs/reference/Selection.md` findings and added four false ones. The type table is
+now closed over itself before the per-function expansion, bounded like the helper loop beside it.
+Whole-tree census findings fall from 233 to 228 with nothing new appearing, recall against the 32
+known findings is unchanged, and 14 of 4,269 bridge functions gain reach.
+
+`Scripts/repro/928-over-coverage-detector/validate_known_findings.py` is also fixed: it had been
+unrunnable since the census's `run()` grew a fourth return value, and it is the only tool that
+measures that recall.
+
+### `Shape.splitDrafts` is removed (#1393)
+
+The operation could not succeed on any input. `LocOpe_SplitDrafts` accepts only a planar face and
+then pipes along the intersection of two planes, always an infinite line, which
+`GeomConvert::CurveToBSplineCurve` refuses by documented design, so every valid call threw and the
+bridge returned `nil`.
+
+It is removed rather than repaired because OCCT removed it first: the class was deleted upstream on
+2026-08-07 in [OCCT#1442](https://github.com/Open-Cascade-SAS/OCCT/pull/1442) as dead code with no
+caller in the OCCT tree. Carrying a kernel patch to revive it would have expired at the next repin
+and could never have been filed upstream.
+
+Gone with it: `OCCTLocOpeSplitDrafts`, its declaration and cross-reference index row, eleven unused
+`#include`s, the reference-page section and the API_REFERENCE entry. The investigation is kept in
+`Scripts/repro/1393-splitdrafts/`, including the GTest written for the upstream PR that could not
+be filed, since it is the only executable statement of what a working `LocOpe_SplitDrafts`
+produces.
+
+### The unlaned refman-coverage lane (#1399)
+
+`Scripts/repro/1399-refman-coverage-unlaned/` audits the 643 wrapped classes #820 found in no
+lane's table. They split into 479 checked continuously by `census-doc-occt-attribution.py`, 138
+real algorithm classes read by hand in four families, and 26 containers. Across the 164 read by
+hand: `ok` 41, `deliberate, recorded` 64, `under` 11, `over` 48.
+
+`over` dominating is the opposite of what the pass expected. A class named nowhere in `docs/`
+almost always meant the capability was documented under its Swift name with the wrong OCCT class
+beside it: a neighbour, a base class, a header filename, or a sub-view of the right object.
+
+The larger finding is that the census's 431 findings had never been read; 212 were real. Fourteen
+code defects came out of an audit whose subject was documentation.
+
+### Fourteen OCCT attributions in `docs/reference/` named a class the bridge does not reach (#1399)
+
+The `healing` family of #1399's unlaned-coverage read (`ShapeFix`/`ShapeAnalysis`/`ShapeUpgrade`/
+`ShapeCustom`/`ShapeExtend`, `BRepTools`/`BRepLib`/`BRepTopAdaptor`, `BRepBndLib`/`BndLib`/`Bnd_*`,
+`BRepGProp`/`GProp_*`, `BRepGraph_*`) checked all 31 classes against the pinned 8.0.1 headers and
+the real bridge bodies. Documentation only; no API or behaviour changes.
+
+- **Eleven `GProp` attributions.** `GeometryProperties.cylinderSurfaceArea`, `cylinderVolume`,
+  `coneSurfaceArea`, `coneVolume`, `sphereSurfaceArea`, `sphereVolume`, `torusSurfaceArea` and
+  `torusVolume` were attributed to `GProp_PGProps`, `GProp_PEquation` or `GProp_GProps`. Every
+  surface member builds `GProp_SelGProps` and every volume member builds `GProp_VelGProps`.
+  `GProp_PGProps` is the point-set class the `pointSetCentroid` family really uses, on the same
+  page.
+- **Eight `BndLib` attributions.** `BndLib.ellipse`, `.cone`, `.circleArc`, `.ellipseArc`,
+  `.parabolaArc`, `.hyperbolaArc`, `.line` and `.sphere` named `BndLib_Add3dCurve` or
+  `BndLib_AddSurface`; all eight call `BndLib::Add` overloads directly. `BndLib.edge` and
+  `BndLib.face` are the only two entry points that really reach the adaptor classes, and they were
+  already correct.
+- **Eleven `BRepGraph` identity and copy attributions.** `copy`, `copyFace` and `translated` named
+  only their bridge function, and the eight UID entries named the *input* type (`BRepGraph_NodeId`,
+  `BRepGraph_RefId`) or "the item-UID layer". They now name `BRepGraph_Copy::Perform` /
+  `::CopyNode`, `BRepGraph_Transform::Perform`, and the `UIDs()` registry call each function makes,
+  with `BRepGraph_UID` / `_RefUID` / `_ItemUID` / `_ItemId` named for the first time outside the
+  changelog.
+- **`Shape.revolutionToElementary()` runs the inverse of what it says.** It calls
+  `ShapeCustom::ConvertToRevolution`, which the pinned header documents as converting elementary
+  periodic surfaces *into* surfaces of revolution. Measured: a cylinder's lateral face comes back
+  as a `Geom_SurfaceOfRevolution`, and `sweptToElementary()` puts it back. All three doc layers said
+  the opposite and no test covered it. `withSurfacesAsRevolution()` is a second wrapper of the
+  identical bridge call, correctly documented. The rename is [#1634](https://github.com/SecondMouseAU/OCCTSwift/issues/1634).
+- **`Shape.updateEdgeTolerance(edge:tolerance:)` does not set a tolerance.** It calls
+  `BRepLib::UpdateEdgeTol`, not the whole-shape `UpdateEdgeTolerance` the page named, and
+  `tolerance` is `MinToleranceRequest`, a sampling floor. Measured across two edges and four
+  requested values from `1e-9` to `2`, the edge tolerance stayed at `1e-07` every time while the
+  call returned `true`. The hardcoded `tolerance * 100` ceiling is [#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639).
+- **`Shape.composeShell(precision:)` cannot split a face.** The bridge wraps the face's own surface
+  in a 1 x 1 `ShapeExtend_CompositeSurface`, and `ShapeFix_ComposeShell` splits along joints
+  between patches. Measured: one face in, one face out, `Perform()` true. What it does perform, the
+  wire rebuild, is now what both doc surfaces describe. Taking a real grid is [#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638).
+- **`Shape.bsplineRestriction(...)` converts no elementary surface.** Both entry points pass a
+  default-built `ShapeCustom_RestrictionParameters`, whose defaults leave planes, cylinders, cones,
+  spheres, tori and Bezier surfaces alone and convert only revolution, extrusion and offset
+  surfaces plus curves. Measured: a cylinder comes back with three elementary faces and no BSpline.
+  Exposing the toggles is [#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637).
+- **`Shape.nearestPlane(to:)` is not a planarity test.** `ShapeAnalysis_Geom::NearestPlane` refuses
+  only when the smallest principal extent reaches half of one of the other two. Measured: one corner
+  of a 10 x 10 square lifted 8 units out of plane fits with a `maxDeviation` of 2.13, and the cutoff
+  on that sheet is a thickness of 5. Gate on `maxDeviation`. Attribution corrected from `gp_Pln`, its
+  out-parameter, to `ShapeAnalysis_Geom::NearestPlane` through `GProp_PEquation`.
+- **Four more single-class corrections.** `fixedFreeBounds` is `ShapeFix_FreeBounds`, not
+  `ShapeFix_Shape` ([#1636](https://github.com/SecondMouseAU/OCCTSwift/issues/1636) for its
+  returning a wire compound rather than the repaired shape); `purgedLocations` is
+  `BRepTools_PurgeLocations`, not `BRepLib::SameParameter`; `curveOnSurfaceCheck` is
+  `BRepLib_CheckCurveOnSurface`, not `ShapeAnalysis_Edge`; `recognizeCanonical` is
+  `ShapeAnalysis_CanonicalRecognition`, not `BRepGProp`.
+- **`dividedByNumber(_:)`'s entry was pre-#1491.** It said "approximately `parts` patches"; since
+  #1491 the count is exact and per-axis and lands on U. The Swift `///` was updated by that PR and
+  the reference page was not.
+- **`checkOuterBound`'s entry described two defects PR #1140 had already fixed.** It said the
+  cancellation and partial-pcurve gaps were open "because the fix is a magnitude threshold against
+  the face's own UV scale and nobody has measured what it should be"; that threshold has been in
+  `OCCTWireCheckOuterBound` since 2026-08-26, alongside an every-edge-pcurve requirement. `nil` now
+  covers five inputs, not four.
+
+`Scripts/repro/1399-refman-coverage-unlaned/probe_healing_claims.mm` and its committed transcript
+replay five of these bridge call sequences against the pinned kernel;
+`family-healing.md` beside them carries the 31-class table, the evidence per finding, and the six
+`census-doc-occt-attribution.py` candidates rejected after reading the bridge.
+
+### Read the `booleans` family of #1399's unlaned refman-coverage lane (#1399)
+
+31 OCCT classes with real bridge presence that sit in no #807 lane's table and that no claim
+`census-doc-occt-attribution.py` parses, given one verdict each with the evidence in
+`Scripts/repro/1399-refman-coverage-unlaned/family-booleans.md`: 19 `ok`, 6 `deliberate, recorded`,
+1 `under`, 5 `over`. Six findings, measured against the pinned 8.0.1 kernel by
+`Scripts/repro/1399-refman-coverage-unlaned/probe_booleans.mm` (transcript committed beside it).
+
+Four of the six are behaviour, and are filed rather than changed here:
+[#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631)
+(`Shape.edgeFaceIntersection(with:)` returns an empty array for every input, because
+`OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange` and `IntTools_Range`'s default is
+`(0, 0)`),
+[#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)
+(`ExtremaElSS.planeToSphere` and `sphereToSphere` always return `[]`, because
+`Extrema_ExtElSS::Perform` is `throw Standard_NotImplemented();` for both pairs in OCCT itself, and
+`planeToPlane` answers only its parallel case with zeroed points),
+[#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)
+(`Curve3D.minimumDistance(from:)` and `extrema` report interior extrema only, so a point past the
+end of a bounded curve gets `nil` rather than the distance to the nearer endpoint), and
+[#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635)
+(`ContapContourResult` has no reachable geometry for an analytic silhouette).
+
+The documentation corrections in this change:
+
+- `docs/reference/Curve3D-Analysis.md` attributed `Curve3D.extrema(from:)`,
+  `extrema(from:uMin:uMax:)` and `minimumDistance(from:)` to `Extrema_ExtPC` at six sites, one of
+  them "with bounded `GeomAdaptor_Curve`". The bridge constructs `ExtremaPC_Curve` from the
+  `Geom_Curve` handle and builds no adaptor. The three entries now name the real class and state
+  that the solve reports interior extrema only.
+- `Shape.FilletSurfaceInfo.startStatus`/`endStatus` were documented as
+  "(0 = ok, 1 = not ok, 2 = partial)", which is `FilletSurf_StatusDone`, the enum on the sibling
+  `FilletSurfaceResult.status`. They carry `FilletSurf_StatusType`, whose ordinals are
+  `TwoExtremityOnEdge`/`OneExtremityOnEdge`/`NoExtremityOnEdge`. `OCCTBridge_Modeling.h`'s own
+  field comment had the first two transposed and wrote "OnFace" for OCCT's "OnEdge".
+  `firstParameter`/`lastParameter` were undocumented, and come from `FirstParameter()`/
+  `LastParameter()`, which take no surface index, so the same pair is repeated into every element.
+- `Shape.CommonPart.param2Range` was documented as the parameter range "on the second edge". From
+  `edgeFaceIntersection(with:)` there is no second edge and the value is always `(0, 0)`:
+  `IntTools_EdgeFace` never calls `AppendRange2` or `SetVertexParameter2`, so `Ranges2()` is empty
+  and `VertexParameter2()` is the `0.0` its constructor set.
+- `ContapContourResult.pointCount(line:)`, `point(line:index:)` and `points(line:)` answer for
+  `.walking` contours only. `Contap_Line::NbPnts()` and `Point(Index)` throw
+  `Standard_DomainError` on any other type, so an analytic silhouette (a cylinder's two tangent
+  rulings, the common case) reports `0` points and `point(line:index:)` hands back
+  `SIMD3(0, 0, 0)`, a zero rather than a measurement.
+- `QuadricIntersection.coneSphere` was attributed to `IntAna_QuadQuadGeo`. The bridge builds an
+  `IntAna_Quadric` from the sphere and runs `IntAna_IntQuadQuad`.
+- `Shape.polygonInterference(poly1:poly2:)` and `polygonSelfInterference(polygon:)` cap their
+  output at 100 points and truncate silently, which is now stated as the sibling
+  `Curve2D.intersections(with:)` already states its own 128.
+
+The pass also adjudicated `census-doc-occt-attribution.py`'s own boolean and extrema findings,
+which are parsed on every run and had never been read. The census reported **431** findings at this
+branch's base commit and reports **421** here, with no new findings added: beyond the two above, it
+had been reporting that `Curve3D.projectPointAll` is `GeomAPI_ProjectPointOnCurve` rather than
+`GeomAPI_ExtremaCurveCurve`/`Extrema_ExtPC`, that `Surface.locateNearestPoint` is
+`Extrema_GenLocateExtPS` rather than the global `Extrema_ExtPS`, and that `Shape.split(by:)` and
+`split(atPlane:normal:)` run `BRepAlgoAPI_Splitter` rather than its base class
+`BRepAlgoAPI_BuilderAlgo`, which is General Fuse and returns a compound of split parts rather than
+splitting arguments by tools.
+
+### #1399 geometry family: 25 over-coverage corrections and a measured knot-splitting contract (#1399)
+
+Twenty-five documentation claims about the `Geom`/`Geom2d`/`Convert`/`Gcc`/`ProjLib`/`HelixGeom`/
+`Law`/`LProp` families corrected against the pinned OCCT 8.0.1 headers and the bridge, as part of
+#1399's reading of the 118 wrapped classes no #807 lane claims.
+
+- **Eight OCCT class names that do not exist** were named as the implementation of a public
+  member: `HelixGeom_Helix` and `HelixGeom_ApproxCurve` behind the `Helix` builders and
+  evaluators, `LProp_AnalyticCurInf` behind `Shape.analyticCurvaturePoints`, and
+  `Geom2dGcc_Circ2d2TanPt`, `Geom2dGcc_Circ2dTanPtRad`, `Geom2dGcc_Circ2d2PtRad`,
+  `Geom2dGcc_Circ2d3Pt` and `Geom2dGcc_Lin2dTanPt` behind five `Curve2DGcc` members. Each is the
+  bridge function's own name with an OCCT package prefix attached. They now name what the bridge
+  builds: `HelixGeom_BuilderHelix`, `HelixGeom_BuilderHelixCoil`, `HelixGeom_HelixCurve`,
+  `HelixGeom_Tools::ApprHelix`, `LProp_CurAndInf`, and the `Geom2dGcc_Circ2d3Tan` /
+  `Circ2d2TanRad` / `Lin2d2Tan` constructors that take a `Geom2dGcc_QualifiedCurve` or a
+  `Geom2d_CartesianPoint`.
+- **The `GeomEval` and `Geom2dEval` analytic factories are OCCT classes, not ours.** Twenty
+  entries across `docs/reference/Surface.md`, `Curve2D.md` and `Document-Completions.md` gave a
+  bridge C function under `- **OCCT:**`, and two preambles described the family as project-local
+  evaluators "backed by `Geom_CartesianPoint`-derived evaluator surfaces". Every entry now names
+  its real class, and the preambles say what these derive from.
+- **`Shape.analyticCurvaturePoints` never returns an inflection**, and only an ellipse produces
+  any point at all: a line, a circle, a parabola and a hyperbola have no curvature extremum. The
+  entry also now says that `LProp_CurAndInf` classifies by *radius* of curvature, so an ellipse's
+  major-axis vertices come back as `.minimumCurvature`.
+- **`BisecSolution`'s conic payload was described backwards.** `position` is the centre for an
+  ellipse or a hyperbola and the **vertex** for a parabola, never a focus; `radius` is `0` for
+  every conic and the semi-axes are in `secondary`, except for a parabola whose `secondary.x` is a
+  focal distance. Corrected in the reference page, in the `///`, and in
+  `Sources/OCCTBridge/include/OCCTBridge_Geom2d.h`.
+- **`LawFunction.knotSplitting(continuityOrder:)` and `knotSplitParameters(continuityOrder:)` read
+  four of the seven law factories**, not the one the docs named. `Law_Interpol` and `Law_S` derive
+  from `Law_BSpFunc`, so `interpolate(points:periodic:)` and `sCurve(from:to:parameterRange:)` are
+  readable alongside `bspline(...)` and `interpolated(...)`; `constant`, `linear` and `composite`
+  are not. A readable law always reports at least its two end knots, so an empty array means "not
+  a `Law_BSpFunc`-derived law" rather than "no discontinuities". Measured and covered by
+  `Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift`.
+- **`Curve2DQualifier`'s "inside" is orientation-dependent**: `GccEnt_Position.hxx` defines the
+  interior of a line or an open curve as its left-hand side relative to its own orientation, so
+  reversing a curve swaps what `.enclosing` and `.enclosed` select. The claim that a qualifier is
+  passed "in every `Curve2DGcc` solver call" is also gone: the all-point members take none.
+- **`Surface.hyperboloid(r1:r2:twoSheets:)` returns one sheet** when `twoSheets` is `true`;
+  `GeomEval_HyperboloidSurface` represents a single connected surface. Both parametrisations, and
+  the parametric ranges of the other four `GeomEval` surface factories, are now documented.
+- **`uIsoCurvePoints`/`vIsoCurvePoints` clamp an infinite iso to `-1e6...1e6`**, and return
+  `count` points at the origin rather than an empty array when the shape is not a face.
+- **`Curve3D.join(_:)` uses `GeomConvert::CurveToBSplineCurve` +
+  `GeomConvert_CompCurveToBSplineCurve::Add`**, not `GeomConvert::ConcatG1`, which the bridge never
+  calls.
+- **`Shape.uniformDeflection(_:)` uses `CPnts_UniformDeflection`**, not `GCPnts_UniformDeflection`;
+  this repo wraps that one separately, behind `Curve3D.drawDeflection` and
+  `Curve2D.drawDeflection`.
+- **The `ProjLib` projectors construct `ProjLib_Plane`/`ProjLib_Cylinder`** and read
+  `IsDone()`/`Line()`/`Circle()`, rather than calling `ProjLib::Project`.
+- **`Geom2dEval.circleInvoluteD0(origin:direction:radius:u:)` and its `D1` sibling** were public
+  and documented nowhere; both now have reference entries.
+- The ten `Geom2dEval_*` evaluators' current failure contract is documented and tracked as
+  [#1646](https://github.com/SecondMouseAU/OCCTSwift/issues/1646): they have no `try`/`catch` over
+  constructors that throw on out-of-range arguments.
+
+### Foundation-family documentation corrections from #1399's unlaned-class read (#1399)
+
+Seven documentation defects found by reading the 32 OCCT classes in #1399's `foundation` family
+against the pinned kernel, one at a time. No behaviour changed; every correction is a comment or a
+reference page.
+
+- **`MathSolver.eigenvalues` / `eigenvaluesAndVectors`: the ignored `subdiagonal` element is the
+  first, not the last.** `math_EigenValuesSearcher` shifts its working sub-diagonal down by one and
+  zeroes the tail, discarding the caller's element 0. `MathSolver.swift`,
+  `docs/reference/Document-Transforms.md` and `OCCTBridge_Spatial.h` all said "last element
+  unused", and the example shipped in the doc comment,
+  `eigenvalues(diagonal: [2, 2, 2], subdiagonal: [1, 1, 0])`, returns `[1, 3, 2]` rather than the
+  `2-sqrt(2), 2, 2+sqrt(2)` it implies. Both entries now state the real convention, note that the
+  return order is undefined by OCCT's own header, and carry a corrected runnable example. The
+  API-shape question is #1643.
+- **The same two entries named `math_EigenVectors`**, a class that does not exist in the pinned
+  kernel. They now name `math_EigenValuesSearcher::EigenValue` / `EigenVector`.
+- **The relative mesh deflection is the longest bounding-box side times four, not the diagonal.**
+  `Prs3d::GetDeflection` is `max(aDiag.maxComp() * coefficient * 4.0, Precision::Confusion())`.
+  `docs/reference/Drawing.md`, `docs/reference/Display.md`, `DisplayDrawer.deviationCoefficient`'s
+  doc comment and the bridge's #1418 comment are corrected, and the formula is written out with
+  the measured values (0.004 / 0.04 / 0.4 for 1-, 10- and 100-unit cubes at the 0.001 default).
+  `Display.md` also said the deflection was "read from `Prs3d_Drawer`"; for OCCT's default relative
+  type it is computed from a `Bnd_Box` the bridge builds.
+- **`Selector.pick` does not call `SelectMgr_ViewerSelector::Pick`.** All four `Pick` overloads
+  require a `V3d_View`, which the headless selector exists to avoid. The three `pick` entries and
+  `Selector.init()` now name `SelectMgr_SelectingVolumeManager`'s volume builders,
+  `SelectMgr_ViewerSelector::TraverseSensitives`, `SelectMgr_SortCriterion` and
+  `SelectMgr_EntityOwner`, and the rectangle entry names `PickBox` rather than the bridge
+  function's `PickRect`.
+- **`OCCTLengthUnit`'s documented declaration had the wrong raw values.**
+  `UnitsMethods_LengthUnit` skips `3`, so `foot` is `4`. The reference page's compressed case list
+  would have given `foot` the value `3` and shifted every case after it.
+- **`OCCTPrecision.pConfusion` is a constant 1e-9**, not "scaled by curve-space bounds":
+  `Precision::PConfusion()` takes no argument. `intersection` (1e-9) and `approximation` (1e-6)
+  gain their values, and `OCCTPrecision` gains the runnable snippet `docs-current` asks for.
+- **`Exporter.optimizeSTEP` deduplicates through `XSControl_WorkSession`.**
+  `StepTidy_DuplicateCleaner` runs on `STEPControl_Reader::WS()` before `TransferRoots`, which is
+  why the call takes a file path rather than a `Shape`. Neither class was named on the reference
+  page.
+- **`OSD::SetSignal` does not make OCCT's signals catchable in this build.** `OCC_CONVERT_SIGNALS`
+  is undefined, so `OCC_CATCH_SIGNALS` expands to nothing. The two bridge comments that claimed
+  otherwise now say what the handler does and cross-reference the #263 note in the same file that
+  already said so.
+
+Filed rather than fixed: #1641 (the attribution census cannot see any class whose name ends in an
+all-uppercase word: 45 claim sites, 14 real classes), #1642 (`reachable()`'s wrapper-type expansion
+is single-pass, so a correct attribution scores worse than the wrong one it replaced), #1643 (the
+`subdiagonal` API shape), #1644 (`IFSelect_ReturnStatus` collapsed to `Bool` at 44 sites), #1645
+(six `math_*` callback adapters compiled into five files and instantiated in one).
+
+### Reference pages attribute the OCCT class the bridge actually calls (#1399)
+
+Adjudicated all 431 findings from `Scripts/census-doc-occt-attribution.py`, a detector that had
+been running on every push with nobody reading its output. 212 were real and are corrected; the
+census now reports 230.
+
+The three `BRepGraph` reference pages named `BRepGraph_EditorView`, `BRepGraph_CoEdge`,
+`BRepGraph_RepStore` and six more classes that do not exist in the pinned kernel; the real ones are
+`BRepGraph::EditorView`'s `Ops` sub-views, `BRepGraph::Topo()`, `BRepGraph_Tool` and
+`BRepGraph_LayerHistory`. Eleven mutation entries named the wrong `Ops` sub-view. Eighteen further
+pages named a class absent from OCCT 8.0.1, among them `Geom2dGcc_Circ2d2TanPt` (the solver is
+`Geom2dGcc_Circ2d3Tan`), `math_Laguerre` (`MathPoly::Laguerre`), `HelixGeom_Helix`
+(`HelixGeom_BuilderHelix`) and `Draft_MakeDraft` (`BRepOffsetAPI_DraftAngle`). Sixty-nine more
+named a real class that is not the one running, such as `GProp_PGProps` for six analytic
+properties that use `GProp_SelGProps` and `GProp_VelGProps`.
+
+Eight `BRepGraph` setters and six matching getters are silent no-ops on the pinned kernel and were
+documented as if they worked; each now carries the note `setEdgeRegularity` already had, and the
+API-surface question is [#1652](https://github.com/SecondMouseAU/OCCTSwift/issues/1652).
+
+The adjudication, including all 210 false positives with the reason the detector was wrong and a
+measured 49.8% false-positive rate over the whole set, is in
+[`Scripts/repro/1399-refman-coverage-unlaned/census-findings.md`](Scripts/repro/1399-refman-coverage-unlaned/census-findings.md).
+
+### `Shape.edgeFaceIntersection` can find an intersection (#1631)
+
+`OCCTIntToolsEdgeFace` never called `IntTools_EdgeFace::SetRange`, whose default is `(0, 0)`, so the
+intersector was given an empty interval on the edge and returned zero common parts for every input
+while reporting `IsDone()`. It now sets the edge's own parameter range. On a 10-unit box with an
+edge through its middle, the two faces the edge crosses report a common part where all six
+previously reported none.
+
+The function also now checks that its two handles really are an edge and a face before casting
+them.
+
+### A gate for the repo's own counted claims about its inventories (#1408, #1066)
+
+`Scripts/check-inventory-prose.py` derives how many patches are carried, how many the pinned kernel
+holds, and how many gates, censuses and audits `ci.yml`'s `gate-scripts` job runs, then checks
+sixteen counted claims in `Package.swift`, `CLAUDE.md`, `ci.yml` and `okf/policies/static-gates.md`
+against them. A claim whose sentence no longer matches its regex fails as loudly as a wrong number,
+so a rewording cannot quietly drop a check.
+
+It found three live defects when first run: `ci.yml`'s `gate-scripts` comment claimed "all five"
+scripts against a job running thirteen and "the other four" against twelve (#1066), and
+`okf/references/carried-occt-patches.md` keyed a row `0010-Intf_Interference-…-319`, an ellipsis
+that names no file on disk. A fourth surfaced with it: the `0027` row was keyed to a name the patch
+file does not have. All fixed. The gate is the ninth in the `gate-scripts` job, and #819's
+gate-coverage audit moves `stale-self-referential-count` from `ungated-gap` to `gated`.
+
+### The attribution census sees a bullet that names no OCCT class (#1399)
+
+`Scripts/census-doc-occt-attribution.py` silently skipped any claim from which it could extract no
+class name, so a `- **OCCT:**` bullet answering with a bridge C symbol instead of an OCCT class was
+invisible to it. #1399's geometry family found twenty such entries on the `GeomEval`/`Geom2dEval`
+surfaces while the census called both packages clean. The census now reports them as their own
+category, 183 sites at time of writing, and its self-test gained three cases including the
+table-row case that pins the deliberate restriction to the `- **OCCT:**` bullet channel.
+
+Its summary line also counted from a literal (`total = 20`) while 23 cases printed; it is now
+derived from what ran.
+
+### A gate for throwing OCCT calls, and the live abort it found (#1407)
+
+`Scripts/check-throwing-calls.py` checks that every `gp_Dir`/`gp_Dir2d`/`gp_Ax*`/`Geom_Direction`
+construction and every `D1`/`D2` evaluator in `Sources/OCCTBridge/src` is inside a `try`, guarded by
+a length test the function already performs, or in a helper whose callers catch. This is the #345
+defect class, where an exception crossing into Swift is a process abort rather than an error, and
+where 49 sites were fixed by hand with nothing to keep them fixed.
+
+`GeneralTransform2D.affinity(axisOrigin:axisDirection:ratio:)` now returns `GeneralTransform2D?`.
+It was the one live site: a zero-length `axisDirection` reached `gp_Dir2d` unguarded and aborted the
+process. It returns `nil` for a direction shorter than `gp::Resolution()`, and the bridge function
+returns `bool`.
+
+### `Shape.checkSolid()`, and `checkResult` localizes solid-level defects (#1392)
+
+`BRepCheck_Solid` is reachable from Swift for the first time: `OCCTCheckSolid` had been implemented
+and documented since v0.x with no Swift caller, so nothing could reach it. `Shape.checkSolid()`
+checks every solid in the shape and reports `isValid`, `errorCount` and `firstError` like the rest
+of the check family. It answers what the per-sub-shape checks cannot: shell imbrication, an enclosed
+region no shell declares as a void, a subshape not in the shape.
+
+`Shape.checkResult` no longer reports zero errors on a shape it has just called invalid. It set
+`isValid` from `BRepCheck_Analyzer` but localized the error by walking only faces and edges, so a
+solid- or shell-level defect left `errorCount` at 0 and `firstError` at `.noError`. It now walks
+shells and solids as well.
+
+### Curve-surface extrema carry both surface parameters (#1514)
+
+`Curve3D.extremaCSPoint(range:surface:index:)` returns a new `CurveSurfaceExtremaPoint` instead of
+`ExtremaPointPair`: the surface-side point of a curve-to-surface extremum has two parameters, and
+the old struct had room for one, so `OCCTExtremaExtCSPoint` computed V and discarded it. The
+surface point can now be re-evaluated from the parameters the call reports
+(`surface.point(atU: p.u2, v: p.v2) == p.point2`). The same call also now guards its null handles
+rather than dereferencing them, and the reference page's two conflicting descriptions of the old
+encoding (`(u, v, 0)` packing, and `point2.z` carrying V) are removed: neither was true.
+
+At the C bridge, `OCCTExtremaExtCSPoint` returns the new `OCCTExtremaCSPointPair`.
+
+### `Shape.splitDrafts` is covered, and documented as unusable on this kernel (#1393)
+
+`LocOpe_SplitDrafts` had no test anywhere in the tree. It has one now, and what it records is that
+the operation cannot succeed on OCCT 8.0.1: `LocOpe_SplitDrafts` accepts only a planar face and then
+pipes along the intersection of two planes, always a `Geom_Line`, and
+`GeomConvert::CurveToBSplineCurve` has no line case, so `GeomFill_Pipe` throws
+`Standard_DomainError("No such curve")` on every valid call. `Shape.splitDrafts` therefore returns
+`nil` for every input, which the bridge's existing `catch (...)` already did correctly.
+
+The reference page now says so, the defect is recorded in
+[`okf/references/known-occt-bugs.md`](okf/references/known-occt-bugs.md), and both reproducers are
+committed under `Scripts/repro/1393-splitdrafts/`. The upstream fix, a `Geom_Line` case in
+`GeomConvert` (a line is a degree-1 B-spline with two poles), is queued rather than carried as a
+patch. No behavior changes in this PR.
+
+### Twelve `TDataStd_*` OCAF suites move into `OCCTXCAFTests` (#1396)
+
+Ten suites inside the `OCCTFoundationTests` monolith and two files in `OCCTModelingTests` all test
+plain OCAF label-attribute round-trips, the same shape as the `TDataStd_*` suites already in
+`OCCTXCAFTests`. They move verbatim, one file per attribute. Test-only: no source, no public API
+and no test body changes, and the same 36 tests run in the same order. #817's coverage census, which
+reported all twelve as unreached by its lane, now reports `ok: 131, under: 0` where it reported
+`ok: 119, under: 12`.
+
+### Every duplicate `#include`/`#import` in the bridge sources removed (#1385)
+
+128 duplicate include directives across 36 `Sources/OCCTBridge/src/*.mm` files, first occurrence
+kept. Thirty-one came from the four merged `.mm` splits, whose migration script deduped the shared
+preamble by raw line text and so kept a header included once as `#import` and once as `#include`;
+the script was fixed when that was found, and this is the retroactive half. The other ninety-seven
+are pre-existing duplicates in five hand-written files (`OCCTBridge.mm`,
+`OCCTBridge_ProjLib_NLPlate.mm`, `OCCTBridge_Properties.mm`, `OCCTBridge_BRepGraph.mm`,
+`OCCTBridge_AIS.mm`), two of them holding a header three times. No behavior change: duplicate
+includes resolve through include guards.
+
+### `docs/thread-safety.md`'s #374 writeup corrected to the fix that actually shipped (#1400)
+
+The `Resource_Manager::Debug` / `Storage_Schema` current-data section described the first version of
+patch `0016`, an `ICurrentDataMutex()` recursive mutex around every touch point. That version was
+revised on upstream review: `0016` deletes the `ICurrentData()`/`ISetCurrentData()` statics and gives
+`Storage_Schema` a per-instance `myCurrentData` member instead, so there is no shared state left to
+guard. The suppression-policy paragraph also still named the `#353` `CDM_Application` suppression as
+its current example, which `tsan.supp` dropped in v1.15.11 once patch `0015` landed; it now names
+the live `TopoDS_TShape::myState` / #1154 / `0030` entry. `docs/occtswift-wrapping-gaps.md`'s
+carve-out entry, which recorded both as filed-not-fixed, is updated to match.
+
+### CLAUDE.md moves its rules into `okf/` and its Known OCCT Bugs record into `okf/references/` (#1617)
+
+`CLAUDE.md` shrinks from 1,072 lines to 345, keeping commands, guard syntax and a short working list, with one pointer per section into `okf/`. New: `okf/references/known-occt-bugs.md` (one row per root-caused kernel defect, with fix location and writeup pointer) and four `okf/policies/` pages (`pinned-kernel-patch-check`, `required-status-checks`, `static-gates`, `null-handle-guards`). `okf/references/carried-occt-patches.md` gains rows for `0030`, `0031` and `0033`, the retired `0032`, and a table of the five patches the pinned `v3.0.0` asset does not hold. `Scripts/census-comment-staleness.py`'s patch-citation channel scans the two okf references as well as `CLAUDE.md`. Three stale claims fixed: #344/#345 are not "still uncharacterized", `gate-scripts` is required on `main` not `refactor/**`, and no step says to commit a release directly.
+
+### `EdgeAnalysis.checkVerticesWithCurve3d`/`checkVerticesWithPCurve` default `precision` now matches OCCT's own sentinel (#1577)
+
+`EdgeAnalysis.checkVerticesWithCurve3d`/`checkVerticesWithPCurve` defaulted `precision` to a
+fixed `1e-6`, stricter than `ShapeAnalysis_Edge`'s own documented sentinel default (a negative
+`preci` checks each vertex against its own stored tolerance instead of a fixed distance). For a
+vertex whose own tolerance is looser than `1e-6` (common on healed/mesh-derived geometry), the
+old default could flag a mismatch that OCCT's own semantics does not consider one. Both
+functions now default `precision` to `-1.0`, matching OCCT. The bridge already forwarded the
+value unmodified; this is a pure Swift-side default change with no signature change.
+
+### `LawFunction.bspline` and `.interpolated` reject mismatched parallel arrays (#1586)
+
+`OCCTLawCreateBSpline` reads `multiplicities[i]` once per knot and `OCCTLawInterpolate` reads
+`parameters[i]` once per value, neither checking that the paired array holds that many elements. The
+Swift entry points guarded only the minimum lengths, so a caller passing a shorter `multiplicities`
+or `parameters` read past the end of its own buffer.
+
+`LawFunction.bspline(poles:knots:multiplicities:degree:)` now requires
+`multiplicities.count == knots.count`, and `LawFunction.interpolated(values:parameters:periodic:)`
+requires a non-`nil` `parameters` to match `values`. Both directions of mismatch are refused with
+`nil`, and both doc comments state the length contract the bridge relies on. No signature change.
+
+### `Shape.threadedHole` no longer cuts the internal thread at the wrong radius (#1578)
+
+**Bug fix, correctness-critical.** `threadedHole` passed the major radius (`spec.nominalDiameter / 2`) as the internal cutter's `helixRadius`. For an internal thread (a boolean subtraction), the cutter's untouched "mouth" edge becomes the thread's crest and its cutting "apex" edge (`helixRadius + cutDepth`) becomes the root (confirmed against `OCCTShapeBuildThreadCutter`'s own contract: `apexR = helixRadius + apexSign*cutDepth`). Passing the major radius put the crest at the major/nominal diameter and the root beyond it, backwards from standard thread geometry, where an internal thread's crest sits at the minor diameter (mating a bolt's own root) and the root reaches out to exactly the major/nominal diameter (mating a bolt's own crest). A bolt (`threadedShaft`) and its tapped hole (`threadedHole`) built from the same `ThreadSpec` did not actually mate: the nut's ridges sat at the bolt's own crest radius instead of clearing it. Fixed by passing `spec.minorDiameter / 2`. `threadedShaft`'s external path is unaffected (its own `nominalDiameter / 2` is correct there). New regression tests (`Issue1578ThreadedHoleMinorDiameterTests`) build a bolt and a matching tapped hole from the same spec and confirm the nut's root matches the bolt's own crest radius (they mate), and that the internal thread's root lands at the nominal diameter rather than beyond it. Five existing tests that pre-bored their fixtures to the (buggy) major-diameter convention are updated to the physically-correct minor-diameter tap-drill size.
+
+### `TObjApplication.shared` now releases its OCCT refcount on deinit (#1588)
+
+`OCCTTObjApplicationGetInstance()` incremented `TObj_Application::GetInstance()`'s singleton
+refcount on every `.shared` access with no matching release, leaking one increment per call (inert
+in practice, since the singleton's own permanent static handle keeps it alive regardless, but a
+violation of this project's "every creating function needs a matching Release" rule). Added
+`OCCTTObjApplicationRelease` and a matching `TObjApplication.deinit`. No public API signature
+change.
+
+### Fixed DXF LTYPE table's declared entry count to match its actual entries (#1589)
+
+`DXFWriter.tables()`'s LTYPE table header declared a group-70 max-entry count of 4 while only 3
+linetypes (`CONTINUOUS`/`DASHED`/`CHAIN`) were ever written before `ENDTAB`, a stale value present
+since the file's first commit. The declared count now matches the real entry count (3), consistent
+with every other table (`LAYER`, `STYLE`) in the same writer.
+
+### `Shape.revolutionAxes(tolerance:)`/`Shape.symmetryAxes(fractionalTolerance:)` no longer crash past 256/8 distinct axes (#1576)
+
+`OCCTShapeRevolutionAxes`/`OCCTShapeSymmetryAxes` wrote only the capped number of entries into the
+caller's output buffer but returned the full, uncapped count, so a shape with more than 256 distinct
+(post-dedup) revolution axes made `Shape.revolutionAxes()` trap with a fatal "Index out of range"
+error. Both bridge functions now return the count they actually wrote.
+
+### SVG export: Y-flip transform now reflects about the viewBox's own midline, not just its height (#1570)
+
+Fixed `SVGWriter.write(to:)`'s Y-flip transform, which was missing a `vb.min.y` term and so mapped
+content entirely outside the declared `viewBox` for any drawing not centered at the origin (the
+common no-explicit-`viewBox` `Exporter.writeSVG(drawing:to:)` path). Output coordinates now change
+for any SVG export whose computed or supplied viewBox has a non-zero `min.y`; content that
+previously rendered clipped/invisible under a spec-compliant SVG viewer (default root `overflow:
+hidden`) now renders correctly inside the declared viewBox.
+
+### `FeatureReconstructor.absorbAdditive` now surfaces a total union failure as `Skipped` instead of discarding accumulated geometry (#1585)
+
+Fixed: when an id'd additive feature's fusion into the accumulated shape totally failed (both the history-recording union and the plain union fallback), `absorbAdditive` silently replaced the accumulated shape with the new feature's raw, unfused body, never recorded a `Skipped` entry, and still listed the feature as `fulfilled`. It now calls `recordSkip` and leaves the accumulated shape untouched, matching `applyBoolean`/`applyHole`/`applyFillet`/`applyChamfer`'s existing failure-path behavior and the documented `FeatureReconstructor` contract.
+
+### `SheetMetal.Bend.angle`'s sign now drives auto-inferred bend direction; doc corrections for two dead fields; `intersect` now checks both seam axes (#1565)
+
+Fixed three doc/behavior mismatches in `SheetMetal.swift` found by the Pass 1 correctness sweep:
+
+- `Bend.angle`'s documented sign convention (positive = concave, negative = convex) is now
+  actually honored: when a bend's `direction` is left at its default `.auto`, a non-nil, non-zero
+  `angle` overrides the geometric inference by its sign. Previously `angle` was accepted but
+  silently ignored for direction resolution.
+- `Bend.outsideRadius`/`materialThicknessAtBend` are documented as forward-compatible but not yet
+  read by `Builder.build()`; the docs previously (incorrectly) instructed callers to use them for
+  an extruded-angle profile / thinned bend line, effects the Builder cannot currently produce.
+- `intersect(bend:a:b:)` now checks both a flange's u AND v axes before falling back to "no split
+  needed"; previously only u-alignment was checked, and a seam genuinely diagonal to both axes
+  could trigger a bogus split attempt, including a spurious
+  `BuildError.nonRectangularStepFlange` for a non-rectangular flange with no real stepped seam.
+
+### `ViewObject.ProjectionType` raw values now match `XCAFView_ProjectionType` (#1574)
+
+`ViewObject.ProjectionType`'s raw values were `central=0, parallel=1`, which did not match the real
+`XCAFView_ProjectionType` (`NoCamera=0, Parallel=1, Central=2`); the bridge casts the raw value
+straight into the OCCT enum with no translation, so `.central` actually stored `NoCamera`, and real
+`Central` could never be set or read at all. Fixed: `ProjectionType` is now
+`noCamera=0, parallel=1, central=2`, with a new `.noCamera` case for OCCT's own default/unset
+sentinel.
+
+```swift
+public enum ProjectionType: Int32 {
+    case noCamera = 0
+    case parallel = 1
+    case central = 2
+}
+```
+
+### `DriverTable.exists` is documented as the creation query it is (#1587)
+
+`TPrsStd_DriverTable::Get()` returns the static table and, per its own header, "if it does not
+exist, creates it and fills it with standard drivers". The handle is therefore never null,
+`DriverTable.exists` always answers `true`, and reading the property is itself what creates and
+populates the process-wide table. `TPrsStd_DriverTable` declares no non-creating alternative, so
+there is nothing to switch the implementation to.
+
+The Swift property, the bridge declaration and its definition now say this, and
+`docs/reference/Document-XCAF-Notes.md` drops an `if DriverTable.exists { DriverTable.clear() }`
+example whose false branch can never be taken. The property keeps its name: a rename would break
+source for a case the documentation settles. No behaviour change.
+
+### `WireOrder.Status`/`decode` no longer misreports a successful analysis as `nil`/`.failed` (#1575)
+
+`ShapeAnalysis_WireOrder::Status()`'s real codes are `0`=unchanged, `1`=reordered,
+`-1`=reversed-but-connected, `3`=shifted-still-connected, all four successful, with no "gaps"
+code. `WireOrder.analyze(edges:)`/`analyze(wire:)` used to return `nil` for the `-1` case and
+report `.failed` (with `orderedEdges` still populated) for the `3` case. `WireOrder.Status`'s cases
+are renamed to match the real semantics: `.closed`/`.open`/`.gaps`/`.failed` become
+`.unchanged`/`.reordered`/`.reversed`/`.shifted`/`.failed`, and both `analyze` overloads now report
+a real, correctly-ordered `WireOrder` for all four codes.
+
+### `OCCTPolyMergeNodes`/`mergedMeshNodes` no longer mis-report counts on buffer overflow (#1566)
+
+`OCCTPolyMergeNodes` (backing `mergedMeshNodes(from:smoothAngle:mergeTolerance:)`) used to set
+`*outTriangleCount` and return the merged node count unconditionally, even when the actual write
+into `outVertices`/`outNormals`/`outIndices` was skipped because a buffer was too small for the
+merged result. A caller trusting those counts got a `MergedMeshData` whose
+`triangleCount`/`vertexCount` disagreed with `indices.count`/`vertices.count` -- or, on the vertex
+side, a hard Swift trap reading past the end of `mergedMeshNodes`'s own local buffer. Both are
+all-or-nothing failures now: `OCCTPolyMergeNodes` refuses the whole call (returns `0`,
+`*outTriangleCount` left untouched) rather than reporting a count larger than what it actually
+wrote, and `mergedMeshNodes` gained a matching defensive check before trusting either count.
+Triggers only for meshes large enough to overflow the fixed 1,000,000-vertex/3,000,000-index
+buffers (realistically ~500K+ merged nodes); ordinary meshes are unaffected.
+
+### `Edge.curve3D`'s doc corrected: it returns the raw, untrimmed curve, not a `Geom_TrimmedCurve` (#1584)
+
+The doc previously claimed the curve was trimmed to the edge's own parameter range. It never was --
+the bridge deliberately returns the raw underlying `Geom_Curve` so callers can `DownCast` it to a
+concrete type (`Geom_Circle`, `Geom_Line`, ...). Use `Edge.parameterBounds` for the edge's own
+finite extent; `curve3D.domain` reports the underlying geometry's full range (unbounded for a line,
+a full period for a circle/ellipse). Doc-only fix, no behavior change.
+
+### `AssemblyNode.descendants(allLevels:)`/`.layers` no longer silently truncate past their buffer caps (#1563)
+
+`OCCTDocumentGetDescendantLabels`/`OCCTDocumentGetLabelLayers` used to return the count they had
+*written*, indistinguishable from a tree/label with exactly that many entries once the write was
+capped at 1024 descendants / 16 layer names, the pre-#562 shape. Both bridge functions now report
+the TRUE total count even when truncated, and `descendants(allLevels:)`/`.layers` retry once with
+a buffer sized to that count, so both Swift APIs return every entry instead of silently dropping
+the rest.
+
+### `AssemblyGraph.NodeType`'s raw values now match `XCAFDoc_AssemblyGraph::NodeType` exactly (#1568)
+
+The enum's raw values were scrambled against the pinned OCCT 8.0.1 header: a node OCCT reports as
+`Occurrence` (raw `3`) decoded as `.instance`, and there was no way to correctly ask for OCCT's real
+`Part`/`Occurrence`/`AssemblyRoot` through this API. Cases are renamed to match OCCT's own semantics
+and raw values one-for-one: `undefined=0, assemblyRoot=1, subassembly=2, occurrence=3, part=4,
+subshape=5` (previously `node=0, occurrence=1, part=2, instance=3, subshape=4, free=5`). No other
+Swift call site relied on the old values. **Breaking change** for any caller switching on a specific
+case or persisting the raw value.
+
+Closes #1568
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+### Fixed OOB reads in `weightedCentroid`/`loadLinearXYZ` on mismatched parallel-array lengths (#1583)
+
+`GeometryProperties.weightedCentroid(points:weights:)` and `PlateSolver.loadLinearXYZ(uvPoints:targets:coefficients:)` now guard that their parallel caller-supplied arrays are the same length before forwarding to the bridge, returning a clean refusal (`(0, nil)` / `false`) on a mismatch instead of reading past the shorter array's end.
+
+### `IntAna.linePlane` now distinguishes a disjoint parallel line from one embedded in the plane (#1582)
+
+`ConicQuadResult` gains `isInQuadric: Bool`, forwarded from OCCT's own
+`IntAna_IntConicQuad::IsInQuadric()`, which the bridge already computed but Swift never read. When
+`isParallel` is `true`, `points`/`params` are empty either way; `isInQuadric` now tells apart a
+line lying entirely within the plane (`true`) from one that is merely parallel and disjoint
+(`false`): two geometrically opposite outcomes that were previously indistinguishable. `lineSphere(...)`
+forwards the same field but it is always `false` there, since the bridge never calls
+`IsInQuadric()` for the line-sphere case.
+
+### Fixed `DrawingAnnotation.surfaceFinish`'s check-mark arms actually being symmetric ([#1573](https://github.com/SecondMouseAU/OCCTSwift/issues/1573))
+
+The "Long arm"/"Short arm" comments described an asymmetric ISO 1302 tick mark, but both arms were
+computed as mirror images of the apex and were mathematically identical in length. The two arms now
+follow ISO 1302 Annex A's proportions (long leg height ~2.1x the short leg's, both at ~60° to the
+surface baseline); the `.machiningRequired` bar now caps the long arm only rather than connecting
+back to the (now shorter) short arm.
+
+### Fixed `Color.toHex`/`toHexRGBA`'s backwards, misnamed prefix parameter (#1571)
+
+`toHex(sRGB:)`/`toHexRGBA(sRGB:)` are now `toHex(includeHashPrefix:)`/
+`toHexRGBA(includeHashPrefix: Bool = true)`. The old `sRGB` parameter was bridged to OCCT's
+`theToPrefixHash` (the `'#'` prefix switch, not a linear/sRGB switch; that mode does not exist
+in `Quantity_Color::ColorToHex`/`Quantity_ColorRGBA::ColorToHex` in this OCCT version) and was
+negated on the way in, so the documented default silently returned a `'#'`-prefixed string and
+`sRGB: true` stripped it instead of converting anything. `includeHashPrefix` now does exactly
+what its name says, defaulting to `true` (matching OCCT's own default), and the doc comments
+and `docs/reference/Color-Material.md` describe the real behavior.
+
+```swift
+let hex = Color.red.toHex()                              // "#FF0000"
+let noPrefix = Color.red.toHex(includeHashPrefix: false)  // "FF0000"
+```
+
+### `Sheet.standardLayout`'s inter-cell gap is now genuinely `margin/2`, matching its documented algorithm (#1572)
+
+`Sheet.standardLayout(of:scale:margin:includeIso:)` produced a full-`margin` gap between cells
+instead of the documented `margin/2`: the column stride between cell centres baked in a full
+`margin` regardless of cell width. Fixed so the gap is genuinely `margin/2`; each cell is
+correspondingly `margin/4` wider/taller than before, and view positions/`fitScale` shift for
+existing callers using non-default margins or margin-sensitive layouts.
+
+### AAG neighbor-lookup methods now guard against a negative face index (#1580)
+
+`AAG.neighbors(of:)`, `AAG.edge(between:and:)`, `AAG.concaveNeighbors(of:)` and `AAG.convexNeighbors(of:)` used to guard only the upper index bound, so a negative `faceIndex` (or `face1`) reached an `Array` subscript and crashed the process (`Fatal error: Index out of range`) instead of returning the documented empty/`nil` result for an out-of-range index. Fixed by adding a lower-bound check to each guard.
+
+### `PresentationStyle.toOCCT()` no longer drops a curve-only color (#1569)
+
+A `PresentationStyle` with only `curveColor` set (`surfaceColor` left `nil`) used to silently fall into `toOCCT()`'s empty-style branch, so `isEmpty` wrongly reported `true` and `isEqual(to:)` ignored the curve color whenever surface color was unset on either side. Added `OCCTXCAFPrsStyleCreateWithCurvColor` (bridge) and a matching `toOCCT()` branch (Swift) so a curve-only style now round-trips correctly.
+
+### `Drawing.addCuttingPlaneLine` refuses a zero-length normal or view direction (#1581)
+
+The degenerate guard normalized both inputs before measuring them. `simd_normalize(.zero)` is a NaN
+vector and every comparison against NaN is false, so a zero-length `cuttingPlaneNormal` or
+`viewDirection` passed the guard, then passed the later fallback-axis checks on the same terms. The
+call returned a `.cuttingPlaneLine` annotation built from the hardcoded `(1, 0)`/`(0, 1)` fallback
+axes, or from NaN geometry when `viewDirection` was the zero vector, in place of the documented
+`nil`. Both inputs are now length-checked before anything normalizes them.
+
+### `MedialAxis.init(of:)` and `addAutoCentermarks` doc comments corrected to match actual (already-correct) behavior (#1579)
+
+`MedialAxis.init(of:)` documented itself as using only the outer wire of the first face found; it actually uses all wires of that face (outer boundary and inner/hole wires alike), which is what its own thin-wall-detection use case relies on. `Drawing.addAutoCentermarks`'s doc stated the inverse of its actual, already-tested circle-visibility rule: a circle is visible when its plane normal is roughly *parallel* to the view direction, not when it isn't. Doc-only; no behavior change.
+
+### The Quaternion Euler-order doc names the right ordinals (#1567)
+
+`setEulerAngles(order:alpha:beta:gamma:)` documented `0 = Intrinsic_XYZ`. In the pinned
+`gp_EulerSequence.hxx`, ordinal `0` is `gp_EulerAngles`, aliased `Intrinsic_ZXZ` and the classic
+Euler angles; `Intrinsic_XYZ` is ordinal `8`. The doc comment now carries the full 26-value table,
+and `getEulerAngles(order:)`, which had no order note at all despite sharing the parameter, points
+at it. Doc-only: the bridge passes `order` straight through to `(gp_EulerSequence)order` with no
+remapping, and the existing test already used `order: 8` for `Intrinsic_XYZ`.
+
+### `ConstructionPlane.throughAxis`'s doc drops an adjacent face it never reads (#1564)
+
+The case doc said the reference plane is "deduced from the first face adjacent to the axis". The
+resolver calls `perpendicularBasis(to:)`, a pure function of the direction vector using OCCT's
+`gp_Ax2` canonical smallest-component algorithm, and reaches no face and no `BRepGraph` on the way.
+`docs/reference/Construction.md` and `Issue881PerpendicularBasisTests` both already described the
+real behaviour; the inline comment predates #881's basis unification. Doc-only.
+
+### `Shape.encodingRegularity`'s default tolerance was 172x stricter than OCCT's own default (#1545)
+
+`encodingRegularity(toleranceDegrees:)` defaulted to the bare literal `1e-10`, taken as **degrees**.
+The bridge correctly converts this to radians before calling `BRepLib::EncodeRegularity`, whose own
+default (`1.0e-10`) is expressed in **radians**, so the old default converted to ~1.745e-12 radians,
+about 172x stricter than OCCT's own default, meaning essentially no edge was ever marked "regular"
+at the default tolerance. The default is now `1.0e-10 * 180.0 / Double.pi` (~5.7295779513e-9
+degrees), which converts back to exactly OCCT's own `1.0e-10` radian default.
+
+### Fix stale/wrong `Document.swift` doc comments for `loadOBJ` and `documentCount` (#1546)
+
+`loadOBJ(from:singlePrecision:systemLengthUnit:)`'s doc comment no longer claims a
+nonexistent `(default: false)` for the required `singlePrecision` argument.
+`documentCount`'s doc comment no longer describes a shared, process-wide "application
+session"; since #371 every `Document` owns a private `TDocStd_Application`, so this
+property reports the count opened through that one instance (in practice 1 for a valid
+document, 0 for null). Same fix applied to `docs/reference/Document-Persistence-IO.md`.
+Documentation only, no behavior change.
+
+### `Curve3D.bsplineKnotSequence()` heap buffer overflow past ~1020 poles fixed (#1541)
+
+`OCCTCurve3DBSplineGetKnotSequence` had no capacity parameter and unconditionally wrote every
+knot in a curve's flat sequence into whatever buffer it was given; `bsplineKnotSequence()`'s fixed
+1024-element Swift buffer overflowed for any BSpline whose real sequence length
+(`poleCount + degree + 1`, more for a periodic curve) exceeded that, a genuine out-of-bounds heap
+write. The bridge function now takes a `maxCount` capacity and clamps its writes, returning the
+number of knots actually written, matching `OCCTCurve3DBSplineToBeziers`/
+`OCCTSplitCurve3dContinuity`'s existing pattern; the Swift wrapper sizes its buffer from the
+curve's own pole count and degree (`poleCount + 2*degree + 1`, an exact upper bound for both
+periodic and non-periodic curves per `Geom_BSplineCurve::KnotSequence`'s documented length
+formula), so it never truncates.
+
+### Fixed `Shape.loadSTEP(from:unitInMeters:)`'s unit parameter being dead on arrival (#1548)
+
+`STEPControl_Reader::SetSystemLengthUnit()` was called before `ReadFile()`, when it is a guarded
+no-op with no model yet to apply to (`StepModel().IsNull()` is always true at that point), so the
+imported shape always came back unscaled regardless of `unitInMeters`. Fixed by reordering the call
+to run after `ReadFile()` and before the transfer, and by converting `unitInMeters` (meters,
+matching the parameter name and the doc's own examples) to `SetSystemLengthUnit`'s actual
+millimeter-based convention (empirically confirmed: `1.0` == 1 mm, `1000.0` == 1 m, `25.4` == 1
+inch) before handing it off, so the doc's existing examples (`0.001` for mm, `0.0254` for inch) now
+work as documented rather than needing to change.
+
+### `Curve2D.isLinear(tolerance:)` can never return the documented `nil`, and `bsplineMovePointAndTangent`'s `poleRange` mislabeled OCCT's independent continuity codes (#1542)
+
+`Curve2D.isLinear(tolerance:)` is documented to return `nil` for a curve that isn't a BSpline, but
+the bridge returned `false` for both "not a BSpline" and "genuinely non-linear (0.0 deviation)", so
+the documented `nil` path was unreachable and a non-BSpline curve silently read back as
+`(isLinear: false, deviation: 0.0)`. The bridge now signals the two cases distinctly, and the Swift
+wrapper maps "not a BSpline" to `nil`.
+
+`Curve2D.bsplineMovePointAndTangent`/`Curve3D.bsplineMovePointAndTangent` took a
+`poleRange: ClosedRange<Int>`, forwarding it to `Geom(2d)_BSplineCurve::MovePointAndTangent`'s
+`StartingCondition`/`EndingCondition` parameters, two independent continuity codes (`-1` free to
+move, `0` fixed, `1` fixed with tangent, and so on), not a pole-index range and not required to be
+ordered, so `ClosedRange<Int>` could not even represent a legitimate call like
+`StartingCondition: 1, EndingCondition: -1` (`1...(-1)` traps at runtime). Both methods now take
+`startingCondition: Int, endingCondition: Int` directly.
+
+### `distanceSS(to:deflection:)`'s default deflection was 9 orders of magnitude off OCCT's own default, silently returning the wrong extremum's points (#1544)
+
+`Shape.distanceSS(to:deflection:)` defaulted `deflection` to `100.0`. Per OCCT's own
+`BRepExtrema_DistanceSS` header, that parameter is a numeric-tie tolerance (default
+`Precision::Confusion()`, ~1e-7) controlling how many near-minimum extrema get folded into the
+solution set, not a spatial search radius. At the old default, `.distance` correctly reported the
+true minimum while `.point1`/`.point2` (the first-appended solution) could silently describe a
+different, non-minimal extremum, with `.solutionCount` inflated by every extremum within 100 units
+of the minimum. The default is now `1e-7` (`Precision::Confusion()`), matching OCCT's own default.
+
+### `Shape.isSelfIntersecting(hardTimeout:)` no longer falls back to a racy self-based check when `deepCopy` fails (#1549)
+
+If `Shape.deepCopy` failed while building the geometry-independent probe
+`isSelfIntersecting(hardTimeout:)` uses, it silently fell back to running the check against `self`
+directly, reintroducing the shared `Geom_Surface`/`Geom_Curve` evaluation-cache race (#1160/#831)
+the probe exists to avoid. It now returns `nil` (indeterminate) instead, matching the method's
+existing contract for every other case it cannot conclusively answer. No signature change.
+
+### `Surface.extrema(to:)` now uses each surface's real domain when `uvBounds1`/`uvBounds2` is omitted, not `[0,1]x[0,1]` (#1543)
+
+`Surface.extrema(to:uvBounds1:uvBounds2:)` hardcoded a `(0, 1, 0, 1)` fallback for an omitted `uvBounds1`/`uvBounds2`, contradicting its own doc comment ("Uses full surface bounds if nil"). For any surface whose real domain isn't `[0,1]x[0,1]` (a sphere, a full cylinder, an unbounded plane, ...) this silently searched only a tiny corner of parameter space, giving a wrong nearest-point/distance or `nil` where a real extremum exists outside that corner. Now defaults to `self.domain`/`other.domain`, each surface's actual parameter bounds. Also fixes two doc-only mistakes: `toBezierPatchGrid()`'s and `Shape.surface(poles:)`'s doc comments said "row-major order (U varies faster/fastest)", backwards from the real loop order (V varies faster); and a `gaussianCurvature(atU:v:)` doc example called a nonexistent `Surface.cylinder(axis:direction:radius:)` overload instead of the real `cylinder(origin:axis:radius:)`.
+
+### `Shape.proximityFaces` indices now address the same enumeration `face(at:)` does (#1550)
+
+`Shape.proximityFaces(with:tolerance:deflection:)`'s returned `face1Index`/`face2Index` used to
+come from `BRepExtrema_ShapeProximity`'s own internal, non-deduplicated occurrence walk, rather
+than the deduplicated enumeration `Shape.face(at:)` reads. For a shape with a genuinely
+shared/instanced face occurrence (e.g. a split/Boolean result whose pieces share the cut face),
+`proximityFaces`' indices could silently name a different face than `face(at:)` at that same
+index. Fixed by remapping through the same deduplicated enumeration `face(at:)` uses, matching
+#541's convention for every other index-returning entry point in the bridge. The returned index
+*values* may now differ from before on shapes with shared face occurrences; ordinary shapes are
+unaffected.
+
+### `isBooleanValidWith`'s operation-code doc table was wrong; default corrected to `BOPAlgo_UNKNOWN` (#1540)
+
+`Shape.isBooleanValidWith(_:operation:testSmallEdges:testSelfInterference:)` documented `operation`
+as `0=unknown, 1=common, 2=fuse, 3=cut, 4=section`. The real mapping (the bridge casts straight
+through to `BOPAlgo_Operation` with no translation) is `0=common, 1=fuse, 2=cut, 3=cut21, 4=section,
+5=unknown`. The doc table is corrected, and the default changes from `0` (previously, silently,
+`BOPAlgo_COMMON`) to `5` (`BOPAlgo_UNKNOWN`), matching the generic-check semantics
+`isValidForBoolean(with:)` already documented. A caller passing an explicit `operation:` value
+should re-check it against the corrected table; a caller relying on the default should confirm the
+generic unknown-operation check (no operation-specific dimension-compatibility test) is still what
+they want.
+
+### `meshFaceActiveTriangulationRepId`/`meshEdgePolygon3DRepId` now consult the persistent mesh tier they promise (#1547)
+
+Fixed `BRepGraph.meshFaceActiveTriangulationRepId(_:)` and `meshEdgePolygon3DRepId(_:)`, which
+documented cache-first/persistent-fallback semantics but only ever queried the algorithm-derived
+mesh cache. For a face or edge whose triangulation/polygon-3D data lives only in the persistent
+(def-resident) tier (e.g. a shape meshed, or STEP-imported with an existing triangulation, before
+the `BRepGraph` was built), both accessors silently returned `nil` even though the sibling
+`faceHasTriangulation`/`edgeHasPolygon3D` correctly reported the data was present. Both now query
+`Mesh().Effective()`, matching `faceHasTriangulation`/`edgeHasPolygon3D`'s existing pattern.
+
+### `Face.principalCurvatures(atU:v:)`/`Surface.principalCurvatures(atU:v:)` now return `dirMin`/`dirMax` correctly paired (#1437)
+
+Previously returned the maximum-curvature direction as `dirMin` and the minimum-curvature
+direction as `dirMax`, exactly transposed. Fixed to match `GeomLProp_SLProps::CurvatureDirections`'s
+real parameter order.
+
+### `Shape.fixSmallCurves`/`fixSmallBezierCurves` removed as non-functional no-ops; `Shape.dividedByNumber` actually divides now (#1491)
+
+`OCCTShapeUpgradeFixSmallCurves`/`OCCTShapeUpgradeFixSmallBezierCurves` (and the Swift
+`Shape.fixSmallCurves(tolerance:)`/`fixSmallBezierCurves(tolerance:)` wrappers) always handed back
+the caller's own unmodified shape: `ShapeUpgrade_FixSmallCurves`/`FixSmallBezierCurves` have no
+standalone `Perform()`/`Compute()` at all, and the only two real OCCT callers either need an
+active curve-split criterion these entry points never took, or are already exercised correctly via
+`Shape.convertToBezier()`. Removed both rather than leaving a no-op in place; use
+`Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:)` instead, the real standalone equivalent,
+which already exists.
+
+Separately, `OCCTShapeDivideByNumber(shape, nbU, nbV)` never called `SetNumbersUVSplits(nbU,
+nbV)`, so per-axis split counts were silently ignored in favor of an auto-derived "roughly square"
+split (`nbU=5,nbV=1` and `nbU=1,nbV=5` produced identical results). Fixed by calling
+`SetNumbersUVSplits`. Also fixed a second, more severe defect found while writing a regression
+test for the first: `MaxArea()` was never set to the `-1` sentinel `Perform()` needs to derive a
+max-area-per-part from `NbParts()` at all, so the function returned `nil` for every input,
+unconditionally, regardless of the U/V bug. `Shape.dividedByNumber(_:)` now actually works, and
+(since it always passes `nbV: 1`) splits a face into strips along its longer parametric axis
+rather than a grid; its doc comment is corrected to match.
+
+### `occtCPntsUniformDeflectionImpl` and 25 further split-statement cast sites gain a null-shape guard (#1513)
+
+`Shape.uniformDeflection(_:)`/`(_:range:)` crashed the whole process (uncatchable SIGSEGV) on a
+`Shape` whose wrapper was non-null but whose underlying `TopoDS_Shape` was null (e.g.
+`someShape.nullified?.uniformDeflection(_:)`), instead of returning `nil`. The gap was a `TopoDS::`
+cast assigned to a local in one statement, then consumed by a shape-dereferencing constructor or
+`BRep_Tool::` call in the next, invisible to `check-null-handle-guards.py`'s outward walk, which
+only follows call-nesting within one expression. Fixed with `occtShapeIsPresent(shape)` at all 26
+sites the newly-extended gate found across 10 files. No public API change.
+
+### `Curve2DGcc.hatch` no longer silently drops clockwise-wound boundaries ([#1496](https://github.com/SecondMouseAU/OCCTSwift/issues/1496))
+
+`OCCTCurve2DHatch` added every boundary element to the oriented `Geom2dHatch_Hatcher` with a
+hardcoded `TopAbs_FORWARD`, so a boundary wound clockwise had its inside/outside swapped and every
+resulting hatch domain was silently dropped, `IsDone` still reporting success. The bridge now
+derives the whole boundary's winding sense from its actual geometry (a shoelace sum over the
+ordered curve array) and orients every element `TopAbs_REVERSED` when it winds clockwise, matching
+how `DBRep_IsoBuilder`, OCCT's own reference caller of this class, derives orientation from real
+edge orientation. `Curve2DGcc.hatch(boundaries:...)` now accepts a boundary wound in either
+direction with no change to its signature.
+
+### `OCCTSewingNbMultipleEdges`/`OCCTSewingIsMultipleEdge` null-handle guards (#1507)
+
+`OCCTSewingNbMultipleEdges` and `OCCTSewingIsMultipleEdge` (`OCCTBridge_Modeling_HealingSewing.mm`)
+now guard a null `OCCTSewingRef` with `if (!sewing) return <fallback>;`, matching the file's other
+20 `OCCTSewing*` functions. A null `sewing` previously dereferenced a raw pointer uncatchably
+(SIGSEGV). Not reachable through the public Swift API (`SewingBuilder` always holds a non-null
+`ref`); hardening for the public C ABI.
+
+### Fixed `IntAna.planeSphere` returning `(0, 0, 0)` for the common secant case, and `QuadricIntersection.coneSpherePoints` NaN on `sampleCount: 1` (#1495)
+
+`IntAna.planeSphere`'s ordinary secant case (a plane cutting through a sphere) used to report a
+circle intersection's center as `(0, 0, 0)` regardless of the real geometry: OCCT's own
+`IntAna_QuadQuadGeo::Point()` only handles the tangent case and falls back to the origin for
+`IntAna_Circle`, and the bridge called it unconditionally. `IntAna.QuadQuadResult` gains
+`resultType` (mirrors `IntAna_ResultType`) and `circles` (center/axis/radius); the bridge now reads
+`Circle()` instead of `Point()` when `resultType == .circle`:
+
+```swift
+let r = IntAna.planeSphere(planeOrigin: SIMD3(0, 0, 3), planeNormal: SIMD3(0, 0, 1),
+                            sphereCenter: .zero, sphereAxis: SIMD3(0, 0, 1), radius: 10)
+// r.resultType == .circle, r.circles[0].center ≈ (0, 0, 3), r.circles[0].radius ≈ 9.539
+```
+
+Separately, `QuadricIntersection.coneSpherePoints(sampleCount: 1)` divided by zero
+(`nbSamples - 1 == 0`) and returned a single `NaN` point while still reporting success, even
+though `sampleCount: 1` is documented as legal. It now returns the curve's domain start instead.
+
+### `GeomTools_{Curve,Curve2d,Surface}Set` write functions refuse a batch with a duplicate handle instead of silently dropping it (#1512)
+
+`OCCTGeomToolsCurveSetWrite`/`Curve2dSetWrite`/`SurfaceSetWrite` discarded `GeomTools_*Set::Add()`'s
+return value. `Add()` returns the index of the key, new or existing, deduplicating by
+underlying-object identity, so two array elements sharing one underlying
+`Geom_Curve`/`Geom2d_Curve`/`Geom_Surface` (e.g. the same `Curve3D`/`Curve2D`/`Surface` instance
+appearing twice, or two edges of a real BREP shape sharing one 3D curve) were silently collapsed to
+a single stored entry: `Write()` emitted a set with fewer entries than the caller passed, and
+`deserializeCurves`/`deserializeSurfaces`'s read-back array was shorter than what was serialized,
+with index correspondence silently broken from the first duplicate onward. All three write loops
+now refuse the whole batch (return `nil`) on a duplicate, matching the existing null-handle
+refusal's own idiom.
+
+### `Shape.analyticCurvaturePoints` no longer swaps MinCur/MaxCur for ellipses; `Curve2D.curveType`'s null-handle fallback returns OtherCurve, not OffsetCurve (#1511)
+
+Two bugs fixed in `OCCTBridge_Geom2d_Adaptor.mm`:
+
+- `Shape.analyticCurvaturePoints(curveType: 2, ...)` (ellipses) previously reported
+  `.maximumCurvature` at the major-axis vertices (θ=0,π) and `.minimumCurvature` at the minor-axis
+  vertices (θ=π/2,3π/2): backwards, per `LProp_CurAndInf`'s own radius-of-curvature definition.
+  Now correctly reports `.minimumCurvature` at θ=0,π and `.maximumCurvature` at θ=π/2,3π/2.
+- `OCCTCurve2DCurveType`'s null/invalid-handle fallback returned `7` (`GeomAbs_OffsetCurve`) instead
+  of `8` (`GeomAbs_OtherCurve`), matching the fix already shipped for the 3D sibling in #1476. Low
+  reachability through the public Swift API today (`Curve2D`'s `curve` parameter is `_Nonnull`).
+
+### IGES `Robust` importers' precision override was dead code; multi-shape IGES export silently dropped a shape `AddShape` rejected (#1504)
+
+`OCCTImportIGESRobust`/`OCCTImportIGESRobustProgress` set `read.precision.mode` to `0` (File)
+and then set `read.precision.val`, which only takes effect under mode `1` (User); the value was
+never read. Now matches the STEP robust importers' own shape: `read.precision.mode` stays File,
+and `read.maxprecision.val` is tightened from the default `1.0` to `0.1`, capping how far
+healing may widen a tolerance to reconcile a defect.
+
+`Exporter.writeIGES(shapes:to:)` (backed by `OCCTExportIGESMultiShape`) could silently drop a
+shape from the written file while still reporting success: `IGESControl_Writer::AddShape` can
+reject a shape that is topologically valid (`BRepCheck_Analyzer`-clean) but not IGES-translatable
+(for example a standalone degenerate edge with no 3D curve), and the bridge ignored that
+signal. The whole export now fails (`ExportError.exportFailed`) if any shape in the batch is
+rejected, rather than writing a file quietly missing part of what was asked for.
+
+### Seven `Topology_Adjacency.mm` functions guard against a null `OCCTShapeRef` (#1492)
+
+`OCCTEdgeFaceAdjacency`, `OCCTVertexEdgeAdjacency`, `OCCTEdgeAdjacentFaces`,
+`OCCTVertexAdjacentEdges`, `OCCTWireExplorerOrientations`, `OCCTWireExplorerVertices` and
+`OCCTShapeTransformIsNegative` now guard a genuinely-null `OCCTShapeRef` the same way dozens of
+sibling functions in the same file already did, returning the same fallback each function's
+existing `catch (...)` already produces instead of dereferencing a null pointer. Not reachable
+through the public Swift API today (`Shape.handle` is non-optional), so this is hardening with no
+observable behavior change for any currently-reachable input.
+
+### `GeomFill_Darboux` no longer crashes; surface-surface extrema now return both points' full UV (#1502)
+
+`Shape.darbouxTrihedron(onFace:at:)` used to hand `GeomFill_Darboux::SetCurve` a plain
+`BRepAdaptor_Curve`, where the class unconditionally `static_cast`s the handle to
+`Adaptor3d_CurveOnSurface*` and reads private fields at offsets that don't exist on that type: an
+uncatchable bus error on any real edge-on-face input. It now builds a genuine curve-on-surface from
+the edge's pcurve on the face, so the operation works instead of crashing.
+
+`Surface.extremaSSPoint(other:index:)` used to discard the V parameter of both returned points
+(`Extrema_POnSurf::Parameter` was called but only U was kept), reusing `Curve3D.ExtremaPointPair`,
+a struct designed for one parameter per point. **Breaking:** it now returns
+`Surface.ExtremaSurfacePointPair`, with explicit `u1`/`v1`/`u2`/`v2` fields for both points, so a
+caller can actually re-locate a surface-surface extremum in either surface's own UV space.
+
+### `Surface.conversionGap` deprecated: it never reflected `convertToPeriodic()`, and never can (#1510)
+
+`OCCTSurfaceConversionGap` used to construct a throwaway `ShapeCustom_Surface`, run an unrelated
+`ConvertToAnalytical(1e-3, Standard_False)` recognition pass at a hardcoded tolerance the caller
+never supplied, discard the recognized surface, and return whatever `Gap()` held from that call.
+`ShapeCustom_Surface::Gap()`'s own header doc says it reports the deviation from the *last call to
+ConvertToAnalytical*, never `ConvertToPeriodic`, and `myGap` is written even on
+`ConvertToAnalytical`'s rejection path, so the old code could report a nonzero "gap" even when
+nothing was actually converted, and identically whether or not `convertToPeriodic()` had ever run.
+
+Investigated whether `ConvertToPeriodic` could report a real measured deviation instead: it can't,
+meaningfully. Reading its OCCT source shows it is a pure knot rearrangement
+(`Geom_BSplineSurface::SetUPeriodic`/`SetVPeriodic`, reusing the surface's own poles), and
+direct-sampling reproducers (`Scripts/repro/1510-surface-conversion-gap/`) measured exactly 0.0
+deviation between the original and periodic-converted surface in every scenario tried, including a
+deliberately not-quite-exactly-closed input. `Surface.conversionGap` is now
+`@available(*, deprecated, ...)` and its bridge function always returns `-1.0`, a documented
+sentinel rather than a fabricated measurement; `convertToPeriodic()`'s own doc comment explains why
+there is no accompanying gap. Existing callers keep compiling, with a deprecation warning.
+
+### Fixed roughness-from-shininess formula and color attribute round-trip in `OCCTBridge_Document_Appearance.mm` (#1508)
+
+`OCCTDocumentGetLabelMaterial`'s `HasCommonMaterial()` fallback divided `Shininess` (already `[0,1]`) by 100 before inverting it, collapsing every legitimate roughness estimate into `[0.99, 1.0]`; it now reuses `OCCTMaterialRoughnessFromSpecular`, the physically-based specular-color+shininess conversion already used elsewhere. `OCCTDocumentSetColorAttr`/`SetColorRGBAAttr` built their `Quantity_Color` with `Quantity_TOC_sRGB` while the matching getters read back with no colorspace conversion, so a color set via `AssemblyNode.setColorAttribute` did not round-trip through `colorAttribute`/`colorRGBAAttribute`; both setters now use `Quantity_TOC_RGB`, matching the sibling `setColor`/`color` pair.
+
+### `OCCTMedialAxisDistanceOnArc` linearly interpolated the inscribed-circle radius instead of measuring the real curve point (#1493)
+
+`OCCTMedialAxisDistanceOnArc` computed the boundary distance only at an arc's two endpoint nodes and
+linearly interpolated between them for any intermediate `t`, instead of evaluating the arc's own
+trimmed curve at `t` and measuring `distanceToBoundary` from that real point, the mechanism
+`OCCTMedialAxisDrawArc` already used two functions above it in the same file. Linear interpolation
+of distance-to-boundary is exact only when the bisector arc is a straight line; most arcs are
+circular (corner-corner bisectors) or parabolic (vertex-to-edge bisectors from a reflex corner),
+where the true inscribed-circle radius is not linear in `t`, up to 30% wrong at an arc's own
+midpoint on a reflex-vertex polygon. Fixed to evaluate the trimmed curve's own `D0` at the requested
+`t` (respecting `GeomBis`'s `Reverse` flag so `t=0`/`t=1` still land on the arc's first/second node
+exactly as documented) and measure the real distance from that point; falls back to the old
+node-position interpolation only if the curve can't be evaluated. Bridge-side fix only, no OCCT
+kernel patch. `MedialAxisRectangleTests.rectangleDistanceOnArc` is unaffected: a rectangle's
+bisector arcs are all straight lines, the one shape family where linear interpolation happens to be
+exact.
+
+### `.visibleIso`/`.hiddenIso`/`.isoLine` HLR edge categories always returned nil (#1500)
+
+`OCCTHLRGetEdgesByCategory` and `OCCTHLRCompoundOfEdges` built their `HLRBRep_Algo` with `algo->Add(shape->shape)`, omitting the `nbIso` argument that OCCT defaults to `0`. `HLRTopoBRep_DSFiller::Insert` gates isoline computation entirely on that count, so `hlrEdges(direction:category:)`'s `.visibleIso`/`.hiddenIso` and `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)`'s `.isoLine` always returned `nil`, contradicting the bridge's own "exact HLR only" documentation. Both functions gain a new `nbIso: Int = 10` parameter (`hlrEdges(direction:category:nbIso:)` / `hlrCompoundOfEdges(direction:edgeType:visible:in3d:nbIso:)`), matching the precedent `hlrPolyEdges(...:deflection:)` already sets, and the bridge now passes it through to `algo->Add(shape, nbIso)`. Existing call sites are unaffected: the new parameter defaults to `10`, the same value the issue's own reproducer used to confirm the fix.
+
+### `OCCTGeomFillCoonsAlgPatchEval` reparametrizes boundaries to `[0,1]` before evaluating (#1499)
+
+`Shape.coonsAlgPatch(edge1:edge2:edge3:edge4:evalU:evalV:)` built each boundary from the edge's own
+raw curve parameter range and never reparametrized it to `[0,1]` before evaluating the resulting
+patch at `u,v` normalized to `[0,1]`, so for real (non-`[0,1]`-parametrized) edges it silently
+sampled only a tiny sliver of the true patch near each edge's own parameter origin, instead of the
+requested point. Fixed by reparametrizing each boundary to `[0,1]` first, matching
+`GeomFill_ConstrainedFilling`'s own established usage.
+
+### Fixed canonical-shape recognition falling back to Plane/Unrecognized ([#1509](https://github.com/SecondMouseAU/OCCTSwift/issues/1509))
+
+`OCCTShapeRecognizeCanonical`, `OCCTShapeRecognizeCanonicalSurface`, and
+`OCCTShapeRecognizeCanonicalCurve` ran their sequential `IsPlane`/`IsCylinder`/`IsCone`/`IsSphere`/
+`IsLine`/`IsCircle`/`IsEllipse` checks on one `ShapeAnalysis_CanonicalRecognition` instance with no
+`ClearStatus()` between them. `myStatus` is set to `1` on an ordinary "not this type" outcome, not
+just a genuine error, and every `IsX` short-circuits to `false` while `myStatus != 0`, so a
+cylindrical, conical, or spherical face (and a straight-line edge, through the combined whole-shape
+entry point) was never actually recognized past the first check; `Shape.recognizeCanonical()` and
+`Shape.recognizeCanonicalSurface()` returned `.plane`/`nil`/`.none` instead of `.cylinder`/`.cone`/
+`.sphere`/`.line`. Fixed by clearing the recognizer's status between checks.
+
+### `occtFillingAddConstraint` now degrades to position-only continuity for a pcurve-less edge instead of failing the whole fill (#1503)
+
+`Shape.fill(boundaries:supportedBy:parameters:)` and `Shape.fill(constraints:parameters:)` (and
+their bridge counterparts `OCCTShapeFillWithSupport`/`OCCTShapeFillConstraints`, plus
+`FillingSurface`'s `add(edge:continuity:)`/`add(edge:support:continuity:)`) used to return `nil` for
+the whole fill when a boundary edge had neither a nominated/inferred support face nor a pcurve of
+its own, at any continuity above `.c0`: OCCT's face-less fill overload throws for that case, and the
+bridge never caught it by downgrading first. Fixed to degrade that edge to position-only continuity
+instead, matching the documented per-edge fallback. `Shape.fill(boundaries:parameters:)` (no
+support) is affected the same way, since all these entry points share one bridge helper; its own doc
+comment, which previously promised the opposite (whole-call failure), is corrected to match.
+
+### Five null-handle guards fixed in `OCCTBridge_Modeling_SolidPrimitives.mm` (#1498)
+
+`occtShapePeriodicImpl` (`Shape.makePeriodic`/`Shape.repeated`), `OCCTShapeMakeDraft`
+(`Shape.draft`), `OCCTShapeCreateRevolution` (`Shape.revolve(profile:...)`),
+`OCCTShapeCreateRevolutionFull` and `OCCTShapeCreateRevolutionPartial` (`Shape.revolved(...)`)
+checked only the wrapper pointer, not the geometry it wraps, before passing it into OCCT. A
+non-null wrapper carrying a null shape/wire -- reachable via the deprecated `Shape.nullified`
+property -- crashed the process instead of returning `nil`. All five now use `occtShapeIsPresent(...)`,
+matching this file's other shape-consuming functions.
+
+### `Shape.facesFromEdges` no longer discards every face when the input has more than one disjoint closed loop (#1506)
+
+Fixed a total-data-loss bug in `OCCTShapeEdgesToFaces`: a compound containing more than one disjoint
+closed edge loop (e.g. two separate closed squares) threw an uncaught `StdFail_NotDone` while trying
+to reconnect the second loop's first edge, discarding every already-built face and returning `nil`
+for the whole call. Also fixed a related defect in the same recovery branch where the edge that
+failed to connect was silently dropped instead of seeding the next wire, which would have caused the
+second loop to come up one edge short once the exception was fixed. `Shape.facesFromEdges(_:onlyPlanar:)`
+now correctly returns one face per disjoint closed loop.
+
+### `ExtremaElC.lineToCircle`/`.circleToCircle`/`.lineToEllipse` no longer return an empty array for a degenerate parallel case (#1501)
+
+`OCCTExtremaElCLinCirc`, `OCCTExtremaElCCircCirc`, and `OCCTExtremaElCLinElips` discarded a
+genuinely computed distance whenever `Extrema_ExtElC` reported `IsParallel()` (a line coincident
+with a circle's or ellipse's own axis, or two coaxial, coplanar circles), returning an empty
+Swift array instead of the well-defined constant distance OCCT had already computed. Fixed to
+retrieve `ext.SquareDistance(1)` and return one result, matching the existing
+`ExtremaElC.lineToLine` pattern for its own parallel case.
+
+### `Extrema2d.distanceBetweenLines` returns a genuine matched point pair for parallel lines (#1494)
+
+Fixed `OCCTExtremaExtElC2dLinLin`'s parallel-lines branch, which used to echo each line's raw input
+origin as the returned "closest" point pair. Those origins only achieved the reported `distance`
+when the offset between the lines happened to already be perpendicular to their shared direction;
+in general they didn't, so `Extrema2DResult.point1`/`.point2` could be reported alongside a
+`distance` they did not actually achieve. Now derived by projecting line 1's origin perpendicularly
+onto line 2, a genuine matched pair for any pair of parallel lines.
+
+### `occtHasSelfIntersectingWire` now detects self-intersection on a bare wire, not just a face (#1505)
+
+The #263 crash guard behind `Shape.extruded(by:)`, `Shape.healed()` and
+`Shape.healedWithFullHistory()` only ever checked self-intersection when its input already was
+(or contained) a `TopoDS_Face`, because `BRepCheck_Wire::SelfIntersect()` needs a face context to
+project pcurves onto. A bare-wire `Shape` (e.g. from `Shape.fromWire(_:)`) silently passed the
+guard even when genuinely self-intersecting. Fixed by synthesizing a planar face per face-less
+wire before checking; a wire that can't be faced falls back to no verdict rather than crashing.
+No public API change.
+
+### Fixed two uncatchable crashes on a null shape in ShapeFix healing operations (#1479)
+
+`OCCTShapeFixComposeShell` (backing `Shape.composeShell(precision:)`) now guards against a
+non-null wrapper carrying a null `TopoDS_Shape` (e.g. the deprecated `Shape.nullified`), and
+`OCCTShapeFixEdgeConnect` (backing `Shape.fixEdgeConnect()`) now guards against a genuinely-null
+`OCCTShapeRef`, matching its sibling `OCCTShapeConnectEdges`. Both previously crashed the process
+(SIGSEGV) uncatchably; both now return `nil`.
+
+### `Wire.filletedAll2D`/`chamferedAll2D` no longer mask a mid-loop failure, and chamfer adjacency now follows true wire connection order (#1478)
+
+`Wire.filletedAll2D(radius:)` and `Wire.chamferedAll2D(distance:)` used to check
+`ChFi2d_Builder::Status()` only once, after their whole per-vertex/per-edge-pair loop; since that
+field is overwritten by every `AddFillet`/`AddChamfer` call, a failure earlier in the batch, masked
+by a later success, could silently produce a wrong partial result instead of the documented
+"original wire if some failed" fallback. Both now track failure across the whole loop correctly.
+
+`Wire.chamferedAll2D(distance:)`'s adjacency pairing also assumed `TopExp::MapShapes` returns edges
+in wire-connection order; for a wire whose edges were added out of sequence (e.g. via
+`Wire.wireFromEdges`), that assumption could pair the wrong edges and skip real adjacent corners
+entirely. It now derives adjacency from `BRepTools_WireExplorer`, the wire's true connection order.
+
+### `occtDocumentCreateDimensionImpl` no longer double-registers a single-shape dimension (#1481)
+
+A single-shape dimension created via `Document.createDimension(on:type:value:...)` / `createDimension(on:type:value:lowerTolerance:upperTolerance:)` used to be registered under both `XCAFDoc_DimTolTool`'s `DimensionRefFirstGUID` and `DimensionRefSecondGUID` graph-node roles for its shape, so `XCAFDoc_DimTolTool::GetRefDimensionLabels` reported it twice for that shape, silently corrupting any consumer that counts or deduplicates dimensions per shape (STEP export, UI listings, etc.). The live defect was in `OCCTBridge_Document_DocumentLifecycle.mm`'s `occtDocumentCreateDimensionImpl`, which now calls `XCAFDoc_DimTolTool`'s dedicated single-shape `SetDimension(theL, theDimTolL)` overload instead of the 3-sequence one with a duplicated argument.
+
+Adds `Document.refDimensionCount(for:)` to read how many dimensions reference a shape:
+
+```swift
+let label = doc.addShape(shaft, makeAssembly: false)
+doc.createDimension(on: label, type: .sizeDiameter, value: 20.0)
+print(doc.refDimensionCount(for: label)) // 1, not 2
+```
+
+### `Curve2D.approxWithDetails` reports the maxError `approximated` discarded (#1474)
+
+`OCCTCurve2DApproximate` gated its result on `Geom2dConvert_ApproxCurve::HasResult()` alone, never
+reading `MaxError()` or `IsDone()`. OCCT documents `HasResult()` as true even for a fit that is "not
+NECESSARILY within the required tolerance", so `Curve2D.approximated` could silently hand back a
+curve nowhere near the requested tolerance with no way for a caller to tell.
+
+`Curve3D` and `Surface` had the identical trap and were fixed by #491, adding an
+`approxWithDetails` companion sharing one implementation with the plain entry point.
+`Curve2D.approximated` was left out of that fix: `Geom2dConvert_ApproxCurve` appeared exactly once
+in the whole bridge, at this one call site, with no detailed sibling.
+
+`Curve2D` now gets the same companion, matching the #491 pattern:
+`Curve2D.approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)` (backed by a new
+`OCCTGeomConvertApproxCurve2D`/`OCCTApproxCurve2DResult`) returns the same fitted curve
+`approximated` does, plus the `maxError`/`isDone`/`hasResult` diagnostics OCCT already computes for
+it. Both entry points now share one bridge helper (`occtApproxCurve2D`), so they cannot drift the
+way the pre-#491 `Curve3D`/`Surface` pairs did. `Curve2D.approximated`'s behavior is unchanged: it
+still returns a best-effort fit whenever `HasResult()` is true, matching
+`Curve3D.approximated`/`Surface.approximated`; its doc comment now carries the same caveat those
+two already do.
+
+New `Issue1474Curve2DApproxDetailsTests` (`Tests/OCCTGeom2dTests`) proves `approxWithDetails`
+surfaces the gap: a single degree-3 segment fitted to a full radius-10 circle against a `1e-9`
+tolerance still reports `hasResult`/a non-nil curve (matching `approximated`'s existing behavior),
+but `maxError` measures `5.108514...`, three orders of magnitude past the tolerance, matching the
+analogous `Curve3D` starved-fit case's `~5.1` almost exactly, information `OCCTCurve2DApproximate`
+discarded entirely before this fix.
+
+### Fixed a corrupted identity-matrix fallback and documented `explorerIsAssembly`'s always-`false` contract (#1480)
+
+- `Document.explorerLocation(at:)` returned a corrupted "identity" matrix (spurious Z=1 and a
+  `y += z` shear) for an out-of-range index or on an internal exception, instead of a true
+  identity. Fixed.
+- `Document.explorerIsAssembly(at:)` always returns `false`: it shares its flat index with
+  `explorerShape(at:)`/`explorerDepth(at:)`/`explorerLocation(at:)`, all built by walking
+  leaf nodes only, which structurally excludes every assembly node. This is by design, not a
+  bug; the documentation previously implied otherwise. Use `AssemblyNode.isAssembly` (via
+  `Document.node(at:)`) to detect an assembly.
+
+### `Shape.fastSewn(tolerance:)` no longer wraps an empty result as success (#1475)
+
+`OCCTShapeFastSewn` never checked `BRepBuilderAPI_FastSewing`'s output for null before wrapping and
+returning it as success. `BRepBuilderAPI_FastSewing` only handles naturally-bounded surfaces (a
+sphere, cylinder, cone, torus); an ordinary planar `TopoDS_Face` (the common shape of a box, or any
+other polyhedral B-Rep solid) is declined outright, so `Add()` returns `false` for every face,
+`Perform()` finds nothing, and `GetResult()` is a null `TopoDS_Shape`. `fastSewn(tolerance:)` was
+wrapping that null shape in a non-nil `Shape`, contradicting its own doc ("Returns: The sewn shape,
+or nil on failure"). Now returns nil for those cases, matching sibling sewing entry points in the
+same file. `sewn(tolerance:)` is the general-purpose sibling for shapes with trimmed/analytic
+faces.
+
+### Fixed two silent-failure defects in `OCCTBridge_Geom2d_Curves.mm` ([#1477](https://github.com/SecondMouseAU/OCCTSwift/issues/1477))
+
+`OCCTGeom2dConvertApproxArcsSegments` returned the unclipped OCCT-side piece count instead of the number of curves actually written into the caller's buffer, so `Curve2D.approxArcsAndSegments(tolerance:angleTolerance:)`'s fixed 256-slot buffer could read out of bounds when approximation needed more pieces than that. `OCCTCurve2DJoinToBSpline` discarded `Geom2dConvert_CompCurveToBSplineCurve::Add`'s `bool` return, so `Curve2D.join(_:tolerance:)` silently dropped any curve that failed to attach (out of order, gapped, or outside tolerance) instead of failing the join. Both now match the pattern their sibling functions in the same file already use.
+
+### `OCCTCurve3DCurveType`'s null/exception fallback returns OtherCurve (8), not OffsetCurve (7) (#1476)
+
+`Curve3D.curveType`'s fallback for a null/invalid handle or any caught exception returned `7`
+(`GeomAbs_OffsetCurve`), a specific, real, wrong curve type, instead of `8` (`GeomAbs_OtherCurve`,
+"other/unknown"). Two doc comments (`OCCTBridge_Curve3D.h`, `Curve3D.swift`) repeated the same
+off-by-one in their enumerated value list; both corrected.
+
+### Fixed an uncatchable crash in `TransformFactory2D.mirrorAxis(point:direction:)` on a zero-length direction (#1473)
+
+`OCCTMakeMirror2dAxis` now guards the `gp_Dir2d` construction with `try`/`catch`, matching every
+sibling transform-factory function in the same file. A zero-or-near-zero `direction` now returns a
+zeroed transform matrix instead of aborting the process.
+
+### `OCCTBoundSortBoxCompare` returned OCCT's native 1-based indices and silently truncated past `maxIndices` (#1462)
+
+`OCCTBoundSortBoxCreate` stores caller box `i` (0-based) at OCCT array position `i+1`, but `OCCTBoundSortBoxCompare` copied `Bnd_BoundSortBox::Compare()`'s raw 1-based OCCT indices straight into `outIndices` with no `-1` translation, so `BoundSortBox.compare(...)` returned the wrong box (or, for the last box, an out-of-bounds index) instead of the caller's own 0-based indices. The same function also silently truncated past `maxIndices`, returning the number *written* rather than the true number of intersecting boxes, so a query hitting more than `BoundSortBox`'s fixed 1000-element buffer lost the rest with no signal. Both are fixed: indices are translated back to 0-based, and the bridge function now follows the codebase's count-then-fill convention (`outIndices=NULL` is a sizing query; a fill call always returns the true count, so `return value > maxIndices` signals truncation), and `BoundSortBox.compare(...)` sizes its buffer from that count instead of a fixed 1000-slot array, so it can no longer truncate.
+
+### `Shape.fillet2dEdges` no longer hardcodes the fillet plane's origin to world (0,0,0) (#1459)
+
+`OCCTChFi2dFilletEdges` built the `gp_Pln` passed to `ChFi2d_FilletAPI` from the caller's plane
+normal alone, always at `gp_Pnt(0, 0, 0)`. Both algorithms `ChFi2d_FilletAPI` dispatches to
+reconstruct 3D points from `myPlane->Pln().Position()`, so for two edges lying in a plane that
+does not pass through the world origin, the returned `filletEdge` landed in the wrong plane while
+`modifiedEdge1`/`modifiedEdge2` stayed correct, a disconnected result reported as success.
+`Shape.fillet2dEdges` gains a `planeOrigin: SIMD3<Double> = .zero` parameter (mirroring
+`Shape.anaFillet`/`Shape.filletAlgo`'s existing `planeOrigin`), threaded through to
+`OCCTChFi2dFilletEdges`, which now takes `planeOx, planeOy, planeOz` alongside the normal.
+
+### `Shape.fixIntersectingWires(faceIndex:)` now actually applies its computed fix; `EdgeAnalysis.validateEdge` now uses the edge's real SameParameter state (#1461)
+
+`fixIntersectingWires` previously computed a fix and discarded it, always returning `true` with no
+observable change. `validateEdge` previously always ran the naive same-parameter-value comparison
+regardless of the edge's actual `SameParameter` flag, understating deviation for edges where it's
+false.
+
+### `plateSurface`'s point constraints also reject `.g1`, not just `.g2` (#1460)
+
+`.g1` on a *point* constraint (`Shape.plateSurface(through:orders:)`, and the point half of
+`Shape.plateSurface(pointConstraints:curveConstraints:)`) was a silent no-op, not a diagnostic.
+`GeomPlate_PointConstraint`'s point-only constructor throws only for order above 1, so `.g1`
+(`myOrder == 1`) passed straight through, but its member-init list never sets the
+tangent-derivative fields `D1()` returns, so they default to `(0,0,0)`.
+`GeomPlate_BuildPlateSurface::LoadPoint`'s order-1 branch fed that zero vector into
+`Plate_GtoCConstraint`, whose constructor computes a zero cross product, sees
+`normale.Modulus() < NORMIN`, and returns before adding any constraint: `nb_PPConstraints` stayed
+0, the tangent request never reached the solver, and the returned surface was silently G0-only,
+with `IsDone() == true` and no diagnostic anywhere in the chain.
+
+Verified directly against the pinned `V8_0_1` sources (`GeomPlate_PointConstraint.cxx`,
+`GeomPlate_BuildPlateSurface.cxx`'s `LoadPoint`, `Plate_GtoCConstraint.cxx`'s zero-normal early
+return) before fixing this.
+
+Extends #437's fix for the same underlying reason: a bare point cannot carry tangent data any
+more than it can carry curvature. `SurfaceContinuity.isUnsupportedForPointConstraint` now reads
+`self != .g0` instead of `self == .g2`, rejecting both `.g1` and `.g2` for a point constraint in
+Swift, before any `GeomPlate_PointConstraint` is built. `GeomPlate_CurveConstraint` has no such
+restriction (it is built from an `Adaptor3d_Curve`, which can always supply a tangent), so curve
+orders are unaffected: both `.g1` and `.g2` remain fully supported for a curve constraint.
+
+Unlike `.g2`, this guard is not decorative: OCCT's own constructor never rejected `.g1`, so the
+public answer for a `.g1` point request changes from a real, geometrically-degraded surface to
+`nil`. `Issue1460PlatePointG1Tests` has the guard-removal matrix proving the new mechanism is
+load-bearing, per `okf/policies/prove-the-test-fails.md`. `AdvancedPlateSurfaceTests`'s own "mixed
+G0/G1 orders" test, which only ever asserted `shape != nil`, exercising the silent-no-op path
+without measuring whether the tangent constraint did anything, now asserts the rejection instead.
+
+### Fixed BSpline knot-sequence undercount and ExtremaPC's degenerate search domain (#1456)
+
+`Curve3D.bsplineKnotSequence()` on a periodic B-spline used to silently return one fewer knot
+value than actually exists (the bridge sized its scratch buffer using the non-periodic
+flat-knot-sequence formula). `Curve3D.extrema(from:)` used to always search a degenerate `[0, 0]`
+parameter domain instead of the curve's natural range, so it could only ever find an extremum that
+happened to sit at parameter 0; every other true nearest/farthest point was silently missed (or,
+worse, whatever landed at parameter 0 was returned as if it were the answer). Both fixed
+bridge-side; no kernel change.
+
+### `Shape.featFuse(with:)`/`.featCut(with:)` were a complete silent no-op, and now actually perform the operation ([#1458](https://github.com/SecondMouseAU/OCCTSwift/issues/1458))
+
+**Flagging loudly: this changes the returned geometry for every existing caller of these two
+methods**, from wrong to correct. `OCCTBRepFeatBuilderFuse`/`OCCTBRepFeatBuilderCut`
+(`OCCTBridge_Modeling_Features.mm`) never called `BRepFeat_Builder::Perform()`, so the PaveFiller
+intersection never ran. `Shape.featFuse(with:)` returned a non-nil, `isValid == true`, empty
+compound (volume 0) for every call; `Shape.featCut(with:)` returned a non-nil, `isValid == true`,
+byte-for-byte-unmodified copy of the input for every call. Neither `HasErrors()` nor `isValid`
+could detect it. Fixed by adding the missing `Perform()` call to both, and dropping Fuse's
+`PartsOfTool()`/`KeepPart` loop, which (once `Perform()` actually ran) selected the wrong artifact
+for a plain fuse rather than being merely redundant. Any caller relying on the previous (broken)
+behavior (an empty Fuse result, or a Cut that removed nothing) sees a real geometry change.
+
+### `OCCTGeomLibCheckBSpline3D`/`2D` no longer returns nil for virtually every real curve (#1457)
+
+`Curve3D.checkBSplineTangents()` and `Curve2D.checkBSplineTangents()` gated their result on
+`GeomLib_CheckBSplineCurve::IsDone()` (and its 2D twin), which OCCT only ever sets true for a
+periodic curve or one with fewer than 4 poles, never along the real tangent-analysis branch an
+ordinary curve takes. Both entry points now call `NeedTangentFix` directly, matching the existing
+`fixBSplineTangents()` pattern, so a caller now gets the real `(fixFirst, fixLast)` result instead
+of `nil`.
+
+### `OCCTExtremaElSSPlanePlane`'s parallel branch honors `max == 0` (#1463)
+
+The parallel-plane branch of `OCCTExtremaElSSPlanePlane` (`OCCTBridge_Surface_Extrema.mm`) returned
+`1` unconditionally even when `max == 0` and nothing was written to the output buffer, unlike every
+other branch in the file, which gates the write and the returned count together. Fixed:
+`return (max > 0) ? 1 : 0;`. Latent (unreachable through the public Swift API, which always passes a
+10-element buffer), fixed proactively.
+
+### Mesh: tessellation deflection argument order, a Polygon3D SIGSEGV, and point-cloud tolerance default (#1440)
+
+`Shape.edgePolyline(at:deflection:)` now applies the requested chordal deflection to the correct
+constructor slot (previously masked only at the default). `Polygon3D.parameter(at:)` on a
+no-params polygon now safely returns instead of crashing. Auto-density point clouds now use OCCT's
+own default tolerance instead of `0.0`.
+
+### Datums now land on the real GD&T table, not a private one on Main() (#1435, regression of #1051)
+
+`Document.createDatum`/`.datumCount`/`.datum(at:)` previously wrote and read datums via a table
+attached directly to the document's Main() label, invisible to STEP export, `RescaleGeometry`, and
+any other consumer of the real `XCAFDoc_DocumentTool::DimTolTool` table. Fixed to use the real
+table; a document's datums are now visible everywhere a real GD&T consumer looks for them.
+
+### Fixed 4 defects in `OCCTBridge_Healing_Analysis.mm`: null-shape SIGSEGV, always-false `checkOverlapping`, wrong-quantity `checkPCurveRange`, undercounted `gapCount` (#1438)
+
+- `Shape.recognizeCanonicalSurface(tolerance:)` / `recognizeCanonicalCurve(tolerance:)` no
+  longer SIGSEGV on a `.nullified` shape (uncatchable crash, now refused with `.type == .none`
+  like every other invalid input).
+- `EdgeAnalysis.checkOverlapping(_:_:tolerance:)` gained a real `tolerance` parameter (default
+  `1e-7`); it used to zero its own working tolerance before use and so always returned
+  `overlapping: false`, regardless of the input edges.
+- `EdgeAnalysis.checkPCurveRange(_:face:first:last:)` now checks against the pcurve's own
+  underlying geometric domain (its full period, for a periodic pcurve) instead of the edge's
+  current stored trim range, matching `ShapeAnalysis_Edge::CheckPCurveRange`'s real contract.
+  A range can now be valid even when it extends past where the edge itself is trimmed.
+- `Shape.analyze(tolerance:)`'s `gapCount` now counts each individual edge-to-edge gap, not
+  each wire that contains at least one gap; a wire with 2 independent gaps used to report `1`.
+- `Shape.toleranceValue(mode:subShapeType:)` and its `toleranceOverCount`/
+  `toleranceInRangeCount` siblings now guard a null shape wrapper, matching every other
+  bridge function in the file (hardening; not reachable through the public Swift API today).
+
+### Fixed `OCCTBRepGraphHistoryGetRecordInfo`'s NUL terminator and `Edge.dihedralAngle`'s unreachable concave range (#1434)
+
+`OCCTBRepGraphHistoryGetRecordInfo` wrote the ASCII digit `'0'` (0x30) instead of the real NUL
+terminator (0x00) at its truncation point, so a C-string reader running past the header's promised
+boundary would never find a real zero byte.
+
+`Edge.dihedralAngle(between:and:)` used to return `std::acos(normal1 . normal2)` unconverted, which
+answers only in `[0, PI]`: a convex edge and its complementary concave edge (same two face normals,
+opposite material side) returned the identical value, so the documented `0...2*PI` range (`less
+than PI` convex, `greater than PI` concave) was unreachable. Worse, the raw value wasn't even the
+correct interior dihedral angle for the convex case in general, only by coincidence at a box's
+self-symmetric 90-degree edges. Now uses OCCT's own `ChFi3d::DefineConnectType` classifier (the
+same one `Edge` convexity queries already use) to report the true interior angle across the full
+documented range.
+
+### Fixed a heap-buffer-overflow-class sizing bug in BRepGProp_Face knot introspection (#1433)
+
+`Shape.faceIntegrationKnotsV()` and `Shape.faceBoundaryIntegration(edgeIndex:precision:)` sized
+their scratch knot array to `BRepGProp_Face`'s subinterval count instead of the knot count it
+actually writes (one more), truncating the last knot on every call and, in the pinned Release
+kernel (built with `No_Exception`), writing one `double` past the allocation with no bounds check.
+Fixed by sizing the array correctly. Also fixed a `new`/`delete` type mismatch in
+`Surface.uReversed()`/`vReversed()` found in the same file.
+
+### `DiskInfo.size()`/`.freeSpace()` no longer report 2x too many KB, `UnicodeUtils.convertToUnicode()` no longer drops non-ASCII text, `DiskInfo.isValid()` now checks the real OCCT status (#1442)
+
+`DiskInfo.size(path:)`/`.freeSpace(path:)` returned `OSD_Disk`'s raw 512-byte block count while
+documented as KB, exactly 2x the true value. `UnicodeUtils.convertToUnicode(_:)` silently dropped
+every non-ASCII character converted from SJIS/EUC/GB/ANSI input instead of UTF-8-encoding it, so
+non-ASCII text came back empty or truncated; it now UTF-8-encodes correctly. `DiskInfo.isValid(path:)`
+tested whether construction threw rather than the real OCCT failure flag, so it returned `true` for
+a nonexistent path; it now correctly returns `false`. The underlying `OSD_Disk` construction also
+switched to the overload that actually works on macOS/iOS/Linux (the previous one left every disk
+query silently non-functional on those platforms via an unrelated, newly-discovered defect in the
+same construction path).
+
+### Five `gp_Ax3` bridge functions no longer swallow construction failures with an empty catch (#1443)
+
+`OCCTAx3Create`, `OCCTAx3CreateFromNormal`, `OCCTAx3MirrorPoint`, `OCCTAx3Rotate`, and
+`OCCTAx3Translate` used to catch OCCT's `Standard_ConstructionError` (raised for a zero-length
+direction/xDirection, a parallel direction/xDirection pair, or a zero-length rotation axis) with an
+empty `catch (...)`, leaving every out-parameter at whatever the caller happened to pre-initialize
+it to. Each now writes a deterministic fallback instead: `isDirect = false` plus an all-zero
+`xDirection`/`yDirection` for `CoordinateSystem3D.init(origin:direction:xDirection:)` and
+`init(origin:direction:)` (unambiguous, since a real result direction is always a unit vector), and
+the input point unmoved (plus an all-zero direction/xDirection where applicable) for
+`mirrored(about:)`, `rotated(about:axisDirection:angle:)`, and `translated(by:)`.
+
+### `OCCTShapeSelfIntersectsDetailed` no longer reports `.intersects` for a refused argument (#1436)
+
+`isSelfIntersectingDetailed(timeout:)` used `BOPAlgo_ArgumentAnalyzer::HasFaulty()`, which is true for
+*any* recorded fault, not just a genuine self-intersection. A shape with no geometry (e.g. `.emptied`)
+made the analyzer record `BOPAlgo_BadType` and return before any self-intersection test ran, and the
+old code reported that as `.intersects` regardless. It now reads the check results by status, mirroring
+the fix `isSelfIntersecting(timeout:)` already carried from #1054, and reports `.error` for a refused
+or otherwise unanalysable argument instead. Also fixed: five internal `Shape.History` bridge functions
+(`merge`, `replaceGenerated`, `replaceModified`, `modifiedShapes(of:)`, `generatedShapes(of:)`) cast the
+opaque history handle to the wrong pointer type; harmless on the current ABI, but a real strict-aliasing
+violation, now matching every other consumer of the same handle.
+
+### Fixed `OCCTFilletSurfError`'s doc comment and exception fallback, off by one against `FilletSurf_ErrorTypeStatus` (#1439)
+
+`OCCTFilletSurfError`'s doc comment (`@return 0=EdgeNotG1, ... 4=PbFilletCompute`) was one off
+against `FilletSurf_ErrorTypeStatus`'s real enum for every value it named, and its `catch (...)`
+fallback returned the literal `4`, which collides with the real, legitimately-returned
+`FilletSurf_NotSharpEdge` (also `4`). Corrected the doc comment to `0=EmptyList, 1=EdgeNotG1,
+2=FacesNotG1, 3=EdgeNotOnShape, 4=NotSharpEdge, 5=PbFilletCompute`, and changed the fallback to `5`
+(`PbFilletCompute`) so a caught exception is distinguishable from a genuine `NotSharpEdge` verdict.
+
+### Fix Bezier→BSpline buffer overflow and silently-dropped curves in composite joins (#1441)
+
+`OCCTConvertCompBezierToBSpline`/`OCCTConvertCompBezier2dToBSpline2d` now reject (`return false`) a
+composite curve whose true pole/knot count exceeds `OCCTBezierBSplineResult`'s/
+`OCCTBezierBSpline2dResult`'s fixed capacity (100 poles, 50 knots), instead of reporting the
+unclamped true count against a buffer that only ever held a truncated prefix; the Swift consumer
+(`CompBezierConverter`) trusted that count as its loop bound over the fixed-size buffer, a real
+out-of-bounds read for a large enough composite curve.
+
+`OCCTCurve3DJoinToBSpline`/`OCCTCurve3DConcatenateG1` now check
+`GeomConvert_CompCurveToBSplineCurve::Add()`'s return value and return `nullptr` on failure, instead
+of discarding it. `Add()` is a documented no-op when the new curve isn't G0-continuous with the
+accumulated one, so a curve that failed to join used to be silently dropped while the function still
+returned a non-nil, partial result. `Curve3D.join`/`Curve3D.concatenateG1` now correctly return
+`nil` in that case, matching the already-correct `Curve3D`/`OCCTCurve3DJoinCurves`/
+`OCCTConcatenateCurves3D` siblings.
+
+### Visualization fallback defaults, unscaled relative deflection, and wrong PBR roughness accessor (#1417, #1418, #1419)
+
+Three independent Wave 1 bugs, fixed together because they share files:
+
+- `OCCTTextLabelGetInfo` now reads the label's real text height via
+  `Prs3d_TextAspect::Height()` instead of always reporting a hardcoded, and wrong, `12.0`
+  (OCCT's own default is `16.0`).
+- `OCCTCameraGetScale`'s null-handle fallback is now `1000.0`, matching
+  `Graphic3d_Camera`'s real default (was `1.0`, off by a factor of 1000).
+- `Shape.shadedMesh(drawer:)`/`edgeMesh(drawer:)` now correctly scale a relative deflection
+  type's `DeviationCoefficient()` by the shape's own bounding-box diagonal (matching OCCT's
+  own `StdPrs_ToolTriangulatedShape::GetDeflection`), instead of treating the bare
+  dimensionless coefficient as an absolute deflection. This affected every default-settings
+  call, producing drastically over- or under-tessellated meshes depending on the shape's
+  real-world scale.
+- `Material.predefinedMaterial(named:)`/`predefinedMaterial(at:)`'s `pbrRoughness` now reports
+  the material's authored roughness (`Graphic3d_PBRMaterial::NormalizedRoughness()`) instead of
+  an internal calculation-space remap (`Roughness()`), matching glTF's `roughnessFactor`
+  semantics the type's own docs promise.
+
+### Fixed a crash on a null shape passed to a face bounding-box query (#1424)
+
+`OCCTBndLibFace` (backing `BndLib.face(_:tolerance:)`) now guards a genuinely-null `OCCTShapeRef`
+the same way its sibling `OCCTBndLibEdge` already did, returning a zeroed bounding box instead of
+crashing.
+
+### `Shape.pipeShellMultiSection(..., solid: true)`/`pipeShellWithLaw(..., solid: true)` now refuse instead of silently returning an open shell (#1414)
+
+A `solid: true` request whose profile can't be capped into a solid (e.g. an unclosed end
+profile) used to silently return the open shell as if it were the requested solid, with no way
+to tell it apart from a genuine result. Now returns `nil`.
+
+### `Wire.analyze().isClosed`/`.hasSelfIntersection` now report real geometry instead of always true/false (#1415)
+
+`OCCTWireAnalyze`'s underlying `ShapeAnalysis_Wire` never had its face set, so both fields were
+structurally incapable of reporting anything but their always-true/always-false defaults.
+`isClosed` is now a direct 3D endpoint check; `hasSelfIntersection` uses a fitted planar face
+(for a non-planar wire, still not checkable -- a real, acknowledged limitation, not new).
+
+### `MessageSystem.loadDefault()` now loads a real OCCT message set (#1422)
+
+`OCCTMessageMsgFileLoadDefault` referenced a fabricated environment variable (`CSF_XHatch`, not a
+real OCCT resource-file variable anywhere in the kernel) with an empty file name, so the call could
+structurally never succeed. It now calls `ShapeExtend::Init()`, the real upstream loader for
+OCCT's Shape Healing (ShapeFix) diagnostic message set (`CSF_SHMessage`/`"SHAPE"`), chosen over
+the other real precedent (`Interface_Static::Standards()`, XSTEP) because it does nothing but load
+messages, matching this function's own narrow, documented contract; `Interface_Static::Standards()`
+also configures ~15 unrelated XSTEP read/write precision/tolerance parameters as a side effect.
+`ShapeExtend::Init()` falls back to a message set compiled directly into the OCCT static library
+when no `CSF_SHMessage` resource file is found (true for this project and for any downstream
+SwiftPM consumer), so `MessageSystem.loadDefault()` now reliably returns `true` and
+`MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0")` becomes `true` afterward:
+
+```swift
+MessageSystem.loadDefault()
+let hasSmallSolidMessage = MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0")
+// hasSmallSolidMessage == true
+```
+
+### Fixed `OCCTCurve2DHatch` silently truncating hatch output at half the caller's buffer capacity (#1420)
+
+`Curve2DGcc.hatch(boundaries:...)` sizes its output buffer for `maxSegments` segments (4 doubles
+each) and passes `maxSegments` through to `OCCTCurve2DHatch`'s last parameter, but that parameter's
+internal guard read it as a *point* count (2 doubles each), capping real output at half the buffer's
+capacity -- silently, with no truncation signal. Any hatch producing more than `maxSegments / 2`
+segments (but no more than `maxSegments`) came back truncated. Fixed by renaming the parameter
+`maxPoints` -> `maxSegments` and correcting the guard to match, aligning it with the sibling
+`OCCTHatchLines`/`HatchPattern.generate`'s established `maxSegments`/`outSegments` convention.
+
+```swift
+// A boundary/spacing combination producing more than 2048 segments now returns the true count
+// instead of being silently capped at 2048:
+let segments = Curve2DGcc.hatch(
+    boundaries: tallRectangleBoundary,
+    spacing: 1.0)
+print(segments.count) // now the true count (e.g. ~3000), not capped at 2048
+```
+
+### `OCCTContapCylinderDir`/`Shape.contourCylinderDir` now returns both tangent lines (#1416)
+
+Fixed a bug where `Shape.contourCylinderDir` silently discarded the second of the two tangent
+lines a cylinder's silhouette always produces against a non-degenerate view direction
+(`Contap_ContAna::Perform(gp_Cylinder, gp_Dir)` sets `nbSol` to exactly 0 or 2, never 1). The
+underlying bridge function `OCCTContapCylinderDir` only ever wrote the first line into its
+`outData` buffer while still reporting `count == 2`, making the second contour's geometry
+unrecoverable.
+
+`Shape.contourCylinderDir`'s `ContourResult.data` now holds 12 doubles instead of 8 when the
+contour type is a line: line 1's location xyz + direction xyz at `data[0...5]`, line 2's at
+`data[6...11]`. `Shape.contourSphereDir`/`Shape.contourSphereEye` are unaffected (unchanged
+8-double, single-line/circle buffer); both underlying `Contap_ContAna` sphere overloads only ever
+produce one contour.
+
+```swift
+if let result = Shape.contourCylinderDir(
+    origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+    radius: 5, direction: SIMD3(1, 0, 0)),
+   result.count == 2 {
+    let line1Location = SIMD3(result.data[0], result.data[1], result.data[2])
+    let line2Location = SIMD3(result.data[6], result.data[7], result.data[8])
+}
+```
+
+### `Drawing.edges(ofType:)`/`.hiddenEdges`/`.outlineEdges` now correctly return `nil` for a genuinely empty edge category (#1421)
+
+Previously returned a valid but empty `Shape` for a category with zero contributing edges (e.g.
+`.hidden` on a convex shape, `.outline` on a shape with no curved surfaces), contradicting the
+documented `nil` contract. Fixed: `MakeCompound` always returns a non-null handle regardless of
+content, so the old `compound.IsNull()` guard could never fire; now tracks whether anything was
+actually added.
+
+### Documented BRepGraph's undocumented no-op setters (#1001)
+
+`BRepGraph`'s eighteen editor-view members that are silent no-ops against the pinned OCCT
+8.0.0p1 kernel (`edgeMaxContinuity`, the edge/wire/face/shell derived-flag setters, two coedge/wire
+ref setters, `setCoEdgeUVBox`, the six `Set*RefLocalLocation` setters, and
+`repSetPolygonOnTriTriangulationId`) now say so in their doc comments and point at the real
+derived-value getter where one exists. No signature or behavior changed; these have always been
+no-ops, only the documentation was missing.
+
+### Gate coverage-of-the-gates audit (#819 Phase 6 item 3)
+
+- New committed artifact `Scripts/repro/819-gate-coverage-audit/`: live-derives the current
+  gate/census/audit set (8/4/1, structurally classified, `--check` mode keeps this from going
+  stale) and cross-references 23 defect classes the refactor programme has found against it. 9
+  gated, 4 census-covered, 1 audit-covered, 1 process-only, 4 not gateable by any static script
+  (kernel data races/crashes/wrong-answers live in vendored C++ source), 4 genuine ungated gaps.
+- Filed #1407 (missing try/catch gate), #1408 (stale self-referential count gate: #1066 is a live
+  instance), #1409 (stale tsan.supp suppression gate). None built here, per this project's own
+  "materially new workstream gets filed and deferred" rule.
+
+### `@unchecked Sendable` audit: EdgeCurve/WireCurve no longer Sendable (#1162)
+
+- **BREAKING**: `EdgeCurve` and `WireCurve` are no longer `Sendable`. Their bridge structs hold a
+  persistent BSpline-adaptor evaluation cache mutated by every accessor with zero synchronization
+  (#1153) -- every method looked like a pure query, which made the conformance actively misleading.
+  Construct one instance per thread/task rather than sharing one, or serialize access with
+  `OCCTSerial.withLock { }` (the pattern was already correct; the compiler now enforces it).
+- Audited and re-verified all 27+ classes #1162 named (29 total, including `WireCurve` found along
+  the way) against what's actually shipped, not the issue's own citations (all six of which were
+  stale, wrong, or answered a different question). 21 classes' doc comments corrected/strengthened
+  to name the real hazard; 5 reclassified genuinely safe with evidence. Full audit:
+  `Scripts/repro/1162-sendable-audit/`.
+- Filed #1404: `TObjApplication` wraps a separate, previously-uncharacterized unsynchronized
+  singleton, unrelated to the stale #344 citation.
+- `docs/thread-safety.md`: new subsection documenting the audit and this project's explicit
+  `@unchecked Sendable` convention (handle-move-safe, not concurrent-mutation-safe).
+
+### #369 root-caused: OSD_ThreadPool cross-caller "corruption" was never a bug
+
+- Root-caused #369: the 27-vs-13-face divergence #367 found was `BRepAlgoAPI_BuilderAlgo`
+  (General Fuse) legitimately differing from a `BRepAlgoAPI_Fuse` baseline the reproducer
+  compared it against: a test-harness bug, not a pool defect. `OSD_ThreadPool::DefaultPool()`
+  confirmed safe for concurrent independent submitters via direct isolation testing (zero races
+  across two dedicated reproducers) and a corrected re-run of the original scenario (0 races,
+  down from 237, against a kernel carrying #1153/#1154's since-landed fixes). Fixed the test
+  harness's own baseline comparison; corrected the now-inaccurate bridge comment
+  (`OCCTBridge_Modeling_Boolean.mm`, comment-only, functional behavior unchanged).
+
+### Interface_Static thread safety investigation (#1157)
+
+- New carried kernel patch `Scripts/patches/0033-Interface_Static-thread-safety-mutex-1157.patch`
+  (override-link validated, not yet in a rebuilt xcframework): a `std::recursive_mutex` guards all
+  17 of `Interface_Static`'s static entry points, closing a confirmed memory-safety race (concurrent
+  `NCollection_DataMap` mutation and shared-buffer corruption) reachable by every STEP/IGES
+  consumer. Deliberately partial: does not make concurrent operations setting different values for
+  the same named parameter produce correct output -- `igesMutex()` remains the bridge's own
+  defense for that, unchanged.
+- Corrected a stale patch-count paragraph in both CLAUDE.md and `Package.swift` (said
+  twenty-one/four since before #1371 landed; now twenty-three/six).
+
+### Phase 6: whole-surface refman coverage reconciliation (#820)
+
+- New committed artifact `Scripts/repro/820-refman-coverage-whole-surface/`: unions the nine #807
+  source lanes (1,730 classes, zero double-claims: the lanes partition cleanly) plus a new
+  substrate audit of #1045's fifteen packages (337 classes, 257 newly recorded in
+  `docs/occtswift-wrapping-gaps.md`). Diffed against the full 6,774-header pinned surface: 642
+  wrapped-but-unowned classes filed as #1399, 3,983 unwrapped classes bucketed by module, 82
+  low-confidence residual left unadjudicated.
+- `docs/occtswift-wrapping-gaps.md`'s headline count corrected from a 4-month-stale 4,256/1,166 to
+  the current, gate-agreeing 4,365/1,174.
+
+### Refman coverage audit: tests, Document/XCAF (#817, Pass 5c of #807/#819)
+
+- New committed census `Scripts/repro/817-refman-coverage-tests-document/`: 119 `ok` of 131
+  wrapped+documented classes, 12 `under` (real coverage exists outside the lane, filed as #1396),
+  0 confirmed over-coverage. One genuine gap fixed in this PR: `Document.lengthUnit`
+  (`XCAFDoc_LengthUnit`) had zero test coverage, now covered by two new tests in
+  `Tests/OCCTXCAFTests/DocumentTests.swift`.
+
+### Refman coverage audit: tests, geometry primitives (#815, Pass 5a of #807/#819)
+
+- New committed census `Scripts/repro/815-refman-coverage-tests-geometry/`: 550 `ok` of 1288
+  derived members; 13 genuine under-coverage findings fixed in this PR (new tests for
+  `Curve3D.d2`/`.bsplineSetKnot`, `Curve2D.d2`/`.allExtrema`/`.selfIntersections`,
+  `OCCTPrecision.infinite`/`.pConfusion`, `Surface.bsplineSetUKnot`/`.bsplineSetVKnot`/
+  `.bsplineRemoveUKnot`/`.bsplineIncreaseVMultiplicity`/`.isUClosed`/`.isVClosed`); 1 over-coverage
+  finding fixed (a stale sphere `isVClosed` doc comment).
+
+### Refman coverage audit: tests, peripheral subsystems (#818, Pass 5d of #807/#819)
+
+- New committed census `Scripts/repro/818-refman-coverage-tests-peripheral/`: of 136 wrapped
+  classes across #811-#814's four source lanes, 134 tested (53 in-lane, 81 correctly in a sibling
+  domain target), 1 fixed here (`BRepOffsetAPI_MiddlePath`: new
+  `Tests/OCCTModelingTests/Issue818MiddlePathTests.swift`), 1 filed as #1393
+  (`LocOpe_SplitDrafts`). Zero confirmed over-coverage.
+
+### Refman coverage audit: tests, Shape/Topology (#816, Pass 5b of #807/#819)
+
+- New committed census `Scripts/repro/816-refman-coverage-tests-topology/`: 65 `ok`, 0
+  `deliberate, recorded`, 1 `under` (filed as #1392: `BRepCheck_Solid`'s bridge function has no
+  Swift caller), 0 confirmed over-coverage across 37 hand-adjudicated candidates.
+
+### New census: comment-staleness (#872)
+
+- `Scripts/census-comment-staleness.py`: four channels (Sources/OCCTSwift dotted symbol mentions,
+  Sources/OCCTBridge bridge-function mentions, Scripts/*.py usage-flag drift, CLAUDE.md
+  patch-number citations), wired into `ci.yml`'s `gate-scripts` job and the optional pre-commit
+  hook (`--self-test` only, same as the other three censuses)
+- Four stale comment references fixed, its first real catch: `ConstructionLayer.materialize` ->
+  `ConstructionContext.materialize` (3 sites), `ShapeMeasurements.measure()` -> `Shape.measure()`,
+  `Curve3D.localCurvature` -> `Curve3D.curvature(at:)`,
+  `ConstructionEntity.resolveFaceAxisDirection` -> `BRepGraph.resolveFaceAxisDirection`
+
+### Partition census for #1045's fifteen unowned substrate packages
+
+- `Scripts/repro/1045-substrate-package-partition/partition_census.py`: assigns all fifteen
+  (`GeomFill_`, `BRepFill_`, `BRepOffset_`, `BRepBlend_`, `Blend_`, `BlendFunc_`, `ChFiDS_`,
+  `ChFiKPart_`, `Draft_`, `BiTgte_`, `MAT_`, `MAT2d_`, `Bisector_`, `AdvApp2Var_`, `AdvApprox_`) to
+  #820 (Phase 6), `GeomFill_`/`BRepFill_` flagged HIGH priority
+
+### Fix: TopOpeBRepBuild KPart-merge file-scope statics are thread_local (#1371)
+
+- Twelve unsynchronized file-scope statics in the legacy fillet/chamfer reconstruction engine
+  (`TopOpeBRepBuild_ffsfs.cxx`/`GridSS.cxx`/`GridFF.cxx`) converted to `thread_local`, matching
+  #298's precedent in the same toolkit
+- Confirmed currently unreachable from `BRepFilletAPI_MakeFillet`/`MakeChamfer`; fixed ahead of
+  reachability, not in response to an observed failure
+- Kernel-only (`Scripts/patches/0032`), no public API change, not yet in a rebuilt xcframework
+- **Retired before it ever shipped (#1472).** Upstream fixed the same globals better, and more
+  widely, in OCCT#1505 and OCCT#1509, four days after this patch landed. `0032` is deleted rather
+  than carried, so nothing in this release note describes code that exists. No xcframework was ever
+  built with it, so no consumer saw either state. `Scripts/patches/README.md` and
+  `okf/references/carried-occt-patches.md` record the retirement, and `CLAUDE.md` gains the
+  "check upstream's own recent activity first" step this cost bought
+
+### Share DXF group-code formatter via DrawingTestFixtures.DXFTestFormat (#1271)
+
+- New `DXFTestFormat` enum in `DrawingTestFixtures.swift` mirrors `DXFExporter.swift`'s internal formatting
+- `Issue1173ArrowheadTriangleGeometryTests` now uses `DXFTestFormat.lineEntity` instead of private duplicate
+- `OCCTDrawingTests.swift` formatter not yet migrated (separate follow-up)
+
+### Unify `SIMD3.normalized` inline implementations with shared epsilon threshold (#1275)
+
+- New `ModelingTestExtensions.swift` provides `SIMD3.normalized` with 1e-10 threshold
+- `ShapeSplittingTests` and `IntegrationThicknessAnalysisTests` now use the shared helper
+- Eliminates divergent zero-guard logic and ensures consistent behavior
+
+### Deduplicate `overlappingBoxes`/`stackedBoxes` boolean fixtures into BooleanTestFixtures (#1273)
+
+- New `BooleanTestFixtures` enum in `Tests/OCCTModelingTests/BooleanTestFixtures.swift`
+- `Issue206BooleanTimeoutTests`, `Issue1067BooleanOutcomeTests`, `Issue832BooleanDelegationTests`, `Issue202BooleanOptionsTests` all reference the shared fixtures
+- `overlappingBoxes()`: two 10mm boxes at (0,0,0) and (5,0,0)
+- `stackedBoxes()`: two 10mm boxes at (0,0,0) and (0,0,10)
+
+### Consolidate `BOPAlgoRemoveFeaturesTests` into `Issue497DefeaturingTests` (#1274)
+
+- 3 tests from `BOPAlgoRemoveFeaturesTests` merged into `Issue497DefeaturingTests`:
+  - `removeFilletFromBox` → `removeFilletFromBoxViaDefeature`
+  - `removeFeaturesEmptyFaces` → `defeatureEmptyFaces`
+  - `removeFaceFromBox` → `removeFaceFromBoxViaDefeature`
+- `BOPAlgoRemoveFeaturesTests.swift` deleted
+- Test terminology updated from deprecated `removeFeatures` to current `defeature`
+
+### Replace tautological assertions in ChamferBuilder/FilletBuilder tests (#1277)
+
+- `ChamferBuilderCompletionsV124Tests`: `#expect(!closed || closed)` → `#expect(!closed)`; `#expect(!cat || cat)` → `#expect(!cat)`
+- `FilletBuilderCompletionsV124Tests`: same fixes
+- Single-edge chamfer/fillet contours are correctly reported as not closed and not closed-and-tangent
+
+### Deduplicate `openShell`/`declinedIndices` fillet fixtures into FilletTestFixtures (#1272)
+
+- New `FilletTestFixtures` enum in `Tests/OCCTModelingTests/FilletTestFixtures.swift`
+- `Issue612FilletContourSelectionTests`, `Issue633BlendedEdgesDuplicateReportTests`, `Issue639FilletDeclinedEdgeReportTests` all reference the shared fixture
+- `acceptedIndices` kept local to `Issue639` (only used there)
+
+### Deduplicate Gluer face-pair search harness into ModelingTestExtensions (#1276)
+
+- New `tryGlueAllFacePairs` helper in `ModelingTestExtensions.swift` tries all face pairs with a given glue function
+- `BRepFeatGluerTests` and `LocOpeGluerTests` both use the shared helper
+- `ShapeSplittingTests` now uses shared `SIMD3.normalized` from same file
+
+### Fix `boxTopEdges` helper to return actual top-face edges (#1278)
+
+- `boxTopEdges()` now filters box edges to only those at Z=5 (top face of centered box)
+- Comment updated to reflect Z+ face of centered box
+- Test `fillWithBoxEdges` now correctly receives 4 edges
+
+### Migrate `writeBREPAllowInvalid` to shared `invalidBowtieShape` helper (#1279)
+
+- `BREPTests.writeBREPAllowInvalid` now uses `IOTestFixtures.invalidBowtieShape()`
+- Removes duplicate bowtie polygon face construction
+- Consistent with how other IO tests reference the shared fixture
+
+### Merge `IGESExportGuardTests` into `IGESTests` (#1283)
+
+- Delete `Tests/OCCTIOTests/IGESExportGuardTests.swift` (single redundant test)
+- `IGESTests` already covers valid IGES export in `exportIGES()`
+- No test coverage lost
+
+### Thread-safety survey: eight candidate classes confirmed clean (Issue #1155)
+
+Surveyed all eight classes #1155 named as "algorithms with internal mutable state"
+(`BRepBuilderAPI_Transform`, `BRepClass3d_SolidClassifier`, `GeomAPI_ProjectPointOnSurf`,
+`BRepBuilderAPI_MakeEdge`/`MakeWire`/`MakeFace`, `BRepOffsetAPI_MakePipeShell`/`MakeThickSolid`,
+`BRepFilletAPI_MakeFillet`/`MakeChamfer`, `ShapeFix_Face`/`Wire`/`Shape`, `BRepCheck_Analyzer`).
+All eight confirmed clean: none hold file-scope/static mutable state reachable from ordinary use.
+New TSan stress harness added (`Scripts/repro/1155-thread-safety-survey/occt_1155_stress.cpp`),
+registered in `Scripts/tsan-stress.sh`'s gate matrix, 8 threads x 30 iterations per scenario, 0
+races. No kernel patch, no bridge change, no public API change.
+
+### `Shape.isValidForBoolean`/`isValidForBoolean(with:)` converge onto `isBooleanValid`/`isBooleanValidWith`, gain a null guard (#1297)
+
+`isValidForBoolean`/`isValidForBoolean(with:)` and `isBooleanValid`/`isBooleanValidWith` reached the
+same `BRepAlgoAPI_Check` operation through two independent bridge implementations
+(`OCCTShapeBooleanCheck` vs. `OCCTShapeBooleanCheckSingle`/`OCCTShapeBooleanCheckPair`); the newer
+pair never carried the older one's null guard on its `OCCTShapeRef` parameters. Converged onto the
+fuller implementation (which already exposes `testSmallEdges`/`testSelfInterference`/`operation`),
+added the missing guard, and deleted the duplicate. `isValidForBoolean`/`isValidForBoolean(with:)`
+now forward onto `isBooleanValid()`/`isBooleanValidWith(_:)` at their existing implicit defaults
+(both confirmed identical to `BRepAlgoAPI_Check`'s own C++ constructor defaults), so behavior is
+unchanged. No public Swift API changes.
+
+### Test-only: mesh crest-radius measurement deduplicated in `OCCTThreadTests`, `-1` sentinel bug fixed (#1266)
+
+The maximum XY-planar radial distance across a shape's meshed vertices (the "crest radius" of a
+threaded solid) was reimplemented four times across `Tests/OCCTThreadTests/`
+(`ThreadFormsTests.externalForm`/`.roundedExternalForm`, `Issue257MultiStartTests.meshCrestRadius`,
+`Issue222Envelope.crestRadiusMesh`), with a real bug in one copy: `meshCrestRadius` returned a `-1`
+sentinel on `Shape.mesh` failure, and every one of its three call sites compared the result with
+`<=` against a positive nominal radius (`-1 <= 5.0 * 1.005` is trivially true), so a genuine
+measurement failure would have silently reported success instead of being caught. All four are now
+one shared `meshMaxRadialExtent(_:deflection:)` helper (`OCCTThreadTests.swift`), returning `nil`
+on failure; the three previously-buggy call sites now explicitly record a failure instead of
+silently passing. No production behavior change: same geometry, same measurement, only the
+duplication and the sentinel bug fixed.
+
+### ShapeHealing test fixture dedup, `totalProblems` reimplementation drift, and stale doc refs (#1287, #1288, #1290)
+
+Part of the tests duplication sweep (#390, itself a sub-issue of #377). Test-only: no production
+API or behavior change.
+
+- **#1287**: `expectVolume`/`twoBoxes`/`hollowBox`/`multiconnexSolid` were duplicated byte-for-byte
+  between `Issue442FixSolidMultiBodyTests.swift` and `Issue443FirstOfNTests.swift`, bypassing
+  `ShapeHealingTestFixtures.swift`. All four now live there; `Issue443FirstOfN.solidFromMulticonnex`
+  calls the shared `multiconnexSolid()` instead of inlining the identical construction.
+- **#1288**: `Issue702SolidDemotionTests.totalProblemsExcludingFreeFace` reimplemented
+  `ShapeAnalysisResult.totalProblems` and had drifted, missing the `hasSelfIntersection` term.
+  Fixed to include it, matching `ShapeAnalysisTests.analysisResultProperties`'s own mirror of the
+  same contract. A new test (`totalProblemsExcludingFreeFaceIncludesSelfIntersection`) exercises a
+  genuinely self-intersecting fixture, the first in this file to do so, which is what actually makes
+  the previously-omitted term matter (every other call site's `hasSelfIntersection` is always `nil`).
+- **#1290**: doc comments in `ShapeHealingTestFixtures.swift`, `Issue442FixSolidMultiBodyTests.swift`
+  and `Issue702SolidDemotionTests.swift` named `Issue442FixSolidMultiBodyTests`/
+  `Issue702SolidDemotionTests`, but neither struct carries a `Tests` suffix
+  (`Issue442FixSolidMultiBody`, `Issue702SolidDemotion`). Corrected all four references.
+
+### Test-only: deduplicated robust-import cancellation fixtures and the `ImportProgress` recorder in `OCCTIOTests` (#1281, #1282)
+
+No source behavior change. The "row of N translated 10x10x10 boxes" and "1200-sided N-gon prism"
+fixtures, each independently reimplemented across `CancellationReportingTests`,
+`MultibodyRobustImportTests`, and `RobustImportProgressTests`, now share two factory functions in
+`IOTestFixtures.swift`: `boxRow(count:)` and `ngonPrism(sides:radius:height:)`. Separately,
+`MeshAndExportProgressTests.Recorder` and `ImportProgressTests.ProgressRecorder`, the same
+lock-guarded `ImportProgress` recorder under two names, are now one shared `ProgressRecorder` in
+`IOTestFixtures.swift`.
+
+### Mesh triangulation test duplication removed (#1268, #1269)
+
+`Tests/OCCTMeshTests/`: `CoherentTriangulationTests`'s copy-pasted 4-node/2-triangle
+fixture (three identical builds across `addTriangles`, `removeTriangle`,
+`computeLinks`) is now one shared `twoTriangleMesh()` helper. `Issue613MeshIndexContractTests.swift`
+now imports `simd` and computes its triangle-winding normal/dot product via
+`simd_cross`/`simd_dot` instead of hand-rolled arithmetic, matching
+`Issue375MeshWindingTests.swift`'s existing convention. Test-only, no public API impact.
+
+### Fixed data races in BSpline adaptor evaluation caches (Issue #1153)
+
+Multiple data races existed when multiple threads concurrently evaluated the same
+`GeomAdaptor_Curve` or `GeomAdaptor_Surface` wrapping BSpline curves/surfaces.
+The mutable `BSplCLib_Cache`/`BSplSLib_Cache` inside the adaptors were accessed
+without synchronization across `Value`, `D0`, `D1`, `D2`, `D3` evaluation methods.
+
+Added `std::mutex` protection at three levels:
+- `BSplCLib_Cache`: all const evaluation methods lock internal mutex
+- `BSplSLib_Cache`: all const evaluation methods lock internal mutex  
+- `GeomAdaptor_Curve`/`GeomAdaptor_Surface`: BSpline/Bezier `EvalD0`-`EvalD3` lock mutex
+
+Verified with ThreadSanitizer: **0 races** under maximum stress (8 threads × 1000 
+iterations = 32,000 evaluations per test type), down from **5 confirmed races** before.
+
+### Fixed data races in TopoDS_TShape flag mutations (Issue #1154)
+
+TopoDS_TShape::myState was a plain `uint16_t` modified via non-atomic bitwise
+operations (`|=`, `&=`, `^=`). Concurrent flag mutations on shared TShapes
+(common after boolean operations where result shares TShapes with inputs)
+caused data races.
+
+Changed `myState` to `std::atomic<uint16_t>` with `compare_exchange_weak`
+loop in `setBit()` for lock-free atomic bit operations. All flag getters now
+use `load(std::memory_order_acquire)` and `setBit` uses atomic RMW with
+`memory_order_release/acquire` semantics.
+
+Verified with ThreadSanitizer reproducer at
+`Scripts/repro/1154-topology-flag-race/occt_1154_stress.cpp`, and with a new
+GTest (`TopoDS_TShape_Test.ConcurrentFlagMutationsAreNotLost`).
+
+### Factor five-of-six-faces open-shell fixture into shared helper (#1296)
+
+### Factor void-shape and zero-size-vertex test fixtures into shared helpers (#1295)
+
+### Fix doc comment citing non-existent test suite (#1294)
+
+### Remove duplicate curvature test, tighten circleRadius tolerance (#1293)
+
+### Merge duplicate Surface-Surface Intersection test suites into one (#1292)
+
+### Merge duplicate Curve-Surface Intersection test suites into one (#1291)
+
+### Test-only: consolidated the four independent `makeBSplineSurface()` fixtures (#1254)
+
+`BSplineSurfaceManipulationTests`, `BSplineSurfaceExtrasTests`,
+`BSplineSurfaceRemoveVKnotTests` and `BSplineSurfaceCompletionsV121Tests`
+each had their own private `makeBSplineSurface()` reusing the same name for
+four different fixtures. Moved into `SurfaceTestFixtures.swift` under
+distinct names; no production code or test behavior changed.
+
+### `classifyPoint2DInside` now actually tests `.inside` (#1284)
+
+Internal only, no public API change. `BRepClassFClassifierTests.classifyPoint2DInside` asserted
+`.outside` against a point far outside the face's UV bounds, so `Shape.classifyPoint2D` returning
+`.inside` was never exercised anywhere in the suite. It now classifies the midpoint of the face's
+own UV bounds, a genuinely interior point.
+
+### `hollowSolid()` test fixture consolidated onto one shared helper (#1265)
+
+Internal only, no public API change. The 20-cube-minus-8-cube-cavity fixture used across
+`Issue211OuterShellTests.swift`, `Issue439OuterShellMultiSolidTests.swift`, and
+`Issue502SubShapeTraversalTests.swift` was rebuilt independently five times; all five sites now call
+one shared `Issue211OuterShell.hollowSolid()`.
+
+### `lBracket()` test fixture naming collision resolved (#1280)
+
+Internal only, no public API change. `Issue613IndexContractTests.swift`'s `lBracket()` (a fused-box
+construction) is renamed `fusedLBracket()` to stop colliding with the differently-shaped, unrelated
+`lBracket()` in `GeometricEdgeSelectionTests.swift` (an extruded polygon).
+
+### `WireAnalyzerV124Tests` factored its 9x-inlined fixture into one helper (#1285)
+
+Internal only, no public API change. `WireAnalyzerV124Tests.swift`'s nine tests each independently
+rebuilt the same rectangle-wire-to-`WireAnalyzer` construction inside a triple-nested `if let`; now
+factored into one `rectangleAnalyzer(precision:)` helper, called via `guard let`.
+
+### Extracted locateLocalSpan helper in Curve2DBSplineLocalTests (#1258)
+
+All 5 tests in `Curve2DBSplineLocalTests` repeated an identical 8-line preamble (build a
+BSpline via interpolation, locate its local knot span, guard both steps) before diverging only
+in which local-evaluation accessor each exercises. Extracted to a private `locateLocalSpan`
+helper. Test-only, no behavior change.
+
+### Hoisted expectSameCurve into a shared fixture across the Curve2D interpolation parity suites (#1256)
+
+`Curve2DInterpolatePeriodicParityTests` and `Curve2DInterpolateTangentsParityTests` each
+reimplemented an identical `expectSameCurve` assertion helper instead of sharing one. Moved to
+`Curve2DInterpolateParityTestFixtures.swift`, matching this target's existing shared-fixture
+convention (`SurfaceTestFixtures.swift`). Test-only, no behavior change.
+
+### Removed IntToolsFClass2dTests' pointInside/pointOutside, strictly subsumed by Issue840ClassifyPoint2dToleranceTests (#1257)
+
+`IntToolsFClass2dTests.pointInside`/`.pointOutside` duplicated the identical fixture and the
+identical two assertions `Issue840ClassifyPoint2dToleranceTests.wellInsideUnaffected`/
+`.wellOutsideUnaffected` already cover, which additionally cross-check `Face.classify`.
+`IntToolsFClass2dTests.isHoleCheck`, unrelated coverage, stays. Test-only, no behavior change.
+
+### Folded DocumentMainLabelTests into TDFLabelPropertyTests.labelTag (#1247)
+
+`DocumentMainLabelTests.getMainLabel` duplicated three assertions already covered by
+`TDFLabelPropertyTests` (`labelTag`, `labelDepth`, `labelIsRoot`). Its one real value, an
+explicit `main != nil` assertion (the `TDFLabelPropertyTests` suite's tests use bare `if let`
+with no `else`, so they'd vacuously pass if `mainLabel` were ever nil), is now folded into
+`labelTag`. The redundant suite is deleted. Test-only, no behavior change.
+
+### `splitBoxCompound()` test fixture naming collision resolved (#1255)
+
+Internal only, no public API change. `Tests/OCCTTopologyTests/Issue541FaceIndexContractTests.swift`
+and `Issue614FaceOrientationTests.swift` carried byte-identical `splitBoxCompound()` fixtures; #541
+now calls #614's copy instead of keeping its own. `Issue979SubShapeIndexIdentityTests.swift`'s
+`splitBoxCompound()` named a structurally different fixture (a plane split, not a face split) under
+the same name; renamed to `planeSplitBoxCompound()` to remove the collision.
+
+### Deduplicated the C-string decode closure across two XCAF test suites (#1246)
+
+`Issue1078LayerNameLengthTests` and `Issue1055DatumNameLengthTests` each reimplemented the
+NUL-terminated buffer decode `Document.string(fromCString:)` already provides, instead of
+calling it. No behavior change (all three copies were byte-identical to the helper), test-only.
+
+### Test-only: shared BSpline continuity fixture across `Issue485SurfaceContinuityTests`/`Issue619SurfaceContinuityEncodingTests` (#1253)
+
+`bsplineSurface(interiorMultiplicityU:)`, previously duplicated verbatim in
+both suites, now lives once in `SurfaceTestFixtures.swift` as
+`makeContinuityBSplineSurface(interiorMultiplicityU:)`. No production code
+changed; no test behavior changed.
+
+### `MathSolverFunctionRootTests.findRoot(near:)` test pair parameterized with `@Test(arguments:)` (#1250)
+
+`MathSolverFunctionRootTests.findRootNewton()`/`findRootNegative()` are now one `@Test(arguments:)`-parameterized test. Test-only; no production behavior change.
+
+### `ElCLibTests.valueOnCircle` test pair parameterized with `@Test(arguments:)` (#1249)
+
+`ElCLibTests.valueOnCircle()`/`valueOnCircleAtPiOver2()` are now one `@Test(arguments:)`-parameterized test. Test-only; no production behavior change.
+
+### `OSDPathTests` removed, fully subsumed by `PathParsingContractTests` (#1286)
+
+`OSDPathTests` predated #499's path-parsing unification (`PathParsingContractTests`) and was
+never removed once its replacement landed. Confirmed case-by-case that every assertion it made is
+already covered, with equal or greater strength, by `PathParsingContractTests`. Test-only; no
+production code or public API changes.
+
+### `Issue640MathDimensionBoundsTests` Gauss/Crout determinant tolerance tightened to match its source fixtures (#1248)
+
+`Issue640MathDimensionBoundsTests`'s Gauss/Crout determinant control assertions now use the same `1e-10` tolerance as the `MathGaussTests`/`MathCroutTests` fixtures they were copied from, instead of a 10x looser `1e-9`. Test-only; no production behavior change.
+
+### Test-only dedup: `FreeBoundsPropertiesTests`' three earlier tests now call its own `twoFaces()` helper (#1289)
+
+Internal dedup only, no observable behavior change: `freeBoundsOnFaces`, `closedBoundInfo`, and
+`freeBoundWire` inlined the identical two-stacked-10x10-faces fixture that `twoFaces()` (added
+later in the same struct, #504) already factors out. All three now call the helper.
+
+### `Tests/OCCTModelingTests/OCCTModelingTests.swift` split by `@Suite` (#1308)
+
+`OCCTModelingTests.swift` carried 129 `@Suite` structs across 6853 lines. Split into one file per
+struct, named after the struct, matching the sibling `Issue*Tests.swift` files already in the
+directory. The file-scope `SIMD3.normalized` helper (used by exactly one suite,
+`ShapeSplittingTests`) moved with it as a `fileprivate extension`; no shared fixtures file was
+needed, since every other helper in the file was already struct-scoped. No test behavior changed:
+same assertions, same tolerances, same `@Test` count (682 across the directory, before and after).
+
+### `OCCTSurfaceTests.swift` split by `@Suite` into 130 files + shared fixtures (#1300)
+
+`OCCTSurfaceTests.swift` carried 7,049 lines across 130 `@Suite` structs. Split one file per suite,
+named after the struct, matching the target's existing `Issue*Tests.swift` convention. The
+`SIMD3.normalized` extension and the `#645` quarter-cylinder Gordon fixture (shared by
+`GeomFillGordonTests` and `GeomFillGordonReportTests`) move to a new `SurfaceTestFixtures.swift`,
+matching the `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API
+changes: same types, same signatures, same module, same test count (560 `@Test`s), just relocated.
+
+### `OCCTXCAFTests.swift` split by `@Suite` into one file per suite (#1307)
+
+`Tests/OCCTXCAFTests/OCCTXCAFTests.swift` carried 5,641 lines across 107 `@Suite` structs (423
+`@Test`s). Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in that directory. The file's one file-scope helper
+(`SIMD3.normalized`, unused by any suite here) moves to a new `XCAFTestFixtures.swift`, matching
+the `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API changes:
+same types, same signatures, same module, just relocated. `@Test` count is unchanged (423 before
+and after).
+
+### `OCCTCurveTests.swift` split by `@Suite` into one file per suite (#1305)
+
+`Tests/OCCTCurveTests/OCCTCurveTests.swift` carried 92 `@Suite` structs across 5195 lines. Split
+into 92 files, one per suite, named after the struct, matching the sibling `Issue*Tests.swift`
+files already in the directory. The file-scope `SIMD3.normalized` extension (the target-wide
+helper `CLAUDE.md`'s Test Layout section documents, unused within this file) moves to a new
+`Tests/OCCTCurveTests/CurveTestFixtures.swift`, following the
+`Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. No public API changes:
+same types, same signatures, same module, just relocated. `@Test` count unchanged: 555 before, 555
+after.
+
+### `OCCTIOTests.swift` split into one file per `@Suite` (#1302)
+
+`Tests/OCCTIOTests/OCCTIOTests.swift` carried 5740 lines across 44 `@Suite` structs, the only file
+in the target. Split one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files in every other domain test target. Shared fixtures used by 2+ suites
+(`invalidBowtieShape()`, the SIMD3 `.normalized` helper, and the `#795` golden-drawing fixture)
+moved to a new `IOTestFixtures.swift`, matching the `Tests/OCCTShapeHealingTests/
+ShapeHealingTestFixtures.swift` precedent. No public API changes: same types, same signatures,
+same module, just relocated.
+
+### `Tests/OCCTAnalysisTests/OCCTAnalysisTests.swift` split by `@Suite` (#1309)
+
+`OCCTAnalysisTests.swift` carried 143 `@Suite` structs across 7,376 lines, the largest file in the
+repo. Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in the directory. The shared `SIMD3.normalized` helper moves to
+a new `AnalysisTestFixtures.swift`. No public API changes: same tests, same module, just relocated;
+`@Test` count unchanged (547 before and after).
+
+### `OCCTTopologyTests.swift` split by `@Suite`, one file per suite (#1304)
+
+`OCCTTopologyTests.swift` carried 106 `@Suite`s across 5,256 lines. Split into 106 files, one per
+suite, named after the struct, matching the sibling `Issue*Tests.swift` files already in
+`Tests/OCCTTopologyTests/`. The file-scope `SIMD3.normalized` helper (unused within this target)
+moves to a new `TopologyTestFixtures.swift`, matching the `ShapeHealingTestFixtures.swift`
+precedent. No public API changes: same types, same signatures, same module, just relocated.
+`@Test` count is unchanged (556 across the directory, before and after). No `Package.swift` change
+needed, its `path:` already covers the whole directory.
+
+### `OCCTMathTests.swift` split by `@Suite`, one file per suite (#1306)
+
+`OCCTMathTests.swift` carried 100 `@Suite` structs across 3557 lines. Split into 100 per-suite
+files, each named after its struct (matching the sibling `Issue640MathDimensionBoundsTests.swift`
+convention already in the directory), plus `MathTestFixtures.swift` for the one file-scope helper
+(`SIMD3.normalized`, unused by any suite today and not owned by one, so it isn't moved with a
+particular suite). No public API changes: same types, same signatures, same module, just
+relocated. `@Test` count unchanged (352 across the directory, before and after).
+
+### `OCCTGeom2dTests.swift` split into 110 per-suite files (#1298)
+
+`Tests/OCCTGeom2dTests/OCCTGeom2dTests.swift` (5,120 lines, 110 `@Suite` structs) split into one
+file per suite, matching the sibling `Issue*Tests.swift` convention already in that directory. A
+new `Geom2dTestFixtures.swift` holds the one file-scope declaration shared across the original file
+(an unused `SIMD3.normalized` extension), following the `ShapeHealingTestFixtures.swift` precedent.
+No public API changes: internal test reorganization only, same tests, same module, just relocated.
+
+### `OCCTBRepGraphTests.swift` split by `@Suite` (#1303)
+
+`Tests/OCCTBRepGraphTests/OCCTBRepGraphTests.swift` carried 4496 lines across 64 `@Suite`
+structs. Split into one file per suite, named after the struct, matching the sibling
+`Issue*Tests.swift` files already in the directory. The shared `SIMD3.normalized` helper
+(declared once per module, not currently called by any suite in this target) moves to a new
+`BRepGraphTestFixtures.swift`, matching the `ShapeHealingTestFixtures.swift` precedent.
+Verbatim move: no assertion, tolerance, or test body changed, and the `@Test` count is
+unchanged (226, before and after).
+
+### `OCCTShapeHealingTests.swift` split by `@Suite` into 78 files (#1301)
+
+`Tests/OCCTShapeHealingTests/OCCTShapeHealingTests.swift` carried 2,984 lines across 78 `@Suite`
+structs. Split one file per suite, named after the struct, matching the sibling `Issue*Tests.swift`
+files already in the directory. The file-scope `SIMD3.normalized` helper (CLAUDE.md's Test Layout
+section documents it as the one shared helper per target) moved into the existing
+`ShapeHealingTestFixtures.swift`. No public API changes: same types, same signatures, same module,
+same test count (326 before and after), just relocated.
+
+### `OCCTDrawingTests.swift` split by `@Suite` into per-suite files (#1299)
+
+`OCCTDrawingTests.swift` carried 2780 lines across 33 `@Suite` structs. Split into one file per
+suite, named after the struct, matching the sibling `Issue*Tests.swift` files already in
+`Tests/OCCTDrawingTests/`. The one file-scope helper used by no suite in this file
+(`SIMD3.normalized`, kept for parity with every other domain test target's own copy, per
+`CLAUDE.md`'s Test Layout) moves to a new `DrawingTestFixtures.swift`, matching the
+`Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift` precedent. The one helper used by a
+single suite (`RecordingSink`) moves with it, onto `DrawingTransformUnificationTests.swift`,
+`private` -> `fileprivate`. `OCCTDrawingTests.swift` itself is now empty and removed. No public API
+changes: same types, same signatures, same module, just relocated. `@Test` count is unchanged (197
+before and after).
+
+### Refman coverage audit, Pass 4d: Mesh, presentation and misc lane (#814)
+
+The largest of #807's lane audits: 368 headers across nine packages (`BRepMesh_`, `Poly_`,
+`IMeshData_`, `IMeshTools_`, `AIS_`, `Graphic3d_`, `Image_`, `StdPrs_`, `StdSelect_`). 45 classes
+were already wrapped or documented; the other 320 are now recorded in
+`docs/occtswift-wrapping-gaps.md` across 32 family-level buckets (mostly OCCT's own OpenGl-based
+live-viewer pipeline and its own internal meshing-engine machinery, neither reached by this
+project's Metal renderer or its `BRepMesh_IncrementalMesh` entry point). One real, narrow gap
+recorded rather than wrapped: `Poly_TriangulationParameters` (a triangulation's own record of the
+deflection/angle/minSize it was built with, never read or written by this bridge).
+
+Twelve documentation errors found and fixed: eleven doc lines across `docs/reference/
+Document-Mesh-Fixing.md` and `docs/reference/Document.md` cited `Poly_Triangulation` for methods
+actually implemented by `RWMesh_FaceIterator` or `TDataXtd_Triangulation`; `docs/API_REFERENCE.md`'s
+`PointCloud` Swift type is now correctly described as having no OCCT class backing it at all
+(previously wrongly attributed to `AIS_PointCloud`).
+
+`StdPrs_` (28 classes, OCCT's default presentation-builder toolkit) is confirmed genuinely unwrapped
+and undocumented; `StdSelect_`'s two already-wrapped classes are #809's own Swift surface, not
+re-derived here.
+
+### Deduplicated `writeSTEP(progress:)`/`writeIGES(progress:)` dispatch (#1231)
+
+`Exporter.writeSTEP(shape:to:progress:)` and `writeIGES(shape:to:progress:)` now share one
+private `writeWithProgress` helper instead of reimplementing the identical validate/dispatch/
+translate body twice. No public API or behavior change.
+
+### `Exporter`: deduplicated the `*Data` temp-file round trip (#1230)
+
+`stlData`, `stepData`, `igesData` and `brepData` reimplemented the identical "write to a temp file,
+read it back as `Data`, clean up" five-statement pattern four times. Extracted into one private
+`Exporter.dataViaTempFile(extension:write:)` helper. No public API or behavior change: same
+signatures, same `throws` contracts, same output (confirmed byte-identical for all four formats,
+see "Notes for the reviewer" below).
+
+### `DXFError`/`PDFError`'s dead `.drawingEmpty` case removed (#1229)
+
+`DXFError` and `PDFError` no longer declare a `.drawingEmpty` case. Neither writer's `write(to:)`
+has ever thrown it -- both already write a valid, empty DXF/PDF file for an empty `Drawing`,
+silently, matching `SVGWriter`'s own (documented, tested) behavior. `SVGError` never had the case
+in the first place. A consumer with an exhaustive `switch` over either enum must remove the
+`.drawingEmpty` arm; there is nothing to migrate to, since the case was never produced.
+
+### PDFWriter/SVGWriter share one per-layer dash-pattern table (#1228)
+
+`PDFWriter` and `SVGWriter` each independently maintained a switch statement over the identical
+per-layer dash lengths (HIDDEN: 3/2mm, CENTER: 8/2/2/2mm), formatted into each format's own syntax.
+A new internal `dashLengths(for:)` in `DrawingDispatch.swift` now owns those values once, alongside
+the sibling `strokeWidthMM(for:)` table #795 centralized for the same reason; each writer's dash
+formatting is now a two-line wrapper around it. No public API change, no behavior change.
+
+### `Exporter`: 8 of 15 `Shape`-taking export functions were missing the `isValid` guard (#1226)
+
+`writeIGES(shape:to:unit:)`, `writeIGESBRep`, `writeIGES(shapes:to:)`,
+`writePLY(shape:to:deflection:normals:colors:texCoords:)`, `writeSTEP(shape:to:modelType:)`,
+`writeSTEP(shape:to:modelType:tolerance:)`, `writeSTEPCleanDuplicates`, and `writeGLTF` now throw
+`ExportError.invalidShape` for an invalid shape before attempting the write, matching every other
+`Exporter` write method. Previously: the three STEP overloads and the PLY-with-options overload had
+no validity check anywhere in the call chain and silently exported an invalid shape; `writeGLTF` had
+no guard of any kind, Swift-side or bridge-side; the two IGES overloads (`unit:`, BRep mode) were
+already rejected by the bridge's own check but surfaced as `.exportFailed` instead of
+`.invalidShape`; `writeIGES(shapes:to:)` silently dropped an invalid shape from a batch and exported
+the rest instead of rejecting the call. The shared guard is now a single private helper
+(`Exporter.validateExportInputs(shape:url:)`) so a future overload can't drop it the same way.
+
+### DXFWriter/PDFWriter/SVGWriter share one entity-buffer implementation (#1227)
+
+`DXFWriter`, `PDFWriter` and `SVGWriter` each independently declared the same five entity arrays
+(`lines`/`polylines`/`circles`/`arcs`/`texts`) and the same `addLine`/`addPolyline`/`addCircle`/
+`addArc`/`addText`/`entityCounts` staging logic, byte-for-byte identical apart from a cosmetic arc
+tuple field-name difference. A new internal `DrawingEntityBuffer` type now owns that storage and
+staging once, shared via a `DrawingPrimitiveSink` protocol-required property (mirroring the
+existing `cachedPrimitiveOps` pattern); each writer's public methods are unchanged in signature and
+behavior and now forward into it in one line. No public API change.
+
+### `writeSTLBinary`/`writeSTLAscii` no longer silently drop every face but the first (#1225)
+
+`Shape.writeSTLBinary(to:deflection:)`/`writeSTLAscii(to:deflection:)` used to return `true` after
+writing only the first face's triangulation for any multi-face shape (a box, a cylinder, a filleted
+part), silently discarding the rest. Both now delegate to the same whole-shape `StlAPI_Writer`-based
+writer `Exporter.writeSTL` already uses, so every face is written.
+
+### `Shape.shadedMesh`/`Shape.edgeMesh` overload pairs share one deinterleave implementation (#1224)
+
+`shadedMesh(deflection:)`/`shadedMesh(drawer:)` and `edgeMesh(deflection:)`/`edgeMesh(drawer:)` no
+longer independently reimplement the same mesh-buffer deinterleave and construction logic. Each
+pair now converges on a shared private helper (`buildShadedMeshData(from:)` /
+`buildEdgeMeshData(from:)`), differing only in which bridge call populates the buffer, mirroring the
+delegation `OCCTShapeGetShadedMeshWithDrawer`/`OCCTShapeGetEdgeMeshWithDrawer` already use one layer
+down. No public API or behavior change. Elevated from #796's census by #388 (Pass 4d of #377).
+
+### Refman coverage audit: OCAF persistence and format drivers, family-level (#983)
+
+Pass 3c of the refman-coverage epic (#807): audited the 38-package, 342-class OCAF
+persistence/format-driver layer against the pinned refman. 9 classes are individually
+wrapped or documented (the eight format-registration classes the bridge names, plus `PCDM`'s
+package header); the other 333 are curated in thirteen family-level buckets in
+`docs/occtswift-wrapping-gaps.md`, per the lane's own predicted shape ("an attribute driver
+is not a callable capability, it is what makes an attribute survive a round trip"). One
+genuine, narrow under-coverage finding recorded: `StdDrivers_`/`StdLDrivers_` register two
+legacy, read-only OCAF formats (`"MDTV-Standard"`, `"OCC-StdLite"`) that `Document` never
+registers. Two stale claims found in `docs/thread-safety.md`'s `#349`/`#353`/`#374` writeup
+(a superseded fix mechanism and a removed suppression it still describes as current) were
+filed as #1232 rather than fixed in this PR, since a human was concurrently working in that
+same file. Census artifact:
+[`Scripts/repro/983-ocaf-persistence-drivers/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/983-ocaf-persistence-drivers).
+
+### OCAF framework layer audited against the pinned refman, in both directions (#982)
+
+Pass 3b of #807. Five OCCT packages (`TFunction_`, `TPrsStd_`, `TObj_`, `AppStd_`, `AppStdL_`), 51
+classes, compared against `occt-refman@8.0.1` and the pinned headers.
+
+**Under-coverage.** 42 of the 51 were neither wrapped nor documented and none carried a recorded
+reason. `docs/occtswift-wrapping-gaps.md` gains an OCAF-framework-layer section covering all 42,
+grouped by measured mechanism: 8 collection aliases deprecated at file scope since OCCT 8.0.0, 4
+classes requiring an application-specific subclass (protected constructor or pure-virtual method,
+each confirmed directly), 17 `TObj_` classes that are internal machinery of that same subclassing
+framework, 10 `TPrsStd_` classes that populate an `AIS_InteractiveObject` through OCCT's own
+live-viewer pipeline (`AIS_InteractiveContext`/`V3d_Viewer`, confirmed unreferenced anywhere in this
+bridge or its docs: OCCTSwift's display layer is Metal instead), and 2 legacy
+`TDocStd_Application` resource-name subclasses superseded by #371's direct instantiation. The 42nd,
+`TFunction_Iterator`, is a genuine capability gap recorded as one rather than squeezed into a
+curated excuse: it walks the regeneration dependency graph in execution order, needs no subclass,
+and is never constructed anywhere in this bridge despite being `#include`d.
+
+**Over-coverage.** 2 findings, both fixed. `docs/reference/Document-XCAF-Notes.md` attributed
+`TObjApplication.createDocument()` to `TObj_Application::NewDocument`, a real but *different*
+method, inherited from `TDocStd_Application` and never called; the bridge actually calls
+`TObj_Application`'s own `CreateNewDocument` override. Neither `census-doc-occt-attribution.py` nor
+this pass's own method-attribution checker can catch that shape (the cited method genuinely exists,
+just isn't the one reached), so it was found reading the header directly. The same doc also
+attributed `DriverTable.initStandard()` to `TPrsStd_DriverTable::Get` + "`TPrsStd_AISPresentation`
+standard driver registration"; `InitStandardDrivers()`'s own body registers six `TPrsStd_Driver`
+subclasses and never touches `TPrsStd_AISPresentation` at all, the textbook shape
+`census-doc-occt-attribution.py --lane` is built to catch, and did.
+
+**Artifact.** `Scripts/repro/982-refman-coverage-ocaf-framework/`: the by-call lane derivation, the
+census with a self-test and a family-count assertion, and a removal matrix that proves each
+detector shape load-bearing (and found one design inconsistency of its own on first run: a
+`declares_member` propagation branch inherited from #812's template with no case in this lane that
+could ever exercise it, removed rather than left unproven).
+
+### Drawing/2D-annotation lane audited against the pinned refman, in both directions (#812)
+
+Pass 4b of #807. Three OCCT packages (`HLRAlgo_`, `HLRBRep_`, `HLRAppli_`), 93 classes, compared against `occt-refman@8.0.1` and the pinned headers. `Prs3d_` contributes zero classes: the only construction sites are behind `DisplayDrawer.swift`'s 3D Metal-display tessellation control, not this lane's 2D output.
+
+**Under-coverage.** 86 of the 93 were neither wrapped nor documented and none carried a recorded reason. `docs/occtswift-wrapping-gaps.md` gains a Drawing/2D-annotation-lane section covering all 86, grouped by measured mechanism: 2 bare package-utility classes, 15 collection aliases deprecated at file scope since OCCT 8.0.0, 5 alias templates to `GeomLProp_*Base` instantiations, 1 header declaring no class of its own name, 1 unread bit-flag enum, and 62 internal engine helpers across four sub-mechanisms (16 poly-HLR internal mesh/edge-status data, 21 exact-HLR internal edge/face/interference cursor state, 7 template-policy "Tool" adaptors, 18 `HLRBRep_The<X>Of<Y>`/`My<X>Of<Y>` curve/curve and curve/surface intersection-engine template instantiations). Unlike #811's lane, almost none of the 86 is a genuine capability gap: HLR is one algorithm with five public entry classes and the rest is its own internal machinery.
+
+**Over-coverage.** 0 findings. `census-doc-occt-attribution.py --lane` surfaced 5 candidates at 3 locations, all in `docs/reference/Drawing.md`, all one shape (`HLRBRep_HLRToShape`/`HLRBRep_PolyHLRToShape` attributed to `OCCTDrawingGetEdges`) and all rejected on read: the doc's "selected via `OCCTEdgeType` in `OCCTDrawingGetEdges`" phrasing accurately describes a two-function mechanism (a sibling function extracts the compounds, this one selects among them), not a false claim about which function constructs either class. A hand read of every remaining `- **OCCT:**` bullet touching this lane (`HLRAlgo_Projector`'s constructors, `HLRBRep_TypeOfResultingEdge`'s six ordinals, `HLREdgeCategory`'s eleven cases, both `reflectLines*` descriptions) found nothing further.
+
+**Artifact.** `Scripts/repro/812-refman-coverage-drawing/`: the by-call lane derivation, the census with a self-test and a family-count assertion, and a removal matrix that proves each detector shape load-bearing.
+
+### `emitOrdinate`'s dx/dy leader/tick/tolerance-text recipe unified into one axis-generic helper (#1192)
+
+`emitOrdinate` (`DrawingDispatch.swift`) drew its per-feature X and Y extension-leader/tick/
+tolerance-text geometry as two independent, axis-swapped copies of the same recipe. Both now share
+a new `emitOrdinateAxisFeature(...)` (private, parametrized by which axis is "along"). No output
+values changed, confirmed byte-identical against the existing DXF/SVG/PDF golden-output tests.
+
+### `DrawingDimension.Radial`/`.Diameter` share one `Circular` payload struct (#1185)
+
+`Radial` and `.Diameter` were two field-for-field-identical structs (7 fields + memberwise init),
+hand-duplicated across six switch-arm pairs in `DrawingAnnotation.swift`, `DrawingComposition.swift`
+and `Drawing.swift`, and already drifted (`Diameter.leaderAngle` had lost the doc comment
+`Radial.leaderAngle` still carried). Both are now public typealiases of a new
+`DrawingDimension.Circular`, which holds the shared fields once. Existing code compiles unchanged
+(`.radial(...)`, `.diameter(...)`, `DrawingDimension.Radial(...)`, `.Diameter(...)`, field access,
+`DrawingDimension.value` all work exactly as before).
+
+**Breaking**: `DrawingDimension.Radial.value` and `.Diameter.value` (the struct-level computed
+properties) are removed; `radius`/`2 * radius` now compute only inside `DrawingDimension.value`'s
+own switch (unchanged output there). Read `dimension.value` on the `DrawingDimension` enum case
+instead of `.value` on a bare `Radial`/`Diameter` struct.
+
+### Four independent `scale * p + translate` transform sites unified, `TransformedDrawing.apply(_:)` is no longer dead code (#1183)
+
+`DrawingDimension.transformed`, `DrawingAnnotation.transformed` (both `DrawingComposition.swift`)
+and `collectProjectedEdges` (`DrawingDispatch.swift`) each independently re-derived the 2D affine
+transform `scale * p + translate` in a local closure, while `TransformedDrawing.apply(_:)` --
+documented as the canonical implementation -- had no callers at all. All four now share a new
+`TransformedDrawing.apply(_:translate:scale:)` (internal static). No output values changed. Public
+API unchanged (`TransformedDrawing.apply(_:)` keeps its existing signature and behavior).
+
+### Six independent 2D left-perpendicular derivations unified into `leftPerpendicular2D(of:)` (#1182)
+
+`emitLinear`/`emitRadial`/`emitDiameter` (`DrawingDispatch.swift`), `breakLine`
+(`DrawingSymbols.swift`), `cosmeticThreadSideView` (`DrawingThreadAnnotation.swift`), and
+`arrowheadBasePoints` (`DrawingStyle.swift`, itself already shared by `emitCuttingPlaneLine` and
+`datumFeature` since #1173) each independently re-derived the 2D "rotate 90° counter-clockwise"
+perpendicular of a direction vector, some as `SIMD2(-d.y, d.x)` on a named vector and some as the
+trig-form equivalent `SIMD2(-sin(θ), cos(θ))`; the latter is why a prior audit pass missed two of
+them. All six now share a new `leftPerpendicular2D(of:)` helper (`DrawingStyle.swift`, internal),
+distinct from the unrelated 3D `perpendicularBasis(to:)` (#881). No output values changed. Internal
+only.
+
+### `Sheet`/`ProjectionSymbol`/`StandardLayout` can now render onto `PDFWriter` and `SVGWriter`, not just `DXFWriter` (#1180)
+
+`Sheet.render(into:)`, `ProjectionSymbol.render(_:at:into:)`, and `StandardLayout.render(into:)`
+gain `PDFWriter` and `SVGWriter` overloads alongside their existing `DXFWriter` one. Previously a
+`Sheet`'s ISO 5457 border, ISO 7200 title block, and ISO 5456-2 projection symbol, and a
+`standardLayout(of:)` result's placed views, could only be emitted onto a `DXFWriter`; a PDF or
+SVG sheet had to be composed without any of that scaffolding. All three writers already implement
+the underlying primitives identically, so PDF/SVG output is pixel-for-pixel the same scaffolding
+DXF has always drawn, just staged onto a different writer.
+
+```swift
+let sheet = Sheet(size: .a4, title: TitleBlock(title: "Bracket", drawingNumber: "B-001"))
+try Exporter.writePDF(sheet: sheet, to: url) { pdf in
+    sheet.render(into: pdf)          // now works -- used to only accept DXFWriter
+}
+```
+
+No existing signature changes; the `DXFWriter` overloads are unchanged.
+
+### ISO 6410 cosmetic-thread end-view arcs now reach PDF/SVG and `Drawing.bounds()`, not just DXF (#1179)
+
+`DrawingAnnotation.cosmeticThreadEndView(centre:majorDiameter:pitch:)` used to return a bespoke
+`ArcSegment` type that was never a `DrawingAnnotation`, reachable only through
+`DXFWriter.addCosmeticThreadEndView`'s own bypass of the shared annotation dispatch. It now
+returns `[DrawingAnnotation]` (three `.arc(DrawingAnnotation.Arc)` cases), a full
+`DrawingAnnotation` factory like its sibling `cosmeticThreadSideView`. A new
+`Drawing.addCosmeticThreadEndView(centre:majorDiameter:pitch:)` stores the arcs on a `Drawing`,
+so a thread end-view now exports identically to DXF, PDF and SVG, and participates in
+`Drawing.bounds()`/`detailView()`. `DXFWriter.addCosmeticThreadEndView` is unchanged in behaviour.
+
+Migration: any caller reading `DrawingAnnotation.ArcSegment` (removed) or the old
+`[ArcSegment]` return of `cosmeticThreadEndView` should switch to pattern-matching
+`case .arc(let a) = annotation`, reading `a.centre`/`a.radius`/`a.startAngle`/`a.endAngle` (same
+fields, plus a new `layer`/`id`). Any exhaustive `switch` over `DrawingAnnotation` needs a new
+`.arc` arm.
+
+### Arrowhead/triangle-pointer geometry unified between cutting-plane-line arrows and datum-feature triangles (#1173)
+
+`emitCuttingPlaneLine`'s arrowhead and `datumFeature`'s triangle pointer independently
+re-implemented the same "unit direction, its perpendicular, two base points offset by a
+half-width from a point set back along that direction" vector geometry with unrelated naming and
+independently-chosen proportions (a 0.4x shouldered arrowhead vs. a 1.0x full wedge). Both now
+share a new `arrowheadBasePoints(apex:direction:backset:halfWidth:)` helper (`DrawingStyle.swift`,
+internal); each site still supplies its own proportions, since the two are legitimately different
+symbols, but the shared point-offset math now lives in one place. No output values changed.
+Internal only.
+
+### Polygon hatch-fill's duplicated implementations unified onto `Hatch_Hatcher` (#1172)
+
+`Drawing.addHatch`'s rendering path (`emitHatch`, used by every `DrawingWriter`: DXF/SVG/PDF) reimplemented, in hand-rolled Swift, exactly what `HatchPattern.generate`'s OCCT-native `Hatch_Hatcher` call already does, and the two had drifted: a bare, five-orders-looser near-horizontal tolerance (`1e-12` vs `Hatch_Hatcher`'s own `1e-7`), no allocation bound on `emitHatch`'s scanline output, and `HatchPattern.generate` had no way to trim against island (hole) polygons at all even though `emitHatch` already supported them. `OCCTHatchLines` now accepts an optional flattened array of island polygons and `Trim()`s the hatcher against each island edge, same even/odd rule as the outer boundary; `HatchPattern.generate` gains a matching `islands:` parameter (default `[]`, existing calls unaffected); and `emitHatch` is now a thin wrapper over `HatchPattern.generate` instead of a second implementation, inheriting `Hatch_Hatcher`'s tolerance, island support and allocation bound.
+
+### Deduplicate OCCTDrawingGetEdges's eight guard-then-add sites (#1190)
+
+- New shared `occtAddShapeIfPresent` helper in `OCCTBridge_Internal.h`
+- `OCCTDrawingGetEdges` (`OCCTBridge_HLR.mm`) now calls it at all eight sites instead of
+  reimplementing `if (!x.IsNull()) { builder.Add(compound, x); }` per field
+- Internal bridge refactor only, no behavior change
+
+### `Drawing.addCuttingPlaneLine`'s duplicated direction-projection recipe de-duplicated (#1193)
+
+`addCuttingPlaneLine`'s trace and arrow direction blocks each projected a 3D direction as `projectPointToPlane(direction, ...) - projectPointToPlane(.zero, ...)`, a roundabout point-difference idiom that only produced the right answer because `projectPointToPlane` has no translation term of its own; a future change to `projectPointToPlane`/`perpendicularBasis` picking up an affine origin would have silently broken both blocks with nothing to catch it. Both now share a new `projectDirectionToPlane(_:viewDirection:)` helper (a direct `simd_dot` against `perpendicularBasis(to:)`'s `(right, up)`), and `projectAxisToPlane`'s equivalent `dir2` computation now routes through the same helper too, so there is one canonical "project a direction into the view plane" recipe instead of three. No output values changed. Internal only.
+
+### Add `DrawingAnnotation.rectangleCentrelines(min:max:style:)` helper, dedupe FCF/datum boxes (#1188)
+
+- New public function `DrawingAnnotation.rectangleCentrelines(min:max:style:)`, building the four
+  `.centreline` edges of an axis-aligned rectangle on top of `rectanglePoints(min:max:)`
+- `featureControlFrame`'s outer box and `datumFeature`'s label box both now call it instead of
+  hand-rolling the same four `.centreline` appends
+- No behavior change: identical winding order, style and geometry at both call sites
+
+### Added `packSIMD3`, the write-direction sibling of `unpackSIMD3`, and deduplicated `PointCloud`'s pack loops onto it (#1186)
+
+### Unify LengthDimension/RadiusDimension/AngleDimension/DiameterDimension behind shared DimensionMeasurement base (#1178)
+
+### Add `rectanglePoints(min:max:)` helper for CCW rectangle corners (#1189)
+
+- New public function `rectanglePoints(min:max:)` in `DrawingSheet.swift`
+- Replaces 4 hand-built corner arrays with single shared helper
+- Ensures consistent CCW winding order across all rectangle uses
+
+### Deduplicate HLR bridge 6-field drawing population (#1184)
+
+- Extracted `occtDrawingPopulate` template helper in `OCCTBridge_HLR.mm`
+- Both `OCCTDrawingCreate` and `OCCTDrawingCreatePoly` now use the shared helper
+- Reduces code duplication and ensures consistent field population
+
+### Rename 2D `DrawingAnnotation.TextLabel` to `DrawingTextLabel` (#1175)
+
+- Renamed `DrawingAnnotation.TextLabel` struct to `DrawingAnnotation.DrawingTextLabel`
+- No public API surface change: `Drawing.addTextLabel()` and the `.textLabel` enum case remain unchanged
+- Internal references updated automatically via enum case inference
+
+### Remove duplicate ISO 128-20 line-width table; unify on `strokeWidthMM` (#1170)
+
+- Deleted `DrawingLineStyle.defaultWidth` and `boldWidth` computed properties (dead code)
+- `strokeWidthMM(for:)` in `DrawingDispatch.swift` is now the canonical line-width table
+- Tests updated to verify `strokeWidthMM` values match ISO 128-20
+
+### Fix surfaceFinish machiningProhibited to emit circle as centreline segments (#1177)
+
+- `.machiningProhibited` case now produces 24 connected `.centreline` segments forming a circle
+- Removed the text label "O" fallback that was previously emitted
+- Consistent with `datumFeature` (triangle as 3 lines) and `breakLine` (zigzag as 5 lines)
+
+### Remove shadowing compound(from:) and use compound(_:) in Section2D (#1171)
+
+### refactor(drawing): share cosmetic thread minor-diameter formula (#1187)
+
+### refactor(drawing): unify circle-visibility test between addAutoDimensions and addAutoCentermarks (#1181)
+
+### Fix false GDTSymbol doc comment claiming round-trip with GeomToleranceType (#1176)
+
+### #1174 HLR bridge deflection doc omission
 
 ### `Curve2D.swift`'s Gcc/analytic-intersection/extrema families split into their own files (#687)
 
 `Curve2D.swift` carried 962 lines across 13 declarations belonging to other type families. Split
 out:
 
-- `Curve2DGcc.swift` — `Curve2DGcc`, `Curve2DQualifier`, `Curve2DCircleSolution`,
+- `Curve2DGcc.swift`: `Curve2DGcc`, `Curve2DQualifier`, `Curve2DCircleSolution`,
   `Curve2DLineSolution`, `Curve2DHatchSegment`, `BisecType`, `BisecSolution`, `GccAnaBisector`
-- `IntAna2d.swift` — `Intersection2DPoint`, `IntAna2d`
-- `Extrema2d.swift` — `Extrema2DResult`, `Extrema2d`
+- `IntAna2d.swift`: `Intersection2DPoint`, `IntAna2d`
+- `Extrema2d.swift`: `Extrema2DResult`, `Extrema2d`
 
 `Surface.swift`'s `CurveSurfaceIntersection` and its `Curve3D` intersection extension move onto
 `Curve3D.swift`. No public API changes: same types, same signatures, same module, just relocated.
@@ -88,9 +2786,113 @@ occurrence-shape reader exercised it.
 
 The `.a4` arm was returning `(20, 10, 10, 10)` instead of `(7, 7, 7, 10)` per the doc comment.
 
+### Compute qualifier for GCC 2D tangent solvers and intersection parameters (#781)
+
+### `Shape.withPrism`/`withBoss`/`withPocket` documentation corrected (#1047)
+
+The methods were documented as feature-based operations but actually use extrusion + boolean. Section renamed to "Extrusion-Based Features", doc comments updated to name `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse`/`Cut` and cross-reference `prismUntilFace` for true feature prisms.
+
+### Teach `check-null-handle-guards.py` to detect OCAF handle dereferences from `FindAttribute` / `GetObject` patterns (#1052)
+
+- New `OCAF_DEREF_RECEIVERS` table listing OCAF attribute types (`XCAFDoc_Datum`, `XCAFDoc_Dimension`, `XCAFDoc_GeomTolerance`) and their methods that internally dereference OCAF-fetched handles (`GetObject`).
+- New regexes `OCAF_FINDATTRIBUTE` and `OCAF_HANDLE_DECL` to detect handle acquisition via `label.FindAttribute(Type::GetID(), handle)` and declare-then-assign forms.
+- New `OCAF_GUARD_HELPERS` named-helper allowlist (`occtDatumLabelIsReadable`, `occtDocumentGdtAlwaysReadable`) for structural label guards instead of `IsNull()`.
+- Self-test fixtures for both unguarded and guarded OCAF patterns (declare-then-assign and direct init forms).
+
+### Fix: derive-gdt-enums.py now fails on unknown GD&T enums (#1063)
+
+The `--reverify-headers` mode now treats any `XCAFDimTolObjects_*` enum header not listed in `BOUND` or `KNOWN_UNBOUND` as a hard error. This prevents a new OCCT enum from being silently ignored by the gate.
+
+### Add regression tests for naming trace iterator behavior (#950)
+
+### Unify OBJ/PLY XDE export pipeline via shared helper `occtExportCafImpl` (#976)
+
+- Add `occtExportCafImpl` template in `Sources/OCCTBridge/src/OCCTBridge_IO.mm`
+- Refactor `OCCTExportOBJ` and `occtExportPLYImpl` to use shared helper
+- Net reduction: 13 lines (30 added, 43 removed)
+
+### Fix Construction.md: correct basis algorithm docs, remove deleted helper reference, add Placement.lift entry (#1060)
+
+### Document `Edge.split(at:vertex:)` out-of-range refusal and fix incorrect caveat (#1061)
+
+### Fix doc comment discrepancies for Curve2D polynomial pole count and GD&T plural accessors (#1062)
+
+### Fix #1085: bisectorIntersections validates non-finite and large coordinates (#1085)
+
+Adds `BisectorIntersection.maxSafeMagnitude` (1e150) threshold and early validation in `bisectorIntersections` to reject NaN, ±Infinity, and coordinates exceeding the safe magnitude. Includes comprehensive test suite `Issue1085BisectorNonFiniteTests`.
+
+### `SAWireAnalysis` check functions now return `Bool?` so refusal is distinguishable from a clean verdict (#1074)
+
+The ten whole-wire checks (`checkOrder`, `checkConnected`, `checkSmall`, `checkDegenerated`, `checkClosed`, `checkSelfIntersection`, `checkGaps3d`, `checkGaps2d`, `checkEdgeCurves`, `checkLacking`) and four per-edge checks (`checkConnectedEdge`, `checkSmallEdge`, `checkDegeneratedEdge`, `checkGap3dEdge`) now return `Bool?` instead of `Bool`. A `nil` return means the check could not run (wrong type, null shape, edgeless wire, or unassemblable wire). The pcurve guard remains specific to `checkOuterBound`.
+
+### `bisectorIntersections(a:b:c:d:)` now reports segment endpoints for coincident bisectors (#1070)
+
+Two coincident half-lines (the same bisector constructed from identical or collinear point pairs) previously returned an empty array because OCCT reports their intersection as a segment, not a point. The bridge now reads the segment endpoints and returns them: the shared midpoint (parameter 0 on both rays) and the point at infinity (`Precision::Infinite()`).
+
+```swift
+// Before: [] (indistinguishable from "no crossing")
+// After: 2 points, the midpoint and the point at infinity
+let coincident = bisectorIntersections(a: (0, 0), b: (4, 0),
+                                        c: (0, 0), d: (4, 0))
+// coincident.count == 2
+// coincident[0] == (2, 0), paramOnFirst == 0
+// coincident[1].paramOnFirst > 1e99 (≈ Precision::Infinite())
+```
+
+### Consolidate three near-identical GD&T label-lookup helpers (#1065)
+
+### Document investigation concluding #345 SIGABRT was not caused by #1057 toolchain defect (#1072)
+
+### Fix inventory mismatches in ci.yml and carried-occt-patches.md (#1066)
+
+- ci.yml: update gate script count from "five" to "eleven" with accurate breakdown
+- okf/references/carried-occt-patches.md: fix patch 0027 row key to match actual filename
+
+### Fix OCCTBridge.h class index for OCCTWireCheckOuterBound (#1075)
+
+### Fix #1064: Strengthen three Pass 4a test suites to avoid false positives and exercise all parameters (#1064)
+
+- `Issue1009Matrix12GroupedTests`: Added second discriminator for translation test to distinguish success from the bridge's error sentinel.
+- `Issue999NLPlateParametersTests`: Added `g2ToleranceIsLive` and `g3ToleranceIsLive` tests proving the `tolerance` parameter is live.
+- `Issue1017NLPlateResolutionOrderTests`: Strengthened `inRangeOrderStillBuilds` to verify actual deformation (`maxAbsZ > 1.0`) not just non-nil return.
+
+### Consolidate BRepCheck tri-state decoder into shared helper; add census of tri-state return functions (#1077)
+
+- New shared helper `occtBRepCheckSubShapeStatus` in `OCCTBridge_Internal.h` consolidates logic previously duplicated in `OCCTCheckFaceStatus`, `OCCTCheckEdgeStatus`, `OCCTCheckVertexStatus`
+- Added `docs/tri-state-census.md` documenting 15+ tri-state `int32_t` functions across Healing, Modeling, Properties, Document, and Advanced Modeling domains
+- No behavioral change; all 5922 tests pass, all 8 gate scripts pass
+
 ### Fixed `Shape.BooleanOperation` raw values to match OCCT's `BOPAlgo_Operation` enum ([#1082](https://github.com/SecondMouseAU/OCCTSwift/issues/1082))
 
 The Swift `BooleanOperation` enum cases `common` and `fuse` had transposed raw values (0/1) compared to OCCT's `BOPAlgo_Operation` (COMMON=0, FUSE=1). The bridge's explicit switch was masking this mismatch. Now the enum values match directly and the switch is removed.
+
+### OCCTBridge_Modeling split into HLR and AdvancedModeling domains (#1071)
+
+The monolithic `OCCTBridge_Modeling.h/.mm` (62K lines) is split into three domain-specific files:
+
+- `OCCTBridge_HLR.h/.mm`: Hidden Line Removal / Drawing (HLRBRep, HLRAlgo, BRepMesh)
+- `OCCTBridge_AdvancedModeling.h/.mm`: Filleting, drafting, defeaturing, pipe sweeps, thread cutters, B-spline/ruled surfaces, shell-with-open-faces
+- `OCCTBridge_Modeling.h/.mm`: Remaining core modeling (booleans, offsets, sweeps, features, healing, etc.)
+
+No public Swift API changes. The C bridge headers are re-exported through `OCCTBridge.h`, so existing imports continue to work. Internal only.
+
+### Deflection validation added to `OCCTDrawingCreatePoly` (#1130 review)
+
+`OCCTDrawingCreatePoly` now validates `deflection > 0` before passing to `BRepMesh_IncrementalMesh`, returning `NULL` for non-positive values instead of risking undefined behaviour.
+
+### Internal comment and type safety fixes (#1130 review)
+
+- Duplicate includes removed from `OCCTBridge_AdvancedModeling.mm`
+- Misleading comment for `OCCTShapeCreateRuled` corrected (uses `BRepFill::Shell`, not `BRepFill::Face`)
+- `occtPipeShellSetMode` parameter changed from `int32_t` to `OCCTPipeMode` enum for compile-time safety
+
+### Bridge string returns report full length, support length query (#1078)
+
+- `OCCTDocumentGetLayerName`, `OCCTBRepGraphHistoryGetRecordInfo`, `OCCTUnicodeConvertFromUnicode` return `int32_t` (full length or -1) instead of `bool`
+- All three support `out=NULL, max=0` to query required buffer size
+- Swift wrappers updated: `Document.layerName(at:)`, `BRepGraph.historyRecord(at:)`, `UnicodeUtils.convertFromUnicode(_:maxSize:)`
+
+### Add `Hashable` conformance to `GraphSnapshotError` and `CylindricalHoleExtent` enums (#1076)
 
 ### Install the pinned clang-format without pip or venv, and document how (#1123)
 
@@ -1530,6 +4332,128 @@ changed for a consumer, which for this pass is nothing.
 - `Document.assemblyItemCount(maxDepth:)` gained a `- Warning:` recording that the bridge stops
   counting at 100,001 and returns that as the total, filed as #964. Superseded within this same
   release by the fix below, which makes the truncation reportable.
+
+### `symmetryAxes` honours `fractionalTolerance` in its existence gate (#1497)
+
+`OCCTShapeSymmetryAxes` took a `fractionalTolerance` argument, passed it to the per-axis comparisons,
+and then called `GProp_PrincipalProps::HasSymmetryPoint()` and `HasSymmetryAxis()` with no argument
+at all. Both take an optional tolerance and default to `Precision::Confusion()`, so the gate deciding
+*whether a shape has symmetry* ran at a fixed tolerance while the gate deciding *which axes to report*
+ran at the caller's. A shape symmetric only within a loosened tolerance was refused before the
+caller's tolerance was ever consulted.
+
+Both calls now take `fractionalTolerance`. A caller passing a larger tolerance gets the axes it asks
+for; a caller passing the default sees no change.
+
+### `Sheet` and `ProjectionSymbol` render onto a writer chosen at runtime (#1267)
+
+`Sheet.render(into:)` and `ProjectionSymbol.render(_:at:into:)` existed only as three concrete
+overloads over `DXFWriter`, `PDFWriter` and `SVGWriter`, so code picking a format at runtime had no
+type to hold the writer in.
+
+New public protocol `DrawingWriter` (`DrawingDispatch.swift`) declares the subset those two render
+paths need, plus `entityCounts`:
+
+```swift
+let writer: DrawingWriter = useSVG ? SVGWriter() : DXFWriter()
+sheet.render(into: writer)
+ProjectionSymbol.render(.first, at: .zero, into: writer)
+```
+
+`DrawingWriter` and the internal `DrawingPrimitiveSink` are two separately declared protocols with
+identical requirements rather than one refining the other: a `public` protocol cannot inherit an
+`internal` one, and #1180's visibility constraint on `renderScaffolding` is why `DrawingPrimitiveSink`
+cannot be widened. The two new overloads therefore switch on the concrete type onto the three
+existing overloads. That switch is exact rather than a fallback guess, because `DXFWriter`,
+`PDFWriter` and `SVGWriter` are the protocol's only conformers.
+
+Additive. The three concrete overloads are unchanged.
+
+### Sixty-five `OCCT:` attributions in `docs/reference/` named a method the bridge never calls (#1044)
+
+The #928 census checks every ``Class::Member`` attribution in the docs against that class's own
+pinned header. Outside the features lane it had never been run to completion, and sixty-five
+attributions across twenty `docs/reference/` pages named something that does not exist or does not
+do the work. `gp_Quaternion::GetVectorPart` stood where `GetMatrix` belonged, `math_Householder::Solve`
+where `Perform` belonged, `OSD_Path::IsRelative`/`IsAbsolute` where `IsRelativePath`/`IsAbsolutePath`
+belonged, and `BRepGProp_Domain::NbEdges`, which has no such member, stood for an `Init`/`More`/`Next`
+iteration.
+
+`refman_census.py` now checks attributions for **every** class rather than only lane classes, and
+carries a `METHOD_ATTRIBUTION_ALLOWED` set of fifteen pairs that are deliberate: enum values
+(`Graphic3d_Camera::Projection_Perspective`), documented kernel internals in `docs/thread-safety.md`,
+members removed by a version bump and recorded in `docs/occt-upgrades.md`, and doc-level concepts
+that stand for a Swift wrapper rather than one OCCT call (`ShapeAnalysis_CanonicalRecognition::IsCanonicalSurface`).
+Each carries its reason inline.
+
+Documentation only. No API or behaviour change.
+
+### `checkOuterBound` refuses a partial pcurve set and an area that cancels to rounding (#1073)
+
+`OCCTWireCheckOuterBound` guarded against a wire where **no** edge carried a pcurve on the face,
+because `ShapeAnalysis::TotCross2D` would then sign an area nothing contributed to. The quantifier
+was wrong. `TotCross2D` skips an edge with no pcurve rather than failing on it, so a wire where
+*some* edges carry one produces a signed area contributed by only the pcurved subset, and the
+verdict reads as geometry when it is an artefact of which edges happened to project.
+
+The guard now requires every edge to carry a pcurve. A second refusal is added for the case the
+first cannot see: a wire whose projected area cancels to rounding. The returned `TotCross2D`
+magnitude is tested against the face's own UV bounds from `ShapeAnalysis::GetFaceUVBounds`, and an
+area below `1e-12` of that scale is refused, which is far below any real outer/inner distinction
+and far above cancellation noise.
+
+Both refusals return `-1`, which `Shape.checkOuterBound` already surfaces as `nil` under #1058's
+tri-state encoding. A wire that previously received a verdict whose sign was numerical noise now
+receives no verdict. Callers already unwrapping the Optional need no change.
+
+### `Edge.adjacentFaces(in:)` returns every adjacent face, not the first two (#1087)
+
+**Breaking.** The return type changes from `(Face, Face?)?` to `[Face]?`.
+
+```swift
+// before
+if let (f1, f2) = edge.adjacentFaces(in: shape) { ... }
+
+// after
+if let faces = edge.adjacentFaces(in: shape) { ... }
+```
+
+An edge can bound three or more faces in a compound whose solids share a face. The old signature
+could express two, and returned whichever two `TopExp::MapShapesAndAncestors` listed first with no
+signal that it had truncated. Measured on two solids sharing one cut face, each of the four shared
+edges is bounded by four face occurrences, and the caller was handed two of them.
+
+New bridge entry point `OCCTEdgeGetAdjacentFacesArray` fills a caller-allocated array and returns
+the true count, so the truncation point is the caller's buffer rather than the signature. `Edge.swift`
+passes 64. `OCCTEdgeGetAdjacentFaces` is kept and marked deprecated in the header for the same reason
+it always worked: two faces is the right answer for a manifold edge.
+
+Migration: destructure the array instead of the tuple. `faces[0]` for the old `face1`, and
+`faces.count > 1 ? faces[1] : nil` for the old `face2`, or handle the whole set where the shape can
+be non-manifold.
+
+### Null-wire guards on nineteen `ShapeAnalysis_Wire` bridge functions (#1099)
+
+Nineteen bridge functions calling `ShapeAnalysis_Wire::Init` tested only that their `OCCTShapeRef`
+pointers were non-null, then handed the wrapped `TopoDS_Shape` to OCCT. A nullified or wrong-typed
+shape reached `Init` and took the process down with an uncatchable SIGSEGV, since `OCC_CATCH_SIGNALS`
+is inert in this build.
+
+All nineteen now guard with `occtShapeIsType(wire, TopAbs_WIRE)` and
+`occtShapeIsType(face, TopAbs_FACE)`, which is the guard #1058 already applied to
+`OCCTWireCheckOuterBound`:
+
+```
+OCCTWireCheckOrder            OCCTWireCheckLacking          OCCTWireMaxDistance2d
+OCCTWireCheckConnected        OCCTWireEdgeCount             OCCTWireCheckConnectedEdge
+OCCTWireCheckSmall            OCCTWireMinDistance3d         OCCTWireCheckSmallEdge
+OCCTWireCheckDegenerated      OCCTWireMaxDistance3d         OCCTWireCheckDegeneratedEdge
+OCCTWireCheckClosed           OCCTWireMinDistance2d         OCCTWireCheckGap3dEdge
+OCCTWireCheckSelfIntersection OCCTWireCheckGaps2d
+OCCTWireCheckGaps3d           OCCTWireCheckEdgeCurves
+```
+
+Each returns the refusal it already gave a wrong-typed input, so no correct call changes behaviour.
 
 ---
 

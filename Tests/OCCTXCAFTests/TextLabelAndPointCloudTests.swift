@@ -1,4 +1,5 @@
 import Foundation
+import OCCTBridge
 import Testing
 import simd
 
@@ -37,6 +38,25 @@ struct TextLabelAndPointCloudTests {
         let pos = label.position
         #expect(abs(pos.x - 5) < 1e-6)
         #expect(abs(pos.y - 10) < 1e-6)
+    }
+
+    @Test("Text label default height matches OCCT's own default (#1417)")
+    func textLabelDefaultHeightMatchesOCCT() {
+        // Prs3d_TextAspect's own default constructor is myHeight(16.0)
+        // (Prs3d_TextAspect.cxx:29,40), not the 12.0 this used to hardcode unconditionally.
+        let label = TextLabel(text: "Test", position: .zero)!
+        var info = OCCTTextLabelInfo()
+        #expect(OCCTTextLabelGetInfo(label.handle, &info))
+        #expect(abs(info.height - 16.0) < 1e-6)
+    }
+
+    @Test("Text label height round-trips through setHeight (#1417)")
+    func textLabelHeightRoundTrips() {
+        let label = TextLabel(text: "Test", position: .zero)!
+        label.setHeight(30.0)
+        var info = OCCTTextLabelInfo()
+        #expect(OCCTTextLabelGetInfo(label.handle, &info))
+        #expect(abs(info.height - 30.0) < 1e-6)
     }
 
     @Test("Create point cloud")

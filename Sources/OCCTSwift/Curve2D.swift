@@ -843,7 +843,14 @@ public final class Curve2D: @unchecked Sendable {
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
-    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    /// Returns the fitted curve whenever OCCT produced one, which, per `HasResult()`, the
+    /// accessor this shares with ``approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
+    /// (#1474, following the #491 pattern already in place for `Curve3D`/`Surface`), includes a
+    /// best-effort fit that did *not* reach `tolerance`. A non-nil result is therefore not a
+    /// promise that `tolerance` was met: `approxWithDetails` reports the actual `maxError` and an
+    /// `isDone` flag for that.
+    ///
+    /// - Returns: Approximated BSpline curve, or `nil` when OCCT produced no fit at all
     ///
     /// ```swift
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
@@ -859,6 +866,36 @@ public final class Curve2D: @unchecked Sendable {
                 Int32(maxSegments), Int32(maxDegree))
         else { return nil }
         return Curve2D(handle: h)
+    }
+
+    /// The same approximation ``approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs, reporting the fit's error and completion status.
+    ///
+    /// One shared `Geom2dConvert_ApproxCurve` run behind both (#1474, mirroring #491's
+    /// `Curve3D.approxWithDetails`/`Surface.approxWithDetails`). For identical arguments the two
+    /// return the same curve; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true
+    /// even for a fit that is *not* within `tolerance`; `isDone` and `maxError` are how you find
+    /// out. So a non-nil `curve` is not by itself a promise that `tolerance` was met.
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let fit = circle.approxWithDetails(tolerance: 1e-6)
+    /// if let bspline = fit.curve, fit.maxError <= 1e-6 {
+    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(
+        tolerance: Double = 1e-3, continuity: Int = 2,
+        maxSegments: Int = 100, maxDegree: Int = 8
+    ) -> ApproxCurve2DResult {
+        let r = OCCTGeomConvertApproxCurve2D(
+            handle, tolerance, Int32(continuity),
+            Int32(maxSegments), Int32(maxDegree))
+        let curve: Curve2D? = r.curve.map { Curve2D(handle: $0) }
+        return ApproxCurve2DResult(
+            curve: curve, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
     }
 
     /// Find knot indices where a B-spline has continuity discontinuities.
@@ -1317,9 +1354,10 @@ extension Curve2D {
     /// - Returns: Tuple of (isLinear, deviation) where deviation is the actual maximum
     ///   deviation from the line, or nil if not a BSpline curve
     public func isLinear(tolerance: Double = 1e-6) -> (isLinear: Bool, deviation: Double)? {
+        var isLinearResult = false
         var deviation: Double = 0
-        let result = OCCTCurve2DIsLinear(handle, tolerance, &deviation)
-        return (isLinear: result, deviation: deviation)
+        let measured = OCCTCurve2DIsLinear(handle, tolerance, &isLinearResult, &deviation)
+        return measured ? (isLinear: isLinearResult, deviation: deviation) : nil
     }
 
     /// Convert a nearly-linear 2D curve to a line.
@@ -3348,15 +3386,21 @@ extension Curve2D {
     }
 
     /// Move point and tangent at parameter u on 2D BSpline curve.
+    ///
+    /// `startingCondition`/`endingCondition` are OCCT's own independent continuity codes, not a
+    /// pole-index range: `-1` means that endpoint is free to move, `0` means the point cannot
+    /// move, `1` means the point and its tangent cannot move, and so on (see
+    /// `Geom2d_BSplineCurve::MovePointAndTangent`). The two codes are unrelated and need not be
+    /// ordered, e.g. `startingCondition: 1, endingCondition: -1` is a legitimate call.
     @discardableResult
     public func bsplineMovePointAndTangent(
         u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
-        tolerance: Double, poleRange: ClosedRange<Int>
+        tolerance: Double, startingCondition: Int, endingCondition: Int
     ) -> Bool {
         OCCTCurve2DBSplineMovePointAndTangent(
             handle, u, point.x, point.y,
             tangent.x, tangent.y,
             tolerance,
-            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+            Int32(startingCondition), Int32(endingCondition))
     }
 }

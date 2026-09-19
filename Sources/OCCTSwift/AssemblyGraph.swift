@@ -32,13 +32,23 @@ public final class AssemblyGraph: @unchecked Sendable {
     }
 
     /// Assembly graph node type.
+    ///
+    /// Raw values match `XCAFDoc_AssemblyGraph::NodeType` exactly (`NodeType_UNDEFINED=0`,
+    /// `NodeType_AssemblyRoot=1`, `NodeType_Subassembly=2`, `NodeType_Occurrence=3`,
+    /// `NodeType_Part=4`, `NodeType_Subshape=5`).
     public enum NodeType: Int32 {
-        case node = 0
-        case occurrence = 1
-        case part = 2
-        case instance = 3
-        case subshape = 4
-        case free = 5
+        /// Undefined node type.
+        case undefined = 0
+        /// Root node.
+        case assemblyRoot = 1
+        /// Intermediate node.
+        case subassembly = 2
+        /// Assembly/part occurrence node.
+        case occurrence = 3
+        /// Leaf node representing a part.
+        case part = 4
+        /// Subshape node.
+        case subshape = 5
     }
 
     /// Get the type of a node by 1-based index.

@@ -704,7 +704,24 @@ public struct FeatureReconstructor: Sendable {
             if let id, let r = prior.unionWithFullHistory(body) {
                 ctx.current = r.result
                 ctx.histories[id] = r.history
+            } else if let id {
+                // History-recording union failed; fall back to the plain union.
+                // If that also fails, this id'd feature never fused: surface it
+                // as Skipped and leave `ctx.current` (every prior accumulated
+                // shape) untouched, matching applyBoolean/applyHole/applyFillet/
+                // applyChamfer's own failure-path handling.
+                guard let fused = prior.union(body) else {
+                    recordSkip(
+                        ctx: &ctx, id: id,
+                        reason: .occtFailure("boolean union failed"),
+                        stage: .additive)
+                    return
+                }
+                ctx.current = fused
             } else {
+                // No id: no Skipped entry possible anyway (recordSkip is a no-op
+                // for a nil id), so an anonymous feature that fails to fuse still
+                // falls back to absorbing its own unfused body.
                 ctx.current = prior.union(body) ?? body
             }
         } else {

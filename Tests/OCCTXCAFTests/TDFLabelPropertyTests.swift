@@ -139,4 +139,19 @@ struct TDFLabelPropertyTests {
         let all = parent.descendants(allLevels: true)
         #expect(all.count == 4, "Should have 4 total descendants")
     }
+
+    @Test("Label descendants past the 1024 buffer cap reports the true count (#1563)")
+    func labelDescendantsBeyondBufferCap() {
+        let doc = Document.create()!
+        let parent = doc.createLabel()!
+        let extraCount = 1024 + 5
+        for _ in 0..<extraCount {
+            _ = doc.createLabel(parent: parent)!
+        }
+
+        let direct = parent.descendants(allLevels: false)
+        #expect(
+            direct.count == extraCount,
+            "Should report all \(extraCount) descendants, not the 1024-entry buffer cap")
+    }
 }

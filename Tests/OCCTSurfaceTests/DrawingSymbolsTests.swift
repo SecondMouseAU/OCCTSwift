@@ -18,6 +18,42 @@ struct DrawingSymbolsTests {
         #expect(anns.count == 5)
     }
 
+    // MARK: - #1573: the check-mark's two arms must actually differ in
+    // length, not just in the comments beside them ("Long arm"/"Short arm"
+    // used to be equidistant from the apex, i.e. mathematically identical).
+
+    @Test("Surface finish check-mark arms are genuinely unequal length (ISO 1302 long/short legs)")
+    func surfaceFinishArmsAreAsymmetric() {
+        let anns = DrawingAnnotation.surfaceFinish(
+            at: SIMD2(10, 10),
+            leaderTo: SIMD2(20, 5),
+            ra: 1.6,
+            symbol: .any)
+        let lines: [DrawingAnnotation.Centreline] = anns.compactMap {
+            if case .centreline(let c) = $0 { return c } else { return nil }
+        }
+        guard let rightArm = lines.first(where: { $0.id == "surface-finish-right" }),
+            let leftArm = lines.first(where: { $0.id == "surface-finish-left" })
+        else {
+            Issue.record("expected both check-mark arms (by id) to be present")
+            return
+        }
+        func length(_ c: DrawingAnnotation.Centreline) -> Double {
+            let d = c.to - c.from
+            return (d.x * d.x + d.y * d.y).squareRoot()
+        }
+        let rightLength = length(rightArm)
+        let leftLength = length(leftArm)
+        // The "right"/long arm must be meaningfully longer than the "left"/
+        // short arm, not merely a mirror image of it. Pre-fix, both arms
+        // were offset from the apex by the same height and the same
+        // horizontal magnitude, so this fails against that geometry: assert
+        // it here rather than just describing it, so the test proves it
+        // caught the regression rather than merely exercising the code path.
+        #expect(rightLength > leftLength * 1.5)
+        #expect(abs(rightLength - leftLength) > 1.0)
+    }
+
     @Test("Surface finish .any has no horizontal bar")
     func surfaceFinishAny() {
         let required = DrawingAnnotation.surfaceFinish(

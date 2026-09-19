@@ -279,7 +279,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -876,7 +876,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
                                                       int          maxDegree,
                                                       int          maxSegments)
 {
-  if (!edgeShape)
+  if (!occtShapeIsPresent(edgeShape))
     return nullptr;
   try
   {
@@ -1066,17 +1066,21 @@ OCCTExtremaExtCSResult OCCTExtremaExtCS(OCCTCurve3DRef curve,
   return result;
 }
 
-OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
-                                           double         uFirst,
-                                           double         uLast,
-                                           OCCTSurfaceRef surface,
-                                           int            index)
+OCCTExtremaCSPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
+                                             double         uFirst,
+                                             double         uLast,
+                                             OCCTSurfaceRef surface,
+                                             int            index)
 {
-  OCCTExtremaPointPair result = {};
+  OCCTExtremaCSPointPair result = {};
+  auto*                  c      = (OCCTCurve3D*)curve;
+  auto*                  s      = (OCCTSurface*)surface;
+  if (!c || c->curve.IsNull() || !s || s->surface.IsNull())
+  {
+    return result;
+  }
   try
   {
-    auto*                       c  = (OCCTCurve3D*)curve;
-    auto*                       s  = (OCCTSurface*)surface;
     Handle(GeomAdaptor_Curve)   ac = new GeomAdaptor_Curve(c->curve, uFirst, uLast);
     Handle(GeomAdaptor_Surface) as = new GeomAdaptor_Surface(s->surface);
     Extrema_ExtCS               ext(*ac, *as, 1e-6, 1e-6);
@@ -1093,9 +1097,7 @@ OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
       result.x2     = ps.Value().X();
       result.y2     = ps.Value().Y();
       result.z2     = ps.Value().Z();
-      double u, v;
-      ps.Parameter(u, v);
-      result.param2 = u; // Store U in param2; V not directly available in this struct
+      ps.Parameter(result.u2, result.v2);
     }
   }
   catch (...)
@@ -1146,7 +1148,7 @@ OCCTExtremaLocateExtCCResult OCCTExtremaLocateExtCC(OCCTCurve3DRef curve1,
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
 {
   if (!curve || curve->curve.IsNull())
-    return 7; // OtherCurve
+    return 8; // OtherCurve
   try
   {
     GeomAdaptor_Curve ac(curve->curve);
@@ -1154,7 +1156,7 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
   }
   catch (...)
   {
-    return 7;
+    return 8;
   }
 }
 

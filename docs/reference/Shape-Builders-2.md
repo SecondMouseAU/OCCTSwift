@@ -11,7 +11,7 @@ See also: **[Shape](Shape.md)** (index).
 
 ## Topics
 
-- [GeomFill\_Sweep](#geomfill_sweep) · [GeomFill\_EvolvedSection](#geomfill_evolvedsection) · [ProjLib\_ComputeApprox](#projlib_computeapprox) · [BRepOffset\_Offset](#brepoffset_offset) · [Adaptor3d\_IsoCurve](#adaptor3d_isocurve) · [ShapeAnalysis\_TransferParametersProj](#shapeanalysis_transferparametersrproj) · [BOPAlgo\_RemoveFeatures](#bopalgo_removefeatures) · [BOPAlgo\_Section](#bopalgo_section) · [ShapeBuild\_Edge](#shapebuild_edge) · [ShapeBuild\_Vertex](#shapebuild_vertex) · [ShapeExtend\_Explorer](#shapeextend_explorer) · [ShapeUpgrade\_FaceDivide](#shapeupgrade_facedivide) · [ShapeUpgrade\_WireDivide](#shapeupgrade_wiredivide) · [ShapeUpgrade\_EdgeDivide](#shapeupgrade_edgedivide) · [ShapeUpgrade\_ClosedEdgeDivide](#shapeupgrade_closededgedivide) · [ShapeUpgrade\_FixSmallCurves](#shapeupgrade_fixsmallcurves) · [ShapeUpgrade\_FixSmallBezierCurves](#shapeupgrade_fixsmallbeziercurves) · [ShapeUpgrade\_ConvertCurve3dToBezier](#shapeupgrade_convertcurve3dtobezier) · [ShapeUpgrade\_ConvertSurfaceToBezierBasis](#shapeupgrade_convertsurfacetobezierbasis) · [2D Vector/Direction Utilities & LProp](#2d-vectordirection-utilities--lprop) · [TopTrans Surface Transition](#toptrans-surface-transition) · [TopTrans Curve Transition](#toptrans-curve-transition) · [GeomFill Trihedrons](#geomfill-trihedrons) · [Polygon Interference](#polygon-interference) · [GccAna\_Circ2d3Tan](#gccana_circ2d3tan) · [IntTools](#inttools) · [BOPAlgo Builder](#bopalgo-builder) · [BOPTools](#boptools) · [IntTools\_BeanFaceIntersector](#inttools_beanfaceintersector) · [BOPAlgo\_WireSplitter](#bopalgo_wiresplitter) · [BRepFeat\_SplitShape](#brepfeat_splitshape) · [BRepFeat\_MakeCylindricalHole](#brepfeat_makecylindricalhole) · [BRepFeat\_Gluer](#brepfeat_gluer) · [LocOpe\_WiresOnShape + LocOpe\_Spliter](#locope_wiresonshape--locope_spliter) · [LocOpe\_Gluer](#locope_gluer) · [ChFi2d\_Builder](#chfi2d_builder) · [ChFi2d\_ChamferAPI](#chfi2d_chamferapi) · [ChFi2d\_FilletAPI](#chfi2d_filletapi) · [FilletSurf\_Builder](#filletsorf_builder)
+- [GeomFill\_Sweep](#geomfill_sweep) · [GeomFill\_EvolvedSection](#geomfill_evolvedsection) · [ProjLib\_ComputeApprox](#projlib_computeapprox) · [BRepOffset\_Offset](#brepoffset_offset) · [Adaptor3d\_IsoCurve](#adaptor3d_isocurve) · [ShapeAnalysis\_TransferParametersProj](#shapeanalysis_transferparametersrproj) · [BOPAlgo\_RemoveFeatures](#bopalgo_removefeatures) · [BOPAlgo\_Section](#bopalgo_section) · [ShapeBuild\_Edge](#shapebuild_edge) · [ShapeBuild\_Vertex](#shapebuild_vertex) · [ShapeExtend\_Explorer](#shapeextend_explorer) · [ShapeUpgrade\_FaceDivide](#shapeupgrade_facedivide) · [ShapeUpgrade\_WireDivide](#shapeupgrade_wiredivide) · [ShapeUpgrade\_EdgeDivide](#shapeupgrade_edgedivide) · [ShapeUpgrade\_ClosedEdgeDivide](#shapeupgrade_closededgedivide) · [ShapeUpgrade\_ConvertCurve3dToBezier](#shapeupgrade_convertcurve3dtobezier) · [ShapeUpgrade\_ConvertSurfaceToBezierBasis](#shapeupgrade_convertsurfacetobezierbasis) · [2D Vector/Direction Utilities & LProp](#2d-vectordirection-utilities--lprop) · [TopTrans Surface Transition](#toptrans-surface-transition) · [TopTrans Curve Transition](#toptrans-curve-transition) · [GeomFill Trihedrons](#geomfill-trihedrons) · [Polygon Interference](#polygon-interference) · [GccAna\_Circ2d3Tan](#gccana_circ2d3tan) · [IntTools](#inttools) · [BOPAlgo Builder](#bopalgo-builder) · [BOPTools](#boptools) · [IntTools\_BeanFaceIntersector](#inttools_beanfaceintersector) · [BOPAlgo\_WireSplitter](#bopalgo_wiresplitter) · [BRepFeat\_SplitShape](#brepfeat_splitshape) · [BRepFeat\_MakeCylindricalHole](#brepfeat_makecylindricalhole) · [BRepFeat\_Gluer](#brepfeat_gluer) · [LocOpe\_WiresOnShape + LocOpe\_Spliter](#locope_wiresonshape--locope_spliter) · [LocOpe\_Gluer](#locope_gluer) · [ChFi2d\_Builder](#chfi2d_builder) · [ChFi2d\_ChamferAPI](#chfi2d_chamferapi) · [ChFi2d\_FilletAPI](#chfi2d_filletapi) · [FilletSurf\_Builder](#filletsorf_builder)
 
 ---
 
@@ -139,7 +139,12 @@ public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>]
 
 - **Parameters:** `u`, U parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
-- **OCCT:** `Adaptor3d_IsoCurve` (iso kind 0 = U)
+- **OCCT:** `Adaptor3d_IsoCurve`, selected with `GeomAbs_IsoU`/`GeomAbs_IsoV` (iso kind 0 = U)
+- **Note:** The samples are spread evenly over the iso curve's own parameter range, clamped to
+  `-1e6...1e6` when the surface is infinite in that direction (a plane, or a cylinder's V), so on
+  an unbounded face the points span that clamp rather than anything derived from the face's own
+  extent. When the shape is not a face, or its surface cannot be read, the bridge writes nothing
+  and the array comes back as `count` points at the origin rather than empty.
 - **Example:**
   ```swift
   let pts = face.uIsoCurvePoints(u: 0.5, count: 50)
@@ -157,7 +162,12 @@ public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>]
 
 - **Parameters:** `v`, V parameter value. `count`, number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
-- **OCCT:** `Adaptor3d_IsoCurve` (iso kind 1 = V)
+- **OCCT:** `Adaptor3d_IsoCurve`, selected with `GeomAbs_IsoU`/`GeomAbs_IsoV` (iso kind 1 = V)
+- **Note:** The samples are spread evenly over the iso curve's own parameter range, clamped to
+  `-1e6...1e6` when the surface is infinite in that direction (a plane, or a cylinder's V), so on
+  an unbounded face the points span that clamp rather than anything derived from the face's own
+  extent. When the shape is not a face, or its surface cannot be read, the bridge writes nothing
+  and the array comes back as `count` points at the origin rather than empty.
 - **Example:**
   ```swift
   let pts = face.vIsoCurvePoints(v: 0.25)
@@ -175,7 +185,7 @@ public func uIsoCurveEdge(u: Double, vMin: Double, vMax: Double) -> Shape?
 
 - **Parameters:** `u`, U parameter. `vMin`/`vMax`, V parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
-- **OCCT:** `Adaptor3d_IsoCurve`
+- **OCCT:** `Geom_Surface::UIso` / `VIso` turned into an edge by `BRepBuilderAPI_MakeEdge` (no `Adaptor3d_IsoCurve`, unlike the point samplers above)
 - **Example:**
   ```swift
   if let e = face.uIsoCurveEdge(u: 0.5, vMin: 0, vMax: 1) { }
@@ -193,7 +203,7 @@ public func vIsoCurveEdge(v: Double, uMin: Double, uMax: Double) -> Shape?
 
 - **Parameters:** `v`, V parameter. `uMin`/`uMax`, U parameter range for the edge.
 - **Returns:** Edge shape representing the iso curve, or `nil` on failure.
-- **OCCT:** `Adaptor3d_IsoCurve`
+- **OCCT:** `Geom_Surface::UIso` / `VIso` turned into an edge by `BRepBuilderAPI_MakeEdge` (no `Adaptor3d_IsoCurve`, unlike the point samplers above)
 - **Example:**
   ```swift
   if let e = face.vIsoCurveEdge(v: 0.5, uMin: 0, uMax: 1) { }
@@ -652,46 +662,6 @@ public func canDivideClosedEdge(onFace face: Shape) -> Bool
 
 ---
 
-## ShapeUpgrade\_FixSmallCurves
-
-### `fixSmallCurves(tolerance:)`
-
-Fix small curves in this shape.
-
-```swift
-public func fixSmallCurves(tolerance: Double = 1e-6) -> Shape?
-```
-
-- **Parameters:** `tolerance`, threshold below which curves are considered small.
-- **Returns:** Fixed shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_FixSmallCurves`
-- **Example:**
-  ```swift
-  if let fixed = shape.fixSmallCurves() { }
-  ```
-
----
-
-## ShapeUpgrade\_FixSmallBezierCurves
-
-### `fixSmallBezierCurves(tolerance:)`
-
-Fix small Bezier curves in this shape.
-
-```swift
-public func fixSmallBezierCurves(tolerance: Double = 1e-6) -> Shape?
-```
-
-- **Parameters:** `tolerance`, detection threshold.
-- **Returns:** Fixed shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_FixSmallBezierCurves`
-- **Example:**
-  ```swift
-  if let fixed = shape.fixSmallBezierCurves() { }
-  ```
-
----
-
 ## ShapeUpgrade\_ConvertCurve3dToBezier
 
 ### `convertCurves3dToBezier(lineMode:circleMode:conicMode:)`
@@ -705,7 +675,7 @@ public func convertCurves3dToBezier(lineMode: Bool = true, circleMode: Bool = tr
 
 - **Parameters:** `lineMode`, convert line segments. `circleMode`, convert circles. `conicMode`, convert other conics.
 - **Returns:** Shape with Bezier curves, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertCurve3dToBezier`
+- **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with 3D-curve conversion enabled
 - **Example:**
   ```swift
   if let bez = shape.convertCurves3dToBezier(lineMode: false) { }
@@ -726,7 +696,7 @@ public func convertSurfacesToBezier(planeMode: Bool = true, revolutionMode: Bool
 
 - **Parameters:** `planeMode`, convert planes. `revolutionMode`, convert revolution surfaces. `extrusionMode`, convert extrusions. `bsplineMode`, convert BSpline surfaces.
 - **Returns:** Shape with Bezier surfaces, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertSurfaceToBezierBasis`
+- **OCCT:** `ShapeUpgrade_ShapeConvertToBezier` with surface conversion enabled
 - **Example:**
   ```swift
   if let bez = shape.convertSurfacesToBezier(bsplineMode: false) { }
@@ -792,7 +762,7 @@ Magnitude of a 2D vector.
 public static func vector2DMagnitude(_ v: SIMD2<Double>) -> Double
 ```
 
-- **OCCT:** `gp_Vec2d::Magnitude`
+- **OCCT:** inline arithmetic `sqrt(x * x + y * y)` (no `gp_Vec2d` constructed)
 - **Example:**
   ```swift
   let m = Shape.vector2DMagnitude(SIMD2(3, 4))  // 5.0
@@ -808,7 +778,7 @@ Return a normalized copy of a 2D vector.
 public static func vector2DNormalized(_ v: SIMD2<Double>) -> SIMD2<Double>
 ```
 
-- **OCCT:** `gp_Vec2d::Normalized`
+- **OCCT:** inline arithmetic dividing each component by the magnitude (no `gp_Vec2d` constructed)
 - **Example:**
   ```swift
   let n = Shape.vector2DNormalized(SIMD2(3, 4))
@@ -903,16 +873,25 @@ public struct CurvatureSpecialPoint {
 
 ### `Shape.analyticCurvaturePoints(curveType:first:last:)`
 
-Compute curvature special points (inflections, min/max curvature) for an analytic curve type.
+Compute the curvature extrema of an analytic curve type, as parameter/kind pairs.
+
+Only `curveType: 2` (ellipse) ever produces a point: a line has zero curvature, a circle constant
+curvature, and a parabola and a hyperbola monotonic curvature, so none of them has an extremum,
+and every other value returns an empty array. An ellipse reports the four axis vertices that fall
+inside `first...last`, classified the way `LProp_CurAndInf` classifies them, by radius of
+curvature rather than by curvature: the major-axis vertices at `0` and `π` are
+`.minimumCurvature` (minimum radius) and the minor-axis vertices at `π/2` and `3π/2` are
+`.maximumCurvature`. `CurvaturePointType.inflection` is declared but never returned; an analytic
+conic has no inflection.
 
 ```swift
 public static func analyticCurvaturePoints(curveType: Int32, first: Double,
                                             last: Double) -> [CurvatureSpecialPoint]
 ```
 
-- **Parameters:** `curveType`, 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
-- **Returns:** Array of special points; empty if none found.
-- **OCCT:** `LProp_AnalyticCurInf`
+- **Parameters:** `curveType`, the `GeomAbs_CurveType` ordinal: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola. `first`/`last`, parameter domain.
+- **Returns:** Array of curvature extrema; empty for every `curveType` but 2, and for an ellipse whose domain excludes all four vertices.
+- **OCCT:** `LProp_CurAndInf` (the result container) and `LProp_CIType` (the kind enum). The extrema themselves are computed in the bridge rather than by an OCCT algorithm, since the closed form for a conic is four fixed parameters; `OCCTLPropAnalyticCurInf` fills the container with `AddExtCur` and reads it back with `Parameter`/`Type`.
 - **Example:**
   ```swift
   let pts = Shape.analyticCurvaturePoints(curveType: 2, first: 0, last: .pi)
@@ -1184,6 +1163,10 @@ public struct PolygonIntersection: Sendable {
 }
 ```
 
+`points` is capped at 100 entries, and the truncation is silent: both entry points below size a
+fixed 100-element buffer and pass its length to `Intf_InterferencePolygon2d` as the maximum. A
+polyline pair with more than 100 crossings loses the rest with no signal (#1399).
+
 ---
 
 ### `Shape.polygonInterference(poly1:poly2:)`
@@ -1447,8 +1430,17 @@ public struct CommonPart: Sendable {
 |---|---|
 | `type` | `.vertex` or `.edge`: the kind of intersection found. |
 | `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
-| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. |
+| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
 | `point` | Representative 3D point of the intersection. |
+
+**`param2Range` is always `(0, 0)` from `edgeFaceIntersection(with:)`.** A face is not an edge, and
+`IntTools_EdgeFace` reflects that: `IntTools_EdgeFace.cxx` never calls `AppendRange2` or
+`SetVertexParameter2`, so `IntTools_CommonPrt::Ranges2()` comes back empty and
+`VertexParameter2()` comes back as the `0.0` its default constructor set
+(`IntTools_CommonPrt.cxx:33`). The bridge reads those and passes them on, so the pair reads as a
+measurement and is not one. Measured in
+`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt` (#1399). Read `param1Range`, the
+range on the edge, and `point`.
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -1486,6 +1478,12 @@ public func edgeFaceIntersection(with face: Shape) -> [CommonPart]?
 
 - **Parameters:** `face`, face to intersect with.
 - **Returns:** Array of common parts, or `nil` on failure.
+- **Warning:** this currently returns an **empty array for every input**, including an edge that
+  genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange`, and
+  `IntTools_Range`'s default is `(0, 0)`, so the search window is degenerate.
+  [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631) has the measurement and the fix.
+- **Note:** `CommonPart.param2Range` is `(0, 0)` on this path whatever the result, see the
+  `CommonPart` entry above.
 - **OCCT:** `IntTools_EdgeFace`
 - **Example:**
   ```swift
@@ -2518,24 +2516,26 @@ public struct Fillet2DEdgeResult: Sendable {
 
 ---
 
-### `Shape.fillet2dEdges(edge1:edge2:planeNormal:radius:nearPoint:)`
+### `Shape.fillet2dEdges(edge1:edge2:planeOrigin:planeNormal:radius:nearPoint:)`
 
 Create a fillet between two edges in a plane using `ChFi2d_FilletAPI`.
 
 ```swift
 public static func fillet2dEdges(edge1: Shape, edge2: Shape,
+                                 planeOrigin: SIMD3<Double> = .zero,
                                  planeNormal: SIMD3<Double>,
                                  radius: Double,
                                  nearPoint: SIMD3<Double>) -> Fillet2DEdgeResult?
 ```
 
-- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
+- **Parameters:** `edge1`/`edge2`, edges to fillet. `planeOrigin`, a point on the plane containing the edges (defaults to the world origin; must match the edges' actual plane for edges not passing through `(0,0,0)`, #1459). `planeNormal`, normal of the plane containing the edges. `radius`, fillet radius. `nearPoint`, point near the desired fillet location, used to select among multiple solutions.
 - **Returns:** `Fillet2DEdgeResult` with the fillet arc, trimmed edges, and solution count, or `nil` on failure.
 - **OCCT:** `ChFi2d_FilletAPI` (selects analytical or iterative algorithm automatically)
 - **Example:**
   ```swift
   if let r = Shape.fillet2dEdges(
       edge1: e1, edge2: e2,
+      planeOrigin: SIMD3(0, 0, 0),
       planeNormal: SIMD3(0, 0, 1),
       radius: 2.0,
       nearPoint: SIMD3(1, 1, 0)) {
@@ -2569,8 +2569,25 @@ public struct FilletSurfaceInfo: Sendable {
 | `supportFace1` | The first of the two original faces this fillet surface blends between. |
 | `supportFace2` | The second of the two original faces this fillet surface blends between. |
 | `tolerance` | Geometric tolerance achieved for this fillet surface. |
-| `startStatus` | `FilletSurf_Builder` status code at the fillet's start extremity (0 = ok, 1 = not ok, 2 = partial). |
-| `endStatus` | `FilletSurf_Builder` status code at the fillet's end extremity (0 = ok, 1 = not ok, 2 = partial). |
+| `firstParameter` | The fillet's parameter on the **first edge of the whole request**, not a per-surface value; see the note below. |
+| `lastParameter` | The fillet's parameter on the last edge of the whole request; per request, not per surface, for the same reason. |
+| `startStatus` | Where the fillet's start section sits relative to the edge it was built on: both extremities on the edge (`0`), one extremity on the edge (`1`), or neither (`2`); see the note below. |
+| `endStatus` | The same scale at the fillet's end section. |
+
+`firstParameter` and `lastParameter` come from `FilletSurf_Builder::FirstParameter()` and
+`LastParameter()`, which take no surface index. They are the fillet's parameters on the first and
+last edge of the whole request, and this struct repeats the same pair into every element rather
+than measuring one per surface.
+
+`startStatus`/`endStatus` come from `FilletSurf_Builder::StartSectionStatus()` and
+`EndSectionStatus()`, whose enum is `FilletSurf_StatusType`
+(`0` = `FilletSurf_TwoExtremityOnEdge`, `1` = `FilletSurf_OneExtremityOnEdge`,
+`2` = `FilletSurf_NoExtremityOnEdge`). **They are not on `FilletSurfaceResult.status`'s scale**, and
+reading them as if they were is a silent misread rather than an error: that field carries
+`FilletSurf_StatusDone` (`0` = ok, `1` = not ok, `2` = partial). The two enums are unrelated and
+share the ordinals `0...2`. This table described both as the ok/not-ok/partial scale until #1399
+measured the ordinals against the pinned `FilletSurf_StatusType.hxx`
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt`).
 
 #### `Shape.FilletSurfaceInfo.endStatus`
 
@@ -2590,6 +2607,11 @@ public struct FilletSurfaceResult: Sendable {
 | Field | Meaning |
 |---|---|
 | `surfaces` | One `FilletSurfaceInfo` per requested edge that produced a fillet surface. |
+| `status` | Overall outcome of the whole computation: `0` = ok, `1` = not ok, `2` = partial. |
+
+That is `FilletSurf_Builder::IsDone()`'s `FilletSurf_StatusDone`, and it is unrelated to
+`FilletSurfaceInfo.startStatus`/`endStatus`, which carry `FilletSurf_StatusType` on the same
+ordinals.
 
 #### `Shape.FilletSurfaceResult.surfaces`
 

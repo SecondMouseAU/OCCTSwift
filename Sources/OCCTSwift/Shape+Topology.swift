@@ -50,17 +50,36 @@ extension Shape {
     }
 
     /// A pair of face indices detected as near-miss (within tolerance).
+    ///
+    /// `face1Index` addresses `self`'s enumeration, the same one ``Shape/face(at:)`` reads;
+    /// `face2Index` addresses `other`'s. Both used to come straight from OCCT's own internal,
+    /// non-deduplicated occurrence walk, which could silently name a different face than
+    /// `face(at:)` for a shape with a genuinely shared face occurrence, the same gap #541 already
+    /// closed for every other index-returning entry point in this bridge (#1550).
     public struct FaceProximityPair: Sendable {
         public let face1Index: Int
         public let face2Index: Int
     }
 
     /// Detect face pairs between this shape and another that are within tolerance.
+    ///
+    /// The returned indices address the same enumeration ``Shape/face(at:)`` reads, so they can be
+    /// handed straight to it: `face(at: pair.face1Index)` on `self`, `other.face(at:
+    /// pair.face2Index)` on `other` (#1550, matching #541's convention).
+    ///
     /// - Parameters:
     ///   - other: The shape to compare against.
     ///   - tolerance: Maximum distance (model units) at which two faces count as proximate.
     ///   - deflection: Linear mesh deflection (mm) for the proximity triangulation. Default `0.1`.
     /// - Returns: The index pairs of faces closer than the tolerance, empty when none are.
+    ///
+    /// ```swift
+    /// let pairs = shape1.proximityFaces(with: shape2, tolerance: 0.5)
+    /// for pair in pairs {
+    ///     let f1 = shape1.face(at: pair.face1Index)
+    ///     let f2 = shape2.face(at: pair.face2Index)
+    /// }
+    /// ```
     public func proximityFaces(with other: Shape, tolerance: Double, deflection: Double = 0.1)
         -> [FaceProximityPair]
     {
@@ -1150,6 +1169,36 @@ extension Shape {
         )
     }
 
+    /// Check every solid in this shape with `BRepCheck_Solid`.
+    ///
+    /// This is the solid-level check that ``checkEdge(at:)``, ``checkWire(at:)``,
+    /// ``checkShell(at:)`` and ``checkVertex(at:)`` cannot answer: shell imbrication, an enclosed
+    /// region no shell declares as a void, a subshape that is not in the shape. Every solid in
+    /// the shape is checked, so there is no index; `errorCount` totals the statuses across all
+    /// of them.
+    ///
+    /// ```swift
+    /// // A small box fully inside a large one, both shells forward, is not a valid solid:
+    /// // the inner region is enclosed but declared as material rather than as a void.
+    /// if let outer = Shape.box(width: 10, height: 10, depth: 10),
+    ///    let inner = Shape.box(origin: SIMD3(2, 2, 2), width: 3, height: 3, depth: 3),
+    ///    let outerShell = outer.subShapes(ofType: .shell).first,
+    ///    let innerShell = inner.subShapes(ofType: .shell).first,
+    ///    let bad = Shape.solidFromShells([outerShell, innerShell]) {
+    ///     let check = bad.checkSolid()
+    ///     print(check.isValid, check.firstError as Any)  // false, .enclosedRegion
+    /// }
+    /// ```
+    public func checkSolid() -> CheckResult {
+        let result = OCCTCheckSolid(handle)
+        let status = CheckStatus(rawValue: Int32(result.firstError.rawValue))
+        return CheckResult(
+            isValid: result.isValid,
+            errorCount: Int(result.errorCount),
+            firstError: result.errorCount > 0 ? status : nil
+        )
+    }
+
     /// Check validity of a vertex by index.
     public func checkVertex(at index: Int) -> CheckResult {
         let result = OCCTCheckVertex(handle, Int32(index))
@@ -1440,11 +1489,22 @@ extension Shape {
     }
 
     /// Get edges by fine-grained category using exact HLR (hidden line removal).
-    public func hlrEdges(direction: SIMD3<Double>, category: HLREdgeCategory) -> Shape? {
+    ///
+    /// - Parameters:
+    ///   - direction: View direction.
+    ///   - category: Edge category to extract.
+    ///   - nbIso: Number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted
+    ///     for the `.visibleIso`/`.hiddenIso` categories; OCCT gates isoline computation on this
+    ///     count entirely, so a value of `0` means `.visibleIso`/`.hiddenIso` always return `nil`
+    ///     (#1500). Default `10`.
+    /// - Returns: Shape containing edges, or nil if none / the projection failed.
+    public func hlrEdges(
+        direction: SIMD3<Double>, category: HLREdgeCategory, nbIso: Int = 10
+    ) -> Shape? {
         guard
             let h = OCCTHLRGetEdgesByCategory(
                 handle, direction.x, direction.y, direction.z,
-                OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue)))
+                OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue)), Int32(nbIso))
         else { return nil }
         return Shape(handle: h)
     }
@@ -1478,14 +1538,24 @@ extension Shape {
     }
 
     /// Get edges using the generic CompoundOfEdges API from exact HLR.
+    ///
+    /// - Parameters:
+    ///   - direction: View direction.
+    ///   - edgeType: Resulting edge type to extract.
+    ///   - visible: `true` for visible edges, `false` for hidden.
+    ///   - in3d: `true` for a 3D result, `false` for a 2D projected one.
+    ///   - nbIso: Number of isoparametric lines `HLRBRep_Algo` computes per face. Only consulted
+    ///     when `edgeType` is `.isoLine`; OCCT gates isoline computation on this count entirely,
+    ///     so a value of `0` means `.isoLine` always returns `nil` (#1500). Default `10`.
+    /// - Returns: Shape containing edges, or nil if none / the projection failed.
     public func hlrCompoundOfEdges(
         direction: SIMD3<Double>, edgeType: HLREdgeType,
-        visible: Bool, in3d: Bool
+        visible: Bool, in3d: Bool, nbIso: Int = 10
     ) -> Shape? {
         guard
             let h = OCCTHLRCompoundOfEdges(
                 handle, direction.x, direction.y, direction.z,
-                edgeType.rawValue, visible, in3d)
+                edgeType.rawValue, visible, in3d, Int32(nbIso))
         else { return nil }
         return Shape(handle: h)
     }
@@ -2334,10 +2404,71 @@ extension Shape {
         OCCTBRepLibUpdateInnerTolerances(handle)
     }
 
-    /// Update tolerance of a specific edge.
+    /// What ``updateEdgeTolerance(edge:tolerance:maxToleranceToCheck:)`` measured.
+    ///
+    /// `BRepLib::UpdateEdgeTol` returns `true` whether or not it moved anything, so the pair of
+    /// tolerances is the only thing that reports whether the call did any work (#1639).
+    public struct EdgeToleranceUpdate: Sendable, Equatable {
+        /// The edge's tolerance before the call.
+        public let toleranceBefore: Double
+
+        /// The edge's tolerance after the call.
+        ///
+        /// OCCT can lower it as well as raise it.
+        public let toleranceAfter: Double
+
+        /// Whether the measurement moved the edge's tolerance at all.
+        public var changed: Bool { toleranceAfter != toleranceBefore }
+    }
+
+    /// Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
+    ///
+    /// **`tolerance` is not written to the edge.** It is OCCT's `MinToleranceRequest`, the
+    /// tolerance the measurement starts testing from; the tolerance the edge ends up with is
+    /// computed from the measured curve-to-pcurve distances and can be larger or smaller than the
+    /// one it had. An edge whose pcurves match its 3D curve, which is every edge of a
+    /// freshly built primitive, has nothing to measure and does not move. To set a tolerance
+    /// outright, use ``setTolerance(_:)``.
+    ///
+    /// `maxToleranceToCheck` is the ceiling: an edge already looser than it is left alone and the
+    /// call returns `nil`. Until #1639 the bridge derived it as `tolerance * 100`, so a loose edge
+    /// could not be measured at a tight sampling tolerance at all. The default examines every
+    /// edge.
+    ///
+    /// The result reports the tolerance on both sides of the call, because
+    /// `BRepLib::UpdateEdgeTol`'s own `Bool` does not: it is `true` on every path that is not a
+    /// refusal, including runs that move nothing.
+    ///
+    /// ```swift
+    /// let edge = imported.subShapes(ofType: .edge)[0]
+    /// if let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-7),
+    ///     update.changed
+    /// {
+    ///     print("tolerance \(update.toleranceBefore) -> \(update.toleranceAfter)")
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - edge: The edge to measure. Anything else returns `nil`.
+    ///   - tolerance: `MinToleranceRequest`, the tolerance worth starting the measurement from.
+    ///     OCCT's own guidance is around 1e-5.
+    ///   - maxToleranceToCheck: The ceiling above which the edge is not examined at all. Defaults
+    ///     to `.infinity`, which examines every edge.
+    /// - Returns: The tolerance before and after the call, or `nil` when the edge is degenerate,
+    ///   already looser than `maxToleranceToCheck`, or not an edge.
     @discardableResult
-    public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool {
-        OCCTBRepLibUpdateEdgeTolerance(edge.handle, tolerance)
+    public static func updateEdgeTolerance(
+        edge: Shape,
+        tolerance: Double,
+        maxToleranceToCheck: Double = .infinity
+    ) -> EdgeToleranceUpdate? {
+        var before: Double = 0
+        var after: Double = 0
+        guard
+            OCCTBRepLibUpdateEdgeTolerance(
+                edge.handle, tolerance, maxToleranceToCheck, &before, &after)
+        else { return nil }
+        return EdgeToleranceUpdate(toleranceBefore: before, toleranceAfter: after)
     }
 }
 

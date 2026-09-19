@@ -318,20 +318,6 @@ struct OCCTDrawer
   OCCTDrawer() { drawer = new Prs3d_Drawer(); }
 };
 
-static double OCCTDrawerGetEffectiveDeflection(OCCTDrawerRef drawer)
-{
-  if (!drawer)
-    return 0.1;
-  if (drawer->drawer->TypeOfDeflection() == Aspect_TOD_RELATIVE)
-  {
-    return drawer->drawer->DeviationCoefficient();
-  }
-  else
-  {
-    return drawer->drawer->MaximalChordialDeviation();
-  }
-}
-
 struct OCCTClipPlane
 {
   Handle(Graphic3d_ClipPlane) plane;
@@ -365,9 +351,12 @@ static void fillMaterialProps(const Graphic3d_MaterialAspect& mat, OCCTMaterialP
   props->refractionIndex = mat.RefractionIndex();
   props->isPhysic        = (mat.MaterialType() == Graphic3d_MATERIAL_PHYSIC);
   // PBR
-  Graphic3d_PBRMaterial pbr  = mat.PBRMaterial();
-  props->pbrMetallic         = pbr.Metallic();
-  props->pbrRoughness        = pbr.Roughness();
+  Graphic3d_PBRMaterial pbr = mat.PBRMaterial();
+  props->pbrMetallic        = pbr.Metallic();
+  // #1419: NormalizedRoughness() is the authored [0,1] value; Roughness() remaps it into
+  // [MinRoughness,1] for OCCT's own internal calculations, which is not what a caller reading
+  // this struct back (e.g. for glTF's roughnessFactor) wants.
+  props->pbrRoughness        = pbr.NormalizedRoughness();
   props->pbrIOR              = pbr.IOR();
   props->pbrAlpha            = pbr.Alpha();
   NCollection_Vec3<float> em = pbr.Emission();
@@ -1156,7 +1145,7 @@ bool OCCTShapeGetShadedMeshWithDrawer(OCCTShapeRef        shape,
 {
   if (!shape || !drawer || !out)
     return false;
-  double deflection = OCCTDrawerGetEffectiveDeflection(drawer);
+  double deflection = occtDrawerGetEffectiveDeflection(drawer->drawer, shape->shape);
   double angle      = drawer->drawer->DeviationAngle();
 
   out->vertices      = nullptr;
@@ -1181,7 +1170,7 @@ bool OCCTShapeGetEdgeMeshWithDrawer(OCCTShapeRef shape, OCCTDrawerRef drawer, OC
 {
   if (!shape || !drawer || !out)
     return false;
-  double deflection = OCCTDrawerGetEffectiveDeflection(drawer);
+  double deflection = occtDrawerGetEffectiveDeflection(drawer->drawer, shape->shape);
   double angle      = drawer->drawer->DeviationAngle();
 
   out->vertices      = nullptr;

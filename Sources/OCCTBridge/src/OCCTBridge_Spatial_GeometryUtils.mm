@@ -209,242 +209,6 @@ static void fillBounds6(const Bnd_Box& box, double* bounds6)
   bounds6[5] = z1;
 }
 
-// C++ adapter: wraps a C callback into math_FunctionWithDerivative
-class OCCTMathFuncAdapter : public math_FunctionWithDerivative
-{
-  OCCTMathFuncDerivCallback callback;
-  void*                     ctx;
-
-public:
-  OCCTMathFuncAdapter(OCCTMathFuncDerivCallback cb, void* c)
-      : callback(cb),
-        ctx(c)
-  {
-  }
-
-  bool Value(const double X, double& F) override
-  {
-    double d;
-    return callback(X, &F, &d, ctx);
-  }
-
-  bool Derivative(const double X, double& D) override
-  {
-    double f;
-    return callback(X, &f, &D, ctx);
-  }
-
-  bool Values(const double X, double& F, double& D) override { return callback(X, &F, &D, ctx); }
-};
-
-// C++ adapter: wraps C callbacks into math_FunctionSetWithDerivatives
-class OCCTMathFuncSetAdapter : public math_FunctionSetWithDerivatives
-{
-  OCCTMathFuncSetCallback      valueCallback;
-  OCCTMathFuncSetDerivCallback derivCallback;
-  void*                        ctx;
-  int                          nVars, nEqs;
-
-public:
-  OCCTMathFuncSetAdapter(int                          nv,
-                         int                          ne,
-                         OCCTMathFuncSetCallback      vcb,
-                         OCCTMathFuncSetDerivCallback dcb,
-                         void*                        c)
-      : nVars(nv),
-        nEqs(ne),
-        valueCallback(vcb),
-        derivCallback(dcb),
-        ctx(c)
-  {
-  }
-
-  int NbVariables() const override { return nVars; }
-
-  int NbEquations() const override { return nEqs; }
-
-  bool Value(const math_Vector& X, math_Vector& F) override
-  {
-    std::vector<double> x(nVars), f(nEqs);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = valueCallback(x.data(), nVars, f.data(), nEqs, ctx);
-    for (int i = 0; i < nEqs; i++)
-      F(i + 1) = f[i];
-    return ok;
-  }
-
-  bool Derivatives(const math_Vector& X, math_Matrix& D) override
-  {
-    std::vector<double> x(nVars), jac(nVars * nEqs);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = derivCallback(x.data(), nVars, jac.data(), nEqs, ctx);
-    for (int i = 0; i < nEqs; i++)
-      for (int j = 0; j < nVars; j++)
-        D(i + 1, j + 1) = jac[i * nVars + j];
-    return ok;
-  }
-
-  bool Values(const math_Vector& X, math_Vector& F, math_Matrix& D) override
-  {
-    return Value(X, F) && Derivatives(X, D);
-  }
-};
-
-// C++ adapter: wraps a C callback into math_MultipleVarFunction
-class OCCTMathMultiVarAdapter : public math_MultipleVarFunction
-{
-  OCCTMathMultiVarCallback callback;
-  void*                    ctx;
-  int                      nVars;
-
-public:
-  OCCTMathMultiVarAdapter(int nv, OCCTMathMultiVarCallback cb, void* c)
-      : nVars(nv),
-        callback(cb),
-        ctx(c)
-  {
-  }
-
-  int NbVariables() const override { return nVars; }
-
-  bool Value(const math_Vector& X, double& F) override
-  {
-    std::vector<double> x(nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    return callback(x.data(), nVars, &F, ctx);
-  }
-};
-
-// C++ adapter: wraps a C callback into math_MultipleVarFunctionWithGradient
-class OCCTMathMultiVarGradAdapter : public math_MultipleVarFunctionWithGradient
-{
-  OCCTMathMultiVarGradCallback callback;
-  void*                        ctx;
-  int                          nVars;
-
-public:
-  OCCTMathMultiVarGradAdapter(int nv, OCCTMathMultiVarGradCallback cb, void* c)
-      : nVars(nv),
-        callback(cb),
-        ctx(c)
-  {
-  }
-
-  int NbVariables() const override { return nVars; }
-
-  bool Value(const math_Vector& X, double& F) override
-  {
-    std::vector<double> x(nVars), g(nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    return callback(x.data(), nVars, &F, g.data(), ctx);
-  }
-
-  bool Gradient(const math_Vector& X, math_Vector& G) override
-  {
-    std::vector<double> x(nVars), g(nVars);
-    double              f;
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = callback(x.data(), nVars, &f, g.data(), ctx);
-    for (int i = 0; i < nVars; i++)
-      G(i + 1) = g[i];
-    return ok;
-  }
-
-  bool Values(const math_Vector& X, double& F, math_Vector& G) override
-  {
-    std::vector<double> x(nVars), g(nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = callback(x.data(), nVars, &F, g.data(), ctx);
-    for (int i = 0; i < nVars; i++)
-      G(i + 1) = g[i];
-    return ok;
-  }
-};
-
-// Simple math_Function adapter for GaussSingleIntegration
-class OCCTMathSimpleFuncAdapter : public math_Function
-{
-  OCCTMathSimpleFuncCallback cb;
-  void*                      ctx;
-
-public:
-  OCCTMathSimpleFuncAdapter(OCCTMathSimpleFuncCallback c, void* x)
-      : cb(c),
-        ctx(x)
-  {
-  }
-
-  bool Value(const double X, double& F) override { return cb(X, &F, ctx); }
-};
-
-class OCCTMathHessianAdapter : public math_MultipleVarFunctionWithHessian
-{
-  OCCTMathHessianCallback callback;
-  void*                   context;
-  int                     nVars;
-
-public:
-  OCCTMathHessianAdapter(int n, OCCTMathHessianCallback cb, void* ctx)
-      : nVars(n),
-        callback(cb),
-        context(ctx)
-  {
-  }
-
-  int NbVariables() const override { return nVars; }
-
-  bool Value(const math_Vector& X, double& F) override
-  {
-    std::vector<double> x(nVars), g(nVars), h(nVars * nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    return callback(x.data(), nVars, &F, g.data(), h.data(), context);
-  }
-
-  bool Gradient(const math_Vector& X, math_Vector& G) override
-  {
-    std::vector<double> x(nVars), g(nVars), h(nVars * nVars);
-    double              f;
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = callback(x.data(), nVars, &f, g.data(), h.data(), context);
-    for (int i = 0; i < nVars; i++)
-      G(i + 1) = g[i];
-    return ok;
-  }
-
-  bool Values(const math_Vector& X, double& F, math_Vector& G) override
-  {
-    std::vector<double> x(nVars), g(nVars), h(nVars * nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = callback(x.data(), nVars, &F, g.data(), h.data(), context);
-    for (int i = 0; i < nVars; i++)
-      G(i + 1) = g[i];
-    return ok;
-  }
-
-  bool Values(const math_Vector& X, double& F, math_Vector& G, math_Matrix& H) override
-  {
-    std::vector<double> x(nVars), g(nVars), h(nVars * nVars);
-    for (int i = 0; i < nVars; i++)
-      x[i] = X(i + 1);
-    bool ok = callback(x.data(), nVars, &F, g.data(), h.data(), context);
-    for (int i = 0; i < nVars; i++)
-      G(i + 1) = g[i];
-    for (int i = 0; i < nVars; i++)
-      for (int j = 0; j < nVars; j++)
-        H(i + 1, j + 1) = h[i * nVars + j];
-    return ok;
-  }
-};
-
 struct OCCTIntfTool
 {
   Intf_Tool tool;
@@ -509,6 +273,13 @@ void OCCTAx3Create(double px,
   }
   catch (...)
   {
+    // gp_Dir/gp_Ax3 raise Standard_ConstructionError for a zero-length direction/xDirection or a
+    // parallel direction/xDirection pair (#1443). No valid axis exists to report: isDirect=false
+    // plus an all-zero xDirection/yDirection is unambiguous, since a genuine gp_Ax3's
+    // XDirection()/YDirection() are always unit vectors and can never be all-zero.
+    *isDirect = false;
+    *xDx = *xDy = *xDz = 0;
+    *yDx = *yDy = *yDz = 0;
   }
 }
 
@@ -541,6 +312,12 @@ void OCCTAx3CreateFromNormal(double px,
   }
   catch (...)
   {
+    // gp_Dir raises Standard_ConstructionError for a zero-length normal (#1443, this overload has
+    // no xDirection so the parallel case doesn't apply). Same unambiguous fallback as
+    // OCCTAx3Create's catch.
+    *isDirect = false;
+    *xDx = *xDy = *xDz = 0;
+    *yDx = *yDy = *yDz = 0;
   }
 }
 
@@ -646,6 +423,15 @@ void OCCTAx3MirrorPoint(double px,
   }
   catch (...)
   {
+    // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
+    // the only throw site here; gp_Ax3::Mirrored(const gp_Pnt&) is itself noexcept. No valid
+    // mirrored axis exists to report: the input point unmoved, plus an all-zero
+    // direction/xDirection (unambiguous the same way as OCCTAx3Create's fallback).
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
+    *rnx = *rny = *rnz = 0;
+    *rxDx = *rxDy = *rxDz = 0;
   }
 }
 
@@ -691,6 +477,15 @@ void OCCTAx3Rotate(double px,
   }
   catch (...)
   {
+    // Two throw sites share this catch (#1443): the input ax3's own construction
+    // (direction/xDirection zero-length or parallel), and the rotation axis's gp_Dir (a
+    // zero-length rotation direction, e.g. axDx=axDy=axDz=0). Neither leaves a valid rotated axis
+    // to report; same fallback shape as OCCTAx3MirrorPoint.
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
+    *rnx = *rny = *rnz = 0;
+    *rxDx = *rxDy = *rxDz = 0;
   }
 }
 
@@ -720,6 +515,13 @@ void OCCTAx3Translate(double px,
   }
   catch (...)
   {
+    // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
+    // the only throw site here; gp_Ax3::Translated(const gp_Vec&) is itself noexcept. No valid
+    // translated axis exists to report: fall back to the input point unmoved (this overload has
+    // no direction/xDirection output to signal through).
+    *rpx = px;
+    *rpy = py;
+    *rpz = pz;
   }
 }
 

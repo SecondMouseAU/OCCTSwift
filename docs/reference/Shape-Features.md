@@ -259,7 +259,10 @@ public func split(by tool: Shape) -> [Shape]?
 
 - **Parameters:** `tool`, shape to use as cutting tool (typically a face or solid).
 - **Returns:** Array of result shapes after the split, or `nil` on failure. The array will have at least two elements when the cut produces distinct pieces.
-- **OCCT:** `BRepAlgoAPI_BuilderAlgo` (multi-split general cutter).
+- **OCCT:** `BRepAlgoAPI_Splitter`, whose arguments are split by its tools. Not its base class
+  `BRepAlgoAPI_BuilderAlgo`, which these entries named until #1399: that one is General Fuse, which
+  treats every argument symmetrically and returns a compound of all the split parts, a different
+  operation with a different result (#367).
 - **Example:**
   ```swift
   let box = Shape.box(width: 20, height: 20, depth: 20)
@@ -283,7 +286,8 @@ public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape
 
 - **Parameters:** `point`, a point on the cutting plane; `normal`, plane normal direction.
 - **Returns:** Array of result shapes, or `nil` on failure.
-- **OCCT:** `BRepBuilderAPI_MakeFace` (build cutting plane) + `BRepAlgoAPI_BuilderAlgo`.
+- **OCCT:** `BRepBuilderAPI_MakeFace` (build the cutting face) + `BRepAlgoAPI_Splitter`, the same
+  splitter `split(by:)` uses, not `BRepAlgoAPI_BuilderAlgo`.
 - **Example:**
   ```swift
   let cube = Shape.box(width: 20, height: 20, depth: 20)
@@ -576,18 +580,23 @@ Error type for failed STEP/IGES/BREP imports.
 public enum ImportError: Error, LocalizedError {
     case importFailed(String)
     case cancelled
+    case readFailed(path: String, status: IOStatus)
     public var errorDescription: String? { get }
 }
 ```
 
-- `importFailed`: carries a human-readable message describing why the import failed.
+- `importFailed`: carries a human-readable message describing why the import failed. Still the
+  case for the BREP and STL loaders, whose readers produce no `IFSelect_ReturnStatus`.
 - `cancelled`: the import was cancelled via `ImportProgress.shouldCancel()`.
+- `readFailed`: a STEP or IGES reader rejected the file, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 
 | Case / Property | Meaning |
 |---|---|
 | `.importFailed(_:)` | The import failed; the associated string is a human-readable reason. |
 | `.cancelled` | The import was cancelled via `ImportProgress.shouldCancel()`. |
-| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, or a fixed string for `.cancelled`. |
+| `.readFailed(path:status:)` | A STEP or IGES read failed, and `status` is the reason OCCT gave, so "check the path" (`.error`) is distinguishable from "this file is not STEP" (`.fail`). `.notReached` means the read never ran. |
+| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, the path and status for `.readFailed`, or a fixed string for `.cancelled`. |
 
 #### `ImportError.errorDescription`
 
@@ -839,7 +848,7 @@ Points are uniformly sampled from start to end of the edge curve.
 
 - **Parameters:** `index`, edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints`, output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points along the edge curve.
-- **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
+- **OCCT:** `BRep_Tool::Curve`, sampled at uniform parameter with `Geom_Curve::Value` (via `OCCTShapeGetEdgePoints`).
 
 ---
 
@@ -1452,7 +1461,7 @@ public func drafted(
   - `angle`: draft angle in radians (typically 1–5°).
   - `neutralPlane`: point and normal of the plane where draft angle is zero.
 - **Returns:** Drafted shape, or `nil` on failure.
-- **OCCT:** `OCCTShapeDraft` (internal `Draft_MakeDraft`-based implementation).
+- **OCCT:** `BRepOffsetAPI_DraftAngle` (via `OCCTShapeDraft`).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
   here fails the whole call rather than being skipped (#568). Skipping was worse here than anywhere
   else in that sweep: `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no
@@ -2044,7 +2053,7 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 | Case | Meaning |
 |---|---|
 | `.g0` | Positional continuity: the surface passes through the constraint. |
-| `.g1` | Tangent continuity: the surface is tangent along the constraint. |
+| `.g1` | Tangent continuity: the surface is tangent along the constraint. Rejected for a bare point constraint (see below). |
 | `.g2` | Curvature continuity: the surface matches curvature along the constraint. Rejected for a bare point constraint (see below). |
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
@@ -2060,12 +2069,17 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 
 ```swift
 ```
-Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
-point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
-before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
-relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
-`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
+Not every API accepts every order. A bare point carries no tangent or curvature data to match, so
+`GeomPlate_PointConstraint`'s point-only constructor structurally cannot honour `.g1` or `.g2`.
+`.g2` throws above order 1 in the constructor itself; `.g1` does not throw, but its member-init
+list never sets the tangent-derivative fields, so the tangent constraint silently drops out at the
+solver (`Plate_GtoCConstraint`'s zero-normal early return) and the build degrades to G0-only with
+no diagnostic. `Shape.plateSurface(through:orders:)` and the point half of
+`Shape.plateSurface(pointConstraints:curveConstraints:)` reject both `.g1` and `.g2` in Swift
+before building any constraint, so a point given either returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (`.g2`, #437) or silently building a degraded result
+(`.g1`, #1460). Curve constraints have no such restriction: `GeomPlate_CurveConstraint` accepts
+order up to 2 directly, so both `.g1` and `.g2` are fine for a curve.
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
 > `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
@@ -2437,14 +2451,16 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-Each point independently specifies G0 (position) or G1 (position + tangent) continuity.
-**`.g2` always returns `nil`**: `GeomPlate_PointConstraint` rejects order 2 outright for a bare
-point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`,
-before any constraint is built, rather than relying on OCCT's own throw.
+Each point can only specify G0 (position) continuity. **`.g1` and `.g2` always return `nil`**:
+`GeomPlate_PointConstraint`'s point-only constructor cannot carry tangent or curvature data for a
+bare point (`.g2` rejects order 2 outright in the constructor, #437; `.g1` builds but silently
+drops the tangent constraint at the solver with no diagnostic, #1460), and both are checked in
+Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`, before any constraint is built,
+rather than relying on OCCT's own throw (which only ever caught `.g2`).
 
 - **Parameters:**
   - `points`: 3D points (minimum 3); must match `orders.count`.
-  - `orders`: per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
+  - `orders`: per-point constraint orders (`.g0` only; `.g1` and `.g2` are rejected, see above).
   - `degree`: maximum polynomial degree (default 3).
   - `pointsOnCurves`: sample points on internal curves (default 15).
   - `iterations`: solver iterations (default 2).
@@ -2468,14 +2484,15 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-At least one of `points` or `curves` must be non-empty. `.g2` is rejected up front for a **point**
-constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is fine for a
-**curve** constraint (`GeomPlate_CurveConstraint` accepts order 2 directly); only `points`'
-orders are checked.
+At least one of `points` or `curves` must be non-empty. `.g1` and `.g2` are rejected up front for
+a **point** constraint (`GeomPlate_PointConstraint`'s point-only constructor can carry neither
+tangent nor curvature data; `.g2` throws in the constructor, #437, `.g1` silently drops the
+tangent constraint at the solver instead, #1460) but both are fine for a **curve** constraint
+(`GeomPlate_CurveConstraint` accepts order up to 2 directly); only `points`' orders are checked.
 
 - **Parameters:**
-  - `points`: point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
-    rejected, see above).
+  - `points`: point constraints, each with a position and a `SurfaceContinuity` (`.g0` only;
+    `.g1`/`.g2` always rejected, see above).
   - `curves`: curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree`: maximum polynomial degree (default 3).
   - `tolerance`: approximation tolerance.

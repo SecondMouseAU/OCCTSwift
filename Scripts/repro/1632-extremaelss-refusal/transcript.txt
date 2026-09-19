@@ -1,0 +1,9 @@
+=== Extrema_ExtElSS on the pinned 8.0.1 kernel
+  plane/plane parallel     IsDone=1 IsParallel=1 NbExt=1 SquareDistance(1)=25
+                           (Points() NOT called: myPOnS1/myPOnS2 are null handles here, see header)
+  plane/plane crossing     IsDone=1 IsParallel=0 NbExt=0
+  plane/sphere             ctor THREW 23Standard_NotImplemented ()
+  sphere/sphere            ctor THREW 23Standard_NotImplemented ()
+  sphere/cylinder          ctor THREW 23Standard_NotImplemented ()
+  sphere/cone              ctor THREW 23Standard_NotImplemented ()
+  sphere/torus             ctor THREW 23Standard_NotImplemented ()

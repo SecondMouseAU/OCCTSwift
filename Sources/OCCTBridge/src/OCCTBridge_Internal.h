@@ -88,9 +88,13 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
-#include <GCPnts_AbscissaPoint.hxx> // occtAdaptorLengthBetween, the shared ranged arc length
-#include <CPnts_AbscissaPoint.hxx>  // occtArcQuadrature's per-span integrator (#603)
-#include <TColStd_Array1OfReal.hxx> // the GeomAbs_CN interval array the same helpers walk
+#include <GCPnts_AbscissaPoint.hxx>    // occtAdaptorLengthBetween, the shared ranged arc length
+#include <CPnts_AbscissaPoint.hxx>     // occtArcQuadrature's per-span integrator (#603)
+#include <TColStd_Array1OfReal.hxx>    // the GeomAbs_CN interval array the same helpers walk
+#include <IFSelect_ReturnStatus.hxx>   // occtRecordReturnStatus (#1644)
+#include <Aspect_TypeOfDeflection.hxx> // occtDrawerGetEffectiveDeflection (#1418)
+#include <Prs3d.hxx>        // occtDrawerGetEffectiveDeflection: Prs3d::GetDeflection (#1418)
+#include <Prs3d_Drawer.hxx> // occtDrawerGetEffectiveDeflection (#1418)
 #include <cmath>
 
 // === Foundation struct definitions ===
@@ -373,11 +377,17 @@ std::mutex& fontListMutex();
 
 // === OCCT signal handling ===
 //
-// Installs OCCT's signal handlers (OSD::SetSignal) once, so that OS signals
-// raised inside OCCT (SIGSEGV/SIGFPE on degenerate geometry) are converted into
-// catchable Standard_Failure exceptions when a try block uses OCC_CATCH_SIGNALS.
-// Call at the top of any modelling op that can hit degenerate input (loft,
-// booleans, sweep, fillet…). Definition lives in OCCTBridge.mm. See issue #175.
+// Installs OCCT's signal handlers (OSD::SetSignal) once, process-wide, so an OS signal raised
+// inside OCCT (SIGSEGV/SIGFPE on degenerate geometry) is reported with an OCCT message and a
+// stack trace. Call at the top of any modelling op that can hit degenerate input (loft,
+// booleans, sweep, fillet). Definition lives in OCCTBridge.mm. See issue #175.
+//
+// #1399: this comment used to say the signals "are converted into catchable Standard_Failure
+// exceptions when a try block uses OCC_CATCH_SIGNALS". They are not, in this build, and the
+// #263 note twelve lines below already said so. OCC_CONVERT_SIGNALS is undefined here, so
+// OCC_CATCH_SIGNALS expands to nothing and Standard_ErrorHandler::Abort throws directly from
+// the signal handler, which does not unwind. Treat an OS signal inside OCCT as fatal and guard
+// the input instead.
 void occtEnsureSignals();
 
 // === #263: self-intersecting-wire guard ===
@@ -680,8 +690,10 @@ enum class OCCTFillingSupport
 //
 // Returns false only when `kind` is Nominated and that face carries no pcurve for the edge; the
 // constraint is then NOT added and the caller should fail the whole fill. Every other path adds
-// a constraint and returns true, including the no-pcurve-anywhere case, which reaches the
-// face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
+// a constraint and returns true, including the no-pcurve-anywhere case, which downgrades `order`
+// to GeomAbs_C0 before adding: with no pcurve to build a tangent constraint from, the face-less
+// overload throws OCCT's documented Standard_Failure at Build() time for anything above C0
+// (#1503).
 bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               const TopoDS_Edge&         edge,
                               const TopoDS_Face&         support,
@@ -3124,6 +3136,18 @@ inline bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell,
 
 // Build the configured shell and, when asked, close it into a solid. Holds the sole copy
 // of the build-history workaround that used to be pasted into all six entry points.
+//
+// #1414: BRepOffsetAPI_MakePipeShell::MakeSolid() never touches Done()/NotDone(), it only
+// reads IsDone() once as a precondition (inherited from the Build() above), so re-testing
+// IsDone() after calling it was always true regardless of whether MakeSolid() itself closed
+// the shell. BRepFill_PipeShell::MakeSolid() (the class it wraps) genuinely returns false
+// for a real, reachable input, e.g. an unclosed profile wire, whose swept shell can never be
+// capped into a solid, so the stale check silently handed callers the open shell under a
+// "solid" label it never earned. Use MakeSolid()'s own return value instead, and refuse
+// (nullptr) on a genuine failure rather than return an open shell mislabeled as the solid
+// the caller asked for: every other failure in this function already signals nullptr, and
+// this project has already made the equivalent call for BRepOffsetAPI_ThruSections::MakeSolid
+// (#905): fail visibly rather than silently demote the result.
 inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid)
 {
   pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
@@ -3134,11 +3158,9 @@ inline OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, 
   TopoDS_Shape result = pipeShell.Shape();
   if (solid)
   {
-    pipeShell.MakeSolid();
-    if (pipeShell.IsDone())
-    {
-      result = pipeShell.Shape();
-    }
+    if (!pipeShell.MakeSolid())
+      return nullptr;
+    result = pipeShell.Shape();
   }
   return new OCCTShape(result);
 }
@@ -3181,14 +3203,93 @@ inline int32_t occtBRepCheckSubShapeStatus(const TopoDS_Shape& shape, const Topo
 // guard/add logic applied to fewer than all eight would have no compiler or test signal. This
 // helper collapses each to one call; placed here (rather than as a static helper local to
 // OCCTBridge_HLR.mm) so any other bridge site with the same idiom can share it too.
-inline void occtAddShapeIfPresent(BRep_Builder&       builder,
+//
+// #1421: returns whether it actually added anything, so a caller can tell "every contributing
+// field was null" (an empty result) from "at least one edge landed in the compound" -- the
+// compound handle itself is never null once BRep_Builder::MakeCompound has run (it unconditionally
+// allocates a fresh TopoDS_TCompound), so IsNull() on the compound can never signal that.
+inline bool occtAddShapeIfPresent(BRep_Builder&       builder,
                                   TopoDS_Shape&       compound,
                                   const TopoDS_Shape& shape)
 {
   if (!shape.IsNull())
   {
     builder.Add(compound, shape);
+    return true;
   }
+  return false;
+}
+
+// === #1418: the drawer's real, size-scaled mesh deflection ===
+//
+// Prs3d_Drawer::DeviationCoefficient() is a dimensionless coefficient (OCCT default 0.001), not a
+// usable absolute deflection, whenever the drawer's TypeOfDeflection() is Aspect_TOD_RELATIVE
+// (itself OCCT's own default type), and must be scaled by the shape's own size before it means
+// anything, per Prs3d_Drawer.hxx's own doc comment ("SizeOfObject * DeviationCoefficient").
+// This mirrors OCCT's own reference caller, StdPrs_ToolTriangulatedShape::GetDeflection, computing
+// a Bnd_Box and scaling through Prs3d::GetDeflection rather than returning the bare coefficient.
+//
+// #1399: the size in question is the LONGEST BOUNDING-BOX SIDE, times four, not the diagonal.
+// Prs3d::GetDeflection is max(aDiag.maxComp() * coefficient * 4.0, Precision::Confusion()) over
+// the box's own extent vector. This comment and three doc sites said "diagonal" until it was
+// measured; see Scripts/repro/1399-refman-coverage-unlaned/probe_foundation.mm.
+//
+// Was duplicated verbatim as a static, non-shared OCCTDrawerGetEffectiveDeflection in all four
+// OCCTBridge_Visualization_*.mm split files with none of this scaling, live (called) only from
+// _Presentation.mm and dead code in the other three; consolidated here rather than fixed four
+// times over, following this file's own occtPipeShellFinish precedent for a cross-split-file
+// helper.
+inline double occtDrawerGetEffectiveDeflection(const Handle(Prs3d_Drawer)& drawer,
+                                               const TopoDS_Shape&         shape)
+{
+  if (drawer.IsNull())
+    return 0.1;
+  if (drawer->TypeOfDeflection() != Aspect_TOD_RELATIVE)
+    return drawer->MaximalChordialDeviation();
+
+  Bnd_Box box;
+  BRepBndLib::Add(shape, box, false);
+  return Prs3d::GetDeflection(box,
+                              drawer->DeviationCoefficient(),
+                              drawer->MaximalChordialDeviation());
+}
+
+// === #1644: IFSelect_ReturnStatus, reported instead of discarded ===
+//
+// Every STEP/IGES read, transfer and write step in the bridge used to end in
+// `if (status != IFSelect_RetDone) return false;`, which is one bit of a five-valued answer. These
+// two record it into the caller's optional out-parameter instead, so "the path is wrong", "the
+// file is malformed" and "the model is empty" stop arriving as the same `nil`.
+//
+// The static_asserts are the point of doing the conversion here rather than casting at 50 call
+// sites: OCCTReturnStatus's ordinals are IFSelect_ReturnStatus's own, and an OCCT repin that
+// renumbers or reorders that enum has to fail this compile rather than silently relabel every
+// status the bridge reports.
+static_assert(static_cast<int>(OCCTReturnStatusVoid) == static_cast<int>(IFSelect_RetVoid),
+              "OCCTReturnStatusVoid tracks IFSelect_RetVoid");
+static_assert(static_cast<int>(OCCTReturnStatusDone) == static_cast<int>(IFSelect_RetDone),
+              "OCCTReturnStatusDone tracks IFSelect_RetDone");
+static_assert(static_cast<int>(OCCTReturnStatusError) == static_cast<int>(IFSelect_RetError),
+              "OCCTReturnStatusError tracks IFSelect_RetError");
+static_assert(static_cast<int>(OCCTReturnStatusFail) == static_cast<int>(IFSelect_RetFail),
+              "OCCTReturnStatusFail tracks IFSelect_RetFail");
+static_assert(static_cast<int>(OCCTReturnStatusStop) == static_cast<int>(IFSelect_RetStop),
+              "OCCTReturnStatusStop tracks IFSelect_RetStop");
+
+//! Writes `theStatus` into `theOut` when the caller asked for it.
+inline void occtSetReturnStatus(OCCTReturnStatus* theOut, OCCTReturnStatus theStatus)
+{
+  if (theOut)
+    *theOut = theStatus;
+}
+
+//! Records an OCCT data-exchange status and reports whether it was IFSelect_RetDone, so a call
+//! site reads `if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus)) return nullptr;`
+//! and neither drops the status nor forgets the Done test.
+inline bool occtRecordReturnStatus(IFSelect_ReturnStatus theStatus, OCCTReturnStatus* theOut)
+{
+  occtSetReturnStatus(theOut, static_cast<OCCTReturnStatus>(static_cast<int>(theStatus)));
+  return theStatus == IFSelect_RetDone;
 }
 
 #endif /* OCCTBridge_Internal_h */

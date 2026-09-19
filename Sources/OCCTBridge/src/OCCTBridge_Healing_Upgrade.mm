@@ -112,7 +112,6 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
-#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -123,7 +122,6 @@
 #include <ShapeExtend_CompositeSurface.hxx>
 #include <ShapeFix_ComposeShell.hxx>
 #include <ShapeUpgrade_ClosedFaceDivide.hxx>
-#include <ShapeUpgrade_ShapeDivideAngle.hxx>
 #include <ShapeUpgrade_ShapeDivideArea.hxx>
 #include <ShapeUpgrade_ShellSewing.hxx>
 #include <ShapeFix_FaceConnect.hxx>
@@ -776,10 +774,25 @@ OCCTShapeRef OCCTShapeDivideByNumber(OCCTShapeRef shape, int32_t nbU, int32_t nb
   try
   {
     ShapeUpgrade_ShapeDivide divider(shape->shape);
-    // Use FaceDivideArea with splitting-by-number mode
+    // Use FaceDivideArea with splitting-by-number mode. Two things are needed to make this
+    // actually run rather than silently fail or silently ignore the caller's axis counts (#1491):
+    //
+    // 1. MaxArea() defaults to Precision::Infinite(), not the -1 sentinel
+    //    ShapeUpgrade_FaceDivideArea::Perform() checks for ("if (myMaxArea == -1) { ... derive
+    //    myMaxArea from myNbParts ... }"). Left at its default, Perform()'s very next line
+    //    ("if ((anArea - myMaxArea) < Precision::Confusion()) return false;") is unconditionally
+    //    true for any finite face area, so Perform() -- and therefore this whole function --
+    //    failed outright for every input, every time, independent of nbU/nbV. Measured directly:
+    //    a plain box through this exact call sequence with MaxArea() left unset returns false.
+    // 2. SetNumbersUVSplits is what makes Compute() respect the caller's per-axis split counts
+    //    once Perform() actually runs; without it, myUnbSplit/myVnbSplit stay at their own
+    //    default sentinel (-1) and ShapeUpgrade_SplitSurfaceArea::Compute silently derives its
+    //    own roughly-square split from NbParts() alone instead.
     Handle(ShapeUpgrade_FaceDivideArea) faceDivide = new ShapeUpgrade_FaceDivideArea();
     faceDivide->SetSplittingByNumber(true);
     faceDivide->NbParts() = nbU * nbV;
+    faceDivide->MaxArea() = -1;
+    faceDivide->SetNumbersUVSplits(nbU, nbV);
     divider.SetSplitFaceTool(faceDivide);
     if (!divider.Perform())
       return nullptr;
@@ -909,6 +922,54 @@ OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoi
   }
 }
 
+OCCTBSplineRestrictionParameters occtDefaultBSplineRestrictionParameters(void)
+{
+  Handle(ShapeCustom_RestrictionParameters) defaults = new ShapeCustom_RestrictionParameters();
+  OCCTBSplineRestrictionParameters          out;
+  out.convertPlane           = defaults->ConvertPlane();
+  out.convertBezierSurf      = defaults->ConvertBezierSurf();
+  out.convertRevolutionSurf  = defaults->ConvertRevolutionSurf();
+  out.convertExtrusionSurf   = defaults->ConvertExtrusionSurf();
+  out.convertOffsetSurf      = defaults->ConvertOffsetSurf();
+  out.convertCylindricalSurf = defaults->ConvertCylindricalSurf();
+  out.convertConicalSurf     = defaults->ConvertConicalSurf();
+  out.convertToroidalSurf    = defaults->ConvertToroidalSurf();
+  out.convertSphericalSurf   = defaults->ConvertSphericalSurf();
+  out.segmentSurfaceMode     = defaults->SegmentSurfaceMode();
+  out.convertCurve3d         = defaults->ConvertCurve3d();
+  out.convertOffsetCurv3d    = defaults->ConvertOffsetCurv3d();
+  out.convertCurve2d         = defaults->ConvertCurve2d();
+  out.convertOffsetCurv2d    = defaults->ConvertOffsetCurv2d();
+  return out;
+}
+
+// Build the OCCT parameter object from the caller's switches. A null `parameters` keeps the
+// class's own defaults, which is what both BSplineRestriction entry points passed unconditionally
+// until #1637: with them a cylinder comes back with 0 BSpline faces and 3 still elementary,
+// because ConvertCylindricalSurf and friends default to false.
+static Handle(ShapeCustom_RestrictionParameters) occtRestrictionParameters(
+  const OCCTBSplineRestrictionParameters* parameters)
+{
+  Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
+  if (!parameters)
+    return params;
+  params->ConvertPlane()           = parameters->convertPlane;
+  params->ConvertBezierSurf()      = parameters->convertBezierSurf;
+  params->ConvertRevolutionSurf()  = parameters->convertRevolutionSurf;
+  params->ConvertExtrusionSurf()   = parameters->convertExtrusionSurf;
+  params->ConvertOffsetSurf()      = parameters->convertOffsetSurf;
+  params->ConvertCylindricalSurf() = parameters->convertCylindricalSurf;
+  params->ConvertConicalSurf()     = parameters->convertConicalSurf;
+  params->ConvertToroidalSurf()    = parameters->convertToroidalSurf;
+  params->ConvertSphericalSurf()   = parameters->convertSphericalSurf;
+  params->SegmentSurfaceMode()     = parameters->segmentSurfaceMode;
+  params->ConvertCurve3d()         = parameters->convertCurve3d;
+  params->ConvertOffsetCurv3d()    = parameters->convertOffsetCurv3d;
+  params->ConvertCurve2d()         = parameters->convertCurve2d;
+  params->ConvertOffsetCurv2d()    = parameters->convertOffsetCurv2d;
+  return params;
+}
+
 OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
                                                double       tol3d,
                                                double       tol2d,
@@ -917,13 +978,14 @@ OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
                                                int32_t      continuity3d,
                                                int32_t      continuity2d,
                                                bool         degreePriority,
-                                               bool         rational)
+                                               bool         rational,
+                                               const OCCTBSplineRestrictionParameters* parameters)
 {
   if (!shape)
     return nullptr;
   try
   {
-    Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
+    Handle(ShapeCustom_RestrictionParameters) params = occtRestrictionParameters(parameters);
     TopoDS_Shape                              result =
       ShapeCustom::BSplineRestriction(shape->shape,
                                       tol3d,
@@ -985,29 +1047,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, 
   }
 }
 
-OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int32_t nbSplitPoints)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    ShapeUpgrade_ShapeDivide              sd(shape->shape);
-    Handle(ShapeUpgrade_ClosedFaceDivide) cfd = new ShapeUpgrade_ClosedFaceDivide();
-    cfd->SetNbSplitPoints(nbSplitPoints > 0 ? nbSplitPoints : 1);
-    sd.SetSplitFaceTool(cfd);
-    if (!sd.Perform())
-      return nullptr;
-    TopoDS_Shape result = sd.Result();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, double maxAngleDegrees)
 {
   if (!shape)
@@ -1015,28 +1054,6 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape, dou
   try
   {
     ShapeUpgrade_ShapeDivideAngle sd(maxAngleDegrees * M_PI / 180.0, shape->shape);
-    if (!sd.Perform())
-      return nullptr;
-    TopoDS_Shape result = sd.Result();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceArea(OCCTShapeRef shape, int32_t nbParts)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    ShapeUpgrade_ShapeDivideArea sd(shape->shape);
-    sd.SetSplittingByNumber(true);
-    sd.NbParts() = (nbParts > 0 ? nbParts : 4);
     if (!sd.Perform())
       return nullptr;
     TopoDS_Shape result = sd.Result();
@@ -1074,7 +1091,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeFaceDivide(OCCTShapeRef faceShape)
 OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape,
                                                         OCCTShapeRef faceShape)
 {
-  if (!wireShape || !faceShape)
+  if (!occtShapeIsPresent(wireShape) || !occtShapeIsPresent(faceShape))
     return nullptr;
   try
   {
@@ -1153,78 +1170,23 @@ bool OCCTShapeUpgradeClosedEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRe
   }
 }
 
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallCurves(OCCTShapeRef shape, double tolerance)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    // Use ShapeFix_Wireframe which internally uses FixSmallCurves logic
-    // to fix small edges across the entire shape
-    TopTools_IndexedMapOfShape faceMap;
-    TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-    if (faceMap.Extent() == 0)
-      return nullptr;
-
-    BRep_Builder    bb;
-    TopoDS_Compound result;
-    bb.MakeCompound(result);
-    bool anyFixed = false;
-
-    for (int i = 1; i <= faceMap.Extent(); i++)
-    {
-      TopoDS_Face                face = TopoDS::Face(faceMap(i));
-      TopTools_IndexedMapOfShape edgeMap;
-      TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
-      for (int j = 1; j <= edgeMap.Extent(); j++)
-      {
-        TopoDS_Edge                         edge = TopoDS::Edge(edgeMap(j));
-        Handle(ShapeUpgrade_FixSmallCurves) fsc  = new ShapeUpgrade_FixSmallCurves();
-        fsc->SetPrecision(tolerance);
-        fsc->Init(edge, face);
-        anyFixed = true;
-      }
-    }
-    // Return original shape (fix is in-place via shape healing)
-    return new OCCTShape(shape->shape);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, double tolerance)
-{
-  if (!shape)
-    return nullptr;
-  try
-  {
-    TopTools_IndexedMapOfShape faceMap;
-    TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-    if (faceMap.Extent() == 0)
-      return nullptr;
-
-    for (int i = 1; i <= faceMap.Extent(); i++)
-    {
-      TopoDS_Face                face = TopoDS::Face(faceMap(i));
-      TopTools_IndexedMapOfShape edgeMap;
-      TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
-      for (int j = 1; j <= edgeMap.Extent(); j++)
-      {
-        TopoDS_Edge                               edge = TopoDS::Edge(edgeMap(j));
-        Handle(ShapeUpgrade_FixSmallBezierCurves) fsbc = new ShapeUpgrade_FixSmallBezierCurves();
-        fsbc->SetPrecision(tolerance);
-        fsbc->Init(edge, face);
-      }
-    }
-    return new OCCTShape(shape->shape);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
+// OCCTShapeUpgradeFixSmallCurves / OCCTShapeUpgradeFixSmallBezierCurves removed (#1491): both were
+// complete no-ops that unconditionally handed back the caller's own unmodified shape.
+// ShapeUpgrade_FixSmallCurves/FixSmallBezierCurves have no standalone Perform()/Compute() at all;
+// per their own headers they are internal helper "tool" classes meant only to be plugged into a
+// driving class via SetFixSmallCurveTool. Investigated wiring ShapeFix_Wireframe in, since the
+// removed comment above claimed that was the intended mechanism -- it was not: ShapeFix_Wireframe
+// (ShapeUpgrade/../ShapeFix/ShapeFix_Wireframe.cxx) never references either class anywhere. The
+// only two real OCCT callers are ShapeUpgrade_WireDivide (which constructs a default
+// ShapeUpgrade_FixSmallCurves in its own constructor, but only reaches Approx() as a byproduct of
+// an active 3D/2D curve *split* actually producing a too-small leftover segment, unreachable from a
+// tolerance-only entry point with no splitting criterion to drive it) and
+// ShapeUpgrade_ShapeConvertToBezier (which wires FixSmallBezierCurves into its own internal
+// WireDivide automatically -- already exercised correctly by the existing OCCTShapeConvertToBezier
+// / Shape.convertToBezier()). The one genuinely standalone "fix small edges" OCCT operation is a
+// different class, ShapeFix_Wire::FixSmall via ShapeFix_Wireframe::FixSmallEdges(), already wrapped
+// faithfully as OCCTShapeFixSmallEdges / Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:). See
+// the #1491 PR body for the full investigation.
 
 OCCTShapeRef _Nullable OCCTShapeUpgradeConvertCurves3dToBezier(OCCTShapeRef shape,
                                                                bool         lineMode,

@@ -72,14 +72,17 @@ struct Issue232BoundsTests {
             let a = Double(i) * .pi / 3 + .pi / 6
             return SIMD2(r * cos(a), r * sin(a))
         }
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5)
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
         guard let hex = Wire.polygon(pts),
             let prism = Shape.extrude(profile: hex, direction: SIMD3(0, 0, 1), length: depth),
             let bore = Shape.cylinder(
-                at: SIMD3(0, 0, -1), direction: SIMD3(0, 0, 1), radius: 5, height: depth + 2),
+                at: SIMD3(0, 0, -1), direction: SIMD3(0, 0, 1),
+                radius: spec.minorDiameter / 2, height: depth + 2),
             let block = prism.subtracting(bore),
             let nut = block.threadedHole(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                spec: ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5), depth: depth),
+                spec: spec, depth: depth),
             let z = Self.meshZExtent(nut)
         else {
             Issue.record("build/mesh failed")

@@ -24,6 +24,10 @@ public final class TObjApplication: @unchecked Sendable {
         self.ref = ref
     }
 
+    deinit {
+        OCCTTObjApplicationRelease(ref)
+    }
+
     /// Get the singleton TObj_Application instance.
     public static var shared: TObjApplication? {
         guard let ref = OCCTTObjApplicationGetInstance() else { return nil }

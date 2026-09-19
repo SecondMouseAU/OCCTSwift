@@ -165,4 +165,49 @@ struct SurfaceAnalyticTests {
             #expect(abs(maxK - 1.0 / r) < 1e-10)  // 1/r around circumference
         }
     }
+
+    /// #1437: `OCCTSurfaceGetPrincipalCurvatures` had the identical dirMin/dirMax transposition as
+    /// its sibling `OCCTFaceGetPrincipalCurvatures` (`OCCTBridge_Properties.mm`), both pairing the
+    /// first `CurvatureDirections` output with the wrong curvature. `cylinderPrincipalCurvatures`
+    /// above only asserts magnitudes, never directions, so the swap went uncaught here too.
+    ///
+    /// The fix makes `kMin`/`dirMin` and `kMax`/`dirMax` internally consistent (each direction
+    /// paired with its own curvature value), which is the property this test actually checks —
+    /// **not** a fixed claim about which of `dirMin`/`dirMax` is axial. A first version of this
+    /// test assumed `dirMin` is always axial, reasoning that axial curvature (0) is numerically
+    /// smaller than circumferential (~1/r). That assumption is wrong: `MinCurvature()`/
+    /// `MaxCurvature()` are signed, and a ground-truth probe against the pinned kernel (a bare
+    /// `Geom_CylindricalSurface`, r=4, same axis as here) shows the circumferential curvature
+    /// comes back **negative** (-0.25) under OCCT's chosen normal convention, making it the true
+    /// minimum, with axial (exactly 0) the true maximum — the reverse of the naive assumption.
+    /// So this test locates the axial/circumferential pair by curvature magnitude instead of by
+    /// position, and confirms each pairing is self-consistent (whichever curvature is ~0 has the
+    /// ~Z direction; whichever is ~1/r has the in-plane direction), which is exactly what the
+    /// swap being fixed makes true and what being transposed would make false.
+    @Test("Cylinder principal curvature directions are not transposed")
+    func cylinderPrincipalCurvatureDirectionsNotTransposed() throws {
+        let r: Double = 4.0
+        let cyl = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: r))
+        let pc = try #require(cyl.principalCurvatures(atU: 0.5, v: 1.0))
+
+        // Identify the axial pair by curvature magnitude (~0), not by min/max position.
+        let (axialCurv, axialDir, circumCurv, circumDir): (Double, SIMD3<Double>, Double, SIMD3<Double>) =
+            abs(pc.kMin) < abs(pc.kMax)
+            ? (pc.kMin, pc.dirMin, pc.kMax, pc.dirMax)
+            : (pc.kMax, pc.dirMax, pc.kMin, pc.dirMin)
+
+        #expect(abs(axialCurv) < 1e-10, "the near-zero curvature should be axial, got \(axialCurv)")
+        #expect(
+            abs(abs(axialDir.z) - 1.0) < 1e-10,
+            "the direction paired with the near-zero curvature should be axial (|z| ~ 1), got \(axialDir)"
+        )
+        #expect(
+            abs(abs(circumCurv) - 1.0 / r) < 1e-10,
+            "the other curvature should be circumferential (~1/r), got \(circumCurv)"
+        )
+        #expect(
+            abs(circumDir.z) < 1e-10,
+            "the direction paired with the circumferential curvature should lie in the XY plane (z ~ 0), got \(circumDir)"
+        )
+    }
 }

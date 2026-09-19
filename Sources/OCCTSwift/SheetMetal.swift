@@ -22,7 +22,12 @@ import Foundation
 ///   classification is the *outside* corner of an L-bracket (the outer
 ///   surface of the fold). The inner corner stays sharp. Real sheet-metal
 ///   parts want inner radius `r` and outer radius `r + thickness`; modeling
-///   that requires a different construction and is not yet implemented.
+///   that requires a different construction and is not yet implemented. As
+///   a consequence, `Bend.outsideRadius` and `Bend.materialThicknessAtBend`
+///   are accepted (for forward compatibility) but not yet read anywhere in
+///   `Builder.build()`; only `Bend.insideRadius` (the concave path's fillet
+///   radius) and the Builder's global `thickness` (the convex path's
+///   bend-material prism radius) affect the built shape (#1565).
 /// - **Stepped seams (v0.151 limitation, lifted in v0.153)**, flanges
 ///   meeting along less than their full seam-direction extent (e.g. a narrow
 ///   upright on a wider base) now build cleanly. The builder splits the
@@ -82,11 +87,13 @@ public enum SheetMetal {
     /// - `.convex`: the metal folds back on the opposite side (interior dihedral
     ///   > 180°, reflex angle). Example: a Z-section's middle bend, where the
     ///   third flange folds away from the first.
-    /// - `.auto`: inferred from flange-body positions. The Builder uses
-    ///   `concave` if the two flanges' body centroids sit on positions that
-    ///   make the bend natural (b's centroid is on a's `+normal` side); else
-    ///   `convex`. Almost every input matches the inference; explicitly
-    ///   specify only when the geometry is symmetric or you want to override.
+    /// - `.auto`: if the owning `Bend`'s `angle` is non-nil and non-zero, its sign decides
+    ///   directly (positive → concave, negative → convex, matching `Bend.angle`'s own doc
+    ///   comment), overriding geometric inference. Otherwise inferred from flange-body positions:
+    ///   the Builder uses `concave` if the two flanges' body centroids sit on positions that make
+    ///   the bend natural (b's centroid is on a's `+normal` side); else `convex`. Almost every
+    ///   input matches the inference; explicitly specify `angle` or `direction` only when the
+    ///   geometry is symmetric or you want to override.
     public enum BendDirection: Sendable, Equatable {
         case auto
         case concave
@@ -104,16 +111,22 @@ public enum SheetMetal {
     ///   negative for convex bends (Z's back corner). `nil` means "infer
     ///   from the flange placements".
     ///
-    /// `insideRadius` and `outsideRadius` are independent. The default
-    /// "both sides radiused" sheet-metal bend has
-    /// `outsideRadius == insideRadius + materialThicknessAtBend`. For an
-    /// extruded-angle profile (sharp inside, rounded outside, common in
-    /// turned-edge or stamped parts) set `insideRadius = 0` and
-    /// `outsideRadius` to the desired outer radius.
+    /// This sign only drives `direction` resolution when `direction` is left at its default
+    /// `.auto` (a non-nil, non-zero `angle` then overrides the geometric inference, see
+    /// `BendDirection.auto`'s doc comment); an explicit `direction: .concave`/`.convex` always
+    /// wins outright, whatever `angle` says. `angle` itself is not otherwise read: it does not
+    /// currently constrain the fillet/bend-material geometry to that literal angle, only its sign
+    /// (when used) picks concave vs. convex.
     ///
-    /// `materialThicknessAtBend` allows the metal in the bend region to be
-    /// thinner than the flange thickness, common in etched parts, where a
-    /// thinned bend line allows tighter folds without cracking.
+    /// `outsideRadius` and `materialThicknessAtBend` are accepted on every `Bend` for forward
+    /// compatibility, but **neither is read by `Builder.build()` today**, unlike `angle`'s sign
+    /// (see above), which is. The concave path always fillets the seam edge with `insideRadius`
+    /// alone (OCCT's own single radius on that edge, see the file's top-level "Limitations"
+    /// section), and the convex path's bend-material prism radius is always the Builder's global
+    /// `thickness`, never `outsideRadius` or `materialThicknessAtBend`. Setting either field
+    /// changes nothing about the built shape; a caller wanting an extruded-angle profile (sharp
+    /// inside, rounded outside) or a thinned bend line (etched parts) cannot get that effect from
+    /// this Builder yet.
     public struct Bend: Sendable {
         public let fromFlangeID: String
         public let toFlangeID: String
@@ -121,7 +134,9 @@ public enum SheetMetal {
         /// Bend angle in radians.
         ///
         /// 0 = flat continuation, ±π = closed sheet. Positive = concave; negative = convex. `nil` = infer from
-        /// flange placements.
+        /// flange placements. When `direction` is `.auto` (the default), a non-nil, non-zero
+        /// `angle` decides concave vs. convex by this sign, overriding the geometric inference;
+        /// set `direction` explicitly instead if you want to override `angle`'s sign too.
         public let angle: Double?
 
         /// Inside bend radius (the smaller, concave radius from inside the
@@ -134,12 +149,18 @@ public enum SheetMetal {
         /// metal).
         ///
         /// `nil` means use the natural sheet-metal default `insideRadius + materialThicknessAtBend`.
+        ///
+        /// **Not yet read by `Builder.build()`** (see `Bend`'s own doc comment above); setting
+        /// this has no effect on the built shape today.
         public let outsideRadius: Double?
 
         /// Material thickness through the bend region.
         ///
         /// `nil` means use the Builder's global `thickness`. For etched parts, set to a
         /// fraction of the flange thickness.
+        ///
+        /// **Not yet read by `Builder.build()`** (see `Bend`'s own doc comment above); setting
+        /// this has no effect on the built shape today.
         public let materialThicknessAtBend: Double?
 
         /// Explicit direction override; defaults to `.auto`.
@@ -419,9 +440,15 @@ public enum SheetMetal {
 
         /// Resolve the bend direction.
         ///
-        /// If the user pinned a direction explicitly, honour it. Otherwise infer from flange-body
-        /// positions: a bend is concave when b's body centroid sits on a's `+normal` side (the two flanges' bodies overlap in volume
-        /// around the seam, like an L-bracket); convex otherwise.
+        /// If the user pinned a direction explicitly, honour it. Otherwise, if `bend.angle` is
+        /// non-nil and non-zero, its documented sign convention (positive = concave, negative =
+        /// convex, see `Bend`'s doc comment) decides directly, overriding geometric inference; a
+        /// caller who set `angle` gets exactly the direction the sign promises regardless of how
+        /// the flange bodies happen to be placed. Otherwise (`angle` nil or `0`, which is
+        /// documented as "flat continuation" and has no concave/convex sign of its own) infer from
+        /// flange-body positions: a bend is concave when b's body centroid sits on a's `+normal`
+        /// side (the two flanges' bodies overlap in volume around the seam, like an L-bracket);
+        /// convex otherwise.
         fileprivate static func resolvedDirection(
             bend: Bend,
             a: Flange, b: Flange,
@@ -431,6 +458,9 @@ public enum SheetMetal {
             case .concave: return .concave
             case .convex: return .convex
             case .auto:
+                if let angle = bend.angle, angle != 0 {
+                    return angle > 0 ? .concave : .convex
+                }
                 let midA = bodyMidpoint(of: a, thickness: thickness)
                 let midB = bodyMidpoint(of: b, thickness: thickness)
                 let projection = Vector3DMath.dot(midB - midA, a.normal)
@@ -679,8 +709,10 @@ public enum SheetMetal {
             let toFlangeID: String
             let radius: Double
             let seamUnit: SIMD3<Double>
-            /// `true` if the seam direction in flange A's profile aligns
-            /// with `uAxis`; `false` if it aligns with `vAxis`.
+            /// Which of flange A's profile axes the seam direction aligns with.
+            ///
+            /// `true` for `uAxis`, `false` for `vAxis`. Meaningless (and unread) when the seam
+            /// aligns with neither, the "no split" fallback below (#1565).
             let aSeamAlongU: Bool
             let bSeamAlongU: Bool
             /// A's seam-edge profile-coord range along its split axis.
@@ -713,10 +745,36 @@ public enum SheetMetal {
                 throw BuildError.parallelFlangesHaveNoSeam(
                     fromID: bend.fromFlangeID, toID: bend.toFlangeID)
             }
-            let aSeamAlongU = Self.axisParallel(seamUnit, to: a.uAxis)
-            let bSeamAlongU = Self.axisParallel(seamUnit, to: b.uAxis)
+            let aAlongU = Self.axisParallel(seamUnit, to: a.uAxis)
+            let aAlongV = Self.axisParallel(seamUnit, to: a.vAxis)
+            let bAlongU = Self.axisParallel(seamUnit, to: b.uAxis)
+            let bAlongV = Self.axisParallel(seamUnit, to: b.vAxis)
+            let aSeamAlongU = aAlongU
+            let bSeamAlongU = bAlongU
             let aRange = Self.profileRange(of: a, alongU: aSeamAlongU)
             let bRange = Self.profileRange(of: b, alongU: bSeamAlongU)
+
+            // If either flange's seam direction aligns with neither its own u nor v axis, there's
+            // no meaningful profile-coordinate axis to project the seam intersection onto for
+            // that flange (the doc comment above documents exactly this as a "no split" fallback).
+            // Return unsplit (full-extent) ranges for both flanges rather than projecting onto a
+            // profile axis the seam isn't actually parallel to, which `collectSplitsFor` reads as
+            // "this bend needs no split", the v0.151 single-fillet path.
+            guard aAlongU || aAlongV, bAlongU || bAlongV else {
+                return BendIntersection(
+                    bend: bend,
+                    fromFlangeID: bend.fromFlangeID,
+                    toFlangeID: bend.toFlangeID,
+                    radius: bend.radius,
+                    seamUnit: seamUnit,
+                    aSeamAlongU: aSeamAlongU,
+                    bSeamAlongU: bSeamAlongU,
+                    aRange: aRange,
+                    bRange: bRange,
+                    aIntersection: aRange,
+                    bIntersection: bRange)
+            }
+
             let aProfileAxis = aSeamAlongU ? a.uAxis : a.vAxis
             let bProfileAxis = bSeamAlongU ? b.uAxis : b.vAxis
 

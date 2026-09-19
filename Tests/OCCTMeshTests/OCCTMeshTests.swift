@@ -401,6 +401,36 @@ struct DrawerMeshTests {
             #expect(mesh.triangleCount == 12)
         }
     }
+
+    @Test("Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
+    func relativeDeflectionScalesWithShapeSize() {
+        // A drawer's TypeOfDeflection() default is .relative, and DeviationCoefficient() (default
+        // ~0.001) is documented as a coefficient of the shape's own bounding-box diagonal, not a
+        // usable absolute deflection on its own -- OCCTDrawerGetEffectiveDeflection used to return
+        // the bare coefficient with no scaling step, so it behaved as a fixed absolute deflection
+        // regardless of the shape's real-world size.
+        //
+        // With the fix, the same relative coefficient produces roughly scale-invariant
+        // tessellation density: a 50x-larger sphere should need a broadly similar triangle count,
+        // not 50x more. Without the fix, the raw ~0.001 coefficient stays a constant *absolute*
+        // deflection, so the larger sphere (needing the same absolute chordal tolerance over a
+        // much bigger surface) needs dramatically more triangles.
+        let smallSphere = Shape.sphere(radius: 1)!
+        let largeSphere = Shape.sphere(radius: 50)!
+        let drawer = DisplayDrawer()
+
+        let smallMesh = smallSphere.shadedMesh(drawer: drawer)
+        let largeMesh = largeSphere.shadedMesh(drawer: drawer)
+
+        #expect(smallMesh != nil)
+        #expect(largeMesh != nil)
+        if let small = smallMesh, let large = largeMesh, small.triangleCount > 0 {
+            // large/small triangle count ratio should stay well under the 50x radius ratio;
+            // the un-scaled bug makes it grow roughly linearly with shape size instead.
+            let ratio = Double(large.triangleCount) / Double(small.triangleCount)
+            #expect(ratio < 10)
+        }
+    }
 }
 
 // MARK: - Overload-Pair Deinterleave Parity Tests (#1224)
@@ -1016,12 +1046,41 @@ struct MeshViewCountsTests {
     func meshCountsAfterIncrementalMesh() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            // Generate triangulation via incremental mesher.
+            // Generate triangulation via incremental mesher BEFORE building the graph: construction
+            // ingests the existing triangulation into the persistent tier, not the runtime cache.
             _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
             let graph = BRepGraph(shape: box)
             if let graph {
                 // After meshing, persistent triangulation tier should report nonzero.
                 #expect(graph.triangulationCount + graph.polygon3DCount >= 0)
+                // #1547: meshFaceActiveTriangulationRepId must resolve mesh data that lives only in
+                // the persistent tier, matching faceHasTriangulation (which already does).
+                #expect(graph.faceHasTriangulation(0) == true)
+                #expect(graph.meshFaceActiveTriangulationRepId(0) != nil)
+            }
+        }
+    }
+
+    @Test("Mesh edge polygon3D rep id resolves the persistent tier (#1547)")
+    func meshEdgePolygon3DRepIdResolvesPersistentTier() {
+        let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0)]
+        guard let poly = Polygon3D.create(points: pts) else {
+            Issue.record("Polygon3D.create nil")
+            return
+        }
+        let box = Shape.box(width: 10, height: 10, depth: 10)
+        if let box {
+            let graph = BRepGraph(shape: box)
+            if let graph {
+                guard let repId = graph.createPolygon3DRep(poly) else {
+                    Issue.record("createPolygon3DRep nil")
+                    return
+                }
+                // Write directly into the persistent-tier slot (EdgeDef.Polygon3DRepId) rather than
+                // the runtime cache (contrast createAndBindPolygon3DRep's setCachedPolygon3D above).
+                graph.setEdgePolygon3DRepId(0, polygon3DRepId: repId)
+                #expect(graph.edgeHasPolygon3D(0) == true)
+                #expect(graph.meshEdgePolygon3DRepId(0) != nil)
             }
         }
     }

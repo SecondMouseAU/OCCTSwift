@@ -1,0 +1,99 @@
+Transcript of Scripts/repro/1652-brepgraph-noop-setters/probe.mm, run against the pinned
+kernel (Libraries/OCCT.xcframework/macos-arm64, OCCT 8.0.1). No carried patch touches
+BRepGraph, so the locally built xcframework and the v3.0.0 pinned asset agree here:
+  grep -l BRepGraph Scripts/patches/*.patch  ->  no matches.
+
+Command:
+  clang++ -std=c++17 -ObjC++ -w \
+    -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+    -L"Libraries/OCCT.xcframework/macos-arm64" \
+    -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+    Scripts/repro/1652-brepgraph-noop-setters/probe.mm -o /tmp/occt_probe_1652
+  /tmp/occt_probe_1652
+
+Run on 2026-09-08 (UTC).
+
+----------------------------------------------------------------------
+
+OCCT 8.0.1, BRepGraph reference-location / coedge-UV / polygon-on-tri ground truth (#1652)
+
+=== A. Reference storage structs: which carry a LocalLocation field? ===
+  BRepGraphInc::ShellRef      LocalLocation: no
+  BRepGraphInc::FaceRef       LocalLocation: no
+  BRepGraphInc::WireRef       LocalLocation: no
+  BRepGraphInc::VertexRef     LocalLocation: no
+  BRepGraphInc::SolidRef      LocalLocation: no
+  BRepGraphInc::ChildRef      LocalLocation: YES
+  BRepGraphInc::OccurrenceRef LocalLocation: YES
+  BRepGraphInc::CoEdgeRef: does not exist as a type; BRepGraph_RefId::Kind has no
+    CoEdge member, so there is no coedge reference to carry a location at all.
+
+  Reference kinds BRepGraph_RefId::IsValidKind accepts:
+    0=Shell 1=Face 2=Wire 3=Vertex 4=Solid 5=Child 6=Occurrence
+
+=== B. CoEdge definition: is there a UV box to set? ===
+  BRepGraphInc::CoEdgeDef UVBox:   no
+  BRepGraphInc::CoEdgeDef UV1:     no
+  BRepGraphInc::CoEdgeDef UVFirst: no
+  BRepGraphInc::CoEdgeDef UVPoints:no
+
+=== C. Polygon-on-triangulation rep: is there a triangulation id to rebind? ===
+  BRepGraphInc::CoEdgePolygonOnTriRep TriangulationRepId: no
+  BRepGraphInc::CoEdgePolygonOnTriRep TriangulationId:    no
+  (For contrast, BRepGraphInc::FaceDef TriangulationRepId: YES. Faces own the
+   triangulation, and SetPersistentPolygonOnTri resolves it through
+   CoEdgeDef.FaceId -> FaceDef.TriangulationRepId.)
+
+=== D. Runtime: a box graph's references, read back through Refs().Gen() ===
+  graph: solids=1 shells=1 faces=6 wires=6 edges=12 coedges=24 vertices=8
+  Shell       refs: 1
+  Gen().LocalLocation(Shell, 0)                  identity=YES translation=(0.000, 0.000, 0.000)
+  Face        refs: 6
+  Gen().LocalLocation(Face, 0)                   identity=YES translation=(0.000, 0.000, 0.000)
+  Wire        refs: 6
+  Gen().LocalLocation(Wire, 0)                   identity=YES translation=(0.000, 0.000, 0.000)
+  Vertex      refs: 24
+  Gen().LocalLocation(Vertex, 0)                 identity=YES translation=(0.000, 0.000, 0.000)
+  Solid       refs: 0
+  Child       refs: 0
+  Occurrence  refs: 0
+
+=== E. Occurrence reference: does the one real per-topology-shaped writer round-trip? ===
+  parent product valid=YES  child product valid=YES
+  Products().Append -> occurrence valid=YES  occurrenceRef valid=YES (index 1)
+  after Append with translation (5, 6, 7):
+  Refs().Occurrences().Entry().LocalLocation     identity=no  translation=(5.000, 6.000, 7.000)
+  Refs().Gen().LocalLocation(Occurrence)         identity=no  translation=(5.000, 6.000, 7.000)
+  after Occurrences().SetRefLocalLocation with translation (11, 12, 13):
+  Refs().Occurrences().Entry().LocalLocation     identity=no  translation=(11.000, 12.000, 13.000)
+  Refs().Gen().LocalLocation(Occurrence)         identity=no  translation=(11.000, 12.000, 13.000)
+  Topo().Occurrences().OccurrenceLocation(def)   identity=no  translation=(11.000, 12.000, 13.000)
+
+=== F. Child reference: the other real writer, for comparison ===
+  compound valid=YES
+  childRef valid=YES (index 1)
+  after Gen().SetChildRefLocalLocation with translation (1, 2, 3):
+  Refs().Children().Entry().LocalLocation        identity=no  translation=(1.000, 2.000, 3.000)
+  Refs().Gen().LocalLocation(Child)              identity=no  translation=(1.000, 2.000, 3.000)
+
+=== G. CoEdge UV endpoints: derived from the PCurve, or stored? ===
+  coedge 0 before: UV1=(0.000, 0.000) UV2=(10.000, 0.000) range=(0.000, 10.000)
+  coedge 0 after SetPCurve(line through (2,3) along +u, 0..4):
+                   UV1=(2.000, 3.000) UV2=(6.000, 3.000) range=(0.000, 4.000)
+  -> the UV endpoints track the PCurve, so a per-coedge UV box would have nothing
+     to store and no reader that would consult it.
+
+=== H. Polygon-on-triangulation: how is the triangulation bound? ===
+  before: Mesh().Persistent().CoEdges().HasPolygonOnTriangulation = no
+  after SetPersistentPolygonOnTri(handle): Has... = YES  same handle back = YES
+  -> binding is by handle on the coedge. The rep record (CoEdgePolygonOnTriRep) is
+     {ParentCoEdgeId, Polygon}; there is no triangulation id on it to rebind.
+
+=== I. Which coedge PCurve transitions are observable, for the replacement test ===
+  HasPCurve(coedge 0) on a freshly ingested box: YES
+  HasPCurve after SetPCurve(null):               no
+  HasPCurve after SetPCurve(line):               YES
+  CoEdges().Add(edge 0, face 0, line, 0..4): valid=YES index=24, coedges 24 -> 25
+  Range(added) = (0.000, 4.000), distinct from the ingested coedges' (0, 10)
+
+Done.

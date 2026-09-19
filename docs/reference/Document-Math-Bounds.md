@@ -860,7 +860,7 @@ Heap allocated bytes for the current process.
 public static var heapUsage: Int64 { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo_Heap)` (via `OCCTMemInfoHeapUsage`).
+- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo::MemHeapUsage)` (via `OCCTMemInfoHeapUsage`).
 
 ---
 
@@ -872,7 +872,7 @@ Working set (resident memory) in bytes.
 public static var workingSet: Int64 { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo_WSet)` (via `OCCTMemInfoWorkingSet`).
+- **OCCT:** `OSD_MemInfo::Value(OSD_MemInfo::MemWorkingSet)` (via `OCCTMemInfoWorkingSet`).
 
 ---
 
@@ -884,7 +884,7 @@ Heap usage as a precise `Double` in mebibytes.
 public static var heapUsageMiB: Double { get }
 ```
 
-- **OCCT:** `OSD_MemInfo::ValueMiB(OSD_MemInfo_Heap)` (via `OCCTMemInfoHeapUsageMiB`).
+- **OCCT:** `OSD_MemInfo::ValuePreciseMiB(OSD_MemInfo::MemHeapUsage)` (via `OCCTMemInfoHeapUsageMiB`).
 
 ---
 
@@ -2197,7 +2197,7 @@ public static var angular: Double { get }
 
 ### `OCCTPrecision.intersection`
 
-Tolerance used by intersection algorithms.
+Tolerance used by intersection algorithms. `Precision::Confusion() / 100`, that is 1×10⁻⁹.
 
 ```swift
 public static var intersection: Double { get }
@@ -2209,7 +2209,8 @@ public static var intersection: Double { get }
 
 ### `OCCTPrecision.approximation`
 
-Tolerance used by approximation algorithms.
+Tolerance used by approximation algorithms. `Precision::Confusion() * 10`, that is 1×10⁻⁶, so it
+is deliberately looser than ``confusion``.
 
 ```swift
 public static var approximation: Double { get }
@@ -2233,11 +2234,16 @@ public static var infinite: Double { get }
 
 ### `OCCTPrecision.pConfusion`
 
-Parametric-space confusion tolerance (scaled by curve-space bounds).
+Parametric-space confusion tolerance: a constant 1×10⁻⁹.
 
 ```swift
 public static var pConfusion: Double { get }
 ```
+
+`Precision::PConfusion()` is ``confusion`` converted to parametric space for a curve whose mean
+tangent length is OCCT's default of 100, so it is `Precision::Confusion() / 100` and depends on
+nothing the caller passes. This entry said "scaled by curve-space bounds" until #1399 measured
+it; the overload that does take a tangent length, `Precision::PConfusion(T)`, is not wrapped.
 
 - **OCCT:** `Precision::PConfusion()` (via `OCCTPrecisionPConfusion`).
 
@@ -2273,6 +2279,7 @@ public struct ConicQuadResult {
     public let points: [SIMD3<Double>]
     public let params: [Double]
     public let isParallel: Bool
+    public let isInQuadric: Bool
 }
 ```
 
@@ -2281,6 +2288,7 @@ public struct ConicQuadResult {
 | `points` | Intersection points in 3D |
 | `params` | Parameter on the line for each point, aligned index-for-index with `points` |
 | `isParallel` | The line is parallel to the quadric surface |
+| `isInQuadric` | Only meaningful when `isParallel` is `true`: the line lies entirely within the surface (an infinite intersection), rather than merely being parallel and disjoint from it (#1582). `points`/`params` stay empty either way. Only `linePlane(...)` computes this (mirrors OCCT's own `IntAna_IntConicQuad::IsInQuadric()`); `lineSphere(...)` always reports `false`. |
 
 ---
 
@@ -2299,13 +2307,17 @@ public static func linePlane(lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
                               planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> ConicQuadResult
 ```
 
-- **Returns:** Up to 1 intersection point; `isParallel` is `true` when the line lies in or is parallel to the plane.
+- **Returns:** Up to 1 intersection point; `isParallel` is `true` when the line lies in or is parallel to the plane. When `isParallel` is `true`, check `isInQuadric` to tell a line embedded entirely within the plane apart from one that is merely parallel and disjoint (#1582); both otherwise report the identical empty `points`/`params`.
 - **OCCT:** `IntAna_IntConicQuad` (via `OCCTIntAnaLineQuad`).
 - **Example:**
   ```swift
   let r = IntAna.linePlane(lineOrigin: SIMD3(0, 0, 5), lineDir: SIMD3(0, 0, -1),
                             planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
   // r.points[0] ≈ (0, 0, 0)
+
+  let embedded = IntAna.linePlane(lineOrigin: SIMD3(1, 2, 0), lineDir: SIMD3(1, 0, 0),
+                                   planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+  // embedded.isParallel == true, embedded.isInQuadric == true (the line lies in the plane)
   ```
 
 ---
@@ -2325,6 +2337,27 @@ public static func lineSphere(lineOrigin: SIMD3<Double>, lineDir: SIMD3<Double>,
 
 ---
 
+### `IntAna.ResultType`
+
+Which shape `IntAna_QuadQuadGeo` actually reported, mirroring OCCT's `IntAna_ResultType`.
+
+```swift
+public enum ResultType: Int32, Sendable {
+    case point = 0
+    case line = 1
+    case circle = 2
+    case pointAndCircle = 3
+    case ellipse = 4
+    case parabola = 5
+    case hyperbola = 6
+    case empty = 7
+    case same = 8
+    case noGeometricSolution = 9
+}
+```
+
+---
+
 ### `IntAna.QuadQuadResult`
 
 Result of a quadric-quadric intersection.
@@ -2332,14 +2365,25 @@ Result of a quadric-quadric intersection.
 ```swift
 public struct QuadQuadResult {
     public let count: Int
+    public let resultType: ResultType
     public let lines: [(origin: SIMD3<Double>, direction: SIMD3<Double>)]
     public let points: [SIMD3<Double>]
+    public let circles: [(center: SIMD3<Double>, axis: SIMD3<Double>, radius: Double)]
 }
 ```
 
-- `count`: number of solutions `IntAna_QuadQuadGeo` found.
-- `lines`: solution lines (origin + direction), populated for a plane-plane intersection.
-- `points`: solution points, populated for e.g. a plane-sphere intersection's circle centre.
+- `count`: number of solutions `IntAna_QuadQuadGeo` found. `resultType` is only meaningful when
+  this is at least 1.
+- `resultType`: the kind of intersection OCCT reported (`.line` for plane-plane, `.point` or
+  `.circle` for plane-sphere).
+- `lines`: solution lines (origin + direction), populated when `resultType == .line`
+  (plane-plane).
+- `points`: solution points, populated when `resultType == .point` (e.g. a plane tangent to a
+  sphere).
+- `circles`: solution circles (center, axis, radius), populated when `resultType == .circle`
+  (e.g. a plane secant to a sphere — the common case, #1495: `IntAna_QuadQuadGeo::Point()`
+  silently returns `(0, 0, 0)` for this case in OCCT itself, so this wrapper reads `Circle()`
+  instead).
 
 *(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
 
@@ -2376,7 +2420,15 @@ public static func planeSphere(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Do
                                 radius: Double) -> QuadQuadResult
 ```
 
+- **Returns:** `resultType == .circle` (center/axis/radius in `circles`) for the ordinary secant
+  case, `.point` (in `points`) only when the plane is tangent to the sphere.
 - **OCCT:** `IntAna_QuadQuadGeo` plane-sphere (via `OCCTIntAnaPlaneSphere`).
+- **Example:**
+  ```swift
+  let r = IntAna.planeSphere(planeOrigin: SIMD3(0, 0, 3), planeNormal: SIMD3(0, 0, 1),
+                              sphereCenter: .zero, sphereAxis: SIMD3(0, 0, 1), radius: 10)
+  // r.resultType == .circle, r.circles[0].center ≈ (0, 0, 3), r.circles[0].radius ≈ 9.539
+  ```
 
 ---
 
@@ -2593,7 +2645,7 @@ public static func toBSpline2d(segments: [[SIMD2<Double>]]) -> BezierToBSpline2d
 
 - **Parameters:** `segments`, each element is the ordered 2D control points of one Bezier segment; all segments must have the same number of control points.
 - **Returns:** The merged 2D BSpline data, or `nil` on failure.
-- **OCCT:** `Convert_CompPolynomialToPoles` / `Convert_CompBezierCurves2dToBSplineCurve2d` (via `OCCTConvertCompBezier2dToBSpline2d`).
+- **OCCT:** `Convert_CompBezierCurves2dToBSplineCurve2d` (via `OCCTConvertCompBezier2dToBSpline2d`).
 
 ---
 

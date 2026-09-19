@@ -740,7 +740,10 @@ OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef sur
 
 /// Contour type enum: 0=Line, 1=Circle, 2=Walking, 3=Restriction
 /// Compute analytical contours on a sphere with a view direction.
-/// @return Number of contours, or -1 on failure. If circle, outCx/Cy/Cz/Cr are filled.
+/// @return Number of contours, or -1 on failure. If circle, outData[0..3] holds
+///   center xyz + radius. `Contap_ContAna::Perform(gp_Sphere, gp_Dir)` only ever
+///   produces a single contour, so outData needs 8 doubles (4 used).
+/// @param outData Caller-owned buffer of at least 8 doubles.
 int32_t OCCTContapSphereDir(double   cx,
                             double   cy,
                             double   cz,
@@ -752,6 +755,10 @@ int32_t OCCTContapSphereDir(double   cx,
                             double*  outData);
 
 /// Compute analytical contours on a cylinder with a view direction.
+/// @return Number of contours (0 or 2; never 1 -- see #1416), or -1 on failure. When 2 (the
+///   ordinary, non-degenerate case), outData holds BOTH tangent lines: line 1 location xyz +
+///   direction xyz at outData[0..5], line 2 at outData[6..11].
+/// @param outData Caller-owned buffer of at least 12 doubles.
 int32_t OCCTContapCylinderDir(double   px,
                               double   py,
                               double   pz,
@@ -766,6 +773,10 @@ int32_t OCCTContapCylinderDir(double   px,
                               double*  outData);
 
 /// Compute analytical contours on a sphere with an eye point (perspective).
+/// @return Number of contours, or -1 on failure. `Contap_ContAna::Perform(gp_Sphere, gp_Pnt)`
+///   only ever produces a single contour (a circle, outData[0..3] center xyz + radius), so
+///   outData needs 8 doubles (4 used).
+/// @param outData Caller-owned buffer of at least 8 doubles.
 int32_t OCCTContapSphereEye(double   cx,
                             double   cy,
                             double   cz,
@@ -801,6 +812,66 @@ void OCCTContapContourLinePoint(OCCTContapContourRef ref,
                                 double*              z);
 int  OCCTContapContourLineType(OCCTContapContourRef ref, int lineIndex);
 void OCCTContapContourRelease(OCCTContapContourRef ref);
+
+// --- Contap_Line geometry for the non-walking contour types, and Contap_Point vertices (#1635) ---
+//
+// Contap_Line::NbPnts()/Point() throw Standard_DomainError unless the line is Contap_Walking, so
+// OCCTContapContourLinePointCount/LinePoint above answer for a traced contour only. An ANALYTIC
+// contour, which is what a cylinder or a sphere produces, carries its geometry in Line(), Circle()
+// or Arc() instead, and every type carries NbVertex()/Vertex(). Each accessor below refuses a line
+// of the wrong type rather than returning a value, because Contap_Line refuses it too.
+
+/// A vertex on a contour line (Contap_Point). Valid on every Contap_IType.
+typedef struct
+{
+  double x, y, z;         // Value()
+  double u, v;            // Parameters(): the vertex in the face's UV space
+  double parameterOnLine; // ParameterOnLine()
+  double parameterOnArc;  // ParameterOnArc(), which throws unless isOnArc; NaN when !isOnArc
+  bool   isOnArc;         // IsOnArc()
+  bool   isVertex;        // IsVertex(): the point is a vertex of the original face
+  bool   isMultiple;      // IsMultiple(): the point belongs to several contour lines
+  bool   isInternal;      // IsInternal(): the contour is tangent to the restriction here
+} OCCTContapVertex;
+
+/// Contap_Line::Line() for a Contap_Lin contour: the infinite line the tangent ruling lies on.
+/// Writes 6 doubles into out: origin xyz, then unit direction xyz.
+/// @return false, writing nothing, when the line is not Contap_Lin or the index is out of range.
+bool OCCTContapContourLineAsLine(OCCTContapContourRef ref, int lineIndex, double* _Nonnull out);
+
+/// Contap_Line::Circle() for a Contap_Circle contour: the circle the silhouette lies on.
+/// Writes 10 doubles into out: centre xyz, axis direction xyz, X direction xyz, then the radius.
+/// @return false, writing nothing, when the line is not Contap_Circle or the index is out of range.
+bool OCCTContapContourLineAsCircle(OCCTContapContourRef ref, int lineIndex, double* _Nonnull out);
+
+/// Contap_Line::Arc()'s parameter range for a Contap_Restriction contour, the stretch of the
+/// face's own boundary that lies on the silhouette. The parameters are the arc's, in the face's
+/// UV space; evaluate them with OCCTContapContourLineArcPoint.
+/// @return false, writing nothing, when the line is not Contap_Restriction, the index is out of
+///         range, or the arc handle is null.
+bool OCCTContapContourLineArcRange(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double* _Nonnull outFirst,
+                                   double* _Nonnull outLast);
+
+/// Adaptor2d_Curve2d::Value on the arc of a Contap_Restriction contour: the UV point at a
+/// parameter from OCCTContapContourLineArcRange's range.
+/// @return false, writing nothing, on the same refusals as OCCTContapContourLineArcRange.
+bool OCCTContapContourLineArcPoint(OCCTContapContourRef ref,
+                                   int                  lineIndex,
+                                   double               parameter,
+                                   double* _Nonnull outU,
+                                   double* _Nonnull outV);
+
+/// Contap_Line::NbVertex(), which is valid on every contour type, unlike NbPnts().
+int OCCTContapContourLineVertexCount(OCCTContapContourRef ref, int lineIndex);
+
+/// Contap_Line::Vertex(Index) (1-based), as a Contap_Point.
+/// @return false, writing nothing, when the index is out of range.
+bool OCCTContapContourLineVertex(OCCTContapContourRef ref,
+                                 int                  lineIndex,
+                                 int                  vertexIndex,
+                                 OCCTContapVertex* _Nonnull out);
 
 // --- GeomFill Trihedron Laws ---
 // Evaluate trihedron frame (tangent, normal, binormal) on an edge at parameter
@@ -1042,9 +1113,21 @@ bool OCCTGeomFillBoundWithSurfEvaluate(OCCTSurfaceRef _Nonnull surface,
 // MARK: - ShapeCustom_Surface (additional: ConvertToPeriodic, Gap)
 
 /// Convert surface to periodic form. Returns null if already periodic or not convertible.
+///
+/// `ShapeCustom_Surface::ConvertToPeriodic` is a pure knot-rearrangement (it calls
+/// `Geom_BSplineSurface::SetUPeriodic`/`SetVPeriodic`, which reinterprets an already-closed
+/// clamped B-spline as periodic by reusing its own poles); it never touches `myGap` and has no
+/// deviation to report. See `OCCTSurfaceConversionGap` below. (#1510)
 OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull surface);
 
-/// Get gap after last ShapeCustom_Surface conversion.
+/// Deprecated, always returns -1.0. `ShapeCustom_Surface::Gap()`'s own header doc says it reports
+/// the deviation from the *last call to ConvertToAnalytical*, never `ConvertToPeriodic`, and
+/// `ConvertToPeriodic` (see above) has no gap concept to report: it is a lossless knot
+/// rearrangement, confirmed by direct sampling (`Scripts/repro/1510-surface-conversion-gap/`).
+/// This function used to run an unrelated, hardcoded-tolerance `ConvertToAnalytical` call just to
+/// read *its* `Gap()`, which reported a nonzero number even when that recognition attempt failed
+/// outright and never reflected the surface's actual periodic conversion. Kept only so existing
+/// callers keep compiling; do not use it to judge periodic-conversion fidelity. (#1510)
 double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface);
 
 // MARK: - GeomConvert_ApproxSurface
@@ -1298,10 +1381,22 @@ typedef struct
 OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef _Nonnull surface1,
                                         OCCTSurfaceRef _Nonnull surface2);
 
+// #1502: both extremal points here sit on a surface, so each needs a full (u, v), not the
+// single `param` OCCTExtremaPointPair carries (that struct is correct for OCCTExtremaExtCCPoint,
+// where both points are on a curve). Mirrors OCCTExtremaPointOnSurf's (x, y, z, u, v) shape
+// above, doubled for the two surfaces. The curve-surface case has the same gap on its
+// surface-side point and is carried by OCCTExtremaCSPointPair since #1514.
+typedef struct
+{
+  double squareDistance;
+  double x1, y1, z1, u1, v1; // Point on surface 1
+  double x2, y2, z2, u2, v2; // Point on surface 2
+} OCCTExtremaSSPointPair;
+
 /// Get Nth extremum from surface-surface computation
-OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
-                                           OCCTSurfaceRef _Nonnull surface2,
-                                           int index);
+OCCTExtremaSSPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef _Nonnull surface1,
+                                             OCCTSurfaceRef _Nonnull surface2,
+                                             int index);
 
 // --- gce_MakePln ---
 /// Create a plane from equation Ax+By+Cz+D=0
@@ -2019,7 +2114,23 @@ OCCTCurve3DRef _Nullable OCCTSurfaceSweptBasisCurve(OCCTSurfaceRef _Nonnull surf
 // MARK: - Extrema_ExtElSS: Elementary Surface-Surface Distance (v0.109.0)
 
 /// Distance between two planes (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
+///
+/// Plane/plane is the only pair Extrema_ExtElSS implements: its Perform overloads for
+/// plane/sphere, sphere/sphere, sphere/cylinder, sphere/cone and sphere/torus are all
+/// `throw Standard_NotImplemented();` in OCCT itself, so the bridge functions that wrapped the
+/// first two were removed in #1632.
+///
+/// Only the square distance is reported, because it is the only thing OCCT computes here.
+/// Perform(gp_Pln, gp_Pln) sets myNbExt = 1 in its parallel branch and fills mySqDist alone,
+/// leaving myPOnS1/myPOnS2 as null handles, so Points() is an uncatchable fault and this
+/// function never calls it. Two parallel planes have no unique closest pair anyway: every point
+/// of one plane, paired with its own projection, is a minimum.
+///
+/// @param outIsParallel set on every non-error path, true only for parallel planes.
+/// @param outSquareDistance written ONLY when the return value is 1; untouched otherwise.
+/// @return 1 when a square distance was computed (parallel planes), 0 when the kernel records no
+///         extremum (crossing planes: distance is zero all along their intersection line, and
+///         Extrema_ExtElSS reports NbExt() == 0), -1 on error.
 int32_t OCCTExtremaElSSPlanePlane(double pl1x,
                                   double pl1y,
                                   double pl1z,
@@ -2033,36 +2144,7 @@ int32_t OCCTExtremaElSSPlanePlane(double pl1x,
                                   double pn2y,
                                   double pn2z,
                                   bool* _Nonnull outIsParallel,
-                                  OCCTExtremaElResult* _Nonnull out,
-                                  int32_t max);
-
-/// Distance between a plane and sphere (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
-int32_t OCCTExtremaElSSPlaneSphere(double plx,
-                                   double ply,
-                                   double plz,
-                                   double pnx,
-                                   double pny,
-                                   double pnz,
-                                   double cx,
-                                   double cy,
-                                   double cz,
-                                   double radius,
-                                   OCCTExtremaElResult* _Nonnull out,
-                                   int32_t max);
-
-/// Distance between two spheres (Extrema_ExtElSS).
-/// @return Number of extrema (-1 on error)
-int32_t OCCTExtremaElSSSphereSphere(double c1x,
-                                    double c1y,
-                                    double c1z,
-                                    double r1,
-                                    double c2x,
-                                    double c2y,
-                                    double c2z,
-                                    double r2,
-                                    OCCTExtremaElResult* _Nonnull out,
-                                    int32_t max);
+                                  double* _Nonnull outSquareDistance);
 
 // MARK: - Extrema_ExtPElS: Point to Elementary Surface Distance (v0.109.0)
 

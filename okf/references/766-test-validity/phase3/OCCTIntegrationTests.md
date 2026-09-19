@@ -72,6 +72,23 @@ For each test, run ground-truth C++ comparison:
 
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
+| KronrodIntegration/integrateSin | ✅ | ✅ | ✅ |
+| KronrodIntegration/adaptive | ✅ | ✅ | ✅ |
+| GaussMultipleIntegration/integrate2D | ✅ | ✅ | ✅ |
+| GaussSetIntegration/integrateSet | ✅ | ✅ | ✅ |
+| Mounting Bracket | ✅ | ✅ | ✅ |
+| Fluent Composition Chain | ✅ | ✅ | ✅ |
+| Z-Level Slicing | ✅ | ✅ | ✅ |
+| Hole Detection | ✅ | ✅ | ✅ |
+| Degenerate Resilience (3) | ✅ | ✅ | ✅ |
+| OBB Tightness | ✅ | ✅ | ✅ |
+| Memory Stress | ✅ | ✅ | ✅ |
+| Pocket Clearing | ✅ | ✅ | ✅ |
+| Scallop Analysis | ✅ | ✅ | ✅ |
+| Bottle Profile | ✅ | ✅ | ✅ |
+| Cross-Section Regression | ✅ | ✅ | ✅ |
+| Tolerance Cascade | ✅ | ✅ | ✅ |
+| BREP Round-trip | ✅ | ✅ | ✅ |
 | KronrodIntegration/integrateSin | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
 | KronrodIntegration/adaptive | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
 | GaussMultipleIntegration/integrate2D | ✅ 2026-09-19 | ✅ 2026-09-19 | ✅ |
