@@ -112,7 +112,6 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
-#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -123,7 +122,6 @@
 #include <ShapeExtend_CompositeSurface.hxx>
 #include <ShapeFix_ComposeShell.hxx>
 #include <ShapeUpgrade_ClosedFaceDivide.hxx>
-#include <ShapeUpgrade_ShapeDivideAngle.hxx>
 #include <ShapeUpgrade_ShapeDivideArea.hxx>
 #include <ShapeUpgrade_ShellSewing.hxx>
 #include <ShapeFix_FaceConnect.hxx>
@@ -746,8 +744,20 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
 
       if (!face.IsNull())
       {
+        // #1438: CheckGaps3d() returns one bool for the WHOLE wire (true if ANY edge-to-edge
+        // junction has a gap), so "gaps += wireAnalysis.CheckGaps3d()" counted wires-with-a-gap,
+        // not gaps -- a wire with 2 independent gaps reported 1. CheckGap3d(i), the per-junction
+        // check CheckGaps3d() itself loops internally, is public; call it directly once per edge
+        // to get a real per-gap count instead.
         ShapeAnalysis_Wire wireAnalysis(wire, face, tolerance);
-        gaps += wireAnalysis.CheckGaps3d();
+        int                nbWireEdges = wireAnalysis.NbEdges();
+        for (int i = 1; i <= nbWireEdges; i++)
+        {
+          if (wireAnalysis.CheckGap3d(i))
+          {
+            gaps++;
+          }
+        }
       }
     }
 
@@ -1148,6 +1158,49 @@ OCCTShapeCheckResult OCCTCheckShape(OCCTShapeRef shape)
           }
         }
       }
+
+      // #1392: a solid- or shell-level defect (bad shell imbrication, an enclosed region no
+      // shell declares as a void) is reported by BRepCheck_Analyzer::IsValid but sits on the
+      // SOLID or SHELL result, so walking only faces and edges left errorCount at 0 while
+      // isValid was false: "no error found" and "nowhere I looked" spelled the same way.
+      for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next())
+      {
+        const Handle(BRepCheck_Result)& res = analyzer.Result(exp.Current());
+        if (!res.IsNull())
+        {
+          const auto& statusList = res->Status();
+          for (auto it = statusList.begin(); it != statusList.end(); ++it)
+          {
+            if (*it != BRepCheck_NoError)
+            {
+              if (result.errorCount == 0)
+              {
+                result.firstError = mapBRepCheckStatus(*it);
+              }
+              result.errorCount++;
+            }
+          }
+        }
+      }
+      for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More(); exp.Next())
+      {
+        const Handle(BRepCheck_Result)& res = analyzer.Result(exp.Current());
+        if (!res.IsNull())
+        {
+          const auto& statusList = res->Status();
+          for (auto it = statusList.begin(); it != statusList.end(); ++it)
+          {
+            if (*it != BRepCheck_NoError)
+            {
+              if (result.errorCount == 0)
+              {
+                result.firstError = mapBRepCheckStatus(*it);
+              }
+              result.errorCount++;
+            }
+          }
+        }
+      }
     }
     return result;
   }
@@ -1343,6 +1396,11 @@ double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape,
 OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, double tolerance)
 {
   OCCTCanonicalResult result = {};
+  // #1438: ShapeAnalysis_CanonicalRecognition::Init's first line unconditionally dereferences the
+  // shape's TShape (TopoDS_Shape::ShapeType()), an uncatchable crash on a nullified wrapper, not
+  // something the surrounding catch(...) can absorb.
+  if (!occtShapeIsPresent(faceShape))
+    return result;
   try
   {
     ShapeAnalysis_CanonicalRecognition recog(faceShape->shape);
@@ -1363,6 +1421,10 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    // #1509: myStatus is set on an ordinary "not this type" outcome, not just genuine errors, and
+    // every IsX short-circuits to false while myStatus != 0. ClearStatus() between checks is
+    // required, not optional, for the sequence below to reach anything past IsPlane.
+    recog.ClearStatus();
     gp_Cylinder cyl;
     if (recog.IsCylinder(tolerance, cyl))
     {
@@ -1380,6 +1442,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    recog.ClearStatus();
     gp_Cone cone;
     if (recog.IsCone(tolerance, cone))
     {
@@ -1398,6 +1461,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
       return result;
     }
 
+    recog.ClearStatus();
     gp_Sphere sph;
     if (recog.IsSphere(tolerance, sph))
     {
@@ -1420,6 +1484,9 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalSurface(OCCTShapeRef faceShape, d
 OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef edgeShape, double tolerance)
 {
   OCCTCanonicalResult result = {};
+  // #1438: same unconditional-dereference crash as OCCTShapeRecognizeCanonicalSurface above.
+  if (!occtShapeIsPresent(edgeShape))
+    return result;
   try
   {
     ShapeAnalysis_CanonicalRecognition recog(edgeShape->shape);
@@ -1440,6 +1507,10 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef edgeShape, dou
       return result;
     }
 
+    // #1509: myStatus is set on an ordinary "not this type" outcome, not just genuine errors, and
+    // every IsX short-circuits to false while myStatus != 0. ClearStatus() between checks is
+    // required, not optional, for the sequence below to reach anything past IsLine.
+    recog.ClearStatus();
     gp_Circ circ;
     if (recog.IsCircle(tolerance, circ))
     {
@@ -1457,6 +1528,7 @@ OCCTCanonicalResult OCCTShapeRecognizeCanonicalCurve(OCCTShapeRef edgeShape, dou
       return result;
     }
 
+    recog.ClearStatus();
     gp_Elips elips;
     if (recog.IsEllipse(tolerance, elips))
     {
@@ -2147,9 +2219,17 @@ bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef edge,
   }
 }
 
-bool OCCTEdgeCheckOverlapping(OCCTShapeRef edge1, OCCTShapeRef edge2, double* tolOverlap)
+bool OCCTEdgeCheckOverlapping(OCCTShapeRef edge1,
+                              OCCTShapeRef edge2,
+                              double       tolerance,
+                              double*      tolOverlap)
 {
-  *tolOverlap = 0;
+  // #1438: ShapeAnalysis_Edge::CheckOverlapping's third argument is an INPUT threshold passed by
+  // non-const reference (its own internal comparisons, e.g. IsOverlapPartEdges' "distance >=
+  // theTolerance", read it before ever writing it back), not a pure out-parameter. Seeding
+  // *tolOverlap with 0 here used to make that comparison "distance >= 0", true for essentially
+  // any sample, so the function always returned false regardless of the real geometry.
+  *tolOverlap = tolerance;
   if (!edge1 || !edge2)
     return false;
   try
@@ -2237,20 +2317,23 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef edge,
 
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef edge, OCCTShapeRef face, double first, double last)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {
     ShapeAnalysis_Edge sae;
-    // Check if the pcurve parameter range [first, last] is valid for the edge on the face
-    // Get pcurve and check its range
+    // #1438: this used to compare [first, last] against cf/cl, the edge's own CURRENT STORED TRIM
+    // on this face (BRep_Tool.hxx: "parameters of the edge on this curve"), not the pcurve's own
+    // underlying geometric domain. ShapeAnalysis_Edge::CheckPCurveRange is the real check: it
+    // unwraps a Geom2d_TrimmedCurve to its basis curve and, for a periodic pcurve, accepts any
+    // range up to a full period wide regardless of where the edge itself happens to be trimmed.
     TopoDS_Edge          e = TopoDS::Edge(edge->shape);
     TopoDS_Face          f = TopoDS::Face(face->shape);
     double               cf, cl;
     Handle(Geom2d_Curve) pc = BRep_Tool::CurveOnSurface(e, f, cf, cl);
     if (pc.IsNull())
       return false;
-    return (first >= cf - 1e-10 && last <= cl + 1e-10);
+    return sae.CheckPCurveRange(first, last, pc);
   }
   catch (...)
   {
@@ -2491,6 +2574,11 @@ OCCTShapeRef OCCTFreeBoundsPropsWire(OCCTFreeBoundsPropsRef props,
 // MARK: - v0.118: Tolerance value/over-count/in-range + Boolean check single/pair
 double OCCTShapeToleranceValue(OCCTShapeRef shape, int32_t mode, int32_t shapeType)
 {
+  // #1438: the pointer itself was never guarded (unlike every sibling in this file, e.g.
+  // OCCTShapeMaxTolerance below); a null wrapper pointer isn't Swift-reachable today, but it is
+  // reachable from a direct C/Obj-C++ caller of this bridge.
+  if (!occtShapeIsPresent(shape))
+    return 0.0;
   try
   {
     auto*                        s = static_cast<OCCTShape*>(shape);
@@ -2505,6 +2593,9 @@ double OCCTShapeToleranceValue(OCCTShapeRef shape, int32_t mode, int32_t shapeTy
 
 int32_t OCCTShapeToleranceOverCount(OCCTShapeRef shape, double value, int32_t shapeType)
 {
+  // #1438: see OCCTShapeToleranceValue above.
+  if (!occtShapeIsPresent(shape))
+    return 0;
   try
   {
     auto*                        s = static_cast<OCCTShape*>(shape);
@@ -2523,6 +2614,9 @@ int32_t OCCTShapeToleranceInRangeCount(OCCTShapeRef shape,
                                        double       valmax,
                                        int32_t      shapeType)
 {
+  // #1438: see OCCTShapeToleranceValue above.
+  if (!occtShapeIsPresent(shape))
+    return 0;
   try
   {
     auto*                        s = static_cast<OCCTShape*>(shape);

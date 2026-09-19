@@ -62,4 +62,23 @@ struct ShapeSymmetryAxesTests {
         #expect(abs(extent.lowerBound + 10) < 1e-6)
         #expect(abs(extent.upperBound - 10) < 1e-6)
     }
+
+    // #1497: the existence gate (`HasSymmetryPoint()`/`HasSymmetryAxis()`, no-arg) used OCCT's own
+    // hardcoded ~1e-10 internal tolerance instead of the caller's `fractionalTolerance`, even though
+    // the downstream axis-selection loop a few lines later already honored it correctly. A box whose
+    // width and height differ by 1e-7 (2e-8 relative, well inside the documented default
+    // `fractionalTolerance: 1e-4`, but well outside OCCT's own ~1e-10) used to report zero symmetry
+    // axes: the no-arg gate rejected it before the loop that would have accepted it ever ran.
+    @Test("Box with near-equal width/height reports a symmetry axis within the default tolerance")
+    func nearSymmetricBoxReportsAxisWithinTolerance() {
+        guard let box = Shape.box(width: 10, height: 10 * (1 + 1e-7), depth: 30) else {
+            Issue.record("box nil")
+            return
+        }
+        let axes = box.symmetryAxes()
+        #expect(axes.count == 1)
+        if let a = axes.first {
+            #expect(a.kind == ShapeAxis.Kind.symmetry)
+        }
+    }
 }

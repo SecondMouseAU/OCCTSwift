@@ -18,14 +18,14 @@ import Testing
 //   MathGauss.determinant, MathSVD.solve, MathJacobi.eigenvalues, MathHouseholder.solve,
 //   MathCrout.determinant, MathSolver.solveSystem, .minimize, .minimizePowell,
 //   .particleSwarm, .globalMinimize, .solveSystemNewton, .minimizeNewton, .leastSquares,
-//   .uzawa, .eigenvalues(diagonal:subdiagonal:), .eigenvaluesAndVectors(diagonal:subdiagonal:),
+//   .uzawa, .eigenvalues(diagonal:offDiagonal:), .eigenvaluesAndVectors(diagonal:offDiagonal:),
 //   .gaussMultipleIntegration, .gaussSetIntegration, and both `findAllRoots(samples:)` overloads.
 //
 // Five of these were invisible to the trap-shaped census:
 // - `MathGauss.determinant`/`MathCrout.determinant` return a scalar `Double`, not an `Array`
 //   sized by the dimension, so there was nothing for lens 1 to see. The bridge still loops
 //   `matrixData[i*n+j]` for `i, j in 0..<n` unconditionally.
-// - `.eigenvalues(diagonal:subdiagonal:)`, `.eigenvaluesAndVectors`, and
+// - `.eigenvalues(diagonal:offDiagonal:)`, `.eigenvaluesAndVectors`, and
 //   `.gaussMultipleIntegration` each derive their own dimension from an array's own `.count`
 //   (always non-negative), so lens 1 sees nothing to trap on -- but a SECOND array
 //   (`subdiagonal`/`upper`/`order`) is read up to that dimension with no check that it is
@@ -394,19 +394,20 @@ struct Issue640MathDimensionBounds {
 
     // MARK: - Sites invisible to a trap-shaped census: no Array(repeating:count:) at all
 
-    @Test("MathSolver.eigenvalues/eigenvaluesAndVectors reject a subdiagonal shorter than diagonal")
+    @Test("MathSolver.eigenvalues/eigenvaluesAndVectors reject an off-diagonal of the wrong length")
     func eigenvaluesSubdiagonalLengthBounds() {
-        // diagonal.count (50) can never be negative, so nothing here ever traps -- the bridge
-        // just reads subdiagonal[i] for i in 0..<50 regardless, which used to succeed with
-        // heap garbage against a 1-element subdiagonal.
+        // diagonal.count (50) can never be negative, so nothing here ever traps: the bridge
+        // just read subdiagonal[i] for i in 0..<50 regardless, which used to succeed with
+        // heap garbage against a 1-element subdiagonal. #1643 then changed the required
+        // length from 50 to 49, since the 50th slot was one OCCT discarded.
         let longDiagonal = [Double](repeating: 1, count: 50)
-        #expect(MathSolver.eigenvalues(diagonal: longDiagonal, subdiagonal: [1.0]) == nil)
-        #expect(MathSolver.eigenvaluesAndVectors(diagonal: longDiagonal, subdiagonal: [1.0]) == nil)
+        #expect(MathSolver.eigenvalues(diagonal: longDiagonal, offDiagonal: [1.0]) == nil)
+        #expect(MathSolver.eigenvaluesAndVectors(diagonal: longDiagonal, offDiagonal: [1.0]) == nil)
 
         let diag = [2.0, 2.0, 2.0]
-        let subdiag = [1.0, 1.0, 0.0]
-        #expect(MathSolver.eigenvalues(diagonal: diag, subdiagonal: subdiag) != nil)
-        #expect(MathSolver.eigenvaluesAndVectors(diagonal: diag, subdiagonal: subdiag) != nil)
+        let offDiag = [1.0, 1.0]
+        #expect(MathSolver.eigenvalues(diagonal: diag, offDiagonal: offDiag) != nil)
+        #expect(MathSolver.eigenvaluesAndVectors(diagonal: diag, offDiagonal: offDiag) != nil)
     }
 
     @Test("MathSolver.gaussMultipleIntegration/.gaussSetIntegration reject mismatched arrays")

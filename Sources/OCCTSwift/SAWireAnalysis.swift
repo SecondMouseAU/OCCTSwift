@@ -137,10 +137,12 @@ public enum SAWireAnalysis {
     /// Check whether a wire fails to define an outer bound on a face, or `nil` when the check
     /// could not be run at all.
     ///
-    /// Returns true if a problem is found, false if none is, and `nil` for four inputs the check
+    /// Returns true if a problem is found, false if none is, and `nil` for five inputs the check
     /// cannot evaluate: a `Shape` that is not a wire or not a face, **a null shape included**; a
-    /// wire with no edges; a wire whose edges do not assemble; and a wire with no pcurve on the
-    /// face (#1058). The other fourteen **check** members of this enum answer a plain `Bool`, so a
+    /// wire with no edges; a wire whose edges do not assemble (#1058); a wire where **any** edge
+    /// lacks a pcurve on the face, since `ShapeAnalysis::TotCross2D` would then sign an area only
+    /// the pcurved subset contributed to; and a wire whose signed area cancels to rounding,
+    /// tested as `|TotCross2D|` under `1e-12` of the face's own UV area (#1073). The other fourteen **check** members of this enum answer a plain `Bool`, so a
     /// refused call and a clean verdict are the same value for them; `edgeCount` and the four
     /// distance members return `Int`/`Double` and have their own version of that collision.
     /// Unlike every sibling above, this takes no precision, because

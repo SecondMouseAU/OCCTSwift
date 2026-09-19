@@ -59,7 +59,9 @@ public indirect enum ConstructionPlane: Sendable, Hashable {
     case offsetFromFace(face: TopologyRef, distance: Double)
 
     /// Plane containing `axis` edge, rotated `angleDeg` from a reference plane.
-    /// Reference plane is deduced from the first face adjacent to the axis.
+    /// Reference plane is the canonical `perpendicularBasis(to:)` basis for the axis
+    /// direction (OCCT's `gp_Ax2` smallest-component algorithm), not derived from any
+    /// adjacent face.
     case throughAxis(axis: TopologyRef, angleDeg: Double)
 
     /// Plane tangent to `face` at a point (`at` resolves to a vertex on that face).

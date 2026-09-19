@@ -60,7 +60,10 @@ public struct MedialAxisArc: Sendable {
 /// - Shape decomposition and feature recognition
 ///
 /// The input shape must contain at least one planar face. The medial
-/// axis is computed from the outer wire of the first face found.
+/// axis is computed from the first face found, using **all** of its wires:
+/// the outer boundary and any inner (hole) wires alike, each contributing
+/// its own contour. This is what makes thin-wall detection work, a hole's
+/// boundary participates in the skeleton just as the outer wire does.
 ///
 /// ```swift
 /// let rect = Shape.makeFace(
@@ -78,9 +81,10 @@ public final class MedialAxis: @unchecked Sendable {
 
     /// Compute the medial axis of a planar face.
     ///
-    /// - Note: Only the **first** face found is used, and only its outer wire. A shape with
-    ///   several faces returns the same result as that first face on its own; the rest are
-    ///   ignored, not merged. Pass one face at a time to compute a medial axis per face.
+    /// - Note: Only the **first** face found is used, but all of its wires are: the outer
+    ///   boundary and any inner (hole) wires, each its own contour. A shape with several faces
+    ///   returns the same result as that first face on its own; the rest are ignored, not merged.
+    ///   Pass one face at a time to compute a medial axis per face.
     ///
     /// - Note: There is no tolerance. Neither `BRepMAT2d_Explorer::Perform` nor
     ///   `BRepMAT2d_BisectingLocus::Compute` accepts one; `Compute`'s own knobs are the line index,

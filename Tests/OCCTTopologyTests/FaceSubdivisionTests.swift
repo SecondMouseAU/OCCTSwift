@@ -35,12 +35,11 @@ struct FaceSubdivisionTests {
     }
 
     @Test("Divide by parts")
-    func divideByParts() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let result = box.dividedByParts(4)
-        #expect(result != nil)
-        if let result {
-            #expect(result.subShapeCount(ofType: .face) > 6)
-        }
+    func divideByParts() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let result = try #require(box.dividedByParts(4))
+        // `> 6` was the assertion until #1640, and a splitter that split one face out of six
+        // would have passed it. Issue1640DuplicateSplittersTests carries the per-piece areas.
+        #expect(result.subShapeCount(ofType: .face) == 24)
     }
 }

@@ -584,6 +584,10 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    // #1509: myStatus is set on an ordinary "not this type" outcome, not just genuine errors, and
+    // every IsX short-circuits to false while myStatus != 0. ClearStatus() between checks is
+    // required, not optional, for the sequence below to reach anything past IsPlane.
+    recog.ClearStatus();
     gp_Cylinder cyl;
     if (recog.IsCylinder(tolerance, cyl))
     {
@@ -598,6 +602,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    recog.ClearStatus();
     gp_Cone cone;
     if (recog.IsCone(tolerance, cone))
     {
@@ -613,6 +618,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    recog.ClearStatus();
     gp_Sphere sph;
     if (recog.IsSphere(tolerance, sph))
     {
@@ -627,6 +633,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    recog.ClearStatus();
     gp_Lin lin;
     if (recog.IsLine(tolerance, lin))
     {
@@ -640,6 +647,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    recog.ClearStatus();
     gp_Circ circ;
     if (recog.IsCircle(tolerance, circ))
     {
@@ -654,6 +662,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
       result.gap          = recog.GetGap();
       return result;
     }
+    recog.ClearStatus();
     gp_Elips elips;
     if (recog.IsEllipse(tolerance, elips))
     {

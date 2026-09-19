@@ -73,8 +73,9 @@ extension Shape {
     /// are already malloc'd C-side by the single bridge call before this ever runs, so bounding
     /// the count here would only save the Swift-side unpack, not the C-side cost of producing the
     /// buffers in the first place — closing that needs a cap inside the bridge's own accumulation
-    /// loop (`OCCTCPntsUniformDeflection`/`Range` in `OCCTBridge_Curve3D.mm`), a different fix in
-    /// a different place, deliberately left for a follow-up rather than folded in here.
+    /// loop (`OCCTCPntsUniformDeflection`/`Range`, which live in
+    /// `OCCTBridge_Curve3D_ArcLength.mm` since the #396 split), a different fix in a different
+    /// place, deliberately left for a follow-up rather than folded in here.
     private func unpackDeflectionResult(
         outParams: UnsafeMutablePointer<Double>?,
         outPoints: UnsafeMutablePointer<Double>?,
@@ -96,7 +97,20 @@ extension Shape {
         )
     }
 
-    /// Discretize an edge by uniform deflection.
+    /// Discretize an edge by uniform deflection over its whole parameter range.
+    ///
+    /// ```swift
+    /// if let d = edge.uniformDeflection(0.1) {
+    ///     // d.points are 3D samples no further than 0.1 from the true curve,
+    ///     // d.parameters the edge parameters they were taken at.
+    /// }
+    /// ```
+    ///
+    /// - Parameter deflection: maximum chord deflection.
+    /// - Returns: the samples, or `nil` if the shape is not an edge or the sampler produced none.
+    /// - Note: `CPnts_UniformDeflection`, not `GCPnts_UniformDeflection`. This repo wraps both;
+    ///   the `GCPnts_` one is behind ``Curve3D/drawDeflection(deflection:maxPoints:)`` and
+    ///   ``Curve2D/drawDeflection(deflection:maxPoints:)``.
     public func uniformDeflection(_ deflection: Double) -> DeflectionResult? {
         var outParams: UnsafeMutablePointer<Double>?
         var outPoints: UnsafeMutablePointer<Double>?
@@ -147,6 +161,10 @@ extension Shape {
     ///   - count: Desired number of evaluations, honoured within `1...`
     ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     /// - Returns: Array of 3D points along the iso curve.
+    /// - Note: Samples are spread evenly over the iso curve's own parameter range, clamped to
+    ///   `-1e6...1e6` where the surface is infinite in that direction, so on an unbounded face
+    ///   they span that clamp rather than the face's own extent. A non-face shape, or one whose
+    ///   surface cannot be read, yields `count` points at the origin rather than an empty array.
     public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>] {
         guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)
@@ -161,6 +179,10 @@ extension Shape {
     ///   - count: Desired number of evaluations, honoured within `1...`
     ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     /// - Returns: Array of 3D points along the iso curve.
+    /// - Note: Samples are spread evenly over the iso curve's own parameter range, clamped to
+    ///   `-1e6...1e6` where the surface is infinite in that direction, so on an unbounded face
+    ///   they span that clamp rather than the face's own extent. A non-face shape, or one whose
+    ///   surface cannot be read, yields `count` points at the origin rather than an empty array.
     public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>] {
         guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)

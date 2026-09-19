@@ -170,7 +170,7 @@ public struct AAGEdge: Sendable {
 /// 2. **A per-pair swap is measurably slower, and the gap widens with model size.** `BRepGraph`'s
 ///    own `adjacentFaces(of:)`/`sharedEdges(between:and:)` (`bgAdjacentFaces`/`bgSharedEdges`,
 ///    `OCCTBridge_BRepGraph.mm`) each linearly scan every edge in the WHOLE graph, because OCCT
-///    8.0.0p1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
+///    8.0.1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
 ///    face-to-face incidence to query instead. The direct call compares only the two
 ///    faces' own (small, typically 4-6) edge sets. Measured on a plate with a grid of drilled
 ///    holes: replacing the inner call, same O(n^2) outer loop, cost 2.4x more wall time at 22
@@ -405,20 +405,20 @@ public final class AAG: @unchecked Sendable {
 
     /// Get neighbors of a face.
     public func neighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return Array(adjacencyList[faceIndex].keys)
     }
 
     /// Get the edge between two faces (if adjacent).
     public func edge(between face1: Int, and face2: Int) -> AAGEdge? {
-        guard face1 < adjacencyList.count else { return nil }
+        guard face1 >= 0, face1 < adjacencyList.count, face2 >= 0 else { return nil }
         guard let edgeIndex = adjacencyList[face1][face2] else { return nil }
         return edges[edgeIndex]
     }
 
     /// Get all concave neighbors of a face.
     public func concaveNeighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
             edges[edgeIndex].convexity == .concave ? neighbor : nil
         }
@@ -426,7 +426,7 @@ public final class AAG: @unchecked Sendable {
 
     /// Get all convex neighbors of a face.
     public func convexNeighbors(of faceIndex: Int) -> [Int] {
-        guard faceIndex < adjacencyList.count else { return [] }
+        guard faceIndex >= 0, faceIndex < adjacencyList.count else { return [] }
         return adjacencyList[faceIndex].compactMap { (neighbor, edgeIndex) in
             edges[edgeIndex].convexity == .convex ? neighbor : nil
         }

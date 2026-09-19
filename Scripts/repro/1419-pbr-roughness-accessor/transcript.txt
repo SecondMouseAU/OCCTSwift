@@ -1,0 +1,25 @@
+count=24 minRoughness=0.010000
+ 1 Brass                normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 2 Bronze               normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 3 Copper               normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 4 Gold                 normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 5 Pewter               normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 6 Plastered            normalized=1.000000 remapped=1.000000 metallic=0.000000
+ 7 Plastified           normalized=0.500000 remapped=0.505000 metallic=0.000000
+ 8 Silver               normalized=0.212132 remapped=0.220011 metallic=1.000000
+ 9 Steel                normalized=0.212132 remapped=0.220011 metallic=1.000000
+10 Stone                normalized=0.707107 remapped=0.710036 metallic=0.000000
+11 Shiny_plastified     normalized=0.412311 remapped=0.418187 metallic=0.000000
+12 Satined              normalized=0.774597 remapped=0.776851 metallic=0.000000
+13 Metalized            normalized=0.212132 remapped=0.220011 metallic=1.000000
+14 Ionized              normalized=0.000000 remapped=0.010000 metallic=0.000000
+15 Chrome               normalized=0.212132 remapped=0.220011 metallic=1.000000
+16 Aluminium            normalized=0.212132 remapped=0.220011 metallic=1.000000
+17 Obsidian             normalized=0.316228 remapped=0.323065 metallic=0.000000
+18 Neon                 normalized=0.000000 remapped=0.010000 metallic=0.000000
+19 Jade                 normalized=0.244949 remapped=0.252499 metallic=0.000000
+20 Charcoal             normalized=0.547723 remapped=0.552245 metallic=0.000000
+21 Water                normalized=0.000000 remapped=0.010000 metallic=0.000000
+22 Glass                normalized=0.000000 remapped=0.010000 metallic=0.000000
+23 Diamond              normalized=0.000000 remapped=0.010000 metallic=0.000000
+24 Transparent          normalized=1.000000 remapped=1.000000 metallic=0.000000

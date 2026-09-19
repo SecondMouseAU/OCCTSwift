@@ -244,7 +244,7 @@ def subject_of(kf) -> str:
 
 
 def report_mode(det, lanes, verbose: bool) -> None:
-    findings, unresolved, checked = det.findings()
+    findings, unresolved, checked, _symbol_only = det.findings()
     print(f"detector on the tree as checked out: {len(findings)} findings, "
           f"{checked} attributions checked, {len(unresolved)} unresolved\n")
     for lane, known in lanes:
@@ -300,7 +300,7 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
                     print(f"could not apply lane {lane}'s fix: {p.stderr.strip()}")
                     return
                 applied.append(patches[lane])
-        base, _u, _c = det.findings()
+        base, _u, _c, _so = det.findings()
         base_keys = {(f.claim.path, f.claim.line, f.cls) for f in base}
         print(f"baseline (both lanes fixed): {len(base)} findings\n")
 
@@ -326,7 +326,7 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
                           f"(reverse-apply failed: {rev.stderr.strip().splitlines()[:1]})")
                     continue
                 try:
-                    now, _u, _c = det.findings()
+                    now, _u, _c, _so = det.findings()
                     wanted = det.classes_named(phrase, quoted_only_for(doc_file))
                     span = locate(os.path.join(ROOT, doc_file), phrase)
                     got = matching(now, doc_file, span, wanted) if span else []

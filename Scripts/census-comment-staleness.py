@@ -23,9 +23,11 @@ script checks is the mechanically-checkable SUBSET of that question, four ways:
 3. **`Scripts/*.py` docstring usage lines vs. real `argparse` flags**: a docstring showing
    `python3 Scripts/foo.py --bar` where `--bar` is not a flag `main()`'s `ArgumentParser` actually
    registers.
-4. **`CLAUDE.md` patch-number citations vs. `Scripts/patches/*.patch` on disk**: a `Scripts/patches/
-   00NN-*` citation in prose naming a file that is not actually present (already retired, or never
-   existed under that number).
+4. **Patch-number citations vs. `Scripts/patches/*.patch` on disk**: a `Scripts/patches/00NN-*`
+   citation in prose naming a file that is not actually present (already retired, or never existed
+   under that number). Scanned in `CLAUDE.md` and in the two `okf/references/` pages that took over
+   its Known OCCT Bugs narrative on 2026-09-07 (`known-occt-bugs.md`, `carried-occt-patches.md`);
+   a detector left pointing only at the file the prose moved out of would be blind by construction.
 
 WHAT THIS DOES NOT CHECK, stated rather than silently absent, per #872's own scope. Bare (undotted)
 symbol mentions (`` `filleted` ``) are not checked here for the identical reason
@@ -249,22 +251,34 @@ def script_flag_findings():
     return findings
 
 
+PATCH_CITATION_FILES = (
+    "CLAUDE.md",
+    "okf/references/known-occt-bugs.md",
+    "okf/references/carried-occt-patches.md",
+)
+
+
 def claude_md_findings():
-    """Channel 4: Scripts/patches/00NN-* citations in CLAUDE.md against files on disk."""
+    """Channel 4: Scripts/patches/00NN-* citations in CLAUDE.md and the okf references that hold
+    its former Known OCCT Bugs narrative, against files on disk."""
     findings = []
-    claude_path = os.path.join(REPO_ROOT, "CLAUDE.md")
     real_patches = {os.path.basename(p) for p in glob.glob(os.path.join(REPO_ROOT, "Scripts/patches/*.patch"))}
     real_numbers = {os.path.basename(p)[:4] for p in real_patches}
     cite_re = re.compile(r'`Scripts/patches/(\d{4})-[A-Za-z0-9_.\-]*\.patch`')
-    with open(claude_path, encoding="utf-8") as fh:
-        for lineno, line in enumerate(fh, start=1):
-            for m in cite_re.finditer(line):
-                num = m.group(1)
-                cited_file = m.group(0).strip('`').split('/')[-1]
-                if num not in real_numbers:
-                    findings.append((claude_path, lineno, f"`Scripts/patches/{cited_file}`",
-                                      "no patch with this number is on disk (retired or renumbered)",
-                                      line.strip()[:160]))
+    for rel in PATCH_CITATION_FILES:
+        path = os.path.join(REPO_ROOT, rel)
+        if not os.path.exists(path):
+            findings.append((path, 0, "(file)", "patch-citation file listed in PATCH_CITATION_FILES is missing", ""))
+            continue
+        with open(path, encoding="utf-8") as fh:
+            for lineno, line in enumerate(fh, start=1):
+                for m in cite_re.finditer(line):
+                    num = m.group(1)
+                    cited_file = m.group(0).strip('`').split('/')[-1]
+                    if num not in real_numbers:
+                        findings.append((path, lineno, f"`Scripts/patches/{cited_file}`",
+                                          "no patch with this number is on disk (retired or renumbered)",
+                                          line.strip()[:160]))
     return findings
 
 
@@ -273,7 +287,7 @@ def run_census(quiet=False):
         ("Sources/OCCTSwift comments, dotted symbol mentions", swift_comment_findings()),
         ("Sources/OCCTBridge comments, bridge function mentions", bridge_comment_findings()),
         ("Scripts/*.py docstring usage flags", script_flag_findings()),
-        ("CLAUDE.md patch-number citations", claude_md_findings()),
+        ("CLAUDE.md + okf/references patch-number citations", claude_md_findings()),
     ]
     total = 0
     for title, findings in channels:
@@ -378,11 +392,16 @@ def self_test():
     real_numbers = {os.path.basename(p)[:4] for p in glob.glob(os.path.join(REPO_ROOT, "Scripts/patches/*.patch"))}
     if not real_numbers:
         failures.append("no Scripts/patches/*.patch files found at all -- glob is broken")
-    stale_ids = {f[2] for f in findings}
     for f in findings:
+        if f[2] == "(file)":
+            failures.append(f"claude_md_findings(): {f[0]} is missing")
+            continue
         num = f[2].split("/")[-1][:4]
         if num in real_numbers:
             failures.append(f"claude_md_findings() flagged {f[2]} but that number IS on disk")
+    for rel in PATCH_CITATION_FILES:
+        if not os.path.exists(os.path.join(REPO_ROOT, rel)):
+            failures.append(f"patch-citation file {rel} is missing -- channel 4 would scan nothing there")
 
     if failures:
         for f in failures:

@@ -79,7 +79,6 @@
 #include <IMeshTools_Parameters.hxx>
 #include <StlAPI_Writer.hxx>
 #include <StlAPI_Reader.hxx>
-#include <BinTools.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
 #include <TopoDS_Iterator.hxx>
@@ -512,8 +511,10 @@ struct OCCTSharedLib
 
 OCCTShapeRef OCCTImportIGESProgress(const char*               path,
                                     const OCCTImportProgress* ctx,
-                                    bool*                     outCancelled)
+                                    bool*                     outCancelled,
+                                    OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -522,9 +523,8 @@ OCCTShapeRef OCCTImportIGESProgress(const char*               path,
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator                   = new BridgeProgressIndicator(ctx);
@@ -550,8 +550,10 @@ OCCTShapeRef OCCTImportIGESProgress(const char*               path,
 
 OCCTShapeRef OCCTImportIGESRobustProgress(const char*               path,
                                           const OCCTImportProgress* ctx,
-                                          bool*                     outCancelled)
+                                          bool*                     outCancelled,
+                                          OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   clearCancelOut(outCancelled);
   if (!path)
     return nullptr;
@@ -561,11 +563,16 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char*               path,
   try
   {
     IGESControl_Reader reader;
+    // read.precision.mode stays File (0): SetRVal("read.precision.val", ...) only takes effect
+    // under mode 1 ('User'), so setting both here was dead code (#1504). Matching the STEP
+    // robust importers' own shape instead: trust the file's own declared resolution as the
+    // basis tolerance, but tighten the ceiling ShapeFix is allowed to widen it to afterward,
+    // from the default 1.0 down to 0.1, via the max-precision pair rather than forcing a fixed
+    // basis value a coarser file's own geometry may not support.
     Interface_Static::SetIVal("read.precision.mode", 0);
-    Interface_Static::SetRVal("read.precision.val", 0.0001);
+    Interface_Static::SetRVal("read.maxprecision.val", 0.1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     indicator = new BridgeProgressIndicator(ctx);
@@ -652,16 +659,16 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
   }
 }
 
-int32_t OCCTIGESReaderNbRoots(const char* path)
+int32_t OCCTIGESReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     return reader.NbRootsForTransfer();
   }
@@ -671,16 +678,18 @@ int32_t OCCTIGESReaderNbRoots(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESRoot(const char* path, int32_t rootIndex)
+OCCTShapeRef OCCTImportIGESRoot(const char* path,
+                                int32_t     rootIndex,
+                                OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path || rootIndex < 1)
     return nullptr;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     int nbRoots = reader.NbRootsForTransfer();
     if (rootIndex > nbRoots)
@@ -698,16 +707,16 @@ OCCTShapeRef OCCTImportIGESRoot(const char* path, int32_t rootIndex)
   }
 }
 
-int32_t OCCTIGESReaderNbShapes(const char* path)
+int32_t OCCTIGESReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return 0;
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return 0;
     reader.TransferRoots();
     return reader.NbShapes();
@@ -718,8 +727,9 @@ int32_t OCCTIGESReaderNbShapes(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESVisible(const char* path)
+OCCTShapeRef OCCTImportIGESVisible(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
   std::lock_guard<std::mutex> igesLock(igesMutex());
@@ -727,8 +737,7 @@ OCCTShapeRef OCCTImportIGESVisible(const char* path)
   {
     IGESControl_Reader reader;
     reader.SetReadVisible(true);
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
     reader.TransferRoots();
     TopoDS_Shape shape = reader.OneShape();
@@ -807,7 +816,12 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
       BRepCheck_Analyzer analyzer(shapes[i]->shape);
       if (!analyzer.IsValid())
         continue;
-      writer.AddShape(shapes[i]->shape);
+      // AddShape can still reject a BRepCheck_Analyzer-valid shape, e.g. a degenerate edge
+      // with no 3D curve translates to a null IGES entity (#1504); refuse the whole export
+      // rather than silently write a file missing geometry the caller asked for, matching
+      // the fail-fast contract #1226 already established for this entry point.
+      if (!writer.AddShape(shapes[i]->shape))
+        return false;
       added++;
     }
     if (added == 0)
@@ -833,17 +847,17 @@ std::mutex& igesMutex()
   return mutex;
 }
 
-OCCTShapeRef OCCTImportIGES(const char* path)
+OCCTShapeRef OCCTImportIGES(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
   std::lock_guard<std::mutex> igesLock(igesMutex());
   try
   {
-    IGESControl_Reader    reader;
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    IGESControl_Reader reader;
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     // Transfer all roots
@@ -862,8 +876,9 @@ OCCTShapeRef OCCTImportIGES(const char* path)
   }
 }
 
-OCCTShapeRef OCCTImportIGESRobust(const char* path)
+OCCTShapeRef OCCTImportIGESRobust(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -872,12 +887,16 @@ OCCTShapeRef OCCTImportIGESRobust(const char* path)
   {
     IGESControl_Reader reader;
 
-    // Configure reader for better handling
+    // read.precision.mode stays File (0): SetRVal("read.precision.val", ...) only takes effect
+    // under mode 1 ('User'), so setting both here was dead code (#1504). Matching the STEP
+    // robust importers' own shape instead: trust the file's own declared resolution as the
+    // basis tolerance, but tighten the ceiling ShapeFix is allowed to widen it to afterward,
+    // from the default 1.0 down to 0.1, via the max-precision pair rather than forcing a fixed
+    // basis value a coarser file's own geometry may not support.
     Interface_Static::SetIVal("read.precision.mode", 0);
-    Interface_Static::SetRVal("read.precision.val", 0.0001);
+    Interface_Static::SetRVal("read.maxprecision.val", 0.1);
 
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
       return nullptr;
 
     if (reader.TransferRoots() == 0)
@@ -898,6 +917,18 @@ OCCTShapeRef OCCTImportIGESRobust(const char* path)
   {
     return nullptr;
   }
+}
+
+double OCCTDebugGetReadMaxPrecisionVal(void)
+{
+  std::lock_guard<std::mutex> igesLock(igesMutex());
+  return Interface_Static::RVal("read.maxprecision.val");
+}
+
+void OCCTDebugSetReadMaxPrecisionVal(double value)
+{
+  std::lock_guard<std::mutex> igesLock(igesMutex());
+  Interface_Static::SetRVal("read.maxprecision.val", value);
 }
 
 bool OCCTExportIGES(OCCTShapeRef shape, const char* path)

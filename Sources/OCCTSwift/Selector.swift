@@ -247,7 +247,8 @@ public final class Selector: @unchecked Sendable {
     /// the `-1` `subShapeIndex` sentinel, see ``PickResult/subShapeIndex``) is made once (#890).
     ///
     /// `count` is asserted, not clamped, against `buffer.count`: `OCCTSelectorCollectResults`
-    /// (`OCCTBridge_Visualization.mm`, the shared helper behind all three `OCCTSelectorPick*`
+    /// (`OCCTBridge_Visualization_Presentation.mm` since #1380 split the single
+    /// `OCCTBridge_Visualization.mm` this named; the shared helper behind all three `OCCTSelectorPick*`
     /// bridge calls) writes `out[count]` inside a loop gated `count < maxResults` and starts
     /// `count` at 0, so it is provably always in `[0, maxResults]` on every path, including the
     /// early `return 0` for a null selector/camera/buffer or `maxResults <= 0`, this was

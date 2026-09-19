@@ -51,15 +51,6 @@
 // MARK: - AIS Annotations & Measurements (v0.26.0)
 // ============================================================
 
-#include <PrsDim_LengthDimension.hxx>
-#include <PrsDim_RadiusDimension.hxx>
-#include <PrsDim_AngleDimension.hxx>
-#include <PrsDim_DiameterDimension.hxx>
-#include <PrsDim_Dimension.hxx>
-#include <AIS_TextLabel.hxx>
-#include <TCollection_ExtendedString.hxx>
-#include <TCollection_AsciiString.hxx>
-
 struct OCCTDimension
 {
   Handle(PrsDim_Dimension) dim;
@@ -573,7 +564,10 @@ bool OCCTTextLabelGetInfo(OCCTTextLabelRef label, OCCTTextLabelInfo* out)
     strncpy(out->text, ascii.ToCString(), 255);
     out->text[255] = '\0';
 
-    out->height = 12.0; // Default height
+    // #1417: read the real height back via Prs3d_TextAspect::Height() instead of hardcoding a
+    // stale, wrong-anyway literal. AIS_TextLabel's ctor always assigns myDrawer->SetTextAspect(new
+    // Prs3d_TextAspect()), so TextAspect() is never null on a live label.
+    out->height = label->label->Attributes()->TextAspect()->Height();
     return true;
   }
   catch (...)

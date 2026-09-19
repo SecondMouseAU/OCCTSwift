@@ -29,8 +29,11 @@ struct OCAFDocumentMetadataTests {
 
     @Test("Document count")
     func documentCount() {
+        // Since #371 each Document owns a private TDocStd_Application; a freshly
+        // created document is the only one ever opened through it, so this is
+        // exactly 1, not merely a lower bound on a shared session's total.
         let doc = Document.create(format: "BinOcaf")!
-        #expect(doc.documentCount >= 1)
+        #expect(doc.documentCount == 1)
     }
 
     @Test("Create with XCAF format")

@@ -1204,7 +1204,7 @@ Since `TopoDS_Wire` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `wire`, the wire to wrap.
 - **Returns:** A `Shape` wrapping the wire, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromWire`).
+- **OCCT:** no OCCT call; a `TopoDS_Wire` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromWire`).
 - **Example:**
   ```swift
   if let wireAsShape = Shape.fromWire(myWire) {
@@ -1226,7 +1226,7 @@ Since `TopoDS_Edge` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `edge`, the edge to wrap.
 - **Returns:** A `Shape` wrapping the edge, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromEdge`).
+- **OCCT:** no OCCT call; a `TopoDS_Edge` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromEdge`).
 
 ---
 
@@ -1242,7 +1242,7 @@ Since `TopoDS_Face` inherits from `TopoDS_Shape` in OCCT, this is a lightweight 
 
 - **Parameters:** `face`, the face to wrap.
 - **Returns:** A `Shape` wrapping the face, or `nil` on failure.
-- **OCCT:** `TopoDS` shape-type promotion (via `OCCTShapeFromFace`).
+- **OCCT:** no OCCT call; a `TopoDS_Face` is a `TopoDS_Shape`, so the bridge rewraps it (via `OCCTShapeFromFace`).
 
 ---
 
@@ -1491,7 +1491,8 @@ Convenience alias for `loadSTEP(fromPath:progress:)`.
 
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** Imported shape.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on other failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on other failure.
 - **OCCT:** `STEPControl_Reader` (via `OCCTImportSTEPProgress`).
 - **Example:**
   ```swift
@@ -1510,7 +1511,8 @@ public static func load(fromPath path: String, progress: ImportProgress? = nil) 
 ```
 
 - **Parameters:** `path`, file system path to the STEP file; `progress`, optional progress/cancellation.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader` (via `OCCTImportSTEPProgress`).
 
 ---
@@ -1537,7 +1539,8 @@ Load a shape from a STEP file path with optional progress.
 public static func loadSTEP(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape
 ```
 
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader` (via `OCCTImportSTEPProgress`).
 
 ---
@@ -1589,7 +1592,8 @@ public static func loadSTEPRoot(from url: URL, rootIndex: Int) throws -> Shape
 
 - **Parameters:** `url`, URL to the STEP file; `rootIndex`, 1-based root index.
 - **Returns:** The imported shape for that root.
-- **Throws:** `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader::TransferRoot` (via `OCCTImportSTEPRoot`).
 
 ---
@@ -1608,7 +1612,12 @@ public static func loadSTEPRoot(fromPath path: String, rootIndex: Int) throws ->
 
 ### `Shape.loadSTEP(from:unitInMeters:progress:)`
 
-Import a STEP file with a specific system length unit.
+Import a STEP file, scaling the imported geometry into a specific target length unit.
+
+`unitInMeters` names the *target* unit: the length, in meters, of one unit in the returned
+shape's coordinate system. OCCT reads the length unit the STEP file itself declares in its
+header and scales the transferred geometry so the returned shape's numbers come out in
+`unitInMeters`, whatever unit the file was authored in.
 
 ```swift
 public static func loadSTEP(from url: URL, unitInMeters: Double, progress: ImportProgress? = nil) throws -> Shape
@@ -1616,11 +1625,20 @@ public static func loadSTEP(from url: URL, unitInMeters: Double, progress: Impor
 
 - **Parameters:**
   - `url`: URL to the STEP file.
-  - `unitInMeters`: system length unit in metres (e.g. `0.001` for mm, `0.0254` for inch).
+  - `unitInMeters`: length, in meters, of one unit in the returned shape's coordinate system
+    (e.g. `0.001` for millimeters, `1.0` for meters, `0.0254` for inches).
   - `progress`: optional progress/cancellation channel.
-- **Returns:** The imported shape in the specified unit system.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Returns:** The imported shape, scaled into the specified unit system.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader::SetSystemLengthUnit` (via `OCCTImportSTEPWithUnitProgress`).
+- **Example:**
+  ```swift
+  // A file authored in millimeters, imported unscaled (target unit = 1 mm).
+  let mmShape = try Shape.loadSTEP(from: url, unitInMeters: 0.001)
+  // The same file, imported scaled down into meters instead (target unit = 1 m).
+  let meterShape = try Shape.loadSTEP(from: url, unitInMeters: 1.0)
+  ```
 
 ---
 
@@ -1677,7 +1695,8 @@ Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and 
 
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** Processed shape, a plain **solid** for a single-body file, a **compound of solids** when the file holds several bodies.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTEPRobustProgress`).
 - **Example:**
   ```swift
@@ -1739,7 +1758,8 @@ Returns an `ImportResult` struct containing the shape and information about what
 
 - **Parameters:** `url`, URL to the STEP file.
 - **Returns:** `ImportResult` with `shape`, `originalType`, `resultType`, `sewingApplied`, `solidCreated`, `solidsCreated`, and `healingApplied`.
-- **Throws:** `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `STEPControl_Reader` + `OCCTImportSTEPWithDiagnostics`.
 - **Example:**
   ```swift
@@ -1772,7 +1792,8 @@ IGES is a legacy CAD format still commonly used in manufacturing and older CAD s
 
 - **Parameters:** `url`, URL to the `.igs` or `.iges` file; `progress`, optional progress/cancellation.
 - **Returns:** Imported shape.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `IGESControl_Reader` (via `OCCTImportIGESProgress`).
 - **Example:**
   ```swift
@@ -1807,7 +1828,8 @@ Both phases are bounded by `progress`: transfer spans `fraction` 0…0.5 and hea
 
 - **Parameters:** `url`, URL to the IGES file; `progress`, optional progress/cancellation channel.
 - **Returns:** Transferred shape with healing applied.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `IGESControl_Reader` + `ShapeFix_Shape` (via `OCCTImportIGESRobustProgress`).
 - **Example:**
   ```swift
@@ -1881,7 +1903,8 @@ public static func loadIGESRoot(from url: URL, rootIndex: Int) throws -> Shape
 ```
 
 - **Parameters:** `url`, URL to the IGES file; `rootIndex`, 1-based root index.
-- **Throws:** `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `IGESControl_Reader::TransferOneRoot` (via `OCCTImportIGESRoot`).
 
 ---
@@ -1931,7 +1954,8 @@ public static func loadIGESVisible(from url: URL) throws -> Shape
 ```
 
 - **Parameters:** `url`, URL to the IGES file.
-- **Throws:** `ImportError.importFailed` on failure.
+- **Throws:** `ImportError.readFailed(path:status:)`, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644), on failure.
 - **OCCT:** `IGESControl_Reader` with visibility filtering (via `OCCTImportIGESVisible`).
 
 ---

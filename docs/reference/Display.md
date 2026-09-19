@@ -1114,7 +1114,16 @@ Uses the drawer's deflection type (relative or absolute), deviation coefficient/
 
 - **Parameters:** `drawer`, a configured `DisplayDrawer` whose properties drive `BRepMesh_IncrementalMesh`.
 - **Returns:** `ShadedMeshData`, or `nil` on failure.
-- **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)` with deflection/angle read from `Prs3d_Drawer`.
+The angle is read straight off the drawer, but the deflection is not, and this entry said it was
+until #1399. When the drawer's deflection type is relative, which is OCCT's own default, the
+coefficient is a dimensionless number that has to be scaled by the shape's size first; the bridge
+mirrors what OCCT's own triangulation tool does for the same reason. The absolute
+`MaximalChordialDeviation` is used unscaled only when the type is absolute. See
+[`DisplayDrawer.deviationCoefficient`](Drawing.md#deviationcoefficient) for the formula.
+
+- **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)`, with `angle`
+  from `Prs3d_Drawer::DeviationAngle` and `deflection` from `Prs3d::GetDeflection` over a
+  `Bnd_Box` built by `BRepBndLib::Add`.
 - **Example:**
   ```swift
   let drawer = DisplayDrawer()
@@ -1136,7 +1145,9 @@ func edgeMesh(drawer: DisplayDrawer) -> EdgeMeshData?
 
 - **Parameters:** `drawer`, a configured `DisplayDrawer`.
 - **Returns:** `EdgeMeshData`, or `nil` on failure.
-- **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)` + `BRep_Tool::PolygonOnTriangulation`.
+- **OCCT:** `BRepMesh_IncrementalMesh(shape, deflection, Standard_False, angle)` +
+  `BRep_Tool::PolygonOnTriangulation`, with the deflection derived from the drawer the same way
+  as `shadedMesh(drawer:)`, through `Prs3d::GetDeflection` rather than read off the drawer.
 - **Example:**
   ```swift
   if let wf = shape.edgeMesh(drawer: drawer) {

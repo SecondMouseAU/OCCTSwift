@@ -27,10 +27,23 @@ public final class DisplayDrawer: @unchecked Sendable {
 
     // MARK: - Tessellation Quality
 
-    /// Chordal deviation coefficient (relative to bounding box diagonal).
+    /// Chordal deviation coefficient, scaled by the shape's own size.
     ///
     /// Lower values produce finer tessellation. Default is approximately 0.001.
     /// Only applies when ``deflectionType`` is `.relative`.
+    ///
+    /// The absolute deflection ``Shape/shadedMesh(drawer:)`` and ``Shape/edgeMesh(drawer:)``
+    /// hand to `BRepMesh_IncrementalMesh` is `Prs3d::GetDeflection`'s:
+    /// `max(longest bounding-box side * deviationCoefficient * 4, Precision::Confusion())`.
+    /// A 10-unit cube at the default 0.001 therefore tessellates to 0.04. This comment said
+    /// "relative to bounding box diagonal" until #1399 measured the kernel function; the
+    /// diagonal is not what it uses.
+    ///
+    /// ```swift
+    /// let drawer = DisplayDrawer()
+    /// drawer.deviationCoefficient = 0.0002   // finer than the 0.001 default
+    /// let mesh = Shape.box(width: 10, height: 10, depth: 10)?.shadedMesh(drawer: drawer)
+    /// ```
     public var deviationCoefficient: Double {
         get { OCCTDrawerGetDeviationCoefficient(handle) }
         set { OCCTDrawerSetDeviationCoefficient(handle, newValue) }

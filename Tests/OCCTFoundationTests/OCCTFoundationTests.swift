@@ -144,10 +144,24 @@ struct ColorOCCTTests {
     }
 
     @Test func toHex() {
+        // Pure red is a fixed point of the linear->sRGB gamma curve (0 and 1 map to themselves),
+        // so the expected string is exact rather than approximate.
         let c = Color(red: 1.0, green: 0.0, blue: 0.0)
-        if let hex = c.toHex() {
-            #expect(!hex.isEmpty)
-        }
+        #expect(c.toHex() == "#FF0000")
+    }
+
+    // Regression for #1571: `includeHashPrefix` (formerly the backwards, misnamed `sRGB`
+    // parameter) controls ONLY the '#' prefix, matching OCCT's own `theToPrefixHash`. There is no
+    // linear-RGB-output mode: `Quantity_Color::ColorToHex` always gamma-encodes to sRGB.
+    @Test func toHexIncludeHashPrefixDefaultTrue() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0)
+        #expect(c.toHex() == "#FF0000")
+        #expect(c.toHex(includeHashPrefix: true) == "#FF0000")
+    }
+
+    @Test func toHexIncludeHashPrefixFalseOmitsPrefix() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0)
+        #expect(c.toHex(includeHashPrefix: false) == "FF0000")
     }
 
     @Test func fromHexRGBA() {
@@ -162,6 +176,20 @@ struct ColorOCCTTests {
         if let hex = c.toHexRGBA() {
             #expect(!hex.isEmpty)
         }
+    }
+
+    // Regression for #1571: same shape as `toHex`, for the RGBA overload. Alpha is passed through
+    // unconverted by OCCT (only R/G/B are gamma-encoded), and pure red/full alpha are again fixed
+    // points, so the expected string is exact.
+    @Test func toHexRGBAIncludeHashPrefixDefaultTrue() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        #expect(c.toHexRGBA() == "#FF0000FF")
+        #expect(c.toHexRGBA(includeHashPrefix: true) == "#FF0000FF")
+    }
+
+    @Test func toHexRGBAIncludeHashPrefixFalseOmitsPrefix() {
+        let c = Color(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        #expect(c.toHexRGBA(includeHashPrefix: false) == "FF0000FF")
     }
 
     @Test func distance() {
@@ -327,6 +355,32 @@ struct MaterialOCCTTests {
         let mr = Material.minRoughness
         #expect(mr > 0)
         #expect(mr < 0.1)
+    }
+
+    @Test func predefinedMaterialRoughnessIsAuthoredValueNotRemap() {
+        // #1419: Graphic3d_MaterialAspect(Graphic3d_NameOfMaterial_Water)'s PBR material has an
+        // authored (NormalizedRoughness) roughness of exactly 0.0 --
+        // Graphic3d_PBRMaterial::SetBSDF's dielectric-glass branch calls SetRoughness(0.f)
+        // directly. The wrong accessor, Roughness(), remaps that into [MinRoughness,1] for
+        // internal calculations and would read back exactly MinRoughness() (0.01), never below
+        // it, for ANY material. Measured directly against the pinned kernel, see
+        // Scripts/repro/1419-pbr-roughness-accessor/: Water/Glass/Diamond/Neon/Ionized all report
+        // normalized=0.0, remapped=0.01.
+        if let water = Material.predefinedMaterial(named: "Water") {
+            #expect(Double(water.pbrRoughness) < Double(Material.minRoughness))
+            #expect(abs(water.pbrRoughness) < 1e-4)
+        }
+    }
+
+    @Test func predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic() {
+        // #1419: Brass's PBR material has an authored roughness of 0.212132 (sqrt(0.045),
+        // Graphic3d_BSDF::CreateMetallic's roughness parameter); Roughness() would remap it to
+        // 0.220011 in [MinRoughness,1] space. The two are close enough that a loose tolerance
+        // would pass either way, so this pins the value tightly against the authored one.
+        if let brass = Material.predefinedMaterial(named: "Brass") {
+            #expect(abs(Double(brass.pbrRoughness) - 0.212132) < 1e-4)
+            #expect(abs(Double(brass.pbrRoughness) - 0.220011) > 1e-4)
+        }
     }
 
     @Test func roughnessFromSpecular() {
@@ -690,339 +744,6 @@ struct ReportTests {
     }
 }
 
-@Suite("ByteArray Tests")
-struct ByteArrayTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let values: [UInt8] = [42, 255, 0, 128]
-        #expect(doc.setByteArray(tag: 320, values: values))
-        if let result = doc.byteArray(tag: 320) {
-            #expect(result.count == 4)
-            #expect(result[0] == 42)
-            #expect(result[1] == 255)
-            #expect(result[3] == 128)
-        }
-    }
-
-    @Test func hasByteArray() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasByteArray(tag: 321))
-        _ = doc.setByteArray(tag: 321, values: [1, 2, 3])
-        #expect(doc.hasByteArray(tag: 321))
-    }
-}
-
-@Suite("IntegerList Tests")
-struct IntegerListTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let values: [Int32] = [10, 20, 30]
-        #expect(doc.setIntegerList(tag: 330, values: values))
-        if let result = doc.integerList(tag: 330) {
-            #expect(result.count == 3)
-            #expect(result[0] == 10)
-            #expect(result[2] == 30)
-        }
-    }
-
-    @Test func appendAndClear() {
-        guard let doc = Document.create() else { return }
-        _ = doc.setIntegerList(tag: 331, values: [])
-        #expect(doc.integerListAppend(tag: 331, value: 42))
-        #expect(doc.integerListAppend(tag: 331, value: 99))
-        if let result = doc.integerList(tag: 331) {
-            #expect(result.count == 2)
-            #expect(result[0] == 42)
-        }
-        #expect(doc.integerListClear(tag: 331))
-        if let result = doc.integerList(tag: 331) {
-            #expect(result.count == 0)
-        }
-    }
-
-    @Test func hasIntegerList() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasIntegerList(tag: 332))
-        _ = doc.setIntegerList(tag: 332, values: [1])
-        #expect(doc.hasIntegerList(tag: 332))
-    }
-}
-
-@Suite("RealList Tests")
-struct RealListTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let values: [Double] = [1.5, 2.7, 3.14]
-        #expect(doc.setRealList(tag: 340, values: values))
-        if let result = doc.realList(tag: 340) {
-            #expect(result.count == 3)
-            #expect(abs(result[0] - 1.5) < 1e-10)
-            #expect(abs(result[2] - 3.14) < 1e-10)
-        }
-    }
-
-    @Test func appendAndClear() {
-        guard let doc = Document.create() else { return }
-        _ = doc.setRealList(tag: 341, values: [])
-        #expect(doc.realListAppend(tag: 341, value: 0.5))
-        #expect(doc.realListAppend(tag: 341, value: 1.5))
-        if let result = doc.realList(tag: 341) {
-            #expect(result.count == 2)
-        }
-        #expect(doc.realListClear(tag: 341))
-        if let result = doc.realList(tag: 341) {
-            #expect(result.count == 0)
-        }
-    }
-
-    @Test func hasRealList() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasRealList(tag: 342))
-        _ = doc.setRealList(tag: 342, values: [1.0])
-        #expect(doc.hasRealList(tag: 342))
-    }
-}
-
-@Suite("ExtStringArray Tests")
-struct ExtStringArrayTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let values = ["Hello", "World", "Test"]
-        #expect(doc.setExtStringArray(tag: 350, values: values))
-        if let len = doc.extStringArrayLength(tag: 350) {
-            #expect(len == 3)
-        }
-        if let v = doc.extStringArrayValue(tag: 350, index: 1) {
-            #expect(v == "Hello")
-        }
-        if let v = doc.extStringArrayValue(tag: 350, index: 2) {
-            #expect(v == "World")
-        }
-    }
-
-    @Test func hasExtStringArray() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasExtStringArray(tag: 351))
-        _ = doc.setExtStringArray(tag: 351, values: ["A"])
-        #expect(doc.hasExtStringArray(tag: 351))
-    }
-}
-
-@Suite("ExtStringList Tests")
-struct ExtStringListTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let values = ["Alpha", "Beta", "Gamma"]
-        #expect(doc.setExtStringList(tag: 360, values: values))
-        if let count = doc.extStringListCount(tag: 360) {
-            #expect(count == 3)
-        }
-        if let v = doc.extStringListValue(tag: 360, index: 0) {
-            #expect(v == "Alpha")
-        }
-        if let v = doc.extStringListValue(tag: 360, index: 2) {
-            #expect(v == "Gamma")
-        }
-    }
-
-    @Test func appendAndClear() {
-        guard let doc = Document.create() else { return }
-        _ = doc.setExtStringList(tag: 361, values: [])
-        #expect(doc.extStringListAppend(tag: 361, value: "X"))
-        #expect(doc.extStringListAppend(tag: 361, value: "Y"))
-        if let count = doc.extStringListCount(tag: 361) {
-            #expect(count == 2)
-        }
-        #expect(doc.extStringListClear(tag: 361))
-        if let count = doc.extStringListCount(tag: 361) {
-            #expect(count == 0)
-        }
-    }
-
-    @Test func hasExtStringList() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasExtStringList(tag: 362))
-        _ = doc.setExtStringList(tag: 362, values: ["A"])
-        #expect(doc.hasExtStringList(tag: 362))
-    }
-}
-
-@Suite("ReferenceArray Tests")
-struct ReferenceArrayTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let refs: [Int32] = [400, 401, 402]
-        #expect(doc.setReferenceArray(tag: 370, refTags: refs))
-        if let result = doc.referenceArray(tag: 370) {
-            #expect(result.count == 3)
-            #expect(result[0] == 400)
-            #expect(result[1] == 401)
-            #expect(result[2] == 402)
-        }
-    }
-
-    @Test func hasReferenceArray() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasReferenceArray(tag: 371))
-        _ = doc.setReferenceArray(tag: 371, refTags: [500])
-        #expect(doc.hasReferenceArray(tag: 371))
-    }
-}
-
-@Suite("ReferenceList Tests")
-struct ReferenceListTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        let refs: [Int32] = [410, 411]
-        #expect(doc.setReferenceList(tag: 380, refTags: refs))
-        if let result = doc.referenceList(tag: 380) {
-            #expect(result.count == 2)
-            #expect(result[0] == 410)
-            #expect(result[1] == 411)
-        }
-    }
-
-    @Test func appendAndClear() {
-        guard let doc = Document.create() else { return }
-        _ = doc.setReferenceList(tag: 381, refTags: [])
-        #expect(doc.referenceListAppend(tag: 381, refTag: 420))
-        #expect(doc.referenceListAppend(tag: 381, refTag: 421))
-        if let result = doc.referenceList(tag: 381) {
-            #expect(result.count == 2)
-        }
-        #expect(doc.referenceListClear(tag: 381))
-        if let result = doc.referenceList(tag: 381) {
-            #expect(result.count == 0)
-        }
-    }
-
-    @Test func hasReferenceList() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasReferenceList(tag: 382))
-        _ = doc.setReferenceList(tag: 382, refTags: [500])
-        #expect(doc.hasReferenceList(tag: 382))
-    }
-}
-
-@Suite("Relation Tests")
-struct RelationTests {
-    @Test func setAndGet() {
-        guard let doc = Document.create() else { return }
-        #expect(doc.setRelation(tag: 390, relation: "x + y = z"))
-        if let rel = doc.relation(tag: 390) {
-            #expect(rel == "x + y = z")
-        }
-    }
-
-    @Test func hasRelation() {
-        guard let doc = Document.create() else { return }
-        #expect(!doc.hasRelation(tag: 391))
-        _ = doc.setRelation(tag: 391, relation: "a = b")
-        #expect(doc.hasRelation(tag: 391))
-    }
-}
-
-@Suite("IntPackedMap Tests")
-struct IntPackedMapTests {
-
-    @Test func setAndAdd() {
-        guard let doc = Document.create() else { return }
-        #expect(doc.setIntPackedMap(tag: 100))
-        #expect(doc.intPackedMapAdd(tag: 100, value: 42))
-        #expect(doc.intPackedMapAdd(tag: 100, value: 100))
-        #expect(doc.intPackedMapContains(tag: 100, value: 42))
-        #expect(doc.intPackedMapContains(tag: 100, value: 100))
-    }
-
-    @Test func extent() {
-        guard let doc = Document.create() else { return }
-        doc.setIntPackedMap(tag: 101)
-        doc.intPackedMapAdd(tag: 101, value: 1)
-        doc.intPackedMapAdd(tag: 101, value: 2)
-        doc.intPackedMapAdd(tag: 101, value: 3)
-        #expect(doc.intPackedMapCount(tag: 101) == 3)
-    }
-
-    @Test func remove() {
-        guard let doc = Document.create() else { return }
-        doc.setIntPackedMap(tag: 102)
-        doc.intPackedMapAdd(tag: 102, value: 10)
-        doc.intPackedMapAdd(tag: 102, value: 20)
-        #expect(doc.intPackedMapRemove(tag: 102, value: 10))
-        #expect(!doc.intPackedMapContains(tag: 102, value: 10))
-        #expect(doc.intPackedMapCount(tag: 102) == 1)
-    }
-
-    @Test func clearAndEmpty() {
-        guard let doc = Document.create() else { return }
-        doc.setIntPackedMap(tag: 103)
-        doc.intPackedMapAdd(tag: 103, value: 5)
-        #expect(!doc.intPackedMapIsEmpty(tag: 103))
-        doc.intPackedMapClear(tag: 103)
-        #expect(doc.intPackedMapIsEmpty(tag: 103))
-        #expect(doc.intPackedMapCount(tag: 103) == 0)
-    }
-
-    @Test func getValues() {
-        guard let doc = Document.create() else { return }
-        doc.setIntPackedMap(tag: 104)
-        doc.intPackedMapAdd(tag: 104, value: 7)
-        doc.intPackedMapAdd(tag: 104, value: 42)
-        doc.intPackedMapAdd(tag: 104, value: 99)
-        let values = doc.intPackedMapValues(tag: 104)
-        #expect(values.count == 3)
-        #expect(values.contains(7))
-        #expect(values.contains(42))
-        #expect(values.contains(99))
-    }
-
-    @Test func changeValues() {
-        guard let doc = Document.create() else { return }
-        doc.setIntPackedMap(tag: 105)
-        doc.intPackedMapAdd(tag: 105, value: 1)
-        #expect(doc.intPackedMapSetValues(tag: 105, values: [10, 20, 30, 40, 50]))
-        #expect(doc.intPackedMapCount(tag: 105) == 5)
-        #expect(doc.intPackedMapContains(tag: 105, value: 30))
-        #expect(!doc.intPackedMapContains(tag: 105, value: 1))
-    }
-}
-
-@Suite("NoteBook Tests")
-struct NoteBookTests {
-
-    @Test func createNoteBook() {
-        guard let doc = Document.create() else { return }
-        #expect(doc.setNoteBook(tag: 200))
-        #expect(doc.noteBookExists(tag: 200))
-    }
-
-    @Test func appendReal() {
-        guard let doc = Document.create() else { return }
-        doc.setNoteBook(tag: 201)
-        let childTag = doc.noteBookAppendReal(tag: 201, value: 3.14)
-        #expect(childTag != nil)
-    }
-
-    @Test func appendInteger() {
-        guard let doc = Document.create() else { return }
-        doc.setNoteBook(tag: 202)
-        let childTag = doc.noteBookAppendInteger(tag: 202, value: 42)
-        #expect(childTag != nil)
-    }
-
-    @Test func multipleAppends() {
-        guard let doc = Document.create() else { return }
-        doc.setNoteBook(tag: 203)
-        let r1 = doc.noteBookAppendReal(tag: 203, value: 1.0)
-        let r2 = doc.noteBookAppendReal(tag: 203, value: 2.0)
-        let i1 = doc.noteBookAppendInteger(tag: 203, value: 10)
-        #expect(r1 != nil)
-        #expect(r2 != nil)
-        #expect(i1 != nil)
-        // Each append creates a new child, so tags should be different
-        if let r1, let r2 { #expect(r1 != r2) }
-    }
-}
 
 @Suite("OSD Timer Tests")
 struct OSDTimerTests {
@@ -1330,7 +1051,10 @@ struct OSDFileIteratorTests {
 struct OSDDiskTests {
     @Test func diskSize() {
         let size = DiskInfo.size()
-        // On macOS, may return 0 (OCCT limitation)
+        // Fixed by #1442 (bridge now constructs OSD_Disk from the path string directly
+        // rather than via OSD_Path, whose Disk() component is never populated on
+        // macOS/iOS/Linux): a real path now reports a real, nonzero KB figure. See
+        // Issue1442DiskUnicodeOSDUtilitiesTests for the precise regression coverage.
         #expect(size >= 0)
     }
 
@@ -1395,8 +1119,17 @@ struct MessageMsgTests {
     }
 
     @Test func loadDefault() {
-        // May fail but should not crash
-        let _ = MessageSystem.loadDefault()
+        // Issue #1422: loadDefault() used to reference a fabricated env var ("CSF_XHatch") that
+        // could never resolve, so this used to be able to assert only "doesn't crash." It now
+        // loads OCCT's real Shape Healing (ShapeFix) message set via ShapeExtend::Init(), which
+        // falls back to a message set compiled into the OCCT static library when no CSF_SHMessage
+        // resource file is found, so this reliably succeeds. Nothing else in this bridge or its
+        // tests calls ShapeExtend::Init() (only OCCT's higher-level ShapeProcess/XSAlgo framework
+        // does, which this bridge never reaches), so this key cannot already be present from an
+        // unrelated code path.
+        let ok = MessageSystem.loadDefault()
+        #expect(ok)
+        #expect(MessageSystem.hasMessage(forKey: "ShapeFix.FixSmallSolid.MSG0"))
     }
 
     @Test func loadNonexistent() {
@@ -1568,6 +1301,53 @@ struct SheetStandardLayoutTests {
             #expect(placed.offset.y >= frame.min.y)
             #expect(placed.offset.y <= frame.max.y)
         }
+    }
+
+    // #1572: the doc (here and in docs/reference/SheetMetal.md) promises "margin on each
+    // outer edge and margin/2 between cells", but the code used to compute
+    // `cellW = (innerW - margin) / 2` and step columns by `cellW + margin`, which produces a
+    // *full*-margin gap, not margin/2. `front` sits in column 0 for both projection angles, so
+    // its x-offset tracks the column-0 cell centre exactly (view geometry and the applied scale
+    // are held fixed across the two calls below via a tiny `.custom` scale well under the
+    // fit-to-cell scale, so only `margin` varies). The documented algorithm gives
+    // `cellW(margin) = ((frameW - 2*margin) - margin/2) / 2`, which is linear in `margin`, so the
+    // column-0 centre's shift between two margins is exactly computable and distinguishes the
+    // margin/2 gap (this test's `expectedDelta`) from the full-margin-gap bug by a wide,
+    // unambiguous 5mm (15mm vs 10mm here), not a rounding-noise difference.
+    @Test("standardLayout's inter-cell gap is margin/2, matching the documented algorithm")
+    func interCellGapIsHalfMargin() {
+        let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
+        guard let box = Shape.box(width: 20, height: 15, depth: 10) else {
+            Issue.record("setup nil")
+            return
+        }
+        let frame = sheet.innerFrame
+        let margin1 = 20.0
+        let margin2 = 60.0
+        guard
+            let layout1 = sheet.standardLayout(of: box, scale: .custom(0.01), margin: margin1),
+            let layout2 = sheet.standardLayout(of: box, scale: .custom(0.01), margin: margin2)
+        else {
+            Issue.record("setup nil")
+            return
+        }
+
+        let frameW = frame.max.x - frame.min.x
+        func expectedCellW(_ margin: Double) -> Double {
+            let innerW = frameW - 2 * margin
+            return (innerW - margin / 2) / 2
+        }
+        func expectedColumn0Centre(_ margin: Double) -> Double {
+            frame.min.x + margin + expectedCellW(margin) / 2
+        }
+        let expectedDelta = expectedColumn0Centre(margin2) - expectedColumn0Centre(margin1)
+        let actualDelta = layout2.front.offset.x - layout1.front.offset.x
+
+        // Pre-fix (full-margin gap), the same fixture moves front's centre by only
+        // 0.25 * (margin2 - margin1) = 10, not the documented 0.375 * 40 = 15; asserting equality
+        // against `expectedDelta` (the margin/2-gap prediction) fails against that code and passes
+        // against the fix.
+        #expect(abs(actualDelta - expectedDelta) < 1e-6)
     }
 
     @Test("includeIso: false omits the isometric view")

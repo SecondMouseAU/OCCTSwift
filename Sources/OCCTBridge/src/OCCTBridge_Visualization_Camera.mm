@@ -317,20 +317,6 @@ struct OCCTDrawer
   OCCTDrawer() { drawer = new Prs3d_Drawer(); }
 };
 
-static double OCCTDrawerGetEffectiveDeflection(OCCTDrawerRef drawer)
-{
-  if (!drawer)
-    return 0.1;
-  if (drawer->drawer->TypeOfDeflection() == Aspect_TOD_RELATIVE)
-  {
-    return drawer->drawer->DeviationCoefficient();
-  }
-  else
-  {
-    return drawer->drawer->MaximalChordialDeviation();
-  }
-}
-
 struct OCCTClipPlane
 {
   Handle(Graphic3d_ClipPlane) plane;
@@ -364,9 +350,12 @@ static void fillMaterialProps(const Graphic3d_MaterialAspect& mat, OCCTMaterialP
   props->refractionIndex = mat.RefractionIndex();
   props->isPhysic        = (mat.MaterialType() == Graphic3d_MATERIAL_PHYSIC);
   // PBR
-  Graphic3d_PBRMaterial pbr  = mat.PBRMaterial();
-  props->pbrMetallic         = pbr.Metallic();
-  props->pbrRoughness        = pbr.Roughness();
+  Graphic3d_PBRMaterial pbr = mat.PBRMaterial();
+  props->pbrMetallic        = pbr.Metallic();
+  // #1419: NormalizedRoughness() is the authored [0,1] value; Roughness() remaps it into
+  // [MinRoughness,1] for OCCT's own internal calculations, which is not what a caller reading
+  // this struct back (e.g. for glTF's roughnessFactor) wants.
+  props->pbrRoughness        = pbr.NormalizedRoughness();
   props->pbrIOR              = pbr.IOR();
   props->pbrAlpha            = pbr.Alpha();
   NCollection_Vec3<float> em = pbr.Emission();
@@ -508,8 +497,11 @@ void OCCTCameraSetScale(OCCTCameraRef cam, double scale)
 
 double OCCTCameraGetScale(OCCTCameraRef cam)
 {
+  // #1417: Graphic3d_Camera's own default constructor is myScale(1000.0), matching this file's
+  // established pattern for a null fallback (OCCTCameraGetFOV/OCCTCameraGetAspect already mirror
+  // OCCT's real defaults, 45.0 and 1.0 respectively) -- 1.0 was off by a factor of 1000.
   if (!cam)
-    return 1.0;
+    return 1000.0;
   return cam->camera->Scale();
 }
 

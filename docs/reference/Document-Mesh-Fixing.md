@@ -957,7 +957,8 @@ public func projectPointAll(
   - `point`: the 3D query point.
   - `maxResults`: output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
-- **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
+- **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTExtremaPointCurve`). `Surface.projectPointAll`
+  below is the surface counterpart of this call.
 - **Example:**
   ```swift
   if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
@@ -986,7 +987,8 @@ public func locateNearestPoint(
   - `initU`, `initV`, starting UV parameters.
   - `tolerance`: convergence tolerance.
 - **Returns:** `(u, v, distance)` or `nil` on failure.
-- **OCCT:** `Extrema_ExtPS` local mode (via `OCCTExtremaLocateOnSurface`).
+- **OCCT:** `Extrema_GenLocateExtPS` (via `OCCTExtremaLocateOnSurface`), the seeded local solver.
+  Not `Extrema_ExtPS`, the global one, which this entry named until #1399.
 
 ---
 
@@ -1926,7 +1928,7 @@ Run a single fix pass directly.
 
 Runs `ShapeFix_Face::FixPeriodicDegenerated` alone: heals a wire that belts the full period of a
 periodic surface as a single closed edge (see the `ShapeFix_Face::FixPeriodicDegenerated`
-null-Context SIGSEGV entry in `CLAUDE.md`'s Known OCCT Bugs, fixed upstream in OCCT 8.0.1).
+null-Context SIGSEGV row (#317) in `okf/references/known-occt-bugs.md`, fixed upstream in OCCT 8.0.1).
 
 ```swift
 @discardableResult public func fixPeriodicDegenerated() -> Bool
@@ -2129,7 +2131,9 @@ Get the full knot sequence with multiplicities expanded.
 public func bsplineKnotSequence() -> [Double]
 ```
 
-- **Returns:** Up to 1024 knot values in the flat (expanded) sequence.
+- **Returns:** Every knot value in the flat (expanded) sequence, sized from the curve's own pole
+  count and degree (`poleCount + 2*degree + 1`, an exact upper bound for both periodic and
+  non-periodic curves); never truncates, however many poles the curve has (#1541).
 - **OCCT:** `Geom_BSplineCurve::KnotSequence` (via `OCCTCurve3DBSplineGetKnotSequence`).
 
 ---
@@ -3426,7 +3430,7 @@ The total number of named OCCT colours available.
 public static var namedColorCount: Int { get }
 ```
 
-- **OCCT:** `Quantity_Color` named-colour registry (via `OCCTNamedColorCount`).
+- **OCCT:** the `Quantity_NameOfColor` enumeration, counted to its last named entry (via `OCCTNamedColorCount`).
 
 ---
 
@@ -3685,7 +3689,7 @@ public static func build(
   - `isClockwise`: `true` for left-hand helix winding.
   - `tolerance`: maximum approximation error.
 - **Returns:** `BuildResult` with the BSpline curve and the achieved error, or `nil` on failure.
-- **OCCT:** `HelixGeom_Helix` + `GeomAPI_PointsToBSpline` (via `OCCTHelixBuild`).
+- **OCCT:** `HelixGeom_BuilderHelix` (via `OCCTHelixBuild`). The builder's own `Perform()` produces the BSpline; nothing here fits a sampled point set.
 - **Example:**
   ```swift
   if let result = Helix.build(
@@ -3718,7 +3722,7 @@ public static func buildCoil(
 
 - **Parameters:** Same geometric parameters as `build`, minus origin/direction (defaults to Z-axis origin).
 - **Returns:** `BuildResult`, or `nil` on failure.
-- **OCCT:** `HelixGeom_Helix` coil variant (via `OCCTHelixCoilBuild`).
+- **OCCT:** `HelixGeom_BuilderHelixCoil` (via `OCCTHelixCoilBuild`), a separate builder class rather than a mode of the one above.
 
 ---
 
@@ -3739,7 +3743,7 @@ public static func evaluate(
 
 - **Parameters:** `u`, the parameter value to evaluate.
 - **Returns:** The 3D point on the helix at `u`.
-- **OCCT:** `HelixGeom_Helix::Value` (via `OCCTHelixCurveEval`).
+- **OCCT:** `HelixGeom_HelixCurve`, loaded with `Load(t1, t2, pitch, radius, taperAngle, isClockwise)` and evaluated in place (via `OCCTHelixCurveEval`). `Value`, `D1` and `D2` come from its adaptor base rather than from the class itself.
 
 ---
 
@@ -3758,7 +3762,7 @@ public static func evaluateD1(
 ) -> (point: SIMD3<Double>, tangent: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_Helix::D1` (via `OCCTHelixCurveD1`).
+- **OCCT:** `HelixGeom_HelixCurve` (via `OCCTHelixCurveD1`).
 
 ---
 
@@ -3777,7 +3781,7 @@ public static func evaluateD2(
 ) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>)
 ```
 
-- **OCCT:** `HelixGeom_Helix::D2` (via `OCCTHelixCurveD2`).
+- **OCCT:** `HelixGeom_HelixCurve` (via `OCCTHelixCurveD2`).
 
 ---
 
@@ -3797,7 +3801,7 @@ public static func approximateToBSpline(
 ```
 
 - **Returns:** `(curve, maxError)` or `nil` on failure. The returned BSpline is a direct approximation distinct from the helix-sampled interpolation used by `build`.
-- **OCCT:** `HelixGeom_ApproxCurve` or equivalent BSpline fitting (via `OCCTHelixApproxToBSpline`).
+- **OCCT:** `HelixGeom_Tools::ApprHelix` (via `OCCTHelixApproxToBSpline`).
 - **Example:**
   ```swift
   if let (bsp, err) = Helix.approximateToBSpline(

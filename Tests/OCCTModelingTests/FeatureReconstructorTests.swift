@@ -76,6 +76,44 @@ struct FeatureReconstructorTests {
         #expect(result.shape != nil)
     }
 
+    @Test("#1585: a second additive feature whose union totally fails is Skipped, not silently absorbed")
+    func absorbAdditiveTotalUnionFailureIsSkipped() {
+        // First feature: a real 20x20x10 box (via extrude), volume 4000.
+        let box = FeatureSpec.Extrude(
+            profilePoints2D: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 20), SIMD2(0, 20)],
+            planeOrigin: SIMD3(0, 0, 0),
+            planeNormal: SIMD3(0, 0, 1),
+            length: 10,
+            id: "first")
+        // Second feature: a degenerate, zero-area profile (3 collinear points,
+        // satisfying the `>= 3` guard so this reaches `absorbAdditive` rather than
+        // being rejected earlier as underdetermined) revolved into a flat annular
+        // sliver exactly coplanar with the box's own z=0 face. Both
+        // `unionWithFullHistory` and the plain `union` fallback genuinely fail on
+        // this pair (a real OCCT boolean failure, not a timeout or a nullified
+        // operand); confirmed by running this fixture against the pre-fix
+        // `absorbAdditive` and observing the three assertions below fail.
+        let degenerate = FeatureSpec.Revolve(
+            profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 0)],
+            axisOrigin: SIMD3(30, 0, 0),
+            axisDirection: SIMD3(0, 0, 1),
+            angleDeg: 180,
+            id: "second")
+        let result = FeatureReconstructor.build(from: [.extrude(box), .revolve(degenerate)])
+
+        // The failed feature must surface as Skipped, not land in `fulfilled`.
+        #expect(result.fulfilled == ["first"])
+        #expect(result.skipped.contains { $0.featureID == "second" })
+
+        // `ctx.current` must retain the first feature's own shape (volume 4000),
+        // not be silently replaced by the second feature's raw, unfused body.
+        if let volume = result.shape?.volume {
+            #expect(abs(volume - 4000.0) < 1.0)
+        } else {
+            Issue.record("expected the retained first-feature shape to report a volume")
+        }
+    }
+
     @Test("Fillet with uniform radius applies after additive stage")
     func uniformFillet() {
         let r = FeatureSpec.Revolve(

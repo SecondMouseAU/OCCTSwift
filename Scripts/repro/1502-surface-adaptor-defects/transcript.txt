@@ -1,0 +1,8 @@
+########## OLD: plain BRepAdaptor_Curve handed to GeomFill_Darboux::SetCurve ##########
+
+*** caught SIGBUS (10) -- exiting 86 ***
+exit: 86
+
+########## NEW: real Adaptor3d_CurveOnSurface handed to SetCurve ##########
+NEW: D0 returned true, t=(-0.0998334,0.995004,0), n=(-0.995004,-0.0998334,0), b=(0,0,1)
+exit: 0

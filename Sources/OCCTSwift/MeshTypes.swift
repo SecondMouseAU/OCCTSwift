@@ -327,7 +327,11 @@ public struct MergedMeshData: Sendable {
 ///   - shape: A shape that has been triangulated (e.g., via Mesh.from(shape:))
 ///   - smoothAngle: Normal smoothing angle threshold in radians
 ///   - mergeTolerance: Distance threshold for merging nodes (0 = positional only)
-/// - Returns: Merged mesh data, or nil on failure
+/// - Returns: Merged mesh data, or `nil` on failure -- including a merged mesh too large for the
+///   fixed-size `maxVerts`/`maxIdx` buffers below (#1566): `OCCTPolyMergeNodes` refuses the whole
+///   call rather than reporting counts larger than what it actually wrote, so this never returns a
+///   `MergedMeshData` whose `triangleCount`/`vertexCount` disagree with `indices.count`/
+///   `vertices.count`.
 public func mergedMeshNodes(
     from shape: Shape,
     smoothAngle: Double,
@@ -356,6 +360,12 @@ public func mergedMeshNodes(
 
     let nv = Int(nVerts)
     let nt = Int(triCount)
+    // #1566 belt-and-suspenders: the bridge itself now refuses (returns 0, caught above) rather
+    // than report a count it never actually wrote into these buffers, but check here too so this
+    // function stays correct even if that bridge-side guard were ever weakened again -- reading
+    // past either buffer's end via unpackSIMD3's direct subscripting is a hard Swift trap, not a
+    // recoverable error.
+    guard nv <= Int(maxVerts), nt * 3 <= Int(maxIdx) else { return nil }
     let verts: [SIMD3<Float>] = unpackSIMD3(vertices, count: nv)
     let norms: [SIMD3<Float>] = unpackSIMD3(normals, count: nv)
     let idxSlice = Array(indices.prefix(nt * 3))

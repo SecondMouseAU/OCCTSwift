@@ -1785,14 +1785,22 @@ OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, OCCTParameterisationType p
   }
 }
 
-OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c,
-                                      double         tolerance,
-                                      int32_t        continuity,
-                                      int32_t        maxSegments,
-                                      int32_t        maxDegree)
+// #1474: OCCTCurve2DApproximate and OCCTGeomConvertApproxCurve2D share one
+// Geom2dConvert_ApproxCurve run, following the #491 pattern already in place for the sibling
+// Curve3D/Surface approximation entry points (OCCTBridge_Curve3D_Curves.mm,
+// OCCTBridge_Surface_Surfaces.mm). The plain entry point returns just the fitted curve, gated on
+// HasResult(), which OCCT documents as true even for a fit that did NOT reach `tolerance` -- so a
+// non-nil curve is not a promise the fit is within tolerance. The detailed entry point returns the
+// same curve plus MaxError()/IsDone()/HasResult() so a caller can actually check.
+static OCCTApproxCurve2DResult occtApproxCurve2D(OCCTCurve2DRef c,
+                                                 double         tolerance,
+                                                 int32_t        continuity,
+                                                 int32_t        maxSegments,
+                                                 int32_t        maxDegree)
 {
+  OCCTApproxCurve2DResult result = {};
   if (!c || c->curve.IsNull())
-    return nullptr;
+    return result;
   try
   {
     Geom2dConvert_ApproxCurve approx(c->curve,
@@ -1800,17 +1808,38 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c,
                                      occtGeomAbsFromParametricContinuity(continuity),
                                      maxSegments,
                                      maxDegree);
-    if (!approx.HasResult())
-      return nullptr;
-    Handle(Geom2d_BSplineCurve) result = approx.Curve();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTCurve2D(result);
+    result.isDone    = approx.IsDone();
+    result.hasResult = approx.HasResult();
+    if (result.hasResult)
+    {
+      result.maxError                  = approx.MaxError();
+      Handle(Geom2d_BSplineCurve) bspl = approx.Curve();
+      if (!bspl.IsNull())
+        result.curve = new OCCTCurve2D(bspl);
+    }
   }
   catch (...)
   {
-    return nullptr;
   }
+  return result;
+}
+
+OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c,
+                                      double         tolerance,
+                                      int32_t        continuity,
+                                      int32_t        maxSegments,
+                                      int32_t        maxDegree)
+{
+  return occtApproxCurve2D(c, tolerance, continuity, maxSegments, maxDegree).curve;
+}
+
+OCCTApproxCurve2DResult OCCTGeomConvertApproxCurve2D(OCCTCurve2DRef curve,
+                                                     double         tolerance,
+                                                     int32_t        continuity,
+                                                     int32_t        maxSegments,
+                                                     int32_t        maxDegree)
+{
+  return occtApproxCurve2D(curve, tolerance, continuity, maxSegments, maxDegree);
 }
 
 OCCTCurve2DRef OCCTCurve2DInterpolateWithInteriorTangents(const double* points,

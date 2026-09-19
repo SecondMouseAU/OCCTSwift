@@ -279,7 +279,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
                                            double* _Nullable* _Nonnull outPoints,
                                            int32_t* outCount)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return false;
   try
   {
@@ -842,7 +842,11 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
       Handle(Geom_BSplineCurve) bsp = GeomConvert::CurveToBSplineCurve(curves[i]->curve);
       if (!bsp.IsNull())
       {
-        joiner.Add(bsp, tolerance);
+        // Add() returns false and leaves the accumulated curve untouched when this curve isn't
+        // G0-continuous with it (#1441); a discarded return silently drops the curve from the
+        // join instead of failing, matching OCCTCurve3DJoinCurves/OCCTConcatenateCurves3D below.
+        if (!joiner.Add(bsp, tolerance))
+          return nullptr;
       }
     }
     return new OCCTCurve3D(joiner.BSplineCurve());
@@ -1437,15 +1441,21 @@ bool OCCTConvertCompBezierToBSpline(const double*            poles,
       conv.AddCurve(seg);
     }
     conv.Perform();
-    int nb       = conv.NbPoles();
-    int nk       = conv.NbKnots();
+    int nb = conv.NbPoles();
+    int nk = conv.NbKnots();
+    // OCCTBezierBSplineResult's poles/knots/mults are fixed-size (100 poles, 50 knots); a
+    // composite curve with enough segments grows past that with no bound (#1441). Reject
+    // rather than report an unclamped nbPoles/nbKnots against a buffer that only holds the
+    // truncated prefix, which would leave the caller reading past its own fixed-size struct.
+    if (nb > 100 || nk > 50)
+      return false;
     out->degree  = conv.Degree();
     out->nbPoles = nb;
     out->nbKnots = nk;
 
     NCollection_Array1<gp_Pnt> resultPoles(1, nb);
     conv.Poles(resultPoles);
-    for (int i = 1; i <= nb && (i - 1) * 3 + 2 < 300; i++)
+    for (int i = 1; i <= nb; i++)
     {
       out->poles[(i - 1) * 3]     = resultPoles(i).X();
       out->poles[(i - 1) * 3 + 1] = resultPoles(i).Y();
@@ -1455,7 +1465,7 @@ bool OCCTConvertCompBezierToBSpline(const double*            poles,
     NCollection_Array1<double> knots(1, nk);
     NCollection_Array1<int>    mults(1, nk);
     conv.KnotsAndMults(knots, mults);
-    for (int i = 1; i <= nk && i - 1 < 50; i++)
+    for (int i = 1; i <= nk; i++)
     {
       out->knots[i - 1] = knots(i);
       out->mults[i - 1] = mults(i);
@@ -1490,15 +1500,19 @@ bool OCCTConvertCompBezier2dToBSpline2d(const double*              poles,
       conv.AddCurve(seg);
     }
     conv.Perform();
-    int nb       = conv.NbPoles();
-    int nk       = conv.NbKnots();
+    int nb = conv.NbPoles();
+    int nk = conv.NbKnots();
+    // Same fixed-capacity-vs-unclamped-count hazard as the 3D converter above (#1441): reject
+    // rather than report a count against a buffer that only holds the truncated prefix.
+    if (nb > 100 || nk > 50)
+      return false;
     out->degree  = conv.Degree();
     out->nbPoles = nb;
     out->nbKnots = nk;
 
     NCollection_Array1<gp_Pnt2d> resultPoles(1, nb);
     conv.Poles(resultPoles);
-    for (int i = 1; i <= nb && (i - 1) * 2 + 1 < 200; i++)
+    for (int i = 1; i <= nb; i++)
     {
       out->poles[(i - 1) * 2]     = resultPoles(i).X();
       out->poles[(i - 1) * 2 + 1] = resultPoles(i).Y();
@@ -1507,7 +1521,7 @@ bool OCCTConvertCompBezier2dToBSpline2d(const double*              poles,
     NCollection_Array1<double> knots(1, nk);
     NCollection_Array1<int>    mults(1, nk);
     conv.KnotsAndMults(knots, mults);
-    for (int i = 1; i <= nk && i - 1 < 50; i++)
+    for (int i = 1; i <= nk; i++)
     {
       out->knots[i - 1] = knots(i);
       out->mults[i - 1] = mults(i);
@@ -2146,7 +2160,9 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
         GeomConvert::CurveToBSplineCurve(((OCCTCurve3D*)curves[i])->curve);
       if (!bsp.IsNull())
       {
-        concat.Add(bsp, tol);
+        // Same discarded-Add()-return hazard as OCCTCurve3DJoinToBSpline above (#1441).
+        if (!concat.Add(bsp, tol))
+          return nullptr;
       }
     }
     Handle(Geom_BSplineCurve) result = concat.BSplineCurve();

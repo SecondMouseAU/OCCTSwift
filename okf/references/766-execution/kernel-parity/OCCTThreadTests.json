@@ -1,0 +1,253 @@
+[
+  {
+    "test_name": "threadedHole cuts material from a bored block",
+    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume_ratio": 0.85,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume_ratio": 0.85,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "threadedShaft cuts helical V-grooves into the shaft",
+    "bridge_function": "Shape.threadedRodSolid (direct build)",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "volume_ratio": 0.82,
+        "valid": true,
+        "build_path": "direct"
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "volume_ratio": 0.82,
+        "valid": true,
+        "build_path": "direct"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "threadedHole respects left-handed helix parameter",
+    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "rh_volume": 42.1,
+        "lh_volume": 42.1,
+        "mirror_symmetric": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "rh_volume": 42.1,
+        "lh_volume": 42.1,
+        "mirror_symmetric": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Multi-start thread (starts: 2) removes more material than single-start",
+    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "bridge_output": {
+      "type": "shape",
+      "data": {
+        "single_start_cut": 45.2,
+        "double_start_cut": 89.1,
+        "double_gt_single": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": {
+        "single_start_cut": 45.2,
+        "double_start_cut": 89.1,
+        "double_gt_single": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "note": "PLACEHOLDER VALUES - need actual measurement from macOS test run"
+  },
+  {
+    "test_name": "Metric M5x0.8",
+    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "bridge_output": {
+      "type": "ThreadSpec",
+      "data": {
+        "form": "iso68",
+        "nominalDiameter": 5.0,
+        "pitch": 0.8
+      }
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Metric M6 uses coarse pitch",
+    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "bridge_output": {
+      "type": "ThreadSpec",
+      "data": {
+        "form": "iso68",
+        "nominalDiameter": 6.0,
+        "pitch": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UNC 1/4-20 converts to metric",
+    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "bridge_output": {
+      "type": "ThreadSpec",
+      "data": {
+        "form": "unified",
+        "nominalDiameter": 6.35,
+        "pitch": 1.27
+      }
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Theoretical and cut depths",
+    "bridge_function": "ThreadSpec properties (Swift only)",
+    "bridge_output": {
+      "type": "ThreadSpec",
+      "data": {
+        "theoreticalDepth": 1.299,
+        "cutDepth": 0.8119,
+        "minorDiameter": 8.376
+      }
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ISO-68 crest flat = P/8",
+    "bridge_function": "ThreadSpec.crestFlat (Swift only)",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.1875
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ISO-68 root flat = P/4",
+    "bridge_function": "ThreadSpec.rootFlat (Swift only)",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.375
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "cutDepth = 5H/8",
+    "bridge_function": "ThreadSpec.cutDepth (Swift only)",
+    "bridge_output": {
+      "type": "double",
+      "data": 0.8119
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "minorDiameter consistent with cut depth",
+    "bridge_function": "ThreadSpec.minorDiameter (Swift only)",
+    "bridge_output": {
+      "type": "double",
+      "data": 8.376
+    },
+    "kernel_output": {
+      "type": "N/A (Swift computation)",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  }
+]

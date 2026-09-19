@@ -304,7 +304,7 @@ These require implementing C++ abstract classes, which the bridge architecture d
 - `gp_VectorWithNullMagnitude`, `BRepExtrema_UnCompatibleShape`, `Standard_DomainError` exception
   types (`DEFINE_STANDARD_EXCEPTION`), not constructible geometry. `gp_VectorWithNullMagnitude` is
   what `gp_Vec`/`gp_Dir`'s own constructor throws for a zero-length input, already absorbed by the
-  bridge-wide `catch (...)` sweep the #345 entry in `CLAUDE.md`'s Known OCCT Bugs describes;
+  bridge-wide `catch (...)` sweep the #345 row in `okf/references/known-occt-bugs.md` describes;
   `BRepExtrema_UnCompatibleShape` is `BRepExtrema`'s equivalent for a shape-type mismatch, caught
   the same way at every `BRepExtrema_*` call site. Neither is something to "wrap" as a value. (#809)
 - The entire `GCE2d_*` package (`GCE2d_MakeArcOfCircle`, `GCE2d_MakeArcOfEllipse`,
@@ -361,7 +361,7 @@ These require implementing C++ abstract classes, which the bridge architecture d
   exception types (`DEFINE_STANDARD_EXCEPTION`), not constructible topology. The first two are what
   a `TopoDS_Shape` modification raises when the shape, or its geometry, is already shared or
   protected; the third is what `TopoDS_Builder::Add` raises for an incorrect insertion. All three
-  are absorbed by the bridge-wide `catch (...)` the #345 entry in `CLAUDE.md`'s Known OCCT Bugs
+  are absorbed by the bridge-wide `catch (...)` the #345 row in `okf/references/known-occt-bugs.md`
   describes, the same treatment `gp_VectorWithNullMagnitude` gets above. (#808)
 - `BRepBuilderAPI_WireError`, `BRepBuilderAPI_PipeError`, `BRepBuilderAPI_TransitionMode`,
   `TopTools_FormatVersion`: enums whose **values** the Swift surface already mirrors, without the
@@ -944,9 +944,7 @@ defined in terms of, #973's own reason for filing it in this lane. `ShapePersist
 `Storage_StreamFormatError`, `Storage_StreamModeError`, `Storage_StreamReadError`,
 `Storage_StreamTypeMismatchError`, `Storage_StreamUnknownTypeError`, `Storage_StreamWriteError`,
 `Storage_TypeData`, `Storage_TypedCallBack`. `Storage_Schema` is worth naming individually: it is
-the class behind `docs/thread-safety.md`'s #374 writeup (`Storage_Schema::ICurrentData`), recorded
-there, not re-litigated here; see the carve-out entry below for the one respect in which that
-writeup is now stale.
+the class behind `docs/thread-safety.md`'s #374 writeup, recorded there, not re-litigated here.
 
 **Physical file layer (7).** The physical file open/read/write/seek primitives `Storage_`'s and
 `PCDM_`'s own drivers open through to reach disk; selected by the format's own driver, never by the
@@ -1006,26 +1004,24 @@ for wrapping here (a genuine but low-value, low-demand format most consumers wil
 neither format can round-trip a document it opens, since neither ships a storage driver); recorded
 so a future pass does not have to re-derive it.
 
-**Over-coverage: two stale claims found and NOT fixed here, per this task's own carve-out.**
+**Over-coverage: two stale claims found here, filed as #1232, fixed under #1400.**
 `Scripts/census-doc-occt-attribution.py --lane <this lane's 38 packages>` found 0 candidates (this
 lane is barely documented outside the classes above, so the detector's `Class::Method` attribution
 shape has almost nothing to check). The real finding came from reading `docs/thread-safety.md` by
 hand, per #983's own pointer at the `#349`/`#353`/`#374` cluster it describes "in terms of carried
-kernel patches." Both are genuine, and both are **filed rather than fixed**
-([#1232](https://github.com/SecondMouseAU/OCCTSwift/issues/1232)), because a human is concurrently
-building reproducers for open thread-safety issues in this exact file and touching it here would
-collide with that work. Summarized: (1) the `### Resource_Manager::Debug /
-Storage_Schema::ICurrentData() races, fixed (issue #374)` section, about `Storage_Schema`, a class
-in this lane, still describes the FIRST, superseded version of that fix (an `ICurrentDataMutex()`
-mutex), which `Scripts/patches/README.md`'s own `0016` entry and issue #518 (closed) record was
-revised on upstream review to a `myCurrentData` per-instance field with no mutex at all, confirmed
-directly against `Scripts/patches/0016-*.patch`'s current contents; (2) the `Scripts/tsan.supp`
-suppression-policy paragraph, about `CDM_Application`/`CDM_MetaData` (Pass 3's lane, #810, not this
-one, named here only because #983's own body points at the same three-issue cluster), cites the
-`#353` metadata-map suppression as a "current example," but `tsan.supp` itself says that
-suppression was removed in v1.15.11 once patch `0015` landed, and `0015` is in fact carried. See
-#1232 for the full detail, including the exact stale text quoted and what the correction should
-say.
+kernel patches." Both were genuine and both were filed rather than fixed at the time, because a
+human was concurrently building reproducers in that exact file. (1) The `#374` section described the
+FIRST, superseded version of that fix, an `ICurrentDataMutex()` recursive mutex, where patch `0016`
+in fact removes the `ICurrentData()`/`ISetCurrentData()` statics outright in favour of a
+`myCurrentData` per-instance field with no mutex at all. (2) The suppression-policy paragraph cited
+the `#353` metadata-map suppression as a "current example" after `tsan.supp` had dropped it in
+v1.15.11, patch `0015` having landed.
+
+#1232 was closed when this lane's PR merged, but neither correction had been written; #1400
+re-found (1) independently, through `refman_census.py` reporting `ICurrentData` on
+`Storage_Schema` as a member the pinned headers do not declare, which is exactly what removing the
+statics means. Both
+sentences are now corrected in `docs/thread-safety.md`.
 
 ### Mesh/presentation/misc lane, family-level (#814)
 
@@ -1844,7 +1840,7 @@ documented; the remaining 257 are curated below.**
 **`GeomFill_` (68 classes, 38 already ok) and `BRepFill_` (46 classes, 13 already ok), read in the
 most depth per #1045's own priority.** Both back the already-wrapped `GeomFill_Sweep`/
 `BRepFill_Sweep`/`BRepFill_Filling` engine (`BRepOffsetAPI_MakePipeShell`/`MakeFilling`,
-`PipeShellBuilder`, `Shape.sweep`, `Shape.fill`), and CLAUDE.md's Known OCCT Bugs already documents
+`PipeShellBuilder`, `Shape.sweep`, `Shape.fill`), and `okf/references/known-occt-bugs.md` already documents
 two real kernel defects in exactly this engine (`GeomFill_Sweep::BuildAll` overwriting a measured
 error with the requested tolerance, #597; `BRepFill_Filling::AddConstraints` discarding a pcurve's
 trim range, #430), so "internal to an engine with known sharp edges" is not a guess here.
@@ -1877,7 +1873,7 @@ computation of the bisecting locus"), `MAT_BasicElt` an input-graph node ("A Bas
 to each elementary constituent of the figure"), `Bisector_Curve` the abstract bisector-curve base;
 `AdvApp2Var_`/`AdvApprox_` (25, 2 ok) are the two- and one-variable polynomial approximation engine
 under `GeomConvert_ApproxSurface` (and `GeomPlate_MakeApprox` for the one-variable half), wrapped,
-and CLAUDE.md's #522 entry documents a real kernel bug in exactly this engine
+and the #522 row in `okf/references/known-occt-bugs.md` documents a real kernel bug in exactly this engine
 (`AdvApp2Var_ApproxF2var::mma2ce1_`/`AdvApp2Var_Context`), `AdvApp2Var_Patch` ("used to store results
 on a domain [Ui,Ui+1]x[Vj,Vj+1]") and `AdvApprox_SimpleApprox` ("Approximate a function on an
 interval [First,Last]... The result is a simple polynomial whose degree is as low as possible") its
@@ -2008,6 +2004,21 @@ between the nine lanes and zero shared with the substrate audit. The 4,707 resid
   the standard the nine lanes hold themselves to is several more Pass-sized efforts, out of
   proportion to a reconciliation pass, and #820's own text asks whether the lanes partition the
   refman, not that this pass re-does the missing lanes' work.
+
+  **Resolved by #1399**, and the framing above turned out to be the smaller half of the problem.
+  The 643 split three ways by what can check them: 479 named in claims
+  `census-doc-occt-attribution.py` parses, 138 real algorithm classes read by hand in four
+  families, and 26 containers. The hand read returned `ok` 41, `deliberate, recorded` 64, `under`
+  11 and `over` 48 across 164 classes including the containers, and `over` dominating is the
+  opposite of what the pass expected: a class absent from `docs/` almost always meant the
+  capability was documented under its Swift name with the wrong OCCT class beside it.
+
+  The larger finding was the 479. They were covered by a detector **whose 431 findings nobody had
+  ever read**; 212 of them were real, at a measured 49.8% false-positive rate. Fourteen code
+  defects came out of the pass, from `Shape.edgeFaceIntersection` finding nothing for any input
+  (#1631) to eight `BRepGraph` setters being silent no-ops (#1652). Full method, per-family
+  verdicts and the four corrections the lane made to its own instruments:
+  [`Scripts/repro/1399-refman-coverage-unlaned/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1399-refman-coverage-unlaned).
 - **3,983 classes have neither bridge presence, nor a docs/ mention, nor a gaps.md line.**
   Overwhelmingly `DataExchange` (2,089: the STEP/IGES/other-format internal EXPRESS data model
   underneath the `STEPControl_`/`IGESControl_`/`RWObj_`/etc. entry points #813 already audits) and

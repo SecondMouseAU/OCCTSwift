@@ -61,7 +61,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -197,7 +196,6 @@
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <ShapeFix_Solid.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax1.hxx>
@@ -221,8 +219,6 @@
 #include <gp_Vec.hxx>
 
 #include <TColgp_Array2OfPnt.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
 
 #include <TopAbs.hxx>
 #include <TopExp.hxx>
@@ -1713,67 +1709,6 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
   }
 }
 
-OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape,
-                                   int32_t      faceIndex,
-                                   OCCTShapeRef wire,
-                                   double       dirX,
-                                   double       dirY,
-                                   double       dirZ,
-                                   double       planeOriginX,
-                                   double       planeOriginY,
-                                   double       planeOriginZ,
-                                   double       planeNormalX,
-                                   double       planeNormalY,
-                                   double       planeNormalZ,
-                                   double       angle)
-{
-  // #1026: the wire's ShapeType() read below is an unguarded myTShape dereference.
-  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(wire))
-    return nullptr;
-  try
-  {
-    LocOpe_SplitDrafts splitDrafts;
-    splitDrafts.Init(shape->shape);
-
-    // #541: the shared face enumeration, so this names the face face(at:) names.
-    TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
-    if (face.IsNull())
-      return nullptr;
-
-    // Extract wire
-    TopoDS_Wire w;
-    if (wire->shape.ShapeType() == TopAbs_WIRE)
-    {
-      w = TopoDS::Wire(wire->shape);
-    }
-    else
-    {
-      for (TopExp_Explorer exp(wire->shape, TopAbs_WIRE); exp.More(); exp.Next())
-      {
-        w = TopoDS::Wire(exp.Current());
-        break;
-      }
-    }
-    if (w.IsNull())
-      return nullptr;
-
-    gp_Dir dir(dirX, dirY, dirZ);
-    gp_Pln plane(gp_Pnt(planeOriginX, planeOriginY, planeOriginZ),
-                 gp_Dir(planeNormalX, planeNormalY, planeNormalZ));
-
-    splitDrafts.Perform(face, w, dir, plane, angle);
-
-    TopoDS_Shape result = splitDrafts.Shape();
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 // #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
 // an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
 // 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
@@ -2080,12 +2015,12 @@ OCCTShapeRef _Nullable OCCTBRepFeatBuilderFuse(OCCTShapeRef shape, OCCTShapeRef 
     BRepFeat_Builder builder;
     builder.Init(shape->shape, tool->shape);
     builder.SetOperation(1); // Fuse
-    TopTools_ListOfShape parts;
-    builder.PartsOfTool(parts);
-    for (auto it = parts.begin(); it != parts.end(); ++it)
-    {
-      builder.KeepPart(*it);
-    }
+    builder.Perform();
+    // No KeepPart(): PartsOfTool()/KeepPart() select which solids of the
+    // *split* tool to retain for a Cut/Common-style partial keep. For a
+    // plain Fuse the whole tool is wanted, and keeping parts here selects
+    // the wrong artifact (measured: reduces the result to the object alone,
+    // see #1458).
     builder.PerformResult();
     if (builder.HasErrors())
       return nullptr;
@@ -2109,8 +2044,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatBuilderCut(OCCTShapeRef shape, OCCTShapeRef t
     BRepFeat_Builder builder;
     builder.Init(shape->shape, tool->shape);
     builder.SetOperation(0); // Cut
-    TopTools_ListOfShape parts;
-    builder.PartsOfTool(parts);
+    builder.Perform();
     // For cut, keep NO parts of tool (remove all)
     builder.PerformResult();
     if (builder.HasErrors())

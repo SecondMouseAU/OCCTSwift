@@ -1,4 +1,5 @@
 import Foundation
+import OCCTBridge
 import Testing
 import simd
 
@@ -113,5 +114,35 @@ struct BRepGPropVinertGKTests {
             rNearZero.errorReached > rFar.errorReached,
             "as mass shrinks toward zero the reported error should grow, not stay small: a caller must not be told a near-zero-mass answer is MORE certain than a well-conditioned one"
         )
+    }
+
+    /// #1437, Finding 2: `OCCTBRepGPropVinertGK` dereferenced its `OCCTShapeRef` via a raw
+    /// C-style cast with no `occtShapeIsPresent` guard at all, unlike every sibling in its
+    /// Cinert/Sinert/Vinert cluster (`OCCTBRepGPropCinert`/`Sinert`/`SinertAdaptive`/`Vinert`/
+    /// `VinertPlane`, all of which open with the guard). `Shape.vinertGK` always passes a live
+    /// handle, so this wasn't reachable through the public Swift API, but the raw bridge function
+    /// is directly callable, matching Issue #1424's `OCCTBndLibFace` precedent.
+    @Test("a null OCCTShapeRef returns the zeroed fallback, not a crash")
+    func nullRawPointerReturnsZeroedFallback() {
+        let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
+        let r = OCCTBRepGPropVinertGK(nullShape, 0, 0, 0, 1e-3, true)
+        #expect(r.mass == 0)
+        #expect(r.errorReached == 0)
+        #expect(r.centerX == 0)
+        #expect(r.centerY == 0)
+        #expect(r.centerZ == 0)
+    }
+
+    /// A nullified `Shape` (a real, non-null `OCCTShapeRef` wrapping a null `TopoDS_Shape`, per
+    /// `Shape.nullified`) is the other shape `occtShapeIsPresent` refuses, and this one IS
+    /// reachable through the public Swift API: `Shape.vinertGK()` on a nullified shape.
+    @Test("a nullified Shape's vinertGK() returns the zeroed fallback, not a crash")
+    func nullifiedShapeReturnsZeroedFallback() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let nullShape = try #require(box.nullified)
+        let r = nullShape.vinertGK()
+        #expect(r.mass == 0)
+        #expect(r.errorReached == 0)
+        #expect(r.center == nil)
     }
 }

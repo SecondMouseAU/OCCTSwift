@@ -425,12 +425,18 @@ OCCTIntConicQuadResult OCCTIntAnaLineSphere(double lox,
 // MARK: - IntAna_QuadQuadGeo (v0.98.0)
 
 /// Result of a quadric-quadric intersection.
+///
+/// `resultType` mirrors `IntAna_ResultType` (`IntAna_Point` = 0 ... `IntAna_NoGeometricSolution` =
+/// 9) and says which of `points`/`lines`/`circles` actually holds the solution at index `i`: a
+/// plane-sphere intersection is `IntAna_Point` only in the tangent case, `IntAna_Circle` for the
+/// ordinary secant case (#1495), a plane-plane intersection is always `IntAna_Line`.
 typedef struct
 {
   int32_t solutionCount;
-  int32_t resultType; // IntAna_ResultType enum
-  double  points[12]; // up to 4 result points
-  double  lines[24];  // up to 4 lines (origin xyz + direction xyz)
+  int32_t resultType;  // IntAna_ResultType enum
+  double  points[12];  // up to 4 result points (valid when resultType == IntAna_Point)
+  double  lines[24];   // up to 4 lines (origin xyz + direction xyz)
+  double  circles[28]; // up to 4 circles (center xyz + axis xyz + radius), IntAna_Circle
 } OCCTQuadQuadGeoResult;
 
 /// Intersect two planes.
@@ -1459,16 +1465,23 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
 // MARK: - math_EigenValuesSearcher (v0.116.0)
 
 /// Find eigenvalues of symmetric tridiagonal matrix.
-/// diagonal[n], subdiagonal[n] (last element unused). eigenvalues[n].
+/// diagonal[n], offDiagonal[n - 1] holding the real off-diagonal entries in matrix order, and
+/// eigenvalues[n] out, in no defined order. n must be at least 1; offDiagonal may be null only
+/// when n is 1.
+/// These parameters took an n-element subdiagonal until #1643, and its first element was thrown
+/// away: math_EigenValuesSearcher's shiftSubdiagonalElements copies work(i-1) = work(i) over
+/// 2..n and then zeroes work(n), so slot 1 never reaches the matrix (#1399 measured which end;
+/// #1643 took the dead slot out of the signature). This function now prepends that slot itself.
 /// Returns number of eigenvalues found (n on success, 0 on failure).
 int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
-                            const double* _Nonnull subdiagonal,
+                            const double* _Nullable offDiagonal,
                             int32_t n,
                             double* _Nonnull eigenvalues);
 
-/// Find eigenvalues and eigenvectors. eigenvectors is row-major [n x n].
+/// Find eigenvalues and eigenvectors. Same offDiagonal[n - 1] convention as
+/// OCCTMathEigenValues. eigenvectors is row-major [n x n].
 int32_t OCCTMathEigenValuesAndVectors(const double* _Nonnull diagonal,
-                                      const double* _Nonnull subdiagonal,
+                                      const double* _Nullable offDiagonal,
                                       int32_t n,
                                       double* _Nonnull eigenvalues,
                                       double* _Nonnull eigenvectors);
