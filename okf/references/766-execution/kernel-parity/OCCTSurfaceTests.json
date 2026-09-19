@@ -1,0 +1,10 @@
+[
+  {
+    "test_name": "Surface domain kernel parity",
+    "bridge_function": "OCCTSurfacePlaceholder",
+    "bridge_output": {"type": "object", "data": {}},
+    "kernel_output": {"type": "object", "data": {}},
+    "comparison": {"equal": null, "differences": []},
+    "status": "PENDING"
+  }
+]
