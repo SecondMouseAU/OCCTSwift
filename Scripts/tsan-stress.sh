@@ -81,6 +81,28 @@ SCENARIOS=(
   "1155-thread-safety-survey/occt_1155_stress.cpp|fillet_chamfer_all_edges_independent 8 30"
   "1155-thread-safety-survey/occt_1155_stress.cpp|shapefix_independent 8 30"
   "1155-thread-safety-survey/occt_1155_stress.cpp|check_analyzer_independent 8 30"
+  # Issue #1157/#1403, the data-exchange path. Registered 2026-09-20, and the reason it was not
+  # registered before is the finding: this harness has existed since #1157 with seven modes and sat
+  # in NO scenario, so the one subsystem docs/thread-safety.md describes as protected by a
+  # bridge-level mutex (igesMutex(), 40 acquisitions) had no gate coverage at all. That is what the
+  # POLICY block above forbids, and docs/thread-safety.md says outright: "A harness under
+  # Scripts/repro/ that is not in SCENARIOS is a file, not a gate."
+  #
+  # The five INDEPENDENT modes only. cross_talk_schema_unlocked and cross_talk_schema_locked are
+  # deliberately excluded: they set the same Interface_Static key from every thread and cross-talk
+  # 16000/16000 BY CONSTRUCTION, with and without an accessor lock, which is the measurement that
+  # proved a locked accessor cannot fix that shape. Expected to race, so they gate nothing, exactly
+  # like #341's shared_adaptor_cache.
+  #
+  # These are EXPECTED TO FAIL on registration: nothing in Scripts/tsan.supp suppresses any DE race
+  # and #1403's bucket-(b) state is still shared. That failing run is #1403's re-measurement
+  # baseline. Do not add a suppression to make this green; the whole point of registering it is to
+  # stop the DE path being silently unmeasured.
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|step_write_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|step_read_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_write_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_read_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|mixed_step_iges_independent 8 20 @SCRATCH"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)

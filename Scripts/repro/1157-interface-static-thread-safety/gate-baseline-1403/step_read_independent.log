@@ -1,0 +1,282 @@
+==================
+WARNING: ThreadSanitizer: data race (pid=70632)
+  Write of size 1 at 0x000104813ca8 by thread T4:
+    #0 IFSelect_WorkSession::IFSelect_WorkSession() IFSelect_WorkSession.cxx:86 (occt_1157_stress:arm64+0x1013afad4)
+    #1 XSControl_WorkSession::XSControl_WorkSession() XSControl_WorkSession.cxx:50 (occt_1157_stress:arm64+0x1013f2d64)
+    #2 XSControl_WorkSession::XSControl_WorkSession() XSControl_WorkSession.cxx:54 (occt_1157_stress:arm64+0x1013f30b0)
+    #3 XSControl_Reader::XSControl_Reader() XSControl_Reader.cxx:42 (occt_1157_stress:arm64+0x1013d9520)
+    #4 STEPControl_Reader::STEPControl_Reader() STEPControl_Reader.cxx:71 (occt_1157_stress:arm64+0x100544e0c)
+    #5 STEPControl_Reader::STEPControl_Reader() STEPControl_Reader.cxx:72 (occt_1157_stress:arm64+0x100544e0c)
+    #6 runStepReadIndependent(int, int) occt_1157_stress.cpp:119 (occt_1157_stress:arm64+0x100001610)
+    #7 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #8 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #9 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Previous write of size 1 at 0x000104813ca8 by thread T3:
+    #0 IFSelect_WorkSession::IFSelect_WorkSession() IFSelect_WorkSession.cxx:86 (occt_1157_stress:arm64+0x1013afad4)
+    #1 XSControl_WorkSession::XSControl_WorkSession() XSControl_WorkSession.cxx:50 (occt_1157_stress:arm64+0x1013f2d64)
+    #2 XSControl_WorkSession::XSControl_WorkSession() XSControl_WorkSession.cxx:54 (occt_1157_stress:arm64+0x1013f30b0)
+    #3 XSControl_Reader::XSControl_Reader() XSControl_Reader.cxx:42 (occt_1157_stress:arm64+0x1013d9520)
+    #4 STEPControl_Reader::STEPControl_Reader() STEPControl_Reader.cxx:71 (occt_1157_stress:arm64+0x100544e0c)
+    #5 STEPControl_Reader::STEPControl_Reader() STEPControl_Reader.cxx:72 (occt_1157_stress:arm64+0x100544e0c)
+    #6 runStepReadIndependent(int, int) occt_1157_stress.cpp:119 (occt_1157_stress:arm64+0x100001610)
+    #7 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #8 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #9 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Location is global 'errhand' at 0x000104813ca8 (occt_1157_stress+0x101cb3ca8)
+
+  Thread T4 (tid=14909788, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (occt_1157_stress:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (occt_1157_stress:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (occt_1157_stress:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T3 (tid=14909787, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (occt_1157_stress:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (occt_1157_stress:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (occt_1157_stress:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race IFSelect_WorkSession.cxx:86 in IFSelect_WorkSession::IFSelect_WorkSession()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=70632)
+  Read of size 1 at 0x00010480b690 by thread T7:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:805 (occt_1157_stress:arm64+0x100516568)
+    #1 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (occt_1157_stress:arm64+0x100513570)
+    #2 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (occt_1157_stress:arm64+0x100512ec0)
+    #3 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (occt_1157_stress:arm64+0x101345ff8)
+    #4 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (occt_1157_stress:arm64+0x10135db4c)
+    #5 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (occt_1157_stress:arm64+0x10135cf00)
+    #6 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (occt_1157_stress:arm64+0x10135e028)
+    #7 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (occt_1157_stress:arm64+0x101366664)
+    #8 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (occt_1157_stress:arm64+0x1013e49b4)
+    #9 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (occt_1157_stress:arm64+0x1013db918)
+    #10 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (occt_1157_stress:arm64+0x10000168c)
+    #11 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #12 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #13 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Previous write of size 1 at 0x00010480b690 by thread T4:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepShape_ShapeRepresentation> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:993 (occt_1157_stress:arm64+0x10051919c)
+    #1 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:784 (occt_1157_stress:arm64+0x1005161e4)
+    #2 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (occt_1157_stress:arm64+0x100513570)
+    #3 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (occt_1157_stress:arm64+0x100512ec0)
+    #4 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (occt_1157_stress:arm64+0x101345ff8)
+    #5 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (occt_1157_stress:arm64+0x10135db4c)
+    #6 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (occt_1157_stress:arm64+0x10135cf00)
+    #7 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (occt_1157_stress:arm64+0x10135e028)
+    #8 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (occt_1157_stress:arm64+0x101366664)
+    #9 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (occt_1157_stress:arm64+0x1013e49b4)
+    #10 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (occt_1157_stress:arm64+0x1013db918)
+    #11 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (occt_1157_stress:arm64+0x10000168c)
+    #12 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #13 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #14 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Location is global '(anonymous namespace)::NM_DETECTED' at 0x00010480b690 (occt_1157_stress+0x101cab690)
+
+  Thread T7 (tid=14909791, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (occt_1157_stress:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (occt_1157_stress:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (occt_1157_stress:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T4 (tid=14909788, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (occt_1157_stress:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (occt_1157_stress:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (occt_1157_stress:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race STEPControl_ActorRead.cxx:805 in STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=70632)
+  Write of size 4 at 0x00010fa039e0 by thread T3:
+    #0 MoniTool_TypedValue::SetIntegerValue(int) MoniTool_TypedValue.cxx:1059 (occt_1157_stress:arm64+0x101407c8c)
+    #1 Interface_Static::SetIVal(char const*, int) Interface_Static.cxx:505 (occt_1157_stress:arm64+0x10133fb8c)
+    #2 runStepReadIndependent(int, int) occt_1157_stress.cpp:120 (occt_1157_stress:arm64+0x10000161c)
+    #3 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #4 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #5 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Previous read of size 4 at 0x00010fa039e0 by thread T7:
+    #0 MoniTool_TypedValue::IntegerValue() const MoniTool_TypedValue.cxx:1036 (occt_1157_stress:arm64+0x101403f5c)
+    #1 Interface_Static::IVal(char const*) Interface_Static.cxx:472 (occt_1157_stress:arm64+0x10133f8f0)
+    #2 DESTEP_Parameters::InitFromStatic() DESTEP_Parameters.cxx:29 (occt_1157_stress:arm64+0x10087a190)
+    #3 STEPControl_Reader::ReadFile(char const*) STEPControl_Reader.cxx:109 (occt_1157_stress:arm64+0x100545244)
+    #4 runStepReadIndependent(int, int) occt_1157_stress.cpp:125 (occt_1157_stress:arm64+0x100001668)
+    #5 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #6 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #7 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Location is heap block of size 648 at 0x00010fa03900 allocated by main thread:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67ff4)
+    #1 Standard::Allocate(unsigned long) Standard.cxx:386 (occt_1157_stress:arm64+0x1008bee84)
+    #2 Standard_Transient::operator new(unsigned long) Standard_Transient.hxx:47 (occt_1157_stress:arm64+0x10133e594)
+    #3 Interface_Static::Init(char const*, char const*, Interface_ParamType, char const*) Interface_Static.cxx:180 (occt_1157_stress:arm64+0x10133e594)
+    #4 Interface_Static::Init(char const*, char const*, char, char const*) Interface_Static.cxx:275 (occt_1157_stress:arm64+0x10133ec84)
+    #5 Interface_Static::Standards() Interface_StaticStandards.cxx:33 (occt_1157_stress:arm64+0x101340c08)
+    #6 XSControl_Controller::XSControl_Controller(char const*, char const*) XSControl_Controller.cxx:69 (occt_1157_stress:arm64+0x1013d527c)
+    #7 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:59 (occt_1157_stress:arm64+0x10053f7fc)
+    #8 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:60 (occt_1157_stress:arm64+0x1005435f8)
+    #9 STEPControl_Controller::Init() STEPControl_Controller.cxx:494 (occt_1157_stress:arm64+0x1005435f8)
+    #10 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:38 (occt_1157_stress:arm64+0x10054d2dc)
+    #11 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:37 (occt_1157_stress:arm64+0x10054d558)
+    #12 writeFixtures() occt_1157_stress.cpp:314 (occt_1157_stress:arm64+0x100003038)
+    #13 runOne(char const*, int, int) occt_1157_stress.cpp:334 (occt_1157_stress:arm64+0x100003038)
+    #14 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T3 (tid=14909787, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (occt_1157_stress:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (occt_1157_stress:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (occt_1157_stress:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T7 (tid=14909791, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (occt_1157_stress:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (occt_1157_stress:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (occt_1157_stress:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race MoniTool_TypedValue.cxx:1059 in MoniTool_TypedValue::SetIntegerValue(int)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=70632)
+  Read of size 4 at 0x00010e302998 by thread T2:
+    #0 TCollection_AsciiString::Length() const TCollection_AsciiString.hxx:1022 (occt_1157_stress:arm64+0x1008dbf84)
+    #1 TCollection_HAsciiString::Length() const TCollection_HAsciiString.lxx:33 (occt_1157_stress:arm64+0x1008dbf84)
+    #2 TCollection_HAsciiString::IsSameString(opencascade::handle<TCollection_HAsciiString> const&) const TCollection_HAsciiString.cxx:297 (occt_1157_stress:arm64+0x1008dbf84)
+    #3 MoniTool_TypedValue::SetIntegerValue(int) MoniTool_TypedValue.cxx:1042 (occt_1157_stress:arm64+0x101407bb4)
+    #4 Interface_Static::SetIVal(char const*, int) Interface_Static.cxx:505 (occt_1157_stress:arm64+0x10133fb8c)
+    #5 runStepReadIndependent(int, int) occt_1157_stress.cpp:120 (occt_1157_stress:arm64+0x10000161c)
+    #6 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #7 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #8 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Previous write of size 4 at 0x00010e302998 by thread T3:
+    #0 TCollection_AsciiString::deallocate() TCollection_AsciiString.cxx:1473 (occt_1157_stress:arm64+0x1008d0038)
+    #1 TCollection_AsciiString::Clear() TCollection_AsciiString.cxx:516 (occt_1157_stress:arm64+0x1008d0038)
+    #2 TCollection_HAsciiString::Clear() TCollection_HAsciiString.cxx:135 (occt_1157_stress:arm64+0x1008db6cc)
+    #3 MoniTool_TypedValue::SetIntegerValue(int) MoniTool_TypedValue.cxx:1050 (occt_1157_stress:arm64+0x101407be8)
+    #4 Interface_Static::SetIVal(char const*, int) Interface_Static.cxx:505 (occt_1157_stress:arm64+0x10133fb8c)
+    #5 runStepReadIndependent(int, int) occt_1157_stress.cpp:120 (occt_1157_stress:arm64+0x10000161c)
+    #6 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (occt_1157_stress:arm64+0x100006214)
+    #7 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (occt_1157_stress:arm64+0x100006214)
+    #8 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (occt_1157_stress:arm64+0x100006214)
+
+  Location is heap block of size 32 at 0x00010e302980 allocated by main thread:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67ff4)
+    #1 Standard::Allocate(unsigned long) Standard.cxx:386 (occt_1157_stress:arm64+0x1008bee84)
+    #2 Standard_Transient::operator new(unsigned long) Standard_Transient.hxx:47 (occt_1157_stress:arm64+0x10140280c)
+    #3 MoniTool_TypedValue::MoniTool_TypedValue(char const*, MoniTool_ValueType, char const*) MoniTool_TypedValue.cxx:84 (occt_1157_stress:arm64+0x10140280c)
+    #4 Interface_TypedValue::Interface_TypedValue(char const*, Interface_ParamType, char const*) Interface_TypedValue.cxx:33 (occt_1157_stress:arm64+0x101341294)
+    #5 Interface_Static::Interface_Static(char const*, char const*, Interface_ParamType, char const*) Interface_Static.cxx:39 (occt_1157_stress:arm64+0x10133d5b4)
+    #6 Interface_Static::Interface_Static(char const*, char const*, Interface_ParamType, char const*) Interface_Static.cxx:42 (occt_1157_stress:arm64+0x10133e5ac)
+    #7 Interface_Static::Init(char const*, char const*, Interface_ParamType, char const*) Interface_Static.cxx:180 (occt_1157_stress:arm64+0x10133e5ac)
+    #8 Interface_Static::Init(char const*, char const*, char, char const*) Interface_Static.cxx:275 (occt_1157_stress:arm64+0x10133ec84)
+    #9 Interface_Static::Standards() Interface_StaticStandards.cxx:33 (occt_1157_stress:arm64+0x101340c08)
+    #10 XSControl_Controller::XSControl_Controller(char const*, char const*) XSControl_Controller.cxx:69 (occt_1157_stress:arm64+0x1013d527c)
+    #11 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:59 (occt_1157_stress:arm64+0x10053f7fc)
+    #12 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:60 (occt_1157_stress:arm64+0x1005435f8)
+    #13 STEPControl_Controller::Init() STEPControl_Controller.cxx:494 (occt_1157_stress:arm64+0x1005435f8)
+    #14 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:38 (occt_1157_stress:arm64+0x10054d2dc)
+    #15 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:37 (occt_1157_stress:arm64+0x10054d558)
+    #16 writeFixtures() occt_1157_stress.cpp:314 (occt_1157_stress:arm64+0x100003038)
+    #17 runOne(char const*, int, int) occt_1157_stress.cpp:334 (occt_1157_stress:arm64+0x100003038)
+    #18 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T2 (tid=14909786, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (occt_1157_stress:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (occt_1157_stress:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (occt_1157_stress:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+  Thread T3 (tid=14909787, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (occt_1157_stress:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (occt_1157_stress:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (occt_1157_stress:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (occt_1157_stress:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (occt_1157_stress:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (occt_1157_stress:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (occt_1157_stress:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (occt_1157_stress:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (occt_1157_stress:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (occt_1157_stress:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (occt_1157_stress:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race TCollection_AsciiString.hxx:1022 in TCollection_AsciiString::Length() const
+==================
+ops=160 errors=0 crossTalk=0
+[32;1m
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+[0m
+[32;1m******        Transferring Shape, ShapeType = 2                      ******
+[0m
+[32;1m** WorkSession : Sending all data
+[0m
+[32;1m Step File Name : /tmp/occt-tsan-scratch.5Wpy70/fixture.step(350 ents)  Write  Done
+[0m
+ThreadSanitizer: reported 4 warnings
