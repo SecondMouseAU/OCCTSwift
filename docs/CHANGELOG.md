@@ -21,6 +21,76 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patch `0034`: `GeomFill_CoonsAlgPatch::Value` samples the U boundaries at U (#1515)
+
+`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]` and
+`bound[2]` are the U-direction sides. For any boundary set whose V-direction sides are straight the
+result is independent of `U` and the surface collapses onto the `u == v` diagonal, with only
+`u == v` samples coincidentally correct.
+
+The fix is two lines with every coefficient untouched, which #1515 had concluded was impossible:
+`D1U` in the shipped kernel is exactly the derivative of the corrected `Value()`, and a numeric
+probe confirms the corrected form is the exact bilinear surface
+(`Scripts/repro/1515-coons-value-u-parameter/`).
+
+`Shape.coonsAlgPatch` is the only consumer that calls `Value()` directly; `GeomFill_ConstrainedFilling`
+evaluates through `Eval()` and was never affected. **The patch is not in the pinned asset**, so
+`coonsAlgPatch` is still wrong off-diagonal until a repin; its doc comment now says so.
+
+### `API_REFERENCE`'s category rows are censused against the Swift surface (#1679)
+
+A removed public API could leave its name in an `API_REFERENCE.md` category row with every gate
+green, because `count-operations.py` treats those rows as illustrative and re-derives the headline
+totals, while `check-docs-existence.py` reads `docs/reference/` pages rather than these tables.
+`Scripts/census-api-reference-rows.py` reports row entries that resolve to no declaration in
+`Sources/`.
+
+It found one on merge: `revolutionToElementary`, removed by #1634, was still listed in the
+Healing/Analysis row. That row is corrected.
+
+A census rather than a gate, measured: 79 of 2,588 identifier-shaped entries resolve to nothing,
+and most are correct documentation, because the rows mix real symbols with umbrella names
+(`booleanCheck` covers two bridge functions and is declared nowhere), abbreviations
+(`thruSectionsCreate` for `OCCTShapeThruSectionsCreate`) and category labels (`boss`).
+
+### The ten 3D `GeomEval` evaluators return optionals (#1669)
+
+`GeomEval`'s ten curve and surface evaluators returned the zero vector when the call was refused,
+which is indistinguishable from a real answer at the origin, a point these curves and surfaces
+legitimately pass through. Each was a `void` bridge function writing out-parameters inside a `try`,
+so a caught throw left the caller's buffer untouched. This is the defect #1646 fixed for the ten
+`Geom2dEval` functions, which scoped itself to 2D and left these deliberately.
+
+All ten now return `nil` on a refusal: `circularHelixD0`/`D1`/`D2`, `sineWaveD0`/`D1`,
+`ellipsoidD0`, `hyperboloidD0`, `paraboloidD0`, `circularHelicoidD0`, `hyperbolicParaboloidD0`.
+
+The success flag is read off the outputs rather than off the throw, because a throw is only one of
+three routes to a non-answer: a non-finite argument walks past OCCT's validation, since every check
+is written `<= 0` and every comparison against NaN is false, and finite arguments can still
+evaluate to a non-finite point. `EvalD0`/`D1`/`D2` never raise for any parameter, so a finite result
+is the whole of what "succeeded" can mean. Derivative forms answer with every component or none.
+
+Migration: unwrap the result. A caller that previously read the zero vector on failure was reading
+a value that was never a measurement. The ten `docs/reference/` entries are corrected too; each
+previously documented the defect as the contract.
+
+### `pointCloudByDensity(0.0)` returns a cloud instead of hanging (#1452)
+
+Auto-density is requested by passing `0.0`, and it did not return.
+`BRepLib_PointCloudShape::NbPointsByDensity` validates its auto-computed density and then divides
+each face's area by the caller's original argument instead, so `0.0` divides by zero, and
+`(int)std::ceil(+Infinity)` saturates to `INT_MAX`. Every face asked for roughly 2.1 billion points.
+Reachable on an ordinary box.
+
+The bridge now resolves auto-density itself before calling down, using the same `computeDensity()`
+the kernel would have used, so the kernel receives an explicit positive density and its divide is
+correct. Auto-density keeps working; refusing `0.0` would have closed the hang by removing the
+feature.
+
+`Shape.pointCloudByDensity(_:)` gains documentation for what `0.0` means, which it never had, plus
+a runnable snippet. Measurements and probe in `Scripts/repro/1452-pointcloud-auto-density/`. No
+kernel patch is carried; the workaround is marked for retirement when the kernel is repinned.
+
 ### Eighteen doc snippets called a `Curve3D.arc` factory that does not exist (#1675)
 
 `Curve3D.arc(center:radius:startAngle:endAngle:)` appeared in 18 places across `docs/reference/` and
