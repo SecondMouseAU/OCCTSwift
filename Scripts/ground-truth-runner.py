@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import shutil
 import time
+import shlex
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
@@ -241,6 +242,7 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
         "#include <cmath>",
         "#include <vector>",
         "#include <string>",
+        "#include <typeinfo>",
         "",
         "// OCCT headers",
         "#include <Standard.hxx>",
@@ -423,13 +425,13 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
             if requires_base_shape:
                 call_code.append(f"    {occt_class} analyzer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} analyzer(shape);")
+                call_code.append(f"    {occt_class} analyzer(baseShape);")
             call_code.append(f"    Standard_Boolean result = analyzer.IsValid();")
         elif occt_class == "ShapeHealing_ShapeTolerance":
             if requires_base_shape:
                 call_code.append(f"    {occt_class} healer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} healer(shape);")
+                call_code.append(f"    {occt_class} healer(baseShape);")
             call_code.append(f"    healer.Perform();")
             call_code.append(f"    TopoDS_Shape result = healer.Shape();")
         elif occt_class == "GeomAPI_Interpolate":
@@ -473,8 +475,6 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
 
     cpp_code = f"""
 {chr(10).join(includes)}
-
-{spec.setup_code}
 
 int main() {{
     try {{
@@ -526,8 +526,8 @@ def compile_and_run(cpp_code: str, xcframework_paths: Dict[str, Path], work_dir:
         "-std=c++17",
         "-ObjC++",
         "-w",
-        f"-I{headers}",
-        f"-L{library.parent}",
+        f"-I{shlex.quote(str(headers))}",
+        f"-L{shlex.quote(str(library.parent))}",
         "-lOCCT-macos",
         "-framework", "Foundation",
         "-framework", "AppKit",

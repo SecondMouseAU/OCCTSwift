@@ -77,7 +77,8 @@ def apply_remove_guard(lines: List[str], line_idx: int) -> List[str]:
     """Comment out a null-handle guard line (e.g., if (!x || x->field.IsNull()))"""
     line = lines[line_idx]
     stripped = line.strip()
-    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped or "!=" in stripped):
+    # Match specific null-check patterns, not generic !=
+    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped or "!= nullptr" in stripped):
         indent = len(line) - len(line.lstrip())
         lines[line_idx] = " " * indent + "// INJECTED: " + line.lstrip()
     return lines
@@ -99,21 +100,36 @@ def apply_revert_fix(lines: List[str], line_idx: int, target: str) -> List[str]:
 
 
 def apply_remove_try_catch(lines: List[str], line_idx: int) -> List[str]:
-    """Remove try/catch wrapper around OCCT call"""
+    """Remove try/catch wrapper around OCCT call by commenting out the entire block"""
     line = lines[line_idx]
     stripped = line.strip()
     if stripped.startswith("try"):
         i = line_idx
         brace_count = 0
-        in_try = True
+        in_try_block = False
+        try_start = line_idx
+        
+        # First pass: find the complete try-catch block
         while i < len(lines):
             brace_count += lines[i].count("{")
             brace_count -= lines[i].count("}")
-            if brace_count == 0 and in_try:
-                lines[i] = "// INJECTED: " + lines[i]
-                in_try = False
-            elif "catch" in lines[i] and not in_try:
-                lines[i] = "// INJECTED: " + lines[i]
+            
+            if brace_count > 0:
+                in_try_block = True
+            elif in_try_block and brace_count == 0:
+                # We've exited the try block, now look for catch
+                # The catch block starts here and we need to find its end
+                catch_brace_count = 0
+                catch_start = i
+                while i < len(lines):
+                    catch_brace_count += lines[i].count("{")
+                    catch_brace_count -= lines[i].count("}")
+                    if catch_brace_count == 0 and i > catch_start:
+                        # Found end of catch block - comment out everything from try to here
+                        for j in range(try_start, i + 1):
+                            if not lines[j].lstrip().startswith("//"):
+                                lines[j] = "// INJECTED: " + lines[j]
+                        break
                 break
             i += 1
     return lines
