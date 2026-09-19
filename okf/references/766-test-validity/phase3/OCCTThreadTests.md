@@ -10,11 +10,13 @@
 
 | Suite | Tests | Primary Category |
 |-------|-------|------------------|
-| ThreadSpecParsingTests | 4 | WR |
-| ThreadedFeatureTests | 4 | CR |
-| ThreadSpecTruncationTests | 4 | WR |
+| ThreadSpecParsingTests | 4 | WR¹ |
+| ThreadedFeatureTests | 4 | CR¹ |
+| ThreadSpecTruncationTests | 4 | WR¹ |
 
 **Total**: 12 tests across 3 suites
+
+**Legend**: **WR** = Wrong Result (tests producing incorrect results without crashing); **CR** = Crash Risk (tests exercising bridge functions where defects can trigger OCCT-level crashes or assertion failures).
 
 ---
 
