@@ -116,7 +116,7 @@ let occtTarget: Target = useLocalBinary
     // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
     // work already days old. Scripts/patches/ holds TWENTY-THREE patches; the pinned asset holds the
     // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 23 against a list of
-    // 17, and those five are the difference:
+    // 17, and those six are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
@@ -129,16 +129,26 @@ let occtTarget: Target = useLocalBinary
     //         (a partial fix, deliberately: closes the memory-safety hole, does not make
     //         two concurrent operations setting DIFFERENT values for the SAME named
     //         parameter produce correct output; see the patch's own doc comment)
+    //   0034  GeomFill_CoonsAlgPatch::Value samples bound[0]/bound[2] at V, not U        #1515
+    //         (the first carried patch whose fix IS a Swift-reachable wrong answer rather
+    //         than a race or an unreachable accessor; see the paragraph below)
     //
     // What that difference means is narrower than "untested", and the narrowing is worth having.
     // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But
     // kernel-integration.yml triggers on `Scripts/patches/**`, builds V8_0_1 plus every carried
     // patch from source, and runs the full swift test against that binary, so the PR that ADDS a
     // patch does get it built and the suite run against it. What that proves is that the patch
-    // applies, compiles, and regresses nothing; it cannot prove any of the five fixes works,
-    // because none has a Swift-reachable assertion (0030, 0031 and 0033 are all data races, not
-    // wrong answers, so even a Swift-level assertion wouldn't reliably catch any of the three races
-    // without TSan instrumentation the shipped xcframework doesn't carry). And it does not run on
+    // applies, compiles, and regresses nothing. For five of the six it cannot prove the fix works,
+    // because they have no Swift-reachable assertion: 0030, 0031 and 0033 are data races rather
+    // than wrong answers, so even a Swift-level assertion wouldn't reliably catch them without TSan
+    // instrumentation the shipped xcframework doesn't carry, and 0028's one bridge reader was
+    // deleted outright. 0034 IS THE EXCEPTION and it is worth naming, because this paragraph said
+    // "none" until 0034 landed: it is a wrong single-threaded answer, reachable from
+    // Shape.coonsAlgPatch, so a Swift test CAN assert it. Such a test cannot be written
+    // unconditionally today, because it would assert the correct surface and ci.yml's
+    // build-and-test resolves the UNPATCHED asset, where every off-diagonal sample is still wrong.
+    // Whoever repins is the one who can add it, and Shape.coonsAlgPatch's own doc comment carries
+    // the warning until then. And it does not run on
     // any later PR that leaves Scripts/patches/ alone, which is nearly all of them. Do not read
     // this as "check kernel-integration.yml instead of ci.yml": that advice is what #585
     // discredited.
