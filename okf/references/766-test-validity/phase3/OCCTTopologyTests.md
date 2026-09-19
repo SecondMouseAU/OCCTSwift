@@ -16,7 +16,7 @@
 | **Face/Shell/Solid Tests** | Face/Shell/Solid Tests | Face/shell/solid | Remove face/shell/solid |
 | **Compound/CompSolid Tests** | Compound/CompSolid Tests | Compound/compsolid | Remove compound/compsolid |
 | **Orientation Tests** | Orientation Tests | Orientation | Remove orientation |
-| **Adjacency/Connectivity** | Adjacency/Connectivity | Adjacency/connectivity | Remove adjacency |
+| **Adjacency/Connectivity** | Adjacency/Connectivity | Adjacency/connectivity | Remove adjacency/connectivity |
 | **Classification Tests** | Classification Tests | Classification | Remove classification |
 | **Iterator/Explorer Tests** | Iterator/Explorer Tests | Iterator/explorer | Remove iterator |
 | **Transient/Persistent Tests** | Transient/Persistent Tests | Transient/persistent | Remove transient/persistent |
@@ -29,18 +29,18 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| Topology Traversal Tests | OCCTTopologyTraversal | Topology traversal | Remove traversal |  |  |  |
-| Shape Exploration Tests | OCCTShapeExploration | Shape exploration | Remove exploration |  |  |  |
-| Edge/Wire/Vertex Tests | OCCTEdgeWireVertex | Edge/wire/vertex | Remove edge/wire/vertex |  |  |  |
-| Face/Shell/Solid Tests | OCCTFaceShellSolid | Face/shell/solid | Remove face/shell/solid |  |  |  |
-| Compound/CompSolid Tests | OCCTCompoundCompSolid | Compound/compsolid | Remove compound/compsolid |  |  |  |
-| Orientation Tests | OCCTOrientation | Orientation | Remove orientation |  |  |  |
-| Adjacency/Connectivity | OCCTAdjacencyConnectivity | Adjacency/connectivity | Remove adjacency/connectivity |  |  |  |
-| Classification Tests | OCCTClassification | Classification | Remove classification |  |  |  |
-| Iterator/Explorer Tests | OCCTIteratorExplorer | Iterator/explorer | Remove iterator/explorer |  |  |  |
-| Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent |  |  |  |
-| History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping |  |  |  |
-| Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label |  |  |  |
+| Topology Traversal Tests | OCCTTopologyTraversal | Topology traversal | Remove traversal | ✅ | ✅ |  |
+| Shape Exploration Tests | OCCTShapeExploration | Shape exploration | Remove exploration | ✅ | ✅ |  |
+| Edge/Wire/Vertex Tests | OCCTEdgeWireVertex | Edge/wire/vertex | Remove edge/wire/vertex | ✅ | ✅ |  |
+| Face/Shell/Solid Tests | OCCTFaceShellSolid | Face/shell/solid | Remove face/shell/solid | ✅ | ✅ |  |
+| Compound/CompSolid Tests | OCCTCompoundCompSolid | Compound/compsolid | Remove compound/compsolid | ✅ | ✅ |  |
+| Orientation Tests | OCCTOrientation | Orientation | Remove orientation | ✅ | ✅ |  |
+| Adjacency/Connectivity | OCCTAdjacencyConnectivity | Adjacency/connectivity | Remove adjacency/connectivity | ✅ | ✅ |  |
+| Classification Tests | OCCTClassification | Classification | Remove classification | ✅ | ✅ |  |
+| Iterator/Explorer Tests | OCCTIteratorExplorer | Iterator/explorer | Remove iterator/explorer | ✅ | ✅ |  |
+| Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent | ✅ | ✅ |  |
+| History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping | ✅ | ✅ |  |
+| Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label | ✅ | ✅ |  |
 
 ---
 
@@ -58,17 +58,17 @@ For each test, run ground-truth C++ comparison:
 
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
-| Topology Traversal Tests |  |  |  |
-| Shape Exploration Tests |  |  |  |
-| Edge/Wire/Vertex Tests |  |  |  |
-| Face/Shell/Solid Tests |  |  |  |
-| Compound/CompSolid Tests |  |  |  |
-| Orientation Tests |  |  |  |
-| Adjacency/Connectivity |  |  |  |
-| Classification Tests |  |  |  |
-| Iterator/Explorer Tests |  |  |  |
-| Transient/Persistent Tests |  |  |  |
-| History/Mapping Tests |  |  |  |
-| Naming/Label Tests |  |  |  |
+| Topology Traversal Tests | ✅ | ✅ | ✅ |
+| Shape Exploration Tests | ✅ | ✅ | ✅ |
+| Edge/Wire/Vertex Tests | ✅ | ✅ | ✅ |
+| Face/Shell/Solid Tests | ✅ | ✅ | ✅ |
+| Compound/CompSolid Tests | ✅ | ✅ | ✅ |
+| Orientation Tests | ✅ | ✅ | ✅ |
+| Adjacency/Connectivity | ✅ | ✅ | ✅ |
+| Classification Tests | ✅ | ✅ | ✅ |
+| Iterator/Explorer Tests | ✅ | ✅ | ✅ |
+| Transient/Persistent Tests | ✅ | ✅ | ✅ |
+| History/Mapping Tests | ✅ | ✅ | ✅ |
+| Naming/Label Tests | ✅ | ✅ | ✅ |
 
 **Total**: 556 tests
