@@ -1028,6 +1028,18 @@ extension Shape {
     /// - Returns: The evaluated grid, or nil if the patch is degenerate or the grid cannot be
     ///   served: the bound is on the **product**, which must not exceed
     ///   ``Sampling/maximumSampleCount`` (#558).
+    ///
+    /// - Warning: **Every off-diagonal sample is wrong on the currently pinned kernel** (#1515).
+    ///   `GeomFill_CoonsAlgPatch::Value(U, V)` samples all four boundaries at `V`, where
+    ///   `bound[0]` and `bound[2]` are the U-direction sides. For any boundary set whose
+    ///   V-direction sides are straight, the result is independent of `U` entirely and the surface
+    ///   collapses onto the `u == v` diagonal; samples with `u == v` are coincidentally correct,
+    ///   which is why it reads as a valid surface. This is the only consumer that calls `Value()`
+    ///   directly; `GeomFill_ConstrainedFilling` evaluates through `Eval()` and is unaffected.
+    ///
+    ///   Carried patch `0034` fixes it in two lines, but that patch is **not in the pinned asset**,
+    ///   so it changes nothing until the kernel is rebuilt and repinned. Measurement and probe in
+    ///   `Scripts/repro/1515-coons-value-u-parameter/`.
     public static func coonsAlgPatch(
         edge1: Shape, edge2: Shape, edge3: Shape, edge4: Shape,
         evalU: Int = 10, evalV: Int = 10
