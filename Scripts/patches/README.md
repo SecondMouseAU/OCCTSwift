@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, and
 `0032` retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin — see its
 [Retired patches](#retired-patches) entry), so the carried sequence now reads 0010–0012, 0014–0031,
-0033. The gaps are the retirements, not missing files:
+0033–0034. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1431,6 +1431,54 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch
+
+**`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`.** `bound[0]` and
+`bound[2]` are the U-direction sides, per the constructor's own corner-point derivation, and the
+class's derivative functions already know it: `D1U` calls `bound[0]->D1(U, ...)` and
+`bound[2]->D1(U, ...)`, and `DUV` does the same. Only the plain `Value()` used `V` for those two.
+
+The effect is not a small error. For any boundary set whose V-direction sides are straight,
+`Value(U, V)` is **completely independent of `U`**, and the whole surface collapses onto the
+diagonal `U == V` locus. Every sample with `U == V` is coincidentally right, which is what let it
+survive.
+
+**The fix is two lines, and OCCTSwift#1515 said it could not be.** That issue reported that a naive
+swap "produces a third, different, still-wrong set of values ... because the correction-term
+coefficients (`a0..a3`, and the four corner blends) would need re-deriving consistently too", and
+concluded the defect needed a real re-derivation. That is wrong, and both the algebra and a
+measurement say so.
+
+Differentiating a `Value()` with `bound[0]`/`bound[2]` at `U` gives `D1U` **exactly**, every corner
+coefficient included: `d/dU [a0*bound0(U)] = a0*bound0'(U)` matches `D1U`'s `bound[0]->D1(U)`
+scaled by `a0`; `d/dU [a1(U)*bound1(V)] = a1'(U)*bound1(V)` matches its `bound[1]->Value(V)` scaled
+by the derivative `a1`; and each of the four corner terms matches under `a3 = 1 - a1`, `a3' = -a1'`.
+Since `D1U` is already correct in the shipped kernel, the `Value()` it is the derivative of is the
+one this patch writes.
+
+Confirmed numerically on a planar square
+(`Scripts/repro/1515-coons-value-u-parameter/occt_1515_coons_probe.mm`), re-implementing `Value()`
+with the kernel's own coefficients and only the two sampling parameters changed:
+
+```
+   u     v  |      kernel Value()     |   one-line-fixed Value()
+ 0.00  0.50 | (  0.500,  0.500)       | (  0.000,  0.500)
+ 0.50  0.00 | (  0.000,  0.000)       | (  0.500,  0.000)
+ 1.00  0.50 | (  0.500,  0.500)       | (  1.000,  0.500)
+ 0.25  0.75 | (  0.750,  0.750)       | (  0.250,  0.750)
+```
+
+The fixed column is the exact bilinear surface. No coefficient was touched.
+
+**Blast radius.** `GeomFill_ConstrainedFilling` builds a `GeomFill_CoonsAlgPatch` but never calls
+`Value()`; it evaluates through `Eval()` and fits an approximated B-spline, so its output was never
+affected. The one consumer that calls `Value()` directly is OCCTSwift's own
+`OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
+grid.
+
+**Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
+the seven OCCTSwift thread-safety PRs still open on Release 8.1.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 
