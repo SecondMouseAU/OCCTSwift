@@ -114,8 +114,8 @@ let occtTarget: Target = useLocalBinary
     // retired 0032 entry and CLAUDE.md's "Carrying OCCT source patches" section for the process
     // change this prompted: check upstream's own recent activity before opening a new investigation
     // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
-    // work already days old. Scripts/patches/ holds TWENTY-TWO patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 22 against a list of
+    // work already days old. Scripts/patches/ holds TWENTY-THREE patches; the pinned asset holds the
+    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 23 against a list of
     // 17, and those five are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
