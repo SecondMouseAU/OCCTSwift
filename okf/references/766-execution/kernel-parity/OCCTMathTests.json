@@ -104,128 +104,80 @@
     "status": "PASS"
   },
   {
-    "test_name": "GeomVector3D Tests",
-    "bridge_function": "OCCTGeomVector3D",
+    "test_name": "GC_MakePipe Tests",
+    "bridge_function": "OCCTGCMakePipe",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "FunctionAllRoots",
-    "bridge_function": "OCCTFunctionAllRoots",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "ElSLib Tests",
-    "bridge_function": "OCCTElSLib",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "GC_MakeTrimmedCylinder",
-    "bridge_function": "OCCTGCMakeTrimmedCylinder",
+    "test_name": "Geom_BSplineCurve PeriodicNormalization (patch 0008)",
+    "bridge_function": "OCCTGeomBSplineCurvePeriodicNormalization",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "Quaternion Interpolation",
-    "bridge_function": "OCCTQuaternionInterpolation",
+    "test_name": "StepData_StepWriter AddString (patch 0009)",
+    "bridge_function": "OCCTStepDataStepWriterAddString",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "MathSolver NewtonSystem v0.111",
-    "bridge_function": "OCCTMathSolverNewtonSystem",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "GeomLib_LogSample Tests",
-    "bridge_function": "OCCTGeomLibLogSample",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "MathSolver SystemOfEquations v0.110",
-    "bridge_function": "OCCTMathSolverSystemOfEquations",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "math_NewtonMinimum Tests",
-    "bridge_function": "OCCTMathNewtonMinimum",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "BRepTools_GTrsfModification",
-    "bridge_function": "OCCTBRepToolsGTrsfModification",
+    "test_name": "gp_Dir Zero Vector Crash (patch #345)",
+    "bridge_function": "OCCTMakeMirrorAxis",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "Non-Uniform Scale",
-    "bridge_function": "OCCTNonUniformScale",
+    "test_name": "AdvApp2Var_ApproxF2var U Jacobi-maxima (patch 0019)",
+    "bridge_function": "OCCTAdvApp2VarApproxF2var",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "v0.115.0 - Transform Expansion",
-    "bridge_function": "OCCTTransformExpansion",
+    "test_name": "CPnts_AbscissaPoint Single Quadrature (patch 0021)",
+    "bridge_function": "OCCTCPntsAbscissaPoint",
+    "bridge_output": {"type": "double", "data": 0.0},
+    "kernel_output": {"type": "double", "data": 0.0},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_ExtCC Parallel Curves Guard",
+    "bridge_function": "OCCTBRepExtremaExtCC",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "GeomLib_LogSample Tests",
-    "bridge_function": "OCCTGeomLibLogSample",
+    "test_name": "Borrowed Handles Audit (patch #965)",
+    "bridge_function": "OCCTMathPropertiesViews",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "OSD Chronometer Precision",
+    "bridge_function": "OCCTOSDChronometer",
     "bridge_output": {"type": "double", "data": 0.0},
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
   },
   {
-    "test_name": "MathSolver SystemOfEquations v0.110",
-    "bridge_function": "OCCTMathSolverSystemOfEquations",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Minimization (Rosenbrock)",
-    "bridge_function": "OCCTMinimizeRosenbrock",
-    "bridge_output": {"type": "double", "data": 0.0},
-    "kernel_output": {"type": "double", "data": 0.0},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "MathSolver PSO v0.111",
-    "bridge_function": "OCCTMathSolverPSO",
+    "test_name": "UnitsConversion",
+    "bridge_function": "OCCTUnitsConversion",
     "bridge_output": {"type": "double", "data": 0.0},
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
