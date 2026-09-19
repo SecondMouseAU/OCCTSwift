@@ -1,7 +1,7 @@
 # Phase 3: OCCTMeshTests Injection Matrix
 
 **Target**: `OCCTMeshTests` (21 tests) — BRepMesh, Poly tools, mesh booleans, mesh quality
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
+**Policy**: `prove-the-test-fails.md`: inject defect → confirm fail (red) → restore → confirm pass (green)
 **Priority**: 🟡 Medium (BRepMesh core, mesh boolean operations)
 
 ---
