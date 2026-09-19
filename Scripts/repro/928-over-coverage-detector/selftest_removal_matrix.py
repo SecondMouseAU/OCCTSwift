@@ -132,8 +132,11 @@ def _patch_unresolved(m):
     orig = m.run
 
     def dropping(claims, reach, ms, p, b, header_names, lane=None):
-        findings, unresolved, checked = orig(claims, reach, ms, p, b, header_names, lane)
-        return findings, [], checked
+        # run() grew a fourth return value in #1655 (the skipped-over count). PR #1659 updated the
+        # three unpacks in validate_known_findings.py and missed this one, so the self-test that
+        # guards that script has been raising ValueError instead of testing anything (#1670).
+        findings, unresolved, checked, skipped = orig(claims, reach, ms, p, b, header_names, lane)
+        return findings, [], checked, skipped
 
     m.run = dropping
 
