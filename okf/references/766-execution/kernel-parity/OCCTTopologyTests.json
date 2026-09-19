@@ -1,7 +1,7 @@
 [
   {
     "test_name": "Topology Traversal Tests",
-    "bridge_function": "OCCTTopologyTraversal",
+    "bridge_function": "OCCTShapeGetSubShapes",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -9,7 +9,7 @@
   },
   {
     "test_name": "Shape Exploration Tests",
-    "bridge_function": "OCCTShapeExploration",
+    "bridge_function": "OCCTShapeGetContents",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -17,7 +17,7 @@
   },
   {
     "test_name": "Edge/Wire/Vertex Tests",
-    "bridge_function": "OCCTEdgeWireVertex",
+    "bridge_function": "OCCTShapeGetEdgeAtIndex",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -25,7 +25,7 @@
   },
   {
     "test_name": "Face/Shell/Solid Tests",
-    "bridge_function": "OCCTFaceShellSolid",
+    "bridge_function": "OCCTShapeGetFaces",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -33,7 +33,7 @@
   },
   {
     "test_name": "Compound/CompSolid Tests",
-    "bridge_function": "OCCTCompoundCompSolid",
+    "bridge_function": "OCCTShapeGetSubShapeCount",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
@@ -41,7 +41,7 @@
   },
   {
     "test_name": "Orientation Tests",
-    "bridge_function": "OCCTOrientation",
+    "bridge_function": "OCCTFaceGetOrientation",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -49,7 +49,7 @@
   },
   {
     "test_name": "Adjacency/Connectivity",
-    "bridge_function": "OCCTAdjacencyConnectivity",
+    "bridge_function": "OCCTShapeFindContiguousEdges",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -57,7 +57,7 @@
   },
   {
     "test_name": "Classification Tests",
-    "bridge_function": "OCCTClassification",
+    "bridge_function": "OCCTClassifyPointInSolid",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -65,7 +65,7 @@
   },
   {
     "test_name": "Iterator/Explorer Tests",
-    "bridge_function": "OCCTIteratorExplorer",
+    "bridge_function": "OCCTWireExplorerEdgeCount",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -73,7 +73,7 @@
   },
   {
     "test_name": "Transient/Persistent Tests",
-    "bridge_function": "OCCTTransientPersistent",
+    "bridge_function": "OCCTShapeCopy",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -81,7 +81,7 @@
   },
   {
     "test_name": "History/Mapping Tests",
-    "bridge_function": "OCCTHistoryMapping",
+    "bridge_function": "OCCTShapeReplaceSubShape",
     "bridge_output": {"type": "bool", "data": true},
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
@@ -89,7 +89,7 @@
   },
   {
     "test_name": "Naming/Label Tests",
-    "bridge_function": "OCCTNamingLabel",
+    "bridge_function": "OCCTShapeGetSubShapeByTypeIndex",
     "bridge_output": {"type": "string", "data": ""},
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
