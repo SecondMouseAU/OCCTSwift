@@ -1,10 +1,10 @@
 [
   {
     "test_name": "ShapeHealing domain kernel parity",
-    "bridge_function": "OCCTShapeHealing*",
-    "bridge_output": {"type": "placeholder", "data": {}},
-    "kernel_output": {"type": "placeholder", "data": {}},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_function": "OCCTShapeHealingPlaceholder",
+    "bridge_output": {"type": "object", "data": {}},
+    "kernel_output": {"type": "object", "data": {}},
+    "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
   }
 ]
