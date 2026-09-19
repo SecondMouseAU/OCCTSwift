@@ -21,6 +21,22 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patch `0035`: `STEPControl_Writer` stops re-initialising the shared actor per transfer (#1403)
+
+`STEPControl_Writer::Transfer` called `InitializeMissingParameters()` on every transfer, which writes
+through to the process-shared `STEPControl_ActorWrite`. Upstream removed that call in
+[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259); this backports the one line of that
+PR the pinned kernel lacks, byte-identical to upstream's change.
+
+The call is nearly inert in the default path, because the controller's constructor already populates
+both fields its guards test, so it matters only for a caller that has customised shape-fix
+parameters while another thread writes. It is **not** the fix for #1403's residual data-exchange
+races, which are measured separately and sit in `IFSelect_WorkSession`'s `errhand` global and the
+shared write actor. Not in the pinned asset, so nothing changes for consumers until a rebuild.
+
+`check-inventory-prose.py` also grows three claims and one structural check it was blind to, after
+adding `0034` left three prose statements stale that the gate reported clean.
+
 ### Carried patch `0034`: `GeomFill_CoonsAlgPatch::Value` samples the U boundaries at U (#1515)
 
 `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]` and
