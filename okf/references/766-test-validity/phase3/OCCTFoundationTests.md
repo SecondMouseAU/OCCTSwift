@@ -10,19 +10,22 @@
 
 | Suite | Tests | Primary Category |
 |-------|-------|------------------|
-| gp_Dir/gp_Ax1/gp_Ax2/gp_Ax3 zero vector tests | 42 | CR |
-| Geom_BSplineCurve PeriodicNormalization (patch 0008) | 28 | CR |
-| StepData_StepWriter AddString (patch 0009) | 22 | CR |
-| Handle lifecycle tests | 20 | CR |
-| Borrowed handles audit | 18 | CR |
-| OSD Environment/Directory tests | 18 | WR |
-| UnitsConversion tests | 16 | WR |
-| ExtStringArray tests | 12 | WR |
-| FontManager tests | 10 | WR |
-| Color OCCT Operations | 8 | WR |
-| Thread Safety: OCCTSerial | 6 | CR |
+| gp_Dir/gp_Ax1/gp_Ax2/gp_Ax3 zero vector tests | 42 | CR¹ |
+| Geom_BSplineCurve PeriodicNormalization (patch 0008) | 28 | CR¹ |
+| StepData_StepWriter AddString (patch 0009) | 22 | CR¹ |
+| Handle lifecycle tests | 20 | CR¹ |
+| Borrowed handles audit | 18 | CR¹ |
+| OSD Environment/Directory tests | 18 | WR² |
+| UnitsConversion tests | 16 | WR² |
+| ExtStringArray tests | 12 | WR² |
+| FontManager tests | 10 | WR² |
+| Color OCCT Operations | 8 | WR² |
+| Thread Safety: OCCTSerial | 6 | CR¹ |
 
 **Total**: 200 tests across ~11 suites
+
+¹ CR = Crash-Related (critical priority, kernel patches or bridge fixes preventing crashes)
+² WR = Wrapper/Regression (wrapper behavior tests, non-crash functional validation)
 
 ---
 
@@ -38,7 +41,7 @@
 |------|-----------------|--------|-----------|------|--------|-------|
 | mirrorAxisZeroDirection | `OCCTMakeMirrorAxis` → `gp_Dir` | Zero direction vector | Remove `try/catch` in bridge |  |  | Uncaught `Standard_ConstructionError` |
 | mirrorPlaneZeroNormal | `OCCTMakeMirrorPlane` → `gp_Dir` | Zero normal vector | Remove `try/catch` in bridge |  |  | Uncaught `Standard_ConstructionError` |
-| geomDirectionZeroVector | `OCCTGeomDirectionCreate` → `Geom_Direction` | Zero vector handled gracefully | N/A | N/A |  | `Geom_Direction` returns NaN, no exception |
+| geomDirectionZeroVector | `OCCTGeomDirectionCreate` → `Geom_Direction` | Zero vector handled gracefully | N/A | N/A | N/A | `Geom_Direction` returns NaN, no exception |
 
 ### #0008: Geom_BSplineCurve::PeriodicNormalization Infinite Loop (Kernel Patch)
 
