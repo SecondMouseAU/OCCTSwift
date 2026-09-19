@@ -1,0 +1,12 @@
+diff --git a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx
+index c911126d..9f60d9e6 100644
+--- a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx
++++ b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx
+@@ -155,7 +155,6 @@ IFSelect_ReturnStatus STEPControl_Writer::Transfer(const TopoDS_Shape&
+     occ::down_cast<STEPControl_ActorWrite>(WS()->NormAdaptor()->ActorWrite());
+   ActWrite->SetGroupMode(
+     occ::down_cast<StepData_StepModel>(thesession->Model())->InternalParameters.WriteAssembly);
+-  InitializeMissingParameters();
+   return thesession->TransferWriteShape(sh, compgraph, theProgress);
+ }
+ 

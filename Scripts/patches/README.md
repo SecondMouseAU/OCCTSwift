@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, and
 `0032` retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin — see its
 [Retired patches](#retired-patches) entry), so the carried sequence now reads 0010–0012, 0014–0031,
-0033–0034. The gaps are the retirements, not missing files:
+0033–0035. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1479,6 +1479,40 @@ grid.
 
 **Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
 the seven OCCTSwift thread-safety PRs still open on Release 8.1.
+
+## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
+
+**A backport, not a discovery.** Upstream
+[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259) "Data Exchange - Make STEP
+read/write pipelines thread-safer" (merged 2026-05-03) is **three quarters present in the pinned
+V8_0_1 already**. Checked marker by marker:
+
+| #1259 change | In the pin? |
+|---|---|
+| `XSAlgo_ShapeProcessor::SetParameter` skips a matching `Bind` | present |
+| `LibCtl_Library` racing last-protocol cache dropped | present |
+| `STEPControl_Controller` ctor pre-populates the actor | present (`STEPControl_Controller.cxx:348-353`) |
+| per-`Transfer` `InitializeMissingParameters()` dropped | **absent, this patch** |
+
+The diff's blob hashes are byte-identical to upstream's own (`c911126d..9f60d9e6`), so this is
+literally their change rather than a re-derivation.
+
+**It is nearly inert, and that is worth saying rather than overselling it.**
+`STEPControl_Writer::SetShapeFixParameters` delegates to `GetActor()`, the process-shared actor, so
+`InitializeMissingParameters()` does reach shared state. But both of its guards
+(`GetShapeFixParameters().IsEmpty()`, `!GetShapeProcessFlags().second`) read through that same actor,
+which the constructor above has already populated, so in the default path both branches are false and
+the call writes nothing. It matters only for a caller that has customised parameters, where it races
+a concurrent writer.
+
+**This does NOT fix #1403.** The residual races measured after `0033`
+(`Scripts/repro/1157-interface-static-thread-safety/gate-baseline-1403/`) are not the #1259
+mechanisms, because those fixes are already in the pin. The busiest site is
+`IFSelect_WorkSession.cxx:86`'s `errhand` global, then `STEPControl_ActorWrite::SetGroupMode`. This
+patch is housekeeping alongside that work, not the answer to it.
+
+**Nothing to file upstream.** Already merged there. If a future repin picks up a kernel that includes
+#1259 in full, this patch retires with no replacement.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 

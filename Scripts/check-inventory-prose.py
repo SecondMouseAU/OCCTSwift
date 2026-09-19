@@ -123,6 +123,10 @@ def facts():
     return {
         "patches_on_disk": len(patch_files()),
         "patches_pinned": len(pinned_patch_numbers()),
+        # #1403: the count of patches the pinned asset LACKS. Package.swift and
+        # carried-occt-patches.md both introduce their unpinned lists with this number, and both
+        # went stale at 0032, 0033 AND 0034 because no claim read it.
+        "patches_unpinned": len(patch_files()) - len(pinned_patch_numbers()),
         "gate_scripts": len(split["gates"]),
         "census_scripts": len(split["censuses"]),
         "audit_scripts": len(split["audits"]),
@@ -142,6 +146,13 @@ CLAIMS = [
     ("Package.swift", r"under \"Retired patches\"\)\.\s*The (\S+) that", "patches_pinned"),
     ("Package.swift", r"plus (?:the )?(\S+) patches listed above", "patches_pinned"),
     ("Package.swift", r"Scripts/patches/ holds ([A-Za-z-]+) patches", "patches_on_disk"),
+    # #1403: three claims that existed all along and were read by nothing. Kilo's review caught the
+    # first two by hand on PR #2041 after 0034 landed; the third had gone stale unnoticed.
+    ("Package.swift", r"and those (\S+) are the difference:", "patches_unpinned"),
+    ("okf/references/carried-occt-patches.md",
+     r"`Scripts/patches/` holds ([A-Za-z-]+) patches", "patches_on_disk"),
+    ("okf/references/carried-occt-patches.md",
+     r"The (\S+) it lacks, and why each matters", "patches_unpinned"),
     ("Package.swift", r"`ls Scripts/patches/\*\.patch \| wc -l` answers (\d+)", "patches_on_disk"),
     ("CLAUDE.md", r"\((\S+) on disk, \S+ pinned", "patches_on_disk"),
     ("CLAUDE.md", r"\(\S+ on disk, (\S+) pinned", "patches_pinned"),
@@ -205,8 +216,52 @@ def check_patch_rows():
     return problems
 
 
+def carried_sequence_numbers(text):
+    """Expand a "0010-0012, 0014-0031, 0033-0035" range list into the set it names."""
+    match = re.search(r"the carried sequence now reads ([0-9\u2013, \n-]+?)\.", text)
+    if not match:
+        return None
+    numbers = set()
+    for part in re.split(r",\s*", match.group(1).replace("\n", " ").strip()):
+        part = part.strip()
+        if not part:
+            continue
+        ends = re.split(r"[\u2013-]", part)
+        if len(ends) == 2 and ends[0].strip().isdigit() and ends[1].strip().isdigit():
+            numbers.update(range(int(ends[0]), int(ends[1]) + 1))
+        elif part.isdigit():
+            numbers.add(int(part))
+        else:
+            return None
+    return numbers
+
+
+def check_carried_sequence():
+    """Scripts/patches/README.md's range list must name exactly the patches on disk.
+
+    #1403. This is prose that encodes a SET, not a count, so no CLAIMS entry can check it. It has
+    gone stale three times (at 0032's retirement, at 0033 and at 0034), each time caught by a human
+    reading the paragraph rather than by this gate, which was reading the counts beside it and
+    reporting clean.
+    """
+    text = read("Scripts/patches/README.md")
+    stated = carried_sequence_numbers(text)
+    if stated is None:
+        return ["Scripts/patches/README.md: could not find or parse the 'carried sequence now "
+                "reads ...' range list. Reword it and this check must be updated with it."]
+    on_disk = {int(stem[:4]) for stem in patch_files()}
+    problems = []
+    for missing in sorted(on_disk - stated):
+        problems.append("Scripts/patches/README.md: the carried sequence omits %04d, which is on "
+                        "disk" % missing)
+    for extra in sorted(stated - on_disk):
+        problems.append("Scripts/patches/README.md: the carried sequence names %04d, which is not "
+                        "on disk (retired patches belong in the gaps, not the ranges)" % extra)
+    return problems
+
+
 def run():
-    problems = check_claims() + check_patch_rows()
+    problems = check_claims() + check_patch_rows() + check_carried_sequence()
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -235,7 +290,7 @@ def self_test():
         cases.append((name, ok, detail))
 
     # 1. The real repo is clean, which is what the gate asserts in CI.
-    problems = check_claims() + check_patch_rows()
+    problems = check_claims() + check_patch_rows() + check_carried_sequence()
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -296,6 +351,19 @@ def self_test():
              any("names no file" in p for p in check_patch_rows()))
     finally:
         globals()["read"] = saved_read
+
+    # 8. #1403: the carried-sequence range expander. This is prose encoding a SET rather than a
+    #    count, so no CLAIMS entry can cover it, and it had gone stale three times (0032's
+    #    retirement, 0033, 0034) before this check existed.
+    case("carried-sequence-expands-ranges",
+         carried_sequence_numbers("the carried sequence now reads 0010\u20130012, 0014, 0033.")
+         == {10, 11, 12, 14, 33})
+    case("carried-sequence-accepts-ascii-hyphen",
+         carried_sequence_numbers("the carried sequence now reads 0010-0012.") == {10, 11, 12})
+    case("carried-sequence-rejects-garbage",
+         carried_sequence_numbers("the carried sequence now reads 0010 to 0012.") is None)
+    case("carried-sequence-missing-sentence-detected",
+         carried_sequence_numbers("no such sentence here") is None)
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
