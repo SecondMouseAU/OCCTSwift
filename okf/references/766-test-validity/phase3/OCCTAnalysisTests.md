@@ -24,8 +24,6 @@
 | **ShapeExtend Explorer** | ShapeExtend Explorer | Shape extension | Remove extension |
 | **v0.122.0, ShapeFix_Edge Extended** | v0.122.0, ShapeFix_Edge Extended | Edge fixing | Remove edge fix |
 | **Issue 772, analyze() self-intersection is opt-in** | Issue 772, analyze() self-intersection is opt-in | Self-intersection | Remove self-intersection |
-| **ShapeAnalysis_Surface Tests** | ShapeAnalysis_Surface Tests | Surface analysis | Remove surface analysis |
-| **ShapeAnalysis_Curve Static Method Tests** | ShapeAnalysis_Curve Static Method Tests | Curve analysis | Remove curve analysis |
 | **Issue #443, solid(from:) and upgraded() cover every body** | Issue 443, solid(from:) and upgraded() cover every body | Solid creation | Remove solid creation |
 | **Issue #442, fixSolid/solidFromShellFixed cover every body** | Issue 442, fixSolid/solidFromShellFixed cover every body | Solid fixing | Remove solid fix |
 | **Issue 702, solid demotion is reported accurately** | Issue 702, solid demotion is reported accurately | Solid demotion | Remove demotion |
@@ -79,29 +77,6 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
-| **Integration: Thickness Analysis** | Integration: Thickness Analysis | Thickness analysis | Remove thickness |
-| **Issue818 middlePath ground truth (#811)** | Issue818 middlePath ground truth (#811) | Middle path | Remove middle path |
-| **Simple Offset** | Simple Offset | Offset | Remove offset |
-| **BRepFill CompatibleWires Tests** | BRepFill CompatibleWires Tests | Compatible wires | Remove compatible wires |
-| **BRepFill AdvancedEvolved Tests** | BRepFill AdvancedEvolved Tests | Advanced evolved | Remove advanced evolved |
-| **Integration: Draft Analysis** | Integration: Draft Analysis | Draft analysis | Remove draft analysis |
-| **BRepAlgo Loop Tests** | BRepAlgo Loop Tests | Loop tests | Remove loops |
-| **BOPAlgo FaceRestrictor Tests** | BOPAlgo FaceRestrictor Tests | Face restrictor | Remove face restrictor |
-| **Make Connected** | Make Connected | Connected | Remove connected |
-| **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
-| **Glue Tests** | Glue Tests | Glue | Remove glue |
-| **Integration: Thickness Analysis** | Integration: Thickness Analysis | Thickness analysis | Remove thickness |
-| **Issue818 middlePath ground truth (#811)** | Issue818 middlePath ground truth (#811) | Middle path | Remove middle path |
-| **Simple Offset** | Simple Offset | Offset | Remove offset |
-| **BRepFill CompatibleWires Tests** | BRepFill CompatibleWires Tests | Compatible wires | Remove compatible wires |
-| **BRepFill AdvancedEvolved Tests** | BRepFill AdvancedEvolved Tests | Advanced evolved | Remove advanced evolved |
-| **Integration: Draft Analysis** | Integration: Draft Analysis | Draft analysis | Remove draft analysis |
-| **BRepAlgo Loop Tests** | BRepAlgo Loop Tests | Loop tests | Remove loops |
-| **BOPAlgo FaceRestrictor Tests** | BOPAlgo FaceRestrictor Tests | Face restrictor | Remove face restrictor |
-| **Make Connected** | Make Connected | Connected | Remove connected |
-| **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
-| **Glue Tests** | Glue Tests | Glue | Remove glue |
-| **Integration: Thickness Analysis** | Integration: Thickness Analysis | Thickness analysis | Remove thickness |
 
 ---
 
@@ -109,16 +84,14 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| **#318 BRepGProp_EdgeTool SIGSEGV** | BRepGProp_EdgeTool::IntegrationOrder | Null 3D curve deref | Remove degenerate edge skip |  |  |  |
-| **#319 Self-Intersection Timeout** | BOPAlgo_ArgumentAnalyzer | Timeout not honored | Revert kernel patch 0010 |  |  |  |
-| **#603 Arc Length** | occtAdaptorArcLength | Single quadrature | Remove adaptive quadrature |  |  |  |
-| **#636 Extrema Parallel** | BRepExtrema_ExtCC | Parallel crash | Remove isParallel guard |  |  |  |
-| **#310/#655 FreeBounds** | ShapeAnalysis_FreeBounds | INTERNAL orientation | Remove INTERNAL check |  |  |  |
-| **#837 fixed() mode-flag wiring** | ShapeFix_Shape | Mode flags ignored | Remove FixFree*Mode |  |  |  |
-| **#570 Healing approx** | GeomConvert_ApproxSurface | Error not checked | Remove error check |  |  |  |
-| **#263 Self-Intersecting Profile** | ShapeFix_Shape | Self-intersection | Remove self-intersection guard |  |  |  |
-| **#318 BRepGProp_EdgeTool** | BRepGProp_EdgeTool | Null 3D curve deref | Remove degenerate skip |  |  |  |
-| **#636 Extrema Parallel** | BRepExtrema_ExtCC | Parallel crash | Remove isParallel |  |  |  |
+| **#318 BRepGProp_EdgeTool SIGSEGV** | BRepGProp_EdgeTool::IntegrationOrder | Null 3D curve deref | Remove degenerate edge skip | ✅ | ✅ |  |
+| **#319 Self-Intersection Timeout** | BOPAlgo_ArgumentAnalyzer | Timeout not honored | Revert kernel patch 0010 | ✅ | ✅ |  |
+| **#603 Arc Length** | occtAdaptorArcLength | Single quadrature | Remove adaptive quadrature | ✅ | ✅ |  |
+| **#636 Extrema Parallel** | BRepExtrema_ExtCC | Parallel crash | Remove isParallel guard | ✅ | ✅ |  |
+| **#310/#655 FreeBounds** | ShapeAnalysis_FreeBounds | INTERNAL orientation | Remove INTERNAL check | ✅ | ✅ |  |
+| **#837 fixed() mode-flag wiring** | ShapeFix_Shape | Mode flags ignored | Remove FixFree*Mode | ✅ | ✅ |  |
+| **#570 Healing approx** | GeomConvert_ApproxSurface | Error not checked | Remove error check | ✅ | ✅ |  |
+| **#263 Self-Intersecting Profile** | ShapeFix_Shape | Self-intersection | Remove self-intersection guard | ✅ | ✅ |  |
 
 ---
 
@@ -126,139 +99,73 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props |  |  |  |
-| ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis |  |  |  |
-| ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis |  |  |  |
-| ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance |  |  |  |
-| Advanced Healing Tests | OCCTAdvancedHealing | Healing | Remove healing |  |  |  |
-| SAWireAnalysis.checkOuterBound (#1058) | OCCTSAWireAnalysisCheckOuterBound | Outer bound check | Remove outer bound |  |  |  |
-| ShapeAnalysis FreeBoundsProperties | OCCTShapeAnalysisFreeBounds | Free bounds | Remove free bounds |  |  |  |
-| Issue #446 unify mutation | OCCTShapeUnify | Unify mutation | Remove unify mutation |  |  |  |
-| ShapeAnalysis_Curve Static | OCCTShapeAnalysisCurveStatic | Curve analysis | Remove curve analysis |  |  |  |
-| Issue #570 healing approx | OCCTIssue570Healing | Healing approx | Remove error check |  |  |  |
-| ShapeAnalysis_Surface Tests | OCCTShapeAnalysisSurface | Surface analysis | Remove surface analysis |  |  |  |
-| ShapeExtend Explorer | OCCTShapeExtendExplorer | Shape extension | Remove extension |  |  |  |
-| ShapeFix_Edge Extended | OCCTShapeFixEdgeExtended | Edge fixing | Remove edge fix |  |  |  |
-| Issue 772 self-intersection | OCCTIssue772SelfIntersection | Self-intersection | Remove self-intersection |  |  |  |
-| ShapeAnalysis_Surface Tests (2) | OCCTShapeAnalysisSurface2 | Surface analysis | Remove surface analysis |  |  |  |
-| ShapeAnalysis_Curve Static | OCCTShapeAnalysisCurveStatic | Curve analysis | Remove curve analysis |  |  |  |
-| Issue #443 solid(from:) | OCCTIssue443SolidFrom | Solid creation | Remove solid creation |  |  |  |
-| Issue #442 fixSolid/solidFromShell | OCCTIssue442FixSolid | Solid fixing | Remove solid fix |  |  |  |
-| Issue 702 solid demotion | OCCTIssue702Demotion | Solid demotion | Remove demotion |  |  |  |
-| ShapeAnalysis_FreeBounds Simplified | OCCTShapeAnalysisFreeBoundsSimplified | Free bounds | Remove free bounds |  |  |  |
-| Issue #484 Face.fixed ReShape | OCCTIssue484FaceFixed | ReShape context | Remove ReShape context |  |  |  |
-| ShapeUpgrade ConvertSurfacesToBezier | OCCTShapeUpgradeConvertSurfacesToBezier | BSpline conversion | Remove BSpline conversion |  |  |  |
-| ShapeUpgrade SplitCurve Tests | OCCTShapeUpgradeSplitCurve | Curve splitting | Remove curve split |  |  |  |
-| Issue #870 ExtendShapeType fallback | OCCTIssue870ExtendShapeType | Extend fallback | Remove fallback |  |  |  |
-| ShapeAnalysis Surface ValueOfUV | OCCTShapeAnalysisSurfaceValueOfUV | Surface UV | Remove UV values |  |  |  |
-| Sewing Tests | OCCTSewing | Sewing | Remove sewing |  |  |  |
-| Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis |  |  |  |
-| Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing |  |  |  |
-| Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard |  |  |  |
-| Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras |  |  |  |
-| #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode |  |  |  |
-| ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split |  |  |  |
-| ShapeFix_Wireframe Extension | OCCTShapeFixWireframeExtension | Wireframe fixing | Remove wireframe fix |  |  |  |
-| DetectPocketsAAG tolerance (#733) | OCCTDetectPocketsAAG | Pocket detection | Remove pocket detection |  |  |  |
-| PocketFeature.isOpen (#753) | OCCTPocketFeatureIsOpen | Pocket open | Remove pocket open |  |  |  |
-| Off-center enclosed pocket (#777) | OCCTOffCenterPocket | Pocket | Remove pocket |  |  |  |
-| Prism Until Face | OCCTPrismUntilFace | Prism | Remove prism |  |  |  |
-| Vertical corner-blend fillet (#762) | OCCTVerticalCornerBlendFillet | Fillet | Remove fillet |  |  |  |
-| Filleted through-slot (#762) | OCCTFilletedThroughSlot | Fillet | Remove fillet |  |  |  |
-| Filleted box exterior edges (#762) | OCCTFilletedBoxExteriorEdges | Fillet | Remove fillet |  |  |  |
-| LocOpe_Spliter v71 Tests | OCCTLocOpeSpliter | Splitting | Remove splitting |  |  |  |
-| PocketFeature.isOpen on compound (#1089) | OCCTPocketFeatureIsOpenCompound | Pocket open | Remove pocket open |  |  |  |
-| BiTgte Blend Tests | OCCTBiTgteBlend | Blend | Remove blend |  |  |  |
-| Issue 572 forced-C1 sweep | OCCTIssue572ForcedC1 | Forced C1 | Remove forced C1 |  |  |  |
-| Prismatic Feature Tests | OCCTPrismaticFeature | Prismatic | Remove prismatic |  |  |  |
-| Split Shape by Wire | OCCTSplitShapeByWire | Wire splitting | Remove wire split |  |  |  |
-| Boolean with History | OCCTBooleanWithHistory | Boolean history | Remove history |  |  |  |
-| BRepOffset Offset Face | OCCTBRepOffsetOffsetFace | Offset face | Remove offset face |  |  |  |
-| Edge.split bounded by edge's own range (#1020) | OCCTEdgeSplit | Edge split | Remove edge split |  |  |  |
-| SEGV Guards, CellsBuilder empty | OCCTSEGVGuards | SEGV guard | Remove SEGV guard |  |  |  |
-| Extended Extrusion | OCCTExtendedExtrusion | Extrusion | Remove extrusion |  |  |  |
-| BRepOffset SimpleOffset | OCCTBRepOffsetSimpleOffset | Offset | Remove offset |  |  |  |
-| BOPAlgo Splitter | OCCTBOPAlgoSplitter | Splitter | Remove splitter |  |  |  |
-| BOPAlgo_Tools Tests | OCCTBOPAlgoTools | BOPAlgo tools | Remove tools |  |  |  |
-| BOPAlgo_BuilderSolid Tests | OCCTBOPAlgoBuilderSolid | Builder solid | Remove builder solid |  |  |  |
-| LocOpe BuildShape Tests | OCCTLocOpeBuildShape | Build shape | Remove build shape |  |  |  |
-| LocOpe FindEdges Tests | OCCTLocOpeFindEdges | Find edges | Remove find edges |  |  |  |
-| FilletSurf_Builder Tests | OCCTFilletSurfBuilder | Fillet surf builder | Remove fillet surf |  |  |  |
-| Integration: Thickness Analysis | OCCTIntegrationThicknessAnalysis | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath | Middle path | Remove middle path |  |  |  |
-| Simple Offset | OCCTSimpleOffset | Offset | Remove offset |  |  |  |
-| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires | Compatible wires | Remove compatible wires |  |  |  |
-| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved | Advanced evolved | Remove advanced evolved |  |  |  |
-| Integration: Draft Analysis | OCCTIntegrationDraftAnalysis | Draft analysis | Remove draft analysis |  |  |  |
-| BRepAlgo Loop Tests | OCCTBRepAlgoLoop | Loop tests | Remove loops |  |  |  |
-| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor | Face restrictor | Remove face restrictor |  |  |  |
-| Make Connected | OCCTMakeConnected | Connected | Remove connected |  |  |  |
-| Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib |  |  |  |
-| Glue Tests | OCCTGlueTests | Glue | Remove glue |  |  |  |
-| Integration: Thickness Analysis (2) | OCCTIntegrationThicknessAnalysis2 | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath2 | Middle path | Remove middle path |  |  |  |
-| Simple Offset (2) | OCCTSimpleOffset2 | Offset | Remove offset |  |  |  |
-| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires | Compatible wires | Remove compatible wires |  |  |  |
-| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved | Advanced evolved | Remove advanced evolved |  |  |  |
-| Integration: Draft Analysis (2) | OCCTIntegrationDraftAnalysis2 | Draft analysis | Remove draft analysis |  |  |  |
-| BRepAlgo Loop Tests | OCCTBRepAlgoLoop | Loop tests | Remove loops |  |  |  |
-| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor | Face restrictor | Remove face restrictor |  |  |  |
-| Make Connected | OCCTMakeConnected | Connected | Remove connected |  |  |  |
-| Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib |  |  |  |
-| Glue Tests | OCCTGlueTests | Glue | Remove glue |  |  |  |
-| Integration: Thickness Analysis (3) | OCCTIntegrationThicknessAnalysis3 | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath3 | Middle path | Remove middle path |  |  |  |
-| Simple Offset (3) | OCCTSimpleOffset3 | Offset | Remove offset |  |  |  |
-| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires2 | Compatible wires | Remove compatible wires |  |  |  |
-| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved2 | Advanced evolved | Remove advanced evolved |  |  |  |
-| Integration: Draft Analysis (2) | OCCTIntegrationDraftAnalysis3 | Draft analysis | Remove draft analysis |  |  |  |
-| BRepAlgo Loop Tests | OCCTBRepAlgoLoop2 | Loop tests | Remove loops |  |  |  |
-| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor2 | Face restrictor | Remove face restrictor |  |  |  |
-| Make Connected (2) | OCCTMakeConnected2 | Connected | Remove connected |  |  |  |
-| Linear Rib Feature (2) | OCCTLinearRibFeature2 | Rib | Remove rib |  |  |  |
-| Glue Tests (2) | OCCTGlueTests2 | Glue | Remove glue |  |  |  |
-| Integration: Thickness Analysis (4) | OCCTIntegrationThicknessAnalysis4 | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath4 | Middle path | Remove middle path |  |  |  |
-| Simple Offset (4) | OCCTSimpleOffset4 | Offset | Remove offset |  |  |  |
-| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires3 | Compatible wires | Remove compatible wires |  |  |  |
-| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved3 | Advanced evolved | Remove advanced evolved |  |  |  |
-| Integration: Draft Analysis (3) | OCCTIntegrationDraftAnalysis4 | Draft analysis | Remove draft analysis |  |  |  |
-| BRepAlgo Loop Tests | OCCTBRepAlgoLoop3 | Loop tests | Remove loops |  |  |  |
-| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor3 | Face restrictor | Remove face restrictor |  |  |  |
-| Make Connected (3) | OCCTMakeConnected3 | Connected | Remove connected |  |  |  |
-| Linear Rib Feature (3) | OCCTLinearRibFeature3 | Rib | Remove rib |  |  |  |
-| Glue Tests (3) | OCCTGlueTests3 | Glue | Remove glue |  |  |  |
-| Integration: Thickness Analysis (5) | OCCTIntegrationThicknessAnalysis5 | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath5 | Middle path | Remove middle path |  |  |  |
-| Simple Offset (5) | OCCTSimpleOffset5 | Offset | Remove offset |  |  |  |
-| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires4 | Compatible wires | Remove compatible wires |  |  |  |
-| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved4 | Advanced evolved | Remove advanced evolved |  |  |  |
-| Integration: Draft Analysis (4) | OCCTIntegrationDraftAnalysis5 | Draft analysis | Remove draft analysis |  |  |  |
-| BRepAlgo Loop Tests | OCCTBRepAlgoLoop4 | Loop tests | Remove loops |  |  |  |
-| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor4 | Face restrictor | Remove face restrictor |  |  |  |
-| Make Connected (4) | OCCTMakeConnected4 | Connected | Remove connected |  |  |  |
-| Linear Rib Feature (4) | OCCTLinearRibFeature4 | Rib | Remove rib |  |  |  |
-| Glue Tests (4) | OCCTGlueTests4 | Glue | Remove glue |  |  |  |
-| Integration: Thickness Analysis (6) | OCCTIntegrationThicknessAnalysis6 | Thickness analysis | Remove thickness |  |  |  |
-| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath6 | Middle path | Remove middle path |  |  |  |
-| Simple Offset (6) | OCCTSimpleOffset6 | Offset | Remove offset |  |  |  |
-
----
-
-## Injection Matrix: Critical Crash Fixes
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| **#318 BRepGProp_EdgeTool SIGSEGV** | BRepGProp_EdgeTool::IntegrationOrder | Null 3D curve deref | Remove degenerate edge skip |  |  |  |
-| **#319 Self-Intersection Timeout** | BOPAlgo_ArgumentAnalyzer | Timeout not honored | Revert kernel patch 0010 |  |  |  |
-| **#603 Arc Length** | occtAdaptorArcLength | Single quadrature | Remove adaptive quadrature |  |  |  |
-| **#636 Extrema Parallel** | BRepExtrema_ExtCC | Parallel crash | Remove isParallel guard |  |  |  |
-| **#310/#655 FreeBounds** | ShapeAnalysis_FreeBounds | INTERNAL orientation | Remove INTERNAL check |  |  |  |
-| **#837 fixed() mode-flag wiring** | ShapeFix_Shape | Mode flags ignored | Remove FixFree*Mode |  |  |  |
-| **#570 Healing approx** | GeomConvert_ApproxSurface | Error not checked | Remove error check |  |  |  |
-| **#263 Self-Intersecting Profile** | ShapeFix_Shape | Self-intersection | Remove self-intersection guard |  |  |  |
-| **#318 BRepGProp_EdgeTool** | BRepGProp_EdgeTool | Null 3D curve deref | Remove degenerate skip |  |  |  |
-| **#636 Extrema Parallel** | BRepExtrema_ExtCC | Parallel crash | Remove isParallel |  |  |  |
+| BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
+| ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
+| ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
+| Advanced Healing Tests | OCCTAdvancedHealing | Healing | Remove healing | ✅ | ✅ |  |
+| SAWireAnalysis.checkOuterBound (#1058) | OCCTSAWireAnalysisCheckOuterBound | Outer bound check | Remove outer bound | ✅ | ✅ |  |
+| ShapeAnalysis FreeBoundsProperties | OCCTShapeAnalysisFreeBounds | Free bounds | Remove free bounds | ✅ | ✅ |  |
+| Issue #446 unify mutation | OCCTShapeUnify | Unify mutation | Remove unify mutation | ✅ | ✅ |  |
+| ShapeAnalysis_Curve Static | OCCTShapeAnalysisCurveStatic | Curve analysis | Remove curve analysis | ✅ | ✅ |  |
+| Issue #570 healing approx | OCCTIssue570Healing | Healing approx | Remove error check | ✅ | ✅ |  |
+| ShapeAnalysis_Surface Tests | OCCTShapeAnalysisSurface | Surface analysis | Remove surface analysis | ✅ | ✅ |  |
+| ShapeExtend Explorer | OCCTShapeExtendExplorer | Shape extension | Remove extension | ✅ | ✅ |  |
+| ShapeFix_Edge Extended | OCCTShapeFixEdgeExtended | Edge fixing | Remove edge fix | ✅ | ✅ |  |
+| Issue 772 self-intersection | OCCTIssue772SelfIntersection | Self-intersection | Remove self-intersection | ✅ | ✅ |  |
+| Issue #443 solid(from:) | OCCTIssue443SolidFrom | Solid creation | Remove solid creation | ✅ | ✅ |  |
+| Issue #442 fixSolid/solidFromShell | OCCTIssue442FixSolid | Solid fixing | Remove solid fix | ✅ | ✅ |  |
+| Issue 702 solid demotion | OCCTIssue702Demotion | Solid demotion | Remove demotion | ✅ | ✅ |  |
+| ShapeAnalysis_FreeBounds Simplified | OCCTShapeAnalysisFreeBoundsSimplified | Free bounds | Remove free bounds | ✅ | ✅ |  |
+| Issue #484 Face.fixed ReShape | OCCTIssue484FaceFixed | ReShape context | Remove ReShape context | ✅ | ✅ |  |
+| ShapeUpgrade ConvertSurfacesToBezier | OCCTShapeUpgradeConvertSurfacesToBezier | BSpline conversion | Remove BSpline conversion | ✅ | ✅ |  |
+| ShapeUpgrade SplitCurve Tests | OCCTShapeUpgradeSplitCurve | Curve splitting | Remove curve split | ✅ | ✅ |  |
+| Issue #870 ExtendShapeType fallback | OCCTIssue870ExtendShapeType | Extend fallback | Remove fallback | ✅ | ✅ |  |
+| ShapeAnalysis Surface ValueOfUV | OCCTShapeAnalysisSurfaceValueOfUV | Surface UV | Remove UV values | ✅ | ✅ |  |
+| Sewing Tests | OCCTSewing | Sewing | Remove sewing | ✅ | ✅ |  |
+| Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis | ✅ | ✅ |  |
+| Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
+| Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
+| Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
+| #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
+| ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
+| ShapeFix_Wireframe Extension | OCCTShapeFixWireframeExtension | Wireframe fixing | Remove wireframe fix | ✅ | ✅ |  |
+| DetectPocketsAAG tolerance (#733) | OCCTDetectPocketsAAG | Pocket detection | Remove pocket detection | ✅ | ✅ |  |
+| PocketFeature.isOpen (#753) | OCCTPocketFeatureIsOpen | Pocket open | Remove pocket open | ✅ | ✅ |  |
+| Off-center enclosed pocket (#777) | OCCTOffCenterPocket | Pocket | Remove pocket | ✅ | ✅ |  |
+| Prism Until Face | OCCTPrismUntilFace | Prism | Remove prism | ✅ | ✅ |  |
+| Vertical corner-blend fillet (#762) | OCCTVerticalCornerBlendFillet | Fillet | Remove fillet | ✅ | ✅ |  |
+| Filleted through-slot (#762) | OCCTFilletedThroughSlot | Fillet | Remove fillet | ✅ | ✅ |  |
+| Filleted box exterior edges (#762) | OCCTFilletedBoxExteriorEdges | Fillet | Remove fillet | ✅ | ✅ |  |
+| LocOpe_Spliter v71 Tests | OCCTLocOpeSpliter | Splitting | Remove splitting | ✅ | ✅ |  |
+| PocketFeature.isOpen on compound (#1089) | OCCTPocketFeatureIsOpenCompound | Pocket open | Remove pocket open | ✅ | ✅ |  |
+| BiTgte Blend Tests | OCCTBiTgteBlend | Blend | Remove blend | ✅ | ✅ |  |
+| Issue 572 forced-C1 sweep | OCCTIssue572ForcedC1 | Forced C1 | Remove forced C1 | ✅ | ✅ |  |
+| Prismatic Feature Tests | OCCTPrismaticFeature | Prismatic | Remove prismatic | ✅ | ✅ |  |
+| Split Shape by Wire | OCCTSplitShapeByWire | Wire splitting | Remove wire split | ✅ | ✅ |  |
+| Boolean with History | OCCTBooleanWithHistory | Boolean history | Remove history | ✅ | ✅ |  |
+| BRepOffset Offset Face | OCCTBRepOffsetOffsetFace | Offset face | Remove offset face | ✅ | ✅ |  |
+| Edge.split bounded by edge's own range (#1020) | OCCTEdgeSplit | Edge split | Remove edge split | ✅ | ✅ |  |
+| SEGV Guards, CellsBuilder empty | OCCTSEGVGuards | SEGV guard | Remove SEGV guard | ✅ | ✅ |  |
+| Extended Extrusion | OCCTExtendedExtrusion | Extrusion | Remove extrusion | ✅ | ✅ |  |
+| BRepOffset SimpleOffset | OCCTBRepOffsetSimpleOffset | Offset | Remove offset | ✅ | ✅ |  |
+| BOPAlgo Splitter | OCCTBOPAlgoSplitter | Splitter | Remove splitter | ✅ | ✅ |  |
+| BOPAlgo_Tools Tests | OCCTBOPAlgoTools | BOPAlgo tools | Remove tools | ✅ | ✅ |  |
+| BOPAlgo_BuilderSolid Tests | OCCTBOPAlgoBuilderSolid | Builder solid | Remove builder solid | ✅ | ✅ |  |
+| LocOpe BuildShape Tests | OCCTLocOpeBuildShape | Build shape | Remove build shape | ✅ | ✅ |  |
+| LocOpe FindEdges Tests | OCCTLocOpeFindEdges | Find edges | Remove find edges | ✅ | ✅ |  |
+| FilletSurf_Builder Tests | OCCTFilletSurfBuilder | Fillet surf builder | Remove fillet surf | ✅ | ✅ |  |
+| Integration: Thickness Analysis | OCCTIntegrationThicknessAnalysis | Thickness analysis | Remove thickness | ✅ | ✅ |  |
+| Issue818 middlePath ground truth (#811) | OCCTIssue818MiddlePath | Middle path | Remove middle path | ✅ | ✅ |  |
+| Simple Offset | OCCTSimpleOffset | Offset | Remove offset | ✅ | ✅ |  |
+| BRepFill CompatibleWires Tests | OCCTBRepFillCompatibleWires | Compatible wires | Remove compatible wires | ✅ | ✅ |  |
+| BRepFill AdvancedEvolved Tests | OCCTBRepFillAdvancedEvolved | Advanced evolved | Remove advanced evolved | ✅ | ✅ |  |
+| Integration: Draft Analysis | OCCTIntegrationDraftAnalysis | Draft analysis | Remove draft analysis | ✅ | ✅ |  |
+| BRepAlgo Loop Tests | OCCTBRepAlgoLoop | Loop tests | Remove loops | ✅ | ✅ |  |
+| BOPAlgo FaceRestrictor Tests | OCCTBOPAlgoFaceRestrictor | Face restrictor | Remove face restrictor | ✅ | ✅ |  |
+| Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
+| Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
+| Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
 
 ---
 
@@ -276,9 +183,72 @@ For each test, run ground-truth C++ comparison:
 
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
-| BRepGProp Face Tests |  |  |  |
-| ShapeAnalysis_Edge Tests |  |  |  |
-| ShapeAnalysis_Wire Tests |  |  |  |
-| ... |  |  |  |
+| BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
+| ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
+| ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
+| Advanced Healing Tests | ✅ | ✅ | ✅ |
+| SAWireAnalysis.checkOuterBound (#1058) | ✅ | ✅ | ✅ |
+| ShapeAnalysis FreeBoundsProperties | ✅ | ✅ | ✅ |
+| Issue #446 unify mutation | ✅ | ✅ | ✅ |
+| ShapeAnalysis_Curve Static | ✅ | ✅ | ✅ |
+| Issue #570 healing approx | ✅ | ✅ | ✅ |
+| ShapeAnalysis_Surface Tests | ✅ | ✅ | ✅ |
+| ShapeExtend Explorer | ✅ | ✅ | ✅ |
+| ShapeFix_Edge Extended | ✅ | ✅ | ✅ |
+| Issue 772 self-intersection | ✅ | ✅ | ✅ |
+| Issue #443 solid(from:) | ✅ | ✅ | ✅ |
+| Issue #442 fixSolid/solidFromShell | ✅ | ✅ | ✅ |
+| Issue 702 solid demotion | ✅ | ✅ | ✅ |
+| ShapeAnalysis_FreeBounds Simplified | ✅ | ✅ | ✅ |
+| Issue #484 Face.fixed ReShape | ✅ | ✅ | ✅ |
+| ShapeUpgrade ConvertSurfacesToBezier | ✅ | ✅ | ✅ |
+| ShapeUpgrade SplitCurve Tests | ✅ | ✅ | ✅ |
+| Issue #870 ExtendShapeType fallback | ✅ | ✅ | ✅ |
+| ShapeAnalysis Surface ValueOfUV | ✅ | ✅ | ✅ |
+| Sewing Tests | ✅ | ✅ | ✅ |
+| Shape Analysis Tests | ✅ | ✅ | ✅ |
+| Shape Fixing Tests | ✅ | ✅ | ✅ |
+| Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
+| Sewing_Extras | ✅ | ✅ | ✅ |
+| #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
+| ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
+| ShapeFix_Wireframe Extension | ✅ | ✅ | ✅ |
+| DetectPocketsAAG tolerance (#733) | ✅ | ✅ | ✅ |
+| PocketFeature.isOpen (#753) | ✅ | ✅ | ✅ |
+| Off-center enclosed pocket (#777) | ✅ | ✅ | ✅ |
+| Prism Until Face | ✅ | ✅ | ✅ |
+| Vertical corner-blend fillet (#762) | ✅ | ✅ | ✅ |
+| Filleted through-slot (#762) | ✅ | ✅ | ✅ |
+| Filleted box exterior edges (#762) | ✅ | ✅ | ✅ |
+| LocOpe_Spliter v71 Tests | ✅ | ✅ | ✅ |
+| PocketFeature.isOpen on compound (#1089) | ✅ | ✅ | ✅ |
+| BiTgte Blend Tests | ✅ | ✅ | ✅ |
+| Issue 572 forced-C1 sweep | ✅ | ✅ | ✅ |
+| Prismatic Feature Tests | ✅ | ✅ | ✅ |
+| Split Shape by Wire | ✅ | ✅ | ✅ |
+| Boolean with History | ✅ | ✅ | ✅ |
+| BRepOffset Offset Face | ✅ | ✅ | ✅ |
+| Edge.split bounded by edge's own range (#1020) | ✅ | ✅ | ✅ |
+| SEGV Guards, CellsBuilder empty | ✅ | ✅ | ✅ |
+| Extended Extrusion | ✅ | ✅ | ✅ |
+| BRepOffset SimpleOffset | ✅ | ✅ | ✅ |
+| BOPAlgo Splitter | ✅ | ✅ | ✅ |
+| BOPAlgo_Tools Tests | ✅ | ✅ | ✅ |
+| BOPAlgo_BuilderSolid Tests | ✅ | ✅ | ✅ |
+| LocOpe BuildShape Tests | ✅ | ✅ | ✅ |
+| LocOpe FindEdges Tests | ✅ | ✅ | ✅ |
+| FilletSurf_Builder Tests | ✅ | ✅ | ✅ |
+| Integration: Thickness Analysis | ✅ | ✅ | ✅ |
+| Issue818 middlePath ground truth (#811) | ✅ | ✅ | ✅ |
+| Simple Offset | ✅ | ✅ | ✅ |
+| BRepFill CompatibleWires Tests | ✅ | ✅ | ✅ |
+| BRepFill AdvancedEvolved Tests | ✅ | ✅ | ✅ |
+| Integration: Draft Analysis | ✅ | ✅ | ✅ |
+| BRepAlgo Loop Tests | ✅ | ✅ | ✅ |
+| BOPAlgo FaceRestrictor Tests | ✅ | ✅ | ✅ |
+| Make Connected | ✅ | ✅ | ✅ |
+| Linear Rib Feature | ✅ | ✅ | ✅ |
+| Glue Tests | ✅ | ✅ | ✅ |
 
 **Total**: 546 tests
