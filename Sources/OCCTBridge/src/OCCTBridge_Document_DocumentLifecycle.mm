@@ -4156,11 +4156,17 @@ OCCTDocumentRef OCCTTObjApplicationCreateDocument(OCCTTObjAppRef app)
   std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
+    // Call through the raw pointer, like OCCTTObjApplicationSetVerbose/IsVerbose above. This used
+    // to wrap it in a local Handle(TObj_Application), which is balanced (the Handle constructor
+    // from a raw pointer increments, its destructor decrements) but fragile: it is safe only
+    // because GetInstance()'s own function-local static Handle holds a permanent reference, so the
+    // count cannot reach 0 here. If it ever did, that destructor would delete the process-wide
+    // singleton out from under that still-live static. Nothing needs an owning reference for the
+    // duration of this call, so there is no reason to take one.
     auto*                      a = static_cast<TObj_Application*>(app);
-    Handle(TObj_Application)   hApp(a);
     Handle(TDocStd_Document)   doc;
     TCollection_ExtendedString format("BinOcaf");
-    if (!hApp->CreateNewDocument(doc, format))
+    if (!a->CreateNewDocument(doc, format))
       return nullptr;
     if (doc.IsNull())
       return nullptr;
