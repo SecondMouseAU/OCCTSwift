@@ -2821,7 +2821,7 @@ void OCCTCurve3DBSplineLocalDN(OCCTCurve3DRef _Nonnull curve,
 
 /// Evaluate a circular helix at parameter u. Returns point (px,py,pz).
 /// Helix: C(t) = O + R*cos(t)*XDir + R*sin(t)*YDir + (P*t/(2*Pi))*ZDir
-void OCCTGeomEvalCircularHelixD0(double radius,
+bool OCCTGeomEvalCircularHelixD0(double radius,
                                  double pitch,
                                  double u,
                                  double* _Nonnull px,
@@ -2829,7 +2829,7 @@ void OCCTGeomEvalCircularHelixD0(double radius,
                                  double* _Nonnull pz);
 
 /// Evaluate circular helix D1: point + first derivative.
-void OCCTGeomEvalCircularHelixD1(double radius,
+bool OCCTGeomEvalCircularHelixD1(double radius,
                                  double pitch,
                                  double u,
                                  double* _Nonnull px,
@@ -2840,7 +2840,7 @@ void OCCTGeomEvalCircularHelixD1(double radius,
                                  double* _Nonnull vz);
 
 /// Evaluate circular helix D2: point + first + second derivatives.
-void OCCTGeomEvalCircularHelixD2(double radius,
+bool OCCTGeomEvalCircularHelixD2(double radius,
                                  double pitch,
                                  double u,
                                  double* _Nonnull px,
@@ -2858,7 +2858,7 @@ OCCTCurve3DRef _Nullable OCCTGeomEvalCircularHelixCurveCreate(double radius, dou
 
 /// Evaluate a 3D sine wave at parameter u. Returns point.
 /// C(t) = O + t*XDir + A*sin(omega*t + phi)*YDir
-void OCCTGeomEvalSineWaveD0(double amplitude,
+bool OCCTGeomEvalSineWaveD0(double amplitude,
                             double omega,
                             double phase,
                             double u,
@@ -2867,7 +2867,7 @@ void OCCTGeomEvalSineWaveD0(double amplitude,
                             double* _Nonnull pz);
 
 /// Evaluate 3D sine wave D1: point + first derivative.
-void OCCTGeomEvalSineWaveD1(double amplitude,
+bool OCCTGeomEvalSineWaveD1(double amplitude,
                             double omega,
                             double phase,
                             double u,

@@ -38,6 +38,8 @@
 
 // === Area-specific OCCT headers ===
 
+#include <cmath>
+#include <initializer_list>
 #include <Approx_Curve3d.hxx>
 #include <Approx_CurveOnSurface.hxx>
 #include <Approx_CurvilinearParameter.hxx>
@@ -923,28 +925,67 @@ void OCCTLogSample(double a, double b, int32_t n, double* params)
   }
 }
 
-void OCCTGeomEvalCircularHelixD0(double  radius,
+// #1669: the 3D GeomEval evaluators' success contract, the same one #1646/#1668 established for
+// the Geom2dEval ten.
+//
+// These are `void` no longer. A `void` evaluator wrapped in a `try` leaves the caller's pre-zeroed
+// buffer untouched on a throw, so Swift receives the zero vector and cannot tell a refusal from a
+// real answer at the origin.
+//
+// The flag is read off the OUTPUTS, not off the throw, because a throw is only one of three routes
+// to a non-answer and the other two were measured against the pinned kernel (#1646):
+//
+//   - a non-finite argument walks past OCCT's validation, since every check is written `<= 0` and
+//     every comparison against NaN is false, so the constructor accepts NaN and evaluates to NaN;
+//   - finite arguments can still produce a non-finite point, e.g. a log spiral at large u.
+//
+// EvalD0/D1/D2 never raise for any parameter, so a finite result is the whole of what "succeeded"
+// can mean here. On refusal every output is set to 0.0, so the buffer holds a deterministic value
+// rather than a NaN or whatever the caller left there; zero is a refusal in that position and
+// never an answer, which is what the flag exists to say.
+
+/// Write a D0 result, refusing a non-finite point. Returns whether the outputs are a measurement.
+static bool occtEval3dWriteD0(const gp_Pnt& p, double* px, double* py, double* pz)
+{
+  if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
+    return false;
+  *px = p.X();
+  *py = p.Y();
+  *pz = p.Z();
+  return true;
+}
+
+/// Zero a run of output pointers, for the refusal paths below.
+static void occtEval3dZero(std::initializer_list<double*> outs)
+{
+  for (double* o : outs)
+    *o = 0.0;
+}
+
+bool OCCTGeomEvalCircularHelixD0(double  radius,
                                  double  pitch,
                                  double  u,
                                  double* px,
                                  double* py,
                                  double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  occtEval3dZero({px, py, pz});
   try
   {
     gp_Ax2                      ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_CircularHelixCurve helix(ax, radius, pitch);
-    gp_Pnt                      p = helix.EvalD0(u);
-    *px                           = p.X();
-    *py                           = p.Y();
-    *pz                           = p.Z();
+    return occtEval3dWriteD0(helix.EvalD0(u), px, py, pz);
   }
   catch (...)
   {
+    occtEval3dZero({px, py, pz});
+    return false;
   }
 }
 
-void OCCTGeomEvalCircularHelixD1(double  radius,
+bool OCCTGeomEvalCircularHelixD1(double  radius,
                                  double  pitch,
                                  double  u,
                                  double* px,
@@ -954,24 +995,34 @@ void OCCTGeomEvalCircularHelixD1(double  radius,
                                  double* vy,
                                  double* vz)
 {
+  if (!px || !py || !pz || !vx || !vy || !vz)
+    return false;
+  occtEval3dZero({px, py, pz, vx, vy, vz});
   try
   {
     gp_Ax2                      ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_CircularHelixCurve helix(ax, radius, pitch);
     auto                        res = helix.EvalD1(u);
-    *px                             = res.Point.X();
-    *py                             = res.Point.Y();
-    *pz                             = res.Point.Z();
-    *vx                             = res.D1.X();
-    *vy                             = res.D1.Y();
-    *vz                             = res.D1.Z();
+    if (!occtEval3dWriteD0(res.Point, px, py, pz))
+      return false;
+    if (!std::isfinite(res.D1.X()) || !std::isfinite(res.D1.Y()) || !std::isfinite(res.D1.Z()))
+    {
+      occtEval3dZero({px, py, pz});
+      return false;
+    }
+    *vx = res.D1.X();
+    *vy = res.D1.Y();
+    *vz = res.D1.Z();
+    return true;
   }
   catch (...)
   {
+    occtEval3dZero({px, py, pz, vx, vy, vz});
+    return false;
   }
 }
 
-void OCCTGeomEvalCircularHelixD2(double  radius,
+bool OCCTGeomEvalCircularHelixD2(double  radius,
                                  double  pitch,
                                  double  u,
                                  double* px,
@@ -984,23 +1035,35 @@ void OCCTGeomEvalCircularHelixD2(double  radius,
                                  double* d2y,
                                  double* d2z)
 {
+  if (!px || !py || !pz || !d1x || !d1y || !d1z || !d2x || !d2y || !d2z)
+    return false;
+  occtEval3dZero({px, py, pz, d1x, d1y, d1z, d2x, d2y, d2z});
   try
   {
     gp_Ax2                      ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_CircularHelixCurve helix(ax, radius, pitch);
     auto                        res = helix.EvalD2(u);
-    *px                             = res.Point.X();
-    *py                             = res.Point.Y();
-    *pz                             = res.Point.Z();
-    *d1x                            = res.D1.X();
-    *d1y                            = res.D1.Y();
-    *d1z                            = res.D1.Z();
-    *d2x                            = res.D2.X();
-    *d2y                            = res.D2.Y();
-    *d2z                            = res.D2.Z();
+    const bool                  ok =
+      std::isfinite(res.Point.X()) && std::isfinite(res.Point.Y()) && std::isfinite(res.Point.Z())
+      && std::isfinite(res.D1.X()) && std::isfinite(res.D1.Y()) && std::isfinite(res.D1.Z())
+      && std::isfinite(res.D2.X()) && std::isfinite(res.D2.Y()) && std::isfinite(res.D2.Z());
+    if (!ok)
+      return false;
+    *px  = res.Point.X();
+    *py  = res.Point.Y();
+    *pz  = res.Point.Z();
+    *d1x = res.D1.X();
+    *d1y = res.D1.Y();
+    *d1z = res.D1.Z();
+    *d2x = res.D2.X();
+    *d2y = res.D2.Y();
+    *d2z = res.D2.Z();
+    return true;
   }
   catch (...)
   {
+    occtEval3dZero({px, py, pz, d1x, d1y, d1z, d2x, d2y, d2z});
+    return false;
   }
 }
 
@@ -1021,7 +1084,7 @@ OCCTCurve3DRef OCCTGeomEvalCircularHelixCurveCreate(double radius, double pitch)
   }
 }
 
-void OCCTGeomEvalSineWaveD0(double  amplitude,
+bool OCCTGeomEvalSineWaveD0(double  amplitude,
                             double  omega,
                             double  phase,
                             double  u,
@@ -1029,21 +1092,23 @@ void OCCTGeomEvalSineWaveD0(double  amplitude,
                             double* py,
                             double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  occtEval3dZero({px, py, pz});
   try
   {
     gp_Ax2                 ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
-    gp_Pnt                 p = sw.EvalD0(u);
-    *px                      = p.X();
-    *py                      = p.Y();
-    *pz                      = p.Z();
+    return occtEval3dWriteD0(sw.EvalD0(u), px, py, pz);
   }
   catch (...)
   {
+    occtEval3dZero({px, py, pz});
+    return false;
   }
 }
 
-void OCCTGeomEvalSineWaveD1(double  amplitude,
+bool OCCTGeomEvalSineWaveD1(double  amplitude,
                             double  omega,
                             double  phase,
                             double  u,
@@ -1054,20 +1119,30 @@ void OCCTGeomEvalSineWaveD1(double  amplitude,
                             double* vy,
                             double* vz)
 {
+  if (!px || !py || !pz || !vx || !vy || !vz)
+    return false;
+  occtEval3dZero({px, py, pz, vx, vy, vz});
   try
   {
     gp_Ax2                 ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
     auto                   res = sw.EvalD1(u);
-    *px                        = res.Point.X();
-    *py                        = res.Point.Y();
-    *pz                        = res.Point.Z();
-    *vx                        = res.D1.X();
-    *vy                        = res.D1.Y();
-    *vz                        = res.D1.Z();
+    if (!occtEval3dWriteD0(res.Point, px, py, pz))
+      return false;
+    if (!std::isfinite(res.D1.X()) || !std::isfinite(res.D1.Y()) || !std::isfinite(res.D1.Z()))
+    {
+      occtEval3dZero({px, py, pz});
+      return false;
+    }
+    *vx = res.D1.X();
+    *vy = res.D1.Y();
+    *vz = res.D1.Z();
+    return true;
   }
   catch (...)
   {
+    occtEval3dZero({px, py, pz, vx, vy, vz});
+    return false;
   }
 }
 

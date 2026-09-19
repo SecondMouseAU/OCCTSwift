@@ -2369,10 +2369,10 @@ public static func circularHelixD0(radius: Double, pitch: Double, u: Double) -> 
 
 - **Parameters:** `radius`, helix radius; `pitch`, axial advance per full turn; `u`, parameter.
 - **Returns:** 3D point on the helix.
-- **OCCT:** `GeomEval_CircularHelixCurve::EvalD0` (via `OCCTGeomEvalCircularHelixD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_CircularHelixCurve::EvalD0` (via `OCCTGeomEvalCircularHelixD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.circularHelixD0(radius: 5, pitch: 2, u: .pi)
+  if let pt = GeomEval.circularHelixD0(radius: 5, pitch: 2, u: .pi) { print(pt) }
   ```
 
 ---
@@ -2386,10 +2386,12 @@ public static func circularHelixD1(radius: Double, pitch: Double, u: Double) -> 
 ```
 
 - **Returns:** Tuple of `(point, d1)`, position and tangent vector.
-- **OCCT:** `GeomEval_CircularHelixCurve::EvalD1` (via `OCCTGeomEvalCircularHelixD1`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_CircularHelixCurve::EvalD1` (via `OCCTGeomEvalCircularHelixD1`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let (pt, tangent) = GeomEval.circularHelixD1(radius: 5, pitch: 2, u: 0)
+  if let (pt, tangent) = GeomEval.circularHelixD1(radius: 5, pitch: 2, u: 0) {
+      print(pt, tangent)
+  }
   ```
 
 ---
@@ -2403,10 +2405,12 @@ public static func circularHelixD2(radius: Double, pitch: Double, u: Double) -> 
 ```
 
 - **Returns:** Tuple of `(point, d1, d2)`.
-- **OCCT:** `GeomEval_CircularHelixCurve::EvalD2` (via `OCCTGeomEvalCircularHelixD2`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_CircularHelixCurve::EvalD2` (via `OCCTGeomEvalCircularHelixD2`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let (pt, d1, d2) = GeomEval.circularHelixD2(radius: 5, pitch: 2, u: 0)
+  if let (pt, d1, d2) = GeomEval.circularHelixD2(radius: 5, pitch: 2, u: 0) {
+      print(pt, d1, d2)
+  }
   ```
 
 ---
@@ -2421,10 +2425,10 @@ public static func sineWaveD0(amplitude: Double, omega: Double, phase: Double, u
 
 - **Parameters:** `amplitude`, wave amplitude; `omega`, angular frequency; `phase`, phase offset; `u`, parameter.
 - **Returns:** 3D point on the wave.
-- **OCCT:** `GeomEval_SineWaveCurve::EvalD0` (via `OCCTGeomEvalSineWaveD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_SineWaveCurve::EvalD0` (via `OCCTGeomEvalSineWaveD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.sineWaveD0(amplitude: 1, omega: 2 * .pi, phase: 0, u: 0.5)
+  if let pt = GeomEval.sineWaveD0(amplitude: 1, omega: 2 * .pi, phase: 0, u: 0.5) { print(pt) }
   ```
 
 ---
@@ -2438,10 +2442,12 @@ public static func sineWaveD1(amplitude: Double, omega: Double, phase: Double, u
 ```
 
 - **Returns:** `(point, d1)` tuple.
-- **OCCT:** `GeomEval_SineWaveCurve::EvalD1` (via `OCCTGeomEvalSineWaveD1`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_SineWaveCurve::EvalD1` (via `OCCTGeomEvalSineWaveD1`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let (pt, d1) = GeomEval.sineWaveD1(amplitude: 1, omega: 2 * .pi, phase: 0, u: 0.25)
+  if let (pt, d1) = GeomEval.sineWaveD1(amplitude: 1, omega: 2 * .pi, phase: 0, u: 0.25) {
+      print(pt, d1)
+  }
   ```
 
 ---
@@ -2458,10 +2464,10 @@ public static func ellipsoidD0(a: Double, b: Double, c: Double, u: Double, v: Do
 
 - **Parameters:** `a`, `b`, `c`, semi-axes along X, Y, Z; `u`, `v`, longitude, latitude parameters.
 - **Returns:** 3D point on the ellipsoid.
-- **OCCT:** `GeomEval_EllipsoidSurface::EvalD0` (via `OCCTGeomEvalEllipsoidD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_EllipsoidSurface::EvalD0` (via `OCCTGeomEvalEllipsoidD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.ellipsoidD0(a: 3, b: 2, c: 1, u: 0, v: 0)
+  if let pt = GeomEval.ellipsoidD0(a: 3, b: 2, c: 1, u: 0, v: 0) { print(pt) }
   ```
 
 ---
@@ -2476,10 +2482,10 @@ public static func hyperboloidD0(r1: Double, r2: Double, twoSheets: Bool, u: Dou
 
 - **Parameters:** `r1`, `r2`, radii; `twoSheets`, `false` = one-sheet, `true` = two-sheet hyperboloid; `u`, `v`, parameters.
 - **Returns:** 3D point on the hyperboloid.
-- **OCCT:** `GeomEval_HyperboloidSurface::EvalD0`, with `SheetMode::OneSheet` or `SheetMode::TwoSheets` (via `OCCTGeomEvalHyperboloidD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_HyperboloidSurface::EvalD0`, with `SheetMode::OneSheet` or `SheetMode::TwoSheets` (via `OCCTGeomEvalHyperboloidD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.hyperboloidD0(r1: 2, r2: 1, twoSheets: false, u: 0, v: 0)
+  if let pt = GeomEval.hyperboloidD0(r1: 2, r2: 1, twoSheets: false, u: 0, v: 0) { print(pt) }
   ```
 
 ---
@@ -2494,10 +2500,10 @@ public static func paraboloidD0(focal: Double, u: Double, v: Double) -> SIMD3<Do
 
 - **Parameters:** `focal`, focal distance; `u`, `v`, surface parameters.
 - **Returns:** 3D point on the paraboloid.
-- **OCCT:** `GeomEval_ParaboloidSurface::EvalD0` (via `OCCTGeomEvalParaboloidD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_ParaboloidSurface::EvalD0` (via `OCCTGeomEvalParaboloidD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.paraboloidD0(focal: 1.0, u: 0.5, v: 0.5)
+  if let pt = GeomEval.paraboloidD0(focal: 1.0, u: 0.5, v: 0.5) { print(pt) }
   ```
 
 ---
@@ -2512,10 +2518,10 @@ public static func circularHelicoidD0(pitch: Double, u: Double, v: Double) -> SI
 
 - **Parameters:** `pitch`, axial advance per 2π radians; `u`, angular parameter; `v`, radial parameter.
 - **Returns:** 3D point on the helicoid.
-- **OCCT:** `GeomEval_CircularHelicoidSurface::EvalD0` (via `OCCTGeomEvalCircularHelicoidD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_CircularHelicoidSurface::EvalD0` (via `OCCTGeomEvalCircularHelicoidD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.circularHelicoidD0(pitch: 1.0, u: .pi, v: 1.0)
+  if let pt = GeomEval.circularHelicoidD0(pitch: 1.0, u: .pi, v: 1.0) { print(pt) }
   ```
 
 ---
@@ -2530,10 +2536,10 @@ public static func hyperbolicParaboloidD0(a: Double, b: Double, u: Double, v: Do
 
 - **Parameters:** `a`, `b`, shape parameters; `u`, `v`, surface parameters.
 - **Returns:** 3D point on the saddle surface.
-- **OCCT:** `GeomEval_HypParaboloidSurface::EvalD0` (via `OCCTGeomEvalHypParaboloidD0`). Constructed at the origin on the Z axis and evaluated in place; nothing is retained. The bridge catches the constructor's construction error and leaves the out parameters untouched, so a rejected argument reads back as the zero vector rather than as a failure.
+- **OCCT:** `GeomEval_HypParaboloidSurface::EvalD0` (via `OCCTGeomEvalHypParaboloidD0`). Constructed at the origin and evaluated in place; nothing is retained. Returns `nil` rather than the zero vector when the arguments are refused or the evaluation is not finite (#1669): the success flag is read off the outputs, not off the throw, because a non-finite argument walks past OCCT's `<= 0` checks and finite arguments can still evaluate to a non-finite point.
 - **Example:**
   ```swift
-  let pt = GeomEval.hyperbolicParaboloidD0(a: 1, b: 1, u: 0.5, v: -0.5)
+  if let pt = GeomEval.hyperbolicParaboloidD0(a: 1, b: 1, u: 0.5, v: -0.5) { print(pt) }
   ```
 
 ---
