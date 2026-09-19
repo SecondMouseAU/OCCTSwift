@@ -266,7 +266,17 @@ do_swift() {
     # inside the kernel are invisible here. Kernel coverage comes from do_run.
     local filter="${SWIFT_FILTER:-Thread|Stress|Concurren|Parallel}"
     echo ">>> swift test --sanitize=thread --filter \"$filter\""
-    (cd "$PROJECT_DIR" && swift test --sanitize=thread --filter "$filter")
+    # TSAN_OPTIONS is not optional here, it is what makes this a gate rather than a report.
+    # Without it a detected race prints to stdout and the process still exits 0, because the
+    # suites in this filter are deliberately exercisers: they assert "did not deadlock, did not
+    # crash", which stays true while a race is being reported three lines above. Measured
+    # 2026-09-19 during #1404: a run that reported a data race in
+    # TObj_Application::SetVerbose exited 0 and this function called it a pass. exitcode=66
+    # matches do_run's, so both halves of the gate fail the same way, and the same suppression
+    # file applies to both.
+    (cd "$PROJECT_DIR" &&
+       TSAN_OPTIONS="halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE" \
+         swift test --sanitize=thread --filter "$filter")
 }
 
 case "${1:-}" in
