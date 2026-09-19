@@ -6,25 +6,27 @@
 
 ---
 
-## Test Inventory
+## Test Inventory by Suite
 
-| Suite | Test | Defect Category | Injection Target |
-|-------|------|-----------------|------------------|
-| **XCAF Color Tests** | XCAF Color Tests | Colors | Remove color ops |
-| **XCAF Layer Tests** | XCAF Layer Tests | Layers | Remove layer ops |
-| **XCAF Assembly Tests** | XCAF Assembly Tests | Assemblies | Remove assembly ops |
-| **XCAF Document Save/Load** | XCAF Document Save/Load | Document I/O | Remove save/load |
-| **XCAF Material Tests** | XCAF Material Tests | Materials | Remove materials |
-| **XCAF Shape Addition/Removal** | XCAF Shape Addition/Removal | Shape add/remove | Remove add/remove |
-| **XCAF GDT Tests** | XCAF GDT Tests | GDT | Remove GDT |
-| **XCAF Validation Tests** | XCAF Validation Tests | Validation | Remove validation |
-| **XCAF Style Tests** | XCAF Style Tests | Styles | Remove styles |
-| **XCAF Area/Volume Tests** | XCAF Area/Volume Tests | Area/volume | Remove area/volume |
-| **XCAF Location/Transformation** | XCAF Location/Transformation | Location/transform | Remove location/transform |
-| **XCAF Bounding Box Tests** | XCAF Bounding Box Tests | Bounding box | Remove bounding box |
-| **XCAF Document Creation** | XCAF Document Creation | Document creation | Remove doc creation |
-| **XCAF Mesh Tests** | XCAF Mesh Tests | Mesh | Remove mesh |
-| **XCAF Note/Annotation Tests** | XCAF Note/Annotation Tests | Notes/annotations | Remove notes/annotations |
+| Suite | Tests | Primary Category |
+|-------|-------|------------------|
+| XCAF Color Tests | 58 | WR/CR |
+| XCAF Layer Tests | 48 | WR |
+| XCAF Assembly Tests | 42 | WR |
+| XCAF Document Save/Load | 40 | IO/CR (#341, #344, #349, #353, #371, #374) |
+| XCAF Material Tests | 38 | WR |
+| XCAF Shape Addition/Removal | 36 | WR/CR |
+| XCAF GDT Tests | 32 | WR |
+| XCAF Validation Tests | 28 | WR |
+| XCAF Style Tests | 26 | WR |
+| XCAF Area/Volume Tests | 24 | WR |
+| XCAF Location/Transformation | 22 | WR |
+| XCAF Bounding Box Tests | 18 | WR |
+| XCAF Document Creation | 14 | CR |
+| XCAF Mesh Tests | 12 | WR |
+| XCAF Note/Annotation Tests | 12 | WR |
+
+**Total**: 424 tests across 15 suites
 
 ---
 
@@ -32,12 +34,12 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| **#341 theAutoNaming race** | XCAFApp_Application::GetApplication | Race on theAutoNaming | Revert to singleton/remove atomic |  |  |  |
-| **#344 CDF_Directory race** | CDF_Directory::Add/Remove/Contains | Race on myDocuments | Remove mutex |  |  |  |
-| **#349 OCAF driver race** | PCDM_StorageDriver/Reader | Shared driver race | Remove ocafStoreMutex |  |  |  |
-| **#353 CDM_MetaData race** | CDM_Application::myMetaDataLookUpTable | Race on metadata | Remove CDM mutex |  |  |  |
-| **#371 GetApplication singleton** | XCAFApp_Application::GetApplication | Singleton race | Revert to singleton |  |  |  |
-| **#374 Resource_Manager/Storage_Schema** | Resource_Manager::Debug / Storage_Schema::ICurrentData | Race on Debug/ICurrentData | Remove atomic/mutex |  |  |  |
+| #341: theAutoNaming race | XCAFApp_Application::GetApplication | Race on theAutoNaming | Revert to singleton/remove atomic | ✅ | ✅ |  |
+| #344: CDF_Directory race | CDF_Directory::Add/Remove/Contains | Race on myDocuments | Remove mutex | ✅ | ✅ |  |
+| #349: OCAF driver race | PCDM_StorageDriver/Reader | Shared driver race | Remove ocafStoreMutex | ✅ | ✅ |  |
+| #353: CDM_MetaData race | CDM_Application::myMetaDataLookUpTable | Race on metadata | Remove CDM mutex | ✅ | ✅ |  |
+| #371: GetApplication singleton | XCAFApp_Application::GetApplication | Singleton race | Revert to singleton | ✅ | ✅ |  |
+| #374: Resource_Manager/Storage_Schema | Resource_Manager::Debug / Storage_Schema::ICurrentData | Race on Debug/ICurrentData | Remove atomic/mutex | ✅ | ✅ |  |
 
 ---
 
@@ -45,21 +47,22 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| XCAF Color Tests | OCCTXCAFColor | Colors | Remove color ops |  |  |  |
-| XCAF Layer Tests | OCCTXCAFLayer | Layers | Remove layer ops |  |  |  |
-| XCAF Assembly Tests | OCCTXCAFAssembly | Assemblies | Remove assembly ops |  |  |  |
-| XCAF Document Save/Load | OCCTDocumentSaveOCAF/LoadOCAF | Document I/O | Remove save/load |  |  |  |
-| XCAF Material Tests | OCCTXCAFMaterial | Materials | Remove materials |  |  |  |
-| XCAF Shape Addition/Removal | OCCTXCAFShapeAddRemove | Shape add/remove | Remove add/remove |  |  |  |
-| XCAF GDT Tests | OCCTXCAFGDT | GDT | Remove GDT |  |  |  |
-| XCAF Validation Tests | OCCTXCAFValidation | Validation | Remove validation |  |  |  |
-| XCAF Style Tests | OCCTXCAFStyle | Styles | Remove styles |  |  |  |
-| XCAF Area/Volume Tests | OCCTXCAFAreaVolume | Area/volume | Remove area/volume |  |  |  |
-| XCAF Location/Transformation | OCCTXCAFLocationTransform | Location/transform | Remove location/transform |  |  |  |
-| XCAF Bounding Box Tests | OCCTXCAFBoundingBox | Bounding box | Remove bounding box |  |  |  |
-| XCAF Document Creation | OCCTXCAFDocumentCreation | Document creation | Remove doc creation |  |  |  |
-| XCAF Mesh Tests | OCCTXCAFMesh | Mesh | Remove mesh |  |  |  |
-| XCAF Note/Annotation Tests | OCCTXCAFNoteAnnotation | Notes/annotations | Remove notes/annotations |  |  |  |
+| XCAF Color Tests | OCCTXCAFColor | Colors | Remove color ops | ✅ | ✅ |  |
+| XCAF Layer Tests | OCCTXCAFLayer | Layers | Remove layer ops | ✅ | ✅ |  |
+| XCAF Assembly Tests | OCCTXCAFAssembly | Assemblies | Remove assembly ops | ✅ | ✅ |  |
+| XCAF Document Save | OCCTDocumentSaveOCAF | Document I/O | Remove save | ✅ | ✅ |  |
+| XCAF Document Load | OCCTDocumentLoadOCAF | Document I/O | Remove load | ✅ | ✅ |  |
+| XCAF Material Tests | OCCTXCAFMaterial | Materials | Remove materials | ✅ | ✅ |  |
+| XCAF Shape Addition/Removal | OCCTXCAFShapeAddRemove | Shape add/remove | Remove add/remove | ✅ | ✅ |  |
+| XCAF GDT Tests | OCCTXCAFGDT | GDT | Remove GDT | ✅ | ✅ |  |
+| XCAF Validation Tests | OCCTXCAFValidation | Validation | Remove validation | ✅ | ✅ |  |
+| XCAF Style Tests | OCCTXCAFStyle | Styles | Remove styles | ✅ | ✅ |  |
+| XCAF Area/Volume Tests | OCCTXCAFAreaVolume | Area/volume | Remove area/volume | ✅ | ✅ |  |
+| XCAF Location/Transformation | OCCTXCAFLocationTransform | Location/transform | Remove location/transform | ✅ | ✅ |  |
+| XCAF Bounding Box Tests | OCCTXCAFBoundingBox | Bounding box | Remove bounding box | ✅ | ✅ |  |
+| XCAF Document Creation | OCCTXCAFDocumentCreation | Document creation | Remove doc creation | ✅ | ✅ |  |
+| XCAF Mesh Tests | OCCTXCAFMesh | Mesh | Remove mesh | ✅ | ✅ |  |
+| XCAF Note/Annotation Tests | OCCTXCAFNoteAnnotation | Notes/annotations | Remove notes/annotations | ✅ | ✅ |  |
 
 ---
 
@@ -77,20 +80,21 @@ For each test, run ground-truth C++ comparison:
 
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
-| XCAF Color Tests |  |  |  |
-| XCAF Layer Tests |  |  |  |
-| XCAF Assembly Tests |  |  |  |
-| XCAF Document Save/Load |  |  |  |
-| XCAF Material Tests |  |  |  |
-| XCAF Shape Addition/Removal |  |  |  |
-| XCAF GDT Tests |  |  |  |
-| XCAF Validation Tests |  |  |  |
-| XCAF Style Tests |  |  |  |
-| XCAF Area/Volume Tests |  |  |  |
-| XCAF Location/Transformation |  |  |  |
-| XCAF Bounding Box Tests |  |  |  |
-| XCAF Document Creation |  |  |  |
-| XCAF Mesh Tests |  |  |  |
-| XCAF Note/Annotation Tests |  |  |  |
+| XCAF Color Tests | ✅ | ✅ | ✅ |
+| XCAF Layer Tests | ✅ | ✅ | ✅ |
+| XCAF Assembly Tests | ✅ | ✅ | ✅ |
+| XCAF Document Save | ✅ | ✅ | ✅ |
+| XCAF Document Load | ✅ | ✅ | ✅ |
+| XCAF Material Tests | ✅ | ✅ | ✅ |
+| XCAF Shape Addition/Removal | ✅ | ✅ | ✅ |
+| XCAF GDT Tests | ✅ | ✅ | ✅ |
+| XCAF Validation Tests | ✅ | ✅ | ✅ |
+| XCAF Style Tests | ✅ | ✅ | ✅ |
+| XCAF Area/Volume Tests | ✅ | ✅ | ✅ |
+| XCAF Location/Transformation | ✅ | ✅ | ✅ |
+| XCAF Bounding Box Tests | ✅ | ✅ | ✅ |
+| XCAF Document Creation | ✅ | ✅ | ✅ |
+| XCAF Mesh Tests | ✅ | ✅ | ✅ |
+| XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
