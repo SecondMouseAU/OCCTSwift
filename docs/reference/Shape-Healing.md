@@ -1282,7 +1282,7 @@ Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom
   `Geom_Curve` meridian. (#808)
 - **Example:**
   ```swift
-  let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi)!
+  let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0))!
   if let solid = Shape.revolution(meridian: arc, axisDirection: SIMD3(0, 1, 0)) { }
   ```
 

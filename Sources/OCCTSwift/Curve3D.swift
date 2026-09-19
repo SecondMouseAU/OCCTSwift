@@ -2768,7 +2768,9 @@ extension Curve3D {
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
     ///
     /// ```swift
-    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+    /// if let arc = Curve3D.arcOfCircle(
+    ///     start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0))
+    /// {
     ///     let results = arc.extrema(from: SIMD3(3, 4, 0))
     ///     if let nearest = results.min(by: { $0.distance < $1.distance }) {
     ///         print(nearest.point, nearest.distance)
@@ -2850,7 +2852,8 @@ extension Curve3D {
     /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
     ///
     /// ```swift
-    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+    /// if let arc = Curve3D.arcOfCircle(
+    ///        start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
     ///    let d = arc.minimumDistance(from: SIMD3(0, 10, 0)) {
     ///     print(d)  // about 5.0
     /// }

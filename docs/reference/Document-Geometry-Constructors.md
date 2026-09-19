@@ -173,7 +173,7 @@ public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) ->
 - **Example:**
   ```swift
   if let line = Curve3D.line(from: SIMD3(0,0,0), to: SIMD3(1,0,0)),
-     let arc  = Curve3D.arc(center: SIMD3(1,0,0), radius: 1, startAngle: 0, endAngle: .pi/2),
+     let arc  = Curve3D.arcOfCircle(start: SIMD3(1, 0, 0), interior: SIMD3(2, 1, 0), end: SIMD3(3, 0, 0)),
      let joined = Curve3D.concatenate([line, arc]) {
       // single BSpline spanning both segments
   }
