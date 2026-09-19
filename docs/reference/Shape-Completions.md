@@ -315,15 +315,20 @@ public func ancestor(of edge: Shape) -> Shape?
 
 ### `distanceSS(to:deflection:)`
 
-Computes the minimum distance between two sub-shapes using Gauss-point sampling.
+Computes the minimum distance between two sub-shapes.
 
 ```swift
-public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceSSResult
+public func distanceSS(to other: Shape, deflection: Double = 1e-7) -> DistanceSSResult
 ```
 
 - **Parameters:**
   - `other`: the second shape.
-  - `deflection`: sampling deflection; smaller values give finer sampling at a performance cost; default `100.0`.
+  - `deflection`: maximum deviation of an extreme distance from the true minimum for it to be
+    folded into the solution set (`BRepExtrema_DistanceSS`'s `theDeflection`). A numeric-tie
+    tolerance, not a spatial search radius: raising it does not sample more finely, it widens how
+    many near-minimum extrema get reported as "solutions" alongside the true one, and
+    `.point1`/`.point2` are the *first-appended* solution, not guaranteed to be the minimal one.
+    Default `1e-7` (`Precision::Confusion()`), OCCT's own default (#1544).
 - **Returns:** A `DistanceSSResult` containing `.distance`, `.point1`, `.point2`, `.solutionCount`, and `.isDone`.
 - **OCCT:** `BRepExtrema_DistanceSS`.
 - **Example:**
@@ -935,20 +940,57 @@ public struct AppSurfResult {
 
 ## ShapeFix_ComposeShell
 
-### `composeShell(precision:)`
+### `composeShell(precision:uPatches:vPatches:)`
 
-Splits a face into sub-faces using a composite surface grid, repairing topology at the seams.
+Splits a face along the joint lines of a composite surface, and rebuilds its wires.
 
 ```swift
-public func composeShell(precision: Double = 1e-6) -> Shape?
+public func composeShell(precision: Double = 1e-6,
+                         uPatches: Int = 1,
+                         vPatches: Int = 1) -> Shape?
 ```
 
-- **Returns:** A `Shape` containing the repaired/split faces, or `nil` on failure.
-- **OCCT:** `ShapeFix_ComposeShell`.
+The grid is the face's own surface tiled `uPatches` x `vPatches` over the face's UV box, as
+`Geom_RectangularTrimmedSurface` patches, so subdividing needs no extra caller input.
+`ShapeFix_ComposeShell` cuts along the joints **between** patches, which is why the defaults, a
+1 x 1 grid, split nothing: one face goes in and one comes out. That was the only behaviour
+available until [#1638](https://github.com/SecondMouseAU/OCCTSwift/issues/1638), so the defaults
+preserve it exactly.
+
+Measured (`Scripts/repro/1638/transcript.txt`), on a 10 x 10 planar face and on a cylinder's
+lateral face:
+
+| grid | planar face out | cylinder wall out |
+|---|---|---|
+| 1 x 1 | 1 | 1 |
+| 2 x 1 | 2 | 2 |
+| 1 x 2 | 2 | 2 |
+| 3 x 2 | 6 | |
+
+Even at 1 x 1 the call does the wire rebuild: `ShapeFix_ComposeShell` re-splits and re-orders the
+face's wires against the surface and returns them as a shell, which repairs seam and
+degenerate-edge ordering on a face whose boundary has drifted. To subdivide a whole shape rather
+than one face, [`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) and
+[`dividedByArea(maxArea:)`](Shape-Measurement.md#dividedbyareamaxarea) are the shape-level tools.
+
+- **Parameters:** `precision`, the tolerance `ShapeFix_ComposeShell::Init` receives; `uPatches` and
+  `vPatches`, the grid, each at least 1.
+- **Returns:** A `Shape`, the composed shell, or `nil` if the receiver is not a face, carries no
+  surface, a patch count is below 1, or `Perform()` fails.
+- **OCCT:** `ShapeFix_ComposeShell` over a `ShapeExtend_CompositeSurface` of
+  `Geom_RectangularTrimmedSurface` patches, initialised with `ShapeExtend_Natural` (via
+  `OCCTShapeFixComposeShell`). The bridge sets a `ShapeBuild_ReShape` context before `Perform()`,
+  because 8.0.0p1 null-derefs without one.
+- **Note:** `ShapeExtend_Parametrisation` is not a parameter. Because the patches are sub-ranges of
+  the face's own surface, `ShapeExtend_Natural` reproduces the face's own parametrisation exactly
+  and the face's pcurves line up with the composite's global UV; the other two modes renumber the
+  joints away from the pcurves the face already carries.
 - **Example:**
   ```swift
-  if let fixed = myFace.composeShell() {
-      print(fixed.isValid)
+  if let face = Shape.cylinder(radius: 5, height: 10)?.subShapes(ofType: .face).first,
+      let quarters = face.composeShell(uPatches: 4)
+  {
+      print(quarters.subShapes(ofType: .face).count)  // 4, quarter cylinders
   }
   ```
 
@@ -1434,7 +1476,7 @@ Whether this shape contains free (non-shared) wires.
 public var hasFreeWires: Bool { get }
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBounds`.
+- **OCCT:** `TopExp::MapShapesAndAncestors`, reporting any child with no parent.
 
 ---
 
@@ -1446,7 +1488,7 @@ Whether this shape contains free (non-shared) faces.
 public var hasFreeFaces: Bool { get }
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBounds`.
+- **OCCT:** `TopExp::MapShapesAndAncestors`, reporting any child with no parent.
 
 ---
 

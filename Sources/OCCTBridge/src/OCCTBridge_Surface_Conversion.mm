@@ -907,19 +907,16 @@ OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull su
 
 double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface)
 {
-  if (!surface || surface->surface.IsNull())
-    return -1.0;
-  try
-  {
-    ShapeCustom_Surface sc(surface->surface);
-    // Trigger a conversion to populate gap
-    sc.ConvertToAnalytical(1e-3, Standard_False);
-    return sc.Gap();
-  }
-  catch (...)
-  {
-    return -1.0;
-  }
+  // Deprecated, always -1.0 (#1510). This used to construct a throwaway ShapeCustom_Surface and
+  // run an unrelated ConvertToAnalytical(1e-3) recognition pass just to read its Gap(), which
+  // reflects ONLY the last ConvertToAnalytical call per ShapeCustom_Surface's own header doc, and
+  // is written even on ConvertToAnalytical's rejection path. It never measured
+  // OCCTSurfaceConvertToPeriodic's result at all, and ConvertToPeriodic itself has no deviation to
+  // report: it is a pure knot rearrangement (Geom_BSplineSurface::SetUPeriodic/SetVPeriodic), with
+  // no myGap write anywhere in its implementation. See Scripts/repro/1510-surface-conversion-gap/
+  // for the direct-sampling confirmation that a real gap measurement here would be uninformative.
+  (void)surface;
+  return -1.0;
 }
 
 OCCTBiTgteCurveOnEdgeRef OCCTBiTgteCurveOnEdgeCreate(OCCTShapeRef edgeOnFace, OCCTShapeRef edge)

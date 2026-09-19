@@ -876,7 +876,17 @@ Find knot indices where a BSpline law drops below given continuity.
 public func knotSplitting(continuityOrder: ParametricContinuity = .c1) -> [Int]
 ```
 
-Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
+The pair reads any law whose OCCT object derives from `Law_BSpFunc`, which is four of the seven
+factories, not just `bspline(poles:knots:multiplicities:degree:)`: `Law_Interpol` and `Law_S`
+derive from it too (`Law_Interpol.hxx:29`, `Law_S.hxx:26`), so `interpolate(points:periodic:)`,
+`interpolated(values:parameters:periodic:)` and `sCurve(from:to:parameterRange:)` are readable as
+well. `constant(_:from:to:)`, `linear(from:to:parameterRange:)` and `composite(laws:range:)` are
+not: `Law_Constant`, `Law_Linear` and `Law_Composite` derive from `Law_Function` directly, the
+bridge's `Handle(Law_BSpFunc)::DownCast` returns null, and the result is an empty array. A
+readable law always reports at least its two end knots at every continuity order, so **an empty
+array means "not a `Law_BSpFunc`-derived law"**, never "no discontinuities"
+(`Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift`).
+
 Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
 `bounds`; see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
 
@@ -886,7 +896,7 @@ dropped, so it disagreed with `knotSplitParameters(continuityOrder:)` (same anal
 about how many splits the law has.
 
 - **Parameters:** `continuityOrder`: minimum continuity to require of each arc.
-- **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
+- **Returns:** Array of knot indices where continuity breaks. Empty only when the law is not `Law_BSpFunc`-derived: a readable law always reports its two end knots.
 - **OCCT:** `Law_BSplineKnotSplitting::NbSplits` / `SplitValue`.
 - **Continuity range (#480):** the order is a *derivative order*, and a knot splits only when
   `degree - multiplicity < continuityOrder`, so the meaningful range is `0...degree` and it
@@ -911,13 +921,13 @@ the law-function analogue of `Curve3D.continuityBreaks`.
 public func knotSplitParameters(continuityOrder: ParametricContinuity = .c1) -> [Double]
 ```
 
-Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
-Unlike `knotSplitting(continuityOrder:)`'s raw indices, these are real parameter values, directly
-usable with `value(at:)` and bounded by `bounds`.
+Reads the same four factories as `knotSplitting(continuityOrder:)` above and returns an empty
+array for the other three. Unlike that member's raw indices, these are real parameter values,
+directly usable with `value(at:)` and bounded by `bounds`.
 
 - **Parameters:** `continuityOrder`: minimum continuity to require of each arc, same derivative-order
   contract as `knotSplitting(continuityOrder:)` above (#480).
-- **Returns:** Split parameters in ascending order, or empty array if none or if the function is not BSpline-based.
+- **Returns:** Split parameters in ascending order. Empty only when the law is not `Law_BSpFunc`-derived, on the same rule as `knotSplitting(continuityOrder:)`.
 - **OCCT:** `Law_BSplineKnotSplitting`.
 - **Example:**
   ```swift

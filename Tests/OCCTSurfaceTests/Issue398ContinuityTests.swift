@@ -68,12 +68,19 @@ struct Issue398ContinuityTests {
     // MARK: - Orders OCCT will not accept
 
     // #437 (fixed): `.g2` on a point constraint is now rejected deliberately, in Swift, before
-    // any `GeomPlate_PointConstraint` is built -- see `SurfaceContinuity.isUnsupportedForPointConstraint`
+    // any `GeomPlate_PointConstraint` is built; see `SurfaceContinuity.isUnsupportedForPointConstraint`
     // and `Issue437PlatePointG2Tests`. The `== nil` answer below does NOT change: it was already
     // `nil` (OCCT throws, the bridge's `catch (...)` swallows it), and stays `nil` now that the
-    // rejection is explicit. What changed is *why* -- these two tests alone cannot show that; see
+    // rejection is explicit. What changed is *why*: these two tests alone cannot show that; see
     // `Issue437PlatePointG2Tests`'s own class comment for the guard-removal matrix that does.
-    @Test("Plate point constraints reject curvature order")
+    //
+    // #1460 (fixed): the same guard was extended to also reject `.g1` on a point constraint.
+    // Unlike `.g2`, OCCT never threw for `.g1` (`myOrder == 1` passes the constructor's `>1`
+    // check), so a bare point given `.g1` used to build successfully, silently degraded to
+    // G0-only with no diagnostic. The `tangent` assertion below flips from `!= nil` to `== nil`
+    // for exactly that reason; see `Issue1460PlatePointG1Tests` for the guard-removal matrix,
+    // which (unlike #437's) shows this guard is NOT decorative for `.g1`.
+    @Test("Plate point constraints reject curvature and tangent orders")
     func plateThroughPointsRejectsCurvatureOrder() {
         // GeomPlate_PointConstraint throws above order 1: a bare point carries no curvature
         // to match. The throw takes down the whole build, not just that one constraint, so
@@ -87,15 +94,18 @@ struct Issue398ContinuityTests {
             orders: Array(repeating: .g2, count: points.count))
         #expect(curvature == nil)
 
-        // The orders that do work, for contrast.
+        // The one order that still works, for contrast.
         let positional = Shape.plateSurface(
             through: points,
             orders: Array(repeating: .g0, count: points.count))
         #expect(positional != nil)
+
+        // A bare point cannot carry tangent data either (#1460): unlike .g2, OCCT itself never
+        // rejected this, so the Swift-side guard is what makes it nil now.
         let tangent = Shape.plateSurface(
             through: points,
             orders: Array(repeating: .g1, count: points.count))
-        #expect(tangent != nil)
+        #expect(tangent == nil)
     }
 
     @Test("A single curvature point poisons an otherwise valid order list")

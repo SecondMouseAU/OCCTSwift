@@ -26,4 +26,23 @@ struct Curve2DIsLinearTests {
             }
         }
     }
+
+    // #1542: isLinear() is documented to return nil for a curve that isn't a BSpline. The bridge
+    // used to return `false` for both "not a BSpline" and "genuinely non-linear", so the doc's
+    // nil-path could never actually happen -- a non-BSpline curve silently read back as
+    // `(isLinear: false, deviation: 0.0)`, indistinguishable from a measured, non-linear BSpline.
+    @Test("Non-BSpline curve returns nil, not a false result")
+    func nonBSplineCurveReturnsNil() {
+        let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5)
+        #expect(circle != nil)
+        if let circle {
+            #expect(circle.isLinear(tolerance: 1e-6) == nil)
+        }
+
+        let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
+        #expect(segment != nil)
+        if let segment {
+            #expect(segment.isLinear(tolerance: 1e-6) == nil)
+        }
+    }
 }

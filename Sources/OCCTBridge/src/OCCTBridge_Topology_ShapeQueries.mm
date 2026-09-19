@@ -115,15 +115,12 @@
 
 // MARK: - Wire Explorer (v0.29.0)
 
-#include <BRepTools_WireExplorer.hxx>
-
 // Additional includes gathered from throughout the original file (#1380):
 #include <ShapeAnalysis_Edge.hxx>
 #include <BRepOffsetAPI_FindContigousEdges.hxx>
 #include <BRepClass3d.hxx>
 #include <TopoDS_Solid.hxx>
 #include <TopoDS_Shell.hxx>
-#include <TopExp_Explorer.hxx> // still used by the shell-classification and traversal helpers below
 #include <BRepBuilderAPI_FindPlane.hxx>
 #include <ShapeUpgrade_ShapeDivideClosedEdges.hxx>
 #include <ShapeCustom.hxx>
@@ -135,7 +132,6 @@
 #include <BRepLib_MakeVertex.hxx>
 #include <TopoDS_Builder.hxx>
 #include <TopoDS_CompSolid.hxx>
-#import <BRep_Tool.hxx>
 #import <Geom2d_Curve.hxx>
 #include <BRepLProp_SLProps.hxx>
 #include <GeomAbs_SurfaceType.hxx>
@@ -729,7 +725,7 @@ int32_t OCCTShapeRevolutionAxes(OCCTShapeRef   shape,
     int32_t count = std::min((int32_t)collected.size(), maxAxes);
     for (int32_t i = 0; i < count; i++)
       outAxes[i] = collected[i];
-    return (int32_t)collected.size();
+    return count;
   }
   catch (...)
   {
@@ -766,7 +762,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     gp_Vec                     axes[3]    = {v1, v2, v3};
     double                     maxM       = std::max({Ix, Iy, Iz});
     std::vector<OCCTShapeAxis> collected;
-    if (pp.HasSymmetryPoint())
+    if (pp.HasSymmetryPoint(fractionalTolerance))
     {
       // Spherical: add all three principal axes (all equal).
       for (int i = 0; i < 3; i++)
@@ -788,7 +784,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
         collected.push_back(a);
       }
     }
-    else if (pp.HasSymmetryAxis())
+    else if (pp.HasSymmetryAxis(fractionalTolerance))
     {
       // Rotational: the unique (different) moment's axis IS the symmetry axis.
       int uniqueIdx = 0;
@@ -821,7 +817,7 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef   shape,
     int32_t count = std::min((int32_t)collected.size(), maxAxes);
     for (int32_t i = 0; i < count; i++)
       outAxes[i] = collected[i];
-    return (int32_t)collected.size();
+    return count;
   }
   catch (...)
   {
@@ -1345,16 +1341,33 @@ void OCCTBRepLibUpdateInnerTolerances(OCCTShapeRef shape)
   }
 }
 
-bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef edge, double tol)
+bool OCCTBRepLibUpdateEdgeTolerance(OCCTShapeRef edge,
+                                    double       minToleranceRequest,
+                                    double       maxToleranceToCheck,
+                                    double*      outToleranceBefore,
+                                    double*      outToleranceAfter)
 {
-  if (!edge)
+  if (!outToleranceBefore || !outToleranceAfter)
+    return false;
+  *outToleranceBefore = 0.0;
+  *outToleranceAfter  = 0.0;
+  if (!occtShapeIsType(edge, TopAbs_EDGE))
     return false;
   try
   {
-    return BRepLib::UpdateEdgeTol(TopoDS::Edge(edge->shape), tol, tol * 100.0);
+    const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
+    *outToleranceBefore  = BRep_Tool::Tolerance(e);
+    // Both bounds are the caller's. The second one used to be minToleranceRequest * 100, a factor
+    // that appeared in no header, doc or changelog and that decides whether the call does anything
+    // at all: BRepLib::UpdateEdgeTol returns false without measuring when the edge's own tolerance
+    // is already above it (#1639).
+    bool examined      = BRepLib::UpdateEdgeTol(e, minToleranceRequest, maxToleranceToCheck);
+    *outToleranceAfter = BRep_Tool::Tolerance(e);
+    return examined;
   }
   catch (...)
   {
+    *outToleranceAfter = *outToleranceBefore;
     return false;
   }
 }
@@ -3013,7 +3026,7 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef shape, int32_t subShapeType)
 
 bool OCCTBRepToolIsClosedOnFace(OCCTShapeRef edge, OCCTShapeRef face)
 {
-  if (!edge || !face)
+  if (!occtShapeIsPresent(edge) || !occtShapeIsPresent(face))
     return false;
   try
   {

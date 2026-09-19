@@ -30,9 +30,16 @@ void OCCTSerialLockRelease(void)
 }
 
 // Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
-// SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so that
-// signals raised inside OCCT become catchable via OCC_CATCH_SIGNALS instead of aborting
-// the host process. Idempotent + thread-safe via std::once_flag.
+// SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so an OS signal
+// raised inside OCCT gets a named OCCT diagnostic (message + stack trace) rather than a bare
+// crash report. Idempotent + thread-safe via std::once_flag.
+//
+// #1399: this comment used to end "so that signals raised inside OCCT become catchable via
+// OCC_CATCH_SIGNALS instead of aborting the host process", which is not what this build does.
+// OCC_CONVERT_SIGNALS is not defined here, so Standard_ErrorHandler.hxx expands
+// OCC_CATCH_SIGNALS to nothing and Standard_ErrorHandler::Abort throws straight from the POSIX
+// signal handler, which does not unwind. See okf/references/known-occt-bugs.md (#345) and the
+// same correction at occtEnsureSignals' declaration in OCCTBridge_Internal.h.
 #include <OSD.hxx>
 
 void occtEnsureSignals()
@@ -199,11 +206,6 @@ void occtEnsureSignals()
 #include <GCPnts_TangentialDeflection.hxx>
 #include <BRepAdaptor_Curve.hxx>
 
-// For mesh-to-shape conversion
-#include <BRepBuilderAPI_Sewing.hxx>
-#include <BRepBuilderAPI_MakeSolid.hxx>
-#include <ShapeFix_Solid.hxx>
-
 // Measurement & Analysis (v0.7.0)
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -219,7 +221,6 @@ void occtEnsureSignals()
 #include <BRepAdaptor_CompCurve.hxx>
 #include <GCPnts_AbscissaPoint.hxx>
 #include <BRepLProp_CLProps.hxx>
-#include <Geom_BSplineSurface.hxx>
 #include <GeomFill_BSplineCurves.hxx>
 #include <BRepFill.hxx>
 #include <TColgp_Array2OfPnt.hxx>
@@ -262,9 +263,6 @@ void occtEnsureSignals()
 // IGES import/export (v0.10.0)
 #include <IGESControl_Reader.hxx>
 #include <IGESControl_Writer.hxx>
-
-// BREP native format (v0.10.0)
-#include <BRep_Builder.hxx>
 
 // Geometry Construction (v0.11.0)
 #include <GeomAPI_Interpolate.hxx>
@@ -334,7 +332,6 @@ void occtEnsureSignals()
 #include <GeomPlate_MakeApprox.hxx>
 #include <GeomPlate_PointConstraint.hxx>
 #include <GeomPlate_CurveConstraint.hxx>
-#include <BRepAdaptor_Curve.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <Adaptor3d_CurveOnSurface.hxx>
 
@@ -376,16 +373,12 @@ void occtEnsureSignals()
 #include <LocOpe_LinearForm.hxx>
 #include <LocOpe_RevolutionForm.hxx>
 #include <LocOpe_SplitShape.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_FindEdges.hxx>
 #include <LocOpe_FindEdgesInFace.hxx>
 #include <LocOpe_CSIntersector.hxx>
 #include <LocOpe_PntFace.hxx>
 // #include <LocOpe_Gluer.hxx> // unused
-#include <BRepCheck_Analyzer.hxx>
 #include <BRepCheck_Edge.hxx>
-#include <BRepCheck_Wire.hxx>
-#include <BRepCheck_Shell.hxx>
 #include <BRepCheck_Vertex.hxx>
 #include <ShapeFix_ShapeTolerance.hxx>
 #include <ShapeFix_SplitCommonVertex.hxx>
@@ -398,11 +391,10 @@ void occtEnsureSignals()
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <ShapeUpgrade_ShapeDivideClosed.hxx>
 #include <ShapeUpgrade_ShapeDivideContinuity.hxx>
+
 // #include <NCollection_Sequence.hxx> // unused in v0.48
 
 // MARK: - Internal Structures
-
-#include <BRepBuilderAPI_Sewing.hxx>
 
 struct OCCTSewing
 {
@@ -419,9 +411,6 @@ struct OCCTSewing
 
 // MARK: - #263 self-intersecting-wire guard
 
-#include <BRepCheck_Result.hxx>
-#include <BRepCheck_ListOfStatus.hxx>
-
 // A self-intersecting wire (BRepCheck_SelfIntersectingWire) — typically a mesh-derived
 // outline that crosses itself — extrudes into a prism whose subsequent ShapeFix_Shape
 // heal corrupts the heap and aborts with an uncatchable OS signal (#263; backtrace
@@ -436,17 +425,64 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
   try
   {
     BRepCheck_Analyzer analyzer(s);
-    if (analyzer.IsValid())
-      return false; // fast path: a valid shape can't carry the flag
+    if (!analyzer.IsValid())
+    {
+      // A wire that already bounds a TopoDS_Face somewhere in `s` gets a real face context
+      // from BRepCheck_Analyzer's own recursive walk, so BRepCheck_Wire::SelfIntersect() can
+      // fire on it here.
+      for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next())
+      {
+        Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
+        if (res.IsNull())
+          continue;
+        for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+        {
+          if (it.Value() == BRepCheck_SelfIntersectingWire)
+            return true;
+        }
+      }
+    }
+
+    // #1505: BRepCheck_Wire::SelfIntersect() requires a TopoDS_Face context to project pcurves
+    // onto, so a wire with no enclosing face anywhere in `s` (e.g. a bare Shape.fromWire(_:)
+    // shape, which is exactly what OCCTShapeCreateExtrusionShape/OCCTShapeHeal/
+    // OCCTShapeHealWithHistory can be handed) is never examined by the walk above; it always
+    // reads back "not flagged". If `s` carries no face at all, synthesize a planar face per
+    // wire and check that instead. A shape that already has a face is left to the walk above:
+    // every wire in it either bounds one of those faces (already checked with its real
+    // context) or, in the two-callers case this bridge never builds, is a stray wire alongside
+    // a face in the same compound, which stays out of scope for this fix.
+    if (TopExp_Explorer(s, TopAbs_FACE).More())
+      return false;
+
     for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next())
     {
-      Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
-      if (res.IsNull())
-        continue;
-      for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+      const TopoDS_Wire& wire = TopoDS::Wire(we.Current());
+      try
       {
-        if (it.Value() == BRepCheck_SelfIntersectingWire)
-          return true;
+        BRepBuilderAPI_MakeFace faceMaker(wire, /*OnlyPlane=*/true);
+        if (!faceMaker.IsDone())
+          continue; // not planar, or otherwise can't be faced: no verdict from this path
+        BRepCheck_Analyzer wireAnalyzer(faceMaker.Face());
+        if (wireAnalyzer.IsValid())
+          continue;
+        for (TopExp_Explorer fwe(faceMaker.Face(), TopAbs_WIRE); fwe.More(); fwe.Next())
+        {
+          Handle(BRepCheck_Result) res = wireAnalyzer.Result(fwe.Current());
+          if (res.IsNull())
+            continue;
+          for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next())
+          {
+            if (it.Value() == BRepCheck_SelfIntersectingWire)
+              return true;
+          }
+        }
+      }
+      catch (...)
+      {
+        // Couldn't face/check this one wire; fall through to whatever the other wires (or the
+        // original analyzer walk above) already found rather than treating this as fatal.
+        continue;
       }
     }
   }

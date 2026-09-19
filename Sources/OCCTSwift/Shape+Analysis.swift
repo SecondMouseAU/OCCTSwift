@@ -727,7 +727,9 @@ extension Shape {
             /// The check timed out but the breaker was not tripped (analysis completed but exceeded timeout).
             /// This indicates the analysis made no meaningful progress within the time limit.
             case indeterminateBreakerNotTripped
-            /// An error occurred during analysis.
+            /// An error occurred during analysis, or the analyzer could not answer the
+            /// question asked (e.g. a refused/empty argument). Either way, treat as unknown,
+            /// not as `.clean` (#1436).
             case error
         }
 
@@ -1306,7 +1308,15 @@ extension Shape {
         public let type: ContourType
         /// Number of contours found.
         public let count: Int
-        /// Circle: center and radius; line: location and direction.
+        /// Raw parameters.
+        ///
+        /// Circle: center xyz + radius (`data[0...3]`).
+        /// Line: location xyz + direction xyz per contour, 6 doubles each.
+        /// `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data`
+        /// holds 8 doubles (one line at `data[0...5]`, or a circle at `data[0...3]`).
+        /// `contourCylinderDir` can report two tangent lines (#1416: a cylinder's silhouette
+        /// against a non-degenerate view direction is always the pair of tangent rulings, never
+        /// one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
         public let data: [Double]
     }
 
@@ -1338,6 +1348,20 @@ extension Shape {
 
     /// Compute analytical contours on a cylinder with a view direction.
     ///
+    /// A cylinder's silhouette against a non-degenerate (non-axis-parallel) view direction is
+    /// always the pair of tangent rulings either side of the axis, `count == 2`, never 1 (#1416).
+    /// Both are returned: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
+    ///
+    /// ```swift
+    /// if let result = Shape.contourCylinderDir(
+    ///     origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+    ///     radius: 5, direction: SIMD3(1, 0, 0)),
+    ///    result.count == 2 {
+    ///     let line1Location = SIMD3(result.data[0], result.data[1], result.data[2])
+    ///     let line2Location = SIMD3(result.data[6], result.data[7], result.data[8])
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - origin: Cylinder axis origin
     ///   - axis: Cylinder axis direction
@@ -1349,7 +1373,7 @@ extension Shape {
         radius: Double, direction: SIMD3<Double>
     ) -> ContourResult? {
         var outType: Int32 = 0
-        var outData = [Double](repeating: 0, count: 8)
+        var outData = [Double](repeating: 0, count: 12)
         let count = OCCTContapCylinderDir(
             origin.x, origin.y, origin.z,
             axis.x, axis.y, axis.z, radius,
@@ -1508,6 +1532,12 @@ extension Shape {
     }
 
     /// Curvature special point type from LProp analysis.
+    ///
+    /// The three cases mirror `LProp_CIType`, which classifies by *radius* of curvature rather
+    /// than by curvature (`LProp_CurAndInf.hxx`), so an ellipse's major-axis vertices, where the
+    /// curve bends hardest, are ``minimumCurvature``. ``inflection`` is part of that enum but
+    /// ``Shape/analyticCurvaturePoints(curveType:first:last:)`` never returns it: an analytic
+    /// conic has no inflection.
     public enum CurvaturePointType: Int32 {
         case inflection = 0
         case minimumCurvature = 1
@@ -1522,12 +1552,27 @@ extension Shape {
         public let type: CurvaturePointType
     }
 
-    /// Compute curvature special points for analytic curve types using LProp.
+    /// Compute the curvature extrema of an analytic curve type.
+    ///
+    /// Only an ellipse has any: a line has zero curvature, a circle constant curvature, and a
+    /// parabola and a hyperbola monotonic curvature, so every other `curveType` returns an empty
+    /// array. An ellipse reports whichever of its four axis vertices fall inside `first...last`.
+    ///
+    /// ```swift
+    /// // Full ellipse domain: four vertices, the major-axis pair classified by minimum radius.
+    /// let pts = Shape.analyticCurvaturePoints(curveType: 2, first: 0, last: 2 * .pi)
+    /// let major = pts.filter { $0.type == .minimumCurvature }.map(\.parameter)  // [0, pi]
+    /// // A line has no curvature extremum at all.
+    /// let none = Shape.analyticCurvaturePoints(curveType: 0, first: 0, last: 1)  // []
+    /// ```
+    ///
     /// - Parameters:
-    ///   - curveType: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola
+    ///   - curveType: the `GeomAbs_CurveType` ordinal: 0=Line, 1=Circle, 2=Ellipse,
+    ///     3=Hyperbola, 4=Parabola
     ///   - first: First parameter of domain
     ///   - last: Last parameter of domain
-    /// - Returns: Array of special points (inflections, min/max curvature)
+    /// - Returns: The curvature extrema in the domain, empty for every `curveType` but 2. Never
+    ///   contains a ``CurvaturePointType/inflection``.
     public static func analyticCurvaturePoints(
         curveType: Int32, first: Double,
         last: Double
@@ -1582,6 +1627,9 @@ extension Shape {
     }
 
     /// Compute self-interference of a 2D polyline.
+    ///
+    /// Capped at 100 intersection points, and the truncation is silent, as it is for
+    /// ``polygonInterference(poly1:poly2:)`` (#1399).
     public static func polygonSelfInterference(
         polygon: [SIMD2<Double>]
     ) -> PolygonIntersection {
@@ -1615,6 +1663,12 @@ extension Shape {
         /// Parameter range on edge 1 (first, last), same for vertex type.
         public let param1Range: (first: Double, last: Double)
         /// Parameter range on edge 2 (first, last), same for vertex type.
+        ///
+        /// - Warning: only ``edgeEdgeIntersection(with:)`` has a second edge. From
+        ///   ``edgeFaceIntersection(with:)`` this is always `(0, 0)`, a default rather than a
+        ///   measurement: `IntTools_EdgeFace` never calls `AppendRange2` or
+        ///   `SetVertexParameter2`, so `IntTools_CommonPrt` hands back an empty `Ranges2()` and
+        ///   the `0.0` its own constructor set (#1399). Read ``param1Range`` and ``point``.
         public let param2Range: (first: Double, last: Double)
         /// Representative 3D point of the intersection.
         public let point: SIMD3<Double>
@@ -1644,7 +1698,21 @@ extension Shape {
 
     /// Intersect an edge with a face to find common vertices and edge overlaps.
     ///
-    /// Uses IntTools_EdgeFace to compute edge-face intersections.
+    /// Uses `IntTools_EdgeFace` to compute edge-face intersections.
+    ///
+    /// - Warning: this returns an **empty array for every input** on the current bridge, including
+    ///   an edge that genuinely crosses the face. `OCCTIntToolsEdgeFace` never calls
+    ///   `IntTools_EdgeFace::SetRange`, and `IntTools_Range`'s default is `(0, 0)`, so the whole
+    ///   computation searches a degenerate window on the edge. Measured in
+    ///   `Scripts/repro/1399-refman-coverage-unlaned/probe-transcript.txt` and tracked as
+    ///   [#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631). `IsDone()` is `true`
+    ///   either way, so `nil` is not the signal.
+    ///
+    /// ```swift
+    /// if let parts = edge.edgeFaceIntersection(with: face) {
+    ///     for p in parts { print(p.type, p.param1Range, p.point) }  // param2Range is (0, 0)
+    /// }
+    /// ```
     ///
     /// - Parameter face: Face to intersect with
     /// - Returns: Array of common parts, or nil if intersection failed
@@ -1780,7 +1848,20 @@ extension Shape {
     }
 
     /// Compute the minimum distance between two sub-shapes using BRepExtrema_DistanceSS.
-    public func distanceSS(to other: Shape, deflection: Double = 100.0) -> DistanceSSResult {
+    ///
+    /// - Parameters:
+    ///   - other: The second shape.
+    ///   - deflection: Maximum deviation of an extreme distance from the true minimum for it to
+    ///     be folded into the solution set (`BRepExtrema_DistanceSS`'s `theDeflection`). It is a
+    ///     numeric-tie tolerance, not a spatial search radius: raising it does not widen the
+    ///     search, it only widens how many near-minimum extrema get reported as "solutions"
+    ///     alongside the true one. Defaults to `1e-7` (`Precision::Confusion()`), OCCT's own
+    ///     default. ``point1``/``point2`` are the *first-appended* solution, which is not
+    ///     guaranteed to be the minimal one when more than one extremum falls within
+    ///     ``deflection`` of the minimum, so a large value can make them describe a different,
+    ///     non-minimal extremum than the one ``distance`` reports (#1544).
+    /// - Returns: Distance and closest points, or a zeroed, `isDone: false` result on failure.
+    public func distanceSS(to other: Shape, deflection: Double = 1e-7) -> DistanceSSResult {
         let r = OCCTBRepExtremaDistanceSS(handle, other.handle, deflection)
         return DistanceSSResult(
             distance: r.distance,

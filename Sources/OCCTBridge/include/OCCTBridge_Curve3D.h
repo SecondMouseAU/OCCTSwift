@@ -199,6 +199,10 @@ double         OCCTCurve3DGetLengthBetween(OCCTCurve3DRef curve, double u1, doub
 OCCTCurve3DRef OCCTCurve3DToBSpline(OCCTCurve3DRef curve);
 int32_t        OCCTCurve3DBSplineToBeziers(OCCTCurve3DRef curve, OCCTCurve3DRef* out, int32_t max);
 void           OCCTCurve3DFreeArray(OCCTCurve3DRef* curves, int32_t count);
+/// Join curves[0..count) end-to-end into a single BSpline via
+/// GeomConvert_CompCurveToBSplineCurve. Returns nullptr, rather than a partial join, if any
+/// curve after the first is not G0-continuous with the accumulated curve within `tolerance`
+/// (#1441).
 OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
                                         int32_t               count,
                                         double                tolerance);
@@ -1026,12 +1030,17 @@ OCCTExtremaExtCSResult OCCTExtremaExtCS(OCCTCurve3DRef _Nonnull curve,
                                         double uLast,
                                         OCCTSurfaceRef _Nonnull surface);
 
-/// Get Nth extremum from curve-surface computation
-OCCTExtremaPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef _Nonnull curve,
-                                           double uFirst,
-                                           double uLast,
-                                           OCCTSurfaceRef _Nonnull surface,
-                                           int index);
+/// Get Nth extremum from curve-surface computation.
+///
+/// The surface-side point carries both of its parameters (`u2`, `v2`); the curve-side point
+/// carries its single `param1`. Returns a zeroed result for a null handle or an out-of-range
+/// index, which `squareDistance == 0` alone cannot be distinguished from, so callers gate on
+/// `OCCTExtremaExtCS`'s `isDone`/`nbExt` first.
+OCCTExtremaCSPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef _Nonnull curve,
+                                             double uFirst,
+                                             double uLast,
+                                             OCCTSurfaceRef _Nonnull surface,
+                                             int index);
 
 // --- Extrema_LocateExtCC: Local curve-curve distance ---
 typedef struct
@@ -1405,7 +1414,9 @@ typedef struct
 /// @param segCount Number of Bezier segments
 /// @param ptsPerSeg Number of control points per segment (degree+1)
 /// @param out Result filled on success
-/// @return true on success
+/// @return true on success; false if segCount/ptsPerSeg are invalid, the underlying conversion
+///         throws, or the composite curve needs more poles/knots than `out`'s fixed capacity
+///         (100 poles, 50 knots) can hold (#1441).
 bool OCCTConvertCompBezierToBSpline(const double* _Nonnull poles,
                                     int32_t segCount,
                                     int32_t ptsPerSeg,
@@ -1427,7 +1438,9 @@ typedef struct
 /// @param segCount Number of Bezier segments
 /// @param ptsPerSeg Number of control points per segment (degree+1)
 /// @param out Result filled on success
-/// @return true on success
+/// @return true on success; false if segCount/ptsPerSeg are invalid, the underlying conversion
+///         throws, or the composite curve needs more poles/knots than `out`'s fixed capacity
+///         (100 poles, 50 knots) can hold (#1441).
 bool OCCTConvertCompBezier2dToBSpline2d(const double* _Nonnull poles,
                                         int32_t segCount,
                                         int32_t ptsPerSeg,
@@ -1938,6 +1951,9 @@ int32_t OCCTExtremaElCLinLin(double l1px,
                              int32_t max);
 
 /// Distance between a 3D line and circle (Extrema_ExtElC).
+/// A line coincident with the circle's own axis is a degenerate, parallel case with a
+/// well-defined constant distance (the circle's radius): returns 1 result with that distance
+/// (points zeroed, undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCLinCirc(double lpx,
                               double lpy,
@@ -1957,6 +1973,9 @@ int32_t OCCTExtremaElCLinCirc(double lpx,
                               int32_t max);
 
 /// Distance between two 3D circles (Extrema_ExtElC).
+/// Coaxial, coplanar circles are a degenerate, parallel case with a well-defined constant
+/// distance (the radii's absolute difference): returns 1 result with that distance (points
+/// zeroed, undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCCircCirc(double c1x,
                                double c1y,
@@ -1978,6 +1997,9 @@ int32_t OCCTExtremaElCCircCirc(double c1x,
 /// Distance between a 3D line and ellipse (Extrema_ExtElC).
 /// No tolerance (#999): of Extrema_ExtElC's six constructors only the line/line and line/circle
 /// ones take one (AngTol and Tol respectively), and Extrema_ExtElC(gp_Lin, gp_Elips) takes none.
+/// A line coincident with the ellipse's own axis is a degenerate, parallel case with a
+/// well-defined constant distance: returns 1 result with that distance (points zeroed,
+/// undefined) rather than 0 (#1501).
 /// @return Number of extrema (-1 on error)
 int32_t OCCTExtremaElCLinElips(double lpx,
                                double lpy,
@@ -2190,7 +2212,8 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef _Nonnull curve,
 
 // --- Curve3D extras ---
 
-/// Get the curve type enum (GeomAbs_CurveType: 0=Line..7=OtherCurve).
+/// Get the curve type enum (GeomAbs_CurveType: 0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola,
+/// 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OffsetCurve, 8=OtherCurve).
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef _Nonnull curve);
 
 /// Find the parameter on a 3D curve nearest to a 3D point, over the curve's whole range.
@@ -2305,11 +2328,12 @@ double OCCTProjOnCurveLowerParam(OCCTProjOnCurveRef _Nonnull proj);
 /// Set the knot value at a given index (1-based).
 bool OCCTCurve3DBSplineSetKnot(OCCTCurve3DRef _Nonnull curve, int32_t index, double knot);
 
-/// Get the full knot sequence (with multiplicities expanded). Caller must pre-allocate knotSeq.
-/// Returns the count in *count.
-void OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef _Nonnull curve,
-                                       double* _Nonnull knotSeq,
-                                       int32_t* _Nonnull count);
+/// Get the full knot sequence (with multiplicities expanded), clamped to maxCount. Caller must
+/// pre-allocate knotSeq with at least maxCount doubles. Returns the number of knots actually
+/// written, never more than maxCount (#1541).
+int32_t OCCTCurve3DBSplineGetKnotSequence(OCCTCurve3DRef _Nonnull curve,
+                                          double* _Nonnull knotSeq,
+                                          int32_t maxCount);
 
 /// Get all weights (one per pole). Caller must pre-allocate weights array.
 void OCCTCurve3DBSplineGetWeights(OCCTCurve3DRef _Nonnull curve, double* _Nonnull weights);
@@ -2431,7 +2455,9 @@ int32_t OCCTCurve3DSplitAtContinuity(OCCTCurve3DRef _Nonnull curve,
                                      OCCTCurve3DRef _Nullable* _Nonnull outSegments,
                                      int32_t maxSegments);
 
-/// Concatenate an array of 3D curves with G1 continuity.
+/// Concatenate an array of 3D curves with G1 continuity. Returns nullptr, rather than a partial
+/// concatenation, if any curve after the first is not G0-continuous with the accumulated curve
+/// within `tol` (#1441).
 OCCTCurve3DRef _Nullable OCCTCurve3DConcatenateG1(const OCCTCurve3DRef _Nonnull* _Nonnull curves,
                                                   int32_t count,
                                                   double  tol);
@@ -2862,6 +2888,8 @@ OCCTCurve3DRef _Nullable OCCTGeomEvalSineWaveCurveCreate(double amplitude,
 /// Find closest point on a Geom_Curve to a query point.
 /// Returns number of extrema found (0 on failure).
 /// outParams[i] = parameter on curve, outDistances[i] = distance.
+/// Calls ExtremaPC_Curve::PerformWithEndpoints, so the domain's two ends are reported alongside
+/// the interior extrema and a query point with no perpendicular foot still gets an answer (#1633).
 int32_t OCCTExtremaPCCurve(OCCTCurve3DRef _Nonnull curve,
                            double px,
                            double py,
@@ -2874,6 +2902,7 @@ int32_t OCCTExtremaPCCurve(OCCTCurve3DRef _Nonnull curve,
                            int32_t maxResults);
 
 /// Find closest point on a bounded Geom_Curve segment to a query point.
+/// uMin/uMax are themselves reported as extrema, see OCCTExtremaPCCurve above (#1633).
 int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef _Nonnull curve,
                                   double px,
                                   double py,
@@ -2888,6 +2917,8 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef _Nonnull curve,
                                   int32_t maxResults);
 
 /// Find minimum distance from point to curve (convenience, returns distance, -1 on error).
+/// The minimum is over the whole domain, endpoints included, and therefore agrees with the
+/// smallest distance OCCTExtremaPCCurve reports (#1633).
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef _Nonnull curve, double px, double py, double pz);
 
 /// Create a least-squares B-spline approximation solver.

@@ -114,15 +114,12 @@
 
 // MARK: - Wire Explorer (v0.29.0)
 
-#include <BRepTools_WireExplorer.hxx>
-
 // Additional includes gathered from throughout the original file (#1380):
 #include <ShapeAnalysis_Edge.hxx>
 #include <BRepOffsetAPI_FindContigousEdges.hxx>
 #include <BRepClass3d.hxx>
 #include <TopoDS_Solid.hxx>
 #include <TopoDS_Shell.hxx>
-#include <TopExp_Explorer.hxx> // still used by the shell-classification and traversal helpers below
 #include <BRepBuilderAPI_FindPlane.hxx>
 #include <ShapeUpgrade_ShapeDivideClosedEdges.hxx>
 #include <ShapeCustom.hxx>
@@ -134,7 +131,6 @@
 #include <BRepLib_MakeVertex.hxx>
 #include <TopoDS_Builder.hxx>
 #include <TopoDS_CompSolid.hxx>
-#import <BRep_Tool.hxx>
 #import <Geom2d_Curve.hxx>
 #include <BRepLProp_SLProps.hxx>
 #include <GeomAbs_SurfaceType.hxx>
@@ -792,17 +788,28 @@ int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef bsb,
                                 int32_t*            outIndices,
                                 int32_t             maxIndices)
 {
+  if (!bsb)
+    return 0;
   try
   {
     Bnd_Box query;
     query.Update(xmin, ymin, zmin, xmax, ymax, zmax);
-    auto& result = bsb->sorter.Compare(query);
-    int   count  = 0;
-    for (auto it = result.cbegin(); it != result.cend() && count < maxIndices; ++it)
+    auto&   result = bsb->sorter.Compare(query);
+    int32_t total  = 0;
+    for (auto it = result.cbegin(); it != result.cend(); ++it)
     {
-      outIndices[count++] = *it;
+      // Bnd_BoundSortBox returns OCCT's native 1-based indices (Bnd_BoundSortBox.hxx's own
+      // doc on Add(): "The index is 1-based"); OCCTBoundSortBoxCreate stores caller box i
+      // (0-based) at OCCT array position i+1, so translate back here to keep this bridge's
+      // 0-based convention (#1462, finding 1).
+      if (outIndices && total < maxIndices)
+        outIndices[total] = (*it) - 1;
+      total++;
     }
-    return count;
+    // Count-then-fill: return the TOTAL count always, not the number written, so a caller can
+    // detect truncation (return > maxIndices) and outIndices=NULL can be used as a sizing query
+    // (#1462, finding 2).
+    return total;
   }
   catch (...)
   {

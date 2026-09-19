@@ -202,9 +202,9 @@ typedef struct
 /// Tangency/curvature continuity needs a support surface to be continuous WITH. Each
 /// boundary edge's own pcurve support surface is used, so continuity > 0 requires every
 /// boundary edge to carry a pcurve (i.e. to have been borrowed from an existing face);
-/// a free-standing edge with no pcurve makes the whole call fail. Use
-/// OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support faces
-/// explicitly.
+/// a free-standing edge with no pcurve is added with position-only continuity instead
+/// (#1503). Use OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support
+/// faces explicitly.
 ///
 /// @param boundaries Array of boundary wires
 /// @param wireCount Number of boundary wires
@@ -300,9 +300,6 @@ OCCTShapeRef OCCTShapeBSplineRestriction(OCCTShapeRef shape,
 
 /// Convert swept surfaces to elementary (canonical) surfaces
 OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape);
-
-/// Convert surfaces of revolution to elementary surfaces
-OCCTShapeRef OCCTShapeRevolutionToElementary(OCCTShapeRef shape);
 
 /// Convert all surfaces to BSpline
 OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape);
@@ -423,16 +420,32 @@ OCCTShapeRef OCCTShapeFreeBounds(OCCTShapeRef shape,
                                  int32_t*     outClosedCount,
                                  int32_t*     outOpenCount);
 
-/// Fix free boundary wires by closing gaps.
-/// @param shape The shape whose free boundaries to fix
-/// @param sewingTolerance Tolerance for sewing free edges
-/// @param closingTolerance Maximum distance to close a gap
-/// @param outFixedCount Number of wires that were fixed (output)
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
-                                    double       sewingTolerance,
-                                    double       closingTolerance,
-                                    int32_t*     outFixedCount);
+/// Connect a shape's free boundary wires, closing gaps within `closingTolerance`.
+///
+/// Returns `ShapeFix_FreeBounds::GetShape()`, the modified source shape. Connecting several open
+/// wires into one replaces their previous end vertices with new connecting vertices and updates
+/// every edge in the shape that shared them, so the source shape can come back changed. Until
+/// #1636 this returned a compound of the wires instead and `GetShape()` was never read, so a
+/// caller asking for the repaired shape received something with no faces in it at all.
+///
+/// @param shape The shape whose free boundaries to connect. Should be a compound of faces.
+/// @param sewingTolerance Tolerance the sewing analyser is initialised with
+/// @param closingTolerance Maximum distance to close a gap. The pinned header requires this to be
+///        greater than `sewingTolerance` or no connection is performed.
+/// @param outClosedWireCount Number of closed free-bound wires (output)
+/// @param outOpenWireCount Number of open free-bound wires (output)
+/// @param outClosedWires Compound of the closed free-bound wires, NULL if there is none (output,
+///        caller owns and must release)
+/// @param outOpenWires Compound of the open free-bound wires, NULL if there is none (output,
+///        caller owns and must release)
+/// @return The modified source shape, or NULL on failure
+OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef  shape,
+                                    double        sewingTolerance,
+                                    double        closingTolerance,
+                                    int32_t*      outClosedWireCount,
+                                    int32_t*      outOpenWireCount,
+                                    OCCTShapeRef* outClosedWires,
+                                    OCCTShapeRef* outOpenWires);
 
 /// Split closed (periodic) edges in a shape
 /// @param shape Shape containing closed edges
@@ -532,7 +545,10 @@ typedef struct
 /// Result of wire ordering analysis
 typedef struct
 {
-  int32_t status;  ///< 0=closed, 1=open, 2=gaps, -1=failed
+  int32_t status;  ///< ShapeAnalysis_WireOrder::Status() verbatim: 0=unchanged (already in
+                   ///< sequence), 1=reordered (still direct), -1=reversed-but-connected (some
+                   ///< edges reversed, no gap), 3=shifted-still-connected (forward/reverse
+                   ///< rotation). All four are successful analyses; there is no "gaps" code.
   int32_t nbEdges; ///< Number of edges in the order
 } OCCTWireOrderResult;
 
@@ -773,6 +789,40 @@ OCCTShapeRef _Nullable OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape,
 /// @return Shape with all surfaces made direct, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeCustomDirectFaces(OCCTShapeRef shape);
 
+/// Which geometry kinds `ShapeCustom::BSplineRestriction` is allowed to convert.
+///
+/// Mirrors `ShapeCustom_RestrictionParameters`. Every field is a per-kind switch, and a kind whose
+/// switch is off is returned untouched with no diagnostic: with the class's own defaults, which
+/// the bridge used to pass unconditionally, a cylinder comes back with 0 BSpline faces and 3 still
+/// elementary (#1637). The defaults below are the class's own, read off the pinned kernel
+/// (`Scripts/repro/1637/transcript.txt`), so `occtDefaultBSplineRestrictionParameters()` reproduces
+/// the previous behaviour exactly.
+///
+/// `GMaxDegree` and `GMaxSeg` are deliberately absent. They are the class's two global caps and
+/// they are measured to have **no effect** next to the per-call `maxDegree` / `maxSegments`: on a
+/// torus, `GMaxDegree` of 3, 5 and 15 all produce degree 7, while the per-call `maxDegree` of 3, 5
+/// and 9 produces 3, 5 and 7. Exposing them would be exposing a no-op.
+typedef struct
+{
+  bool convertPlane;           // ShapeCustom_RestrictionParameters::ConvertPlane, default false
+  bool convertBezierSurf;      // ConvertBezierSurf, default false
+  bool convertRevolutionSurf;  // ConvertRevolutionSurf, default true
+  bool convertExtrusionSurf;   // ConvertExtrusionSurf, default true
+  bool convertOffsetSurf;      // ConvertOffsetSurf, default true
+  bool convertCylindricalSurf; // ConvertCylindricalSurf, default false
+  bool convertConicalSurf;     // ConvertConicalSurf, default false
+  bool convertToroidalSurf;    // ConvertToroidalSurf, default false
+  bool convertSphericalSurf;   // ConvertSphericalSurf, default false
+  bool segmentSurfaceMode;     // SegmentSurfaceMode, default true
+  bool convertCurve3d;         // ConvertCurve3d, default true
+  bool convertOffsetCurv3d;    // ConvertOffsetCurv3d, default true
+  bool convertCurve2d;         // ConvertCurve2d, default true
+  bool convertOffsetCurv2d;    // ConvertOffsetCurv2d, default true
+} OCCTBSplineRestrictionParameters;
+
+/// `ShapeCustom_RestrictionParameters`'s own defaults, as a value.
+OCCTBSplineRestrictionParameters occtDefaultBSplineRestrictionParameters(void);
+
 /// Simplify BSpline surfaces and curves by restricting degree and segment count.
 /// @param shape Shape to process
 /// @param tol3d 3D tolerance
@@ -783,16 +833,22 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectFaces(OCCTShapeRef shape);
 /// @param continuity2d 2D continuity (0=C0, 1=C1, 2=C2)
 /// @param degreePriority If true, prioritize degree reduction over segment count
 /// @param rational If true, allow rational BSplines
+/// @param parameters Which geometry kinds may be converted. NULL means
+///        `ShapeCustom_RestrictionParameters`'s own defaults, which convert surfaces of revolution,
+///        extrusion and offset and leave planes, cylinders, cones, spheres, tori and Bezier
+///        surfaces alone.
 /// @return Simplified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
-                                                         double       tol3d,
-                                                         double       tol2d,
-                                                         int32_t      maxDegree,
-                                                         int32_t      maxSegments,
-                                                         int32_t      continuity3d,
-                                                         int32_t      continuity2d,
-                                                         bool         degreePriority,
-                                                         bool         rational);
+OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(
+  OCCTShapeRef                            shape,
+  double                                  tol3d,
+  double                                  tol2d,
+  int32_t                                 maxDegree,
+  int32_t                                 maxSegments,
+  int32_t                                 continuity3d,
+  int32_t                                 continuity2d,
+  bool                                    degreePriority,
+  bool                                    rational,
+  const OCCTBSplineRestrictionParameters* parameters);
 
 /// Result of wire vertex analysis.
 typedef struct
@@ -877,14 +933,6 @@ OCCTShapeRef _Nullable OCCTShapeCustomDirectModification(OCCTShapeRef shape);
 /// @param sz Scale Z
 OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, double scaleFactor);
 
-// --- ShapeUpgrade_ClosedFaceDivide ---
-
-/// Divide closed faces (e.g., full cylinders) into multiple faces.
-/// @param shape The shape containing closed faces
-/// @param nbSplitPoints Number of splitting lines (result = nbSplitPoints+1 faces per closed face)
-/// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int32_t nbSplitPoints);
-
 // --- ShapeUpgrade_SplitSurfaceAngle ---
 
 /// Split surfaces of revolution so each segment covers no more than maxAngle degrees.
@@ -893,14 +941,6 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeClosedFaceDivide(OCCTShapeRef shape, int3
 /// @return The modified shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceAngle(OCCTShapeRef shape,
                                                          double       maxAngleDegrees);
-
-// --- ShapeUpgrade_SplitSurfaceArea ---
-
-/// Split faces into approximately nbParts equal-area parts.
-/// @param shape The shape to process
-/// @param nbParts Target number of parts per face
-/// @return The modified shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeSplitSurfaceArea(OCCTShapeRef shape, int32_t nbParts);
 
 // --- ShapeAnalysis_TransferParametersProj ---
 // Transfer a parameter from edge 3D curve to face 2D representation
@@ -942,6 +982,16 @@ void OCCTShapeBuildEdgeRemovePCurve(OCCTShapeRef edgeShape, OCCTShapeRef faceSha
 bool OCCTShapeBuildEdgeReassignPCurve(OCCTShapeRef edgeShape,
                                       OCCTShapeRef oldFaceShape,
                                       OCCTShapeRef newFaceShape);
+
+// --- BRep_Builder (edge parametrization flag) ---
+/// Explicitly set an edge's SameParameter flag (`BRep_Tool::SameParameter`'s writer). None of the
+/// `ShapeBuild_Edge` helpers above (`CopyPCurves`, `ReassignPCurve`, ...) touch this flag
+/// themselves, matching upstream: attaching or reassigning a pcurve by hand leaves the caller to
+/// decide whether the result is still verified same-parameter. Exists to build a regression
+/// fixture for #1461 (a deliberately mismatched 3D-curve/pcurve pair with a known, real
+/// deviation, used to prove `OCCTValidateEdge` reads the edge's real flag rather than a
+/// hardcoded one); no Swift wrapper, reachable from a Swift test via `import OCCTBridge`.
+void OCCTEdgeSetSameParameter(OCCTEdgeRef _Nonnull edge, bool sameParameter);
 
 // --- ShapeBuild_Vertex ---
 /// Combine two vertices into one at the average position.
@@ -1007,19 +1057,10 @@ bool OCCTShapeUpgradeEdgeDivideCompute(OCCTShapeRef edgeShape,
 /// @return true if the edge is closed and can be divided
 bool OCCTShapeUpgradeClosedEdgeDivideCompute(OCCTShapeRef edgeShape, OCCTShapeRef faceShape);
 
-// --- ShapeUpgrade_FixSmallCurves ---
-/// Fix small curves in a shape by removing degenerate edges.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallCurves(OCCTShapeRef shape, double tolerance);
-
-// --- ShapeUpgrade_FixSmallBezierCurves ---
-/// Fix small Bezier curves in a shape.
-/// @param shape Input shape
-/// @param tolerance Tolerance for small curve detection
-/// @return Fixed shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeFixSmallBezierCurves(OCCTShapeRef shape, double tolerance);
+// OCCTShapeUpgradeFixSmallCurves / OCCTShapeUpgradeFixSmallBezierCurves removed (#1491): both were
+// complete no-ops with no OCCT-supported standalone use. See the removal comment in
+// OCCTBridge_Healing_Upgrade.mm and the #1491 PR body. Use OCCTShapeFixSmallEdges
+// (Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:)) instead.
 
 // --- ShapeUpgrade_ConvertCurve3dToBezier ---
 /// Convert 3D curves in a shape to Bezier representation.
@@ -1053,7 +1094,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeConvertSurfaceToBezier(OCCTShapeRef shape
 typedef struct
 {
   bool   isDone;
-  bool   isWithinTolerance; // at default tolerance
+  bool   isWithinTolerance; // at the caller-supplied tolerance
   double maxDistance;
   double tolerance; // tolerance used for check
 } OCCTValidateEdgeResult;
@@ -1127,9 +1168,28 @@ int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef,
                          int* _Nullable outVSplitCount);
 
 // --- ShapeFix_ComposeShell ---
-/// Perform compose shell on a face with composite surface grid
-/// Returns the result shape (shell or compound of faces)
-OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, double precision);
+/// Split a face along the joint lines of a composite surface, and rebuild its wires.
+///
+/// The grid is the face's own surface tiled `uPatches` x `vPatches` over the face's UV box, as
+/// `Geom_RectangularTrimmedSurface` patches. `ShapeFix_ComposeShell` cuts along the joints between
+/// patches, so a 1 x 1 grid has nothing to cut along and one face comes in and one comes out,
+/// which is what this function did unconditionally until #1638. Measured on a planar face, a 3 x 2
+/// grid gives 6 faces, and on a cylinder's lateral face a 2 x 1 grid gives 2.
+///
+/// The patches are sub-ranges of the face's own surface, so `ShapeExtend_Natural` reproduces the
+/// face's own parametrisation exactly and the face's pcurves line up with the composite's global
+/// UV. That is why the parametrisation is not a parameter: the other two modes renumber the joints
+/// away from the pcurves the face already carries.
+///
+/// @param faceRef The face to split. Anything else is refused.
+/// @param precision Tolerance handed to ShapeFix_ComposeShell::Init
+/// @param uPatches Patches along U, at least 1
+/// @param vPatches Patches along V, at least 1
+/// @return The result shape (shell or compound of faces), or NULL on failure
+OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef,
+                                                double  precision,
+                                                int32_t uPatches,
+                                                int32_t vPatches);
 
 // MARK: - ShapeFix_Solid
 
@@ -1436,9 +1496,12 @@ bool OCCTEdgeCheckVertexTolerance(OCCTShapeRef _Nonnull edge,
                                   double* _Nonnull toler1,
                                   double* _Nonnull toler2);
 
-/// Check if two edges overlap. Returns true if overlapping.
+/// Check if two edges overlap within `tolerance`. Returns true if overlapping. `tolOverlap` is
+/// seeded with `tolerance` before the check (#1438: it used to be zeroed instead, which made the
+/// underlying comparison "distance >= 0" and disabled the check entirely).
 bool OCCTEdgeCheckOverlapping(OCCTShapeRef _Nonnull edge1,
                               OCCTShapeRef _Nonnull edge2,
+                              double tolerance,
                               double* _Nonnull tolOverlap);
 
 /// Get UV bounds of an edge on a face.
@@ -1458,7 +1521,9 @@ bool OCCTEdgeGetEndTangent2d(OCCTShapeRef _Nonnull edge,
                              double* _Nonnull tx,
                              double* _Nonnull ty);
 
-/// Check PCurve range on a face.
+/// Check whether [first, last] is a valid parameter range for the edge's pcurve on the face,
+/// against the pcurve's own underlying geometric domain (period, for a periodic pcurve; the basis
+/// curve's own first/last, for a Geom2d_TrimmedCurve), NOT the edge's current stored trim (#1438).
 bool OCCTEdgeCheckPCurveRange(OCCTShapeRef _Nonnull edge,
                               OCCTShapeRef _Nonnull face,
                               double first,

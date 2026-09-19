@@ -79,8 +79,10 @@ struct BRepToolsUtilitiesTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let edges = box.subShapes(ofType: .edge)
             if let edge = edges.first {
-                let ok = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-4)
-                let _ = ok
+                // A box edge's pcurves match its 3D curve exactly, so the measurement has nothing
+                // to move. Issue1639UpdateEdgeToleranceTests is where the bounds are exercised.
+                let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-4)
+                #expect(update?.changed == false)
             }
         }
     }

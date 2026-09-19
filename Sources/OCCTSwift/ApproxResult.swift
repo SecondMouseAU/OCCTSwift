@@ -17,3 +17,11 @@ public struct ApproxSurfaceResult {
     public let isDone: Bool
     public let hasResult: Bool
 }
+
+/// Result of 2D curve approximation as BSpline.
+public struct ApproxCurve2DResult {
+    public let curve: Curve2D?
+    public let maxError: Double
+    public let isDone: Bool
+    public let hasResult: Bool
+}

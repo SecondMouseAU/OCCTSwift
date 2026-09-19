@@ -146,10 +146,11 @@ edges get merged. Match it to the data's precision.
 if let bounds = shape.freeBounds(sewingTolerance: 1e-6) {
     print("open loops:", bounds.openCount, "closed loops:", bounds.closedCount)
     // there are gaps, try to close them:
-    if let (closed, fixedCount) = shape.fixedFreeBounds(sewingTolerance: 1e-6,
-                                                        closingTolerance: 1e-4) {
-        print("closed \(fixedCount) gap(s)")
-        _ = closed
+    if let repair = shape.fixedFreeBounds(sewingTolerance: 1e-6,
+                                          closingTolerance: 1e-4) {
+        // repair.shape is the modified source shape, faces and all; the connected free-bound
+        // wires are on repair.closedWires / repair.openWires.
+        print("closed loops:", repair.closedWireCount, "open loops:", repair.openWireCount)
     }
 }
 ```

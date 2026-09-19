@@ -46,4 +46,47 @@ struct ShapeProximityTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         #expect(!box.selfIntersects)
     }
+
+    // MARK: - #1550: indices address the same enumeration face(at:) does
+
+    /// `Issue614FaceOrientationTests.splitBoxCompound()` is a compound of two 10x10x10 halves of a
+    /// 20x10x10 box (split at x=10), sharing the single cut face between them: 11 distinct faces,
+    /// 12 raw `TopExp_Explorer` occurrences (#541's own repro shape, reused rather than rebuilt,
+    /// #1255).
+    ///
+    /// A probe box centred on the shared face (10, 5, 5) is geometrically close to nothing else on
+    /// the compound: every other face is at least 5 units away in Y or Z, or 10 in X. So whichever
+    /// raw occurrence `BRepExtrema_ShapeProximity` reports for that probe, `face(at:)` on the
+    /// reported index must resolve to a face centred at x=10. Before #1550, the shared face's
+    /// SECOND occurrence (the one `TopExp_Explorer` visits walking the second solid) reported its
+    /// raw, non-deduplicated position instead of the shared face's actual index in
+    /// `Shape.face(at:)`'s enumeration, naming an entirely different, distant face on that solid.
+    @Test("proximityFaces indices address the shared-face enumeration face(at:) does (#1550)")
+    func proximityFacesIndicesMatchFaceAt() {
+        guard let compound = Issue614FaceOrientationTests.splitBoxCompound(),
+            let probe = Shape.box(origin: SIMD3(9.5, 4.5, 4.5), width: 1, height: 1, depth: 1)
+        else {
+            Issue.record("could not build the shared-face fixture")
+            return
+        }
+
+        let pairs = compound.proximityFaces(with: probe, tolerance: 1.0)
+        #expect(!pairs.isEmpty, "the probe sits on the shared face; expected at least one pair")
+
+        for pair in pairs {
+            guard let face = compound.face(at: pair.face1Index),
+                let asShape = Shape.fromFace(face),
+                let box = asShape.boundingBox
+            else {
+                Issue.record(
+                    "face(at: \(pair.face1Index)) is nil for an index proximityFaces returned")
+                continue
+            }
+            let centreX = (box.min.x + box.max.x) / 2
+            #expect(
+                abs(centreX - 10.0) < 0.01,
+                "face(at: \(pair.face1Index)) is centred at x=\(centreX), not the shared face at x=10"
+            )
+        }
+    }
 }

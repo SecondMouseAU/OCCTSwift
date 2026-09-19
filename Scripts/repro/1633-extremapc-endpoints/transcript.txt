@@ -1,0 +1,84 @@
+--- trimmed line [0,10] +X (issue's own case), query (20, 0, 0)
+    Perform             IsDone=1 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=10.000000
+        [0] u=10.000000 d=10.000000 p=(10.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=20.000000 p=(0.0000, 0.0000, 0.0000)
+--- trimmed line [0,10] +X, foot inside, query (5, 3, 0)
+    Perform             IsDone=1 NbExt=1 min=3.000000
+        [0] u=5.000000 d=3.000000 p=(5.0000, 0.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=3 min=3.000000
+        [0] u=5.000000 d=3.000000 p=(5.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=5.830952 p=(0.0000, 0.0000, 0.0000)
+        [2] u=10.000000 d=5.830952 p=(10.0000, 0.0000, 0.0000)
+--- trimmed line [0,10] +X, past the START, query (-4, 3, 0)
+    Perform             IsDone=1 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=5.000000
+        [0] u=0.000000 d=5.000000 p=(0.0000, 0.0000, 0.0000)
+        [1] u=10.000000 d=14.317821 p=(10.0000, 0.0000, 0.0000)
+--- untrimmed line +X, query (20, 3, 0)
+    Perform             IsDone=1 NbExt=1 min=3.000000
+        [0] u=20.000000 d=3.000000 p=(20.0000, 0.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=1 min=3.000000
+        [0] u=20.000000 d=3.000000 p=(20.0000, 0.0000, 0.0000)
+--- full circle r=5, query (0, 10, 0)
+    Perform             IsDone=1 NbExt=2 min=5.000000
+        [0] u=1.570796 d=5.000000 p=(0.0000, 5.0000, 0.0000)
+        [1] u=4.712389 d=15.000000 p=(-0.0000, -5.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=2 min=5.000000
+        [0] u=1.570796 d=5.000000 p=(0.0000, 5.0000, 0.0000)
+        [1] u=4.712389 d=15.000000 p=(-0.0000, -5.0000, 0.0000)
+--- circle arc [0,pi] r=5, query (0, -6, 0)
+    Perform             IsDone=1 NbExt=1 min=11.000000
+        [0] u=1.570796 d=11.000000 p=(0.0000, 5.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=3 min=7.810250
+        [0] u=1.570796 d=11.000000 p=(0.0000, 5.0000, 0.0000)
+        [1] u=0.000000 d=7.810250 p=(5.0000, 0.0000, 0.0000)
+        [2] u=3.141593 d=7.810250 p=(-5.0000, 0.0000, 0.0000)
+--- ellipse arc [0,pi/2] 8x3, query (20, 0, 0)
+    Perform             IsDone=1 NbExt=1 min=12.000000
+        [0] u=0.000000 d=12.000000 p=(8.0000, 0.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=2 min=12.000000
+        [0] u=0.000000 d=12.000000 p=(8.0000, 0.0000, 0.0000)
+        [1] u=1.570796 d=20.223748 p=(0.0000, 3.0000, 0.0000)
+--- parabola arc [0,5] focal=2, query (40, 40, 0)
+    Perform             IsDone=1 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=50.840590
+        [0] u=5.000000 d=50.840590 p=(3.1250, 5.0000, 0.0000)
+        [1] u=0.000000 d=56.568542 p=(0.0000, 0.0000, 0.0000)
+--- hyperbola arc [0,1] 4x3, query (40, 0, 0)
+    Perform             IsDone=1 NbExt=1 min=36.000000
+        [0] u=0.000000 d=36.000000 p=(4.0000, 0.0000, 0.0000)
+    WithEndpoints       IsDone=1 NbExt=2 min=34.010905
+        [0] u=0.000000 d=36.000000 p=(4.0000, 0.0000, 0.0000)
+        [1] u=1.000000 d=34.010905 p=(6.1723, 3.5256, 0.0000)
+--- bezier 4 poles [0,1], query (30, 0, 0)
+    Perform             IsDone=0 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=20.000000
+        [0] u=1.000000 d=20.000000 p=(10.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=30.000000 p=(0.0000, 0.0000, 0.0000)
+--- bspline through 4 pts, query (30, 0, 0)
+    Perform             IsDone=0 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=20.000000
+        [0] u=1.000000 d=20.000000 p=(10.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=30.000000 p=(0.0000, 0.0000, 0.0000)
+--- offset of trimmed line [0,10], offset 2, query (20, 0, 0)
+    Perform             IsDone=0 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=10.198039
+        [0] u=10.000000 d=10.198039 p=(10.0000, -2.0000, 0.0000)
+        [1] u=0.000000 d=20.099751 p=(0.0000, -2.0000, 0.0000)
+--- untrimmed line +X, 3-arg ctor, bounds [0, 10], query (20, 0, 0)
+    Perform             IsDone=1 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=10.000000
+        [0] u=10.000000 d=10.000000 p=(10.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=20.000000 p=(0.0000, 0.0000, 0.0000)
+--- trimmed line [0,10], sub-range, bounds [0, 4], query (20, 0, 0)
+    Perform             IsDone=1 NbExt=0
+    WithEndpoints       IsDone=1 NbExt=2 min=16.000000
+        [0] u=4.000000 d=16.000000 p=(4.0000, 0.0000, 0.0000)
+        [1] u=0.000000 d=20.000000 p=(0.0000, 0.0000, 0.0000)
+--- full circle r=5, half range, bounds [0, 3.14159], query (0, -6, 0)
+    Perform             IsDone=1 NbExt=1 min=11.000000
+    WithEndpoints       IsDone=1 NbExt=3 min=7.810250
+        [0] u=1.570796 d=11.000000 p=(0.0000, 5.0000, 0.0000)
+        [1] u=0.000000 d=7.810250 p=(5.0000, 0.0000, 0.0000)
+        [2] u=3.141593 d=7.810250 p=(-5.0000, 0.0000, 0.0000)

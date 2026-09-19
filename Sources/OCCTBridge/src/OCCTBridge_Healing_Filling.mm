@@ -111,7 +111,6 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
-#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -122,7 +121,6 @@
 #include <ShapeExtend_CompositeSurface.hxx>
 #include <ShapeFix_ComposeShell.hxx>
 #include <ShapeUpgrade_ClosedFaceDivide.hxx>
-#include <ShapeUpgrade_ShapeDivideAngle.hxx>
 #include <ShapeUpgrade_ShapeDivideArea.hxx>
 #include <ShapeUpgrade_ShellSewing.hxx>
 #include <ShapeFix_FaceConnect.hxx>
@@ -652,8 +650,12 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
       filling.Add(edge, derived, order, isBound);
       return true;
     }
-    // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
-    // Standard_Failure here, which is OCCT's documented contract for this case.
+    // No pcurve anywhere: nothing to be tangent to. Downgrade to position-only continuity,
+    // per the degradation OCCTBridge_Healing.h, Shape+Surface.swift and FillConstraint.swift
+    // all document, rather than let the face-less overload throw Standard_Failure for lacking
+    // a curve to build the requested continuity from, failing the whole fill over one edge
+    // (#1503).
+    order = GeomAbs_C0;
   }
   filling.Add(edge, order, isBound);
   return true;

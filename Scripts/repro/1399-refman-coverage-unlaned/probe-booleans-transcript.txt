@@ -1,0 +1,48 @@
+#1399 booleans-family probe, OCCT 8.0.1 (pinned xcframework)
+
+=== Extrema_ExtElSS, the class behind ExtremaElSS.planeToPlane / planeToSphere / sphereToSphere
+  plane/plane, parallel      IsDone=1 IsParallel=1 NbExt=1 sqDist=25
+    Points(1, ...) not called: see the note in the source, run with --points
+  plane/plane, crossing      IsDone=1 IsParallel=0 NbExt=0
+  plane/sphere               ctor THREW 23Standard_NotImplemented
+  sphere/sphere              ctor THREW 23Standard_NotImplemented
+
+=== Contap_Line, the class behind ContapContourResult.pointCount / point / points
+  cylinder face, view direction (1,0,0): NbLines=2
+    line 1  TypeContour=Contap_Lin (0, .line)  NbVertex=2  NbPnts() THREW 20Standard_DomainError
+    line 2  TypeContour=Contap_Lin (0, .line)  NbVertex=2  NbPnts() THREW 20Standard_DomainError
+
+=== IntTools_CommonPrt from IntTools_EdgeFace, the struct behind Shape.CommonPart
+  the edge's own parameter range is (0, 12)
+  face 0, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 0, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=0
+  face 1, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 1, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=0
+  face 2, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 2, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=0
+  face 3, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 3, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=0
+  face 4, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 4, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=1
+      part 1  Type=VERTEX  Range1=(1, 1)  Ranges2().Length()=0  VertexParameter2()=0
+  face 5, bridge (no SetRange)     Range=(0, 0)  IsDone=1  CommonParts=0
+  face 5, SetRange(0, 12)          Range=(0, 12)  IsDone=1  CommonParts=1
+      part 1  Type=VERTEX  Range1=(11, 11)  Ranges2().Length()=0  VertexParameter2()=0
+  IntTools_EdgeFace::Perform feeds myRange straight to
+  IntTools_BeanFaceIntersector::SetBeanParameters, and IntTools_Range's default ctor is
+  (0, 0), so a bridge call that never calls SetRange searches a degenerate window.
+  IntTools_EdgeFace.cxx also never calls AppendRange2 or SetVertexParameter2, so every
+  param2Range Shape.edgeFaceIntersection reports is the default-constructed 0.
+
+=== ExtremaPC_Curve, the class behind Curve3D.extrema / minimumDistance
+  Perform()               IsDone=1 NbExt=0
+  PerformWithEndpoints()  IsDone=1 NbExt=2 MinSquareDistance=100 (min distance 10)
+  true minimum distance from (20,0,0) to the segment [0,10] on +X is 10
+
+=== FilletSurf_StatusDone vs FilletSurf_StatusType, the two enums the docs conflate
+  FilletSurf_StatusDone (FilletSurf_Builder::IsDone, the overall status):
+    IsOk=0 IsNotOk=1 IsPartial=2
+  FilletSurf_StatusType (Start/EndSectionStatus, the per-extremity status):
+    TwoExtremityOnEdge=0 OneExtremityOnEdge=1 NoExtremityOnEdge=2
+
+done

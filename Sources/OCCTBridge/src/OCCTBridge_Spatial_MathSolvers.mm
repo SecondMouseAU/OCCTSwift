@@ -210,6 +210,17 @@ static void fillBounds6(const Bnd_Box& box, double* bounds6)
   bounds6[5] = z1;
 }
 
+// #1645: the six math_* callback adapters below were emitted into all five
+// OCCTBridge_Spatial_*.mm split files by #1380's shared preamble, and instantiated only here.
+// The four dead copies are gone; the anonymous namespace is what makes a future re-duplication
+// harmless, since internal linkage is the same reasoning that already makes the `static`
+// helpers above safe to repeat per TU (see Scripts/repro/396-bridge-mm-split/README.md). A
+// file-scope `class` has external linkage, which is why these six, unlike those helpers, were
+// one edit away from a silent ODR violation: #1418 is the same shape with the copies already
+// diverged.
+namespace
+{
+
 // C++ adapter: wraps a C callback into math_FunctionWithDerivative
 class OCCTMathFuncAdapter : public math_FunctionWithDerivative
 {
@@ -445,6 +456,8 @@ public:
     return ok;
   }
 };
+
+} // namespace
 
 struct OCCTIntfTool
 {
@@ -2013,19 +2026,23 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
 }
 
 int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
-                            const double* _Nonnull subdiagonal,
+                            const double* _Nullable offDiagonal,
                             int32_t n,
                             double* _Nonnull eigenvalues)
 {
+  if (n < 1 || (n > 1 && !offDiagonal))
+    return 0;
   try
   {
     NCollection_Array1<double> diag(1, n);
     NCollection_Array1<double> subdiag(1, n);
+    // Slot 1 is the one math_EigenValuesSearcher discards, so the caller's n - 1 real
+    // off-diagonal entries go in 2..n and this fills the dead slot itself (#1643).
+    subdiag(1) = 0.0;
     for (int i = 0; i < n; i++)
-    {
-      diag(i + 1)    = diagonal[i];
-      subdiag(i + 1) = subdiagonal[i];
-    }
+      diag(i + 1) = diagonal[i];
+    for (int i = 1; i < n; i++)
+      subdiag(i + 1) = offDiagonal[i - 1];
     math_EigenValuesSearcher evs(diag, subdiag);
     if (!evs.IsDone())
       return 0;
@@ -2041,20 +2058,23 @@ int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
 }
 
 int32_t OCCTMathEigenValuesAndVectors(const double* _Nonnull diagonal,
-                                      const double* _Nonnull subdiagonal,
+                                      const double* _Nullable offDiagonal,
                                       int32_t n,
                                       double* _Nonnull eigenvalues,
                                       double* _Nonnull eigenvectors)
 {
+  if (n < 1 || (n > 1 && !offDiagonal))
+    return 0;
   try
   {
     NCollection_Array1<double> diag(1, n);
     NCollection_Array1<double> subdiag(1, n);
+    // Same dead-slot-first convention as OCCTMathEigenValues (#1643).
+    subdiag(1) = 0.0;
     for (int i = 0; i < n; i++)
-    {
-      diag(i + 1)    = diagonal[i];
-      subdiag(i + 1) = subdiagonal[i];
-    }
+      diag(i + 1) = diagonal[i];
+    for (int i = 1; i < n; i++)
+      subdiag(i + 1) = offDiagonal[i - 1];
     math_EigenValuesSearcher evs(diag, subdiag);
     if (!evs.IsDone())
       return 0;

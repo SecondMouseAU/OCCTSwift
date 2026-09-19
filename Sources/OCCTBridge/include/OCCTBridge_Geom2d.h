@@ -259,11 +259,34 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx,
                                               double endParam);
 
 // Conversion Extras
+/// Approximate a curve as a BSpline. Returns the fit whenever Geom2dConvert_ApproxCurve produced
+/// one (HasResult), which per OCCT includes a best-effort fit outside `tolerance` -- use
+/// OCCTGeomConvertApproxCurve2D for the same fit plus its maxError/isDone. Both share one
+/// implementation, matching the #491 pattern already used for Curve3D/Surface (#1474).
 OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve,
                                       double         tolerance,
                                       int32_t        continuity,
                                       int32_t        maxSegments,
                                       int32_t        maxDegree);
+
+/// Result of Geom2dConvert_ApproxCurve approximation: the fitted curve plus OCCT's own diagnostics.
+typedef struct
+{
+  OCCTCurve2DRef _Nullable curve; // result BSpline (as Curve2D)
+  double maxError;
+  bool   isDone;
+  bool   hasResult;
+} OCCTApproxCurve2DResult;
+
+/// The same approximation OCCTCurve2DApproximate performs (one shared implementation, #1474),
+/// reporting the fit's maxError and completion flags. `curve` is populated exactly when
+/// `hasResult`; `isDone` is whether the fit reached `tolerance`.
+OCCTApproxCurve2DResult OCCTGeomConvertApproxCurve2D(OCCTCurve2DRef _Nonnull curve,
+                                                     double  tolerance,
+                                                     int32_t continuity,
+                                                     int32_t maxSegments,
+                                                     int32_t maxDegree);
+
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in
 // OCCTBridge_Internal.h. Returns the TRUE split count even when writing was truncated by `max`, so
@@ -398,6 +421,14 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef       curve,
                            int32_t              max);
 
 // Hatching
+/// Hatch a region bounded by `boundaries` with parallel lines.
+/// @param outXY Output buffer: pairs of (x1,y1,x2,y2) per segment (4 doubles each), sized for
+///   `maxSegments * 4` doubles by the caller.
+/// @param maxSegments Maximum number of output segments (NOT a point count; matches OCCTHatchLines'
+///   own `maxSegments`/`outSegments` convention -- #1420 found the two had drifted, `maxSegments`
+///   here used to be named `maxPoints` and be read as a point count internally, silently
+///   truncating output at half the caller's real buffer capacity).
+/// @return Number of segments written.
 int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
                          int32_t               boundaryCount,
                          double                originX,
@@ -407,7 +438,7 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
                          double                spacing,
                          double                tolerance,
                          double*               outXY,
-                         int32_t               maxPoints);
+                         int32_t               maxSegments);
 
 // Bisector
 OCCTCurve2DRef OCCTCurve2DBisectorCC(OCCTCurve2DRef c1,
@@ -588,9 +619,15 @@ OCCTCurve2DRef _Nullable OCCTCurve2DMakeLineParallel(double px,
 /// Check if a 2D curve's control points are collinear (i.e., nearly linear).
 /// @param curve2D The 2D curve to check
 /// @param tolerance Maximum deviation to consider as linear
+/// @param isLinear Output: whether the curve is linear within tolerance
 /// @param deviation Output: actual maximum deviation from line
-/// @return true if the curve is linear within tolerance
-bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* deviation);
+/// @return true if curve2D is a Geom2d_BSplineCurve and the check was performed (isLinear and
+///         deviation are then meaningful); false if curve2D is not a BSpline curve, in which
+///         case isLinear and deviation are left untouched
+bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D,
+                         double         tolerance,
+                         bool*          isLinear,
+                         double*        deviation);
 
 /// Convert a nearly-linear 2D curve to a Geom2d_Line.
 /// @param curve2D The 2D curve to convert
@@ -658,7 +695,11 @@ typedef struct
   /// For line: (px, py) is a point on it, (dx, dy) is its direction
   /// For circle: (px, py) is center, radius is radius
   /// For point: (px, py) is the point, others are 0
-  /// For conics: (px, py) is focus/center, radius is semi-axis
+  /// For an ellipse or a hyperbola: (px, py) is the CENTER (gp_Elips2d/gp_Hypr2d::Location),
+  ///   (dx, dy) is (MajorRadius, MinorRadius), radius is 0
+  /// For a parabola: (px, py) is the VERTEX (gp_Parab2d::Location), dx is the focal distance,
+  ///   dy and radius are 0
+  /// No conic reports a focus, and `radius` carries a value for the circle case only.
   double px, py, dx, dy, radius;
 } OCCTBisecSolution;
 
@@ -2211,8 +2252,12 @@ OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, doubl
 // MARK: - gp_GTrsf2d (v0.116.0)
 
 /// Create a 2D affinity transformation about an axis with given ratio.
-/// Returns the 2x2 matrix (row-major) and translation vector.
-void OCCTGTrsf2dAffinity(double axPx,
+///
+/// Writes the 2x2 matrix (row-major) and translation vector and returns true. Returns false,
+/// leaving the outputs untouched, when the axis direction has no length: gp_Dir2d raises
+/// Standard_ConstructionError on a zero-norm vector, and an exception reaching Swift is a
+/// SIGABRT rather than an error (#1407).
+bool OCCTGTrsf2dAffinity(double axPx,
                          double axPy,
                          double axDx,
                          double axDy,
@@ -2524,17 +2569,26 @@ bool OCCTCurve2DTransform(OCCTCurve2DRef _Nonnull curve,
                           double  p4);
 
 // --- Geom2dEval 2D Curve Evaluators ---
+//
+// Every one of these returns whether its out-parameters hold a measurement (#1646). `false` means
+// the call was refused: the arguments were rejected by the OCCT constructor (amplitude 0, radius 0,
+// growth rate 0, all of which raise), or the evaluation produced a non-finite value, which a
+// non-finite argument does silently because OCCT's `<= 0` validation is false for NaN. On `false`
+// every output is set to 0, so an ignoring caller reads a deterministic value; 0 is a refusal there
+// and never an answer, since the origin is a point these curves legitimately return.
 
 /// Evaluate Archimedean spiral D0 at parameter u. Returns 2D point.
 /// C(t) = O + (a + b*t)*cos(t)*XDir + (a + b*t)*sin(t)*YDir
-void OCCTGeom2dEvalArchimedeanSpiralD0(double initialRadius,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalArchimedeanSpiralD0(double initialRadius,
                                        double growthRate,
                                        double u,
                                        double* _Nonnull px,
                                        double* _Nonnull py);
 
 /// Evaluate Archimedean spiral D1: point + first derivative.
-void OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
                                        double growthRate,
                                        double u,
                                        double* _Nonnull px,
@@ -2544,14 +2598,16 @@ void OCCTGeom2dEvalArchimedeanSpiralD1(double initialRadius,
 
 /// Evaluate logarithmic spiral D0 at parameter u.
 /// C(t) = O + a*exp(b*t)*cos(t)*XDir + a*exp(b*t)*sin(t)*YDir
-void OCCTGeom2dEvalLogSpiralD0(double scale,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalLogSpiralD0(double scale,
                                double growthExponent,
                                double u,
                                double* _Nonnull px,
                                double* _Nonnull py);
 
 /// Evaluate logarithmic spiral D1: point + derivative.
-void OCCTGeom2dEvalLogSpiralD1(double scale,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalLogSpiralD1(double scale,
                                double growthExponent,
                                double u,
                                double* _Nonnull px,
@@ -2561,13 +2617,15 @@ void OCCTGeom2dEvalLogSpiralD1(double scale,
 
 /// Evaluate circle involute D0 at parameter u.
 /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
-void OCCTGeom2dEvalCircleInvoluteD0(double radius,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalCircleInvoluteD0(double radius,
                                     double u,
                                     double* _Nonnull px,
                                     double* _Nonnull py);
 
 /// Evaluate circle involute D1: point + derivative.
-void OCCTGeom2dEvalCircleInvoluteD1(double radius,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalCircleInvoluteD1(double radius,
                                     double u,
                                     double* _Nonnull px,
                                     double* _Nonnull py,
@@ -2585,7 +2643,9 @@ OCCTCurve2DRef _Nullable OCCTGeom2dEvalCircleInvoluteCurveCreate(double originX,
 
 /// Evaluate circle involute D0 at parameter u with caller-supplied placement.
 /// C(t) = O + R*(cos(t) + t*sin(t))*XDir + R*(sin(t) - t*cos(t))*YDir
-void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused,
+///         which includes a radius <= 0 and a direction of no length.
+bool OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
                                                  double originY,
                                                  double dirX,
                                                  double dirY,
@@ -2595,7 +2655,9 @@ void OCCTGeom2dEvalCircleInvoluteD0WithPlacement(double originX,
                                                  double* _Nonnull py);
 
 /// Evaluate circle involute D1 at parameter u with caller-supplied placement: point + derivative.
-void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
+/// @return true when all four outputs hold a finite result, false when the call was refused,
+///         which includes a radius <= 0 and a direction of no length.
+bool OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
                                                  double originY,
                                                  double dirX,
                                                  double dirY,
@@ -2608,7 +2670,8 @@ void OCCTGeom2dEvalCircleInvoluteD1WithPlacement(double originX,
 
 /// Evaluate 2D sine wave D0 at parameter u.
 /// C(t) = O + t*XDir + A*sin(omega*t + phi)*YDir
-void OCCTGeom2dEvalSineWaveD0(double amplitude,
+/// @return true when (px, py) hold a finite evaluated point, false when the call was refused.
+bool OCCTGeom2dEvalSineWaveD0(double amplitude,
                               double omega,
                               double phase,
                               double u,
@@ -2616,7 +2679,8 @@ void OCCTGeom2dEvalSineWaveD0(double amplitude,
                               double* _Nonnull py);
 
 /// Evaluate 2D sine wave D1: point + derivative.
-void OCCTGeom2dEvalSineWaveD1(double amplitude,
+/// @return true when all four outputs hold a finite result, false when the call was refused.
+bool OCCTGeom2dEvalSineWaveD1(double amplitude,
                               double omega,
                               double phase,
                               double u,

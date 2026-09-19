@@ -28,7 +28,7 @@ public func edgeWires(_ edgeIndex: Int) -> [Int]
 
 - **Parameters:** `edgeIndex`, edge definition index.
 - **Returns:** array of wire definition indices; empty if the edge belongs to no wires.
-- **OCCT:** `BRepGraph_EditorView` (graph topo layer, wire-membership reverse lookup).
+- **OCCT:** `BRepGraph_WiresOfEdge` (parent-wire iteration over a `BRepGraph_EdgeId`).
 - **Example:**
   ```swift
   let graph = BRepGraph(shape: solid)
@@ -48,7 +48,7 @@ public func edgeCoEdges(_ edgeIndex: Int) -> [Int]
 
 - **Parameters:** `edgeIndex`, edge definition index.
 - **Returns:** array of coedge definition indices; empty if none.
-- **OCCT:** `BRepGraph_EditorView` (coedge reverse lookup via edge topo layer).
+- **OCCT:** `BRepGraph::Topo().Edges().CoEdges(BRepGraph_EdgeId)`.
 - **Example:**
   ```swift
   let coedges = graph.edgeCoEdges(0)
@@ -88,7 +88,7 @@ public func faceShellCount(_ faceIndex: Int) -> Int
 ```
 
 - **Parameters:** `faceIndex`, face definition index.
-- **OCCT:** `BRepGraph_EditorView` (face-shell parent reverse lookup).
+- **OCCT:** `BRepGraph::Topo().Faces().Relations(BRepGraph_FaceId)`, counted through `BRepGraph_ShellsOfFace`.
 
 ---
 
@@ -102,7 +102,7 @@ public func faceShells(_ faceIndex: Int) -> [Int]
 
 - **Parameters:** `faceIndex`, face definition index.
 - **Returns:** array of shell definition indices; empty if the face belongs to no shells.
-- **OCCT:** `BRepGraph_EditorView` (face-shell reverse lookup).
+- **OCCT:** `BRepGraph::Topo().Faces().Relations(BRepGraph_FaceId)`, iterated with `BRepGraph_ShellsOfFace`.
 - **Example:**
   ```swift
   let shells = graph.faceShells(0)
@@ -120,7 +120,7 @@ public func faceCompoundCount(_ faceIndex: Int) -> Int
 ```
 
 - **Parameters:** `faceIndex`, face definition index.
-- **OCCT:** `BRepGraph_EditorView` (face-compound parent reverse lookup).
+- **OCCT:** `BRepGraph::Topo().Gen().CompoundRefIds(BRepGraph_NodeId)`, counted through `BRepGraph_CompoundsOfFace`.
 
 ---
 
@@ -135,7 +135,7 @@ public func shellCompoundCount(_ shellIndex: Int) -> Int
 ```
 
 - **Parameters:** `shellIndex`, shell definition index.
-- **OCCT:** `BRepGraph_EditorView` (shell-compound parent reverse lookup).
+- **OCCT:** `BRepGraph::Topo().Gen().CompoundRefIds(BRepGraph_NodeId)`, counted through `BRepGraph_CompoundsOfShell`.
 
 ---
 
@@ -148,7 +148,7 @@ public func isShellClosed(_ shellIndex: Int) -> Bool
 ```
 
 - **Parameters:** `shellIndex`, shell definition index.
-- **OCCT:** `BRepGraph_EditorView` (shell closure derived from face-boundary edge incidence).
+- **OCCT:** `BRepGraph_Tool::Shell::IsClosed(BRepGraph, BRepGraph_ShellId)`.
 - **Note:** In OCCT 8.0.0p1 this is a derived property, not a stored flag.
 - **Example:**
   ```swift
@@ -168,7 +168,7 @@ public func solidCompoundCount(_ solidIndex: Int) -> Int
 ```
 
 - **Parameters:** `solidIndex`, solid definition index.
-- **OCCT:** `BRepGraph_EditorView` (solid-compound parent reverse lookup).
+- **OCCT:** `BRepGraph::Topo().Gen().CompoundRefIds(BRepGraph_NodeId)`, counted through `BRepGraph_CompoundsOfSolid`.
 
 ---
 
@@ -202,7 +202,7 @@ public func addVertex(x: Double, y: Double, z: Double, tolerance: Double) -> Int
 
 - **Parameters:** `x`, `y`, `z`, 3D position; `tolerance`, vertex tolerance.
 - **Returns:** vertex definition index, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Vertices().Add(gp_Pnt, tolerance)`.
+- **OCCT:** `BRepGraph::Editor().Vertices().Add(gp_Pnt, tolerance)`.
 - **Example:**
   ```swift
   if let vi = graph.addVertex(x: 0, y: 0, z: 0, tolerance: 1e-7) {
@@ -221,7 +221,7 @@ public func addShell() -> Int?
 ```
 
 - **Returns:** shell definition index, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Shells().Add()`.
+- **OCCT:** `BRepGraph::Editor().Shells().Add()`.
 - **Example:**
   ```swift
   if let si = graph.addShell() {
@@ -240,7 +240,7 @@ public func addSolid() -> Int?
 ```
 
 - **Returns:** solid definition index, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Solids().Add()`.
+- **OCCT:** `BRepGraph::Editor().Solids().Add()`.
 
 ---
 
@@ -254,7 +254,7 @@ public func addFaceToShell(shellIndex: Int, faceIndex: Int, orientation: Int = 0
 
 - **Parameters:** `shellIndex`, shell definition index; `faceIndex`, face definition index; `orientation`, `TopAbs_Orientation` integer (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
 - **Returns:** face reference index, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)`.
 - **Example:**
   ```swift
   if let si = graph.addShell(), let fi = graph.addFaceToShell(shellIndex: si, faceIndex: 0) {
@@ -274,7 +274,7 @@ public func addShellToSolid(solidIndex: Int, shellIndex: Int, orientation: Int =
 
 - **Parameters:** `solidIndex`, solid definition index; `shellIndex`, shell definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** shell reference index, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)`.
 
 ---
 
@@ -288,7 +288,7 @@ public func addCompound(children: [(kind: NodeKind, index: Int)]) -> Int?
 
 - **Parameters:** `children`, array of `(kind, index)` pairs identifying each child node.
 - **Returns:** compound definition index, or `nil` if `children` is empty or on failure.
-- **OCCT:** `BRepGraph_EditorView::Compounds().Add(NCollection_Array1<BRepGraph_NodeId>)`.
+- **OCCT:** `BRepGraph::Editor().Compounds().Add(NCollection_Array1<BRepGraph_NodeId>)`.
 - **Example:**
   ```swift
   if let ci = graph.addCompound(children: [(.solid, 0), (.solid, 1)]) {
@@ -308,7 +308,7 @@ public func addCompSolid(solidIndices: [Int]) -> Int?
 
 - **Parameters:** `solidIndices`, solid definition indices to collect into the comp-solid.
 - **Returns:** comp-solid definition index, or `nil` if `solidIndices` is empty or on failure.
-- **OCCT:** `BRepGraph_EditorView::CompSolids().Add(NCollection_Array1<BRepGraph_SolidId>)`.
+- **OCCT:** `BRepGraph::Editor().CompSolids().Add(NCollection_Array1<BRepGraph_SolidId>)`.
 
 ---
 
@@ -323,7 +323,7 @@ public func removeNode(nodeKind: NodeKind, nodeIndex: Int)
 ```
 
 - **Parameters:** `nodeKind`, node kind; `nodeIndex`, definition index.
-- **OCCT:** `BRepGraph_EditorView::Gen().RemoveNode(BRepGraph_NodeId)`.
+- **OCCT:** `BRepGraph::Editor().Gen().RemoveNode(BRepGraph_NodeId)`.
 - **Example:**
   ```swift
   graph.removeNode(nodeKind: .face, nodeIndex: 3)
@@ -340,7 +340,7 @@ public func removeSubgraph(nodeKind: NodeKind, nodeIndex: Int)
 ```
 
 - **Parameters:** `nodeKind`, root node kind; `nodeIndex`, root definition index.
-- **OCCT:** `BRepGraph_EditorView::Gen().RemoveSubgraph(BRepGraph_NodeId)`.
+- **OCCT:** `BRepGraph::Editor().Gen().RemoveSubgraph(BRepGraph_NodeId)`.
 - **Note:** Use this instead of iterating descendants manually when pruning a subtree.
 - **Example:**
   ```swift
@@ -397,7 +397,7 @@ applied immediately, making bulk mutations significantly faster.
 public func beginDeferredInvalidation()
 ```
 
-- **OCCT:** `BRepGraph_EditorView::BeginDeferredInvalidation()`.
+- **OCCT:** `BRepGraph::Editor().BeginDeferredInvalidation()`.
 - **Note:** Always pair with `endDeferredInvalidation()`.
 
 ---
@@ -410,7 +410,7 @@ Exits deferred invalidation mode and flushes all accumulated reverse-index chang
 public func endDeferredInvalidation()
 ```
 
-- **OCCT:** `BRepGraph_EditorView::EndDeferredInvalidation()`.
+- **OCCT:** `BRepGraph::Editor().EndDeferredInvalidation()`.
 - **Example:**
   ```swift
   graph.beginDeferredInvalidation()
@@ -428,7 +428,7 @@ Whether deferred invalidation mode is currently active.
 public var isDeferredMode: Bool { get }
 ```
 
-- **OCCT:** `BRepGraph_EditorView::IsDeferredMode()`.
+- **OCCT:** `BRepGraph::Editor().IsDeferredMode()`.
 
 ---
 
@@ -440,7 +440,7 @@ Validates reverse-index consistency after a batch mutation; call after `endDefer
 public func commitMutation()
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CommitMutation()`.
+- **OCCT:** `BRepGraph::Editor().CommitMutation()`.
 
 ---
 
@@ -456,7 +456,7 @@ public func splitEdge(edgeIndex: Int, vertexIndex: Int, param: Double) -> (subA:
 
 - **Parameters:** `edgeIndex`, edge definition index to split; `vertexIndex`, vertex definition index at the split point; `param`, parameter on the 3D curve at the split point.
 - **Returns:** `(subA, subB)` edge definition indices, or `nil` if the split fails.
-- **OCCT:** `BRepGraph_EditorView::Edges().Split(BRepGraph_EdgeId, BRepGraph_VertexId, double, subA, subB)`.
+- **OCCT:** `BRepGraph::Editor().Edges().Split(BRepGraph_EdgeId, BRepGraph_VertexId, double, subA, subB)`.
 - **Example:**
   ```swift
   if let (a, b) = graph.splitEdge(edgeIndex: 0, vertexIndex: 5, param: 0.5) {
@@ -477,7 +477,7 @@ public func replaceEdgeInWire(wireIndex: Int, oldEdgeIndex: Int, newEdgeIndex: I
 ```
 
 - **Parameters:** `wireIndex`, wire definition index; `oldEdgeIndex`, edge to replace; `newEdgeIndex`, replacement edge; `reversed`, whether to reverse the orientation of the replacement edge.
-- **OCCT:** `BRepGraph_EditorView::Wires().ReplaceEdge(BRepGraph_WireId, BRepGraph_EdgeId, BRepGraph_EdgeId, bool)`.
+- **OCCT:** `BRepGraph::Editor().Wires().ReplaceEdge(BRepGraph_WireId, BRepGraph_EdgeId, BRepGraph_EdgeId, bool)`.
 - **Example:**
   ```swift
   graph.replaceEdgeInWire(wireIndex: 0, oldEdgeIndex: 2, newEdgeIndex: 7)
@@ -498,7 +498,7 @@ public func removeRef(refKind: RefKind, refIndex: Int) -> Bool
 
 - **Parameters:** `refKind`, reference kind (see `RefKind` enum); `refIndex`, reference index.
 - **Returns:** `true` if the reference transitioned from active to removed.
-- **OCCT:** `BRepGraph_EditorView::Gen().RemoveRef(BRepGraph_RefId)`.
+- **OCCT:** `BRepGraph::Editor().Gen().RemoveRef(BRepGraph_RefId)`.
 - **Example:**
   ```swift
   let removed = graph.removeRef(refKind: .face, refIndex: 4)
@@ -550,7 +550,7 @@ public func validateMutation() -> Bool
 ```
 
 - **Returns:** `true` if no consistency issues were found.
-- **OCCT:** `BRepGraph_EditorView::ValidateMutationBoundary()`.
+- **OCCT:** `BRepGraph::Editor().ValidateMutationBoundary()`.
 - **Example:**
   ```swift
   guard graph.validateMutation() else { fatalError("graph mutation left inconsistent state") }
@@ -560,7 +560,7 @@ public func validateMutation() -> Bool
 
 ## EditorView Field Setters
 
-These setters write directly into definition fields via `BRepGraph_EditorView`. Several flags
+These setters write directly into definition fields via `BRepGraph::Editor()`. Several flags
 became derived properties in OCCT 8.0.0p1 and are accepted by the API but are **no-ops** (noted
 per entry).
 
@@ -573,7 +573,7 @@ public func setVertexPoint(_ vertexIndex: Int, x: Double, y: Double, z: Double)
 ```
 
 - **Parameters:** `vertexIndex`, vertex definition index; `x`, `y`, `z`, new position.
-- **OCCT:** `BRepGraph_EditorView::Vertices().SetPoint(BRepGraph_VertexId, gp_Pnt)`.
+- **OCCT:** `BRepGraph::Editor().Vertices().SetPoint(BRepGraph_VertexId, gp_Pnt)`.
 
 ---
 
@@ -586,7 +586,7 @@ public func setVertexTolerance(_ vertexIndex: Int, tolerance: Double)
 ```
 
 - **Parameters:** `vertexIndex`, vertex definition index; `tolerance`, new tolerance value.
-- **OCCT:** `BRepGraph_EditorView::Vertices().SetTolerance(BRepGraph_VertexId, double)`.
+- **OCCT:** `BRepGraph::Editor().Vertices().SetTolerance(BRepGraph_VertexId, double)`.
 
 ---
 
@@ -599,7 +599,7 @@ public func setEdgeTolerance(_ edgeIndex: Int, tolerance: Double)
 ```
 
 - **Parameters:** `edgeIndex`, edge definition index; `tolerance`, new tolerance value.
-- **OCCT:** `BRepGraph_EditorView::Edges().SetTolerance(BRepGraph_EdgeId, double)`.
+- **OCCT:** `BRepGraph::Editor().Edges().SetTolerance(BRepGraph_EdgeId, double)`.
 
 ---
 
@@ -612,7 +612,7 @@ public func setEdgeParamRange(_ edgeIndex: Int, first: Double, last: Double)
 ```
 
 - **Parameters:** `edgeIndex`, edge definition index; `first`, `last`, parametric bounds.
-- **OCCT:** `BRepGraph_EditorView::Edges().SetParamRange(BRepGraph_EdgeId, double, double)`.
+- **OCCT:** `BRepGraph::Editor().Edges().SetParamRange(BRepGraph_EdgeId, double, double)`.
 
 ---
 
@@ -677,7 +677,7 @@ public func setCoEdgeParamRange(_ coedgeIndex: Int, first: Double, last: Double)
 ```
 
 - **Parameters:** `coedgeIndex`, coedge definition index; `first`, `last`, parametric bounds on the pcurve.
-- **OCCT:** `BRepGraph_EditorView::CoEdges().SetParamRange(BRepGraph_CoEdgeId, double, double)`.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetParamRange(BRepGraph_CoEdgeId, double, double)`.
 
 ---
 
@@ -690,7 +690,7 @@ public func setCoEdgeOrientation(_ coedgeIndex: Int, orientation: Int)
 ```
 
 - **Parameters:** `coedgeIndex`, coedge definition index; `orientation`, `TopAbs_Orientation` integer (0=Forward, 1=Reversed, 2=Internal, 3=External).
-- **OCCT:** `BRepGraph_EditorView::CoEdges().SetOrientation(BRepGraph_CoEdgeId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetOrientation(BRepGraph_CoEdgeId, TopAbs_Orientation)`.
 
 ---
 
@@ -716,7 +716,7 @@ public func setFaceTolerance(_ faceIndex: Int, tolerance: Double)
 ```
 
 - **Parameters:** `faceIndex`, face definition index; `tolerance`, new tolerance value.
-- **OCCT:** `BRepGraph_EditorView::Faces().SetTolerance(BRepGraph_FaceId, double)`.
+- **OCCT:** `BRepGraph::Editor().Faces().SetTolerance(BRepGraph_FaceId, double)`.
 
 ---
 
@@ -758,7 +758,7 @@ public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientatio
 
 - **Parameters:** `edgeIndex`, edge definition index; `vertexIndex`, vertex definition index; `orientation`, accepted for source compatibility but **ignored** by the supplement layer.
 - **Returns:** layer-local attachment UID, or `nil` on failure. Store this to remove the attachment later via `faceRemoveVertex(_:attachmentUID:)`.
-- **OCCT:** `BRepGraph_EditorView::Supplement().AttachToEdge(BRepGraph_EdgeId, TopoDS_Vertex, AttachmentKind::EdgeInternalVertex)` via `BRepGraph_LayerTopoSupplement`.
+- **OCCT:** `BRepGraph::Editor().Supplement().AttachToEdge(BRepGraph_EdgeId, TopoDS_Vertex, AttachmentKind::EdgeInternalVertex)` via `BRepGraph_LayerTopoSupplement`.
 - **Note:** Internal-edge vertices are a supplemental, runtime concept in OCCT 8.0.0p1, a clean shape has none until one is added here.
 - **Example:**
   ```swift
@@ -779,7 +779,7 @@ public func faceAddVertex(_ faceIndex: Int, vertexIndex: Int, orientation: Int =
 
 - **Parameters:** `faceIndex`, face definition index; `vertexIndex`, vertex definition index; `orientation`, accepted for source compatibility but **ignored** by the supplement layer.
 - **Returns:** layer-local attachment UID, or `nil` on failure. Store this UID to pass to `faceRemoveVertex(_:attachmentUID:)`.
-- **OCCT:** `BRepGraph_EditorView::Supplement().AttachToFace(BRepGraph_FaceId, TopoDS_Vertex, AttachmentKind::FaceDirectVertex)` via `BRepGraph_LayerTopoSupplement`.
+- **OCCT:** `BRepGraph::Editor().Supplement().AttachToFace(BRepGraph_FaceId, TopoDS_Vertex, AttachmentKind::FaceDirectVertex)` via `BRepGraph_LayerTopoSupplement`.
 
 ---
 
@@ -793,7 +793,7 @@ public func shellAddChild(_ shellIndex: Int, childKind: Int, childIndex: Int, or
 
 - **Parameters:** `shellIndex`, shell definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)` (OCCT 8.0.0p1: shells own only faces; non-face kinds return `nil`).
+- **OCCT:** `BRepGraph::Editor().Shells().Append(BRepGraph_ShellId, BRepGraph_FaceId, TopAbs_Orientation)` (OCCT 8.0.0p1: shells own only faces; non-face kinds return `nil`).
 - **Note:** In OCCT 8.0.0p1 shells own only face children, passing a non-face kind returns `nil`.
 
 ---
@@ -808,7 +808,7 @@ public func solidAddChild(_ solidIndex: Int, childKind: Int, childIndex: Int, or
 
 - **Parameters:** `solidIndex`, solid definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)` (OCCT 8.0.0p1: solids own only shells; non-shell kinds return `nil`).
+- **OCCT:** `BRepGraph::Editor().Solids().Append(BRepGraph_SolidId, BRepGraph_ShellId, TopAbs_Orientation)` (OCCT 8.0.0p1: solids own only shells; non-shell kinds return `nil`).
 
 ---
 
@@ -822,7 +822,7 @@ public func compoundAddChild(_ compoundIndex: Int, childKind: Int, childIndex: I
 
 - **Parameters:** `compoundIndex`, compound definition index; `childKind`, raw `NodeKind` integer; `childIndex`, child definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** child-ref id, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Compounds().Append(BRepGraph_CompoundId, BRepGraph_NodeId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().Compounds().Append(BRepGraph_CompoundId, BRepGraph_NodeId, TopAbs_Orientation)`.
 - **Example:**
   ```swift
   if let ref = graph.compoundAddChild(0, childKind: NodeKind.solid.rawValue, childIndex: 2) {
@@ -842,7 +842,7 @@ public func compSolidAddSolid(_ compSolidIndex: Int, solidIndex: Int, orientatio
 
 - **Parameters:** `compSolidIndex`, comp-solid definition index; `solidIndex`, solid definition index; `orientation`, `TopAbs_Orientation` integer.
 - **Returns:** solid-ref id, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::CompSolids().Append(BRepGraph_CompSolidId, BRepGraph_SolidId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().CompSolids().Append(BRepGraph_CompSolidId, BRepGraph_SolidId, TopAbs_Orientation)`.
 
 ---
 
@@ -858,7 +858,7 @@ public func edgeRemoveVertex(_ edgeIndex: Int, vertexRefIndex: Int) -> Bool
 
 - **Parameters:** `edgeIndex`, edge definition index; `vertexRefIndex`, vertex reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Edges().RemoveVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
+- **OCCT:** `BRepGraph::Editor().Edges().RemoveVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
 
 ---
 
@@ -872,7 +872,7 @@ public func edgeReplaceVertex(_ edgeIndex: Int, oldVertexRefIndex: Int, newVerte
 
 - **Parameters:** `edgeIndex`, edge definition index; `oldVertexRefIndex`, existing vertex reference index; `newVertexIndex`, new vertex definition index.
 - **Returns:** new vertex-ref id, or `nil` on failure.
-- **OCCT:** `BRepGraph_EditorView::Edges().ReplaceVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId, BRepGraph_VertexId)`.
+- **OCCT:** `BRepGraph::Editor().Edges().ReplaceVertex(BRepGraph_EdgeId, BRepGraph_VertexRefId, BRepGraph_VertexId)`.
 
 ---
 
@@ -886,7 +886,7 @@ public func wireRemoveCoEdge(_ wireIndex: Int, coedgeRefIndex: Int) -> Bool
 
 - **Parameters:** `wireIndex`, wire definition index; `coedgeRefIndex`, coedge reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Wires().RemoveCoEdge(BRepGraph_WireId, BRepGraph_CoEdgeId)`.
+- **OCCT:** `BRepGraph::Editor().Wires().RemoveCoEdge(BRepGraph_WireId, BRepGraph_CoEdgeId)`.
 - **Note:** In OCCT 8.0.0p1 coedges are not ref-counted; `coedgeRefIndex` is a direct `BRepGraph_CoEdgeId`.
 
 ---
@@ -901,7 +901,7 @@ public func faceRemoveVertex(_ faceIndex: Int, attachmentUID: Int) -> Bool
 
 - **Parameters:** `faceIndex`, face definition index (unused in OCCT 8.0.0p1; the UID is globally unique within the supplement layer); `attachmentUID`, the UID returned by `faceAddVertex`.
 - **Returns:** `true` if the attachment existed and was removed.
-- **OCCT:** `BRepGraph_EditorView::Supplement().RemoveAttachment(uint64_t uid)` via `BRepGraph_LayerTopoSupplement`.
+- **OCCT:** `BRepGraph::Editor().Supplement().RemoveAttachment(uint64_t uid)`.
 
 ---
 
@@ -915,7 +915,7 @@ public func faceRemoveWire(_ faceIndex: Int, wireRefIndex: Int) -> Bool
 
 - **Parameters:** `faceIndex`, face definition index; `wireRefIndex`, wire reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Faces().RemoveWire(BRepGraph_FaceId, BRepGraph_WireRefId)`.
+- **OCCT:** `BRepGraph::Editor().Faces().RemoveWire(BRepGraph_FaceId, BRepGraph_WireRefId)`.
 
 ---
 
@@ -929,7 +929,7 @@ public func shellRemoveFace(_ shellIndex: Int, faceRefIndex: Int) -> Bool
 
 - **Parameters:** `shellIndex`, shell definition index; `faceRefIndex`, face reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)`.
+- **OCCT:** `BRepGraph::Editor().Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)`.
 
 ---
 
@@ -943,7 +943,7 @@ public func shellRemoveChild(_ shellIndex: Int, childRefIndex: Int) -> Bool
 
 - **Parameters:** `shellIndex`, shell definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)` (OCCT 8.0.0p1: shells own only faces; the child-ref is treated as a face-ref).
+- **OCCT:** `BRepGraph::Editor().Shells().RemoveFace(BRepGraph_ShellId, BRepGraph_FaceRefId)` (OCCT 8.0.0p1: shells own only faces; the child-ref is treated as a face-ref).
 
 ---
 
@@ -957,7 +957,7 @@ public func solidRemoveShell(_ solidIndex: Int, shellRefIndex: Int) -> Bool
 
 - **Parameters:** `solidIndex`, solid definition index; `shellRefIndex`, shell reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)`.
+- **OCCT:** `BRepGraph::Editor().Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)`.
 
 ---
 
@@ -971,7 +971,7 @@ public func solidRemoveChild(_ solidIndex: Int, childRefIndex: Int) -> Bool
 
 - **Parameters:** `solidIndex`, solid definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)` (OCCT 8.0.0p1: solids own only shells; the child-ref is treated as a shell-ref).
+- **OCCT:** `BRepGraph::Editor().Solids().RemoveShell(BRepGraph_SolidId, BRepGraph_ShellRefId)` (OCCT 8.0.0p1: solids own only shells; the child-ref is treated as a shell-ref).
 
 ---
 
@@ -985,7 +985,7 @@ public func compoundRemoveChild(_ compoundIndex: Int, childRefIndex: Int) -> Boo
 
 - **Parameters:** `compoundIndex`, compound definition index; `childRefIndex`, child reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::Compounds().RemoveChild(BRepGraph_CompoundId, BRepGraph_ChildRefId)`.
+- **OCCT:** `BRepGraph::Editor().Compounds().RemoveChild(BRepGraph_CompoundId, BRepGraph_ChildRefId)`.
 
 ---
 
@@ -999,7 +999,7 @@ public func compSolidRemoveSolid(_ compSolidIndex: Int, solidRefIndex: Int) -> B
 
 - **Parameters:** `compSolidIndex`, comp-solid definition index; `solidRefIndex`, solid reference index.
 - **Returns:** `true` if the active usage was removed.
-- **OCCT:** `BRepGraph_EditorView::CompSolids().RemoveSolid(BRepGraph_CompSolidId, BRepGraph_SolidRefId)`.
+- **OCCT:** `BRepGraph::Editor().CompSolids().RemoveSolid(BRepGraph_CompSolidId, BRepGraph_SolidRefId)`.
 
 ---
 
@@ -1019,7 +1019,7 @@ public func removeRep(repKind: Int, repIndex: Int)
 
 ## EditorView Ref Setters
 
-These setters write directly into reference-entry fields via `BRepGraph_EditorView`. Entries marked
+These setters write directly into reference-entry fields via `BRepGraph::Editor()`. Entries marked
 **no-op** are not yet modifiable in the underlying OCCT 8.0.0p1 API and are retained for ABI
 compatibility.
 
@@ -1029,7 +1029,7 @@ compatibility.
 public func setVertexRefOrientation(_ vertexRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Vertices().SetRefOrientation(BRepGraph_VertexRefId, TopAbs_Orientation)`.
+- **OCCT:** `BRepGraph::Editor().Vertices().SetRefOrientation(BRepGraph_VertexRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1039,7 +1039,7 @@ public func setVertexRefOrientation(_ vertexRefIndex: Int, orientation: Int)
 public func setVertexRefVertexDefId(_ vertexRefIndex: Int, vertexIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Vertices().SetRefChildVertexId` (renamed in OCCT 8.0.0p1).
+- **OCCT:** `BRepGraph::Editor().Vertices().SetRefChildVertexId` (renamed in OCCT 8.0.0p1).
 
 ---
 
@@ -1049,7 +1049,7 @@ public func setVertexRefVertexDefId(_ vertexRefIndex: Int, vertexIndex: Int)
 public func setEdgeStartVertexRefId(_ edgeIndex: Int, vertexRefIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Edges().SetStartVertexRefId(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
+- **OCCT:** `BRepGraph::Editor().Edges().SetStartVertexRefId(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
 
 ---
 
@@ -1059,7 +1059,7 @@ public func setEdgeStartVertexRefId(_ edgeIndex: Int, vertexRefIndex: Int)
 public func setEdgeEndVertexRefId(_ edgeIndex: Int, vertexRefIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Edges().SetEndVertexRefId(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
+- **OCCT:** `BRepGraph::Editor().Edges().SetEndVertexRefId(BRepGraph_EdgeId, BRepGraph_VertexRefId)`.
 
 ---
 
@@ -1069,7 +1069,7 @@ public func setEdgeEndVertexRefId(_ edgeIndex: Int, vertexRefIndex: Int)
 public func setEdgeCurve3DRepId(_ edgeIndex: Int, curve3DRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Edges()` curve-3D rep slot setter.
+- **OCCT:** `BRepGraph::Editor().Edges().SetCurve(BRepGraph_EdgeId, Handle(Geom_Curve), first, last)`.
 
 ---
 
@@ -1079,7 +1079,7 @@ public func setEdgeCurve3DRepId(_ edgeIndex: Int, curve3DRepId: Int)
 public func setEdgePolygon3DRepId(_ edgeIndex: Int, polygon3DRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Edges()` polygon-3D rep slot setter.
+- **OCCT:** `BRepGraph::Editor().Edges().SetPersistentPolygon3D(BRepGraph_EdgeId, Handle(Poly_Polygon3D))`.
 
 ---
 
@@ -1099,7 +1099,7 @@ public func setCoEdgeRefCoEdgeDefId(_ coedgeRefIndex: Int, coedgeIndex: Int)
 public func setCoEdgeEdgeDefId(_ coedgeIndex: Int, edgeIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` edge-def id setter.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetChildEdgeId(BRepGraph_CoEdgeId, BRepGraph_EdgeId)`.
 
 ---
 
@@ -1109,7 +1109,7 @@ public func setCoEdgeEdgeDefId(_ coedgeIndex: Int, edgeIndex: Int)
 public func setCoEdgeFaceDefId(_ coedgeIndex: Int, faceIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` face-def id setter.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetFaceId(BRepGraph_CoEdgeId, BRepGraph_FaceId)`.
 
 ---
 
@@ -1119,7 +1119,7 @@ public func setCoEdgeFaceDefId(_ coedgeIndex: Int, faceIndex: Int)
 public func setCoEdgeCurve2DRepId(_ coedgeIndex: Int, curve2DRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` curve-2D rep slot setter.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetPCurve(BRepGraph_CoEdgeId, Handle(Geom2d_Curve))`.
 
 ---
 
@@ -1129,7 +1129,7 @@ public func setCoEdgeCurve2DRepId(_ coedgeIndex: Int, curve2DRepId: Int)
 public func setCoEdgePolygon2DRepId(_ coedgeIndex: Int, polygon2DRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` polygon-2D rep slot setter.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetPersistentPolygon2D(BRepGraph_CoEdgeId, Handle(Poly_Polygon2D))`.
 
 ---
 
@@ -1139,7 +1139,7 @@ public func setCoEdgePolygon2DRepId(_ coedgeIndex: Int, polygon2DRepId: Int)
 public func setCoEdgePolygonOnTriRepId(_ coedgeIndex: Int, polygonOnTriRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` polygon-on-triangulation rep slot setter.
+- **OCCT:** `BRepGraph::Editor().CoEdges().SetPersistentPolygonOnTri(BRepGraph_CoEdgeId, Handle(Poly_PolygonOnTriangulation))`.
 
 ---
 
@@ -1151,7 +1151,7 @@ Clears all pcurve bindings (curve-2D, polygon-2D, polygon-on-tri) from a coedge 
 public func clearCoEdgePCurveBinding(_ coedgeIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CoEdges()` pcurve clearing helper.
+- **OCCT:** `BRepGraph::Editor().CoEdges().ClearPCurve(BRepGraph_CoEdgeId)` (OCCT 8.0.0p1: `ClearPCurveBinding` renamed to `ClearPCurve`).
 
 ---
 
@@ -1171,7 +1171,7 @@ public func setWireRefIsOuter(_ wireRefIndex: Int, isOuter: Bool)
 public func setWireRefOrientation(_ wireRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Faces()` wire-ref orientation setter (WireRefId → TopAbs_Orientation).
+- **OCCT:** `BRepGraph::Editor().Wires().SetRefOrientation(BRepGraph_WireRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1181,7 +1181,7 @@ public func setWireRefOrientation(_ wireRefIndex: Int, orientation: Int)
 public func setWireRefWireDefId(_ wireRefIndex: Int, wireIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Faces()` wire-ref def-id setter.
+- **OCCT:** `BRepGraph::Editor().Wires().SetRefChildWireId(BRepGraph_WireRefId, BRepGraph_WireId)`.
 
 ---
 
@@ -1191,7 +1191,7 @@ public func setWireRefWireDefId(_ wireRefIndex: Int, wireIndex: Int)
 public func setFaceSurfaceRepId(_ faceIndex: Int, surfaceRepId: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Faces()` surface rep slot setter.
+- **OCCT:** `BRepGraph::Editor().Faces().SetSurface(BRepGraph_FaceId, Handle(Geom_Surface))`.
 
 ---
 
@@ -1201,7 +1201,7 @@ public func setFaceSurfaceRepId(_ faceIndex: Int, surfaceRepId: Int)
 public func setFaceRefOrientation(_ faceRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Shells()` face-ref orientation setter.
+- **OCCT:** `BRepGraph::Editor().Faces().SetRefOrientation(BRepGraph_FaceRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1211,7 +1211,7 @@ public func setFaceRefOrientation(_ faceRefIndex: Int, orientation: Int)
 public func setFaceRefFaceDefId(_ faceRefIndex: Int, faceIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Shells()` face-ref def-id setter.
+- **OCCT:** `BRepGraph::Editor().Faces().SetRefFaceId(BRepGraph_FaceRefId, BRepGraph_FaceId)`.
 
 ---
 
@@ -1221,7 +1221,7 @@ public func setFaceRefFaceDefId(_ faceRefIndex: Int, faceIndex: Int)
 public func setShellRefOrientation(_ shellRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Solids()` shell-ref orientation setter.
+- **OCCT:** `BRepGraph::Editor().Shells().SetRefOrientation(BRepGraph_ShellRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1231,7 +1231,7 @@ public func setShellRefOrientation(_ shellRefIndex: Int, orientation: Int)
 public func setShellRefShellDefId(_ shellRefIndex: Int, shellIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Solids()` shell-ref def-id setter.
+- **OCCT:** `BRepGraph::Editor().Shells().SetRefChildShellId(BRepGraph_ShellRefId, BRepGraph_ShellId)`.
 
 ---
 
@@ -1241,7 +1241,7 @@ public func setShellRefShellDefId(_ shellRefIndex: Int, shellIndex: Int)
 public func setSolidRefOrientation(_ solidRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CompSolids()` solid-ref orientation setter.
+- **OCCT:** `BRepGraph::Editor().Solids().SetRefOrientation(BRepGraph_SolidRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1251,7 +1251,7 @@ public func setSolidRefOrientation(_ solidRefIndex: Int, orientation: Int)
 public func setSolidRefSolidDefId(_ solidRefIndex: Int, solidIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::CompSolids()` solid-ref def-id setter.
+- **OCCT:** `BRepGraph::Editor().Solids().SetRefChildSolidId(BRepGraph_SolidRefId, BRepGraph_SolidId)`.
 
 ---
 
@@ -1261,7 +1261,7 @@ public func setSolidRefSolidDefId(_ solidRefIndex: Int, solidIndex: Int)
 public func setOccurrenceChildDefId(_ occurrenceIndex: Int, childKind: Int, childIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView` occurrence def child-id setter.
+- **OCCT:** `BRepGraph::Editor().Occurrences().SetChildNodeId(BRepGraph_OccurrenceId, BRepGraph_NodeId)`.
 
 ---
 
@@ -1271,7 +1271,7 @@ public func setOccurrenceChildDefId(_ occurrenceIndex: Int, childKind: Int, chil
 public func setOccurrenceRefOccurrenceDefId(_ occurrenceRefIndex: Int, occurrenceIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView` occurrence-ref def-id setter.
+- **OCCT:** `BRepGraph::Editor().Occurrences().SetRefChildOccurrenceId(BRepGraph_OccurrenceRefId, BRepGraph_OccurrenceId)`.
 
 ---
 
@@ -1281,7 +1281,7 @@ public func setOccurrenceRefOccurrenceDefId(_ occurrenceRefIndex: Int, occurrenc
 public func setChildRefOrientation(_ childRefIndex: Int, orientation: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Compounds()` child-ref orientation setter.
+- **OCCT:** `BRepGraph::Editor().Gen().SetChildRefOrientation(BRepGraph_ChildRefId, TopAbs_Orientation)`.
 
 ---
 
@@ -1291,4 +1291,4 @@ public func setChildRefOrientation(_ childRefIndex: Int, orientation: Int)
 public func setChildRefChildDefId(_ childRefIndex: Int, childKind: Int, childIndex: Int)
 ```
 
-- **OCCT:** `BRepGraph_EditorView::Compounds()` child-ref def-id setter (updates the `BRepGraph_NodeId` for the reference).
+- **OCCT:** `BRepGraph::Editor().Gen().SetChildRefChildNodeId(BRepGraph_ChildRefId, BRepGraph_NodeId)`.

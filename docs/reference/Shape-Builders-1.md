@@ -274,8 +274,20 @@ public static func nearestPlane(to points: [SIMD3<Double>]) -> NearestPlane?
 ```
 
 - **Parameters:** `points`, array of at least 3 points.
-- **Returns:** `NearestPlane`, or `nil` if fewer than 3 points are provided or fitting fails.
-- **OCCT:** `gp_Pln` / `OCCTShapeNearestPlane`.
+- **Returns:** `NearestPlane`, or `nil` if fewer than 3 points are provided or the fit is refused,
+  see the refusal rule below.
+- **OCCT:** `ShapeAnalysis_Geom::NearestPlane`, which analyses the cloud with `GProp_PEquation` and
+  builds the plane through its barycentre normal to the principal axis of least extent (via
+  `OCCTShapeNearestPlane`). `gp_Pln` is the out-parameter that carries the answer back, not the
+  algorithm.
+- **A non-nil result is not a planarity test.** `ShapeAnalysis_Geom::NearestPlane` refuses only
+  when the smallest principal extent is at least half of one of the other two. On a 10 x 10 sheet
+  that means it answers for every thickness up to 5 and refuses above it, so a cloud that is
+  nowhere near planar still gets a plane. Measured on the pinned kernel
+  (`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`): one corner of a
+  10 x 10 square lifted 8 units out of plane fits, with `maxDeviation` 2.13; the eight corners of a
+  cube are refused. **Gate on `maxDeviation`**, which is the largest distance from any input point
+  to the returned plane, rather than on the result being non-nil.
 - **Example:**
   ```swift
   let pts: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(1,0,0), SIMD3(0,1,0)]
@@ -897,7 +909,7 @@ public struct ContourResult {
 }
 ```
 
-- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre and radius; for lines: location and direction).
+- **Fields:** `type`, contour geometry kind; `count`, number of contours; `data`, raw parameters (for circles: centre xyz + radius, `data[0...3]`; for lines: location xyz + direction xyz per contour, 6 doubles each). `contourSphereDir`/`contourSphereEye` always report at most one contour, so `data` holds 8 doubles. `contourCylinderDir` can report two tangent lines (`count == 2`, the ordinary, non-degenerate case, since a cylinder's silhouette against a non-axis-parallel view direction is always a pair of tangent rulings, never one), so `data` holds 12 doubles: line 1 at `data[0...5]`, line 2 at `data[6...11]`.
 
 ---
 
@@ -923,6 +935,20 @@ public static func contourSphereDir(center: SIMD3<Double>, radius: Double,
 ### `Shape.contourCylinderDir(origin:axis:radius:direction:)`
 
 Compute the silhouette contour of a cylinder for an orthographic view direction.
+
+A cylinder's silhouette against a non-axis-parallel view direction is always the pair of tangent
+rulings either side of the axis: `count` is `2`, never `1`. Both lines are returned in `data`,
+6 doubles each (location xyz + direction xyz): line 1 at `data[0...5]`, line 2 at `data[6...11]`.
+
+```swift
+if let result = Shape.contourCylinderDir(
+    origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
+    radius: 5, direction: SIMD3(1, 0, 0)),
+   result.count == 2 {
+    let line1Location = SIMD3(result.data[0], result.data[1], result.data[2])
+    let line2Location = SIMD3(result.data[6], result.data[7], result.data[8])
+}
+```
 
 ```swift
 public static func contourCylinderDir(origin: SIMD3<Double>, axis: SIMD3<Double>,
@@ -1216,7 +1242,7 @@ public static func shellFromPlane(
 
 - **Parameters:** `origin`, point on the plane; `normal`, plane normal; `uRange`, `vRange`, parameter bounds.
 - **Returns:** Shell shape, or `nil` on failure.
-- **OCCT:** `BRepLib_MakeShell(gp_Pln, ...)` via `OCCTBRepLibMakeShellFromPlane`.
+- **OCCT:** `BRepLib_MakeShell(Handle(Geom_Plane), uMin, uMax, vMin, vMax)` via `OCCTBRepLibMakeShellFromPlane`.
 
 ---
 
@@ -1475,7 +1501,7 @@ public func uniformDeflection(_ deflection: Double) -> DeflectionResult?
 
 - **Parameters:** `deflection`, maximum chord deflection.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformDeflection` via `OCCTCPntsUniformDeflection`.
+- **OCCT:** `CPnts_UniformDeflection` via `OCCTCPntsUniformDeflection`. Not `GCPnts_UniformDeflection`, which this repo also wraps, behind `Curve3D.drawDeflection` and `Curve2D.drawDeflection`.
 - **Example:**
   ```swift
   if let d = edge.uniformDeflection(0.1) {
@@ -1495,7 +1521,7 @@ public func uniformDeflection(_ deflection: Double, range: ClosedRange<Double>) 
 
 - **Parameters:** `deflection`, maximum chord deflection; `range`, parameter range to sample.
 - **Returns:** `DeflectionResult`, or `nil` on failure.
-- **OCCT:** `GCPnts_UniformDeflection` with range via `OCCTCPntsUniformDeflectionRange`.
+- **OCCT:** `CPnts_UniformDeflection` with an explicit `(U1, U2)` range via `OCCTCPntsUniformDeflectionRange`.
 
 ---
 
@@ -1794,15 +1820,185 @@ Contour computation result (reference-counted class).
 ```swift
 public class ContapContourResult {
     public var lineCount: Int { get }
+    public func lineType(_ line: Int) -> ContourLineType?
+    public func geometry(line: Int) -> ContourGeometry?
     public func pointCount(line: Int) -> Int
     public func point(line: Int, index: Int) -> SIMD3<Double>
     public func points(line: Int) -> [SIMD3<Double>]
-    public func lineType(_ line: Int) -> ContourLineType?
+    public func arcRange(line: Int) -> ClosedRange<Double>?
+    public func arcPoint(line: Int, parameter: Double) -> SIMD2<Double>?
+    public func vertexCount(line: Int) -> Int
+    public func vertex(line: Int, index: Int) -> ContourVertex?
+    public func vertices(line: Int) -> [ContourVertex]
 }
 ```
 
 - All indices are 1-based.
 - **OCCT:** `Contap_Contour` via `OCCTContapContour*`.
+
+**`pointCount`, `point` and `points` answer for `.walking` lines only.** `Contap_Line::NbPnts()`
+and `Contap_Line::Point(Index)` both open with
+`if (typL != Contap_Walking) { throw Standard_DomainError(); }` (`Contap_Line.lxx`), so on a
+`.line`, `.circle` or `.restriction` contour `pointCount` is `0`, `points` is `[]`, and
+`point(line:index:)` returns `SIMD3(0, 0, 0)`, a zero rather than a measurement. Check
+`lineType(_:)` first.
+
+That is not an edge case: a cylinder's lateral face viewed along `(1, 0, 0)` gives two `.line`
+contours, and neither has a reachable point.
+
+**Added in [#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635):** `geometry(line:)`
+reads the type first and returns the accessor that applies, so an analytic contour has geometry.
+`vertexCount`/`vertex`/`vertices` are `Contap_Line::NbVertex()`/`Vertex(Index)`, which are valid on
+every type, and `arcRange`/`arcPoint` evaluate a `.restriction` contour's boundary arc. Measured
+across all four types in `Scripts/repro/1635-contap-analytic-geometry/`.
+
+---
+
+### `ContourGeometry`
+
+The geometry of one contour line, in whichever form `Contap_Line` holds it.
+
+```swift
+public enum ContourGeometry: Sendable {
+    case line(origin: SIMD3<Double>, direction: SIMD3<Double>)
+    case circle(
+        center: SIMD3<Double>, axis: SIMD3<Double>, xDirection: SIMD3<Double>, radius: Double)
+    case walking(points: [SIMD3<Double>])
+    case restriction(parameterRange: ClosedRange<Double>)
+}
+```
+
+| case | OCCT accessor | what it is |
+|---|---|---|
+| `.line` | `Contap_Line::Line()` | a tangent ruling, as an infinite `gp_Lin`; the stretch on the face is delimited by the line's vertices |
+| `.circle` | `Contap_Line::Circle()` | a silhouette circle, as a `gp_Circ` |
+| `.walking` | `Contap_Line::Point(Index)` | a numerically traced contour, in 3D |
+| `.restriction` | `Contap_Line::Arc()` | a stretch of the face's own boundary, as the arc's parameter range |
+
+---
+
+### `ContourVertex`
+
+A vertex on a contour line (`Contap_Point`). Unlike the traced points, vertices exist on every
+contour type: a cylinder's tangent ruling has two, where it meets the face's boundary.
+
+```swift
+public struct ContourVertex: Sendable {
+    public let point: SIMD3<Double>
+    public let uv: SIMD2<Double>
+    public let parameterOnLine: Double
+    public let parameterOnArc: Double?
+    public let isFaceVertex: Bool
+    public let isMultiple: Bool
+    public let isInternal: Bool
+}
+```
+
+- `point`: `Contap_Point::Value()`.
+- `uv`: `Contap_Point::Parameters()`, in the face's UV space.
+- `parameterOnLine`: `Contap_Point::ParameterOnLine()`.
+- `parameterOnArc`: `Contap_Point::ParameterOnArc()`, or `nil` when the vertex sits on no arc.
+  `nil` rather than zero, because `ParameterOnArc()` throws `Standard_DomainError` when
+  `IsOnArc()` is false and zero is a valid parameter.
+- `isFaceVertex`: `Contap_Point::IsVertex()`, the point is a vertex of the original face.
+- `isMultiple`: `Contap_Point::IsMultiple()`, the point belongs to several contour lines.
+- `isInternal`: `Contap_Point::IsInternal()`, the contour is tangent to the restriction here.
+
+---
+
+#### `ContapContourResult.geometry(line:)`
+
+The geometry of a contour line (1-based index), in whichever form `Contap_Line` holds it.
+
+```swift
+public func geometry(line: Int) -> ContourGeometry?
+```
+
+- **Returns:** the geometry, or `nil` when the index is out of range or the contour failed.
+- **OCCT:** `Contap_Line::TypeContour()`, then `Line()`, `Circle()`, `Point(Index)` or `Arc()`.
+- **Example:**
+  ```swift
+  // A cylinder's lateral face, viewed across its axis: two tangent rulings.
+  if let contour = face.contapContourDirection(SIMD3(1, 0, 0)), contour.lineCount > 0 {
+      for line in 1...contour.lineCount {
+          switch contour.geometry(line: line) {
+          case let .line(origin, direction):
+              print("ruling through \(origin) along \(direction)")
+          case let .circle(center, axis, _, radius):
+              print("silhouette circle r=\(radius) at \(center) about \(axis)")
+          case let .walking(points):
+              print("traced contour, \(points.count) points")
+          case let .restriction(range):
+              print("boundary arc over \(range)")
+          case nil:
+              break
+          }
+      }
+  }
+  ```
+
+#### `ContapContourResult.arcRange(line:)`
+
+The parameter range of the face-boundary arc a `.restriction` contour follows.
+
+```swift
+public func arcRange(line: Int) -> ClosedRange<Double>?
+```
+
+- **Returns:** the range, or `nil` when the line is not `.restriction`, the index is out of range,
+  or `Contap_Line::Arc()` is a null handle.
+- **OCCT:** `Contap_Line::Arc()`, then `Adaptor2d_Curve2d::FirstParameter`/`LastParameter`.
+
+#### `ContapContourResult.arcPoint(line:parameter:)`
+
+A point on that arc, in the face's UV space.
+
+```swift
+public func arcPoint(line: Int, parameter: Double) -> SIMD2<Double>?
+```
+
+- **Parameters:** `line`, 1-based contour line index; `parameter`, a value from `arcRange(line:)`.
+- **Returns:** the UV point, or `nil` on the same refusals as `arcRange(line:)`.
+- **OCCT:** `Adaptor2d_Curve2d::Value`.
+- **Example:**
+  ```swift
+  if let range = contour.arcRange(line: 1),
+     let uv = contour.arcPoint(line: 1, parameter: range.lowerBound) {
+      print(uv)
+  }
+  ```
+
+#### `ContapContourResult.vertexCount(line:)`
+
+The number of vertices on a contour line (1-based index). Valid on every contour type, unlike
+`pointCount(line:)`.
+
+```swift
+public func vertexCount(line: Int) -> Int
+```
+
+- **OCCT:** `Contap_Line::NbVertex()`.
+
+#### `ContapContourResult.vertex(line:index:)`
+
+A vertex on a contour line (1-based indices).
+
+```swift
+public func vertex(line: Int, index: Int) -> ContourVertex?
+```
+
+- **Returns:** the vertex, or `nil` when either index is out of range.
+- **OCCT:** `Contap_Line::Vertex(Index)`.
+
+#### `ContapContourResult.vertices(line:)`
+
+Every vertex on a contour line (1-based line index).
+
+```swift
+public func vertices(line: Int) -> [ContourVertex]
+```
+
+- **OCCT:** `Contap_Line::NbVertex()` and `Vertex(Index)`.
 
 ---
 
@@ -1864,28 +2060,48 @@ public func contapContourEye(_ eye: SIMD3<Double>) -> ContapContourResult?
 
 ### `featFuse(with:)`
 
-Feature-based fuse (union with part selection).
+Feature-based fuse (union) of this shape with `tool`, via `BRepFeat_Builder`. Runs the full
+local-operation pipeline (`Init` → `SetOperation` → `Perform` → `PerformResult`), so the returned
+shape is the real geometric union, matching `BRepAlgoAPI_Fuse` on the same pair. For a plain fuse
+there is nothing to select, so unlike `featCut(with:)` the whole tool is always kept.
 
 ```swift
 public func featFuse(with tool: Shape) -> Shape?
 ```
 
-- **Parameters:** `tool`, the tool shape to fuse.
-- **Returns:** Fused shape, or `nil` on failure.
+```swift
+let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+let fused = box.featFuse(with: sphere)
+print(fused?.volume ?? 0)   // 1261.799388
+```
+
+- **Parameters:** `tool`, the shape to fuse into this one.
+- **Returns:** The union shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_Builder` (fuse mode) via `OCCTBRepFeatBuilderFuse`.
 
 ---
 
 ### `featCut(with:)`
 
-Feature-based cut (subtraction with part selection).
+Feature-based cut (subtraction) of `tool` from this shape, via `BRepFeat_Builder`. Runs the full
+local-operation pipeline (`Init` → `SetOperation` → `Perform` → `PerformResult`) and keeps no
+parts of the split tool, so the returned shape is the real geometric difference, matching
+`BRepAlgoAPI_Cut` on the same pair.
 
 ```swift
 public func featCut(with tool: Shape) -> Shape?
 ```
 
-- **Parameters:** `tool`, the tool shape to subtract.
-- **Returns:** Cut shape, or `nil` on failure.
+```swift
+let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+let sphere = Shape.sphere(center: SIMD3(5, 5, 10), radius: 5)!
+let cut = box.featCut(with: sphere)
+print(cut?.volume ?? 0)   // 738.200612
+```
+
+- **Parameters:** `tool`, the shape to subtract from this one.
+- **Returns:** The difference shape, or `nil` on failure.
 - **OCCT:** `BRepFeat_Builder` (cut mode) via `OCCTBRepFeatBuilderCut`.
 
 ---

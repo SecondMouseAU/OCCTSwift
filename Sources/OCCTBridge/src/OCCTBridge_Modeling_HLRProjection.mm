@@ -61,7 +61,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -197,7 +196,6 @@
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <ShapeFix_Solid.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax1.hxx>
@@ -221,8 +219,6 @@
 #include <gp_Vec.hxx>
 
 #include <TColgp_Array2OfPnt.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
 
 #include <TopAbs.hxx>
 #include <TopExp.hxx>
@@ -1104,7 +1100,8 @@ OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
                                                  double              dirX,
                                                  double              dirY,
                                                  double              dirZ,
-                                                 OCCTHLREdgeCategory category)
+                                                 OCCTHLREdgeCategory category,
+                                                 int32_t             nbIso)
 {
   if (!shape)
     return nullptr;
@@ -1115,7 +1112,7 @@ OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
     HLRAlgo_Projector projector(projAxis);
 
     Handle(HLRBRep_Algo) algo = new HLRBRep_Algo();
-    algo->Add(shape->shape);
+    algo->Add(shape->shape, nbIso);
     algo->Projector(projector);
     algo->Update();
     algo->Hide();
@@ -1249,7 +1246,8 @@ OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
                                               double  dirZ,
                                               int32_t edgeType,
                                               bool    visible,
-                                              bool    in3d)
+                                              bool    in3d,
+                                              int32_t nbIso)
 {
   if (!shape)
     return nullptr;
@@ -1260,7 +1258,7 @@ OCCTShapeRef _Nullable OCCTHLRCompoundOfEdges(OCCTShapeRef _Nonnull shape,
     HLRAlgo_Projector projector(projAxis);
 
     Handle(HLRBRep_Algo) algo = new HLRBRep_Algo();
-    algo->Add(shape->shape);
+    algo->Add(shape->shape, nbIso);
     algo->Projector(projector);
     algo->Update();
     algo->Hide();

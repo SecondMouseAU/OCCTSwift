@@ -54,10 +54,29 @@ struct BSplineCurve2DCompletionsV121Tests {
         if let curve = makeBSplineCurve2D() {
             let target = SIMD2<Double>(5, 10)
             let tangent = SIMD2<Double>(1, 0)
+            // Pinning both endpoints' point AND tangent (condition 1 at both ends) leaves this
+            // 4-pole cubic curve with no degrees of freedom left to also hit an interior target
+            // point/tangent at u=0.5, so OCCT correctly reports failure (errorStatus != 0).
             let r = curve.bsplineMovePointAndTangent(
                 u: 0.5, point: target, tangent: tangent,
-                tolerance: 1e-6, poleRange: 1...4)
-            _ = r
+                tolerance: 1e-6, startingCondition: 1, endingCondition: 1)
+            #expect(!r)
+        }
+    }
+
+    // #1542: startingCondition/endingCondition are OCCT's independent continuity codes, not a
+    // pole-index range -- they need not be ordered, so `startingCondition: 1, endingCondition: -1`
+    // is a legitimate call that the old `poleRange: ClosedRange<Int>` signature could not even
+    // construct (`1...(-1)` traps at runtime, since a ClosedRange requires lowerBound <= upperBound).
+    @Test("MovePointAndTangent 2D with unordered independent conditions")
+    func movePointAndTangentUnorderedConditions() {
+        if let curve = makeBSplineCurve2D() {
+            let target = SIMD2<Double>(5, 10)
+            let tangent = SIMD2<Double>(1, 0)
+            let r = curve.bsplineMovePointAndTangent(
+                u: 0.5, point: target, tangent: tangent,
+                tolerance: 1e-6, startingCondition: 1, endingCondition: -1)
+            #expect(r)
         }
     }
 

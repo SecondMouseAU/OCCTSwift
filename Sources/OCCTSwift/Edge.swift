@@ -208,14 +208,26 @@ public final class Edge: @unchecked Sendable {
     ///
     /// Returns nil for edges with no 3D curve representation (rare, typically
     /// pcurve-only edges from lofted / swept shapes before `BuildCurves3d`).
-    /// Internally the returned curve is a `Geom_TrimmedCurve` over the edge's
-    /// parameter range, so consumers get a finite handle even when the
-    /// underlying geometry is an unbounded line or circle.
+    /// This is deliberately the **raw, untrimmed** underlying curve, not a
+    /// `Geom_TrimmedCurve` over the edge's own extent (`BRep_Tool::Curve`'s own
+    /// contract: it hands back the 3D curve with `First`/`Last` reported
+    /// *separately*, never a clipped copy), so a caller can `DownCast` it to a
+    /// concrete type (`Geom_Circle`, `Geom_Line`, ...) for typed-property
+    /// extraction. Concretely: for a straight edge the returned curve's
+    /// ``Curve3D/domain`` is an unbounded `Geom_Line`'s full range
+    /// (`±Precision::Infinite()`, not the edge's own span), and for a partial
+    /// arc it is the underlying circle/ellipse's whole period, not the arc's
+    /// actual sweep. Use ``parameterBounds`` for the edge's own finite extent
+    /// (#1584).
     ///
     /// Use cases:
     /// - Extract `CircleProperties` from a circular edge via `curve3D?.circleProperties`
-    /// - Emit native DXF `CIRCLE` / `LINE` entities instead of tessellated polylines
-    /// - Feed edge geometry into parametric sampling / analysis pipelines
+    ///   (unaffected by the untrimmed domain: it reads geometry, not extent)
+    /// - Feed edge geometry into parametric sampling / analysis pipelines that
+    ///   pair the curve with ``parameterBounds`` for the edge's actual range
+    /// - `DownCast` to a concrete `Geom_*` type to build native DXF/SVG
+    ///   `CIRCLE` / `LINE` entities, combining the curve's geometry with
+    ///   ``parameterBounds`` for the trimmed extent rather than ``Curve3D/domain``
     public var curve3D: Curve3D? {
         guard let ref = OCCTEdgeGetCurve3D(handle) else { return nil }
         return Curve3D(handle: ref)

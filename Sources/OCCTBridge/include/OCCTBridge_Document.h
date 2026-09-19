@@ -16,13 +16,15 @@ OCCTDocumentRef OCCTDocumentCreate(void);
 /// Load STEP file into XDE document with assembly structure, names, colors, materials
 /// @param path Path to STEP file
 /// @return Document reference, or NULL on failure
-OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path);
+OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus);
 
 /// Write document to STEP file (preserves assembly structure, colors, materials)
 /// @param doc Document to write
 /// @param path Output file path
 /// @return true on success
-bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path);
+bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc,
+                           const char*     path,
+                           OCCTReturnStatus* _Nullable outStatus);
 
 /// Release document and all internal resources
 void OCCTDocumentRelease(OCCTDocumentRef doc);
@@ -162,6 +164,15 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc);
 
 /// Get count of datum labels in document
 int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc);
+
+/// Number of dimensions referencing the shape at shapeLabelId, via
+/// XCAFDoc_DimTolTool::GetRefDimensionLabels. Returns 0 if shapeLabelId does not resolve to a
+/// label. A single-shape dimension created via OCCTDocumentCreateDimension /
+/// OCCTDocumentCreateDimensionWithTolerance must appear here exactly once, not twice (#1481: the
+/// create path used to pass the same shape label as both SetDimension() sequence arguments,
+/// double-registering it as both the DimensionRefFirstGUID and DimensionRefSecondGUID graph-node
+/// father).
+int32_t OCCTDocumentGetRefDimensionCount(OCCTDocumentRef doc, int64_t shapeLabelId);
 
 /// How a dimension's values array encodes its magnitude, taken from OCCT's own predicates
 /// (XCAFDimTolObjects_DimensionObject::IsDimWithRange / IsDimWithPlusMinusTolerance). The array is
@@ -708,9 +719,11 @@ void OCCTDocumentLabelForgetAllAttributes(OCCTDocumentRef doc, int64_t labelId, 
 
 /// Get all descendant labels using TDF_ChildIterator.
 /// @param allLevels If true, iterate all descendants; if false, direct children only
-/// @param outLabelIds Output array of labelIds
-/// @param maxCount Maximum number of labels to return
-/// @return Number of labels found
+/// @param outLabelIds Output array of labelIds, written up to maxCount entries
+/// @param maxCount Maximum number of labels to write into outLabelIds
+/// @return The TRUE total descendant count, even when it exceeds maxCount and the write was
+///     truncated (#1563, the #562 precedent). Retry with a buffer sized to the returned count
+///     when it exceeds maxCount.
 int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
                                         int64_t         labelId,
                                         bool            allLevels,
@@ -795,7 +808,8 @@ void OCCTDocumentSetModified(OCCTDocumentRef doc, int64_t labelId);
 /// Clear all modification marks.
 void OCCTDocumentClearModified(OCCTDocumentRef doc);
 
-/// Check if a label is marked as modified (via the TDocStd_Modified attribute on the root label).
+/// Check if a label is marked as modified, by asking TDocStd_Document::GetModified for the
+/// document's modified-label set (the set the TDocStd_Modified attribute on the root holds).
 bool OCCTDocumentIsLabelModified(OCCTDocumentRef doc, int64_t labelId);
 
 // MARK: - TDataStd Scalar Attributes (v0.55.0)
@@ -1350,8 +1364,11 @@ void OCCTDocumentSetLayer(OCCTDocumentRef doc, int64_t labelId, const char* laye
 /// Check if a specific layer is set on a label.
 bool OCCTDocumentIsLayerSet(OCCTDocumentRef doc, int64_t labelId, const char* layerName);
 
-/// Get layers on a label. Returns count. Fills outNames (caller-allocated array of buffers).
-/// Each buffer must be at least maxLen chars.
+/// Get layers on a label. Fills outNames (caller-allocated array of buffers) up to maxNames
+/// entries; each buffer must be at least maxLen chars.
+/// @return The TRUE total layer count, even when it exceeds maxNames and the write was
+///     truncated (#1563, the #562 precedent). Retry with outNames/maxNames sized to the
+///     returned count when it exceeds maxNames.
 int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
                                    int64_t         labelId,
                                    char**          outNames,
@@ -1656,10 +1673,10 @@ OCCTViewObjectRef OCCTViewObjectCreate(void);
 /// Release view object
 void OCCTViewObjectRelease(OCCTViewObjectRef ref);
 
-/// Set projection type (0=central, 1=parallel)
+/// Set projection type (XCAFView_ProjectionType: 0=NoCamera, 1=Parallel, 2=Central)
 void OCCTViewObjectSetType(OCCTViewObjectRef ref, int32_t type);
 
-/// Get projection type (0=central, 1=parallel)
+/// Get projection type (XCAFView_ProjectionType: 0=NoCamera, 1=Parallel, 2=Central)
 int32_t OCCTViewObjectGetType(OCCTViewObjectRef ref);
 
 /// Set view direction
@@ -1789,6 +1806,9 @@ OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreate(void);
 
 /// Create a style with surface color
 OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithSurfColor(double r, double g, double b, float alpha);
+
+/// Create a style with curve color
+OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateWithCurvColor(double r, double g, double b);
 
 /// Create a style with surface and curve colors
 OCCTXCAFPrsStyle OCCTXCAFPrsStyleCreateFull(double surfR,
@@ -1962,7 +1982,9 @@ int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef _Nonnull document);
 /// Initialize global presentation driver table with standard drivers
 void OCCTDriverTableInitStandard(void);
 
-/// Check if global driver table exists
+/// Always returns true: TPrsStd_DriverTable::Get() lazily creates the table
+/// if it does not already exist, so this cannot observe a "not yet created"
+/// state, and calling it has that creation side effect
 bool OCCTDriverTableExists(void);
 
 /// Clear all drivers from global table
@@ -1979,6 +2001,11 @@ bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef _Nonnull app);
 
 /// Create a new document via TObj_Application
 OCCTDocumentRef _Nullable OCCTTObjApplicationCreateDocument(OCCTTObjAppRef _Nonnull app);
+
+/// Release a reference obtained from OCCTTObjApplicationGetInstance. TObj_Application is a
+/// process-wide singleton whose own function-local static Handle keeps a permanent reference,
+/// so this only undoes the increment GetInstance made; it never deletes the object.
+void OCCTTObjApplicationRelease(OCCTTObjAppRef _Nonnull app);
 
 /// Create an ID filter (ignoreAll=true: ignore all except kept; false: keep all except ignored)
 OCCTIDFilterRef _Nullable OCCTIDFilterCreate(bool ignoreAll);
@@ -2740,7 +2767,10 @@ OCCTShapeRef _Nullable OCCTDocumentExplorerFindShape(OCCTDocumentRef _Nonnull do
 /// Get the depth of a document explorer node at given index.
 int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef _Nonnull doc, int32_t index);
 
-/// Check if a document explorer node is an assembly.
+/// Check if a document explorer node is an assembly. Always false: this explorer's shared flat
+/// index (see OCCTDocumentExplorerCount/Shape/Depth/Location above) walks leaf nodes only
+/// (XCAFPrs_DocumentExplorerFlags_OnlyLeafNodes), which excludes every assembly node by
+/// definition. Use OCCTDocumentIsAssembly(doc, labelId) to detect an assembly. #1480.
 bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef _Nonnull doc, int32_t index);
 
 /// Get the location matrix (12 doubles, row-major 3x4) for a document explorer node.

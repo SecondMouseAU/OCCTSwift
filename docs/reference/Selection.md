@@ -478,7 +478,14 @@ Creates an empty `Selector` with no registered shapes.
 public init()
 ```
 
-- **OCCT:** `SelectMgr_SelectionManager` + `OCCTHeadlessSelector` (custom `SelectMgr_ViewerSelector` subclass).
+The selector is headless by construction. `OCCTHeadlessSelector`, the bridge-private
+`SelectMgr_ViewerSelector` subclass it creates, exists to expose that base class's protected
+`TraverseSensitives` and `GetManager`, so a pick can run against a camera alone where OCCT's own
+entry points all require a view object. Each shape handed to `add(shape:id:)` is wrapped in a
+second bridge-private class, a selectable object whose `Compute` is empty because nothing is ever
+drawn; see that method for its own attribution.
+
+- **OCCT:** `SelectMgr_SelectionManager` + `OCCTHeadlessSelector`.
 - **Example:**
   ```swift
   let selector = Selector()
@@ -728,7 +735,15 @@ Results are sorted by depth (nearest first). Only shapes and sub-shape modes tha
   - `viewSize`: viewport dimensions in pixels `(width, height)`.
   - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` sorted by ascending depth; empty if nothing was hit.
-- **OCCT:** `OCCTHeadlessSelector::PickPoint` → `SelectMgr_ViewerSelector::Pick` (point volume) + `SelectMgr_SortCriterion` for depth ordering.
+This entry named the kernel's own `Pick` entry point until #1399. It is not on this path, and
+cannot be: every one of its four overloads takes a view object, which is exactly what a headless
+selector does not have. What runs instead is the volume-manager sequence below.
+
+- **OCCT:** `OCCTHeadlessSelector::PickPoint` builds a point selecting volume through
+  `SelectMgr_SelectingVolumeManager::InitPointSelectingVolume` / `SetCamera` / `SetWindowSize` /
+  `SetPixelTolerance` / `BuildSelectingVolume`, then runs the protected
+  `SelectMgr_ViewerSelector::TraverseSensitives`. Depth ordering comes from
+  `SelectMgr_SortCriterion`, and each hit is read back through `SelectMgr_EntityOwner`.
 - **Example:**
   ```swift
   let results = selector.pick(at: SIMD2(320, 240),
@@ -758,7 +773,11 @@ public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
   - `viewSize`: viewport dimensions in pixels.
   - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes intersecting the rectangle.
-- **OCCT:** `OCCTHeadlessSelector::PickRect` → `SelectMgr_ViewerSelector::Pick` (box volume).
+This entry called the C++ method `PickRect` until #1399, borrowing the name of the
+`OCCTSelectorPickRect` bridge function that reaches it; the method is `PickBox`.
+
+- **OCCT:** `OCCTHeadlessSelector::PickBox` builds a box selecting volume through
+  `SelectMgr_SelectingVolumeManager::InitBoxSelectingVolume`, then runs `TraverseSensitives`.
 - **Example:**
   ```swift
   let selected = selector.pick(
@@ -790,7 +809,9 @@ The polygon must have at least 3 points. The last point is automatically connect
   - `viewSize`: viewport dimensions in pixels.
   - `maxResults`: output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes whose sensitive primitives fall inside the polygon.
-- **OCCT:** `OCCTHeadlessSelector::PickPoly` → `SelectMgr_ViewerSelector::Pick` (polyline volume); pixel XY pairs passed as interleaved `double` array.
+- **OCCT:** `OCCTHeadlessSelector::PickPoly` builds a polyline selecting volume through
+  `SelectMgr_SelectingVolumeManager::InitPolylineSelectingVolume`, then runs
+  `TraverseSensitives`; pixel XY pairs are passed as an interleaved `double` array.
 - **Example:**
   ```swift
   let lasso: [SIMD2<Double>] = [

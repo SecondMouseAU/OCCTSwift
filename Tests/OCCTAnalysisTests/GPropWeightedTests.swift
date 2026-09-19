@@ -19,6 +19,23 @@ struct GPropWeightedTests {
         }
     }
 
+    /// #1583: a caller passing fewer weights than points used to read past the end of the
+    /// `weights` array's backing storage inside the bridge loop.
+    ///
+    /// Now rejected up front.
+    @Test func weightedCentroidLengthMismatchIsRejected() {
+        let pts = [SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0), SIMD3(0.0, 10.0, 0.0)]
+
+        let tooFewWeights = GeometryProperties.weightedCentroid(points: pts, weights: [1.0])
+        #expect(tooFewWeights.mass == 0)
+        #expect(tooFewWeights.centroid == nil)
+
+        let tooManyWeights = GeometryProperties.weightedCentroid(
+            points: pts, weights: [1.0, 1.0, 1.0, 1.0])
+        #expect(tooManyWeights.mass == 0)
+        #expect(tooManyWeights.centroid == nil)
+    }
+
     @Test func barycentre() {
         let pts = [SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0), SIMD3(0.0, 10.0, 0.0)]
         if let c = GeometryProperties.barycentre(pts) {

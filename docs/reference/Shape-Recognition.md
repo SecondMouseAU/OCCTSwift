@@ -902,7 +902,7 @@ public static func convertToBSplineAdvanced(_ shape: Shape,
 
 - **Parameters:** `extrusionMode`, convert extrusion surfaces; `revolutionMode`, convert revolution surfaces; `offsetMode`, convert offset surfaces; `planeMode`, convert planes.
 - **Returns:** Shape with BSpline surfaces, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertSurfaceToBSplineSurface` via `OCCTShapeConvertToBSplineAdvanced`.
+- **OCCT:** `ShapeCustom_ConvertToBSpline` applied with `BRepTools_Modifier` via `OCCTShapeConvertToBSplineAdvanced`.
 
 ---
 

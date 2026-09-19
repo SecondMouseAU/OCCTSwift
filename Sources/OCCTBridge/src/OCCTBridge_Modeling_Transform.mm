@@ -62,7 +62,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -198,7 +197,6 @@
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <ShapeFix_Solid.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax1.hxx>
@@ -222,8 +220,6 @@
 #include <gp_Vec.hxx>
 
 #include <TColgp_Array2OfPnt.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
 
 #include <TopAbs.hxx>
 #include <TopExp.hxx>
@@ -1468,8 +1464,14 @@ void OCCTMakeMirror2dPoint(double px, double py, double* matrix)
 
 void OCCTMakeMirror2dAxis(double px, double py, double dx, double dy, double* matrix)
 {
-  gce_MakeMirror2d mm(gp_Ax2d(gp_Pnt2d(px, py), gp_Dir2d(dx, dy)));
-  _storeTrsf2d(mm.Value(), matrix);
+  try
+  {
+    gce_MakeMirror2d mm(gp_Ax2d(gp_Pnt2d(px, py), gp_Dir2d(dx, dy)));
+    _storeTrsf2d(mm.Value(), matrix);
+  }
+  catch (...)
+  {
+  }
 }
 
 void OCCTMakeRotation2d(double px, double py, double angle, double* matrix)

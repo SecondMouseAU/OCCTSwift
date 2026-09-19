@@ -66,4 +66,27 @@ struct XDELayerToolExpansionTests {
             }
         }
     }
+
+    @Test("GetLayers past the 16 buffer cap reports the true count (#1563)")
+    func getLayersBeyondBufferCap() {
+        guard let doc = Document.create() else {
+            #expect(Bool(false), "Failed to create document")
+            return
+        }
+        let box = Shape.box(width: 10, height: 20, depth: 30)
+        if let box = box {
+            doc.addShape(box)
+            let roots = doc.rootNodes
+            if let node = roots.first {
+                let extraCount = 16 + 3
+                for i in 0..<extraCount {
+                    node.setLayer("Layer\(i)")
+                }
+                let layers = node.layers
+                #expect(
+                    layers.count == extraCount,
+                    "Should report all \(extraCount) layers, not the 16-entry buffer cap")
+            }
+        }
+    }
 }

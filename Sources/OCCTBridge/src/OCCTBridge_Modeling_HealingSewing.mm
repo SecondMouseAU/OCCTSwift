@@ -62,7 +62,6 @@
 #include <LocOpe_Prism.hxx>
 #include <LocOpe_Revol.hxx>
 #include <LocOpe_RevolutionForm.hxx>
-#include <LocOpe_SplitDrafts.hxx>
 #include <LocOpe_SplitShape.hxx>
 #include <BRepLib_MakePolygon.hxx>
 #include <BRepLib_MakeWire.hxx>
@@ -198,7 +197,6 @@
 #include <BRepBndLib.hxx>
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <ShapeFix_Solid.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <gp_Ax1.hxx>
@@ -222,8 +220,6 @@
 #include <gp_Vec.hxx>
 
 #include <TColgp_Array2OfPnt.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
 
 #include <TopAbs.hxx>
 #include <TopExp.hxx>
@@ -1670,6 +1666,8 @@ OCCTShapeRef OCCTUnifySameDomainShape(OCCTUnifySameDomainRef ref)
 
 int32_t OCCTSewingNbMultipleEdges(OCCTSewingRef sewing)
 {
+  if (!sewing)
+    return 0;
   try
   {
     return (int32_t)sewing->sewing.NbMultipleEdges();
@@ -1682,6 +1680,11 @@ int32_t OCCTSewingNbMultipleEdges(OCCTSewingRef sewing)
 
 bool OCCTSewingIsMultipleEdge(OCCTSewingRef sewing, int32_t index, OCCTShapeRef* outEdge)
 {
+  if (!sewing)
+  {
+    *outEdge = nullptr;
+    return false;
+  }
   try
   {
     if (index < 1 || index > sewing->sewing.NbMultipleEdges())

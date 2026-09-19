@@ -73,4 +73,39 @@ struct ShapeToleranceTests {
             #expect(tol > 0)
         }
     }
+
+    // #1438: OCCTShapeToleranceValue/OverCount/InRangeCount had no pointer guard at all (unlike
+    // every sibling in the file, e.g. OCCTShapeMaxTolerance), so a null OCCTShapeRef pointer would
+    // dereference unconditionally. That pointer is never null through the public Swift API
+    // (Shape.handle is always valid) -- a `.nullified` shape is still a non-null wrapper POINTER
+    // around a null TopoDS_Shape, and TopExp_Explorer (which ShapeAnalysis_ShapeTolerance uses
+    // internally) already handles a null TopoDS_Shape safely -- so these are hardening/consistency
+    // regressions for a direct C/Obj-C++ caller, not Swift-reachable crash fixes; they document the
+    // now-guarded, safe fallback on the reachable (nullified) half of that null-shape space.
+    @Test func toleranceValueOnNullifiedShapeReturnsZero() {
+        guard let box = Shape.box(width: 10, height: 20, depth: 30), let nullShape = box.nullified
+        else {
+            Issue.record("failed to build box / nullified shape")
+            return
+        }
+        #expect(nullShape.toleranceValue(mode: .average) == 0.0)
+    }
+
+    @Test func toleranceOverCountOnNullifiedShapeReturnsZero() {
+        guard let box = Shape.box(width: 10, height: 20, depth: 30), let nullShape = box.nullified
+        else {
+            Issue.record("failed to build box / nullified shape")
+            return
+        }
+        #expect(nullShape.toleranceOverCount(value: 1e-3) == 0)
+    }
+
+    @Test func toleranceInRangeCountOnNullifiedShapeReturnsZero() {
+        guard let box = Shape.box(width: 10, height: 20, depth: 30), let nullShape = box.nullified
+        else {
+            Issue.record("failed to build box / nullified shape")
+            return
+        }
+        #expect(nullShape.toleranceInRangeCount(min: 0, max: 1e-3) == 0)
+    }
 }

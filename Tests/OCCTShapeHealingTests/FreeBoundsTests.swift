@@ -38,12 +38,18 @@ struct FreeBoundsTests {
         #expect(result == nil)
     }
 
-    @Test("Fix free bounds callable")
-    func fixFreeBoundsCallable() {
-        let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
-        let result = face.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4)
-        // Should return something even if nothing was fixed
-        _ = result
+    @Test("Fix free bounds returns the shape, with its face intact")
+    func fixFreeBoundsCallable() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 10))
+        let face = try #require(Shape.face(from: rect))
+        let repair = try #require(face.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
+        // `_ = result` was the whole test until #1636, which is how it passed while the returned
+        // shape was a compound of wires with no faces in it.
+        #expect(repair.shape.subShapes(ofType: .face).count == 1)
+        // A bare face, rather than a compound of faces, gives the analyser nothing to forecast:
+        // ShapeAnalysis_FreeBounds' sewing-based constructor wants a compound. Measured, 0 wires.
+        #expect(repair.closedWireCount == 0)
+        #expect(repair.openWireCount == 0)
     }
 
     // #310 regression: ShapeAnalysis_FreeBounds crashed (uncatchable SIGSEGV) analyzing a compound

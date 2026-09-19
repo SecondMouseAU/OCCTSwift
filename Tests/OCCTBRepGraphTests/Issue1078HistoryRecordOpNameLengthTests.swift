@@ -95,18 +95,25 @@ struct Issue1078HistoryRecordOpNameLengthTests {
         let len = OCCTBRepGraphHistoryGetRecordInfo(graph.handle, 0, nil, 0, &dummySeq)
         #expect(len == 300)
         
-        var small = [CChar](repeating: 0, count: 8)
+        // Seed with a sentinel other than 0 so a missed write is visible, rather than the array's
+        // own zero-fill accidentally matching what a correct NUL terminator would produce.
+        var small = [CChar](repeating: 0x7F, count: 8)
         var seq: Int32 = 0
         let reported = OCCTBRepGraphHistoryGetRecordInfo(graph.handle, 0, &small, Int32(small.count), &seq)
         #expect(reported == len)
-        // The buffer is 8 bytes; prefix should be <= 8 chars and NUL-terminated
+        // #1434: the bridge used to write the ASCII digit '0' (0x30) instead of the real NUL
+        // terminator (0x00) at the truncation point. That bug was invisible to the OLD version of
+        // this assertion (`small[7] == 0 || prefix.count == 8`): 0x30 is non-zero, so
+        // `prefix(while:)` never stopped early and ran to the buffer's own 8-element bound,
+        // making the second, vacuous OR-clause true either way. Assert the real terminator byte
+        // directly instead.
+        #expect(small[7] == 0, "buffer[7] should be the real NUL terminator, got \(small[7])")
         let prefix = small.withUnsafeBufferPointer { ptr in
             String(
                 decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
                 as: UTF8.self)
         }
-        #expect(prefix.count <= 8)
-        #expect(small[7] == 0 || prefix.count == 8)
+        #expect(prefix.count == 7, "prefix should stop at the NUL terminator, got \(prefix.count) chars")
     }
 
     @Test("A negative max length, or a null buffer with a positive one, is refused")

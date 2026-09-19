@@ -53,6 +53,10 @@ public struct PresentationStyle: Sendable {
             var s = OCCTXCAFPrsStyleCreateWithSurfColor(sc.red, sc.green, sc.blue, surfaceAlpha)
             s.isVisible = isVisible
             return s
+        } else if let cc = curveColor {
+            var s = OCCTXCAFPrsStyleCreateWithCurvColor(cc.red, cc.green, cc.blue)
+            s.isVisible = isVisible
+            return s
         } else {
             var s = OCCTXCAFPrsStyleCreate()
             s.isVisible = isVisible

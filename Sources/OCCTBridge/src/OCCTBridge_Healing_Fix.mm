@@ -59,6 +59,7 @@
 #include <BRepTools.hxx>
 
 #include <Geom_BSplineSurface.hxx>
+#include <Geom_RectangularTrimmedSurface.hxx>
 #include <Geom_Curve.hxx>
 #include <GeomAbs_Shape.hxx>
 #include <GeomPlate_BuildPlateSurface.hxx>
@@ -112,7 +113,6 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
-#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -123,7 +123,6 @@
 #include <ShapeExtend_CompositeSurface.hxx>
 #include <ShapeFix_ComposeShell.hxx>
 #include <ShapeUpgrade_ClosedFaceDivide.hxx>
-#include <ShapeUpgrade_ShapeDivideAngle.hxx>
 #include <ShapeUpgrade_ShapeDivideArea.hxx>
 #include <ShapeUpgrade_ShellSewing.hxx>
 #include <ShapeFix_FaceConnect.hxx>
@@ -905,24 +904,6 @@ OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape)
   }
 }
 
-OCCTShapeRef OCCTShapeRevolutionToElementary(OCCTShapeRef shape)
-{
-  if (!shape)
-    return nullptr;
-
-  try
-  {
-    TopoDS_Shape result = ShapeCustom::ConvertToRevolution(shape->shape);
-    if (result.IsNull())
-      return nullptr;
-    return new OCCTShape(result);
-  }
-  catch (...)
-  {
-    return nullptr;
-  }
-}
-
 OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape)
 {
   if (!shape)
@@ -969,12 +950,35 @@ OCCTShapeRef OCCTShapeDropSmallEdges(OCCTShapeRef shape, double tolerance)
   }
 }
 
-OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
-                                    double       sewingTolerance,
-                                    double       closingTolerance,
-                                    int32_t*     outFixedCount)
+static int32_t occtCountWires(const TopoDS_Shape& shape)
 {
-  if (!shape || !outFixedCount)
+  if (shape.IsNull())
+    return 0;
+  int32_t         count = 0;
+  TopExp_Explorer exp(shape, TopAbs_WIRE);
+  while (exp.More())
+  {
+    count++;
+    exp.Next();
+  }
+  return count;
+}
+
+OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef  shape,
+                                    double        sewingTolerance,
+                                    double        closingTolerance,
+                                    int32_t*      outClosedWireCount,
+                                    int32_t*      outOpenWireCount,
+                                    OCCTShapeRef* outClosedWires,
+                                    OCCTShapeRef* outOpenWires)
+{
+  if (!outClosedWireCount || !outOpenWireCount || !outClosedWires || !outOpenWires)
+    return nullptr;
+  *outClosedWireCount = 0;
+  *outOpenWireCount   = 0;
+  *outClosedWires     = nullptr;
+  *outOpenWires       = nullptr;
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
@@ -984,28 +988,24 @@ OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef shape,
                               Standard_True,
                               Standard_True);
 
+    // GetShape() is the point of ShapeFix_FreeBounds over ShapeAnalysis_FreeBounds: connecting
+    // open wires rewrites the end vertices and every edge in the source shape that shared them.
+    // Returning the wire compound instead handed the caller something with no faces in it (#1636).
+    const TopoDS_Shape& modified = fixer.GetShape();
+    if (modified.IsNull())
+      return nullptr;
+
     TopoDS_Compound closedWires = fixer.GetClosedWires();
     TopoDS_Compound openWires   = fixer.GetOpenWires();
 
-    int32_t         closedCount = 0;
-    TopExp_Explorer exp(closedWires, TopAbs_WIRE);
-    while (exp.More())
-    {
-      closedCount++;
-      exp.Next();
-    }
-
-    *outFixedCount = closedCount;
-
-    BRep_Builder    builder;
-    TopoDS_Compound result;
-    builder.MakeCompound(result);
+    *outClosedWireCount = occtCountWires(closedWires);
+    *outOpenWireCount   = occtCountWires(openWires);
     if (!closedWires.IsNull())
-      builder.Add(result, closedWires);
+      *outClosedWires = new OCCTShape(closedWires);
     if (!openWires.IsNull())
-      builder.Add(result, openWires);
+      *outOpenWires = new OCCTShape(openWires);
 
-    return new OCCTShape(result);
+    return new OCCTShape(modified);
   }
   catch (...)
   {
@@ -1349,8 +1349,13 @@ OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape)
 
 // MARK: - ShapeFix_ComposeShell (v0.79)
 // --- ShapeFix_ComposeShell ---
-OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, double precision)
+OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef,
+                                                double  precision,
+                                                int32_t uPatches,
+                                                int32_t vPatches)
 {
+  if (!occtShapeIsPresent(faceRef) || uPatches < 1 || vPatches < 1)
+    return nullptr;
   try
   {
     const TopoDS_Shape& shape = *(const TopoDS_Shape*)faceRef;
@@ -1361,12 +1366,31 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
     if (surf.IsNull())
       return nullptr;
 
-    // Create a 1x1 composite surface grid
-    Handle(NCollection_HArray2<Handle(Geom_Surface)>) grid =
-      new NCollection_HArray2<Handle(Geom_Surface)>(1, 1, 1, 1);
-    grid->SetValue(1, 1, surf);
+    // Tile the face's own surface into uPatches x vPatches trimmed patches over the face's UV box.
+    // ShapeFix_ComposeShell splits along the joints BETWEEN patches, so the 1 x 1 grid this used
+    // to build unconditionally had nothing to cut along and one face always came back out (#1638).
+    // The patches are sub-ranges of one surface, so they are geometrically connected by
+    // construction and ShapeExtend_Natural reproduces the face's own parametrisation, which is
+    // what keeps the face's pcurves aligned with the composite's global UV.
+    double uMin = 0.0, uMax = 0.0, vMin = 0.0, vMax = 0.0;
+    BRepTools::UVBounds(face, uMin, uMax, vMin, vMax);
 
-    Handle(ShapeExtend_CompositeSurface) compSurf = new ShapeExtend_CompositeSurface(grid);
+    Handle(NCollection_HArray2<Handle(Geom_Surface)>) grid =
+      new NCollection_HArray2<Handle(Geom_Surface)>(1, uPatches, 1, vPatches);
+    for (int32_t i = 1; i <= uPatches; i++)
+    {
+      double u0 = uMin + (uMax - uMin) * (i - 1) / uPatches;
+      double u1 = uMin + (uMax - uMin) * i / uPatches;
+      for (int32_t j = 1; j <= vPatches; j++)
+      {
+        double v0 = vMin + (vMax - vMin) * (j - 1) / vPatches;
+        double v1 = vMin + (vMax - vMin) * j / vPatches;
+        grid->SetValue(i, j, new Geom_RectangularTrimmedSurface(surf, u0, u1, v0, v1));
+      }
+    }
+
+    Handle(ShapeExtend_CompositeSurface) compSurf = new ShapeExtend_CompositeSurface();
+    compSurf->Init(grid, ShapeExtend_Natural);
 
     Handle(ShapeFix_ComposeShell) cs = new ShapeFix_ComposeShell();
     // OCCT 8.0.0p1: ShapeFix_ComposeShell::Perform() null-derefs its ReShape context if none is set
@@ -1550,6 +1574,8 @@ OCCTShapeRef OCCTShapeSolidFromShell(OCCTShapeRef shape)
 
 OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape)
 {
+  if (!shape)
+    return nullptr;
   try
   {
     ShapeFix_EdgeConnect connector;
