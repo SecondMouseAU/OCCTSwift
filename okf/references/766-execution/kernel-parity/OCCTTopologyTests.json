@@ -1,0 +1,98 @@
+[
+  {
+    "test_name": "Topology Traversal Tests",
+    "bridge_function": "OCCTTopologyTraversal",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Exploration Tests",
+    "bridge_function": "OCCTShapeExploration",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Edge/Wire/Vertex Tests",
+    "bridge_function": "OCCTEdgeWireVertex",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Face/Shell/Solid Tests",
+    "bridge_function": "OCCTFaceShellSolid",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Compound/CompSolid Tests",
+    "bridge_function": "OCCTCompoundCompSolid",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Orientation Tests",
+    "bridge_function": "OCCTOrientation",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Adjacency/Connectivity",
+    "bridge_function": "OCCTAdjacencyConnectivity",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Classification Tests",
+    "bridge_function": "OCCTClassification",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Iterator/Explorer Tests",
+    "bridge_function": "OCCTIteratorExplorer",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Transient/Persistent Tests",
+    "bridge_function": "OCCTTransientPersistent",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "History/Mapping Tests",
+    "bridge_function": "OCCTHistoryMapping",
+    "bridge_output": {"type": "bool", "data": true},
+    "kernel_output": {"type": "bool", "data": true},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "Naming/Label Tests",
+    "bridge_function": "OCCTNamingLabel",
+    "bridge_output": {"type": "string", "data": ""},
+    "kernel_output": {"type": "string", "data": ""},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  }
+]
