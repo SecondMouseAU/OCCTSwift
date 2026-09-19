@@ -4114,8 +4114,16 @@ OCCTTObjAppRef OCCTTObjApplicationGetInstance()
   }
 }
 
+// #1404: serializes TObj_Application's own myIsVerbose/myIsError, see OCCTBridge_Internal.h.
+std::mutex& tobjApplicationMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
 void OCCTTObjApplicationSetVerbose(OCCTTObjAppRef app, bool verbose)
 {
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
     auto* a = static_cast<TObj_Application*>(app);
@@ -4128,6 +4136,7 @@ void OCCTTObjApplicationSetVerbose(OCCTTObjAppRef app, bool verbose)
 
 bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef app)
 {
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
     auto* a = static_cast<TObj_Application*>(app);
@@ -4141,6 +4150,10 @@ bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef app)
 
 OCCTDocumentRef OCCTTObjApplicationCreateDocument(OCCTTObjAppRef app)
 {
+  // Held across CreateNewDocument() as a whole, not just around the field writes: myIsError is
+  // written before NewDocument() and read after it, so the window that has to be exclusive is the
+  // call, not the assignment.
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
     auto*                      a = static_cast<TObj_Application*>(app);

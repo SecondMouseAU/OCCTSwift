@@ -4,19 +4,32 @@ import simd
 
 /// TObj application singleton for OCAF-based document management.
 ///
-/// `@unchecked Sendable` reflects that `ref` is a plain bridge pointer; it does not mean
-/// concurrent use is safe. `.shared` always returns a wrapper around the **same** process-wide
+/// `.shared` always returns a wrapper around the **same** process-wide
 /// `TObj_Application::GetInstance()` singleton (a `TDocStd_Application` subclass, unrelated to
 /// `XCAFApp_Application`, the class #344/#371 fixed and eliminated), so every `TObjApplication`
-/// instance shares one underlying OCCT object. Its lazy-init itself is thread-safe (a C++11
-/// function-local static, the same fix pattern #344 applied to `XCAFApp_Application`), but
-/// `isVerbose`'s getter/setter and `createDocument()` (which sets `myIsError` before calling
-/// `NewDocument`) mutate that shared instance's plain fields with no synchronization, a
-/// previously-uncharacterized race distinct from any of #341/#344/#349/#353/#371/#374 (see #1404).
-/// `createDocument()`'s downstream document-creation machinery (`CDF_Directory`, storage-driver
-/// caching, `CDM_Application`'s metadata table, `Resource_Manager`/`Storage_Schema`) is covered by
-/// those kernel fixes, all of which ship in the pinned kernel. Serialize calls to `.shared`'s
-/// members with `OCCTSerial.withLock { }` until this gets its own bridge-side lock.
+/// instance shares one underlying OCCT object.
+///
+/// `@unchecked Sendable` is sound here rather than aspirational: `ref` is a plain bridge pointer,
+/// and every member that reaches the shared singleton's own mutable state is serialized on the
+/// bridge side by `tobjApplicationMutex()` (#1404). `isVerbose`'s getter and setter reach
+/// `myIsVerbose`, a plain unguarded `bool`, and `createDocument()` reaches `myIsError`, which
+/// `CreateNewDocument` writes before calling `NewDocument` and reads back as its return value, so
+/// two unserialized concurrent calls could each clear the other's in-flight error signal. The lock
+/// is held across the whole `CreateNewDocument` call, not just the field writes.
+///
+/// That race was distinct from #341/#344/#349/#353/#371/#374, none of which touched this class.
+/// `createDocument()`'s downstream machinery (`CDF_Directory`, storage-driver caching,
+/// `CDM_Application`'s metadata table, `Resource_Manager`/`Storage_Schema`) is covered by those
+/// kernel fixes, all of which ship in the pinned kernel; this lock covers the layer above them.
+///
+/// ```swift
+/// // Safe to call concurrently; the bridge serializes the shared singleton's own state.
+/// await withTaskGroup(of: Document?.self) { group in
+///     for _ in 0..<8 {
+///         group.addTask { TObjApplication.shared?.createDocument() }
+///     }
+/// }
+/// ```
 public final class TObjApplication: @unchecked Sendable {
     private let ref: OCCTTObjAppRef
 

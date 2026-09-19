@@ -374,6 +374,18 @@ std::mutex& ocafStoreMutex();
 // OCCTFontMgrInitDatabase() can reassign both at any time from any thread.
 // Bridge-only (no OCCT source involved).
 std::mutex& fontListMutex();
+// #1404: TObj_Application::GetInstance() is a process-wide singleton whose lazy-init is
+// thread-safe (a C++11 function-local static) but whose own two fields are not. myIsVerbose is a
+// plain unguarded bool behind SetVerbose/IsVerbose, and CreateNewDocument() writes myIsError =
+// false at its top, calls NewDocument(), then reads myIsError back as its return value, so two
+// concurrent createDocument() calls can each clear the other's in-flight error signal. Distinct
+// from #341/#344/#349/#353/#371/#374: all of those fixed XCAFApp_Application / CDF_Application /
+// CDM_Application / Resource_Manager / Storage_Schema state, which NewDocument()'s downstream
+// machinery does now cover in the pinned kernel (patches 0012/0014/0015/0016). TObj_Application's
+// own two fields sit one layer above that and no kernel fix touches them. Bridge-side lock rather
+// than a carried patch: the class has no lock of its own, the API is niche, and upstream has no
+// PR in this area (checked against Open-Cascade-SAS/OCCT before filing).
+std::mutex& tobjApplicationMutex();
 
 // === OCCT signal handling ===
 //
