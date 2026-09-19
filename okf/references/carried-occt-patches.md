@@ -72,8 +72,8 @@ recent activity first" step this prompted.
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-two patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The five it lacks, and why each matters, per
+`Scripts/patches/` holds twenty-three patches; the v3.0.0 release asset `Package.swift` pins holds
+seventeen. The six it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Patch | Exposure today |

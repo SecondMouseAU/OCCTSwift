@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, and
 `0032` retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin — see its
 [Retired patches](#retired-patches) entry), so the carried sequence now reads 0010–0012, 0014–0031,
-0033. The gaps are the retirements, not missing files:
+0033–0034. The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
