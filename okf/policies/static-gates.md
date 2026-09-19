@@ -20,7 +20,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The four censuses today and what each is for:
+The five censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is ~13 s because sub-kind 4 walks a taint fixpoint per bridge function; the
@@ -43,13 +43,23 @@ The four censuses today and what each is for:
 - `census-comment-staleness.py` (#872): comments naming a symbol, flag or patch that no longer
   resolves. Its patch-citation channel scans `CLAUDE.md` and the two `okf/references/` pages that
   cite `Scripts/patches/NNNN-*` files.
+- `census-api-reference-rows.py` (#1679): `docs/API_REFERENCE.md` category-row entries that resolve
+  to no declaration in `Sources/`. A removed API leaves its name in a row with every gate green:
+  `count-operations.py` treats those rows as illustrative and re-derives the headline totals
+  instead, and `check-docs-existence.py` reads `docs/reference/` pages rather than
+  `API_REFERENCE`'s tables. #1666's removal was caught by hand; #1634's `revolutionToElementary`
+  was still listed until this census found it. It reports rather than gates because the rows mix
+  real symbols with umbrella names (`booleanCheck` covers two bridge functions and is itself
+  declared nowhere), abbreviations (`thruSectionsCreate` for `OCCTShapeThruSectionsCreate`) and
+  category labels (`boss`), and no mechanical rule separates those from a stale entry: 79 of 2,588
+  identifier-shaped entries resolve to nothing, and most of them are correct documentation.
 
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
 ## Every detector proves it is not blind
 
-Nine of the ten gates, all four censuses and the merge-history audit take `--self-test`, a
+Nine of the ten gates, all five censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
