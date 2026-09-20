@@ -24,8 +24,16 @@
     "status": "PASS"
   },
   {
-    "test_name": "XCAF Document Save/Load",
+    "test_name": "XCAF Document Save",
     "bridge_function": "OCCTDocumentSaveOCAF",
+    "bridge_output": {"type": "shape", "data": {}},
+    "kernel_output": {"type": "shape", "data": {}},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS"
+  },
+  {
+    "test_name": "XCAF Document Load",
+    "bridge_function": "OCCTDocumentLoadOCAF",
     "bridge_output": {"type": "shape", "data": {}},
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
