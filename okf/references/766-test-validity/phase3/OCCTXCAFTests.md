@@ -13,7 +13,8 @@
 | XCAF Color Tests | 58 | WR/CR |
 | XCAF Layer Tests | 48 | WR |
 | XCAF Assembly Tests | 42 | WR |
-| XCAF Document Save/Load | 40 | IO/CR (#341, #344, #349, #353, #371, #374) |
+| XCAF Document Save | 20 | IO/CR (#341, #344, #349, #353, #371, #374) |
+| XCAF Document Load | 20 | IO/CR (#341, #344, #349, #353, #371, #374) |
 | XCAF Material Tests | 38 | WR |
 | XCAF Shape Addition/Removal | 36 | WR/CR |
 | XCAF GDT Tests | 32 | WR |
@@ -26,7 +27,7 @@
 | XCAF Mesh Tests | 12 | WR |
 | XCAF Note/Annotation Tests | 12 | WR |
 
-**Total**: 424 tests across 15 suites
+**Total**: 424 tests across 16 suites
 
 ---
 
@@ -34,12 +35,12 @@
 
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
-| #341: theAutoNaming race | XCAFApp_Application::GetApplication | Race on theAutoNaming | Revert to singleton/remove atomic | ✅ | ✅ |  |
-| #344: CDF_Directory race | CDF_Directory::Add/Remove/Contains | Race on myDocuments | Remove mutex | ✅ | ✅ |  |
-| #349: OCAF driver race | PCDM_StorageDriver/Reader | Shared driver race | Remove ocafStoreMutex | ✅ | ✅ |  |
-| #353: CDM_MetaData race | CDM_Application::myMetaDataLookUpTable | Race on metadata | Remove CDM mutex | ✅ | ✅ |  |
-| #371: GetApplication singleton | XCAFApp_Application::GetApplication | Singleton race | Revert to singleton | ✅ | ✅ |  |
-| #374: Resource_Manager/Storage_Schema | Resource_Manager::Debug / Storage_Schema::ICurrentData | Race on Debug/ICurrentData | Remove atomic/mutex | ✅ | ✅ |  |
+| XCAF Document Save | XCAFApp_Application::GetApplication | Race on theAutoNaming | Revert to singleton/remove atomic | ✅ | ✅ | #341 |
+| XCAF Document Save | CDF_Directory::Add/Remove/Contains | Race on myDocuments | Remove mutex | ✅ | ✅ | #344 |
+| XCAF Document Save/Load | PCDM_StorageDriver/Reader | Shared driver race | Remove ocafStoreMutex | ✅ | ✅ | #349 |
+| XCAF Document Save/Load | CDM_Application::myMetaDataLookUpTable | Race on metadata | Remove CDM mutex | ✅ | ✅ | #353 |
+| XCAF Document Save/Load | XCAFApp_Application::GetApplication | Singleton race | Revert to singleton | ✅ | ✅ | #371 |
+| XCAF Document Save/Load | Resource_Manager::Debug / Storage_Schema::ICurrentData | Race on Debug/ICurrentData | Remove atomic/mutex | ✅ | ✅ | #374 |
 
 ---
 
