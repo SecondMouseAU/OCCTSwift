@@ -42,25 +42,48 @@ def load_red_green_evidence() -> Dict[str, Dict]:
             domain = md_file.stem
             content = md_file.read_text()
             lines = content.split('\n')
-            in_table = False
+            
+            # Find the injection matrix table
+            in_injection_matrix = False
+            header_parts = None
+            
             for line in lines:
-                if line.strip().startswith('|') and 'Test' in line and 'Defect' in line:
-                    in_table = True
+                if line.strip().startswith('## Injection Matrix'):
+                    in_injection_matrix = True
                     continue
-                if in_table and line.strip().startswith('|'):
+                if in_injection_matrix and line.strip().startswith('---'):
+                    continue
+                if in_injection_matrix and line.strip().startswith('##'):
+                    in_injection_matrix = False
+                    continue
+                    
+                if in_injection_matrix and line.strip().startswith('|'):
                     parts = [p.strip() for p in line.split('|')]
-                    if len(parts) >= 3 and parts[1] and parts[1] != 'Test':
-                        test_name = parts[1]
-                        red_status = parts[3] if len(parts) > 3 else ''
-                        green_status = parts[4] if len(parts) > 4 else ''
-                        if '✅' in red_status or '❌' in red_status or 'N/A' in red_status:
-                            key = f"{domain}:{test_name}"
-                            evidence_map[key] = {
-                                'domain': domain,
-                                'test': test_name,
-                                'red': red_status,
-                                'green': green_status
-                            }
+                    # Skip empty first/last parts from markdown table
+                    parts = [p for p in parts if p]
+                    if not header_parts and len(parts) >= 2 and parts[0] == 'Test':
+                        # Found header row
+                        header_parts = parts
+                        continue
+                    if header_parts and len(parts) >= 2:
+                        # Data row - map columns by header name
+                        test_idx = header_parts.index('Test') if 'Test' in header_parts else 0
+                        red_idx = header_parts.index('Red?') if 'Red?' in header_parts else None
+                        green_idx = header_parts.index('Green?') if 'Green?' in header_parts else None
+                        
+                        if test_idx < len(parts):
+                            test_name = parts[test_idx]
+                            if test_name and test_name != 'Test':
+                                red_status = parts[red_idx] if red_idx is not None and red_idx < len(parts) else ''
+                                green_status = parts[green_idx] if green_idx is not None and green_idx < len(parts) else ''
+                                if '✅' in red_status or '❌' in red_status or 'N/A' in red_status:
+                                    key = f"{domain}:{test_name}"
+                                    evidence_map[key] = {
+                                        'domain': domain,
+                                        'test': test_name,
+                                        'red': red_status,
+                                        'green': green_status
+                                    }
     
     return evidence_map
 
@@ -72,16 +95,23 @@ def load_kernel_parity_evidence() -> Dict[str, Dict]:
     execution_dir = EXECUTION_DIR
     if execution_dir.exists():
         for json_file in execution_dir.glob("kernel-parity/*.json"):
+            # Derive domain from filename as fallback
             domain = json_file.stem.replace("OCCT", "").replace("Tests", "")
             try:
                 with open(json_file) as f:
                     data = json.load(f)
                 for record in data:
                     test_name = record.get("test_name", "")
+                    target = record.get("target", "")  # Use target field directly
                     if test_name:
-                        key = f"OCCT{domain}Tests:{test_name}"
+                        # Construct key from target and test_name if target exists
+                        if target:
+                            key = f"{target}:{test_name}"
+                        else:
+                            # Fallback: derive from filename
+                            key = f"OCCT{domain}Tests:{test_name}"
                         evidence_map[key] = {
-                            'domain': f"OCCT{domain}Tests",
+                            'domain': target if target else f"OCCT{domain}Tests",
                             'test': test_name,
                             'parity': record.get("comparison", {}).get("equal", False),
                             'differences': record.get("comparison", {}).get("differences", [])
