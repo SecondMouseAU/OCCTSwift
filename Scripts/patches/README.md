@@ -7,10 +7,11 @@ release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/
 until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
 for what that takes.
 
-**Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, and
-`0032` retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin — see its
-[Retired patches](#retired-patches) entry), so the carried sequence now reads 0010–0012, 0014–0031,
-0033–0035. The gaps are the retirements, not missing files:
+**Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
+retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
+2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034.
+The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1421,17 +1422,6 @@ Not yet filed upstream (override-link validated, not yet in a rebuilt xcframewor
 
 **Retire** once the bundled OCCT includes this fix.
 
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
-
 ## 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch
 
 **`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`.** `bound[0]` and
@@ -1480,39 +1470,65 @@ grid.
 **Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
 the seven OCCTSwift thread-safety PRs still open on Release 8.1.
 
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
+
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 
-**A backport, not a discovery.** Upstream
-[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259) "Data Exchange - Make STEP
-read/write pipelines thread-safer" (merged 2026-05-03) is **three quarters present in the pinned
-V8_0_1 already**. Checked marker by marker:
+**RETIRED 2026-09-20, one day after it landed. The `.patch` file is deleted.** It reintroduced
+[#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280), a silent shape-corruption bug, and
+turned `kernel-integration.yml` red on `main`.
 
-| #1259 change | In the pin? |
-|---|---|
-| `XSAlgo_ShapeProcessor::SetParameter` skips a matching `Bind` | present |
-| `LibCtl_Library` racing last-protocol cache dropped | present |
-| `STEPControl_Controller` ctor pre-populates the actor | present (`STEPControl_Controller.cxx:348-353`) |
-| per-`Transfer` `InitializeMissingParameters()` dropped | **absent, this patch** |
+**What it did.** Removed `InitializeMissingParameters()` from `STEPControl_Writer::Transfer`, a
+byte-identical backport of the one part of upstream
+[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259) the pinned `V8_0_1` lacked.
 
-The diff's blob hashes are byte-identical to upstream's own (`c911126d..9f60d9e6`), so this is
-literally their change rather than a re-derivation.
+**Why it was wrong, and the reasoning that got it wrong.** Its own writeup argued the call was
+"nearly inert", because both of its guards read through the same process-shared actor that
+`STEPControl_Controller`'s constructor has already populated, so in the default path both branches
+are false. **The premise is true and the conclusion does not follow.** `InitializeMissingParameters`
+is not only an initialiser, it is a *repair*:
 
-**It is nearly inert, and that is worth saying rather than overselling it.**
-`STEPControl_Writer::SetShapeFixParameters` delegates to `GetActor()`, the process-shared actor, so
-`InitializeMissingParameters()` does reach shared state. But both of its guards
-(`GetShapeFixParameters().IsEmpty()`, `!GetShapeProcessFlags().second`) read through that same actor,
-which the constructor above has already populated, so in the default path both branches are false and
-the call writes nothing. It matters only for a caller that has customised parameters, where it races
-a concurrent writer.
+```cpp
+if (!GetShapeProcessFlags().second)
+{
+  ShapeProcess::OperationsFlags aFlags;
+  aFlags.set(ShapeProcess::Operation::SplitCommonVertex);
+  aFlags.set(ShapeProcess::Operation::DirectFaces);
+  SetShapeProcessFlags(aFlags);
+}
+```
 
-**This does NOT fix #1403.** The residual races measured after `0033`
-(`Scripts/repro/1157-interface-static-thread-safety/gate-baseline-1403/`) are not the #1259
-mechanisms, because those fixes are already in the pin. The busiest site is
-`IFSelect_WorkSession.cxx:86`'s `errhand` global, then `STEPControl_ActorWrite::SetGroupMode`. This
-patch is housekeeping alongside that work, not the answer to it.
+`DirectFaces` is exactly the operation whose absence causes #280. Constructing a
+`STEPCAFControl_Reader`, which any XDE STEP read does, leaves the shared actor's `OperationsFlags`
+empty, so the guard is **not** false on that path: the call fires and repairs the poisoned actor
+before every write. Removing it removes the repair. The "default path" the argument reasoned about
+was the only path it looked at.
 
-**Nothing to file upstream.** Already merged there. If a future repin picks up a kernel that includes
-#1259 in full, this patch retires with no replacement.
+**How it presented.** `kernel-integration.yml` runs the suite against a kernel built from this
+directory, so it is the only job that ever sees an unpinned patch.
+`STEPWriterCAFCorruptionTests`, #280's own regression guard, failed there: `CONICAL_SURFACE`
+absent from the written file, the frustum down from 3 faces to 2, and its volume out by 63% while
+still reporting `isValid == true`. CI bisects it cleanly: three green runs on `0034`'s branch and
+on `main` after it merged, then failure on `0035`'s branch and on `main` after that merged.
+
+**The lesson, which is about backporting rather than about this line.** Upstream dropped this call
+as part of a coordinated change; whatever makes the drop safe upstream is in the quarter of #1259
+our pin does not have. A byte-identical hunk is not a safe backport when three quarters of its
+change is already present and the remaining quarter is what it depended on. Take the whole change
+or none of it.
+
+**Not to be re-backported** before a repin onto a kernel carrying #1259 in full, at which point it
+arrives on its own. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 

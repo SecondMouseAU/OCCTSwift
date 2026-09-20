@@ -21,21 +21,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
-### Carried patch `0035`: `STEPControl_Writer` stops re-initialising the shared actor per transfer (#1403)
+### Carried patch `0035` was added and retired without ever reaching a consumer (#1403, #280, #2056)
 
-`STEPControl_Writer::Transfer` called `InitializeMissingParameters()` on every transfer, which writes
-through to the process-shared `STEPControl_ActorWrite`. Upstream removed that call in
-[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259); this backports the one line of that
-PR the pinned kernel lacks, byte-identical to upstream's change.
+`0035` backported the one line of [OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259)
+the pinned kernel lacks, removing `InitializeMissingParameters()` from
+`STEPControl_Writer::Transfer`. It was retired the next day because it reintroduced
+[#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280): that call is not only an initialiser
+but the repair that re-sets `DirectFaces` on a shared actor an XDE STEP read has left with empty
+`OperationsFlags`. Without it, every STEP write following a `Document.loadSTEP` silently drops
+faces on indirect surfaces: a frustum came back with 2 faces instead of 3, missing 63% of its
+volume, still reporting `isValid == true`.
 
-The call is nearly inert in the default path, because the controller's constructor already populates
-both fields its guards test, so it matters only for a caller that has customised shape-fix
-parameters while another thread writes. It is **not** the fix for #1403's residual data-exchange
-races, which are measured separately and sit in `IFSelect_WorkSession`'s `errhand` global and the
-shared write actor. Not in the pinned asset, so nothing changes for consumers until a rebuild.
+**No consumer was ever affected.** `0035` was never in the pinned asset, so only
+`kernel-integration.yml`, which builds the kernel from `Scripts/patches/`, ever ran it, and that is
+the job whose #280 regression guard caught it.
 
-`check-inventory-prose.py` also grows three claims and one structural check it was blind to, after
-adding `0034` left three prose statements stale that the gate reported clean.
+`check-inventory-prose.py` grew three claims and one structural check in the same work, after
+adding `0034` left three prose statements stale that the gate reported clean, and it now tolerates
+a capitalised or line-wrapped "the carried sequence now reads" phrase, which the retirement edit
+itself tripped over.
 
 ### Carried patch `0034`: `GeomFill_CoonsAlgPatch::Value` samples the U boundaries at U (#1515)
 
