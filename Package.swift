@@ -24,27 +24,32 @@ import Foundation
 let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 
 // Detect WASI platform - check multiple indicators for reliability
-// 1. Explicit flag (most reliable)
-// 2. SWIFT_SDK env var (set by swift build --swift-sdk)
-// 3. Target triple contains wasm/wasi
+// 1. Explicit flag (most reliable): OCCTSWIFT_WASI=1
+// 2. SWIFT_SDK env var (set by swift build --swift-sdk): contains "wasm" or "wasi"
+// Note: Target triple inspection is not available in Package.swift context;
+// SwiftPM does not expose the target triple to the manifest.
 let isExplicitWASI = ProcessInfo.processInfo.environment["OCCTSWIFT_WASI"] == "1"
 let swiftSDK = ProcessInfo.processInfo.environment["SWIFT_SDK"]
 let isWASI = isExplicitWASI ||
     (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi")))
-let isWASITarget = isWASI
 
 // For WASI, we use a locally built static library (libOCCT-wasm.a), not an xcframework.
 // For native platforms, we prefer the local xcframework if present, otherwise download the remote one.
 let useLocalXCFramework: Bool = {
-    if isWASITarget { return false } // WASI never uses xcframework
+    if isWASI { return false } // WASI never uses xcframework
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
     if ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1" { return true }
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-let occtTarget: Target = isWASITarget
+// OCCT V8.0.1 plus the seventeen carried patches are documented in Scripts/patches/README.md
+// (patch list, verification status, and CI coverage gaps for maintainers).
+
+let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
     // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
+    // The `path: "Libraries"` sets the base for headerSearchPath("occt-headers-wasm") -> Libraries/occt-headers-wasm/
+    // dummy.c is required by SwiftPM (targets must have at least one source file)
     ? .target(
         name: "OCCT",
         path: "Libraries",
@@ -58,7 +63,8 @@ let occtTarget: Target = isWASITarget
         ],
         linkerSettings: [
             .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
-            .unsafeFlags(["-L", "Libraries"]) // search Libraries/ for the static lib
+            // Build directory is .build/<config>/OCCT.build/, so ../../Libraries reaches package root
+            .unsafeFlags(["-L", "../../Libraries"])
         ]
     )
     : useLocalXCFramework
@@ -121,7 +127,7 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
         url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.17.0/OCCTBridge.xcframework.zip",
         checksum: "d9eab319f0dfad49b83d1776f1c0a74310c0ddb12a7ed391fe0a0b260778091b"
     )
-    : isWASITarget
+    : isWASI
         // WASI: Build from source with WASI-specific settings
         ? .target(
             name: "OCCTBridge",
