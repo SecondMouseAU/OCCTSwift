@@ -1,5 +1,11 @@
 # #1403 Phase 1: the DE gate baseline, and every surviving race classified
 
+> **Superseded in part by [`rescope-2026-09-20.md`](rescope-2026-09-20.md).** The logs in this
+> directory are truncated at 200 KB each, so the classification below rests on 64 of 242 reports.
+> Re-derived from untruncated logs, `Interface_Protocol::theactive()` has **zero** measured support
+> and is removed from bucket (b); `NM_DETECTED`, the `static int` sentinel family and three shared
+> `DataMap` registries are added. The rest of bucket (b) below is confirmed. Read that file first.
+
 Measured 2026-09-20 against the pinned kernel plus all carried patches (so `0033` is in), on the
 ThreadSanitizer build in `Libraries/occt-install-tsan`, by `Scripts/tsan-stress.sh run` with the five
 independent `1157` scenarios newly registered in `SCENARIOS`.

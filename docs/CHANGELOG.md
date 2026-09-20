@@ -21,6 +21,21 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patch `0036`: `IFSelect_WorkSession`'s error-handling sentinel is per instance (#1403)
+
+`IFSelect_WorkSession` used a file-scope `errhand` flag as a recursion sentinel so its nine
+error-handled operations would wrap themselves in a `try` exactly once. Shared across threads, one
+thread clearing the sentinel made another take the unguarded path, so an exception that should have
+been caught and reported escaped instead. It was the busiest racing site in the data-exchange path.
+
+The global was only ever a mirror of the per-instance `theerrhand`, so it is removed in favour of a
+per-instance sentinel, with no lock, following #363's relocate-to-the-owner precedent. Measured by
+override-link against a ThreadSanitizer build: six race access sites become zero
+(`Scripts/repro/1403-workession-errhand/`).
+
+Not in the pinned asset, so nothing changes for consumers until a rebuild. The defect is live in
+current OCCT master too, so the patch is bound upstream.
+
 ### Carried patch `0035` was added and retired without ever reaching a consumer (#1403, #280, #2056)
 
 `0035` backported the one line of [OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259)
