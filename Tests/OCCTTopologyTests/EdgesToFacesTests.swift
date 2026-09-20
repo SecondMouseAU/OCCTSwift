@@ -35,4 +35,27 @@ struct EdgesToFacesTests {
         let result = Shape.facesFromEdges(wireShape, onlyPlanar: false)
         #expect(result != nil)
     }
+
+    @Test("Edges to faces from two disjoint closed loops (#1506)")
+    func edgesToFacesFromTwoDisjointLoops() {
+        // Two disjoint closed squares in one compound (the issue's own fixture). Before the fix,
+        // the second loop's first edge failed to connect to the first loop's now-closed wire,
+        // BRepBuilderAPI_MakeWire::Wire() was called on the builder anyway (no IsDone() guard),
+        // threw StdFail_NotDone, and the exception propagated through both nested loops to the
+        // function's blanket catch(...), discarding BOTH already-built faces, not just the
+        // second, and returning nil.
+        let square1 = Shape.fromWire(Wire.rectangle(width: 4, height: 4)!)!
+        let square2 = Shape.fromWire(Wire.rectangle(width: 4, height: 4)!)!
+            .translated(by: SIMD3<Double>(20, 0, 0))!
+        let compound = Shape.compound([square1, square2])!
+
+        let result = Shape.facesFromEdges(compound, onlyPlanar: true)
+        #expect(result != nil)
+        if let result {
+            // Also guards the second defect: the edge that failed to connect must seed the next
+            // wire rather than being silently discarded, or the second loop would come up one
+            // edge short and never close into a face.
+            #expect(result.faces().count == 2)
+        }
+    }
 }

@@ -1301,7 +1301,12 @@ public func mirrorPlane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Bool
 
 ## GeomEval Surface Factories (v0.130.0)
 
-Parametric surface factories backed by `Geom_CartesianPoint`-derived evaluator surfaces. All return `nil` on invalid parameters.
+Parametric surface factories over the pinned kernel's own `GeomEval_*` classes. These are shipped
+OCCT 8.0.1 surfaces, not evaluators this project wrote: the five below derive from OCCT's
+elementary-surface base, and the two Bezier ones further down from its bounded-surface base, so a
+surface returned here is an ordinary `Surface` that can be trimmed, offset or meshed. Each is
+built at the origin on the Z axis, and each returns `nil` when the OCCT constructor rejects its
+arguments.
 
 ---
 
@@ -1315,9 +1320,12 @@ public static func ellipsoid(a: Double, b: Double, c: Double) -> Surface?
 
 Parametrisation: `P(u,v) = a·cos(v)·cos(u)·X + b·cos(v)·sin(u)·Y + c·sin(v)·Z`.
 
+`u` is periodic on `[0, 2π]` and `v` runs over `[-π/2, π/2]`. When `a == b` the surface is a
+spheroid (an ellipsoid of revolution).
+
 - **Parameters:** `a`, semi-axis along X (> 0); `b`, semi-axis along Y (> 0); `c`, semi-axis along Z (> 0).
 - **Returns:** Ellipsoid surface, or `nil` if any semi-axis ≤ 0.
-- **OCCT:** `OCCTGeomEvalEllipsoidCreate`, custom `Geom_Surface` evaluator.
+- **OCCT:** `GeomEval_EllipsoidSurface` (via `OCCTGeomEvalEllipsoidCreate`).
 - **Example:**
   ```swift
   let ellipsoid = Surface.ellipsoid(a: 10, b: 6, c: 4)
@@ -1333,9 +1341,14 @@ Creates a hyperboloid of revolution surface.
 public static func hyperboloid(r1: Double, r2: Double, twoSheets: Bool = false) -> Surface?
 ```
 
-- **Parameters:** `r1`, first semi-axis radius (> 0); `r2`, second semi-axis radius (> 0); `twoSheets`, if `true`, creates a two-sheet hyperboloid.
-- **Returns:** Hyperboloid surface, or `nil` on failure.
-- **OCCT:** `OCCTGeomEvalHyperboloidCreate`.
+One-sheet parametrisation: `P(u,v) = r1·cosh(v)·cos(u)·X + r1·cosh(v)·sin(u)·Y + r2·sinh(v)·Z`.
+Two-sheet: `P(u,v) = r2·sinh(v)·cos(u)·X + r2·sinh(v)·sin(u)·Y + r1·cosh(v)·Z`. `u` is periodic
+on `[0, 2π]`, `v` runs over the whole real line.
+
+- **Parameters:** `r1`, first semi-axis radius (> 0); `r2`, second semi-axis radius (> 0); `twoSheets`, if `true`, uses the two-sheet parametrisation.
+- **Returns:** Hyperboloid surface, or `nil` if either radius is ≤ 0.
+- **Note:** `twoSheets: true` returns **one** of the two sheets, not both. `GeomEval_HyperboloidSurface` represents a single connected surface, and its header says so: "The second sheet is not represented by this class." Build the other sheet by mirroring this one through the centre plane.
+- **OCCT:** `GeomEval_HyperboloidSurface` (via `OCCTGeomEvalHyperboloidCreate`).
 
 ---
 
@@ -1347,9 +1360,12 @@ Creates a circular paraboloid of revolution surface.
 public static func paraboloid(focal: Double) -> Surface?
 ```
 
+Parametrisation: `P(u,v) = v·cos(u)·X + v·sin(u)·Y + (v² / 4F)·Z`, with the origin at the vertex.
+`u` is periodic on `[0, 2π]`, `v` runs over the whole real line.
+
 - **Parameters:** `focal`, focal distance (must be > 0).
 - **Returns:** Paraboloid surface, or `nil` if `focal ≤ 0`.
-- **OCCT:** `OCCTGeomEvalParaboloidCreate`.
+- **OCCT:** `GeomEval_ParaboloidSurface` (via `OCCTGeomEvalParaboloidCreate`).
 - **Example:**
   ```swift
   let dish = Surface.paraboloid(focal: 5)
@@ -1368,8 +1384,8 @@ public static func circularHelicoid(pitch: Double) -> Surface?
 Parametrisation: `S(u,v) = v·cos(u)·X + v·sin(u)·Y + (P·u / 2π)·Z`.
 
 - **Parameters:** `pitch`, axial advance per 2π turn (must be ≠ 0).
-- **Returns:** Helicoid surface, or `nil` on failure.
-- **OCCT:** `OCCTGeomEvalCircularHelicoidCreate`.
+- **Returns:** Helicoid surface, or `nil` if `pitch == 0`. Both parameters run over the whole real line; the surface is neither periodic nor closed.
+- **OCCT:** `GeomEval_CircularHelicoidSurface` (via `OCCTGeomEvalCircularHelicoidCreate`).
 - **Example:**
   ```swift
   let helicoid = Surface.circularHelicoid(pitch: 3.0)
@@ -1388,8 +1404,8 @@ public static func hyperbolicParaboloid(a: Double, b: Double) -> Surface?
 Parametrisation: `P(u,v) = u·X + v·Y + (u²/a² − v²/b²)·Z`.
 
 - **Parameters:** `a`, first semi-axis length (> 0); `b`, second semi-axis length (> 0).
-- **Returns:** Saddle surface, or `nil` on failure.
-- **OCCT:** `OCCTGeomEvalHypParaboloidCreate`.
+- **Returns:** Saddle surface, or `nil` if either semi-axis is ≤ 0. The origin is the saddle point, both parameters run over the whole real line, and the surface is doubly ruled.
+- **OCCT:** `GeomEval_HypParaboloidSurface` (via `OCCTGeomEvalHypParaboloidCreate`).
 
 ---
 
@@ -1600,6 +1616,9 @@ parameter-value form was exposed here.
 
 ## GeomEval TBezier / AHTBezier Surfaces (v0.131.0)
 
+Both are shipped OCCT 8.0.1 surface classes, not evaluators this project wrote. Each derives from
+OCCT's bounded-surface base, so what comes back is an ordinary `Surface`.
+
 ### `Surface.tBezier(poles:uCount:vCount:alphaU:alphaV:)`
 
 Creates a Trigonometric Bezier surface.
@@ -1618,7 +1637,7 @@ A tensor-product surface using trigonometric Bernstein-like bases in both U and 
   - `alphaU`: frequency parameter in U (> 0).
   - `alphaV`: frequency parameter in V (> 0).
 - **Returns:** TBezier surface, or `nil` if counts are invalid or even.
-- **OCCT:** `OCCTGeomEvalTBezierSurfaceCreate`.
+- **OCCT:** `GeomEval_TBezierSurface` (via `OCCTGeomEvalTBezierSurfaceCreate`).
 - **Example:**
   ```swift
   var poles = [SIMD3<Double>](repeating: .zero, count: 9)
@@ -1648,7 +1667,7 @@ A tensor-product surface using mixed AHT bases in both U and V. Parameter domain
   - `alphaU`, `alphaV`, hyperbolic frequency in U and V (≥ 0).
   - `betaU`, `betaV`, trigonometric frequency in U and V (≥ 0).
 - **Returns:** AHT Bezier surface, or `nil` on invalid parameters.
-- **OCCT:** `OCCTGeomEvalAHTBezierSurfaceCreate`.
+- **OCCT:** `GeomEval_AHTBezierSurface` (via `OCCTGeomEvalAHTBezierSurfaceCreate`).
 
 ---
 

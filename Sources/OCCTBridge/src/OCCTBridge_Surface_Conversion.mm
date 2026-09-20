@@ -38,6 +38,7 @@
 
 // === Area-specific OCCT headers ===
 
+#include <cmath>
 #include <Geom_BezierSurface.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_ConicalSurface.hxx>
@@ -907,19 +908,16 @@ OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull su
 
 double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface)
 {
-  if (!surface || surface->surface.IsNull())
-    return -1.0;
-  try
-  {
-    ShapeCustom_Surface sc(surface->surface);
-    // Trigger a conversion to populate gap
-    sc.ConvertToAnalytical(1e-3, Standard_False);
-    return sc.Gap();
-  }
-  catch (...)
-  {
-    return -1.0;
-  }
+  // Deprecated, always -1.0 (#1510). This used to construct a throwaway ShapeCustom_Surface and
+  // run an unrelated ConvertToAnalytical(1e-3) recognition pass just to read its Gap(), which
+  // reflects ONLY the last ConvertToAnalytical call per ShapeCustom_Surface's own header doc, and
+  // is written even on ConvertToAnalytical's rejection path. It never measured
+  // OCCTSurfaceConvertToPeriodic's result at all, and ConvertToPeriodic itself has no deviation to
+  // report: it is a pure knot rearrangement (Geom_BSplineSurface::SetUPeriodic/SetVPeriodic), with
+  // no myGap write anywhere in its implementation. See Scripts/repro/1510-surface-conversion-gap/
+  // for the direct-sampling confirmation that a real gap measurement here would be uninformative.
+  (void)surface;
+  return -1.0;
 }
 
 OCCTBiTgteCurveOnEdgeRef OCCTBiTgteCurveOnEdgeCreate(OCCTShapeRef edgeOnFace, OCCTShapeRef edge)
@@ -1016,7 +1014,32 @@ OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points,
   }
 }
 
-void OCCTGeomEvalEllipsoidD0(double  a,
+// #1669: the 3D GeomEval surface evaluators' success contract, matching the curve half in
+// OCCTBridge_Curve3D_Approximation.mm and the Geom2dEval ten #1646/#1668 fixed before it.
+//
+// These were `void` wrapped in a `try`, so a throw left the caller's pre-zeroed buffer untouched
+// and Swift received the zero vector, indistinguishable from a real answer at the origin. The flag
+// is read off the OUTPUTS rather than off the throw, because a non-finite argument walks past
+// OCCT's `<= 0` validation (every comparison against NaN is false) and finite arguments can still
+// evaluate to a non-finite point. EvalD0 never raises for any parameter, so a finite result is the
+// whole of what "succeeded" can mean.
+//
+// Deliberately a second small file-static pair rather than a shared symbol: these are six-line
+// leaf checks, and #1645 is the record of what giving small helpers external linkage across
+// several .mm files costs.
+
+/// Write a D0 result, refusing a non-finite point. Returns whether the outputs are a measurement.
+static bool occtEvalSurfWriteD0(const gp_Pnt& p, double* px, double* py, double* pz)
+{
+  if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
+    return false;
+  *px = p.X();
+  *py = p.Y();
+  *pz = p.Z();
+  return true;
+}
+
+bool OCCTGeomEvalEllipsoidD0(double  a,
                              double  b,
                              double  c,
                              double  u,
@@ -1025,17 +1048,23 @@ void OCCTGeomEvalEllipsoidD0(double  a,
                              double* py,
                              double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  *px = 0.0;
+  *py = 0.0;
+  *pz = 0.0;
   try
   {
     gp_Ax3                    ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_EllipsoidSurface ell(ax, a, b, c);
-    gp_Pnt                    p = ell.EvalD0(u, v);
-    *px                         = p.X();
-    *py                         = p.Y();
-    *pz                         = p.Z();
+    return occtEvalSurfWriteD0(ell.EvalD0(u, v), px, py, pz);
   }
   catch (...)
   {
+    *px = 0.0;
+    *py = 0.0;
+    *pz = 0.0;
+    return false;
   }
 }
 
@@ -1056,7 +1085,7 @@ OCCTSurfaceRef OCCTGeomEvalEllipsoidCreate(double a, double b, double c)
   }
 }
 
-void OCCTGeomEvalHyperboloidD0(double  r1,
+bool OCCTGeomEvalHyperboloidD0(double  r1,
                                double  r2,
                                int32_t mode,
                                double  u,
@@ -1065,19 +1094,25 @@ void OCCTGeomEvalHyperboloidD0(double  r1,
                                double* py,
                                double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  *px = 0.0;
+  *py = 0.0;
+  *pz = 0.0;
   try
   {
     gp_Ax3                      ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     auto                        sm = mode == 0 ? GeomEval_HyperboloidSurface::SheetMode::OneSheet
                                                : GeomEval_HyperboloidSurface::SheetMode::TwoSheets;
     GeomEval_HyperboloidSurface hyp(ax, r1, r2, sm);
-    gp_Pnt                      p = hyp.EvalD0(u, v);
-    *px                           = p.X();
-    *py                           = p.Y();
-    *pz                           = p.Z();
+    return occtEvalSurfWriteD0(hyp.EvalD0(u, v), px, py, pz);
   }
   catch (...)
   {
+    *px = 0.0;
+    *py = 0.0;
+    *pz = 0.0;
+    return false;
   }
 }
 
@@ -1100,19 +1135,25 @@ OCCTSurfaceRef OCCTGeomEvalHyperboloidCreate(double r1, double r2, int32_t mode)
   }
 }
 
-void OCCTGeomEvalParaboloidD0(double focal, double u, double v, double* px, double* py, double* pz)
+bool OCCTGeomEvalParaboloidD0(double focal, double u, double v, double* px, double* py, double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  *px = 0.0;
+  *py = 0.0;
+  *pz = 0.0;
   try
   {
     gp_Ax3                     ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_ParaboloidSurface par(ax, focal);
-    gp_Pnt                     p = par.EvalD0(u, v);
-    *px                          = p.X();
-    *py                          = p.Y();
-    *pz                          = p.Z();
+    return occtEvalSurfWriteD0(par.EvalD0(u, v), px, py, pz);
   }
   catch (...)
   {
+    *px = 0.0;
+    *py = 0.0;
+    *pz = 0.0;
+    return false;
   }
 }
 
@@ -1133,24 +1174,30 @@ OCCTSurfaceRef OCCTGeomEvalParaboloidCreate(double focal)
   }
 }
 
-void OCCTGeomEvalCircularHelicoidD0(double  pitch,
+bool OCCTGeomEvalCircularHelicoidD0(double  pitch,
                                     double  u,
                                     double  v,
                                     double* px,
                                     double* py,
                                     double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  *px = 0.0;
+  *py = 0.0;
+  *pz = 0.0;
   try
   {
     gp_Ax3                           ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_CircularHelicoidSurface hel(ax, pitch);
-    gp_Pnt                           p = hel.EvalD0(u, v);
-    *px                                = p.X();
-    *py                                = p.Y();
-    *pz                                = p.Z();
+    return occtEvalSurfWriteD0(hel.EvalD0(u, v), px, py, pz);
   }
   catch (...)
   {
+    *px = 0.0;
+    *py = 0.0;
+    *pz = 0.0;
+    return false;
   }
 }
 
@@ -1171,7 +1218,7 @@ OCCTSurfaceRef OCCTGeomEvalCircularHelicoidCreate(double pitch)
   }
 }
 
-void OCCTGeomEvalHypParaboloidD0(double  a,
+bool OCCTGeomEvalHypParaboloidD0(double  a,
                                  double  b,
                                  double  u,
                                  double  v,
@@ -1179,17 +1226,23 @@ void OCCTGeomEvalHypParaboloidD0(double  a,
                                  double* py,
                                  double* pz)
 {
+  if (!px || !py || !pz)
+    return false;
+  *px = 0.0;
+  *py = 0.0;
+  *pz = 0.0;
   try
   {
     gp_Ax3                        ax(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
     GeomEval_HypParaboloidSurface hp(ax, a, b);
-    gp_Pnt                        p = hp.EvalD0(u, v);
-    *px                             = p.X();
-    *py                             = p.Y();
-    *pz                             = p.Z();
+    return occtEvalSurfWriteD0(hp.EvalD0(u, v), px, py, pz);
   }
   catch (...)
   {
+    *px = 0.0;
+    *py = 0.0;
+    *pz = 0.0;
+    return false;
   }
 }
 

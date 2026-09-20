@@ -390,7 +390,7 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
   return occtDocumentGdtObjectAtImpl<XCAFDoc_Datum, XCAFDimTolObjects_DatumObject>(
     doc,
     datumIndex,
-    [](OCCTDocumentRef d) { return XCAFDoc_DimTolTool::Set(d->doc->Main()); },
+    [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
     occtDatumLabelIsReadable,
     outAttr,
@@ -409,11 +409,14 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
 /// trust the return pair, since a partial application would otherwise be reported as a clean
 /// failure and the caller could not tell it from a no-op.
 ///
-/// One copy, two callers: OCCTDocumentSetDimensionTolerance and the create path this file's
-/// occtDocumentCreateDimensionImpl runs. Both are in this file and nothing outside it applies a
-/// tolerance, so file-static is the right reach. The two spellings of the operation disagreeing
-/// about what counts as applied is the defect #1056 is about, so they share the test rather than
-/// each carrying their own.
+/// This file's own copy has exactly one live caller: the create path immediately below, run from
+/// OCCTDocumentCreateDimensionWithTolerance. OCCTDocumentSetDimensionTolerance, the other spelling
+/// of "apply a tolerance" the defect #1056 is about, is a different function in
+/// OCCTBridge_Document_GDT.mm, calling that file's own byte-identical copy of this one, not this
+/// one (#1481, which is also why this whole shared-helpers block exists identically in six
+/// OCCTBridge_Document_*.mm files: a leftover of #1380's mechanical split that duplicated it
+/// everywhere without pruning per-file reachability). In every file but this one and GDT.mm, both
+/// this function and occtDocumentCreateDimensionImpl below are dead code: defined, never called.
 static bool occtDimensionApplyTolerance(const Handle(XCAFDimTolObjects_DimensionObject)& dimObj,
                                         double                                           lowerTol,
                                         double                                           upperTol)
@@ -473,10 +476,13 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
     if (withTolerance && !occtDimensionApplyTolerance(dimObj, lowerTol, upperTol))
       return -1;
 
-    TDF_Label         dimLabel = dimTolTool->AddDimension();
-    TDF_LabelSequence shapeSeq;
-    shapeSeq.Append(shapeLabel);
-    dimTolTool->SetDimension(shapeSeq, shapeSeq, dimLabel);
+    TDF_Label dimLabel = dimTolTool->AddDimension();
+    // The single-shape overload, not the 3-sequence one: SetDimension(shapeSeq, shapeSeq, dimLabel)
+    // registers shapeLabel as BOTH the DimensionRefFirstGUID and DimensionRefSecondGUID graph-node
+    // father, double-registering this dimension for shapeLabel (#1481). SetDimension(theL, theDimL)
+    // forwards to the 3-label overload with a null second label, which only appends to the first
+    // sequence, registering the shape once.
+    dimTolTool->SetDimension(shapeLabel, dimLabel);
 
     Handle(XCAFDoc_Dimension) dimAttr;
     if (!dimLabel.FindAttribute(XCAFDoc_Dimension::GetID(), dimAttr))
@@ -758,8 +764,9 @@ OCCTDocumentRef OCCTDocumentCreate(void)
   }
 }
 
-OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
+OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path, OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!path)
     return nullptr;
 
@@ -785,8 +792,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
     reader.SetMatMode(Standard_True); // Enable material reading
 
     // Read the file
-    IFSelect_ReturnStatus status = reader.ReadFile(path);
-    if (status != IFSelect_RetDone)
+    if (!occtRecordReturnStatus(reader.ReadFile(path), outStatus))
     {
       delete document;
       return nullptr;
@@ -808,8 +814,11 @@ OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path)
   }
 }
 
-bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path)
+bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc,
+                           const char*     path,
+                           OCCTReturnStatus* _Nullable outStatus)
 {
+  occtSetReturnStatus(outStatus, OCCTReturnStatusNotReached);
   if (!doc || !path)
     return false;
 
@@ -830,8 +839,7 @@ bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path)
       return false;
     }
 
-    IFSelect_ReturnStatus status = writer.Write(path);
-    return status == IFSelect_RetDone;
+    return occtRecordReturnStatus(writer.Write(path), outStatus);
   }
   catch (...)
   {
@@ -1486,6 +1494,10 @@ void OCCTDocumentLabelForgetAllAttributes(OCCTDocumentRef doc, int64_t labelId, 
   }
 }
 
+// #1563: reports the TRUE descendant count even when `maxCount` truncated the write, matching the
+// #562 precedent (OCCTCurve2DSplitAtDiscontinuities) so the Swift caller can retry at the size it
+// was just told. It used to return the written count, which capped it silently at the caller's
+// buffer size and was indistinguishable from a tree with exactly that many descendants.
 int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
                                         int64_t         labelId,
                                         bool            allLevels,
@@ -1499,13 +1511,14 @@ int32_t OCCTDocumentGetDescendantLabels(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return 0;
-    int32_t count = 0;
-    for (TDF_ChildIterator it(label, allLevels); it.More() && count < maxCount; it.Next())
+    int32_t total = 0;
+    for (TDF_ChildIterator it(label, allLevels); it.More(); it.Next())
     {
-      outLabelIds[count] = doc->registerLabel(it.Value());
-      count++;
+      if (total < maxCount)
+        outLabelIds[total] = doc->registerLabel(it.Value());
+      total++;
     }
-    return count;
+    return total;
   }
   catch (...)
   {
@@ -2896,6 +2909,9 @@ bool OCCTDocumentIsLayerSet(OCCTDocumentRef doc, int64_t labelId, const char* la
   }
 }
 
+// #1563: reports the TRUE layer count even when `maxNames` truncated the write, the same #562
+// shape as OCCTDocumentGetDescendantLabels immediately above. It used to return the written
+// count, indistinguishable from a label with exactly `maxNames` layers.
 int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
                                    int64_t         labelId,
                                    char**          outNames,
@@ -2913,14 +2929,15 @@ int32_t OCCTDocumentGetLabelLayers(OCCTDocumentRef doc,
     Handle(NCollection_HSequence<TCollection_ExtendedString>) layers = layerTool->GetLayers(label);
     if (layers.IsNull())
       return 0;
-    int32_t count = std::min((int32_t)layers->Length(), maxNames);
+    int32_t total = (int32_t)layers->Length();
+    int32_t count = std::min(total, maxNames);
     for (int32_t i = 0; i < count; i++)
     {
       TCollection_AsciiString ascii(layers->Value(i + 1));
       strncpy(outNames[i], ascii.ToCString(), maxLen - 1);
       outNames[i][maxLen - 1] = '\0';
     }
-    return count;
+    return total;
   }
   catch (...)
   {
@@ -4048,6 +4065,12 @@ void OCCTDriverTableInitStandard()
   }
 }
 
+// TPrsStd_DriverTable::Get()'s own header doc: "Returns the static table. If
+// it does not exist, creates it and fills it with standard drivers." So
+// Get() can never return a null handle, this always returns true, and merely
+// calling it lazily creates/populates the process-wide table as a side
+// effect (#1587). There is no other OCCT query that can observe the table's
+// existence without also creating it.
 bool OCCTDriverTableExists()
 {
   try
@@ -4091,8 +4114,16 @@ OCCTTObjAppRef OCCTTObjApplicationGetInstance()
   }
 }
 
+// #1404: serializes TObj_Application's own myIsVerbose/myIsError, see OCCTBridge_Internal.h.
+std::mutex& tobjApplicationMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
 void OCCTTObjApplicationSetVerbose(OCCTTObjAppRef app, bool verbose)
 {
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
     auto* a = static_cast<TObj_Application*>(app);
@@ -4105,6 +4136,7 @@ void OCCTTObjApplicationSetVerbose(OCCTTObjAppRef app, bool verbose)
 
 bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef app)
 {
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
     auto* a = static_cast<TObj_Application*>(app);
@@ -4118,13 +4150,23 @@ bool OCCTTObjApplicationIsVerbose(OCCTTObjAppRef app)
 
 OCCTDocumentRef OCCTTObjApplicationCreateDocument(OCCTTObjAppRef app)
 {
+  // Held across CreateNewDocument() as a whole, not just around the field writes: myIsError is
+  // written before NewDocument() and read after it, so the window that has to be exclusive is the
+  // call, not the assignment.
+  std::lock_guard<std::mutex> tobjLock(tobjApplicationMutex());
   try
   {
+    // Call through the raw pointer, like OCCTTObjApplicationSetVerbose/IsVerbose above. This used
+    // to wrap it in a local Handle(TObj_Application), which is balanced (the Handle constructor
+    // from a raw pointer increments, its destructor decrements) but fragile: it is safe only
+    // because GetInstance()'s own function-local static Handle holds a permanent reference, so the
+    // count cannot reach 0 here. If it ever did, that destructor would delete the process-wide
+    // singleton out from under that still-live static. Nothing needs an owning reference for the
+    // duration of this call, so there is no reason to take one.
     auto*                      a = static_cast<TObj_Application*>(app);
-    Handle(TObj_Application)   hApp(a);
     Handle(TDocStd_Document)   doc;
     TCollection_ExtendedString format("BinOcaf");
-    if (!hApp->CreateNewDocument(doc, format))
+    if (!a->CreateNewDocument(doc, format))
       return nullptr;
     if (doc.IsNull())
       return nullptr;
@@ -4136,6 +4178,27 @@ OCCTDocumentRef OCCTTObjApplicationCreateDocument(OCCTTObjAppRef app)
   catch (...)
   {
     return nullptr;
+  }
+}
+
+void OCCTTObjApplicationRelease(OCCTTObjAppRef app)
+{
+  if (!app)
+    return;
+
+  try
+  {
+    auto* a = static_cast<TObj_Application*>(app);
+    // Undo the OCCTTObjApplicationGetInstance() IncrementRefCounter(). Unlike
+    // OCCTMessengerRelease/OCCTReportRelease, never delete on a zero count: GetInstance()'s own
+    // function-local static Handle (TObj_Application.cxx) holds a permanent reference for the
+    // whole process, so a caller matching every GetInstance() with one Release can never actually
+    // drive this to 0, and deleting the singleton out from under that still-live static handle
+    // would corrupt it for the rest of the process's life.
+    a->DecrementRefCounter();
+  }
+  catch (...)
+  {
   }
 }
 

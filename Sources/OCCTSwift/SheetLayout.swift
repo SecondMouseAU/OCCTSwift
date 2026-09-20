@@ -52,8 +52,8 @@ extension Sheet {
         let frame = innerFrame
         let innerW = frame.max.x - frame.min.x - 2 * margin
         let innerH = frame.max.y - frame.min.y - 2 * margin
-        let cellW = (innerW - margin) / 2
-        let cellH = (innerH - margin) / 2
+        let cellW = (innerW - margin / 2) / 2
+        let cellH = (innerH - margin / 2) / 2
         guard cellW > 0, cellH > 0 else { return nil }
 
         // --- Uniform scale: fit the widest/tallest projected view into one cell ---
@@ -75,7 +75,7 @@ extension Sheet {
         // --- Cell centres ---
         // Rows indexed 0 = upper, 1 = lower. Cols indexed 0 = left, 1 = right.
         func cellCentre(col: Int, row: Int) -> SIMD2<Double> {
-            let x = frame.min.x + margin + Double(col) * (cellW + margin) + cellW / 2
+            let x = frame.min.x + margin + Double(col) * (cellW + margin / 2) + cellW / 2
             // Row 0 (upper) = higher Y; row 1 (lower) = lower Y.
             let topY = frame.max.y - margin - cellH / 2
             let bottomY = frame.min.y + margin + cellH / 2

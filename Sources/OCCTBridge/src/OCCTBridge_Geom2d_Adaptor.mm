@@ -639,16 +639,17 @@ int32_t OCCTLPropAnalyticCurInf(int32_t curveType,
     GeomAbs_CurveType ct = (GeomAbs_CurveType)curveType;
     if (ct == GeomAbs_Ellipse)
     {
-      // Ellipse curvature extrema at multiples of PI/2
-      // At 0, PI: max curvature (min radius vertex on minor axis)
-      // At PI/2, 3PI/2: min curvature (max radius vertex on major axis)
+      // Ellipse curvature extrema at multiples of PI/2. LProp_MinCur/MaxCur classify by
+      // radius of curvature, not curvature itself (LProp_CurAndInf.hxx:53-57):
+      // At 0, PI: max curvature, min radius, major-axis vertices -> LProp_MinCur.
+      // At PI/2, 3PI/2: min curvature, max radius, minor-axis vertices -> LProp_MaxCur.
       double PI2 = M_PI / 2.0;
       for (int k = 0; k < 4; k++)
       {
         double param = k * PI2;
         if (param >= first && param <= last)
         {
-          bool isMin = (k == 1 || k == 3);
+          bool isMin = (k == 0 || k == 2);
           result.AddExtCur(param, isMin);
         }
       }
@@ -720,7 +721,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1,
 int32_t OCCTCurve2DCurveType(OCCTCurve2DRef curve)
 {
   if (!curve || curve->curve.IsNull())
-    return 7;
+    return 8; // OtherCurve
   try
   {
     Geom2dAdaptor_Curve ac(curve->curve);
@@ -728,7 +729,7 @@ int32_t OCCTCurve2DCurveType(OCCTCurve2DRef curve)
   }
   catch (...)
   {
-    return 7;
+    return 8; // OtherCurve
   }
 }
 

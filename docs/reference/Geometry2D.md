@@ -1014,7 +1014,7 @@ public init?(origin: SIMD2<Double>, direction: SIMD2<Double>)
 
 - **Parameters:** `origin`, the origin of the axis; `direction`, the direction of the axis (normalised internally to `gp_Dir2d`).
 - **Returns:** `nil` if the direction vector is zero or allocation fails.
-- **OCCT:** `Geom2d_AxisPlacement(gp_Pnt2d, gp_Dir2d)`.
+- **OCCT:** `Geom_SurfaceOfRevolution::Axis`, read as a `gp_Ax1`.
 - **Example:**
   ```swift
   if let ax = AxisPlacement2D(origin: SIMD2(0, 0), direction: SIMD2(1, 0)) {

@@ -25,7 +25,7 @@ public func coedgeEdge(_ coedgeIndex: Int) -> Int
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Edge index.
-- **OCCT:** `BRepGraph_CoEdge::Edge` via `OCCTBRepGraphCoEdgeEdge`.
+- **OCCT:** `BRepGraph::Topo().CoEdges().Edge(BRepGraph_CoEdgeId)` via `OCCTBRepGraphCoEdgeEdge`.
 - **Example:**
   ```swift
   let edgeIdx = graph.coedgeEdge(0)
@@ -43,7 +43,7 @@ public func coedgeFace(_ coedgeIndex: Int) -> Int
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Face index.
-- **OCCT:** `BRepGraph_CoEdge::Face` via `OCCTBRepGraphCoEdgeFace`.
+- **OCCT:** `BRepGraph::Topo().CoEdges().Face(BRepGraph_CoEdgeId)` via `OCCTBRepGraphCoEdgeFace`.
 - **Example:**
   ```swift
   let faceIdx = graph.coedgeFace(0)
@@ -61,7 +61,7 @@ public func coedgeSeamPair(_ coedgeIndex: Int) -> Int?
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Paired coedge index, or `nil` when none.
-- **OCCT:** `BRepGraph_CoEdge::SeamPair` via `OCCTBRepGraphCoEdgeSeamPair`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::SeamPair` via `OCCTBRepGraphCoEdgeSeamPair`.
 - **Example:**
   ```swift
   if let pair = graph.coedgeSeamPair(0) {
@@ -80,7 +80,7 @@ public func coedgeHasPCurve(_ coedgeIndex: Int) -> Bool
 ```
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
-- **OCCT:** `BRepGraph_CoEdge::HasPCurve` via `OCCTBRepGraphCoEdgeHasPCurve`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::HasPCurve` via `OCCTBRepGraphCoEdgeHasPCurve`.
 - **Example:**
   ```swift
   if graph.coedgeHasPCurve(0) {
@@ -100,7 +100,7 @@ public func coedgeRange(_ coedgeIndex: Int) -> (first: Double, last: Double)
 
 - **Parameters:** `coedgeIndex`, 0-based coedge index.
 - **Returns:** Tuple of `(first, last)` parameter values.
-- **OCCT:** `BRepGraph_CoEdge::Range` via `OCCTBRepGraphCoEdgeRange`.
+- **OCCT:** `BRepGraph_Tool::CoEdge::Range` via `OCCTBRepGraphCoEdgeRange`.
 - **Example:**
   ```swift
   let (u0, u1) = graph.coedgeRange(0)
@@ -119,7 +119,7 @@ public func shellSolidCount(_ shellIndex: Int) -> Int
 ```
 
 - **Parameters:** `shellIndex`, 0-based shell index.
-- **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidCount`.
+- **OCCT:** `BRepGraph::Topo().Shells().Relations(BRepGraph_ShellId)`, counted through `BRepGraph_SolidsOfShell`, via `OCCTBRepGraphShellSolidCount`.
 - **Example:**
   ```swift
   let n = graph.shellSolidCount(0)
@@ -137,7 +137,7 @@ public func shellSolids(_ shellIndex: Int) -> [Int]
 
 - **Parameters:** `shellIndex`, 0-based shell index.
 - **Returns:** Array of solid indices (may be empty for free shells).
-- **OCCT:** `BRepGraph_Shell` upward links via `OCCTBRepGraphShellSolidIndices`.
+- **OCCT:** `BRepGraph::Topo().Shells().Relations(BRepGraph_ShellId)`, iterated with `BRepGraph_SolidsOfShell`, via `OCCTBRepGraphShellSolidIndices`.
 - **Example:**
   ```swift
   let solidIndices = graph.shellSolids(0)
@@ -156,7 +156,7 @@ public func solidCompSolidCount(_ solidIndex: Int) -> Int
 ```
 
 - **Parameters:** `solidIndex`, 0-based solid index.
-- **OCCT:** `BRepGraph_Solid` upward links via `OCCTBRepGraphSolidCompSolidCount`.
+- **OCCT:** `BRepGraph::Topo().Solids().Relations(BRepGraph_SolidId)`, counted through `BRepGraph_CompSolidsOfSolid`, via `OCCTBRepGraphSolidCompSolidCount`.
 - **Example:**
   ```swift
   let n = graph.solidCompSolidCount(0)
@@ -174,7 +174,7 @@ Number of history records currently stored in the graph.
 public var historyRecordCount: Int { get }
 ```
 
-- **OCCT:** `BRepGraph_History::NbRecords` via `OCCTBRepGraphHistoryNbRecords`.
+- **OCCT:** `BRepGraph_LayerHistory::NbRecords` via `OCCTBRepGraphHistoryNbRecords`.
 - **Example:**
   ```swift
   print("history records: \(graph.historyRecordCount)")
@@ -190,7 +190,7 @@ Whether history recording is enabled.
 public var isHistoryEnabled: Bool { get set }
 ```
 
-- **OCCT:** `BRepGraph_History::IsEnabled` / `SetEnabled` via `OCCTBRepGraphHistoryIsEnabled` / `OCCTBRepGraphHistorySetEnabled`.
+- **OCCT:** `BRepGraph_LayerHistory::IsEnabled` / `SetEnabled` via `OCCTBRepGraphHistoryIsEnabled` / `OCCTBRepGraphHistorySetEnabled`.
 - **Example:**
   ```swift
   graph.isHistoryEnabled = true
@@ -206,7 +206,7 @@ Removes all history records from the graph.
 public func clearHistory()
 ```
 
-- **OCCT:** `BRepGraph_History::Clear` via `OCCTBRepGraphHistoryClear`.
+- **OCCT:** `BRepGraph_LayerHistory::Clear` via `OCCTBRepGraphHistoryClear`.
 - **Example:**
   ```swift
   graph.clearHistory()
@@ -758,7 +758,7 @@ public func createPolygon3DRep(_ polygon: Polygon3D) -> Int?
 
 ### `createPolygonOnTriRep(_:triRepId:)`
 
-Creates a polygon-on-triangulation rep linked to an existing triangulation rep.
+Creates a polygon-on-triangulation rep.
 
 ```swift
 public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: Int) -> Int?
@@ -766,7 +766,10 @@ public func createPolygonOnTriRep(_ polygon: PolygonOnTriangulation, triRepId: I
 
 - **Parameters:**
   - `polygon`: the `PolygonOnTriangulation` to store.
-  - `triRepId`: id of the parent triangulation rep.
+  - `triRepId`: **accepted and not read** (#1652). OCCT 8.0.1 keeps no rep-id link from a
+    polygon-on-triangulation to a triangulation; the owning triangulation is resolved at attach
+    time through `CoEdgeDef.FaceId` to `FaceDef.TriangulationRepId`. Bind it with
+    `setFaceTriangulationRep(_:triRepId:)`.
 - **Returns:** Rep id, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphMeshCreatePolygonOnTriRep`.
 - **Example:**
@@ -903,7 +906,7 @@ public func sameDomainFaces(of faceIndex: Int) -> [Int]
 
 - **Parameters:** `faceIndex`, 0-based face index.
 - **Returns:** Array of co-domain face indices (empty if none).
-- **OCCT:** `BRepGraph_Face::SameDomain` via `OCCTBRepGraphFaceSameDomainIndices`.
+- **OCCT:** `BRepGraph_Tool::Face::Surface` over the `BRepGraph_FacesOfEdge` neighbours, compared bridge-side, via `OCCTBRepGraphFaceSameDomainIndices`.
 - **Example:**
   ```swift
   let coplanar = graph.sameDomainFaces(of: 0)
@@ -923,7 +926,10 @@ public func copy(copyGeometry: Bool = true) -> BRepGraph?
 
 - **Parameters:** `copyGeometry`, when `true` (default), geometry handles are also copied; when `false`, the new graph shares geometry with the original.
 - **Returns:** New `BRepGraph`, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphCopy`.
+- **OCCT:** `BRepGraph_Copy::Perform` (via `OCCTBRepGraphCopy`). `copyGeometry` selects between
+  `BRepGraph_Copy::GeomPolicy::Copy` and `::Share`. The copy transplants the source's UID counter
+  space, `Generation` and `GraphGUID`, so UIDs minted by the source keep resolving in the clone;
+  see [Durable Identity](BRepGraph-Editor-Identity.md#durable-identity-uid--refuid--itemuid).
 - **Example:**
   ```swift
   if let clone = graph.copy() {
@@ -945,7 +951,9 @@ public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> BRepGraph?
   - `faceIndex`: 0-based index of the face to extract.
   - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** New `BRepGraph` for the face sub-graph, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphCopyFace`.
+- **OCCT:** `BRepGraph_Copy::CopyNode` (via `OCCTBRepGraphCopyFace`). Unlike
+  [`copy(copyGeometry:)`](#copycopygeometry) this lifts one node without the counter space, so the
+  result has a fresh identity and the source's UIDs return `nil` against it.
 - **Example:**
   ```swift
   if let faceGraph = graph.copyFace(0) {
@@ -967,7 +975,9 @@ public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = 
   - `dx`, `dy`, `dz`, translation components in model units.
   - `copyGeometry`: whether to copy geometry handles (default: `true`).
 - **Returns:** Translated `BRepGraph`, or `nil` on failure.
-- **OCCT:** `OCCTBRepGraphTransformTranslation`.
+- **OCCT:** `BRepGraph_Transform::Perform` with a translation `gp_Trsf` (via
+  `OCCTBRepGraphTransformTranslation`). It delegates to `BRepGraph_Copy::Perform`, so identity is
+  inherited exactly as it is for [`copy(copyGeometry:)`](#copycopygeometry).
 - **Example:**
   ```swift
   if let moved = graph.translated(dx: 10, dy: 0, dz: 0) {
@@ -1199,13 +1209,16 @@ public var wireRefCount: Int { get }
 
 ### `coedgeRefCount`
 
-Number of coedge reference entries.
+Number of coedge definitions, not references (#1652). OCCT 8.0.1 has no coedge reference kind:
+`BRepGraph_RefId::Kind` runs Shell, Face, Wire, Vertex, Solid, Child, Occurrence, because a coedge
+usage is stored directly on `CoEdgeDef`. The value is `BRepGraph::TopoView::CoEdges().Nb()`, the
+same figure as `coedgeCount`.
 
 ```swift
 public var coedgeRefCount: Int { get }
 ```
 
-- **OCCT:** `OCCTBRepGraphNbCoEdgeRefs`.
+- **OCCT:** `BRepGraph::TopoView::CoEdgeOps::Nb` (via `OCCTBRepGraphNbCoEdgeRefs`).
 
 ---
 

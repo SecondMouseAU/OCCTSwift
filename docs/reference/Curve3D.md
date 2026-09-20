@@ -1340,7 +1340,7 @@ This overload differs from `translated(by:)`, it uses `GeomAdaptor_TransformedCu
 
 - **Parameters:** `tx`, `ty`, `tz`, translation components.
 - **Returns:** Translated curve, or `nil` on error.
-- **OCCT:** `GeomAdaptor_TransformedCurve` (via `OCCTGeomAdaptorTransformedCurveCreate`).
+- **OCCT:** `Geom_Geometry::Copy` then `Geom_Geometry::Transform(gp_Trsf)` on the copy (via `OCCTGeomAdaptorTransformedCurveCreate`).
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!

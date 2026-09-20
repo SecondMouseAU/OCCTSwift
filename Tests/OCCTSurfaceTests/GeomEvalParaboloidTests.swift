@@ -6,9 +6,9 @@ import Testing
 @Suite("GeomEval, Paraboloid Surface")
 struct GeomEvalParaboloidTests {
 
-    @Test func paraboloidD0() {
+    @Test func paraboloidD0() throws {
         // At u=0, v=1: P = (1*cos(0), 1*sin(0), 1/(4*F)) = (1, 0, 0.125) for F=2
-        let p = GeomEval.paraboloidD0(focal: 2.0, u: 0.0, v: 1.0)
+        let p = try #require(GeomEval.paraboloidD0(focal: 2.0, u: 0.0, v: 1.0))
         #expect(abs(p.x - 1.0) < 1e-10)
         #expect(abs(p.z - 0.125) < 1e-10)  // 1/(4*2) = 0.125
     }

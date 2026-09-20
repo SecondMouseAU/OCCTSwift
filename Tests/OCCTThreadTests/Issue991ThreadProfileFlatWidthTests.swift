@@ -64,14 +64,15 @@ struct Issue991ThreadProfileFlatWidthTests {
     /// bore wall and leaves the outer diameter alone.
     @Test("the cut path still sizes its groove from the profile")
     func cutPathStillCuts() {
+        let spec = ThreadSpec(form: .square, nominalDiameter: 12, pitch: 2.0)
+        // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
         guard let outer = Shape.cylinder(radius: 12, height: 16),
-            let bore = Shape.cylinder(radius: 6, height: 16),
+            let bore = Shape.cylinder(radius: spec.minorDiameter / 2, height: 16),
             let block = outer.subtracting(bore)
         else {
             Issue.record("annulus setup failed")
             return
         }
-        let spec = ThreadSpec(form: .square, nominalDiameter: 12, pitch: 2.0)
         guard
             let tapped = block.threadedHole(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: spec, depth: 14)

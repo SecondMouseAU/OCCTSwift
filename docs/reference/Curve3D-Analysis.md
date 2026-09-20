@@ -34,7 +34,7 @@ The curvature is the reciprocal of the radius of the osculating circle at `u`. Z
 - **OCCT:** `GeomLProp_CLProps::Curvature`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let k = arc.curvature(at: 0)  // ≈ 0.2 (1/R)
   }
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
@@ -80,7 +80,7 @@ The principal normal points toward the center of curvature.
 - **OCCT:** `GeomLProp_CLProps::Normal`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let n = arc.normal(at: 0) {
       // n points inward toward center
   }
@@ -101,7 +101,7 @@ public func centerOfCurvature(at u: Double) -> SIMD3<Double>?
 - **OCCT:** `GeomLProp_CLProps::CentreOfCurvature`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let c = arc.centerOfCurvature(at: 0) {
       // c ≈ SIMD3(0, 0, 0), center of the arc
   }
@@ -121,7 +121,7 @@ Torsion is zero for planar curves. Non-zero values indicate the curve is twistin
 
 - **Parameters:** `u`, curve parameter.
 - **Returns:** Torsion value (signed); `0` for planar curves, which is a real answer, and `nil` where there is no osculating plane to twist out of, a straight stretch, where the first two derivatives are parallel. Those two were the same `0` until #595 (every circle and ellipse is planar, so the collision was as ordinary as `curvature(at:)`'s).
-- **OCCT:** `GeomLProp_CLProps::Torsion`.
+- **OCCT:** `Geom_Curve::D3`, with the torsion formed bridge-side from the three derivatives.
 - **Example:**
   ```swift
   if let helix = Curve3D.circularHelix(radius: 5, pitch: 2) {
@@ -352,7 +352,7 @@ Significantly faster than calling `point(at:)` in a loop for large parameter arr
 - **OCCT:** `GeomGridEval_Curve::EvaluateGrid` via `OCCTCurve3DEvaluateGrid`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let params = stride(from: arc.domain.lowerBound,
                           through: arc.domain.upperBound,
                           by: 0.1).map { $0 }
@@ -403,7 +403,7 @@ Uses `ShapeAnalysis_Curve::IsPlanar` to test whether the curve lies in a plane w
 - **OCCT:** `ShapeAnalysis_Curve::IsPlanar`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let n = arc.planeNormal() {
       // n ≈ SIMD3(0, 0, 1) for an arc in the XY plane
   }
@@ -511,8 +511,8 @@ Returns up to `maxCount` results. For simple queries where only the minimum dist
 - **OCCT:** `GeomAPI_ExtremaCurveCurve`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
-     let c2 = Curve3D.arc(center: SIMD3(10, 0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+  if let c1 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(13, 0, 0), interior: SIMD3(10, 3, 0), end: SIMD3(7, 0, 0)) {
       let results = c1.extrema(with: c2)
       if let closest = results.min(by: { $0.distance < $1.distance }) {
           print(closest.distance)
@@ -636,7 +636,7 @@ Uses `GCPnts_QuasiUniformDeflection`. Tighter curves produce more points; straig
 - **OCCT:** `GCPnts_QuasiUniformDeflection`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let pts = arc.quasiUniformDeflectionPoints(deflection: 0.01)
       // pts is a polyline approximation with ≤0.01 chord error
   }
@@ -770,7 +770,7 @@ Uses `ShapeAnalysis_Curve::ValidateRange`. Useful before trimming or sampling a 
 - **OCCT:** `ShapeAnalysis_Curve::ValidateRange`.
 - **Example:**
   ```swift
-  if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let c = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let vr = c.validateRange(first: -0.001, last: 3.15)
       // vr.wasAdjusted == true; vr.first clamped to domain start
   }
@@ -828,7 +828,7 @@ public struct CurveCurveExtrema: Sendable {
 
 ### `ExtremaPointPair`
 
-A single extremal point pair returned by `extremaCCPoint(...)` or `extremaCSPoint(...)`.
+A single extremal point pair returned by `extremaCCPoint(...)`.
 
 ```swift
 public struct ExtremaPointPair: Sendable {
@@ -841,26 +841,29 @@ public struct ExtremaPointPair: Sendable {
 ```
 
 - `squareDistance`: squared distance between the two extremal points (take `sqrt` for actual distance).
-- `point1` / `param1`, point and parameter on the first curve (or query curve for curve-surface).
-- `point2` / `param2`, point and parameter on the second curve, or UV parameters packed as `(u, v, 0)` for curve-surface.
+- `point1` / `param1`, point and parameter on the first curve.
+- `point2` / `param2`, point and parameter on the second curve.
+
+Curve-surface extrema use `CurveSurfaceExtremaPoint` instead, since the surface-side point needs
+two parameters.
 
 ---
 
 #### `ExtremaPointPair.point1`
 
-Point on the first curve (or the query curve, for curve-surface).
+Point on the first curve.
 
 #### `ExtremaPointPair.param1`
 
-Parameter on the first curve (or the query curve, for curve-surface).
+Parameter on the first curve.
 
 #### `ExtremaPointPair.point2`
 
-Point on the second curve, or the UV point packed as `(u, v, 0)` for curve-surface.
+Point on the second curve.
 
 #### `ExtremaPointPair.param2`
 
-Parameter on the second curve, or the surface U parameter for curve-surface (`point2.z` carries V).
+Parameter on the second curve.
 
 ---
 
@@ -883,8 +886,8 @@ When `range1` or `range2` is `nil`, the curve's full `domain` is used. Check `is
 - **OCCT:** `Extrema_ExtCC`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
-     let c2 = Curve3D.arc(center: SIMD3(20, 0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+  if let c1 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(23, 0, 0), interior: SIMD3(20, 3, 0), end: SIMD3(17, 0, 0)) {
       let ex = c1.extremaCC(other: c2)
       if ex.isDone && !ex.isParallel {
           for i in 1...ex.count {
@@ -1034,12 +1037,48 @@ public func extremaCSPoint(
     range:   ClosedRange<Double>? = nil,
     surface: Surface,
     index:   Int
-) -> ExtremaPointPair
+) -> CurveSurfaceExtremaPoint
 ```
 
 - **Parameters:** `range`, optional parameter range on this curve; `surface`, the target surface; `index`, 1-based extremum index.
-- **Returns:** `ExtremaPointPair`; `param2` encodes the surface U parameter, and `point2.z` encodes V.
+- **Returns:** `CurveSurfaceExtremaPoint`, carrying the curve-side parameter as `param1` and both surface parameters as `u2` / `v2`.
 - **OCCT:** `Extrema_ExtCS`.
+- **Example:**
+  ```swift
+  if let line = Curve3D.line(through: SIMD3(6, 6, 6), direction: SIMD3(1, -1, 0)),
+     let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+      let cs = line.extremaCS(range: -5...5, surface: sphere)
+      if cs.isDone, !cs.isParallel, cs.count >= 1 {
+          let p = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
+          // point2 is exactly what the parameters evaluate to
+          print(sphere.point(atU: p.u2, v: p.v2), p.point2)
+      }
+  }
+  ```
+
+---
+
+### `CurveSurfaceExtremaPoint`
+
+A single extremal pair returned by `extremaCSPoint(...)`: one parameter on the curve side, two on
+the surface side.
+
+```swift
+public struct CurveSurfaceExtremaPoint: Sendable {
+    public let squareDistance: Double
+    public let point1:         SIMD3<Double>
+    public let param1:         Double
+    public let point2:         SIMD3<Double>
+    public let u2:             Double
+    public let v2:             Double
+}
+```
+
+- `squareDistance`: squared distance between the two extremal points (take `sqrt` for the distance).
+- `point1` / `param1`, point and parameter on the curve.
+- `point2` / `u2` / `v2`, point on the surface and the parameters that produce it.
+
+Before #1514 this returned `ExtremaPointPair`, whose single `param2` carried U and dropped V.
 
 ---
 
@@ -1261,7 +1300,7 @@ The format is OCCT's internal text stream format, suitable for persistence or in
 - **Example:**
   ```swift
   if let c1 = Curve3D.line(from: .zero, to: SIMD3(1, 0, 0)),
-     let c2 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let data = Curve3D.serializeCurves([c1, c2]) {
       // store or transmit `data`
   }
@@ -1291,7 +1330,29 @@ public static func deserializeCurves(_ data: String) -> [Curve3D]?
 
 ## ExtremaPC. Point-Curve Distance (v0.130.0)
 
-All-extrema and minimum-distance computation from a point to a curve, backed by `Extrema_ExtPC`.
+All-extrema and minimum-distance computation from a point to a curve, backed by `ExtremaPC_Curve`,
+OCCT 8.0's variant-dispatching point-curve solver. The bridge hands it the `Geom_Curve` handle
+directly, through `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)`, and reads
+`ExtremaPC::Result`. Not `Extrema_ExtPC`, which these entries named until #1399 and which the
+bridge does not construct anywhere.
+
+**Every entry here reports the domain's two ends alongside the interior extrema.** The bridge
+calls `ExtremaPC_Curve::PerformWithEndpoints`, not `Perform`. So a bounded curve normally reports
+two more extrema than it has perpendicular feet, and a query point with no perpendicular foot at
+all still gets an answer: measured on a segment `[0, 10]` along +X queried from `(20, 0, 0)`,
+`Perform` reports `NbExt() == 0` while `PerformWithEndpoints` reports two extrema with the correct
+minimum of 10. An unbounded curve and a closed one have no ends to add, and are unchanged: a full
+circle of radius 5 queried from `(0, 10, 0)` reports the same two extrema either way.
+
+`PerformWithEndpoints` is a superset of `Perform` on every curve kind `ExtremaPC_Curve` dispatches
+over, measured in `Scripts/repro/1633-extremapc-endpoints/probe.mm`, and on a Bezier, B-spline or offset curve queried
+past its end it also reports `IsDone()` where `Perform` does not.
+
+**Changed in [#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633).** These entries used
+to call `Perform`, the interior solve alone, so `extrema(from:)` answered `[]` and
+`minimumDistance(from:)` answered `nil` for every point past the end of a bounded curve. This is
+the same distinction #580 settled for
+[`Shape.pointEdgeExtrema(point:edgeIndex:)`](Shape-Measurement.md).
 
 ---
 
@@ -1321,18 +1382,25 @@ Finds all extrema (closest and farthest points) from a query point to this curve
 public func extrema(from point: SIMD3<Double>) -> [ExtremumResult]
 ```
 
-Uses `Extrema_ExtPC` over the full curve domain. Returns up to 64 results. The minimum-distance result is the `ExtremumResult` with the smallest `distance`.
+Uses `ExtremaPC_Curve` over the curve's own domain. Returns up to 64 results. The
+minimum-distance result is the `ExtremumResult` with the smallest `distance`, and it is a minimum
+over the whole domain, the two ends included, see the note at the top of this section.
 
 - **Parameters:** `point`, the query point.
 - **Returns:** Array of `ExtremumResult` values (empty on failure or no extrema found).
-- **OCCT:** `Extrema_ExtPC`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)` then `PerformWithEndpoints`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let results = arc.extrema(from: SIMD3(3, 4, 0))
       if let nearest = results.min(by: { $0.distance < $1.distance }) {
           print(nearest.point, nearest.distance)
       }
+  }
+
+  if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+      let results = seg.extrema(from: SIMD3(20, 0, 0))
+      print(results.map(\.distance).min()!)  // 10.0. Was [] before #1633.
   }
   ```
 
@@ -1346,11 +1414,14 @@ Finds all extrema from a point to a bounded segment of this curve.
 public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [ExtremumResult]
 ```
 
-Restricts the search to `[uMin, uMax]` using `Extrema_ExtPC` with bounded adaptor. Returns up to 64 results.
+Restricts the search to `[uMin, uMax]` by handing those bounds to `ExtremaPC_Curve`'s own
+three-argument constructor. Returns up to 64 results. `uMin` and `uMax` are themselves reported as
+extrema, see the note at the top of this section.
 
 - **Parameters:** `point`, query point; `uMin`, lower parameter bound; `uMax`, upper parameter bound.
 - **Returns:** Array of `ExtremumResult` values within the specified range (empty on failure).
-- **OCCT:** `Extrema_ExtPC` with bounded `GeomAdaptor_Curve`.
+- **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&, double, double)` then
+  `PerformWithEndpoints`.
 - **Example:**
   ```swift
   if let c = Curve3D.bspline(points: myPoints) {
@@ -1370,15 +1441,23 @@ Returns the minimum distance from a point to this curve.
 public func minimumDistance(from point: SIMD3<Double>) -> Double?
 ```
 
-Convenience method backed by `Extrema_ExtPC`. Returns `nil` when the algorithm fails to find any extremum.
+Convenience method backed by `ExtremaPC_Curve`, reading `ExtremaPC::Result::MinSquareDistance()`.
+
+The minimum is over the whole domain, the two ends of a bounded curve included, so it agrees with
+the smallest `distance` in `extrema(from:)`'s array. `nil` means the solver reported no extremum at
+all, which on a curve it could build is rare.
 
 - **Parameters:** `point`, the query point.
-- **Returns:** Minimum distance, or `nil` on failure.
-- **OCCT:** `Extrema_ExtPC` via `OCCTExtremaPCMinDistance`.
+- **Returns:** Minimum distance over the whole curve, or `nil` when the solver reports no extremum.
+- **OCCT:** `ExtremaPC_Curve::PerformWithEndpoints` via `OCCTExtremaPCMinDistance`.
 - **Example:**
   ```swift
-  if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let c = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let d = c.minimumDistance(from: SIMD3(0, 10, 0)) {
-      print(d)  // ≈ 5.0
+      print(d)  // about 5.0
+  }
+
+  if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+      print(seg.minimumDistance(from: SIMD3(20, 0, 0)) ?? -1)  // 10.0. Was nil before #1633.
   }
   ```

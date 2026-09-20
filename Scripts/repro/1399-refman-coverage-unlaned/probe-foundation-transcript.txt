@@ -1,0 +1,33 @@
+=== 1. math_GaussMultipleIntegration, integral of sum(x_i^2) over the unit n-cube ===
+  n=1  IsDone=true  Value=0.333333333333  expected=0.333333333333  MATCH
+  n=2  IsDone=true  Value=0.666666666667  expected=0.666666666667  MATCH
+  n=3  IsDone=true  Value=1.000000000000  expected=1.000000000000  MATCH
+
+=== 2. Prs3d::GetDeflection, the scaling docs/reference/Display.md does not name ===
+  box    1.0 cube  diagonal=   1.7321  GetDeflection=0.004000000  (coefficient alone would be 0.001000000)
+  box   10.0 cube  diagonal=  17.3205  GetDeflection=0.040000000  (coefficient alone would be 0.001000000)
+  box  100.0 cube  diagonal= 173.2051  GetDeflection=0.400000000  (coefficient alone would be 0.001000000)
+
+=== 3. math_EigenValuesSearcher, the class docs/ calls `math_EigenVectors` ===
+  IsDone=true
+  lambda(1) = 3.414213562
+  lambda(2) = 2.000000000
+  lambda(3) = 0.585786438
+  expected  = 0.585786438, 2.000000000, 3.414213562
+  poison sub(1)=999 ->  3.414214 2.000000 0.585786   (docs call this entry USED)
+  poison sub(3)=999 ->  2.000000 1001.000501 -997.000501   (docs call this entry UNUSED)
+  shipped doc example diagonal [2,2,2] subdiagonal [1,1,0] -> 1.000000000 3.000000000 2.000000000
+  'last unused' would predict 0.585786438 2.000000000 3.414213562
+
+=== 4. Precision::PConfusion(), the constant docs/ calls 'scaled by curve-space bounds' ===
+  Confusion()   = 1e-07
+  PConfusion()  = 1e-09   (Confusion / 100, a constant: nothing is passed to it)
+  PConfusion(1) = 1e-07   (the overload that DOES take a tangent length)
+  Intersection()  = 1e-09
+  Approximation() = 1e-06
+
+=== 5. UnitsMethods::GetLengthFactorValue, 'in millimetres' ===
+  IGES unit 1 -> 25.400000
+  IGES unit 2 -> 1.000000
+  IGES unit 4 -> 304.800000
+  IGES unit 6 -> 1000.000000

@@ -622,7 +622,7 @@ extension Shape {
             starts: starts,
             runout: runout,
             apexSign: +1,
-            helixRadius: spec.nominalDiameter / 2)
+            helixRadius: spec.minorDiameter / 2)
     }
 
     /// Cut a helical V-profile thread into a cylindrical shaft.

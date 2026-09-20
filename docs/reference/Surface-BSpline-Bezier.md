@@ -1211,7 +1211,7 @@ Result type returned by `toBezierPatchGrid()`, describing the decomposed patch l
 public struct BezierPatchGrid {
     public let uCount: Int      // Number of patches in U direction
     public let vCount: Int      // Number of patches in V direction
-    public let patches: [Surface] // Patches in row-major order (U varies faster)
+    public let patches: [Surface] // Patches in U-major order (V varies faster)
 }
 ```
 
@@ -1221,7 +1221,7 @@ Access individual patches with `patches[u * grid.vCount + v]` (0-based).
 |---|---|
 | `uCount` | Number of Bezier patches in the U direction. |
 | `vCount` | Number of Bezier patches in the V direction. |
-| `patches` | The `uCount × vCount` patches, row-major (U varies faster). |
+| `patches` | The `uCount × vCount` patches, U-major (V varies faster). |
 
 #### `Surface.BezierPatchGrid.patches`
 

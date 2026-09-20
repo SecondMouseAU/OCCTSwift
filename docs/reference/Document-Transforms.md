@@ -27,6 +27,10 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>, xDirection: SIMD3<D
 
 OCCT normalises and orthogonalises the input vectors; computed `xDirection`, `yDirection`, and `isDirect` are stored on the value.
 
+On a construction failure (a zero-length `direction`/`xDirection`, or the two parallel/antiparallel)
+this initializer does not throw or fail: `isDirect` is `false` and `xDirection`/`yDirection` are
+both `.zero`, unambiguous since a genuine result direction is always a unit vector (#1443).
+
 - **Parameters:** `origin`, position; `direction`, main (Z) axis; `xDirection`, desired X axis (will be corrected to be orthogonal).
 - **OCCT:** `OCCTAx3Create` → `gp_Ax3(gp_Pnt, gp_Dir, gp_Dir)`.
 - **Example:**
@@ -47,6 +51,9 @@ Create from origin and main direction only; X/Y axes are auto-computed.
 ```swift
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 ```
+
+On a zero-length `direction` this initializer does not throw or fail: `isDirect` is `false` and
+`xDirection`/`yDirection` are both `.zero` (#1443, same fallback as the three-argument initializer).
 
 - **Parameters:** `origin`, position; `direction`, main (Z) axis. X and Y are chosen by OCCT.
 - **OCCT:** `OCCTAx3CreateFromNormal` → `gp_Ax3(gp_Pnt, gp_Dir)`.
@@ -117,6 +124,9 @@ Mirror this coordinate system about a point.
 public func mirrored(about point: SIMD3<Double>) -> CoordinateSystem3D
 ```
 
+If `self` is itself degenerate (see the initializers above), the mirror is a no-op: the returned
+`origin` equals `self.origin` and `direction`/`xDirection` are `.zero` (#1443).
+
 - **Parameters:** `point`, the mirror point.
 - **Returns:** New mirrored coordinate system.
 - **OCCT:** `OCCTAx3MirrorPoint` → `gp_Ax3::Mirror(gp_Pnt)`.
@@ -135,6 +145,9 @@ public func rotated(
 ) -> CoordinateSystem3D
 ```
 
+If `self` is itself degenerate, or `axisDirection` is zero-length, the rotation is a no-op: the
+returned `origin` equals `self.origin` and `direction`/`xDirection` are `.zero` (#1443).
+
 - **Parameters:** `axisOrigin`, axis origin point; `axisDirection`, axis direction; `angle`, angle in radians.
 - **Returns:** New rotated coordinate system.
 - **OCCT:** `OCCTAx3Rotate` → `gp_Ax3::Rotate`.
@@ -148,6 +161,9 @@ Translate by a vector.
 ```swift
 public func translated(by vector: SIMD3<Double>) -> CoordinateSystem3D
 ```
+
+If `self` is itself degenerate, the translation is a no-op: the returned `origin` equals
+`self.origin`, unmoved (#1443).
 
 - **Parameters:** `vector`, translation delta.
 - **Returns:** New coordinate system with shifted origin; direction and X direction unchanged.
@@ -168,12 +184,22 @@ public static func affinity(
     axisOrigin: SIMD2<Double>,
     axisDirection: SIMD2<Double>,
     ratio: Double
-) -> GeneralTransform2D
+) -> GeneralTransform2D?
 ```
 
 - **Parameters:** `axisOrigin`, axis pass-through point; `axisDirection`, axis direction; `ratio`, scale factor along the axis.
-- **Returns:** A new `GeneralTransform2D`.
+- **Returns:** A new `GeneralTransform2D`, or `nil` when `axisDirection` has no length. An axis needs a direction, and `gp_Dir2d` raises on a zero-norm vector rather than choosing one; before #1407 that raise crossed into Swift uncaught, which aborts the process rather than returning.
 - **OCCT:** `OCCTGTrsf2dAffinity` → `gp_GTrsf2d::SetAffinity`.
+
+```swift
+if let t = GeneralTransform2D.affinity(
+    axisOrigin: SIMD2(0, 0), axisDirection: SIMD2(1, 0), ratio: 2) {
+    print(t.matrix)  // [1, 0, 0, 2]
+}
+// A zero direction is refused rather than defaulted:
+GeneralTransform2D.affinity(
+    axisOrigin: .zero, axisDirection: SIMD2(0, 0), ratio: 2)  // nil
+```
 
 ---
 
@@ -490,7 +516,7 @@ public static func normalize(_ v: SIMD3<Double>) -> SIMD3<Double>?
 
 ## MathSolver Extensions
 
-Numeric solver extensions on `MathSolver`, wrapping `math_BracketedRoot`, `math_FRPR`, `math_FunctionAllRoots`, `math_GaussLeastSquare`, `math_NewtonFunctionRoot`, `math_Uzawa`, `math_EigenVectors`, `math_KronrodSingleIntegration`, `math_GaussMultipleIntegration`, and `math_GaussSetIntegration`.
+Numeric solver extensions on `MathSolver`, wrapping `math_BracketedRoot`, `math_FRPR`, `math_FunctionAllRoots`, `math_GaussLeastSquare`, `math_NewtonFunctionRoot`, `math_Uzawa`, `math_EigenValuesSearcher`, `math_KronrodSingleIntegration`, `math_GaussMultipleIntegration`, and `math_GaussSetIntegration`.
 
 ### `MathSolver.bracketedRoot(in:tolerance:maxIterations:function:)`
 
@@ -646,40 +672,79 @@ public static func uzawa(
 
 ---
 
-### `MathSolver.eigenvalues(diagonal:subdiagonal:)`
+### `MathSolver.eigenvalues(diagonal:offDiagonal:)`
 
 Find eigenvalues of a symmetric tridiagonal matrix.
 
 ```swift
 public static func eigenvalues(
-    diagonal: [Double], subdiagonal: [Double]
+    diagonal: [Double], offDiagonal: [Double]
 ) -> [Double]?
 ```
 
-- **Parameters:** `diagonal`, n diagonal entries; `subdiagonal`, n entries (last unused).
-- **Returns:** Array of eigenvalues, or `nil` on failure.
-- **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
-  (#640). This "must be same length" was documentation only until #640: the bridge reads
-  `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
-  used to read out of bounds rather than fail.
-- **OCCT:** `OCCTMathEigenValues` → `math_EigenVectors`.
+- **Parameters:** `diagonal`, the n diagonal entries, n at least 1; `offDiagonal`, the n-1
+  entries either side of the diagonal, in matrix order. For
+  `[[d0, e0, 0], [e0, d1, e1], [0, e1, d2]]` pass `diagonal: [d0, d1, d2]` and
+  `offDiagonal: [e0, e1]`. Nothing is discarded and there is no filler slot.
+- **Returns:** Array of n eigenvalues, or `nil` on failure.
+- **Bounds:** `offDiagonal.count` must equal `diagonal.count - 1` exactly and `diagonal` must
+  be non-empty, or this returns `nil` (#640, #1643). The length relation was documentation
+  only until #640: the bridge read `subdiagonal[i]` for `i in 0..<diagonal.count`
+  unconditionally, so a short array returned heap garbage as eigenvalues.
+- **History:** the parameter was `subdiagonal` and took n elements until #1643, matching
+  `math_EigenValuesSearcher`, which throws one of those elements away:
+  `shiftSubdiagonalElements` copies `work(i-1) = work(i)` for `i` in `2...n` and then zeroes
+  `work(n)`, so the caller's **first** element never reached the matrix. Three doc layers
+  said the last one was the dead slot until #1399 measured it, and this page's own example
+  described off-diagonals `(-1, -1)` while passing them in the n-element shape. The label
+  changed with the shape so that a call written against the old convention fails to compile
+  rather than returning a plausible spectrum of a matrix nobody meant.
+- **OCCT:** `OCCTMathEigenValues` → `math_EigenValuesSearcher::EigenValue`. There is no
+  `math_EigenVectors` in the pinned kernel; this entry named one until #1399 measured it.
+- **Ordering:** unspecified. `math_EigenValuesSearcher.hxx` states that eigenvalues come back
+  "in the order they were computed by the algorithm, which may not be sorted", so sort the
+  returned array yourself if you need an order.
+- **Example:**
+  ```swift
+  // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+  let lambdas = MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1])
+  print(lambdas?.sorted() ?? [])   // [0.585..., 2.0, 3.414...]
+
+  MathSolver.eigenvalues(diagonal: [5], offDiagonal: [])          // [5.0], a 1x1
+  MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [-1, -1, 0])   // nil, too long
+  ```
 
 ---
 
-### `MathSolver.eigenvaluesAndVectors(diagonal:subdiagonal:)`
+### `MathSolver.eigenvaluesAndVectors(diagonal:offDiagonal:)`
 
 Find eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
 
 ```swift
 public static func eigenvaluesAndVectors(
-    diagonal: [Double], subdiagonal: [Double]
+    diagonal: [Double], offDiagonal: [Double]
 ) -> (eigenvalues: [Double], eigenvectors: [[Double]])?
 ```
 
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
-- **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
-  `diagonal.count` exactly (#640).
-- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenVectors`.
+- **Bounds:** Same as `eigenvalues(diagonal:offDiagonal:)`: `offDiagonal.count` must equal
+  `diagonal.count - 1` exactly (#640, #1643).
+- **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenValuesSearcher::EigenValue` /
+  `EigenVector`. There is no `math_EigenVectors` in the pinned kernel; this entry named one
+  until #1399 measured it.
+- **Ordering:** unspecified, as for `eigenvalues(diagonal:offDiagonal:)`. Each eigenvector
+  keeps its own eigenvalue's index, so the pairing survives a sort you apply yourself:
+  `eigenvectors[i]` is the unit vector for `eigenvalues[i]`.
+- **Example:**
+  ```swift
+  // [[2, -1, 0], [-1, 2, -1], [0, -1, 2]]: eigenvalues 2 - sqrt(2), 2, 2 + sqrt(2)
+  if let r = MathSolver.eigenvaluesAndVectors(
+      diagonal: [2, 2, 2], offDiagonal: [-1, -1]
+  ) {
+      print(r.eigenvalues.sorted())   // [0.585..., 2.0, 3.414...]
+      print(r.eigenvectors[0].count)  // 3
+  }
+  ```
 
 ---
 
@@ -805,7 +870,7 @@ public static func linearRc4(a: Double, b: Double) -> [Double]?
 ```
 
 - **Returns:** Array of roots (0 or 1 elements), or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyLinear` → `math_Polynomial` rc4 linear.
+- **OCCT:** `OCCTMathPolyLinear` → `MathPoly::Linear`.
 
 ---
 
@@ -818,7 +883,7 @@ public static func quadraticRc4(a: Double, b: Double, c: Double) -> [Double]?
 ```
 
 - **Returns:** Up to 2 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyQuadratic` → `math_Polynomial` rc4 quadratic.
+- **OCCT:** `OCCTMathPolyQuadratic` → `MathPoly::Quadratic`.
 
 ---
 
@@ -831,7 +896,7 @@ public static func cubicRc4(a: Double, b: Double, c: Double, d: Double) -> [Doub
 ```
 
 - **Returns:** Up to 3 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyCubic` → `math_Polynomial` rc4 cubic.
+- **OCCT:** `OCCTMathPolyCubic` → `MathPoly::Cubic`.
 
 ---
 
@@ -844,7 +909,7 @@ public static func quarticRc4(a: Double, b: Double, c: Double, d: Double, e: Dou
 ```
 
 - **Returns:** Up to 4 real roots, or `nil` if degenerate.
-- **OCCT:** `OCCTMathPolyQuartic` → `math_Polynomial` rc4 quartic.
+- **OCCT:** `OCCTMathPolyQuartic` → `MathPoly::Quartic`.
 
 ---
 
@@ -864,7 +929,7 @@ public static func integGauss(
 ) -> (value: Double, error: Double)?
 ```
 
-- **OCCT:** `OCCTMathIntegGauss` → rc4 `math_IntegGauss`.
+- **OCCT:** `OCCTMathIntegGauss` → `MathInteg::Gauss`.
 
 ---
 
@@ -945,11 +1010,33 @@ Length unit enum matching `UnitsMethods_LengthUnit`.
 
 ```swift
 public enum OCCTLengthUnit: Int32, Sendable {
-    case undefined, inch, millimeter, foot, mile, meter, kilometer, mil, micron, centimeter, microinch
+    case undefined = 0
+    case inch = 1
+    case millimeter = 2
+    case foot = 4
+    case mile = 5
+    case meter = 6
+    case kilometer = 7
+    case mil = 8
+    case micron = 9
+    case centimeter = 10
+    case microinch = 11
 }
 ```
 
+**The raw values are not consecutive**, which is why the declaration is spelled out above rather
+than as a comma-separated case list: `UnitsMethods_LengthUnit` has no `3`, so `foot` is `4`. A
+restatement that let Swift assign raw values implicitly would make `foot` `3`, and every case
+after it would be off by one from the kernel enum the bridge casts to. This page carried that
+restatement until #1399 checked it against
+`Libraries/OCCT.xcframework/macos-arm64/Headers/UnitsMethods_LengthUnit.hxx`; the Swift
+declaration itself was correct throughout.
+
 Case meanings, from `UnitsMethods_LengthUnit`:
+
+#### `OCCTLengthUnit.undefined`
+
+The enum's zero value, used where no unit has been established.
 
 #### `OCCTLengthUnit.inch`
 
@@ -1251,7 +1338,7 @@ public static func projectLineOnPlane(
 ```
 
 - **Returns:** 2D line result, or `nil` if projection is degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectLine` → `ProjLib::Project`.
+- **OCCT:** `ProjLib_Plane` (constructed from the plane and the line, then read through `IsDone()`/`Line()`), via `OCCTProjLibPlaneProjectLine`.
 
 ---
 
@@ -1266,7 +1353,7 @@ public static func projectLineOnCylinder(
 ) -> Line2DResult?
 ```
 
-- **OCCT:** `OCCTProjLibCylinderProjectLine` → `ProjLib::Project`.
+- **OCCT:** `ProjLib_Cylinder` (constructed from the cylinder and the line, then read through `IsDone()`/`Line()`), via `OCCTProjLibCylinderProjectLine`.
 
 ---
 
@@ -1282,7 +1369,7 @@ public static func projectCircleOnPlane(
 ```
 
 - **Returns:** 2D circle in the plane's parameter space, or `nil` if degenerate.
-- **OCCT:** `OCCTProjLibPlaneProjectCircle` → `ProjLib::Project`.
+- **OCCT:** `ProjLib_Plane` (constructed from the plane and the circle, then read through `IsDone()`/`Circle()`), via `OCCTProjLibPlaneProjectCircle`.
 
 ---
 
@@ -1532,13 +1619,15 @@ Check if two shapes are valid for a specific boolean operation together.
 ```swift
 public func isBooleanValidWith(
     _ other: Shape,
-    operation: Int32 = 0,
+    operation: Int32 = 5,
     testSmallEdges: Bool = true,
     testSelfInterference: Bool = true
 ) -> Bool
 ```
 
-- **Parameters:** `other`, second operand; `operation`, `0`=unknown, `1`=common, `2`=fuse, `3`=cut, `4`=section.
+- **Parameters:** `other`, second operand; `operation`, `BOPAlgo_Operation`'s real ordinals:
+  `0`=common, `1`=fuse, `2`=cut, `3`=cut21 (`other` minus `self`), `4`=section, `5`=unknown (the
+  default: a generic pairwise check with no operation-specific dimension-compatibility test).
 - **OCCT:** `OCCTShapeBooleanCheckPair` → `BRepAlgoAPI_Check`.
 - **Note:** [`isValidForBoolean(with:)`](Shape-Healing.md#isvalidforbooleanwith) is the same check
   at these defaults (#1297).

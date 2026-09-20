@@ -339,7 +339,53 @@ def build_plan(cfg, path=None):
                 unclassified.append((kind, name, start + 1, end - start))
         plan.append((kind, name, bucket, start, end, block))
 
+    plan = narrow_shared_by_reach(plan)
     return lines, plan, unresolved, unclassified, scattered_includes, first_code_start
+
+
+# #1677: SHARED is where a file-scope type goes when it is NEEDED in more than one split file, not
+# where every file-scope type goes.
+#
+# The rule above routes every struct/class/enum/namespace/static to SHARED on KIND alone, with no
+# test of whether anything outside one bucket actually names it. That has cost twice, in opposite
+# directions:
+#
+#   #1418  a cross-split-file helper needed the shared treatment and an earlier split had not
+#          given it one, so the split did not build.
+#   #1645  six math_* callback adapters got the shared treatment and did not need it. They were
+#          copied into five Spatial .mm files and instantiated in one. Deleting the four dead
+#          copies removed 944 lines and turned 68 external weak vtable and type-info symbols into
+#          local ones.
+#
+# The test is deliberately CONSERVATIVE, because the two failures are not symmetric: an
+# unnecessary copy wastes symbols, a missing one breaks the build. An item is narrowed out of
+# SHARED only when exactly one bucket names it and no other SHARED item does. Zero references,
+# several buckets, or a mention from SHARED all keep it SHARED.
+def narrow_shared_by_reach(plan):
+    """Route a SHARED-by-kind item to a single bucket when only that bucket names it."""
+    shared_idx = [i for i, (kind, _n, b, _s, _e, _blk) in enumerate(plan)
+                  if b == "SHARED" and kind in ("struct", "class", "static", "namespace", "enum")]
+    if not shared_idx:
+        return plan
+
+    out = list(plan)
+    for i in shared_idx:
+        kind, name, _bucket, start, end, block = plan[i]
+        word = re.compile(r"\b" + re.escape(name) + r"\b")
+        buckets = set()
+        named_by_other_shared = False
+        for j, (_k2, _n2, b2, _s2, _e2, blk2) in enumerate(plan):
+            if j == i or not word.search(blk2):
+                continue
+            if b2 == "SHARED":
+                named_by_other_shared = True
+                break
+            if b2 is not None:
+                buckets.add(b2)
+        if named_by_other_shared or len(buckets) != 1:
+            continue
+        out[i] = (kind, name, buckets.pop(), start, end, block)
+    return out
 
 
 def preamble(lines, first_code_start, scattered_include_lines, shared_items, issue_note):
@@ -617,7 +663,17 @@ enum class OCCTFixtureWant
 
 int OCCTUsesFixtureWant(OCCTFixtureWant w)
 {
+  BRepPrimAPI_MakeBox box(1, 1, 1);
   return static_cast<int>(w);
+}
+
+// #1677: a SECOND consumer, in the OTHER bucket. Without this the fixture could not tell
+// "correctly detected as a file-scope type" from "genuinely needed in more than one split file",
+// and every item below was asserted SHARED for the former reason.
+int OCCTAlsoUsesFixtureWant(OCCTFixtureWant w)
+{
+  BRepAlgoAPI_Fuse fuse;
+  return static_cast<int>(w) + 1;
 }
 
 // A bare file-scope static variable, no call-shaped parentheses at all -- the #1380 gap
@@ -626,7 +682,14 @@ static const int kFixtureLimit = 100000;
 
 int OCCTUsesFixtureLimit(void)
 {
+  BRepPrimAPI_MakeBox box(1, 1, 1);
   return kFixtureLimit;
+}
+
+int OCCTAlsoUsesFixtureLimit(void)
+{
+  BRepAlgoAPI_Fuse fuse;
+  return kFixtureLimit + 1;
 }
 
 // A template whose parameter list spans MULTIPLE lines (not the single-line `template
@@ -648,6 +711,13 @@ OCCTShapeRef OCCTUsesMultiLineTemplateFn(OCCTShapeRef a)
   return a;
 }
 
+OCCTShapeRef OCCTAlsoUsesMultiLineTemplateFn(OCCTShapeRef a)
+{
+  multiLineTemplateFn<int, int, int>(4, 5, 6);
+  BRepAlgoAPI_Fuse fuse;
+  return a;
+}
+
 // A static variable whose TYPE embeds parentheses (OCCT's `Handle(X)` macro inside a template
 // argument) -- the #1380 gap (OCCTBridge_Visualization.mm's g_fontList) STATIC_VAR's original
 // paren-free character class couldn't get past.
@@ -655,7 +725,14 @@ static NCollection_List<Handle(Standard_Transient)> g_fixtureList;
 
 int OCCTUsesFixtureList(void)
 {
+  BRepPrimAPI_MakeBox box(1, 1, 1);
   return g_fixtureList.Size();
+}
+
+int OCCTAlsoUsesFixtureList(void)
+{
+  BRepAlgoAPI_Fuse fuse;
+  return g_fixtureList.Size() + 1;
 }
 
 // A `static` helper using the OCCTXxx PUBLIC-function naming style, not this codebase's usual
@@ -665,6 +742,13 @@ int OCCTUsesFixtureList(void)
 static int OCCTFixtureStaticHelper(int x)
 {
   return x + 1;
+}
+
+OCCTShapeRef OCCTAlsoCallsFixtureStaticHelper(OCCTShapeRef a)
+{
+  OCCTFixtureStaticHelper(2);
+  BRepAlgoAPI_Fuse fuse;
+  return a;
 }
 
 OCCTShapeRef OCCTCallsFixtureStaticHelper(OCCTShapeRef a)
@@ -790,6 +874,58 @@ OCCTShapeRef OCCTCallsFixtureStaticHelper(OCCTShapeRef a)
                              "body_package_to_bucket reference to a bucket not in cfg['buckets']")
         except ValueError:
             pass  # expected
+
+        # #1677: the narrowing itself, in both directions. Every item asserted SHARED above is
+        # SHARED because TWO buckets name it; the fixture was strengthened to make that true, so
+        # those assertions now test the requirement ("needed in more than one split file") rather
+        # than the mechanism ("was detected as a file-scope type"). These two cases test the other
+        # direction and the conservative fallback.
+        narrow_cfg = dict(cfg)
+        one_bucket_src = """
+static int occtOnlySolidHelper(int x)
+{
+  return x + 1;
+}
+
+OCCTShapeRef OCCTOnlySolidCaller(OCCTShapeRef a)
+{
+  occtOnlySolidHelper(1);
+  BRepPrimAPI_MakeBox box(1, 1, 1);
+  return a;
+}
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src = os.path.join(td, "Narrow.mm")
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write(one_bucket_src)
+            _l, nplan, _u, _uc, _si, _fcs = build_plan(narrow_cfg, src)
+            nby = {n: b for _k, n, b, _s, _e, _blk in nplan}
+            # Named by exactly one bucket, so it must NOT be copied into every file.
+            if nby.get("occtOnlySolidHelper") != "SolidPrimitives":
+                failures.append(
+                    f"a static helper named by ONE bucket classified "
+                    f"{nby.get('occtOnlySolidHelper')!r}, want 'SolidPrimitives' (#1677: SHARED is "
+                    f"for items needed in more than one split file, not every file-scope item)")
+
+        # Named by NO bucket at all: ambiguous, and an unnecessary copy is cheaper than a missing
+        # one, so it stays SHARED.
+        orphan_src = """
+static int occtOrphanHelper(int x)
+{
+  return x + 1;
+}
+"""
+        with tempfile.TemporaryDirectory() as td:
+            src = os.path.join(td, "Orphan.mm")
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write(orphan_src)
+            _l, oplan, _u, _uc, _si, _fcs = build_plan(narrow_cfg, src)
+            oby = {n: b for _k, n, b, _s, _e, _blk in oplan}
+            if oby.get("occtOrphanHelper") != "SHARED":
+                failures.append(
+                    f"an unreferenced static helper classified {oby.get('occtOrphanHelper')!r}, "
+                    f"want SHARED (#1677: narrowing is conservative, a missing copy breaks the "
+                    f"build where an extra one only wastes symbols)")
 
         if failures:
             for f in failures:

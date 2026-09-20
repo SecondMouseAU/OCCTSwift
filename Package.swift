@@ -75,6 +75,218 @@ let occtTarget: Target = isWASI
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
+    // OCCT V8_0_1 + the seventeen carried patches listed below.
+    //
+    // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The seventeen that
+    // survive, all present in Scripts/patches/, are:
+    //
+    //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
+    //   0011  XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override             #341/#363
+    //   0012  GetApplication/Resources lazy-init races + CDF_Directory/Resource_Manager
+    //         /CDF_Application map synchronization                                         #344
+    //   0014  PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex              #349
+    //   0015  CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes          #353
+    //   0016  Resource_Manager::Debug atomic + Storage_Schema per-instance scratch    #374/#518
+    //   0017  null ReShape context in ComposeShell/WireDivide                              #484
+    //   0018  GCPnts degenerate count + duplicate end point                                #555
+    //   0019  AdvApp2Var Jacobi maxima workspace slot                                      #522
+    //   0020  BRepFeat_MakeCylindricalHole tool-part selection                             #532
+    //   0021  CPnts adaptive arc-length integration                                        #603
+    //   0022  ChFi2d_Builder::AddChamfer connexion error check                             #705
+    //   0023  GeomTools_Curve2dSet/SurfaceSet null-handle guard                            #643
+    //   0024  Extrema_ExtCC::Points bound against mypoints                                 #636
+    //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
+    //   0026  BRepOffsetAPI_ThruSections refuses an uncappable non-planar extremity        #905
+    //   0027  ThruSections CreateSmoothed section-edge-count guard                         #913
+    //
+    // This list said "fifteen" above a list of eleven until the release check ran, which is the
+    // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
+    // while the enumeration next to it did not.
+    //
+    // ALL SEVENTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
+    //
+    //   - Eight (0010, 0011, 0012, 0014, 0015, 0016, 0021, 0024) touch a shipped .hxx. Every line
+    //     each patch adds to a header was matched, line for line, against the header inside the
+    //     built asset: 210 added lines, 0 missing.
+    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it was verified
+    //     directly in the binary: the message it throws appears exactly once in each of the three
+    //     slice archives (libOCCT-macos.a, libOCCT-ios.a, libOCCT-sim.a).
+    //   - One (0027) is .cxx-only and adds NO string literal, signalling through myStatus instead,
+    //     so nothing in the binary can be grepped for it. It is verified behaviourally by
+    //     StressBuilderLifecycleTests.mismatchedSectionEdgeCountWithoutCheckFailsCleanly, which is
+    //     gated on OCCTSWIFT_LOCAL=1 (PR #915 review, finding 1) precisely because it needs a
+    //     locally built kernel. IT DOES NOT RUN IN ci.yml, which resolves this asset rather than
+    //     building from source, so a green build-and-test is NOT evidence for 0027. Re-verify it
+    //     with `OCCTSWIFT_LOCAL=1 swift test --filter StressBuilderLifecycle` against a local
+    //     build, and check the log says the test STARTED rather than was skipped. That wording is
+    //     measured, not cautious: the same suite reports "5614 tests" either way. Against a local
+    //     kernel the log reads `started` then `passed after 66.774 seconds`; against the downloaded
+    //     asset it reads `skipped`, and the headline total does not move. A green run and a correct
+    //     total are both blind to this, so the per-test line is the only signal.
+    //   - Five (0017, 0019, 0020, 0022, 0025) are .cxx-only and carry their own Swift regression
+    //     suites (Issue484*, Issue522*, Issue532*, Issue568*, and the #597 case in
+    //     OCCTSurfaceTests). ci.yml's build-and-test resolves this asset, not a local build, so a
+    //     green run is behavioural proof those five reached the binary.
+    //   - Two (0018, 0023) are exercised by NO test, and cannot be: the bridge stops the defect
+    //     before OCCT sees it. Sampling.requested(_:atLeast: 2) rejects the point count 0018
+    //     guards against, and OCCTGeomToolsCurve2dSetWrite/SurfaceSetWrite null-check every array
+    //     element before Add(). Both are carried for upstream, deliberately unreachable here.
+    //     They are the only two patches in the tree with no CI coverage of any kind, which is
+    //     worth knowing before trusting "the fix is in the kernel" about either.
+    //
+    // Pinned to the v3.0.0 RELEASE asset: upstream V8_0_1 plus the seventeen patches listed above.
+    // Byte-identical to the v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did
+    // NOT change when `url:` did; the release commit re-uploaded the same zip. Same shape v2.0.0
+    // used with its own kernel.3 asset. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
+    // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
+    // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
+    // and it is why the count check at the top of this comment is worth the ten seconds.
+    //
+    // IT IS TRUE AGAIN RIGHT NOW, DELIBERATELY, AND WIDER THAN IT WAS: this paragraph said
+    // "twenty-one"/"those four" through 0031; it went stale the moment 0032 (#1371) landed without
+    // updating it, the exact #807-shaped failure ("gate agrees, the prose beside it doesn't") this
+    // repo's own CLAUDE.md warns about, caught and corrected here rather than repeated a third time
+    // at 0033. IT WENT STALE AGAIN, and is corrected again, rather than left to repeat once more:
+    // 0032 is RETIRED as of 2026-09-02, dropped rather than carried or upstreamed, because OCCT's
+    // own master already fixes the identical twelve globals through a strictly better mechanism
+    // (per-instance member fields, not thread_local duplication) in #1505 (merged 2026-08-25) and
+    // #1509 (merged 2026-08-28), both by maintainer dpasukhi, #1509 also fixing GLOBAL_faces2d,
+    // which this project's own investigation left uninvestigated. See Scripts/patches/README.md's
+    // retired 0032 entry and CLAUDE.md's "Carrying OCCT source patches" section for the process
+    // change this prompted: check upstream's own recent activity before opening a new investigation
+    // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
+    // work already days old. IT WENT STALE A THIRD TIME, at 0035, and this correction is a
+    // RETRACTION rather than a bookkeeping fix: 0035 (a backport of upstream #1259's last line)
+    // landed 2026-09-19 and was RETIRED 2026-09-20 because it reintroduced #280, silently dropping
+    // a face from every STEP write that follows an XDE read. The entry removed from the list below
+    // called it "nearly inert, because the constructor pre-populates what it would write". That was
+    // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
+    // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
+    // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
+    // Scripts/patches/ holds TWENTY-FOUR patches; the pinned asset holds the
+    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 24 against a list of
+    // 17, and those seven are the difference:
+    //
+    //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
+    //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
+    //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
+    //   0031  BSplCLib_Cache/BSplSLib_Cache mutable evaluation state, unsynchronized      #1153
+    //         (watch OCCT#1076, open/stale since April 2026: would rename these classes to
+    //         BSplCLib_CacheGrid/BSplSLib_CacheGrid but keeps the identical race, so retarget
+    //         this patch if it ever merges, don't drop it)
+    //   0033  Interface_Static's shared STEP/IGES parameter table, recursive mutex        #1157
+    //         (a partial fix, deliberately: closes the memory-safety hole, does not make
+    //         two concurrent operations setting DIFFERENT values for the SAME named
+    //         parameter produce correct output; see the patch's own doc comment)
+    //   0034  GeomFill_CoonsAlgPatch::Value samples bound[0]/bound[2] at V, not U        #1515
+    //         (the first carried patch whose fix IS a Swift-reachable wrong answer rather
+    //         than a race or an unreachable accessor; see the paragraph below)
+    //   0036  IFSelect_WorkSession's errhand recursion sentinel is per-instance             #1403
+    //         (a lost-protection bug, not only a torn flag: one thread clearing the global
+    //         made another take the UNGUARDED path and lose its exception handling. The
+    //         busiest racing site in the DE path; 6 race access sites to 0, measured)
+    //
+    // What that difference means is narrower than "untested", and the narrowing is worth having.
+    // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But
+    // kernel-integration.yml triggers on `Scripts/patches/**`, builds V8_0_1 plus every carried
+    // patch from source, and runs the full swift test against that binary, so the PR that ADDS a
+    // patch does get it built and the suite run against it. What that proves is that the patch
+    // applies, compiles, and regresses nothing. For five of the six it cannot prove the fix works,
+    // because they have no Swift-reachable assertion: 0030, 0031 and 0033 are data races rather
+    // than wrong answers, so even a Swift-level assertion wouldn't reliably catch them without TSan
+    // instrumentation the shipped xcframework doesn't carry, and 0028's one bridge reader was
+    // deleted outright. 0034 IS THE EXCEPTION and it is worth naming, because this paragraph said
+    // "none" until 0034 landed: it is a wrong single-threaded answer, reachable from
+    // Shape.coonsAlgPatch, so a Swift test CAN assert it. Such a test cannot be written
+    // unconditionally today, because it would assert the correct surface and ci.yml's
+    // build-and-test resolves the UNPATCHED asset, where every off-diagonal sample is still wrong.
+    // Whoever repins is the one who can add it, and Shape.coonsAlgPatch's own doc comment carries
+    // the warning until then. And it does not run on
+    // any later PR that leaves Scripts/patches/ alone, which is nearly all of them. Do not read
+    // this as "check kernel-integration.yml instead of ci.yml": that advice is what #585
+    // discredited.
+    //
+    // They differ in what a rebuild would buy. 0028 fixes nothing observable in this repo:
+    // OCCTGeomPlateErrors, the one bridge reader of those three accessors, was deleted by #999 (PR #1015),
+    // and BRepFill_Filling's own forwarding of them is unreachable on the affected branch, so only
+    // the upstream GTests cover it either way. 0029 is an uncatchable SIGSEGV
+    // on OCCTDocumentGetDatumInfo, reachable through Document.datums for any OCAF document whose
+    // datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
+    // protects a consumer. 0030 is a data race, not a crash or a wrong single-threaded answer: any
+    // consumer sharing a TShape across threads (the common case after a boolean operation) is
+    // exposed today, silently, and neither the released kernel nor Scripts/tsan.supp's suppression
+    // (kept until a rebuild ships) makes it visible without deliberately running under TSan. 0031
+    // is the same shape as 0030 (a data race, silent without TSan): any consumer sharing one
+    // GeomAdaptor_Curve/GeomAdaptor_Surface (or the BSplCLib_Cache/BSplSLib_Cache either directly
+    // wraps) across threads is exposed today; unlike 0030, main's Scripts/tsan.supp never carried
+    // suppression lines for it at all (the never-merged PR #1322 branch that first attempted this
+    // fix added some, but that branch's history was discarded rather than inherited, per its own
+    // review), so there is nothing to retire once a rebuild ships. 0033 is a real, live
+    // memory-safety hole in every OCCTSwift STEP/IGES consumer today, currently masked entirely by
+    // the bridge's own igesMutex() (which already serializes the whole configure-then-run window
+    // this patch's accessor-level lock cannot), so a rebuild buys defense-in-depth for anyone
+    // reaching Interface_Static outside that mutex, not a new capability inside it. See
+    // Scripts/patches/README.md's 0028, 0029, 0030, 0031 and 0033 entries.
+    //
+    // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
+    // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its
+    // asset with it and makes this window unbuildable from a clean checkout.
+    //
+    // Until it was published, ci.yml resolved v1.15.18 (V8_0_0_p1 + patches 0001-0016) while the
+    // branch built V8_0_1 + 0010-0021, so every test asserting a newer patch's fix failed in CI
+    // indistinguishably from a real regression: seven suites were red for that reason alone (#585),
+    // and each correctness fix added more. Reading kernel-integration.yml instead of ci.yml was the
+    // documented workaround; pinning a real asset removes the need for one.
+    //
+    // The RELEASE commit re-points this pair at the final v2.0.0 asset (#512). Do NOT delete the
+    // pre-release afterwards: every commit in the v2.0.0 window pins it, so deleting it takes its
+    // asset with it and makes those commits unbuildable from a clean checkout, which breaks
+    // git bisect and any historical re-measurement.
+    //
+    // SEQUENCING. SwiftPM resolves `url:` at build time, so a URL pointing at an asset that is not
+    // uploaded yet fails every build, and a wrong checksum is not the only way that happens: a
+    // correct checksum against a 404 fails just the same, which is how the kernel.3 asset was once
+    // published under the wrong filename and passed a checksum check while resolving to nothing.
+    //
+    // The order below is the one that works FOR THE RELEASE TAG. An earlier draft of this comment
+    // put "create the release" first, which cannot be right there: the tag has to point at the
+    // commit that carries the swapped URL, so the commit must exist before the release is cut.
+    //
+    // IT DOES NOT APPLY TO A KERNEL PRE-RELEASE, where it is circular: you cannot pin a URL that
+    // does not exist yet, and you cannot cut the release from a commit that does not exist yet.
+    // Every kernel pre-release in this repo resolves that the only way it can, by publishing the
+    // asset first and landing the pin after, so its tag points at a commit pinning the PREVIOUS
+    // asset. Measured, not assumed:
+    //
+    //     v2.0.0-kernel.1  -> tree pins v1.15.18
+    //     v2.0.0-kernel.2  -> tree pins v2.0.0-kernel.1
+    //     v2.0.0-kernel.3  -> tree pins v2.0.0-kernel.2
+    //     v3.0.0-kernel.1  -> tree pins v2.0.0
+    //     v2.0.0 (RELEASE) -> tree pins v2.0.0   <- only the release tag is self-consistent
+    //
+    // So a pre-release tag whose tree pins its predecessor is CORRECT and must not be "fixed" by
+    // re-pointing it. That correction was proposed during the v3.0.0-kernel.1 rebuild on the strength of
+    // the paragraph above, and the history is what refuted it.
+    //
+    //   1. commit the `url:` change and push it
+    //   2. gh release create <tag> --target <that commit> with OCCT.xcframework.zip attached, so
+    //      tag, release and asset land together
+    //   3. confirm the asset RESOLVES (curl -fsIL the download URL), not merely that its checksum
+    //      matches, and re-run anything that built in the gap
+    //
+    // There is a window between 1 and 2 where the URL 404s. It is unavoidable and it is short; what
+    // matters is checking step 3 rather than assuming.
+    //
+    // `checksum:` does NOT change between the kernel.N pre-release and the release when the asset
+    // is the identical file. That is what v2.0.0 did, and it is re-verifiable today: the v2.0.0 and
+    // v2.0.0-kernel.3 assets are both 149,133,257 bytes, and downloading the v2.0.0 one hashes to
+    // 8da567699b0ed1fcd0033373d64c2ee97052c57ee2dffe3091d6d55addc41f2a, the value BOTH commits
+    // pinned. The release commit re-uploaded kernel.3's zip unchanged and swapped only `url:`.
+    // Expect to do the same at the v3.0.0 release with the v3.0.0-kernel.1 asset.
+    // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
+    // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
+    // new one.
         // Remote binary xcframework for native platforms
         : .binaryTarget(
             name: "OCCT",
@@ -275,7 +487,12 @@ let package = Package(
         // face-pair edge comparison -- not observable through AAG's own Swift API, which always
         // sizes its buffer from the true count now.
         .testTarget(name: "OCCTModelingTests", dependencies: ["OCCTSwift", "OCCTBridge"], path: "Tests/OCCTModelingTests"),
-        .testTarget(name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTShapeHealingTests"),
+        // OCCTBridge added (#1491) so a regression test can call OCCTShapeDivideByNumber directly
+        // with distinct nbU/nbV: Shape.dividedByNumber(_:), the only Swift call site, always passes
+        // nbV=1, so proving the per-axis fix needs the raw C entry point, not the Swift wrapper.
+        .testTarget(
+            name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift", "OCCTBridge"],
+            path: "Tests/OCCTShapeHealingTests"),
         // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
         // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without
         // this exclude SwiftPM reports them as unhandled on every build of this package as the ROOT

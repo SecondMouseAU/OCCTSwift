@@ -964,16 +964,51 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 ,  a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
 
 - **Parameters:** `tolerance`, maximum approximation error, applied over the whole curve; `continuity`, desired continuity order; `maxSegments`, maximum number of BSpline segments; `maxDegree`, maximum polynomial degree.
-- **Returns:** Approximated BSpline, or `nil` on failure.
-- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
+- **Returns:** Approximated BSpline, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`), gated on `HasResult()`.
 - **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406),
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, which is documented as true for a fit that is "not NECESSARILY within the required
+  tolerance": the same accessor
+  [`approxWithDetails`](#approxwithdetailstolerancecontinuitymaxsegmentsmaxdegree) uses, since #1474
+  put one shared implementation behind both, mirroring the #491 fix already shipped for
+  `Curve3D`/`Surface`. Use `approxWithDetails` when you need the actual `maxError`.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
   let approx = circle.approximated(tolerance: 0.01, continuity: 2)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status.
+
+```swift
+public func approxWithDetails(tolerance: Double = 1e-3, continuity: Int = 2,
+                              maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurve2DResult
+```
+
+One shared `Geom2dConvert_ApproxCurve` run backs both entry points (#1474), so for identical
+arguments they return the same curve: this one just also carries the diagnostics OCCT already
+computed.
+
+- **Returns:** `ApproxCurve2DResult(curve:maxError:isDone:hasResult:)`. `curve` is populated
+  exactly when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the
+  greatest distance between the source curve and the fit.
+- **OCCT:** `Geom2dConvert_ApproxCurve`: `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Example:**
+  ```swift
+  let circle = Curve2D.circle(center: .zero, radius: 5)!
+  let fit = circle.approxWithDetails(tolerance: 1e-6)
+  if let bspline = fit.curve, fit.maxError <= 1e-6 {
+      print("fitted with \(bspline.poleCount ?? 0) poles")
+  }
   ```
 
 ---
@@ -1025,7 +1060,7 @@ Useful for CNC G-code generation where only arcs and lines are supported.
 
 - **Parameters:** `tolerance`, maximum approximation error; `angleTolerance`, maximum angular deviation for arc fitting.
 - **Returns:** Array of arc/segment `Curve2D` objects, or `nil` on failure.
-- **OCCT:** `Geom2dConvert_ApproxCurve` arc-and-segment decomposition.
+- **OCCT:** `Geom2dConvert_ApproxArcsSegments` over a `Geom2dAdaptor_Curve`.
 - **Example:**
   ```swift
   let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!
@@ -1187,7 +1222,7 @@ public static func circlesTangentToTwoCurvesAndPoint(
 
 - **Parameters:** `c1`/`c2`, input curves; `q1`/`q2`, qualifiers; `point`, required pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
-- **OCCT:** `Geom2dGcc_Circ2d2TanPt`.
+- **OCCT:** `Geom2dGcc_Circ2d3Tan`, two-qualified-curve plus point constructor, over a pair of `Geom2dGcc_QualifiedCurve`.
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesTangentToTwoCurvesAndPoint(
@@ -1255,7 +1290,7 @@ public static func circlesTangentToPointWithRadius(
 
 - **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions.
-- **OCCT:** `Geom2dGcc_Circ2dTanPtRad`.
+- **OCCT:** `Geom2dGcc_Circ2d2TanRad`, qualified-curve plus point constructor, over a `Geom2dGcc_QualifiedCurve`.
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesTangentToPointWithRadius(
@@ -1278,7 +1313,7 @@ public static func circlesThroughTwoPoints(
 
 - **Parameters:** `p1`/`p2`, required pass-through points; `radius`, required radius; `tolerance`, tolerance.
 - **Returns:** Array of solutions (0, 1, or 2).
-- **OCCT:** `Geom2dGcc_Circ2d2PtRad`.
+- **OCCT:** `Geom2dGcc_Circ2d2TanRad`, two-`Geom2d_CartesianPoint` constructor. No qualifier takes part: a point has no inside.
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circlesThroughTwoPoints(SIMD2(-3, 0), SIMD2(3, 0), radius: 5)
@@ -1299,7 +1334,7 @@ public static func circleThroughThreePoints(
 
 - **Parameters:** `p1`/`p2`/`p3`, three points; `tolerance`, coincidence tolerance.
 - **Returns:** Array with one solution, or empty if collinear.
-- **OCCT:** `Geom2dGcc_Circ2d3Pt`.
+- **OCCT:** `Geom2dGcc_Circ2d3Tan`, three-`Geom2d_CartesianPoint` constructor.
 - **Example:**
   ```swift
   let sols = Curve2DGcc.circleThroughThreePoints(
@@ -1350,7 +1385,7 @@ public static func linesTangentToPoint(
 
 - **Parameters:** `curve`, input curve; `qualifier`, qualifier; `point`, pass-through point; `tolerance`, tolerance.
 - **Returns:** Array of line solutions.
-- **OCCT:** `Geom2dGcc_Lin2dTanPt`.
+- **OCCT:** `Geom2dGcc_Lin2d2Tan`, qualified-curve plus point constructor, over a `Geom2dGcc_QualifiedCurve`.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 3)!
@@ -1485,6 +1520,10 @@ public func mirrorAxis(origin: SIMD2<Double>, direction: SIMD2<Double>) -> Bool
 
 ## Geom2dEval TBezier / AHTBezier Curves (v0.131.0)
 
+Both are shipped OCCT 8.0.1 curve classes, not evaluators this project wrote. Each derives from
+OCCT's bounded-curve base, so what comes back is an ordinary `Curve2D` that trims, offsets and
+evaluates like any other.
+
 ### `Curve2D.tBezier(poles:alpha:)`
 
 Creates a 2D Trigonometric Bezier curve.
@@ -1497,7 +1536,7 @@ Uses a trigonometric Bernstein-like basis `{1, sin(α·t), cos(α·t), …}`. Pa
 
 - **Parameters:** `poles`, 2D control points (count must be odd and ≥ 3); `alpha`, frequency parameter (must be > 0).
 - **Returns:** TBezier curve, or `nil` if `poles.count < 3`, count is even, or `alpha ≤ 0`.
-- **OCCT:** `OCCTGeom2dEvalTBezierCurveCreate`.
+- **OCCT:** `Geom2dEval_TBezierCurve` (via `OCCTGeom2dEvalTBezierCurveCreate`).
 - **Example:**
   ```swift
   let poles: [SIMD2<Double>] = [SIMD2(1, 0), SIMD2(0, 1), SIMD2(-1, 0)]
@@ -1520,7 +1559,7 @@ Uses a mixed basis: `{1, t, …, t^k, sinh(α·t), cosh(α·t), sin(β·t), cos(
 
 - **Parameters:** `poles`, 2D control points; `algDegree`, algebraic polynomial degree (≥ 0); `alpha`, hyperbolic frequency (≥ 0; 0 omits hyperbolic terms); `beta`, trigonometric frequency (≥ 0; 0 omits trig terms).
 - **Returns:** AHT Bezier curve, or `nil` if the pole count is wrong or construction fails.
-- **OCCT:** `OCCTGeom2dEvalAHTBezierCurveCreate`.
+- **OCCT:** `Geom2dEval_AHTBezierCurve` (via `OCCTGeom2dEvalAHTBezierCurveCreate`).
 - **Example:**
   ```swift
   // Degree-2 algebraic + trig: needs 3 + 0 + 2 = 5 poles

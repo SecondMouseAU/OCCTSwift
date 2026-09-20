@@ -695,7 +695,10 @@ public func setStorageFormat(_ format: String) -> Bool
 
 ### `documentCount`
 
-Number of documents currently open in the application session.
+Number of documents opened through this document's own (private, per-instance)
+application. Since #371 each `Document` owns a private `TDocStd_Application`
+rather than sharing one process-wide instance, so this no longer reflects a
+shared multi-document session, in practice 1 for a valid document, 0 for null.
 
 ```swift
 public var documentCount: Int32
@@ -787,7 +790,9 @@ public static func loadSTEP(from url: URL, modes: STEPReaderModes, progress: Imp
   - `modes`: mode flags.
   - `progress`: optional `ImportProgress` closure for progress updates and cancellation.
 - **Returns:** A `Document` on success.
-- **Throws:** `ImportError.cancelled` if the user cancelled; `ImportError.importFailed` on other failure.
+- **Throws:** `ImportError.cancelled` if the user cancelled;
+  `DocumentError.exchangeFailed(url:status:)` on other failure, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Reader` with `Message_ProgressRange`.
 
 ---
@@ -1659,7 +1664,9 @@ All layer names assigned to this label.
 public var layers: [String]
 ```
 
-- **Returns:** Array of layer name strings (up to 16 entries).
+- **Returns:** Array of every layer name assigned to this label. Reads into a 16-entry buffer
+  first and, if the bridge reports more layers than that, retries once with a buffer sized to the
+  true count (#1563), so the result is never silently truncated.
 - **OCCT:** `XCAFDoc_LayerTool::GetLayers`.
 
 ---
@@ -2000,7 +2007,7 @@ public var colorNOCAttribute: Int32
 ```
 
 - **Returns:** Named-colour integer, or `-1` if not set as a named colour.
-- **OCCT:** `XCAFDoc_Color::GetColor` → `Quantity_Color::Name`.
+- **OCCT:** `XCAFDoc_Color::GetNOC`, which returns the `Quantity_NameOfColor` directly.
 
 ---
 

@@ -62,6 +62,8 @@ struct ImportProgressTests {
                 break
             case .importFailed(let msg):
                 Issue.record("Expected .cancelled, got .importFailed(\(msg))")
+            case .readFailed(let path, let status):
+                Issue.record("Expected .cancelled, got .readFailed(\(path), \(status))")
             }
         }
     }

@@ -18,4 +18,15 @@ struct GeomToolsCurve2dSetTests {
             }
         }
     }
+
+    // #1512: GeomTools_Curve2dSet::Add dedups by underlying-object identity ("new or existing"
+    // index), so two array elements sharing one underlying Geom2d_Curve used to be silently
+    // collapsed to a single stored entry instead of refusing the batch. Passing the same
+    // instance twice is the issue's own minimal fixture: both elements alias the identical
+    // Geom2d_Curve handle.
+    @Test func duplicateHandleRefusesTheBatch() {
+        if let line = Curve2D.lineFrom2Points(SIMD2(0, 0), SIMD2(1, 0)) {
+            #expect(Curve2D.serializeCurves([line, line]) == nil)
+        }
+    }
 }

@@ -63,8 +63,18 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BRANCH_808 = "origin/fix/808-refman-shape-topology"
+# #808's fix, as it landed, pinned the same way #809's is below.
+#
+# This used to be `git diff origin/main BRANCH_808`, which is a diff against a MOVING target. The
+# branch is long since merged, so as main advanced that diff stopped describing #808's fix and
+# started describing the inverse of everything else main had gained. Every one of the 26 rows went
+# NO HUNK, and the recall figure this file exists to produce quietly fell to the six rows lane 809
+# still anchored (#1670). Measured: 0/26 rows anchor against origin/main, 26/26 against the range.
+RANGE_808 = ("0154ff0a^", "55ef8c2b")
 # The #809 fix, as merged: the first commit of PR #923's branch through its review follow-up.
 RANGE_809 = ("c1bef14^", "d3506c1")
+# #930's Pass 2b retro, which fixed five rows that #809's own branch did not. See fix_diff().
+RETRO_930 = "cfe10528"
 
 
 def _load(path, name):
@@ -110,10 +120,24 @@ def fix_diff(lane: str) -> str | None:
     """The documentation half of the lane's fix, as a patch."""
     paths = ["docs/", "Sources/OCCTBridge/include/"]
     if lane == "808":
-        out = git("diff", "origin/main", BRANCH_808, "--", *paths)
-    else:
-        out = git("diff", RANGE_809[0], RANGE_809[1], "--", *paths)
-    return out.stdout if out.returncode == 0 else None
+        out = git("diff", RANGE_808[0], RANGE_808[1], "--", *paths)
+        return out.stdout if out.returncode == 0 else None
+    out = git("diff", RANGE_809[0], RANGE_809[1], "--", *paths)
+    if out.returncode != 0:
+        return None
+    # Five of #809's eleven rows were not fixed on #809's own branch. They are the "four
+    # over-coverage findings + sibling" of #930's Pass 2b retro (cfe10528), which landed later.
+    # Appending that commit's documentation diff lets all eleven rows LOCATE a hunk, which is why
+    # lane 809 now reports NO HUNK 0.
+    #
+    # Those five still do not RUN, and that is a real limit rather than an oversight: the matrix
+    # rewinds the tree to BRANCH_808's snapshot, and cfe10528 is a later commit, so its hunks do
+    # not reverse-apply to that older state. They therefore report NO APPLY, which says "the fix
+    # is known and cannot be replayed here" rather than NO HUNK's "the fix cannot be found at all".
+    # Fixing them properly needs a second rewind point per lane, which is a redesign of this
+    # script, not a repair of it. Recorded rather than papered over (#1670).
+    retro = git("diff", f"{RETRO_930}^", RETRO_930, "--", *paths)
+    return out.stdout + (retro.stdout if retro.returncode == 0 else "")
 
 
 HUNK_START = re.compile(r"^@@ ")
@@ -146,11 +170,26 @@ def split_hunks(patch: str) -> list[tuple[str, str, str]]:
 
 
 def _removed(hunk_lines: list[str]) -> str:
-    return " ".join(" ".join(l[1:].split()) for l in hunk_lines if l.startswith("-"))
+    # normalized(), not a bare whitespace squeeze: both sides of the hunk_for comparison have to
+    # get the same em-dash treatment or the needle is rewritten and the haystack is not.
+    return " ".join(normalized(l[1:]) for l in hunk_lines if l.startswith("-"))
+
+
+# The repo's own em-dash ban (writing-style.md) is the reason this is not just a whitespace
+# squeeze. Commit b5ed4b8e replaced em-dashes with ordinary punctuation across the tree, and that
+# pass also rewrote the bad_phrase QUOTATIONS stored in the lanes' KNOWN_OVER_FINDINGS. So a stored
+# phrase can read "`X`, reads `Y`" where the historical diff it is meant to match reads
+# "`X` \u2014 reads `Y`". Comparing a post-ban quotation against pre-ban history therefore has to be
+# insensitive to that one substitution, or the row silently stops anchoring. Measured on
+# Surface.torusAxis (#1670), which was the last NO HUNK row once the ranges below were corrected.
+_DASH_AS_COMMA = re.compile(r"\s*[\u2014\u2013]\s*")
 
 
 def normalized(text: str) -> str:
-    return " ".join(text.split())
+    # Only the dash is rewritten, and only to the comma the ban replaced it with. An earlier
+    # attempt also collapsed existing commas, which is too loose: it made two rows that had been
+    # matching stop matching.
+    return _DASH_AS_COMMA.sub(", ", " ".join(text.split()))
 
 
 def hunk_for(finding, hunks) -> tuple[str, str] | None:
@@ -244,7 +283,7 @@ def subject_of(kf) -> str:
 
 
 def report_mode(det, lanes, verbose: bool) -> None:
-    findings, unresolved, checked = det.findings()
+    findings, unresolved, checked, _symbol_only = det.findings()
     print(f"detector on the tree as checked out: {len(findings)} findings, "
           f"{checked} attributions checked, {len(unresolved)} unresolved\n")
     for lane, known in lanes:
@@ -291,23 +330,38 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
 
     applied = []
     try:
-        # Both lanes fixed: the baseline every row is measured against.
-        for lane, _known in lanes:
-            if lane == "808":     # #809's fix is already on main
-                p = subprocess.run(["git", "-C", ROOT, "apply"], input=patches[lane],
-                                   capture_output=True, text=True)
-                if p.returncode != 0:
-                    print(f"could not apply lane {lane}'s fix: {p.stderr.strip()}")
-                    return
-                applied.append(patches[lane])
-        base, _u, _c = det.findings()
+        # The baseline patch is a TIME MACHINE, not a fix. `git diff origin/main BRANCH_808`
+        # applied to today's tree rewinds docs/ to BRANCH_808's own snapshot, which is the state
+        # the stored fix hunks below were cut against and therefore the only state they will
+        # reverse-apply to. Both lanes' fixes are present in that snapshot, so it is also a valid
+        # "both lanes fixed" baseline, which is what the original comment here said it was for.
+        #
+        # That double duty is why #1670 was subtle: the same expression was serving as the rewind
+        # AND as the source of the per-row hunks, and it can only be correct as one of them. As the
+        # rewind it is right and is kept. As the hunk source it went stale the moment main moved
+        # past the branch, because its removed lines became today's text rather than the original
+        # wrong text, which is what sent all 26 of lane 808's rows to NO HUNK. The per-row hunks
+        # now come from the pinned historical ranges in fix_diff() instead.
+        rewind = git("diff", "origin/main", BRANCH_808, "--", "docs/", "Sources/OCCTBridge/include/")
+        if rewind.returncode != 0 or not rewind.stdout:
+            print(f"could not build the rewind patch from {BRANCH_808}. "
+                  "Fetch that branch (PR #926) and re-run.")
+            return
+        p_rewind = subprocess.run(["git", "-C", ROOT, "apply"], input=rewind.stdout,
+                                  capture_output=True, text=True)
+        if p_rewind.returncode != 0:
+            print(f"could not rewind the tree to {BRANCH_808}: {p_rewind.stderr.strip()}")
+            return
+        applied.append(rewind.stdout)
+        base, _u, _c, _so = det.findings()
         base_keys = {(f.claim.path, f.claim.line, f.cls) for f in base}
         print(f"baseline (both lanes fixed): {len(base)} findings\n")
 
+        totals = {"measured": 0, "unmeasured": 0}
         for lane, known in lanes:
             hunks = split_hunks(patches[lane])
             print(f"=== #{lane}: removal matrix over {len(known)} confirmed findings ===")
-            tally = {"ISOLATED": 0, "SILENT": 0, "NOISY": 0, "NO HUNK": 0}
+            tally = {"ISOLATED": 0, "SILENT": 0, "NOISY": 0, "NO HUNK": 0, "NO APPLY": 0}
             for i, kf in enumerate(known, 1):
                 doc_file, phrase = kf["doc_file"], kf["bad_phrase"]
                 pair = hunk_for(kf, hunks)
@@ -321,12 +375,17 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
                 rev = subprocess.run(["git", "-C", ROOT, "apply", "-R"], input=one,
                                      capture_output=True, text=True)
                 if rev.returncode != 0:
-                    tally["NO HUNK"] += 1
-                    print(f"  {i:2}. NO HUNK  {subject_of(kf)}  "
-                          f"(reverse-apply failed: {rev.stderr.strip().splitlines()[:1]})")
+                    # Distinct from NO HUNK: the row's text WAS found in the fix diff, but the
+                    # surrounding document has changed enough since that the hunk will not
+                    # reverse-apply. Counted separately so "we could not locate this finding" and
+                    # "we located it and could not reintroduce it" stop sharing a number.
+                    tally["NO APPLY"] += 1
+                    print(f"  {i:2}. NO APPLY {subject_of(kf)}  "
+                          f"(hunk found, reverse-apply failed: "
+                          f"{rev.stderr.strip().splitlines()[:1]})")
                     continue
                 try:
-                    now, _u, _c = det.findings()
+                    now, _u, _c, _so = det.findings()
                     wanted = det.classes_named(phrase, quoted_only_for(doc_file))
                     span = locate(os.path.join(ROOT, doc_file), phrase)
                     got = matching(now, doc_file, span, wanted) if span else []
@@ -348,7 +407,14 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
                 finally:
                     subprocess.run(["git", "-C", ROOT, "apply"], input=one,
                                    capture_output=True, text=True)
-            print("  --> " + ", ".join(f"{k} {v}" for k, v in tally.items()) + "\n")
+            print("  --> " + ", ".join(f"{k} {v}" for k, v in tally.items()))
+            measured = tally["ISOLATED"] + tally["SILENT"] + tally["NOISY"]
+            unmeasured = tally["NO HUNK"] + tally["NO APPLY"]
+            print(f"      measured {measured}/{measured + unmeasured} rows"
+                  + (f"  <-- {unmeasured} DID NOT RUN" if unmeasured else ""))
+            print()
+            totals["measured"] += measured
+            totals["unmeasured"] += unmeasured
     finally:
         for patch in reversed(applied):
             subprocess.run(["git", "-C", ROOT, "apply", "-R"], input=patch,
@@ -359,6 +425,18 @@ def matrix_mode(det, lanes, verbose: bool) -> None:
             print("WARNING: the working tree did not restore cleanly:")
             for l in left:
                 print("  " + l)
+        # #1670: a row that did not run is not a row that passed. This used to print a tally with
+        # NO HUNK in it and exit 0, so a lane measuring nothing at all read the same as a lane
+        # measuring everything. The recall figure quoted from this script rested on six rows of a
+        # claimed thirty-seven for months because of that.
+        if totals["unmeasured"]:
+            print(f"FAILED: {totals['unmeasured']} of "
+                  f"{totals['measured'] + totals['unmeasured']} rows did not run. "
+                  f"Recall is measured over {totals['measured']} rows, not the full set.")
+            print("Re-anchor them or retire them with a reason; do not read the tally as a pass.")
+            matrix_mode.failed = True
+        else:
+            print(f"OK: all {totals['measured']} rows ran.")
 
 
 # The two shipped lanes, as class-name prefixes. #808's own LANE_CLASSES and #809's are lists of
@@ -442,7 +520,11 @@ def main() -> int:
         lanes.append(("809", load_809_findings()))
 
     if args.matrix:
+        matrix_mode.failed = False
         matrix_mode(det, lanes, args.verbose)
+        # #1670: the matrix exits non-zero when any row did not run. Without this the script
+        # reported success whether it measured 37 rows or 6.
+        return 1 if getattr(matrix_mode, "failed", False) else 0
     elif args.retro:
         retro_mode(det, lanes, args.verbose)
     else:

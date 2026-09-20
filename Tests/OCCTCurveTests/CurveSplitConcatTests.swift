@@ -26,6 +26,17 @@ struct CurveSplitConcatTests {
         }
     }
 
+    @Test func concatenateG1RejectsDisconnectedCurve() {
+        // Same shape as joinRejectsDisconnectedCurve (#1441), for the sibling
+        // OCCTCurve3DConcatenateG1 entry point: a 4-unit gap is far past the default 1e-6
+        // tolerance, so Add() must fail and concatenateG1 must return nil, not silently drop
+        // the second curve.
+        let c1 = Curve3D.segment(from: SIMD3(0.0, 0.0, 0.0), to: SIMD3(1.0, 0.0, 0.0))!
+        let c2 = Curve3D.segment(from: SIMD3(5.0, 0.0, 0.0), to: SIMD3(6.0, 0.0, 0.0))!
+        let joined = Curve3D.concatenateG1(curves: [c1, c2])
+        #expect(joined == nil)
+    }
+
     @Test func splitCurve2DAtContinuity() {
         let points = [SIMD2(0.0, 0.0), SIMD2(5.0, 5.0), SIMD2(10.0, 0.0)]
         if let curve = Curve2D.fit(through: points) {

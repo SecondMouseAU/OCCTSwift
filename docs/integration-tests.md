@@ -239,7 +239,7 @@ complex part → measure (volume, area, CoM, edges, faces)
 ```
 
 **Checks:** All 8 results identical, no crashes (the "NCollection SEGV" this used to cite was never
-characterized and didn't hold up under TSan, see CLAUDE.md's Known OCCT Bugs, #341)
+characterized and didn't hold up under TSan, see the #341 row in `okf/references/known-occt-bugs.md`)
 
 ## 5. Regression Tests
 

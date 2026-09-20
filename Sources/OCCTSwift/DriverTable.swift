@@ -9,7 +9,17 @@ public enum DriverTable: Sendable {
         OCCTDriverTableInitStandard()
     }
 
-    /// Check if the global driver table exists.
+    /// Always `true`: querying this lazily creates and populates the global
+    /// driver table if it does not already exist.
+    ///
+    /// This mirrors `TPrsStd_DriverTable::Get()` exactly, whose own header
+    /// doc says "Returns the static table. If it does not exist, creates it
+    /// and fills it with standard drivers." There is no OCCT API that reports
+    /// whether the table has been created without also creating it, so this
+    /// property can never observe (or produce) a "not yet created" state:
+    /// reading it is itself the side effect. Use it to guarantee the table is
+    /// present before relying on it, not to test whether some earlier code
+    /// already initialized one.
     public static var exists: Bool {
         OCCTDriverTableExists()
     }

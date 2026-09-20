@@ -746,18 +746,21 @@ extension Shape {
     /// - Parameters:
     ///   - edge1: First edge.
     ///   - edge2: Second edge.
+    ///   - planeOrigin: A point on the plane containing the edges.
     ///   - planeNormal: Normal direction of the plane containing the edges.
     ///   - radius: Fillet radius.
     ///   - nearPoint: Point near desired fillet location (for choosing among solutions).
     /// - Returns: Fillet result with edges and solution count, or nil on failure.
     public static func fillet2dEdges(
         edge1: Shape, edge2: Shape,
+        planeOrigin: SIMD3<Double> = .zero,
         planeNormal: SIMD3<Double>,
         radius: Double,
         nearPoint: SIMD3<Double>
     ) -> Fillet2DEdgeResult? {
         let result = OCCTChFi2dFilletEdges(
             edge1.handle, edge2.handle,
+            planeOrigin.x, planeOrigin.y, planeOrigin.z,
             planeNormal.x, planeNormal.y, planeNormal.z,
             radius, nearPoint.x, nearPoint.y, nearPoint.z)
         guard let fe = result.filletEdge, let me1 = result.modifiedEdge1,

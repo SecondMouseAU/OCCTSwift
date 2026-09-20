@@ -111,7 +111,7 @@ public func directFaces() -> Shape?
 Applies `ShapeCustom_DirectModification` to replace indirect or offset surface references with direct canonical geometry, normalising outward face normals.
 
 - **Returns:** Shape with canonical surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom_DirectModification` (via `OCCTShapeDirectFaces`).
+- **OCCT:** `ShapeCustom::DirectFaces` (via `OCCTShapeDirectFaces`).
 - **Example:**
   ```swift
   if let direct = imported.directFaces() {
@@ -133,7 +133,7 @@ Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the un
 
 - **Parameters:** `factor`, uniform scale factor applied to all geometry definitions.
 - **Returns:** Scaled shape, or nil on failure.
-- **OCCT:** `ShapeCustom_TrsfModification` (via `OCCTShapeScaleGeometry`).
+- **OCCT:** `ShapeCustom::ScaleShape` (via `OCCTShapeScaleGeometry`).
 - **Example:**
   ```swift
   if let mmShape = inchShape.scaledGeometry(factor: 25.4) {
@@ -154,9 +154,26 @@ public func bsplineRestriction(surfaceTolerance: Double = 0.01,
                                maxSegments: Int = 10000) -> Shape?
 ```
 
-This does **not** recognise analytic forms, nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
+This does **not** recognise analytic forms, nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) is the operation that does.
 
-Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
+**Nor does it convert every geometry.** The bridge passes a default-constructed
+`ShapeCustom_RestrictionParameters`, and callers cannot reach its toggles through either entry
+point. Measured on the pinned kernel
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`), those defaults are:
+
+| converted | left alone |
+|---|---|
+| surfaces of revolution, surfaces of linear extrusion, offset surfaces | planes, cylinders, cones, spheres, tori, Bezier surfaces |
+| 3D curves, 2D curves, offset curves of both | |
+
+So a cylinder through this call comes back with all three faces still elementary and no BSpline at
+all. What is approximated is approximated no worse than the supplied tolerances, capped at
+`maxDegree` and `maxSegments`. To choose the toggles, use
+[`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:parameters:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrationalparameters),
+whose `parameters` argument reaches every one of them (#1637); this entry point keeps OCCT's own
+defaults deliberately.
+
+Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:parameters:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrationalparameters) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
 - **Parameters:**
   - `surfaceTolerance`: maximum allowable deviation for surface approximation (default 0.01).
@@ -186,30 +203,13 @@ Recognises surfaces of extrusion and revolution that degenerate into planes, cyl
 
 - **Returns:** Shape with elementary surfaces, or nil on failure.
 - **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeSweptToElementary`).
+- **Inverse:** [`withSurfacesAsRevolution()`](Shape-Measurement.md#withsurfacesasrevolution) runs
+  the other direction, elementary periodic surfaces into surfaces of revolution.
 - **Example:**
   ```swift
   if let canonical = swept.sweptToElementary() {
       // cylindrical extrusion is now a true Geom_CylindricalSurface
   }
-  ```
-
----
-
-### `revolutionToElementary()`
-
-Convert surfaces of revolution to elementary surfaces.
-
-```swift
-public func revolutionToElementary() -> Shape?
-```
-
-Similar to `sweptToElementary()` but targets only surfaces of revolution.
-
-- **Returns:** Shape with elementary surfaces, or nil on failure.
-- **OCCT:** `ShapeCustom_SweptToElementary` (via `OCCTShapeRevolutionToElementary`).
-- **Example:**
-  ```swift
-  if let canonical = importedRevol.revolutionToElementary() { }
   ```
 
 ---
@@ -593,14 +593,19 @@ Sew faces using the fast sewing algorithm.
 public func fastSewn(tolerance: Double = 1e-6) -> Shape?
 ```
 
-Faster than `sewn(tolerance:)` for large models with many faces, but handles fewer edge cases (non-manifold topology, very irregular gaps).
+Faster than `sewn(tolerance:)` for large models with many faces, but requires every face's
+surface to be naturally bounded (e.g. a sphere, cylinder, cone, or torus). A face whose surface
+is only trimmed by its wire (an ordinary planar `TopoDS_Face`, the common shape of a box or any
+other polyhedral solid) is declined and produces no result, so this returns nil for most
+everyday B-Rep solids; use [`sewn(tolerance:)`](#sewntolerance) for those (#1475).
 
 - **Parameters:** `tolerance`, sewing tolerance (default 1e-6).
 - **Returns:** Sewn shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_FastSewing` (via `OCCTShapeFastSewn`).
 - **Example:**
   ```swift
-  if let shell = largeFaceSoup.fastSewn(tolerance: 1e-4) { }
+  let sewn = Shape.sphere(radius: 10)!.fastSewn()  // naturally-bounded surface: succeeds
+  let box = Shape.box(width: 10, height: 10, depth: 10)!.fastSewn()  // nil: trimmed planes
   ```
 
 ---
@@ -855,7 +860,7 @@ Moves each face by a constant distance without filleting intersections. Faster t
 
 - **Parameters:** `distance`, offset distance; positive moves outward.
 - **Returns:** Offset shape, or nil on failure.
-- **OCCT:** `BRepOffset_SimpleOffset` (via `OCCTShapeSimpleOffset`).
+- **OCCT:** `BRepOffset_MakeSimpleOffset` (via `OCCTShapeSimpleOffset`).
 - **Example:**
   ```swift
   if let thick = sheet.simpleOffset(by: 1.5) { }
@@ -900,7 +905,7 @@ public func fusedEdges() -> Shape?
 Removes unnecessary edge splits introduced by boolean operations or sewing, simplifying topology for downstream algorithms and display.
 
 - **Returns:** Shape with fused edges, or nil on failure.
-- **OCCT:** `ShapeUpgrade_UnifySameDomain` / `BRepAlgo_FaceRestrictor` (via `OCCTShapeFuseEdges`).
+- **OCCT:** `BRepLib_FuseEdges` (via `OCCTShapeFuseEdges`).
 - **Example:**
   ```swift
   if let clean = boolResult.fusedEdges() { }
@@ -1065,7 +1070,10 @@ Identifies whether the shape's geometry matches a canonical form (plane, cylinde
 
 - **Parameters:** `tolerance`, recognition tolerance (default 1e-4).
 - **Returns:** A `CanonicalForm` describing the recognised form, or nil if none is found.
-- **OCCT:** `ShapeAnalysis_Curve` / `BRepGProp` recognition (via `OCCTShapeRecognizeCanonical`).
+- **OCCT:** `ShapeAnalysis_CanonicalRecognition`, asked in order `IsPlane`, `IsCylinder`,
+  `IsCone`, `IsSphere`, `IsCircle`, `IsLine`, `IsEllipse`, with `GetGap()` read after each
+  accepted form (via `OCCTShapeRecognizeCanonical`). Neither `ShapeAnalysis_Curve` nor
+  `BRepGProp` is on this path.
 - **Example:**
   ```swift
   if let form = face.recognizeCanonical() {
@@ -1142,7 +1150,7 @@ Drops holes in faces whose area is below `minArea`. Useful for cleaning up small
 
 - **Parameters:** `minArea`, minimum area threshold; holes smaller than this are removed.
 - **Returns:** Shape with small holes removed, or nil on failure.
-- **OCCT:** `ShapeFix_Shape` / hole-removal pass (via `OCCTShapeRemoveInternalWires`).
+- **OCCT:** `ShapeUpgrade_RemoveInternalWires` (via `OCCTShapeRemoveInternalWires`).
 - **Example:**
   ```swift
   if let clean = sheet.removingInternalWires(minArea: 0.25) { }
@@ -1164,7 +1172,7 @@ Returns the count of edge pairs that are geometrically coincident (within `toler
 
 - **Parameters:** `tolerance`, contiguity tolerance (default 1e-6).
 - **Returns:** Number of contiguous (but unsewn) edge pairs found.
-- **OCCT:** `BRepBuilderAPI_Sewing` probe (via `OCCTShapeFindContiguousEdges`).
+- **OCCT:** `BRepOffsetAPI_FindContigousEdges` (via `OCCTShapeFindContiguousEdges`).
 - **Example:**
   ```swift
   let gaps = faceSoup.contiguousEdgeCount(tolerance: 0.01)
@@ -1274,7 +1282,7 @@ Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom
   `Geom_Curve` meridian. (#808)
 - **Example:**
   ```swift
-  let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi)!
+  let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0))!
   if let solid = Shape.revolution(meridian: arc, axisDirection: SIMD3(0, 1, 0)) { }
   ```
 
@@ -1780,7 +1788,7 @@ Useful for export to systems that cannot handle full 360° surfaces (e.g. splitt
 
 - **Parameters:** `maxAngleDegrees`, maximum surface angular span in degrees (e.g. 90 for quarter-turns).
 - **Returns:** Shape with surfaces split at angle boundaries, or nil on failure.
-- **OCCT:** `ShapeUpgrade_ShapeSplitAngle` (via `OCCTShapeSplitByAngle`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideAngle` (via `OCCTShapeSplitByAngle`).
 - **Example:**
   ```swift
   if let split = fullCylinder.splitByAngle(90) {
@@ -2025,12 +2033,12 @@ Convenience overload accepting a `Wire` directly.
 Mark smooth (G1-continuous) edges as "regular."
 
 ```swift
-public func encodingRegularity(toleranceDegrees: Double = 1e-10) -> Shape?
+public func encodingRegularity(toleranceDegrees: Double = 1.0e-10 * 180.0 / Double.pi) -> Shape?
 ```
 
 Downstream algorithms (e.g. offset, draft) can skip regular edges for better performance. The angular tolerance controls what counts as smooth.
 
-- **Parameters:** `toleranceDegrees`, angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular (default 1e-10, effectively exact smoothness).
+- **Parameters:** `toleranceDegrees`, angular tolerance in degrees; edges whose dihedral angle deviates less than this from 180° are marked regular. Defaults to `1.0e-10 * 180.0 / Double.pi` (~5.7295779513e-9), OCCT's own `BRepLib::EncodeRegularity` default (`1.0e-10` **radians**) converted to degrees. Before #1545 this defaulted to the bare literal `1e-10` *degrees* (~1.745e-12 radians), about 172x stricter than OCCT's own default.
 - **Returns:** Shape with regularity encoded, or nil on failure.
 - **OCCT:** `BRepLib::EncodeRegularity` (via `OCCTShapeEncodeRegularity`).
 - **Example:**
@@ -2070,11 +2078,23 @@ Split faces into approximately the specified number of patches.
 public func dividedByNumber(_ parts: Int) -> Shape?
 ```
 
-Subdivides each face into approximately `parts` parametric patches. Useful for mesh preparation and parametric surface subdivision. Requires `parts > 1`.
+Splits each face into `parts` strips along its **U** parametric direction, leaving V undivided.
+Since #1491 the split count is exact and per-axis, not the "roughly square grid" the algorithm
+derives when the per-axis counts are left unset, and it lands on U specifically rather than on
+whichever of a face's extents is geometrically longer. Useful for mesh preparation and parametric
+surface subdivision. Requires `parts > 1`.
 
-- **Parameters:** `parts`, approximate number of patches per face.
+- **Parameters:** `parts`, number of U strips per face.
 - **Returns:** Shape with divided faces, or nil if `parts ≤ 1` or on failure.
-- **OCCT:** `ShapeUpgrade_ShapeDivideArea` (via `OCCTShapeDivideByNumber`).
+- **OCCT:** `ShapeUpgrade_ShapeDivide` driving a `ShapeUpgrade_FaceDivideArea` split-face tool with
+  `SetSplittingByNumber(true)`, `NbParts() = parts`, `MaxArea() = -1` and
+  `SetNumbersUVSplits(parts, 1)` (via `OCCTShapeDivideByNumber`). Not
+  `ShapeUpgrade_ShapeDivideArea`, which is the class `dividedByArea(maxArea:)` and
+  [`dividedByParts(_:)`](Shape-Measurement.md#dividedbyparts_) use, and which derives its own
+  roughly-square grid instead. Measured on a 10 x 20 x 10 box at 2 parts, the two give 10 faces and
+  18 (`Scripts/repro/1640/transcript.txt`).
+  `MaxArea() = -1` is load-bearing rather than cosmetic: its default is `Precision::Infinite()`,
+  against which `ShapeUpgrade_FaceDivideArea::Perform()` returns false for every finite face.
 - **Example:**
   ```swift
   if let subdivided = face.dividedByNumber(4) { }

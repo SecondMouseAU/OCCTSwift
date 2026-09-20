@@ -151,6 +151,9 @@ extension GeometryProperties {
     ///
     /// Returns (totalMass, centroid), with a nil centroid when there is none to report.
     ///
+    /// **`weights` must have exactly as many elements as `points`.** A mismatch is rejected
+    /// (mass 0, centroid nil) rather than read past the shorter array's end (#1583).
+    ///
     /// **Every weight must be strictly positive.** OCCT's `GProp_PGProps::AddPoint` throws on the
     /// first weight that is not, and one bad weight discards the whole set rather than skipping
     /// that point. The result used to come back as mass 0 with a centroid of (0,0,0), which reads
@@ -160,10 +163,12 @@ extension GeometryProperties {
     /// let pts = [SIMD3(0.0,0,0), SIMD3(10.0,0,0)]
     /// GeometryProperties.weightedCentroid(points: pts, weights: [1, 3]).centroid  // (7.5,0,0)
     /// GeometryProperties.weightedCentroid(points: pts, weights: [1, 0]).centroid  // nil, rejected
+    /// GeometryProperties.weightedCentroid(points: pts, weights: [1]).centroid     // nil, length mismatch
     /// ```
     public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (
         mass: Double, centroid: SIMD3<Double>?
     ) {
+        guard points.count == weights.count else { return (0, nil) }
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
         var cx = 0.0

@@ -464,11 +464,11 @@ The 3D curve underlying this edge as a standalone `Curve3D`.
 public var curve3D: Curve3D? { get }
 ```
 
-Returns a `Geom_TrimmedCurve` wrapping the edge's geometry, trimmed to the edge's parameter range. Returns `nil` for edges with no 3D curve representation (rare, typically pcurve-only edges before `BuildCurves3d`).
+Returns nil for edges with no 3D curve representation (rare, typically pcurve-only edges before `BuildCurves3d`). This is deliberately the raw, untrimmed underlying curve, not a `Geom_TrimmedCurve` over the edge's own extent (`BRep_Tool::Curve` hands back the 3D curve with `First`/`Last` reported separately, never a clipped copy), so a caller can `DownCast` it to a concrete type (`Geom_Circle`, `Geom_Line`, ...) for typed-property extraction. For a straight edge the returned curve's `domain` is an unbounded `Geom_Line`'s full range, and for a partial arc it is the underlying circle/ellipse's whole period, not the arc's own sweep. Use `parameterBounds` for the edge's own finite extent (#1584).
 
-Use cases include extracting `CircleProperties` from a circular edge, emitting native DXF entities, or feeding edge geometry into parametric analysis pipelines.
+Use cases include extracting `CircleProperties` from a circular edge (unaffected by the untrimmed domain), feeding edge geometry into parametric analysis pipelines paired with `parameterBounds`, or downcasting to a concrete `Geom_*` type to build native DXF/SVG entities from the curve's geometry plus `parameterBounds` for the trimmed extent.
 
-- **Returns:** `Curve3D` wrapping a `Geom_TrimmedCurve`, or `nil` if no 3D curve exists.
+- **Returns:** `Curve3D` wrapping the raw, untrimmed OCCT curve, or `nil` if no 3D curve exists.
 - **OCCT:** `BRepLib::BuildCurves3d` + `BRep_Tool::Curve`.
 - **Example:**
   ```swift

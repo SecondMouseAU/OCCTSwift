@@ -1,0 +1,245 @@
+--- cylinder r=5 h=20, face 0, direction (1, 0, 0)
+    NbLines=2
+    line 1  Contap_Lin         NbVertex=2  NbPnts THREW
+        Line()   origin=(0.0000, 5.0000, 0.0000) dir=(0.0000, 0.0000, 1.0000)
+        vertex 1  (0.0000, 5.0000, 0.0000) uv=(1.5708, 0.0000) paramOnLine=0.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+        vertex 2  (0.0000, 5.0000, 20.0000) uv=(1.5708, 20.0000) paramOnLine=20.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+    line 2  Contap_Lin         NbVertex=2  NbPnts THREW
+        Line()   origin=(0.0000, -5.0000, 0.0000) dir=(0.0000, 0.0000, 1.0000)
+        vertex 1  (-0.0000, -5.0000, 0.0000) uv=(4.7124, 0.0000) paramOnLine=0.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (-0.0000, -5.0000, 20.0000) uv=(4.7124, 20.0000) paramOnLine=20.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+--- sphere r=7, face 0, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=8  NbPnts THREW
+        Arc()    range [0.0000, 6.2832]  Value(mid)=(3.1416, 1.5708)
+        vertex 1  (0.0000, -0.0000, 7.0000) uv=(6.2832, 1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=6.2832
+        vertex 2  (0.0000, -0.0000, 7.0000) uv=(6.2832, 1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=7.8540
+        vertex 3  (0.0000, 0.0000, 7.0000) uv=(0.0000, 1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=0.0000
+        vertex 4  (0.0000, 0.0000, 7.0000) uv=(0.0000, 1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=7.8540
+        vertex 5  (0.0000, -0.0000, 7.0000) uv=(6.2832, 1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=6.2832
+        vertex 6  (0.0000, -0.0000, 7.0000) uv=(6.2832, 1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=7.8540
+        vertex 7  (0.0000, 0.0000, 7.0000) uv=(0.0000, 1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=0.0000
+        vertex 8  (0.0000, 0.0000, 7.0000) uv=(0.0000, 1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=7.8540
+    line 2  Contap_Restriction NbVertex=8  NbPnts THREW
+        Arc()    range [0.0000, 6.2832]  Value(mid)=(3.1416, -1.5708)
+        vertex 1  (0.0000, -0.0000, -7.0000) uv=(6.2832, -1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (0.0000, 0.0000, -7.0000) uv=(0.0000, -1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=0.0000
+        vertex 3  (0.0000, -0.0000, -7.0000) uv=(6.2832, -1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=6.2832
+        vertex 4  (0.0000, 0.0000, -7.0000) uv=(0.0000, -1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+        vertex 5  (0.0000, -0.0000, -7.0000) uv=(6.2832, -1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+        vertex 6  (0.0000, 0.0000, -7.0000) uv=(0.0000, -1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=0.0000
+        vertex 7  (0.0000, -0.0000, -7.0000) uv=(6.2832, -1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=6.2832
+        vertex 8  (0.0000, 0.0000, -7.0000) uv=(0.0000, -1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+    line 3  Contap_Circle      NbVertex=2  NbPnts THREW
+        Circle() centre=(0.0000, 0.0000, 0.0000) axis=(1.0000, 0.0000, 0.0000) xdir=(0.0000, 0.0000, 1.0000) r=7.0000
+        vertex 1  (0.0000, -0.0000, 7.0000) uv=(6.2832, 1.5708) paramOnLine=0.0000 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=6.2832
+        vertex 2  (0.0000, 0.0000, -7.0000) uv=(0.0000, -1.5708) paramOnLine=3.1416 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+    line 4  Contap_Circle      NbVertex=2  NbPnts THREW
+        Circle() centre=(0.0000, 0.0000, 0.0000) axis=(1.0000, 0.0000, 0.0000) xdir=(0.0000, 0.0000, 1.0000) r=7.0000
+        vertex 1  (0.0000, -0.0000, -7.0000) uv=(6.2832, -1.5708) paramOnLine=3.1416 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (0.0000, 0.0000, 7.0000) uv=(0.0000, 1.5708) paramOnLine=6.2832 onArc=1 isVertex=1 multiple=1 internal=0
+            ParameterOnArc=7.8540
+--- sphere r=7, face 0, direction (0, 0, 1)
+    NbLines=1
+    line 1  Contap_Circle      NbVertex=2  NbPnts THREW
+        Circle() centre=(0.0000, 0.0000, 0.0000) axis=(0.0000, 0.0000, 1.0000) xdir=(0.0000, 1.0000, 0.0000) r=7.0000
+        vertex 1  (7.0000, -0.0000, 0.0000) uv=(6.2832, 0.0000) paramOnLine=4.7124 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=6.2832
+        vertex 2  (7.0000, 0.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=10.9956 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=6.2832
+--- cone r1=6 r2=2 h=10, face 0, direction (1, 0, 0)
+    NbLines=2
+    line 1  Contap_Lin         NbVertex=2  NbPnts THREW
+        Line()   origin=(0.0000, 1.0000, 12.5000) dir=(0.0000, 0.3714, -0.9285)
+        vertex 1  (0.0000, 2.0000, 10.0000) uv=(1.5708, 10.7703) paramOnLine=2.6926 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+        vertex 2  (0.0000, 6.0000, 0.0000) uv=(1.5708, 0.0000) paramOnLine=13.4629 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+    line 2  Contap_Lin         NbVertex=2  NbPnts THREW
+        Line()   origin=(0.0000, -1.0000, 12.5000) dir=(0.0000, -0.3714, -0.9285)
+        vertex 1  (-0.0000, -2.0000, 10.0000) uv=(4.7124, 10.7703) paramOnLine=2.6926 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (-0.0000, -6.0000, 0.0000) uv=(4.7124, 0.0000) paramOnLine=13.4629 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+--- torus R=10 r=3, face 0, direction (1, 0, 0)
+    NbLines=12
+    line 1  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (0.0000, 13.0000, -0.0000) uv=(1.5708, 6.2832) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+        vertex 2  (0.0000, 10.0000, -3.0000) uv=(1.5708, 4.7124) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 2  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (0.0000, -13.0000, -0.0000) uv=(4.7124, 6.2832) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (0.0000, -10.0000, -3.0000) uv=(4.7124, 4.7124) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 3  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (10.0000, 0.0000, 3.0000) uv=(6.2832, 1.5708) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+        vertex 2  (0.0000, -10.0000, 3.0000) uv=(4.7124, 1.5708) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 4  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (10.0000, 0.0000, -3.0000) uv=(6.2832, 4.7124) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (0.0000, -10.0000, -3.0000) uv=(4.7124, 4.7124) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 5  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (0.0000, 13.0000, 0.0000) uv=(1.5708, 0.0000) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=1.5708
+        vertex 2  (0.0000, 10.0000, 3.0000) uv=(1.5708, 1.5708) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 6  Contap_Walking     NbVertex=2  NbPnts=51
+        vertex 1  (0.0000, -13.0000, 0.0000) uv=(4.7124, 0.0000) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=4.7124
+        vertex 2  (0.0000, -10.0000, 3.0000) uv=(4.7124, 1.5708) paramOnLine=51.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 7  Contap_Walking     NbVertex=2  NbPnts=52
+        vertex 1  (0.0000, 10.0000, 3.0000) uv=(1.5708, 1.5708) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 3.0000) uv=(0.0000, 1.5708) paramOnLine=52.0000 onArc=0 isVertex=0 multiple=0 internal=0
+    line 8  Contap_Walking     NbVertex=2  NbPnts=102
+        vertex 1  (0.0000, 10.0000, 3.0000) uv=(1.5708, 1.5708) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=1 internal=0
+        vertex 2  (0.0000, -10.0000, 3.0000) uv=(4.7124, 1.5708) paramOnLine=102.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 9  Contap_Walking     NbVertex=2  NbPnts=102
+        vertex 1  (0.0000, 10.0000, -3.0000) uv=(1.5708, 4.7124) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=1 internal=0
+        vertex 2  (0.0000, 10.0000, 3.0000) uv=(1.5708, 1.5708) paramOnLine=102.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 10  Contap_Walking     NbVertex=2  NbPnts=102
+        vertex 1  (0.0000, -10.0000, 3.0000) uv=(4.7124, 1.5708) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=1 internal=0
+        vertex 2  (0.0000, -10.0000, -3.0000) uv=(4.7124, 4.7124) paramOnLine=102.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 11  Contap_Walking     NbVertex=2  NbPnts=52
+        vertex 1  (10.0000, 0.0000, -3.0000) uv=(0.0000, 4.7124) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=0 internal=0
+        vertex 2  (0.0000, 10.0000, -3.0000) uv=(1.5708, 4.7124) paramOnLine=52.0000 onArc=0 isVertex=0 multiple=1 internal=0
+    line 12  Contap_Walking     NbVertex=2  NbPnts=102
+        vertex 1  (0.0000, -10.0000, -3.0000) uv=(4.7124, 4.7124) paramOnLine=1.0000 onArc=0 isVertex=0 multiple=1 internal=0
+        vertex 2  (0.0000, 10.0000, -3.0000) uv=(1.5708, 4.7124) paramOnLine=102.0000 onArc=0 isVertex=0 multiple=1 internal=0
+--- torus R=10 r=3, face 0, direction (0, 0, 1)
+    NbLines=3
+    line 1  Contap_Walking     NbVertex=2  NbPnts=201
+        vertex 1  (7.0000, 0.0000, 0.0000) uv=(6.2832, 3.1416) paramOnLine=1.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=3.1416
+        vertex 2  (7.0000, 0.0000, 0.0000) uv=(0.0000, 3.1416) paramOnLine=201.0000 onArc=1 isVertex=0 multiple=0 internal=0
+            ParameterOnArc=3.1416
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 6.2832]  Value(mid)=(3.1416, 6.2832)
+        vertex 1  (13.0000, 0.0000, -0.0000) uv=(0.0000, 6.2832) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (13.0000, 0.0000, -0.0000) uv=(6.2832, 6.2832) paramOnLine=6.2832 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=4  NbPnts THREW
+        Arc()    range [0.0000, 6.2832]  Value(mid)=(3.1416, 0.0000)
+        vertex 1  (13.0000, 0.0000, -0.0000) uv=(6.2832, 6.2832) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (13.0000, 0.0000, -0.0000) uv=(0.0000, 6.2832) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 3  (13.0000, 0.0000, -0.0000) uv=(6.2832, 6.2832) paramOnLine=6.2832 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 4  (13.0000, 0.0000, -0.0000) uv=(0.0000, 6.2832) paramOnLine=6.2832 onArc=0 isVertex=1 multiple=1 internal=0
+--- box face 0, direction (1, 0, 0)
+    IsDone=1 IsEmpty=1, no lines
+--- box face 1, direction (1, 0, 0)
+    IsDone=1 IsEmpty=1, no lines
+--- box face 2, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(0.0000, 5.0000)
+        vertex 1  (0.0000, 0.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 10.0000)
+        vertex 1  (10.0000, 0.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(10.0000, 5.0000)
+        vertex 1  (0.0000, 0.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 4  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 0.0000)
+        vertex 1  (0.0000, 0.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (0.0000, 0.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+--- box face 3, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(0.0000, 5.0000)
+        vertex 1  (0.0000, 10.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 10.0000)
+        vertex 1  (10.0000, 10.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(10.0000, 5.0000)
+        vertex 1  (0.0000, 10.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 4  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 0.0000)
+        vertex 1  (0.0000, 10.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (0.0000, 10.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+--- box face 4, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(0.0000, 5.0000)
+        vertex 1  (0.0000, 0.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (0.0000, 10.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 10.0000)
+        vertex 1  (0.0000, 10.0000, 0.0000) uv=(0.0000, 10.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 0.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(10.0000, 5.0000)
+        vertex 1  (10.0000, 0.0000, 0.0000) uv=(10.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 0.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 4  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 0.0000)
+        vertex 1  (0.0000, 0.0000, 0.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 0.0000) uv=(10.0000, 0.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+--- box face 5, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(0.0000, 5.0000)
+        vertex 1  (0.0000, 0.0000, 10.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (0.0000, 10.0000, 10.0000) uv=(0.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 10.0000)
+        vertex 1  (0.0000, 10.0000, 10.0000) uv=(0.0000, 10.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(10.0000, 5.0000)
+        vertex 1  (10.0000, 0.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 10.0000, 10.0000) uv=(10.0000, 10.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 4  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [0.0000, 10.0000]  Value(mid)=(5.0000, 0.0000)
+        vertex 1  (0.0000, 0.0000, 10.0000) uv=(0.0000, 0.0000) paramOnLine=0.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (10.0000, 0.0000, 10.0000) uv=(10.0000, 0.0000) paramOnLine=10.0000 onArc=0 isVertex=1 multiple=1 internal=0
+--- planar face, viewed edge on, direction (1, 0, 0)
+    NbLines=4
+    line 1  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [-5.0000, 5.0000]  Value(mid)=(-5.0000, 0.0000)
+        vertex 1  (-5.0000, -5.0000, 0.0000) uv=(-5.0000, -5.0000) paramOnLine=-5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (-5.0000, 5.0000, 0.0000) uv=(-5.0000, 5.0000) paramOnLine=5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 2  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [-5.0000, 5.0000]  Value(mid)=(0.0000, -5.0000)
+        vertex 1  (-5.0000, -5.0000, 0.0000) uv=(-5.0000, -5.0000) paramOnLine=-5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (5.0000, -5.0000, 0.0000) uv=(5.0000, -5.0000) paramOnLine=5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 3  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [-5.0000, 5.0000]  Value(mid)=(5.0000, 0.0000)
+        vertex 1  (5.0000, -5.0000, 0.0000) uv=(5.0000, -5.0000) paramOnLine=-5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (5.0000, 5.0000, 0.0000) uv=(5.0000, 5.0000) paramOnLine=5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+    line 4  Contap_Restriction NbVertex=2  NbPnts THREW
+        Arc()    range [-5.0000, 5.0000]  Value(mid)=(0.0000, 5.0000)
+        vertex 1  (-5.0000, 5.0000, 0.0000) uv=(-5.0000, 5.0000) paramOnLine=-5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+        vertex 2  (5.0000, 5.0000, 0.0000) uv=(5.0000, 5.0000) paramOnLine=5.0000 onArc=0 isVertex=1 multiple=1 internal=0
+--- planar face, viewed face on, direction (0, 0, 1)
+    IsDone=1 IsEmpty=1, no lines
+--- cylinder r=5 h=20, face 0, direction (0, 0, 1)
+    IsDone=1 IsEmpty=1, no lines

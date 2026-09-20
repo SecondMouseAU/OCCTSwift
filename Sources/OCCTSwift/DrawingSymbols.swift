@@ -27,19 +27,28 @@ extension DrawingAnnotation {
         method: String? = nil
     ) -> [DrawingAnnotation] {
         // Encode as pre-computed primitive annotations:
-        //   - three lines forming the check-mark
-        //   - optional bar across the top for machiningRequired
+        //   - two lines forming the check-mark (unequal length, see below)
+        //   - optional bar across the top of the long arm for machiningRequired
         //   - optional circle in apex for machiningProhibited
         //   - text label with the Ra value above the horizontal bar
         //   - leader line to target
         //   - optional method text
         //
-        // Geometry: the symbol is 8×10 mm, apex at `position`, check opens upward.
+        // Geometry: apex at `position`, check opens upward. ISO 1302's basic
+        // symbol is two legs inclined at ~60° to the surface baseline, of
+        // deliberately UNEQUAL length: Annex A tabulates the long leg's
+        // minimum height (H2) at ~2.1x the short leg's height (H1) across
+        // every standard symbol size (e.g. 7.5/3.5, 10.5/5, 15/7 mm all
+        // reduce to ~2.1). The long (right) arm carries the Ra text and, for
+        // `.machiningRequired`, the horizontal bar.
         let apex = position
-        let size = 8.0
-        let height = 10.0
-        let leftTop = SIMD2(apex.x - size / 2, apex.y + height)
-        let rightTop = SIMD2(apex.x + size / 2, apex.y + height)
+        let longArmHeight = 10.0
+        let shortArmHeight = longArmHeight / 2.1
+        let legAngle = 60.0 * .pi / 180  // from the horizontal surface baseline
+        let leftTop = SIMD2(
+            apex.x - shortArmHeight / tan(legAngle), apex.y + shortArmHeight)
+        let rightTop = SIMD2(
+            apex.x + longArmHeight / tan(legAngle), apex.y + longArmHeight)
 
         var result: [DrawingAnnotation] = [
             // Long arm of the check
@@ -57,8 +66,17 @@ extension DrawingAnnotation {
         switch symbol {
         case .any: break
         case .machiningRequired:
-            // Horizontal bar connecting the tops
-            result.append(.centreline(.init(from: leftTop, to: rightTop, style: .solid)))
+            // Horizontal bar across the top of the long arm only, extending
+            // right to leave room for the Ra text. The two arms no longer
+            // share a common top height now that they're genuinely unequal
+            // length, so the bar can't connect back to the short arm's top
+            // the way a symmetric V could.
+            let barLength = 4.0
+            result.append(
+                .centreline(
+                    .init(
+                        from: rightTop, to: SIMD2(rightTop.x + barLength, rightTop.y),
+                        style: .solid)))
         case .machiningProhibited:
             // Circle in apex
             let r = 2.0

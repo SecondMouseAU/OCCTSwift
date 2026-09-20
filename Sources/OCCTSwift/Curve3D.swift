@@ -1736,20 +1736,52 @@ extension Curve3D {
         return CurveSurfaceExtrema(isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
+    /// One extremum of a curve-to-surface computation.
+    ///
+    /// The surface-side point carries both of its parameters. `ExtremaPointPair`, which this
+    /// replaced in `extremaCSPoint(range:surface:index:)`, has room for only one and dropped `v`.
+    public struct CurveSurfaceExtremaPoint: Sendable {
+        public let squareDistance: Double
+        /// The extremal point on the curve.
+        public let point1: SIMD3<Double>
+        /// Its curve parameter.
+        public let param1: Double
+        /// The extremal point on the surface.
+        public let point2: SIMD3<Double>
+        /// The surface parameters of `point2`.
+        public let u2: Double
+        public let v2: Double
+    }
+
     /// Get Nth extremum from curve-surface computation.
+    ///
+    /// `index` is 1-based, and valid up to the `count` reported by
+    /// ``extremaCS(range:surface:)``, which is also where `isDone`/`isParallel` are answered.
+    ///
+    /// ```swift
+    /// if let line = Curve3D.line(through: SIMD3(10, 0, 0), direction: SIMD3(0, 0, 1)),
+    ///    let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5) {
+    ///     let cs = line.extremaCS(range: -5...5, surface: sphere)
+    ///     if cs.isDone, !cs.isParallel, cs.count >= 1 {
+    ///         let p = line.extremaCSPoint(range: -5...5, surface: sphere, index: 1)
+    ///         // p.point2 is sphere.point(atU: p.u2, v: p.v2)
+    ///         print(p.param1, p.u2, p.v2)
+    ///     }
+    /// }
+    /// ```
     public func extremaCSPoint(
         range: ClosedRange<Double>? = nil,
         surface: Surface,
         index: Int
-    ) -> ExtremaPointPair {
+    ) -> CurveSurfaceExtremaPoint {
         let d = range ?? domain
         let r = OCCTExtremaExtCSPoint(
             handle, d.lowerBound, d.upperBound,
             surface.handle, Int32(index))
-        return ExtremaPointPair(
+        return CurveSurfaceExtremaPoint(
             squareDistance: r.squareDistance,
             point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+            point2: SIMD3(r.x2, r.y2, r.z2), u2: r.u2, v2: r.v2)
     }
 
     /// Project this curve onto a surface, returning BSpline approximation.
@@ -2722,9 +2754,37 @@ extension Curve3D {
         public let point: SIMD3<Double>
     }
 
-    /// Find all extrema (closest/farthest points) from a point to this curve.
+    /// Find all extrema (closest and farthest points) from a point to this curve.
+    ///
+    /// Backed by `ExtremaPC_Curve`, OCCT 8.0's variant-dispatching point-curve solver, over the
+    /// curve's own domain. Up to 64 results.
+    ///
+    /// **The domain's two ends are reported alongside the interior extrema**, because this calls
+    /// `ExtremaPC_Curve::PerformWithEndpoints`. So a bounded curve normally has two more results
+    /// than there are perpendicular feet, and a query point with no perpendicular foot at all
+    /// still gets an answer: a segment `[0, 10]` along +X queried from `(20, 0, 0)` reports the
+    /// end at `u = 10`, distance 10. An unbounded curve, and a closed one such as a full circle,
+    /// have no ends to add and are unchanged
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+    ///
+    /// ```swift
+    /// if let arc = Curve3D.arcOfCircle(
+    ///     start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0))
+    /// {
+    ///     let results = arc.extrema(from: SIMD3(3, 4, 0))
+    ///     if let nearest = results.min(by: { $0.distance < $1.distance }) {
+    ///         print(nearest.point, nearest.distance)
+    ///     }
+    /// }
+    ///
+    /// if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+    ///     let results = seg.extrema(from: SIMD3(20, 0, 0))
+    ///     print(results.map(\.distance).min()!)  // 10.0. Was [] before #1633.
+    /// }
+    /// ```
+    ///
     /// - Parameter point: the query point
-    /// - Returns: array of extrema results, or empty on failure
+    /// - Returns: array of extrema, empty when there are none
     public func extrema(from point: SIMD3<Double>) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2744,11 +2804,24 @@ extension Curve3D {
     }
 
     /// Find all extrema from a point to a bounded segment of this curve.
+    ///
+    /// `uMin`/`uMax` go to `ExtremaPC_Curve`'s own three-argument constructor, and are themselves
+    /// reported as extrema, the same way ``extrema(from:)`` reports the curve's own ends
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)). Up to 64 results.
+    ///
+    /// ```swift
+    /// if let c = Curve3D.bspline(points: myPoints) {
+    ///     let lo = c.domain.lowerBound
+    ///     let mid = (lo + c.domain.upperBound) / 2
+    ///     let results = c.extrema(from: SIMD3(1, 2, 3), uMin: lo, uMax: mid)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - point: the query point
     ///   - uMin: lower parameter bound
     ///   - uMax: upper parameter bound
-    /// - Returns: array of extrema results
+    /// - Returns: array of extrema within the bounds, empty when there are none
     public func extrema(from point: SIMD3<Double>, uMin: Double, uMax: Double) -> [ExtremumResult] {
         let maxResults: Int32 = 64
         var params = [Double](repeating: 0, count: Int(maxResults))
@@ -2768,9 +2841,31 @@ extension Curve3D {
         }
     }
 
-    /// Find minimum distance from a point to this curve.
+    /// Find the minimum distance from a point to this curve.
+    ///
+    /// Reads `ExtremaPC::Result::MinSquareDistance()` from
+    /// `ExtremaPC_Curve::PerformWithEndpoints`, so the minimum is over the whole domain, the two
+    /// ends of a bounded curve included, and agrees with the smallest `distance` in
+    /// ``extrema(from:)``'s array
+    /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
+    ///
+    /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
+    ///
+    /// ```swift
+    /// if let arc = Curve3D.arcOfCircle(
+    ///        start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
+    ///    let d = arc.minimumDistance(from: SIMD3(0, 10, 0)) {
+    ///     print(d)  // about 5.0
+    /// }
+    ///
+    /// if let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) {
+    ///     print(seg.minimumDistance(from: SIMD3(20, 0, 0)) ?? -1)  // 10.0. Was nil before #1633.
+    /// }
+    /// ```
+    ///
     /// - Parameter point: the query point
-    /// - Returns: the minimum distance, or nil on failure
+    /// - Returns: the minimum distance over the curve, or `nil` when the solver reports no
+    ///   extremum at all
     public func minimumDistance(from point: SIMD3<Double>) -> Double? {
         let d = OCCTExtremaPCMinDistance(handle, point.x, point.y, point.z)
         return d >= 0 ? d : nil
@@ -3705,7 +3800,7 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OtherCurve).
+    /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OffsetCurve, 8=OtherCurve).
     public var curveType: Int {
         Int(OCCTCurve3DCurveType(handle))
     }
@@ -3791,12 +3886,20 @@ extension Curve3D {
     }
 
     /// Get the full knot sequence (with multiplicities expanded).
+    ///
+    /// Sized from the curve's own pole count and degree: `poleCount + 2*degree + 1` is an exact
+    /// upper bound on the flat sequence's length for both periodic and non-periodic curves (per
+    /// `Geom_BSplineCurve::KnotSequence`'s own documented length formula), so this never
+    /// truncates regardless of how many poles the curve has (#1541, a fixed 1024-element buffer
+    /// used to overflow past ~1020 poles).
     public func bsplineKnotSequence() -> [Double] {
-        let maxSize = 1024
-        var seq = [Double](repeating: 0, count: maxSize)
-        var count: Int32 = 0
-        OCCTCurve3DBSplineGetKnotSequence(handle, &seq, &count)
-        return Array(seq.prefix(Int(count)))
+        let nPoles = Int(OCCTCurve3DBSplinePoleCount(handle))
+        guard nPoles > 0 else { return [] }
+        let degree = Int(OCCTCurve3DBSplineDegree(handle))
+        let capacity = nPoles + 2 * degree + 1
+        var seq = [Double](repeating: 0, count: capacity)
+        let count = Int(OCCTCurve3DBSplineGetKnotSequence(handle, &seq, Int32(capacity)))
+        return Array(seq.prefix(count))
     }
 
     /// Get all weights (one per pole).
@@ -4130,16 +4233,22 @@ extension Curve3D {
     }
 
     /// Move point and tangent at parameter u on BSpline curve.
+    ///
+    /// `startingCondition`/`endingCondition` are OCCT's own independent continuity codes, not a
+    /// pole-index range: `-1` means that endpoint is free to move, `0` means the point cannot
+    /// move, `1` means the point and its tangent cannot move, and so on (see
+    /// `Geom_BSplineCurve::MovePointAndTangent`). The two codes are unrelated and need not be
+    /// ordered, e.g. `startingCondition: 1, endingCondition: -1` is a legitimate call.
     @discardableResult
     public func bsplineMovePointAndTangent(
         u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
-        tolerance: Double, poleRange: ClosedRange<Int>
+        tolerance: Double, startingCondition: Int, endingCondition: Int
     ) -> Bool {
         OCCTCurve3DBSplineMovePointAndTangent(
             handle, u, point.x, point.y, point.z,
             tangent.x, tangent.y, tangent.z,
             tolerance,
-            Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+            Int32(startingCondition), Int32(endingCondition))
     }
 }
 

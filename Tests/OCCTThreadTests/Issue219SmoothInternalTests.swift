@@ -13,14 +13,17 @@ struct Issue219SmoothInternal {
 
     /// The wing-nut body: a cylinder with a coaxial bore, tapped 3/8-16 UNC (fine enough to have
     /// hit the degenerate band before the fix).
+    ///
+    /// The bore is pre-drilled to the spec's own MINOR diameter (#1578): a correctly-cut internal
+    /// thread's crest sits there, untouched, and its root reaches out to the major/nominal diameter.
     private func tappedWingNutBody() -> Shape? {
+        let spec = ThreadSpec(form: .unified, nominalDiameter: 9.525, pitch: 25.4 / 16)
         guard let cyl = Shape.cylinder(radius: 8, height: 9),
             let bore = Shape.cylinder(
                 at: SIMD3(0, 0, -1), direction: SIMD3(0, 0, 1),
-                radius: 9.525 / 2, height: 11),
+                radius: spec.minorDiameter / 2, height: 11),
             let body0 = cyl.subtracting(bore)
         else { return nil }
-        let spec = ThreadSpec(form: .unified, nominalDiameter: 9.525, pitch: 25.4 / 16)
         return body0.threadedHole(
             axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: spec, depth: 9)
     }
@@ -41,17 +44,17 @@ struct Issue219SmoothInternal {
 
     @Test("the smooth internal cut still removes a thread's worth of material")
     func removesMaterial() {
+        let spec = ThreadSpec(form: .unified, nominalDiameter: 9.525, pitch: 25.4 / 16)
         guard let cyl = Shape.cylinder(radius: 8, height: 9),
             let bore = Shape.cylinder(
                 at: SIMD3(0, 0, -1), direction: SIMD3(0, 0, 1),
-                radius: 9.525 / 2, height: 11),
+                radius: spec.minorDiameter / 2, height: 11),
             let body0 = cyl.subtracting(bore),
             let v0 = body0.volume
         else {
             #expect(Bool(false))
             return
         }
-        let spec = ThreadSpec(form: .unified, nominalDiameter: 9.525, pitch: 25.4 / 16)
         guard
             let t = body0.threadedHole(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), spec: spec, depth: 9),

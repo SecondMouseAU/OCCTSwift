@@ -27,7 +27,9 @@ public static func load(from url: URL, progress: ImportProgress? = nil) throws -
 
 - **Parameters:** `url`, URL to the STEP file; `progress`, optional progress/cancellation channel.
 - **Returns:** `Document` containing the assembly structure.
-- **Throws:** `DocumentError.loadFailed` if loading fails; `ImportError.cancelled` if cancelled cooperatively.
+- **Throws:** `DocumentError.exchangeFailed(url:status:)` if loading fails, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644); `ImportError.cancelled` if
+  cancelled cooperatively.
 - **OCCT:** `STEPCAFControl_Reader` with color, name, layer, props, and material modes enabled; `XCAFDoc_DocumentTool::ShapeTool/ColorTool/VisMaterialTool`.
 - **Example:**
   ```swift
@@ -176,7 +178,8 @@ public func write(to url: URL) throws
 ```
 
 - **Parameters:** `url`, output file URL.
-- **Throws:** `DocumentError.writeFailed` if writing fails.
+- **Throws:** `DocumentError.exchangeFailed(url:status:)` if writing fails, carrying OCCT's own
+  `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Writer` with color, name, layer, props, and material modes.
 - **Example:**
   ```swift
@@ -195,7 +198,9 @@ public func writeSTEP(to url: URL, progress: ImportProgress?) throws
 ```
 
 - **Parameters:** `url`, output URL; `progress`, optional progress/cancellation channel.
-- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on other failure.
+- **Throws:** `ImportError.cancelled` if cancelled; `DocumentError.exchangeFailed(url:status:)`
+  on other failure, carrying OCCT's own `IFSelect_ReturnStatus` as an
+  [`IOStatus`](IOStatus.md) (#1644).
 - **OCCT:** `STEPCAFControl_Writer` (via `OCCTDocumentWriteSTEPProgress`).
 
 ---
@@ -270,7 +275,7 @@ Transform matrix (position/rotation relative to parent), as a column-major `simd
 public var transform: simd_float4x4 { get }
 ```
 
-- **OCCT:** `XCAFDoc_Location` attribute (via `OCCTDocumentGetLocation`).
+- **OCCT:** `XCAFDoc_ShapeTool::GetLocation` (via `OCCTDocumentGetLocation`).
 
 ---
 
@@ -652,6 +657,7 @@ Errors that can occur when working with XDE documents.
 public enum DocumentError: Error, LocalizedError {
     case loadFailed(url: URL)
     case writeFailed(url: URL)
+    case exchangeFailed(url: URL, status: IOStatus)
     public var errorDescription: String? { get }
 }
 ```
@@ -660,8 +666,9 @@ public enum DocumentError: Error, LocalizedError {
 
 | Case / property | Meaning |
 |---|---|
-| `loadFailed(url:)` | A STEP file at `url` failed to load (`Document.load(from:progress:)` / `loadSTEP(from:progress:)`). |
-| `writeFailed(url:)` | A STEP file at `url` failed to write (`Document.write(to:)` / `writeSTEP(to:progress:)`). |
+| `loadFailed(url:)` | A STEP file at `url` failed to load (`Document.load(from:progress:)` / `loadSTEP(from:progress:)`). Kept for the entry points that reach no OCCT reader. |
+| `writeFailed(url:)` | A STEP file at `url` failed to write (`Document.write(to:)` / `writeSTEP(to:progress:)`). Kept for the same reason. |
+| `exchangeFailed(url:status:)` | A STEP read or write at `url` failed, and `status` is OCCT's own `IFSelect_ReturnStatus` as an [`IOStatus`](IOStatus.md), so a missing or unwritable path is distinguishable from a malformed file (#1644). Thrown by the load and write entry points that run a reader or a writer. |
 | `errorDescription` | `LocalizedError` conformance: a human-readable message naming the file (by last path component) and the failed operation. |
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
@@ -696,7 +703,7 @@ public var lengthUnit: LengthUnit? { get }
 Common `scale` values: `1.0` = mm, `10.0` = cm, `1000.0` = m, `25.4` = inch.
 
 - **Returns:** `LengthUnit` with scale and name, or `nil` if not set.
-- **OCCT:** `STEPCAFControl_Reader` unit info (via `OCCTDocumentGetLengthUnit`).
+- **OCCT:** the `XCAFDoc_LengthUnit` attribute on the root or main label (via `OCCTDocumentGetLengthUnit`).
 - **Example:**
   ```swift
   if let unit = doc.lengthUnit {
@@ -979,7 +986,9 @@ public func descendants(allLevels: Bool = false) -> [AssemblyNode]
 ```
 
 - **Parameters:** `allLevels`, if `true`, recurse all descendants; if `false`, direct children only.
-- **Returns:** Array of descendant nodes (up to 1,024).
+- **Returns:** Array of every descendant node. Reads into a 1,024-entry buffer first and, if the
+  bridge reports more descendants than that, retries once with a buffer sized to the true count
+  (#1563), so the result is never silently truncated.
 - **OCCT:** `TDF_ChildIterator(label, allLevels)` (via `OCCTDocumentGetDescendantLabels`).
   No `TDF_LabelSequence` is built.
 

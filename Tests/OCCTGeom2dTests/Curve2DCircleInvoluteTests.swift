@@ -121,16 +121,18 @@ struct Curve2DCircleInvoluteTests {
         #expect(curve == nil)
     }
 
+    // The refusal is `nil` now, not the origin (#1646). These two asserted the old spelling, and
+    // the origin is a point the involute legitimately returns at u = 0, so what they proved was
+    // "either refused or evaluated at the base point" rather than "refused".
     @Test func circleInvoluteD0WithPlacementRejectsZeroLengthDirection() {
         let p = Geom2dEval.circleInvoluteD0(
             origin: .zero, direction: SIMD2(0, 0), radius: 2.0, u: 1.0)
-        #expect(p.x == 0.0 && p.y == 0.0)
+        #expect(p == nil)
     }
 
     @Test func circleInvoluteD1WithPlacementRejectsZeroLengthDirection() {
         let r = Geom2dEval.circleInvoluteD1(
             origin: .zero, direction: SIMD2(0, 0), radius: 2.0, u: 1.0)
-        #expect(r.point.x == 0.0 && r.point.y == 0.0)
-        #expect(r.d1.x == 0.0 && r.d1.y == 0.0)
+        #expect(r == nil)
     }
 }

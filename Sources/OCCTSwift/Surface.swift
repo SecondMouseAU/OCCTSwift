@@ -834,7 +834,7 @@ public final class Surface: @unchecked Sendable {
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// if let k = sphere.gaussianCurvature(atU: 0, v: 0) { #expect(abs(k - 1.0 / 25) < 1e-12) }
     ///
-    /// let cylinder = Surface.cylinder(axis: .zero, direction: SIMD3(0, 0, 1), radius: 3)!
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
     /// cylinder.gaussianCurvature(atU: 1, v: 6)   // 0, developable, and that is the answer
     /// ```
     public func gaussianCurvature(atU u: Double, v: Double) -> Double? {
@@ -1613,7 +1613,7 @@ extension Surface {
         public let uCount: Int
         /// Number of patches in V direction.
         public let vCount: Int
-        /// Patches in row-major order (U varies faster).
+        /// Patches in U-major order (V varies faster).
         public let patches: [Surface]
     }
 
@@ -1725,8 +1725,8 @@ extension Surface {
         uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
         uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil
     ) -> SurfaceExtremaResult? {
-        let b1 = uvBounds1 ?? (0, 1, 0, 1)
-        let b2 = uvBounds2 ?? (0, 1, 0, 1)
+        let b1 = uvBounds1 ?? self.domain
+        let b2 = uvBounds2 ?? other.domain
         var result = OCCTSurfaceExtremaResult()
         let count = OCCTSurfaceExtrema(
             handle, other.handle,
@@ -2711,13 +2711,40 @@ extension Surface {
             isDone: r.isDone, isParallel: r.isParallel, count: Int(r.nbExt))
     }
 
+    /// A point pair from a surface-surface extrema result, one point on each surface.
+    ///
+    /// Unlike ``Curve3D/ExtremaPointPair``, both points here live on a surface and so each
+    /// carries a full `(u, v)`, not one parameter: reusing the curve-curve struct (a single
+    /// `param` per point) silently discarded the V coordinate of both points (#1502). Shape
+    /// mirrors ``ExtremaPointOnSurface`` doubled for the two surfaces.
+    public struct ExtremaSurfacePointPair: Sendable {
+        public let squareDistance: Double
+        public let point1: SIMD3<Double>
+        public let u1: Double
+        public let v1: Double
+        public let point2: SIMD3<Double>
+        public let u2: Double
+        public let v2: Double
+    }
+
     /// Get Nth extremum from surface-surface computation.
-    public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPair {
+    ///
+    /// ```swift
+    /// if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3),
+    ///    let s2 = Surface.sphere(center: SIMD3(10, 0, 0), radius: 2) {
+    ///     let ss = s1.extremaSS(other: s2)
+    ///     if ss.isDone, !ss.isParallel, ss.count > 0 {
+    ///         let pair = s1.extremaSSPoint(other: s2, index: 1)
+    ///         print(pair.u1, pair.v1, pair.u2, pair.v2)
+    ///     }
+    /// }
+    /// ```
+    public func extremaSSPoint(other: Surface, index: Int) -> ExtremaSurfacePointPair {
         let r = OCCTExtremaExtSSPoint(handle, other.handle, Int32(index))
-        return Curve3D.ExtremaPointPair(
+        return ExtremaSurfacePointPair(
             squareDistance: r.squareDistance,
-            point1: SIMD3(r.x1, r.y1, r.z1), param1: r.param1,
-            point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
+            point1: SIMD3(r.x1, r.y1, r.z1), u1: r.u1, v1: r.v1,
+            point2: SIMD3(r.x2, r.y2, r.z2), u2: r.u2, v2: r.v2)
     }
 
     /// Create a conical surface from 2 points (axis) + 2 radii.
@@ -3718,11 +3745,24 @@ extension Surface {
     }
 
     /// Create a hyperboloid of revolution surface.
+    ///
+    /// One sheet: `P(u,v) = r1*cosh(v)*cos(u)*X + r1*cosh(v)*sin(u)*Y + r2*sinh(v)*Z`.
+    /// Two sheets: `P(u,v) = r2*sinh(v)*cos(u)*X + r2*sinh(v)*sin(u)*Y + r1*cosh(v)*Z`.
+    ///
+    /// ```swift
+    /// let waist = Surface.hyperboloid(r1: 4, r2: 10)               // one sheet
+    /// let bowl = Surface.hyperboloid(r1: 4, r2: 10, twoSheets: true)  // the +Z sheet only
+    /// ```
+    ///
     /// - Parameters:
     ///   - r1: first semi-axis radius (> 0)
     ///   - r2: second semi-axis radius (> 0)
-    ///   - twoSheets: if true, creates a two-sheet hyperboloid (default: one-sheet)
+    ///   - twoSheets: if true, uses the two-sheet parametrisation (default: one-sheet)
     /// - Returns: The constructed surface, or nil if a radius is not positive.
+    /// - Note: `twoSheets: true` gives **one** of the two sheets.
+    ///   `GeomEval_HyperboloidSurface` represents a single connected surface and its header says
+    ///   "The second sheet is not represented by this class"; mirror the result through the
+    ///   centre plane for the other one.
     public static func hyperboloid(r1: Double, r2: Double, twoSheets: Bool = false) -> Surface? {
         guard let ref = OCCTGeomEvalHyperboloidCreate(r1, r2, twoSheets ? 1 : 0) else { return nil }
         return Surface(handle: ref)
@@ -4012,13 +4052,34 @@ extension Surface {
 extension Surface {
     /// Convert surface to periodic form.
     ///
-    /// Returns nil if already periodic or not convertible.
+    /// Returns nil if already periodic or not convertible. This is a pure knot rearrangement
+    /// (OCCT's `ShapeCustom_Surface::ConvertToPeriodic` reinterprets an already-closed clamped
+    /// B-spline as periodic by reusing its own poles, via `Geom_BSplineSurface::SetUPeriodic`/
+    /// `SetVPeriodic`); it has no deviation from the original to report, so there is no
+    /// `conversionGap`-style accessor for it. See `conversionGap`'s own doc comment (#1510).
     public func convertToPeriodic() -> Surface? {
         guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
         return Surface(handle: ref)
     }
 
-    /// Get conversion gap (distance between original and converted surface).
+    /// Deprecated: always returns -1.0.
+    ///
+    /// This never reflected `convertToPeriodic()`. OCCT's `ShapeCustom_Surface::Gap()` reports the
+    /// deviation from the *last call to `ConvertToAnalytical`* (its own header doc says so), not
+    /// `ConvertToPeriodic`, which never writes it at all, because it is a pure knot rearrangement
+    /// with nothing to measure (confirmed by direct sampling, see
+    /// `Scripts/repro/1510-surface-conversion-gap/`). This property used to run an unrelated,
+    /// throwaway `ConvertToAnalytical` recognition pass at a hardcoded tolerance just to read
+    /// *its* gap, which could be nonzero even when that recognition failed outright, and was
+    /// identical whether or not `convertToPeriodic()` had ever been called. Kept only for source
+    /// compatibility; do not use it. (#1510)
+    @available(
+        *, deprecated,
+        message: """
+            Never reflected convertToPeriodic(); ConvertToPeriodic has no gap concept in OCCT \
+            to report. Always returns -1.0. See #1510.
+            """
+    )
     public var conversionGap: Double {
         OCCTSurfaceConversionGap(handle)
     }

@@ -879,8 +879,6 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g)
 
 // MARK: - BRepGraph Extended (v0.133.0)
 
-#include <BRepGraph_Tool.hxx>
-#include <BRepGraph_ShapesView.hxx>
 #include <BRepGraph_Copy.hxx>
 #include <BRepGraph_Transform.hxx>
 
@@ -1407,7 +1405,6 @@ int32_t OCCTBRepGraphSolidCompSolidCount(OCCTBRepGraphRef g, int32_t solidIndex)
 // layer (via LayerRegistry().FindLayer<>() / Ensure<>()); records are now `Event`s whose Mapping
 // value type is NCollection_LinearVector (was NCollection_DynamicArray).
 #include <BRepGraph_LayerHistory.hxx>
-#include <BRepGraph_LayerRegistry.hxx>
 
 // Read the history layer if one has been registered (null otherwise). Reads do not create it.
 static occ::handle<BRepGraph_LayerHistory> bgHistory(OCCTBRepGraphRef g)
@@ -1510,7 +1507,7 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
     // Copy up to outOpNameMax-1 characters, NUL-terminate
     int copyLen = std::min(srcLen, outOpNameMax - 1);
     memcpy(outOpName, src, copyLen);
-    outOpName[copyLen] = '0';
+    outOpName[copyLen] = '\0'; // #1434: was the ASCII digit '0' (0x30), not NUL (0x00)
     return srcLen;
   }
   catch (...)
@@ -1922,7 +1919,7 @@ int32_t OCCTBRepGraphMeshNbActivePolygonsOnTri(OCCTBRepGraphRef g)
   }
 }
 
-// MeshView FaceOps: cache-first triangulation queries.
+// MeshView FaceOps: cache-first, persistent-fallback triangulation queries.
 // OCCT 8.0.0p1: the mesh cache no longer exposes per-entity RepIds. These now return a presence
 // sentinel (0 = a mesh entry exists, -1 = none) instead of the former rep index.
 
@@ -1932,7 +1929,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
     return -1;
   try
   {
-    return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1;
+    return g->graph.Mesh().Effective().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1;
   }
   catch (...)
   {
@@ -1940,7 +1937,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
   }
 }
 
-// MeshView EdgeOps: cache-first polygon3D queries.
+// MeshView EdgeOps: cache-first, persistent-fallback polygon3D queries.
 
 int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex)
 {
@@ -1948,7 +1945,7 @@ int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeInde
     return -1;
   try
   {
-    return g->graph.Mesh().Cache().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1;
+    return g->graph.Mesh().Effective().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1;
   }
   catch (...)
   {
@@ -2377,8 +2374,6 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
 }
 
 // MARK: - BRepGraph Assembly & Refs (v0.134.0)
-
-#include <BRepGraph_RefsView.hxx>
 
 static BRepGraph_RefId::Kind refKindFromInt(int32_t k)
 {
@@ -3180,7 +3175,6 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 // MARK: - BRepGraph Builder (v0.135.0; migrated to EditorView in v0.157.0 / OCCT 8.0.0 beta1)
 
 #include <BRepGraph_EditorView.hxx>
-#include <BRepGraph_Tool.hxx>
 #include <BRepGraph_DeferredScope.hxx>
 
 static TopAbs_Orientation oriFromInt(int32_t o)
@@ -4069,9 +4063,12 @@ bool OCCTBRepGraphCompSolidRemoveSolid(OCCTBRepGraphRef g,
 // OCCT 8.0.0p1: GenOps:RemoveRep removed, representations are owned by their topology defs and
 // cleared through the per-kind editors. For the side-registry rep ids we expose, "removing" a rep
 // nullifies its registry slot so a later Set*RepId() resolving the same id becomes a safe no-op.
-// repKind follows BRepGraphInc_RepId::Kind ordering (0=FaceSurface, 1=FaceTriangulation,
-// 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri); any
-// out-of-range kind/index is ignored.
+// repKind is this bridge's OWN ABI ordering below (0=FaceSurface, 1=FaceTriangulation,
+// 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri),
+// matching the switch below; it does NOT follow BRepGraphInc_RepId::Kind's own ordering, which
+// numbers these differently (EdgeCurve3D=0 ... FaceSurface=5, FaceTriangulation=6). No caller
+// passes a real OCCT ordinal into this parameter, so the divergence is harmless (#1434), but the
+// two must not be confused. Any out-of-range kind/index is ignored.
 void OCCTBRepGraphRemoveRep(OCCTBRepGraphRef g, int32_t repKind, int32_t repIndex)
 {
   if (!g || repIndex < 0)
@@ -4540,9 +4537,11 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g,
 
 // CoEdge geometric setters
 
-// OCCT 8.0.0p1: per-coedge UV bounding box is no longer a settable definition field
-// (UV endpoints are derived from the PCurve via BRepGraph_Tool::CoEdge::UVPoints). No-op.
-void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, double, double) {}
+// #1652 removed OCCTBRepGraphSetCoEdgeUVBox: BRepGraphInc::CoEdgeDef carries no UV field in
+// 8.0.1 and BRepGraph_Tool::CoEdge::UVPoints derives the endpoints from the PCurve, so the
+// stub had nothing to write and nothing that would have read it back. Measured in
+// Scripts/repro/1652-brepgraph-noop-setters/: rebinding the PCurve moves the reported UV
+// endpoints with it. OCCTBRepGraphCoEdgeSetPCurve is the write path.
 
 // OCCT 8.0.0p1: edge regularity would live in BRepGraph_LayerRegularity, but that class is broken
 // in p1 (uncompilable header / absent from libOCCT, see the include note near the top of this
@@ -4648,22 +4647,11 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g,
 // the same twelve doubles. The layout is in the name: see that header for why a Matrix12Grouped
 // array must not be handed to it.
 
-// OCCT 8.0.0p1: only occurrence and child references carry a local location; the per-topology
-// references (vertex/coedge/wire/face/shell/solid) no longer store a location, so their editors
-// expose no SetRefLocalLocation. These are no-ops for ABI compatibility. (CoEdge refs were removed
-// entirely, coedges are not reference-counted.)
-void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
-void OCCTBRepGraphSetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
-
+// #1652 removed the six per-topology location setters (vertex/coedge/wire/face/shell/solid).
+// Only BRepGraphInc::ChildRef and BRepGraphInc::OccurrenceRef declare a LocalLocation field in
+// 8.0.1, so the other reference structs had no slot to write, and BRepGraph_RefId::Kind has no
+// CoEdge member at all, so a coedge reference never existed to place. The two writers below are
+// the whole of the model. Measured in Scripts/repro/1652-brepgraph-noop-setters/.
 void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
                                                 int32_t          occurrenceRefIndex,
                                                 const double*    matrix)
@@ -4699,41 +4687,8 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
 
 // MARK: - BRepGraph EditorView Ref LocalLocation getters (v0.165.0)
 
-bool OCCTBRepGraphGetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: vertex refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: coedge refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: wire refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: face refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: shell refs do not store a local location
-  return false;
-}
-
-bool OCCTBRepGraphGetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, double*)
-{
-  // OCCT 8.0.0p1: solid refs do not store a local location
-  return false;
-}
+// #1652 removed the six per-topology getters with their setters: with no LocalLocation field on
+// those reference structs there is nothing to read, and each could only ever report failure.
 
 bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
                                                 int32_t          occurrenceRefIndex,
@@ -4914,10 +4869,6 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef g, int32_t productInde
 
 // MARK: - BRepGraph EditorView v0.164.0. RepOps non-guard setters
 
-#include <Geom_Surface.hxx>
-#include <Geom_Curve.hxx>
-#include <Geom2d_Curve.hxx>
-
 // OCCT 8.0.0p1: EditorView::Reps() (the standalone representation editor addressed by RepId) was
 // removed. p1 attaches representation handles directly to topology defs via the per-kind editors,
 // with no public RepId slot to overwrite. We preserve the RepId-keyed ABI through the
@@ -4985,10 +4936,11 @@ void OCCTBRepGraphRepSetPolygonOnTri(OCCTBRepGraphRef        g,
          : Handle(Poly_PolygonOnTriangulation)();
 }
 
-// OCCT 8.0.0p1: a polygon-on-tri's owning triangulation is resolved at attach time
-// (CoEdgeDef.FaceId -> FaceDef triangulation), not stored as a rep-id link on the polygon rep.
-// There is no slot to rebind by id; no-op for ABI compatibility.
-void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef, int32_t, int32_t) {}
+// #1652 removed OCCTBRepGraphRepSetPolygonOnTriTriangulationId. A polygon-on-tri's owning
+// triangulation is resolved at attach time (CoEdgeDef.FaceId -> FaceDef.TriangulationRepId),
+// and BRepGraphInc::CoEdgePolygonOnTriRep is {ParentCoEdgeId, Polygon}: no rep-id link exists
+// to rebind. OCCTBRepGraphSetFaceTriangulationRep is what changes the triangulation a
+// polygon-on-tri resolves against.
 
 // MARK: - BRepGraph MeshView v0.164.0, cache entry inspection
 
@@ -5205,11 +5157,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t c
 
 // MARK: - BRepGraph ML Export & Sampling (v0.136.0)
 
-#include <BRepTools.hxx>
-#include <GeomLProp_SLProps.hxx>
-#include <TopoDS.hxx>
 #include <TopoDS_Face.hxx>
-#include <Precision.hxx>
 
 int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g,
                                       int32_t          faceIndex,
@@ -5702,13 +5650,35 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
       n2.Reverse();
     }
 
-    // Angle between normals
-    double cosAngle = n1.Dot(n2);
-    cosAngle        = std::max(-1.0, std::min(1.0, cosAngle)); // Clamp
+    // Angle between the two (outward, material-adjusted) face normals; std::acos always answers
+    // in [0, PI], so this alone cannot distinguish a convex edge from its complementary concave
+    // edge (same two face normals, opposite material side).
+    double cosAngle    = n1.Dot(n2);
+    cosAngle           = std::max(-1.0, std::min(1.0, cosAngle)); // Clamp
+    double normalAngle = std::acos(cosAngle);
 
-    // The dihedral angle is PI - acos(dot) for interior angle
-    // Or we return the angle between normals directly
-    return std::acos(cosAngle);
+    // #1434: recover the true interior/material dihedral angle from normalAngle using OCCT's own
+    // connect-type classifier (ChFi3d::DefineConnectType, the same one OCCTEdgeGetConvexity
+    // calls a few hundred lines below). Returning normalAngle unconverted, as this function used
+    // to, is not even correct for the convex case in general, it only ever looked right because
+    // this function's sole test used a box, whose edges are the self-symmetric 90-degree case
+    // where PI - normalAngle == normalAngle. Ground-truth OCCT probes (not hand geometry alone)
+    // against independently-known angles confirm:
+    //   convex (or tangential/unclassifiable): trueAngle = PI - normalAngle
+    //   concave:                               trueAngle = PI + normalAngle
+    // 1, 60, 90 and 179-degree convex wedges all matched PI - normalAngle to 4 decimal places,
+    // and a 200-degree reflex (concave) notch matched PI + normalAngle. That also rules out
+    // "2*PI - normalAngle" for the concave case, one of the two fix shapes floated when this
+    // issue was filed: it would report 340 degrees for the 200-degree reflex case, not ~200.
+    const double           smoothThreshold = 0.01; // matches OCCTEdgeGetConvexity's SinTol
+    ChFiDS_TypeOfConcavity connectType =
+      ChFi3d::DefineConnectType(edge->edge, face1->face, face2->face, smoothThreshold, true);
+
+    if (connectType == ChFiDS_Concave)
+    {
+      return M_PI + normalAngle;
+    }
+    return M_PI - normalAngle;
   }
   catch (...)
   {

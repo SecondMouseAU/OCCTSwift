@@ -181,6 +181,69 @@ struct FillingSupportFaceTests {
         }
     }
 
+    @Test(
+        "A free-standing boundary with an unrelated support still degrades instead of failing (#1503)"
+    )
+    func freeStandingBoundaryWithSupportDegradesInsteadOfFailing() {
+        guard let square = Wire.rectangle(width: 10, height: 10) else {
+            Issue.record("Failed to create boundary wire")
+            return
+        }
+        guard let unrelated = Shape.box(width: 1, height: 1, depth: 1) else {
+            Issue.record("Failed to create the unrelated support shape")
+            return
+        }
+
+        // The square's edges are free-standing: no ancestor face in `unrelated` (the
+        // support-face lookup finds nothing) and no pcurve of their own (the pcurve-derived
+        // fallback finds nothing either). Before #1503, occtFillingAddConstraint left `order`
+        // at .g1 and fell through to the face-less overload, which raises an uncaught
+        // Standard_Failure for anything above C0, failing the whole build() rather than just
+        // degrading this one edge to position-only continuity as documented.
+        let tangent = Shape.fill(
+            boundaries: [square], supportedBy: unrelated,
+            parameters: FillingParameters(continuity: .g1))
+
+        if let tangent = tangent {
+            #expect(tangent.isValid)
+            // Degraded to position-only continuity: a flat quad across the planar rectangle.
+            #expect(tangent.size!.z < 1e-6)
+        } else {
+            Issue.record(
+                "A free-standing boundary should degrade to position-only continuity, not fail outright"
+            )
+        }
+    }
+
+    @Test("Free-standing constraint edges degrade instead of failing the whole build (#1503)")
+    func freeStandingConstraintEdgesDegradeInsteadOfFailing() {
+        guard let square = Wire.rectangle(width: 10, height: 10) else {
+            Issue.record("Failed to create boundary wire")
+            return
+        }
+        let edges = square.edges()
+        guard !edges.isEmpty else {
+            Issue.record("Rectangle wire produced no edges")
+            return
+        }
+
+        // Same defect, reached through OCCTShapeFillConstraints instead of
+        // OCCTShapeFillWithSupport: each constraint names no support (kind Inferred) and its
+        // edge carries no pcurve, so this is the identical pcurve-less fallback branch inside
+        // occtFillingAddConstraint. Before #1503 this returned nil for the whole call.
+        let constraints = edges.map { FillConstraint(edge: $0, continuity: .g1) }
+        let capped = Shape.fill(constraints: constraints)
+
+        if let capped = capped {
+            #expect(capped.isValid)
+            #expect(capped.size!.z < 1e-6)  // degraded to position-only: a flat quad
+        } else {
+            Issue.record(
+                "Free-standing constraint edges should degrade to position-only continuity, not fail the whole build"
+            )
+        }
+    }
+
     @Test("An internal constraint pulls the surface without bounding it")
     func internalConstraintIsNotABoundary() {
         guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
@@ -216,15 +279,20 @@ struct FillingSupportFaceTests {
         #expect(withInterior.size!.z > 0.5)  // pulled up to the interior edge
     }
 
-    @Test("Free-standing boundary has nothing to be tangent to and fails cleanly")
-    func freeStandingBoundaryFailsCleanly() {
+    @Test("Free-standing boundary degrades to position-only continuity instead of failing (#1503)")
+    func freeStandingBoundaryDegradesInsteadOfFailing() {
         guard let square = Wire.rectangle(width: 10, height: 10) else {
             Issue.record("Failed to create boundary wire")
             return
         }
 
-        // No pcurve on any edge, so no continuity reference exists. This must return nil
-        // rather than crash, and the positional fill of the same wire must still work.
+        // No pcurve on any edge, so no continuity reference exists anywhere: this is
+        // OCCTShapeFill's own version of the same pcurve-less fallback the two tests above
+        // exercise through OCCTShapeFillWithSupport/OCCTShapeFillConstraints, since all three
+        // entry points route through the same occtFillingAddConstraint. Before #1503 this
+        // returned nil (an uncaught Standard_Failure from the face-less overload); it now
+        // degrades to position-only continuity per edge instead, so it must agree with an
+        // explicit .g0 request rather than merely surviving.
         let tangent = Shape.fill(
             boundaries: [square],
             parameters: FillingParameters(continuity: .g1))
@@ -232,8 +300,13 @@ struct FillingSupportFaceTests {
             boundaries: [square],
             parameters: FillingParameters(continuity: .g0))
 
-        #expect(tangent == nil)
-        #expect(positional != nil)
+        guard let tangent = tangent, let positional = positional else {
+            Issue.record("Both the degraded .g1 fill and the explicit .g0 fill should succeed")
+            return
+        }
+        #expect(tangent.isValid)
+        #expect(tangent.size!.z < 1e-6)  // degraded to position-only: flat, matching .g0
+        #expect(positional.size!.z < 1e-6)
     }
 
     @Test("Constraints fill rejects an empty constraint list")

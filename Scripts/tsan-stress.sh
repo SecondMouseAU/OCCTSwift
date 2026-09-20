@@ -81,6 +81,28 @@ SCENARIOS=(
   "1155-thread-safety-survey/occt_1155_stress.cpp|fillet_chamfer_all_edges_independent 8 30"
   "1155-thread-safety-survey/occt_1155_stress.cpp|shapefix_independent 8 30"
   "1155-thread-safety-survey/occt_1155_stress.cpp|check_analyzer_independent 8 30"
+  # Issue #1157/#1403, the data-exchange path. Registered 2026-09-20, and the reason it was not
+  # registered before is the finding: this harness has existed since #1157 with seven modes and sat
+  # in NO scenario, so the one subsystem docs/thread-safety.md describes as protected by a
+  # bridge-level mutex (igesMutex(), 40 acquisitions) had no gate coverage at all. That is what the
+  # POLICY block above forbids, and docs/thread-safety.md says outright: "A harness under
+  # Scripts/repro/ that is not in SCENARIOS is a file, not a gate."
+  #
+  # The five INDEPENDENT modes only. cross_talk_schema_unlocked and cross_talk_schema_locked are
+  # deliberately excluded: they set the same Interface_Static key from every thread and cross-talk
+  # 16000/16000 BY CONSTRUCTION, with and without an accessor lock, which is the measurement that
+  # proved a locked accessor cannot fix that shape. Expected to race, so they gate nothing, exactly
+  # like #341's shared_adaptor_cache.
+  #
+  # These are EXPECTED TO FAIL on registration: nothing in Scripts/tsan.supp suppresses any DE race
+  # and #1403's bucket-(b) state is still shared. That failing run is #1403's re-measurement
+  # baseline. Do not add a suppression to make this green; the whole point of registering it is to
+  # stop the DE path being silently unmeasured.
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|step_write_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|step_read_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_write_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|iges_read_independent 8 20 @SCRATCH"
+  "1157-interface-static-thread-safety/occt_1157_stress.cpp|mixed_step_iges_independent 8 20 @SCRATCH"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)
@@ -266,7 +288,17 @@ do_swift() {
     # inside the kernel are invisible here. Kernel coverage comes from do_run.
     local filter="${SWIFT_FILTER:-Thread|Stress|Concurren|Parallel}"
     echo ">>> swift test --sanitize=thread --filter \"$filter\""
-    (cd "$PROJECT_DIR" && swift test --sanitize=thread --filter "$filter")
+    # TSAN_OPTIONS is not optional here, it is what makes this a gate rather than a report.
+    # Without it a detected race prints to stdout and the process still exits 0, because the
+    # suites in this filter are deliberately exercisers: they assert "did not deadlock, did not
+    # crash", which stays true while a race is being reported three lines above. Measured
+    # 2026-09-19 during #1404: a run that reported a data race in
+    # TObj_Application::SetVerbose exited 0 and this function called it a pass. exitcode=66
+    # matches do_run's, so both halves of the gate fail the same way, and the same suppression
+    # file applies to both.
+    (cd "$PROJECT_DIR" &&
+       TSAN_OPTIONS="halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE" \
+         swift test --sanitize=thread --filter "$filter")
 }
 
 case "${1:-}" in

@@ -1226,16 +1226,57 @@ public func updateInnerTolerances()
 
 ---
 
-### `Shape.updateEdgeTolerance(edge:tolerance:)`
+### `Shape.updateEdgeTolerance(edge:tolerance:maxToleranceToCheck:)`
 
-Force the tolerance of a specific edge to the given value.
+Recompute one edge's tolerance from the deviation between its 3D curve and its pcurves.
 
 ```swift
 @discardableResult
-public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool
+public static func updateEdgeTolerance(edge: Shape,
+                                       tolerance: Double,
+                                       maxToleranceToCheck: Double = .infinity)
+    -> Shape.EdgeToleranceUpdate?
 ```
 
-- **OCCT:** `BRepLib::UpdateEdgeTolerance`.
+**`tolerance` is not written to the edge.** It is `MinToleranceRequest`, the sampling tolerance
+OCCT starts testing at, and the tolerance the edge ends up with is computed from the measured
+curve-to-pcurve distances. It can go down as well as up. An edge whose pcurves already match its
+3D curve, which is every edge of a freshly built primitive, has nothing to measure and does not
+move: measured across two edges and four requested values from 1e-9 to 2
+(`Scripts/repro/1399-refman-coverage-unlaned/probe-healing-transcript.txt`), the tolerance stayed
+at 1e-07 every time. To set a tolerance outright, use
+[`setTolerance(_:)`](Shape-Measurement.md#settolerance_).
+
+**`maxToleranceToCheck` decides whether the call does anything at all.** `BRepLib::UpdateEdgeTol`
+returns `false` without measuring when the edge's own tolerance already exceeds it. Until
+[#1639](https://github.com/SecondMouseAU/OCCTSwift/issues/1639) the bridge derived it as
+`tolerance * 100` and no caller could override it, so a loose edge could not be examined at a tight
+sampling tolerance. Measured on a box whose edges were forced to 0.05: at the default ceiling the
+call brings the tolerance back down to 1e-07, and at the old `1e-7 * 100` ceiling it refuses
+outright (`Scripts/repro/1639/probe.mm`).
+
+**The result reports what moved, because OCCT's own `Bool` does not.**
+`BRepLib::UpdateEdgeTol` returns `false` only for a degenerate edge or one already looser than the
+ceiling, and `true` on every other path, including runs that move nothing.
+`Shape.EdgeToleranceUpdate` carries `toleranceBefore`, `toleranceAfter` and the derived `changed`,
+which is the only thing that answers the question.
+
+- **Parameters:** `edge`, the edge to measure, and nothing else is accepted; `tolerance`,
+  `MinToleranceRequest`, the minimum tolerance worth testing from (OCCT's own guidance is around
+  1e-5); `maxToleranceToCheck`, the ceiling above which the edge is not examined, defaulting to
+  `.infinity`, which examines every edge.
+- **Returns:** the tolerance before and after the call, or `nil` when the edge is degenerate,
+  already looser than `maxToleranceToCheck`, or not an edge.
+- **OCCT:** `BRepLib::UpdateEdgeTol(edge, tolerance, maxToleranceToCheck)` (via
+  `OCCTBRepLibUpdateEdgeTolerance`). Not `BRepLib::UpdateEdgeTolerance`, which is the whole-shape
+  sweep over every edge and which the pinned header warns is "very slow".
+- **Example:**
+  ```swift
+  let edge = imported.subShapes(ofType: .edge)[0]
+  if let update = Shape.updateEdgeTolerance(edge: edge, tolerance: 1e-7), update.changed {
+      print("tolerance \(update.toleranceBefore) -> \(update.toleranceAfter)")
+  }
+  ```
 
 ---
 
@@ -1721,6 +1762,10 @@ public struct ExtremaResult: Sendable {
 - `point1`: closest/farthest point on the first geometric element.
 - `point2`: closest/farthest point on the second geometric element.
 
+`point1`/`point2` are measured points on every entry point on this page. `ExtremaElSS.planeToPlane`
+used to be the exception, reporting `SIMD3(0, 0, 0)` for a case where OCCT computes no points at
+all; since #1632 it does not return an `ExtremaResult`, see the `ExtremaElSS` section below.
+
 ---
 
 #### `point2`
@@ -1849,48 +1894,66 @@ public static func lineToCylinder(
 
 ---
 
+**`Extrema_ExtElSS` implements plane/plane and nothing else, and even plane/plane computes only a
+square distance.** Measured against the pinned 8.0.1 kernel in
+`Scripts/repro/1632-extremaelss-refusal/`:
+
+| pair | `Extrema_ExtElSS` on 8.0.1 |
+|---|---|
+| plane/plane, parallel | `IsDone`, `NbExt() == 1`, a square distance, and both point arrays left null |
+| plane/plane, crossing | `IsDone`, `NbExt() == 0` |
+| plane/sphere | constructor throws `Standard_NotImplemented` |
+| sphere/sphere | constructor throws `Standard_NotImplemented` |
+| sphere/cylinder, sphere/cone, sphere/torus | constructor throws `Standard_NotImplemented` |
+
+**Changed in [#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632).** This namespace used
+to expose `planeToSphere` and `sphereToSphere` as well. Both wrapped a `Perform` overload that is
+`throw Standard_NotImplemented();` in OCCT itself, so neither could return a result on any input,
+and both answered `[]`, which is how the rest of this page spells "no extrema found". They are
+removed rather than left answering a kernel gap in the vocabulary of an ordinary result. For a
+plane-sphere or sphere-sphere distance use `Surface.extremaSS(other:)`
+(`GeomAPI_ExtremaSurfaceSurface`), which answers both numerically.
+
+`planeToPlane` no longer returns `[ExtremaResult]` either, for the same reason: its `point1` and
+`point2` were `SIMD3(0, 0, 0)` written by the bridge, not points OCCT computed.
+
+---
+
 ### `ExtremaElSS.planeToPlane(plane1Point:plane1Normal:plane2Point:plane2Normal:)`
 
-Closed-form extrema between two planes.
+Closed-form distance between two planes.
 
 ```swift
 public static func planeToPlane(
     plane1Point: SIMD3<Double>, plane1Normal: SIMD3<Double>,
     plane2Point: SIMD3<Double>, plane2Normal: SIMD3<Double>
-) -> (isParallel: Bool, results: [ExtremaResult])
+) -> (isParallel: Bool, squareDistance: Double?)
 ```
 
-- **OCCT:** `Extrema_ExtElSS` (plane–plane).
+Two parallel planes have one extremal distance. Two crossing planes have none: their distance is
+zero all along their intersection line, and `Extrema_ExtElSS` reports `NbExt() == 0` for that
+rather than an extremum.
 
----
+No point pair is reported, because OCCT computes none.
+`Extrema_ExtElSS::Perform(gp_Pln, gp_Pln)` fills its square-distance array and leaves both point
+arrays as null handles, so `Points()` there is an uncatchable fault rather than a value the bridge
+could read. Nor is there a pair worth fabricating: for two parallel planes every point of one,
+paired with its own projection onto the other, is a minimum, so any single pair would be an
+arbitrary choice presented as a measurement.
 
-### `ExtremaElSS.planeToSphere(planePoint:planeNormal:sphereCenter:sphereRadius:)`
-
-Closed-form extrema between a plane and a sphere.
-
-```swift
-public static func planeToSphere(
-    planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>,
-    sphereCenter: SIMD3<Double>, sphereRadius: Double
-) -> [ExtremaResult]
-```
-
-- **OCCT:** `Extrema_ExtElSS` (plane–sphere).
-
----
-
-### `ExtremaElSS.sphereToSphere(center1:radius1:center2:radius2:)`
-
-Closed-form extrema between two spheres.
-
-```swift
-public static func sphereToSphere(
-    center1: SIMD3<Double>, radius1: Double,
-    center2: SIMD3<Double>, radius2: Double
-) -> [ExtremaResult]
-```
-
-- **OCCT:** `Extrema_ExtElSS` (sphere–sphere).
+- **Returns:** `isParallel`, and `squareDistance`, which is non-`nil` exactly when the planes are
+  parallel. Coincident planes are parallel at distance zero, and report `.some(0)`. `(false, nil)`
+  covers both crossing planes and a refused input, such as a zero-length normal.
+- **OCCT:** `Extrema_ExtElSS` (plane-plane), reading `SquareDistance(1)` and never `Points`.
+- **Example:**
+  ```swift
+  let r = ExtremaElSS.planeToPlane(
+      plane1Point: .zero, plane1Normal: SIMD3(0, 0, 1),
+      plane2Point: SIMD3(0, 0, 5), plane2Normal: SIMD3(0, 0, 1))
+  if let sq = r.squareDistance {
+      print(sq.squareRoot())  // 5.0
+  }
+  ```
 
 ---
 

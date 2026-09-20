@@ -437,18 +437,44 @@ Free boundaries indicate gaps in a shell. A watertight shell has no free boundar
 
 ### `fixedFreeBounds(sewingTolerance:closingTolerance:)`
 
-Fix free boundary wires by closing gaps.
+Connect free boundary wires, closing gaps within `closingTolerance`.
 
 ```swift
 public func fixedFreeBounds(sewingTolerance: Double = 1e-6,
-                             closingTolerance: Double = 1e-4) -> (shape: Shape, fixedCount: Int)?
+                            closingTolerance: Double = 1e-4) -> Shape.FreeBoundsRepair?
 ```
 
 - **Parameters:**
-  - `sewingTolerance`: Tolerance for sewing free edges.
+  - `sewingTolerance`: Tolerance the sewing analyser is initialised with.
   - `closingTolerance`: Maximum distance to close a gap.
-- **Returns:** Tuple of `(fixed shape, number of wires fixed)`, or `nil` on failure.
-- **OCCT:** `ShapeFix_Shape` / `ShapeAnalysis_FreeBounds` (via `OCCTShapeFixFreeBounds`).
+- **Returns:** A `Shape.FreeBoundsRepair`, or `nil` on failure.
+  - `shape`: `ShapeFix_FreeBounds::GetShape()`, the modified source shape. Connecting several open
+    wires into one replaces their previous end vertices with new connecting vertices and updates
+    every edge that shared them, so it can differ from the input; when nothing is connected it is
+    the input shape. Until [#1636](https://github.com/SecondMouseAU/OCCTSwift/issues/1636) this
+    member was a compound of the free-bound wires and `GetShape()` was never read, so the shape a
+    caller received had **no faces in it**.
+  - `closedWires` / `openWires`: compounds of the free-bound wires, `nil` when the kernel produced
+    none.
+  - `closedWireCount` / `openWireCount`: how many wires are in each.
+- **OCCT:** `ShapeFix_FreeBounds`, the five-argument `(shape, sewtoler, closetoler, splitclosed,
+  splitopen)` constructor (via `OCCTShapeFixFreeBounds`). It builds free bounds with
+  `ShapeAnalysis_FreeBounds` internally and adds the open-wire connection step;
+  `ShapeFix_Shape` is not involved.
+- **Note:** `closingTolerance` must exceed `sewingTolerance` or OCCT performs no connection at
+  all, which is the pinned header's own stated precondition. Nothing enforces it; the defaults
+  satisfy it.
+- **Note:** pass a **compound of faces**, which is what the pinned header asks for. A bare face
+  gives the sewing-based analyser nothing to forecast and comes back with zero wires of either
+  kind.
+- **Example:**
+  ```swift
+  let openShell = Shape.compound(box.subShapes(ofType: .face).dropLast())!
+  if let repair = openShell.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4) {
+      print(repair.shape.subShapes(ofType: .face).count)  // 5, the faces are still there
+      print(repair.closedWireCount, repair.openWireCount) // 1 0
+  }
+  ```
 
 ---
 
@@ -884,14 +910,37 @@ public func withSurfacesAsBSpline(extrusion: Bool = true, revolution: Bool = tru
 
 ### `withSurfacesAsRevolution()`
 
-Convert surfaces to revolution form where possible.
+Convert elementary periodic surfaces into surfaces of revolution.
 
 ```swift
 public func withSurfacesAsRevolution() -> Shape?
 ```
 
-- **Returns:** Shape with surfaces converted to surfaces of revolution, or `nil` on failure.
+`ShapeCustom::ConvertToRevolution` runs in the direction its OCCT name states. Measured on a
+cylinder, the lateral face comes back as a `Geom_SurfaceOfRevolution` and the two planar caps are
+left alone, so the face count is unchanged and the surface-of-revolution count goes from 0 to 1.
+[`sweptToElementary()`](Shape-Healing.md#swepttoelementary) is the inverse.
+
+`Face.surfaceType` will not show the change: it is `BRepAdaptor_Surface::GetType()`, which
+canonicalises a surface of revolution built on a line back to `GeomAbs_Cylinder`. Read
+`Shape.extractFaceSurface()?.typeName` for the Geom subclass.
+
+Until #1634 a second method, `revolutionToElementary()`, wrapped the same static under a name that
+said the opposite. It is removed; this is the spelling that survives.
+
+- **Returns:** Shape whose elementary periodic surfaces are now surfaces of revolution, or `nil` on
+  failure.
 - **OCCT:** `ShapeCustom::ConvertToRevolution` (via `OCCTShapeCustomConvertToRevolution`).
+- **Example:**
+  ```swift
+  if let asRevolution = Shape.cylinder(radius: 5, height: 10)?.withSurfacesAsRevolution() {
+      let kinds = asRevolution.subShapes(ofType: .face).compactMap {
+          $0.extractFaceSurface()?.typeName
+      }
+      // ["Geom_Plane", "Geom_Plane", "Geom_SurfaceOfRevolution"], in some order
+      print(kinds)
+  }
+  ```
 
 ---
 
@@ -1057,15 +1106,39 @@ public func dividedByArea(maxArea: Double) -> Shape?
 
 ### `dividedByParts(_:)`
 
-Subdivide faces into a target number of parts.
+Subdivide faces into a target number of roughly equal-area parts.
 
 ```swift
 public func dividedByParts(_ parts: Int) -> Shape?
 ```
 
+`ShapeUpgrade_ShapeDivideArea` in splitting-by-number mode derives its own roughly-square U/V grid
+from the part count, so a face can be cut on both axes.
+[`dividedByNumber(_:)`](Shape-Healing.md#dividedbynumber_) is the other choice: it forces every cut
+onto U. They are different tools, measured, not two spellings of one: on a 10 x 20 x 10 box at 2
+parts this gives 18 faces and `dividedByNumber(2)` gives 10
+(`Scripts/repro/1640/transcript.txt`).
+
+Measured on a 10 x 10 x 10 cube: `parts: 4` gives 24 faces of 25 each and `parts: 2` gives 12. The
+volume is preserved exactly in both cases.
+
 - **Parameters:** `parts`, Target number of parts per face.
-- **Returns:** Shape with subdivided faces, or `nil` on failure.
+- **Returns:** Shape with subdivided faces, or `nil` on failure. `parts: 1` is a failure, not a
+  no-op: `ShapeUpgrade_ShapeDivideArea::Perform()` returns false when there is nothing to split.
+- **Warning:** a result that was split on **both** axes comes back `BRepCheck_Analyzer`-invalid,
+  with its volume preserved exactly. On the cube, `parts: 2` is a 2 x 1 split and is valid,
+  `parts: 4` is 2 x 2 and is not. It is the two-axis split rather than this entry point that does
+  it: `OCCTShapeDivideByNumber(shape, 2, 2)` is equally invalid, and `dividedByNumber(_:)` never
+  meets it only because it pins `nbV` to 1. Run
+  [`fixed(...)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire) over the result
+  if a valid shape is what you need.
 - **OCCT:** `ShapeUpgrade_ShapeDivideArea` in splitting-by-number mode (via `OCCTShapeDivideByParts`).
+- **Example:**
+  ```swift
+  if let split = Shape.box(width: 10, height: 10, depth: 10)?.dividedByParts(4) {
+      print(split.subShapes(ofType: .face).count)  // 24, four pieces per cube face
+  }
+  ```
 
 ---
 
@@ -1134,7 +1207,10 @@ public var purgedLocations: Shape? { get }
 Removes negative-scale and non-unit-scale transforms from the shape and all sub-shapes. Useful for cleaning imported geometry from STEP/IGES files.
 
 - **Returns:** Cleaned shape, or `nil` if purge was unnecessary or failed.
-- **OCCT:** `BRepLib::SameParameter` / transform purge (via `OCCTShapePurgeLocations`).
+- **OCCT:** `BRepTools_PurgeLocations::Perform` / `GetResult` (via `OCCTShapePurgeLocations`).
+  The removal criterion is that class's own: a location whose transform `IsNegative()`, or whose
+  scale factor differs from 1 by more than `TopLoc_Location::ScalePrec()`. `BRepLib` is not on
+  this path.
 
 ---
 
@@ -1173,7 +1249,9 @@ public var curveOnSurfaceCheck: CurveOnSurfaceCheck? { get }
 Examines all edge-face pairs in the shape and reports the maximum deviation between each edge's 3D curve and its parametric curve (pcurve) on the face surface.
 
 - **Returns:** Check result, or `nil` if the check fails.
-- **OCCT:** `BRep_Tool::CurveOnSurface` / `ShapeAnalysis_Edge` (via `OCCTShapeCheckCurveOnSurface`).
+- **OCCT:** `BRepLib_CheckCurveOnSurface`, one instance per edge-face pair, with
+  `BRep_Tool::CurveOnSurface` used only to skip pairs that carry no pcurve (via
+  `OCCTShapeCheckCurveOnSurface`). `ShapeAnalysis_Edge` is not on this path.
 
 ---
 
@@ -2086,31 +2164,6 @@ public func splitEdge(at edgeIndex: Int, parameter: Double) -> Shape?
 
 ---
 
-### `splitDrafts(faceIndex:wire:direction:planeOrigin:planeNormal:angle:)`
-
-Split a face with draft angles on both sides of a wire.
-
-```swift
-public func splitDrafts(faceIndex: Int, wire: Wire,
-                        direction: SIMD3<Double>,
-                        planeOrigin: SIMD3<Double>,
-                        planeNormal: SIMD3<Double>,
-                        angle: Double) -> Shape?
-```
-
-- **Parameters:**
-  - `faceIndex`: 0-based index of the face to split.
-  - `wire`: Wire defining the split line.
-  - `direction`: Extraction direction.
-  - `planeOrigin`: Origin of the neutral plane.
-  - `planeNormal`: Normal of the neutral plane.
-  - `angle`: Draft angle in radians.
-- **Returns:** Modified shape with draft, or `nil` on failure.
-- **OCCT:** `LocOpe_SplitDrafts` (via `OCCTLocOpeSplitDrafts`).
-- **Note:** `LocOpe_SplitDrafts::Perform()` can throw on incompatible geometry; the bridge wraps it in a try-catch.
-
----
-
 ### `commonEdges(with:)`
 
 Find edges in common between this shape and another.
@@ -2288,6 +2341,35 @@ public func checkVertex(at index: Int) -> CheckResult
 ```
 
 - **OCCT:** `BRepCheck_Vertex` (via `OCCTCheckVertex`).
+
+---
+
+### `checkSolid()`
+
+Check every solid in this shape. There is no index: `errorCount` totals the statuses across all
+solids in the shape.
+
+```swift
+public func checkSolid() -> CheckResult
+```
+
+This answers what the per-sub-shape checks above cannot: shell imbrication, an enclosed region that
+no shell declares as a void, a subshape that is not in the shape. Those defects belong to the solid,
+so a shape whose every edge, wire, shell and vertex checks out can still fail here.
+
+```swift
+// A small box fully inside a large one, both shells forward.
+if let outer = Shape.box(width: 10, height: 10, depth: 10),
+   let inner = Shape.box(origin: SIMD3(2, 2, 2), width: 3, height: 3, depth: 3),
+   let outerShell = outer.subShapes(ofType: .shell).first,
+   let innerShell = inner.subShapes(ofType: .shell).first,
+   let bad = Shape.solidFromShells([outerShell, innerShell]) {
+    let check = bad.checkSolid()
+    print(check.isValid, check.firstError as Any)  // false, Optional(.enclosedRegion)
+}
+```
+
+- **OCCT:** `BRepCheck_Solid` (via `OCCTCheckSolid`).
 
 ---
 
@@ -2533,11 +2615,23 @@ Divide closed (wrapping) faces in this shape.
 public func dividedClosedFaces(splitPoints: Int = 1) -> Shape?
 ```
 
-Uses `ShapeUpgrade_ShapeDivideClosed` to split faces that wrap completely around (e.g., the lateral face of a cylinder).
+Uses `ShapeUpgrade_ShapeDivideClosed` to split faces that wrap completely around (e.g., the lateral
+face of a cylinder). Faces that are not closed are left alone.
+
+Measured on a cylinder, whose three faces are two planar caps and one closed lateral face:
+`splitPoints` of 1, 2 and 3 give 4, 5 and 6 faces, and the volume is unchanged.
 
 - **Parameters:** `splitPoints`, Number of split points per closed face.
-- **Returns:** Shape with divided faces, or `nil` on failure.
+- **Returns:** Shape with divided faces, or `nil` on failure. A shape with **no** closed face is a
+  `nil`, not an unchanged shape: `Perform()` returns false when there is nothing to divide, so a
+  box comes back `nil` at any `splitPoints`.
 - **OCCT:** `ShapeUpgrade_ShapeDivideClosed` (via `OCCTShapeUpgradeDivideClosed`).
+- **Example:**
+  ```swift
+  if let split = Shape.cylinder(radius: 5, height: 10)?.dividedClosedFaces(splitPoints: 1) {
+      print(split.subShapes(ofType: .face).count)  // 4: two caps, lateral face halved
+  }
+  ```
 
 ---
 
@@ -2764,8 +2858,24 @@ public func bsplineRestriction(
     tol3d: Double = 0.01, tol2d: Double = 0.01,
     maxDegree: Int = 8, maxSegments: Int = 100,
     continuity3d: ParametricContinuity = .c1, continuity2d: ParametricContinuity = .c1,
-    degreePriority: Bool = true, rational: Bool = false
+    degreePriority: Bool = true, rational: Bool = false,
+    parameters: Shape.BSplineRestrictionParameters = .occtDefaults
 ) -> Shape?
+```
+
+**`parameters` is what decides which surfaces are converted at all.** Its default is
+`ShapeCustom_RestrictionParameters`'s own, which converts surfaces of revolution, extrusion and
+offset and leaves planes, cylinders, cones, spheres, tori and Bezier surfaces exactly as they were,
+with no diagnostic. Measured, a cylinder through this call at the default comes back with 0 BSpline
+faces and 3 still elementary. Pass `.allSurfaceTypes` to convert everything, or flip one switch:
+
+```swift
+let untouched = cylinder.bsplineRestriction()                              // 0 BSpline faces
+let converted = cylinder.bsplineRestriction(parameters: .allSurfaceTypes)  // 3 BSpline faces
+
+var onlyCylinders = Shape.BSplineRestrictionParameters.occtDefaults
+onlyCylinders.convertCylindricalSurface = true
+let wallOnly = cylinder.bsplineRestriction(parameters: onlyCylinders)      // 1, the wall
 ```
 
 - **Parameters:**
@@ -2781,8 +2891,49 @@ public func bsplineRestriction(
   - `continuity2d`: 2D continuity requirement, same ceiling and same `.c3` limit.
   - `degreePriority`: If `true`, prioritize degree reduction over segment reduction.
   - `rational`: Allow rational BSplines.
+  - `parameters`: which geometry kinds may be converted. Defaults to OCCT's own values, which is
+    the behaviour this call had before [#1637](https://github.com/SecondMouseAU/OCCTSwift/issues/1637)
+    and which converts almost nothing analytic.
 - **Returns:** Simplified shape, or `nil` on failure.
-- **OCCT:** `ShapeCustom::BSplineRestriction` (via `OCCTShapeCustomBSplineRestriction`).
+- **OCCT:** `ShapeCustom::BSplineRestriction` with a caller-supplied
+  `ShapeCustom_RestrictionParameters` (via `OCCTShapeCustomBSplineRestriction`).
+
+---
+
+### `Shape.BSplineRestrictionParameters`
+
+Which geometry kinds `bsplineRestriction` is allowed to convert. Mirrors
+`ShapeCustom_RestrictionParameters`.
+
+```swift
+public struct BSplineRestrictionParameters: Sendable, Equatable {
+    public var convertPlane: Bool               // OCCT default: false
+    public var convertBezierSurface: Bool       // false
+    public var convertRevolutionSurface: Bool   // true
+    public var convertExtrusionSurface: Bool    // true
+    public var convertOffsetSurface: Bool       // true
+    public var convertCylindricalSurface: Bool  // false
+    public var convertConicalSurface: Bool      // false
+    public var convertToroidalSurface: Bool     // false
+    public var convertSphericalSurface: Bool    // false
+    public var segmentSurfaceMode: Bool         // true
+    public var convertCurve3d: Bool             // true
+    public var convertOffsetCurve3d: Bool       // true
+    public var convertCurve2d: Bool             // true
+    public var convertOffsetCurve2d: Bool       // true
+
+    public static let occtDefaults: BSplineRestrictionParameters
+    public static let allSurfaceTypes: BSplineRestrictionParameters
+}
+```
+
+The defaults above are the kernel's own, read off the pinned build
+(`Scripts/repro/1637/transcript.txt`), and a test compares them field by field against
+`occtDefaultBSplineRestrictionParameters()` so they cannot drift.
+
+`GMaxDegree` and `GMaxSeg`, the class's two global caps, are **not** exposed. They are measured to
+have no effect next to the per-call `maxDegree` and `maxSegments`: on a torus, `GMaxDegree` of 3, 5
+and 15 all deliver degree 7, while the per-call `maxDegree` of 3, 5 and 9 delivers 3, 5 and 7.
 
 ---
 
