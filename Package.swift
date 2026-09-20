@@ -23,43 +23,49 @@ import Foundation
 // produced with NO local sibling present (i.e. on CI / a fresh clone). See docs/guides/sharing-the-xcframework.md.
 let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 
-// Detect WASI platform - SwiftPM sets this via --platform or target triple
-let isWASI = ProcessInfo.processInfo.environment["SWIFT_SDK"] != nil &&
-    (ProcessInfo.processInfo.environment["SWIFT_SDK"]?.contains("wasm") == true ||
-     ProcessInfo.processInfo.environment["SWIFT_SDK"]?.contains("wasi") == true)
-
-// For explicit WASI builds, also check for wasi-sdk env or target
+// Detect WASI platform - check multiple indicators for reliability
+// 1. Explicit flag (most reliable)
+// 2. SWIFT_SDK env var (set by swift build --swift-sdk)
+// 3. Target triple contains wasm/wasi
 let isExplicitWASI = ProcessInfo.processInfo.environment["OCCTSWIFT_WASI"] == "1"
-let isWASITarget = isWASI || isExplicitWASI
+let swiftSDK = ProcessInfo.processInfo.environment["SWIFT_SDK"]
+let isWASI = isExplicitWASI ||
+    (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi")))
+let isWASITarget = isWASI
 
-let useLocalBinary: Bool = {
-    if isWASITarget { return false } // WASI uses locally built static library, not xcframework
+// For WASI, we use a locally built static library (libOCCT-wasm.a), not an xcframework.
+// For native platforms, we prefer the local xcframework if present, otherwise download the remote one.
+let useLocalXCFramework: Bool = {
+    if isWASITarget { return false } // WASI never uses xcframework
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
     if ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1" { return true }
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-let occtTarget: Target = useLocalBinary
-    ? .binaryTarget(
+let occtTarget: Target = isWASITarget
+    // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
+    // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
+    ? .target(
         name: "OCCT",
-        path: "Libraries/OCCT.xcframework"
+        path: "Libraries",
+        sources: ["dummy.c"], // Required by SwiftPM; file can be empty
+        cxxSettings: [
+            .headerSearchPath("occt-headers-wasm"),
+            .define("__wasi__"),
+            .define("OCCT_NO_DEPRECATED"),
+            .define("_WASI_EMULATED_PROCESS_CLOCKS"),
+            .define("_WASI_EMULATED_GETPID"),
+        ],
+        linkerSettings: [
+            .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
+            .unsafeFlags(["-L", "Libraries"]) // search Libraries/ for the static lib
+        ]
     )
-    : isWASITarget
-        // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
-        // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
-        ? .target(
+    : useLocalXCFramework
+        // Local xcframework for native development
+        ? .binaryTarget(
             name: "OCCT",
-            path: "Libraries", // dummy path, we use linkerSettings below
-            sources: [], // no sources, just linker settings
-            cxxSettings: [
-                .headerSearchPath("occt-headers-wasm"),
-                .define("__wasi__"),
-                .define("OCCT_NO_DEPRECATED")
-            ],
-            linkerSettings: [
-                .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
-                .unsafeFlags(["-L", "Libraries"]) // search Libraries/ for the static lib
-            ]
+            path: "Libraries/OCCT.xcframework"
         )
         // Remote binary xcframework for native platforms
         : .binaryTarget(

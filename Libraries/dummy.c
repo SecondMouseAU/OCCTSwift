@@ -1,0 +1,1 @@
+/* Dummy source file required by SwiftPM for targets with no real sources */
