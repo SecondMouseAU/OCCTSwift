@@ -26,12 +26,15 @@ let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 // Detect WASI platform - check multiple indicators for reliability
 // 1. Explicit flag (most reliable): OCCTSWIFT_WASI=1
 // 2. SWIFT_SDK env var (set by swift build --swift-sdk): contains "wasm" or "wasi"
+// 3. SWIFT_PLATFORM env var: may contain "wasi" in some SwiftPM versions
 // Note: Target triple inspection is not available in Package.swift context;
 // SwiftPM does not expose the target triple to the manifest.
 let isExplicitWASI = ProcessInfo.processInfo.environment["OCCTSWIFT_WASI"] == "1"
 let swiftSDK = ProcessInfo.processInfo.environment["SWIFT_SDK"]
+let swiftPlatform = ProcessInfo.processInfo.environment["SWIFT_PLATFORM"]
 let isWASI = isExplicitWASI ||
-    (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi")))
+    (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi"))) ||
+    (swiftPlatform != nil && swiftPlatform!.contains("wasi"))
 
 // For WASI, we use a locally built static library (libOCCT-wasm.a), not an xcframework.
 // For native platforms, we prefer the local xcframework if present, otherwise download the remote one.
@@ -44,7 +47,6 @@ let useLocalXCFramework: Bool = {
 
 // OCCT V8.0.1 plus the seventeen carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
-
 let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
     // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
