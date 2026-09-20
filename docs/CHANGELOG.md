@@ -21,6 +21,26 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patch `0037`: the STEP read actor's non-manifold flag is per instance (#2061)
+
+`STEPControl_ActorRead` held its non-manifold marker, `NM_DETECTED`, as a process-global. It is
+reset at the start of a shape-representation transfer, set when a non-manifold item is recognised,
+and read to decide whether an assembly component's `COMPOUND` is flattened into its parent or kept
+nested. Concurrent STEP reads therefore shared a flag that gates shape construction.
+
+Relocated to a per-instance `myIsNMDetected`, with no lock and no signature change, following
+#363's relocate-to-the-owner precedent. Measured by override-link against a ThreadSanitizer build:
+the race is reported in 5 of 5 unpatched runs and 0 of 5 patched
+(`Scripts/repro/2061-nm-detected/`).
+
+The wrong-shape outcome follows from the code and the flag demonstrably leaks between threads, but
+it did not occur in roughly ten thousand reads across three configurations, so this is recorded as
+a confirmed race rather than a demonstrated wrong answer. In practice the bridge's `igesMutex()`
+serialises the whole data-exchange surface, so no consumer can reach it today.
+
+Not in the pinned asset, so nothing changes for consumers until a rebuild. The defect is live in
+current OCCT master too, so the patch is bound upstream.
+
 ### Carried patch `0036`: `IFSelect_WorkSession`'s error-handling sentinel is per instance (#1403)
 
 `IFSelect_WorkSession` used a file-scope `errhand` flag as a recursion sentinel so its nine

@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0037.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1470,6 +1470,46 @@ grid.
 **Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
 the seven OCCTSwift thread-safety PRs still open on Release 8.1.
 
+
+## 0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061.patch
+
+**Fixes a cross-thread data race on the STEP read actor's non-manifold flag**
+([#2061](https://github.com/SecondMouseAU/OCCTSwift/issues/2061)).
+`STEPControl_ActorRead.cxx:208` held `NM_DETECTED` as an anonymous-namespace global: reset at
+`:993`, set at `:1028`/`:1041` while transferring one shape representation, and read at
+`:742`/`:805` to decide whether a `COMPOUND` component is flattened into its parent or kept nested.
+Per-operation state in a process global.
+
+Upstream's own comment above the declaration already records the intended direction:
+
+> The better way is to pass this information via binder or via TopoDS_Shape itself, however,
+> this is very specific info to do so...
+
+**The fix is a private member**, `myIsNMDetected`, with a default member initialiser. Every read and
+write is already inside a `STEPControl_ActorRead` member function, so **no signature changes**. It
+works because `STEPControl_Controller::ActorRead()` never assigns `myAdaptorRead` (only
+`myAdaptorWrite`, `:345`), so it builds a fresh actor per call which `XSControl_TransferReader`
+caches per session. Had the read actor been shared the way IGES's is, a member would have fixed
+nothing.
+
+**Measured**, override-linked against `Libraries/occt-install-tsan`, six threads x ten iterations:
+
+| | `NM_DETECTED` race reported | Total races |
+|---|---|---|
+| unpatched | **5 of 5 runs** | 40 across 5 runs |
+| patched | **0 of 5 runs** | 10 across 5 runs |
+
+**What this does NOT show.** The wrong-shape outcome follows from the code and the flag
+demonstrably leaks across threads, but it did not occur in ~10,000 reads across three
+configurations: the reset at `:993` reliably wins the race to the same thread's read. This is a
+confirmed race on a flag that gates shape construction, not a demonstrated wrong answer, and the
+distinction is kept deliberately. Full method, including two fixture traps and why a setter-skewed
+thread pool measured worse, in
+[`Scripts/repro/2061-nm-detected/`](../repro/2061-nm-detected/README.md).
+
+Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+
+**Retire** once the bundled OCCT includes this fix.
 
 # Retired patches
 
