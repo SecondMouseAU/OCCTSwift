@@ -20,6 +20,56 @@
 
 set -e
 
+# --------------------------------------------------------------------------------------
+# Post-condition: every REQUIRED platform must install every toolkit (#2063)
+# --------------------------------------------------------------------------------------
+#
+# `cmake --build ... || true` below is deliberate: OCCT builds sample executables that fail to
+# link for the mobile platforms and we only need the static libs. It cannot, however, tell an
+# expected executable link failure from a library that never compiled, and `|| true` defeats the
+# `set -e` above.
+#
+# That is not hypothetical. On PR #2062 clang CRASHED ("Abort trap: 6") at 98% of TKDESTEP, make
+# stopped, and this script installed and packaged the partial tree and exited 0. The job went
+# green with 22 of these 49 toolkits, and the failure surfaced two jobs and an hour later as an
+# undefined `BinDrivers::DefineFormat`. Worse, a GitHub Actions cache key cannot be overwritten
+# once written (kernel-integration.yml says so at its own cache step), so the broken artifact was
+# pinned to that patch set and every re-run restored it.
+#
+# A post-condition rather than a stricter exit code, because it catches causes that never produce
+# a non-zero status at all: a compiler crash, an OOM kill, a full disk.
+#
+# The list is the toolkit set of a healthy OCCT V8_0_1 build. If an OCCT upgrade legitimately adds
+# or renames one, update it here in the same commit; a check that needs weakening is a signal to
+# look at the other measurement first.
+REQUIRED_TOOLKITS="TKBin TKBinL TKBinTObj TKBinXCAF TKBO TKBool TKBRep TKCAF TKCDF TKDE TKDECascade TKDEGLTF TKDEIGES TKDEOBJ TKDEPLY TKDESTEP TKDESTL TKDEVRML TKernel TKExpress TKFeat TKFillet TKG2d TKG3d TKGeomAlgo TKGeomBase TKHelix TKHLR TKLCAF TKMath TKMesh TKOffset TKPrim TKRWMesh TKService TKShHealing TKStd TKStdL TKTObj TKTopAlgo TKV3d TKVCAF TKXCAF TKXMesh TKXml TKXmlL TKXmlTObj TKXmlXCAF TKXSBase"
+
+require_toolkits() {
+    local install_dir="$1"
+    local platform="$2"
+    local missing=()
+    local tk
+    for tk in $REQUIRED_TOOLKITS; do
+        [ -f "$install_dir/lib/lib$tk.a" ] || missing+=("$tk")
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo "" >&2
+        echo "ERROR: the $platform kernel build is INCOMPLETE." >&2
+        echo "  ${#missing[@]} of the $(echo $REQUIRED_TOOLKITS | wc -w | tr -d ' ') required toolkits are missing:" >&2
+        printf '    %s
+' "${missing[@]}" >&2
+        echo "" >&2
+        echo "  The 'cmake --build ... || true' above tolerates executable link failures on" >&2
+        echo "  purpose, but cannot tell those from a library that never compiled. Scroll up for" >&2
+        echo "  the real cause: a compile error, a clang crash, an OOM kill or a full disk." >&2
+        echo "" >&2
+        echo "  Do NOT package or cache this tree. See issue #2063." >&2
+        exit 1
+    fi
+    echo ">>> $platform: all $(echo $REQUIRED_TOOLKITS | wc -w | tr -d ' ') required toolkits installed"
+}
+
+
 OCCT_VERSION="8.0.1"
 OCCT_RC=""
 # Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0
@@ -230,6 +280,7 @@ cmake ../occt-src \
 cmake --build . --parallel "$JOBS" || true
 cmake --install . || true
 cd ..
+require_toolkits "occt-install-ios" "iOS device"
 
 # --------------------
 # Build for iOS Simulator
@@ -265,6 +316,7 @@ cmake ../occt-src \
 cmake --build . --parallel "$JOBS" || true
 cmake --install . || true
 cd ..
+require_toolkits "occt-install-sim" "iOS Simulator"
 
 # --------------------
 # Build for macOS
@@ -296,6 +348,7 @@ cmake ../occt-src \
 cmake --build . --parallel "$JOBS" || true
 cmake --install . || true
 cd ..
+require_toolkits "occt-install-macos" "macOS"
 
 # --------------------
 # visionOS / tvOS slices, only when BUILD_ALL_PLATFORMS=1 (see top of script).
