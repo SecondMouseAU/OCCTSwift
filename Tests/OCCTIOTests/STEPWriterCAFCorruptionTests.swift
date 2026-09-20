@@ -39,8 +39,15 @@ struct STEPWriterCAFCorruptionTests {
     /// its base class configured, without re-applying `SetShapeProcessFlags`, and then
     /// `AutoRecord()`s itself under the same "STEP" name the plain writer resolves by. The actor's
     /// OperationsFlags end up empty, so `DirectFaces` never runs and faces on indirect
-    /// (left-handed) surfaces, a frustum's cone, are dropped. Worked around in the bridge by
-    /// installing a freshly-constructed plain controller on each shape-level write.
+    /// (left-handed) surfaces, a frustum's cone, are dropped.
+    ///
+    /// The bridge-side workaround this comment used to describe (a freshly-constructed plain
+    /// controller per shape-level write) was removed in `f2469da2` once the kernel fix landed.
+    /// What protects consumers today is `STEPControl_Writer::Transfer`'s call to
+    /// `InitializeMissingParameters()`, which re-sets `DirectFaces` when the shared actor's
+    /// `OperationsFlags` are empty. Carried patch `0035` deleted that call and this test caught
+    /// the regression in `kernel-integration.yml`; see `Scripts/patches/README.md`'s retired
+    /// `0035` entry (#2056). Anything proposing to remove that call again must make this pass.
     ///
     /// This is also the cause of the long-standing `cone()` failure in OCCTStressTests, which
     /// passed in isolation and failed in every full run purely because OCCTIOTests reads a STEP

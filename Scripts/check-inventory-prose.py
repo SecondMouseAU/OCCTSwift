@@ -218,7 +218,11 @@ def check_patch_rows():
 
 def carried_sequence_numbers(text):
     """Expand a "0010-0012, 0014-0031, 0033-0035" range list into the set it names."""
-    match = re.search(r"the carried sequence now reads ([0-9\u2013, \n-]+?)\.", text)
+    # Tolerate a capitalised "The" and a line wrap anywhere inside the phrase: the sentence is
+    # reflowed whenever a retirement is added to it, and a gate that fails on the wrap teaches
+    # whoever hits it to contort the prose rather than to fix the inventory.
+    match = re.search(r"[Tt]he\s+carried\s+sequence\s+now\s+reads\s+([0-9\u2013, \n-]+?)\.",
+                      text)
     if not match:
         return None
     numbers = set()
@@ -364,6 +368,13 @@ def self_test():
          carried_sequence_numbers("the carried sequence now reads 0010 to 0012.") is None)
     case("carried-sequence-missing-sentence-detected",
          carried_sequence_numbers("no such sentence here") is None)
+    # Both of these failed before the phrase regex tolerated them, on a real retirement edit:
+    # the sentence gets reflowed every time a patch is retired into it.
+    case("carried-sequence-accepts-sentence-initial-capital",
+         carried_sequence_numbers("The carried sequence now reads 0010\u20130012.") == {10, 11, 12})
+    case("carried-sequence-accepts-a-wrap-inside-the-phrase",
+         carried_sequence_numbers("so the carried\nsequence now reads 0010\u20130012.")
+         == {10, 11, 12})
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
