@@ -1,6 +1,6 @@
 [
   {
-    "test_name": "Point projection capacities clamp rather than trap",
+    "test_name": "point projection capacities clamp rather than trap",
     "bridge_function": "OCCTShapeProject",
     "bridge_output": {"type": "int", "data": 0},
     "kernel_output": {"type": "int", "data": 0},
