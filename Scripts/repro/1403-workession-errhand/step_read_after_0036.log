@@ -1,0 +1,221 @@
+==================
+WARNING: ThreadSanitizer: data race (pid=16718)
+  Write of size 1 at 0x000103d0f6b0 by thread T3:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepShape_ShapeRepresentation> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:993 (stress_patched:arm64+0x100536abc)
+    #1 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:784 (stress_patched:arm64+0x100533b04)
+    #2 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (stress_patched:arm64+0x100530e90)
+    #3 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (stress_patched:arm64+0x1005307e0)
+    #4 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (stress_patched:arm64+0x101362930)
+    #5 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (stress_patched:arm64+0x10137a248)
+    #6 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (stress_patched:arm64+0x1013795fc)
+    #7 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (stress_patched:arm64+0x10137a724)
+    #8 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (stress_patched:arm64+0x101382d60)
+    #9 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (stress_patched:arm64+0x1013e5978)
+    #10 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (stress_patched:arm64+0x1013dc8dc)
+    #11 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (stress_patched:arm64+0x10000168c)
+    #12 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #13 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #14 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Previous write of size 1 at 0x000103d0f6b0 by thread T2:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepShape_ShapeRepresentation> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:993 (stress_patched:arm64+0x100536abc)
+    #1 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:784 (stress_patched:arm64+0x100533b04)
+    #2 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (stress_patched:arm64+0x100530e90)
+    #3 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (stress_patched:arm64+0x1005307e0)
+    #4 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (stress_patched:arm64+0x101362930)
+    #5 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (stress_patched:arm64+0x10137a248)
+    #6 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (stress_patched:arm64+0x1013795fc)
+    #7 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (stress_patched:arm64+0x10137a724)
+    #8 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (stress_patched:arm64+0x101382d60)
+    #9 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (stress_patched:arm64+0x1013e5978)
+    #10 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (stress_patched:arm64+0x1013dc8dc)
+    #11 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (stress_patched:arm64+0x10000168c)
+    #12 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #13 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #14 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Location is global '(anonymous namespace)::NM_DETECTED' at 0x000103d0f6b0 (stress_patched+0x101cab6b0)
+
+  Thread T3 (tid=15144628, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (stress_patched:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (stress_patched:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (stress_patched:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+  Thread T2 (tid=15144627, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (stress_patched:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (stress_patched:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (stress_patched:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race STEPControl_ActorRead.cxx:993 in STEPControl_ActorRead::TransferEntity(opencascade::handle<StepShape_ShapeRepresentation> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool&, bool, Message_ProgressRange const&)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=16718)
+  Write of size 8 at 0x00010f4023c8 by thread T4:
+    #0 opencascade::handle<Standard_Transient>::EndScope() Standard_Handle.hxx:393 (stress_patched:arm64+0x1013943a8)
+    #1 opencascade::handle<Standard_Transient>::Nullify() Standard_Handle.hxx:91 (stress_patched:arm64+0x1013943a8)
+    #2 IFSelect_EditForm::ClearData() IFSelect_EditForm.cxx:85 (stress_patched:arm64+0x1013943a8)
+    #3 IFSelect_WorkSession::ClearData(int) IFSelect_WorkSession.cxx:462 (stress_patched:arm64+0x100009a20)
+    #4 XSControl_WorkSession::ClearData(int) XSControl_WorkSession.cxx:64 (stress_patched:arm64+0x1013f40d0)
+    #5 IFSelect_WorkSession::SetModel(opencascade::handle<Interface_InterfaceModel> const&, bool) IFSelect_WorkSession.cxx:165 (stress_patched:arm64+0x100007ed8)
+    #6 STEPControl_Reader::ReadFile(char const*) STEPControl_Reader.cxx:143 (stress_patched:arm64+0x100562c2c)
+    #7 runStepReadIndependent(int, int) occt_1157_stress.cpp:125 (stress_patched:arm64+0x100001668)
+    #8 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #9 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #10 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Previous write of size 8 at 0x00010f4023c8 by thread T3:
+    #0 opencascade::handle<Standard_Transient>::EndScope() Standard_Handle.hxx:393 (stress_patched:arm64+0x1013943a8)
+    #1 opencascade::handle<Standard_Transient>::Nullify() Standard_Handle.hxx:91 (stress_patched:arm64+0x1013943a8)
+    #2 IFSelect_EditForm::ClearData() IFSelect_EditForm.cxx:85 (stress_patched:arm64+0x1013943a8)
+    #3 IFSelect_WorkSession::ClearData(int) IFSelect_WorkSession.cxx:462 (stress_patched:arm64+0x100009a20)
+    #4 XSControl_WorkSession::ClearData(int) XSControl_WorkSession.cxx:64 (stress_patched:arm64+0x1013f40d0)
+    #5 IFSelect_WorkSession::SetModel(opencascade::handle<Interface_InterfaceModel> const&, bool) IFSelect_WorkSession.cxx:165 (stress_patched:arm64+0x100007ed8)
+    #6 STEPControl_Reader::ReadFile(char const*) STEPControl_Reader.cxx:143 (stress_patched:arm64+0x100562c2c)
+    #7 runStepReadIndependent(int, int) occt_1157_stress.cpp:125 (stress_patched:arm64+0x100001668)
+    #8 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #9 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #10 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Location is heap block of size 224 at 0x00010f402300 allocated by main thread:
+    #0 calloc <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x67ff4)
+    #1 Standard::Allocate(unsigned long) Standard.cxx:386 (stress_patched:arm64+0x1008dbec8)
+    #2 Standard_Transient::operator new(unsigned long) Standard_Transient.hxx:47 (stress_patched:arm64+0x10055f61c)
+    #3 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:426 (stress_patched:arm64+0x10055f61c)
+    #4 STEPControl_Controller::STEPControl_Controller() STEPControl_Controller.cxx:60 (stress_patched:arm64+0x100560f18)
+    #5 STEPControl_Controller::Init() STEPControl_Controller.cxx:494 (stress_patched:arm64+0x100560f18)
+    #6 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:38 (stress_patched:arm64+0x10056ab00)
+    #7 STEPControl_Writer::STEPControl_Writer() STEPControl_Writer.cxx:37 (stress_patched:arm64+0x10056ad7c)
+    #8 writeFixtures() occt_1157_stress.cpp:314 (stress_patched:arm64+0x100003038)
+    #9 runOne(char const*, int, int) occt_1157_stress.cpp:334 (stress_patched:arm64+0x100003038)
+    #10 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+  Thread T4 (tid=15144629, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (stress_patched:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (stress_patched:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (stress_patched:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+  Thread T3 (tid=15144628, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x10000645c)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x10000645c)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x10000645c)
+    #6 std::__1::thread* std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_slow_path<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1109 (stress_patched:arm64+0x10000645c)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()::operator()() const vector.h:1149 (stress_patched:arm64+0x100003918)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1129 (stress_patched:arm64+0x100003918)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x100003918)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x100003918)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race Standard_Handle.hxx:393 in opencascade::handle<Standard_Transient>::EndScope()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=16718)
+  Read of size 1 at 0x000103d0f6b0 by thread T8:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:805 (stress_patched:arm64+0x100533e88)
+    #1 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (stress_patched:arm64+0x100530e90)
+    #2 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (stress_patched:arm64+0x1005307e0)
+    #3 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (stress_patched:arm64+0x101362930)
+    #4 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (stress_patched:arm64+0x10137a248)
+    #5 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (stress_patched:arm64+0x1013795fc)
+    #6 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (stress_patched:arm64+0x10137a724)
+    #7 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (stress_patched:arm64+0x101382d60)
+    #8 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (stress_patched:arm64+0x1013e5978)
+    #9 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (stress_patched:arm64+0x1013dc8dc)
+    #10 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (stress_patched:arm64+0x10000168c)
+    #11 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #12 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #13 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Previous write of size 1 at 0x000103d0f6b0 by thread T6:
+    #0 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepShape_ShapeRepresentation> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:993 (stress_patched:arm64+0x100536abc)
+    #1 STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:784 (stress_patched:arm64+0x100533b04)
+    #2 STEPControl_ActorRead::TransferShape(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, bool, Message_ProgressRange const&) STEPControl_ActorRead.cxx:2218 (stress_patched:arm64+0x100530e90)
+    #3 STEPControl_ActorRead::Transfer(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_TransientProcess> const&, Message_ProgressRange const&) STEPControl_ActorRead.cxx:406 (stress_patched:arm64+0x1005307e0)
+    #4 Transfer_ActorOfTransientProcess::Transferring(opencascade::handle<Standard_Transient> const&, opencascade::handle<Transfer_ProcessForTransient> const&, Message_ProgressRange const&) Transfer_ActorOfTransientProcess.cxx:47 (stress_patched:arm64+0x101362930)
+    #5 Transfer_ProcessForTransient::TransferProduct(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:989 (stress_patched:arm64+0x10137a248)
+    #6 Transfer_ProcessForTransient::Transferring(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:903 (stress_patched:arm64+0x1013795fc)
+    #7 Transfer_ProcessForTransient::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_ProcessForTransient_0.cxx:1031 (stress_patched:arm64+0x10137a724)
+    #8 Transfer_TransferOutput::Transfer(opencascade::handle<Standard_Transient> const&, Message_ProgressRange const&) Transfer_TransferOutput.cxx:77 (stress_patched:arm64+0x101382d60)
+    #9 XSControl_TransferReader::TransferOne(opencascade::handle<Standard_Transient> const&, bool, Message_ProgressRange const&) XSControl_TransferReader.cxx:1023 (stress_patched:arm64+0x1013e5978)
+    #10 XSControl_Reader::TransferRoots(Message_ProgressRange const&) XSControl_Reader.cxx:286 (stress_patched:arm64+0x1013dc8dc)
+    #11 runStepReadIndependent(int, int) occt_1157_stress.cpp:132 (stress_patched:arm64+0x10000168c)
+    #12 std::__1::__invoke_result_impl<void, void (*)(int, int), int, int>::type std::__1::__invoke[abi:nqe220106]<void (*)(int, int), int, int>(void (*&&)(int, int), int&&, int&&) invoke.h:90 (stress_patched:arm64+0x100006214)
+    #13 void std::__1::__thread_execute[abi:nqe220106]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int, 0ul, 1ul, 2ul>(std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>&, std::__1::__integer_sequence<unsigned long, 0ul, 1ul, 2ul>) thread.h:161 (stress_patched:arm64+0x100006214)
+    #14 void* std::__1::__thread_proxy[abi:nqe220106]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(int, int), int, int>>(void*) thread.h:169 (stress_patched:arm64+0x100006214)
+
+  Location is global '(anonymous namespace)::NM_DETECTED' at 0x000103d0f6b0 (stress_patched+0x101cab6b0)
+
+  Thread T8 (tid=15144633, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (stress_patched:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (stress_patched:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (stress_patched:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+  Thread T6 (tid=15144631, running) created by main thread at:
+    #0 pthread_create <null> (libclang_rt.tsan_osx_dynamic.dylib:arm64e+0x33bac)
+    #1 std::__1::__libcpp_thread_create[abi:nqe220106](_opaque_pthread_t**, void* (*)(void*), void*) pthread.h:182 (stress_patched:arm64+0x1000060dc)
+    #2 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:221 (stress_patched:arm64+0x1000060dc)
+    #3 std::__1::thread::thread[abi:nqe220106]<void (*&)(int, int), int&, int&, 0>(void (*&)(int, int), int&, int&) thread.h:212 (stress_patched:arm64+0x1000038c8)
+    #4 void std::__1::allocator<std::__1::thread>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&>(std::__1::thread*, void (*&)(int, int), int&, int&) allocator.h:141 (stress_patched:arm64+0x1000038c8)
+    #5 void std::__1::allocator_traits<std::__1::allocator<std::__1::thread>>::construct[abi:nqe220106]<std::__1::thread, void (*&)(int, int), int&, int&, 0>(std::__1::allocator<std::__1::thread>&, std::__1::thread*, void (*&)(int, int), int&, int&) allocator_traits.h:296 (stress_patched:arm64+0x1000038c8)
+    #6 void std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::__emplace_back_assume_capacity[abi:nqe220106]<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:483 (stress_patched:arm64+0x1000038c8)
+    #7 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'()::operator()() const vector.h:1146 (stress_patched:arm64+0x1000038c8)
+    #8 void std::__1::__if_likely_else[abi:nqe220106]<std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()>(bool, std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda'(), std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&)::'lambda0'()) vector.h:1127 (stress_patched:arm64+0x1000038c8)
+    #9 std::__1::thread& std::__1::vector<std::__1::thread, std::__1::allocator<std::__1::thread>>::emplace_back<void (*&)(int, int), int&, int&>(void (*&)(int, int), int&, int&) vector.h:1143 (stress_patched:arm64+0x1000038c8)
+    #10 runOne(char const*, int, int) occt_1157_stress.cpp:359 (stress_patched:arm64+0x1000038c8)
+    #11 main occt_1157_stress.cpp:396 (stress_patched:arm64+0x100002de4)
+
+SUMMARY: ThreadSanitizer: data race STEPControl_ActorRead.cxx:805 in STEPControl_ActorRead::TransferEntity(opencascade::handle<StepBasic_ProductDefinition> const&, opencascade::handle<Transfer_TransientProcess> const&, StepData_Factors const&, bool, Message_ProgressRange const&)
+==================
+ops=160 errors=0 crossTalk=0
+[32;1m
+*******************************************************************
+******        Statistics on Transfer (Write)                 ******
+
+*******************************************************************
+******        Transfer Mode = 0  I.E.  As Is       ******
+[0m
+[32;1m******        Transferring Shape, ShapeType = 2                      ******
+[0m
+[32;1m** WorkSession : Sending all data
+[0m
+[32;1m Step File Name : /tmp/occt-p1403.BibUJm/fixture.step(350 ents)  Write  Done
+[0m
+ThreadSanitizer: reported 3 warnings

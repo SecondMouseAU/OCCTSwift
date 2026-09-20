@@ -1,0 +1,242 @@
+diff --git a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
+index 6e34bf5e..8e64a2bf 100644
+--- a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
++++ b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.cxx
+@@ -73,7 +73,6 @@ IMPLEMENT_STANDARD_RTTIEXT(IFSelect_WorkSession, Standard_Transient)
+ #define Flag_Incorrect 2
+ //  (Bit Map n0 2)
+ 
+-static bool                    errhand; // pb : only one at a time, but it goes so fast
+ static TCollection_AsciiString bufstr;
+ 
+ //  #################################################################
+@@ -83,8 +82,8 @@ static TCollection_AsciiString bufstr;
+ IFSelect_WorkSession::IFSelect_WorkSession()
+ {
+   theshareout = new IFSelect_ShareOut;
+-  theerrhand = errhand = true;
+-  thecopier            = new IFSelect_ModelCopier;
++  theerrhand  = true;
++  thecopier   = new IFSelect_ModelCopier;
+   thecopier->SetShareOut(theshareout);
+   thecheckdone = false;
+   thegtool     = new Interface_GTool;
+@@ -95,7 +94,7 @@ IFSelect_WorkSession::IFSelect_WorkSession()
+ 
+ void IFSelect_WorkSession::SetErrorHandle(const bool toHandle)
+ {
+-  theerrhand = errhand = toHandle;
++  theerrhand = toHandle;
+ }
+ 
+ //=================================================================================================
+@@ -1417,9 +1416,9 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
+   const occ::handle<IFSelect_Selection>& sel) const
+ {
+   Interface_EntityIterator iter;
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -1432,7 +1431,7 @@ Interface_EntityIterator IFSelect_WorkSession::EvalSelection(
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+     }
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+     return iter;
+   }
+ 
+@@ -1458,9 +1457,9 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
+   SelectionResult(const occ::handle<IFSelect_Selection>& sel) const
+ {
+   occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> res;
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -1473,7 +1472,7 @@ occ::handle<NCollection_HSequence<occ::handle<Standard_Transient>>> IFSelect_Wor
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+     }
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+     return res;
+   }
+ 
+@@ -2217,9 +2216,9 @@ void IFSelect_WorkSession::EvaluateFile()
+     return;
+   }
+   Interface_CheckIterator checks;
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -2233,8 +2232,8 @@ void IFSelect_WorkSession::EvaluateFile()
+       sout << "\n    Abandon" << '\n';
+       checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
+     }
+-    errhand     = theerrhand;
+-    thecheckrun = checks;
++    myInErrorHandler = false;
++    thecheckrun      = checks;
+     return;
+   }
+ 
+@@ -2306,9 +2305,9 @@ bool IFSelect_WorkSession::SendSplit()
+   ////...
+   Interface_CheckIterator checks;
+ 
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -2322,8 +2321,8 @@ bool IFSelect_WorkSession::SendSplit()
+       sout << "\n    Abandon" << '\n';
+       checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
+     }
+-    errhand     = theerrhand;
+-    thecheckrun = checks;
++    myInErrorHandler = false;
++    thecheckrun      = checks;
+     return false;
+   }
+ 
+@@ -2592,9 +2591,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
+     return IFSelect_RetError;
+   }
+ 
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -2607,7 +2606,7 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendAll(const char* const filename,
+       sout << "    ****    SendAll Interrupted by Exception :   ****\n";
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+-      errhand = theerrhand;
++      myInErrorHandler = false;
+       checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
+       thecheckrun = checks;
+       return IFSelect_RetFail;
+@@ -2653,9 +2652,9 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
+     return IFSelect_RetVoid;
+   }
+ 
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -2669,8 +2668,8 @@ IFSelect_ReturnStatus IFSelect_WorkSession::SendSelected(const char* const filen
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+       checks.CCheck(0)->AddFail("Exception Raised -> Abandon");
+-      errhand     = theerrhand;
+-      thecheckrun = checks;
++      myInErrorHandler = false;
++      thecheckrun      = checks;
+       return IFSelect_RetFail;
+     }
+   }
+@@ -4264,9 +4263,9 @@ void IFSelect_WorkSession::PrintSignatureList(Standard_OStream&
+ void IFSelect_WorkSession::EvaluateSelection(const occ::handle<IFSelect_Selection>& sel) const
+ {
+   Message_Messenger::StreamBuffer sout = Message::SendInfo();
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -4278,7 +4277,7 @@ void IFSelect_WorkSession::EvaluateSelection(const occ::handle<IFSelect_Selectio
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+     }
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+     return;
+   }
+ 
+@@ -4306,9 +4305,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+                                             const int                             mode) const
+ {
+   Message_Messenger::StreamBuffer sout = Message::SendInfo();
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -4320,7 +4319,7 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+     }
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+     return;
+   }
+ 
+@@ -4410,9 +4409,9 @@ void IFSelect_WorkSession::EvaluateDispatch(const occ::handle<IFSelect_Dispatch>
+ void IFSelect_WorkSession::EvaluateComplete(const int mode) const
+ {
+   Message_Messenger::StreamBuffer sout = Message::SendInfo();
+-  if (errhand)
++  if (theerrhand && !myInErrorHandler)
+   {
+-    errhand = false;
++    myInErrorHandler = true;
+     try
+     {
+       OCC_CATCH_SIGNALS
+@@ -4424,7 +4423,7 @@ void IFSelect_WorkSession::EvaluateComplete(const int mode) const
+       sout << anException.what();
+       sout << "\n    Abandon" << '\n';
+     }
+-    errhand = theerrhand;
++    myInErrorHandler = false;
+     return;
+   }
+ 
+diff --git a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
+index 4df3a317..634b4058 100644
+--- a/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
++++ b/src/DataExchange/TKXSBase/IFSelect/IFSelect_WorkSession.hxx
+@@ -1169,6 +1169,10 @@ private:
+   occ::handle<IFSelect_ModelCopier>     thecopier;
+   occ::handle<Interface_InterfaceModel> theoldel;
+   bool                                  themodelstat;
++  //! Guards the self-recursive error-handling frame in EvalSelection and its eight siblings.
++  //! Per instance, not per process: two sessions on two threads must not be able to clear
++  //! each other's guard, which the former file-scope flag allowed.
++  mutable bool myInErrorHandler = false;
+ };
+ 
+ #endif // _IFSelect_WorkSession_HeaderFile
