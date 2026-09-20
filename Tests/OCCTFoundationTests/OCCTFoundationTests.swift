@@ -977,26 +977,32 @@ struct OSDDirectoryTests {
 struct ResourceUnicodeTests {
 
     @Test func setAndGetFormat() {
-        UnicodeUtils.setFormat(.ansi)
-        let fmt = UnicodeUtils.format
-        #expect(fmt == .ansi)
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.ansi)
+            let fmt = UnicodeUtils.format
+            #expect(fmt == .ansi)
+        }
     }
 
     @Test func convertToUnicode() {
-        UnicodeUtils.setFormat(.ansi)
-        let result = UnicodeUtils.convertToUnicode("hello")
-        #expect(result != nil)
-        if let r = result {
-            #expect(r == "hello")
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.ansi)
+            let result = UnicodeUtils.convertToUnicode("hello")
+            #expect(result != nil)
+            if let r = result {
+                #expect(r == "hello")
+            }
         }
     }
 
     @Test func convertFromUnicode() {
-        UnicodeUtils.setFormat(.ansi)
-        let result = UnicodeUtils.convertFromUnicode("hello")
-        #expect(result != nil)
-        if let r = result {
-            #expect(r == "hello")
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.ansi)
+            let result = UnicodeUtils.convertFromUnicode("hello")
+            #expect(result != nil)
+            if let r = result {
+                #expect(r == "hello")
+            }
         }
     }
 }
