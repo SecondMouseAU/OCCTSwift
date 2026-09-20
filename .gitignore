@@ -44,3 +44,6 @@ docs/CLAUDE_HANDOFF.md
 # Stray scheduler lock (local only)
 .claude/scheduled_tasks.lock
 __pycache__/
+
+# Third-party upstream workspace (OCCT et al.), local only
+upstream/

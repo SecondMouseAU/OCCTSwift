@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1529,6 +1529,39 @@ or none of it.
 
 **Not to be re-backported** before a repin onto a kernel carrying #1259 in full, at which point it
 arrives on its own. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
+
+## 0036-IFSelect_WorkSession-per-instance-error-guard-1403.patch
+
+**`errhand` is a recursion sentinel, and sharing it loses a thread's exception handling.** Every one
+of the nine guarded blocks in `IFSelect_WorkSession` has this shape:
+
+```cpp
+if (errhand) { errhand = false; try { ... EvalSelection(sel); } catch (...) {} errhand = theerrhand; return iter; }
+// the real work, reached only through that recursive call
+```
+
+The flag exists so the function wraps itself in a `try` exactly once. With two threads, A clears it
+and recurses into the guarded path while **B sees it already false and takes the unguarded path**,
+losing its exception handling entirely. That is a lost-protection bug rather than a torn flag, and
+it was the busiest racing site in the whole data-exchange path.
+
+The global was a pure mirror of the per-instance `theerrhand`, written only as
+`theerrhand = errhand = ...`, so it is deleted and a per-instance
+`mutable bool myInErrorHandler` takes the sentinel role. **No lock.** #363 is the precedent: it moved
+`theAutoNaming` onto `XCAFDoc_ShapeTool` after upstream rejected the mutex framing, and
+`docs/thread-safety.md` states the rule as relocating ownership rather than locking the wrong owner.
+
+Measured by override-link against the TSan kernel
+(`Scripts/repro/1403-workession-errhand/`): `IFSelect_WorkSession.cxx:86` goes from **6 race access
+sites to 0**, `step_read` 4 races to 3, `iges_read` 15 to 11. The remaining
+`IFSelect_WorkSession` strings in the patched logs are caller frames, which every DE operation has.
+
+**Live in current upstream master**, not just the pin: `static bool errhand;` is still at
+`IFSelect_WorkSession.cxx:78` with 36 references.
+
+`bufstr`, the other global on that line, is deliberately untouched. It is returned as
+`ToCString()`, so concurrent callers get pointers into one shared buffer; that is an API-shape
+defect needing a signature decision, not a field move.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 
