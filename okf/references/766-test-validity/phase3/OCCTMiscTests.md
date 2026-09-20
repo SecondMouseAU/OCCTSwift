@@ -1,7 +1,7 @@
 # Phase 3: OCCTMiscTests Injection Matrix
 
-**Target**: `OCCTMiscTests` (105 tests) — Miscellaneous tests
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
+**Target**: `OCCTMiscTests` (105 tests): Miscellaneous tests
+**Policy**: `prove-the-test-fails.md`: inject defect → confirm fail (red) → restore → confirm pass (green)
 **Priority**: 🟢 P3 (isolated miscellaneous tests)
 
 ---
