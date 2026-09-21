@@ -395,6 +395,7 @@ OCCTClipPlaneRef OCCTClipPlaneCreate(double a, double b, double c, double d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -414,6 +415,7 @@ void OCCTClipPlaneSetEquation(OCCTClipPlaneRef plane, double a, double b, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -431,6 +433,7 @@ void OCCTClipPlaneGetEquation(OCCTClipPlaneRef plane, double* a, double* b, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -452,6 +455,7 @@ void OCCTClipPlaneGetReversedEquation(OCCTClipPlaneRef plane,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -465,6 +469,7 @@ void OCCTClipPlaneSetOn(OCCTClipPlaneRef plane, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -478,6 +483,7 @@ bool OCCTClipPlaneIsOn(OCCTClipPlaneRef plane)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -492,6 +498,7 @@ void OCCTClipPlaneSetCapping(OCCTClipPlaneRef plane, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -505,6 +512,7 @@ bool OCCTClipPlaneIsCapping(OCCTClipPlaneRef plane)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -519,6 +527,7 @@ void OCCTClipPlaneSetCappingColor(OCCTClipPlaneRef plane, double r, double g, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -537,6 +546,7 @@ void OCCTClipPlaneGetCappingColor(OCCTClipPlaneRef plane, double* r, double* g, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -550,6 +560,7 @@ void OCCTClipPlaneSetCappingHatch(OCCTClipPlaneRef plane, int32_t style)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -563,6 +574,7 @@ int32_t OCCTClipPlaneGetCappingHatch(OCCTClipPlaneRef plane)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -584,6 +596,7 @@ void OCCTClipPlaneSetCappingHatchOn(OCCTClipPlaneRef plane, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -597,6 +610,7 @@ bool OCCTClipPlaneIsCappingHatchOn(OCCTClipPlaneRef plane)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -625,6 +639,7 @@ int32_t OCCTClipPlaneProbePoint(OCCTClipPlaneRef plane, double x, double y, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -661,6 +676,7 @@ int32_t OCCTClipPlaneProbeBox(OCCTClipPlaneRef plane,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -682,6 +698,7 @@ void OCCTClipPlaneSetChainNext(OCCTClipPlaneRef plane, OCCTClipPlaneRef next)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -695,6 +712,7 @@ int32_t OCCTClipPlaneChainLength(OCCTClipPlaneRef plane)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -707,6 +725,7 @@ OCCTZLayerSettingsRef OCCTZLayerSettingsCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -726,6 +745,7 @@ void OCCTZLayerSettingsSetName(OCCTZLayerSettingsRef s, const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -739,6 +759,7 @@ void OCCTZLayerSettingsSetDepthTest(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -752,6 +773,7 @@ bool OCCTZLayerSettingsGetDepthTest(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -766,6 +788,7 @@ void OCCTZLayerSettingsSetDepthWrite(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -779,6 +802,7 @@ bool OCCTZLayerSettingsGetDepthWrite(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -793,6 +817,7 @@ void OCCTZLayerSettingsSetClearDepth(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -806,6 +831,7 @@ bool OCCTZLayerSettingsGetClearDepth(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -827,6 +853,7 @@ void OCCTZLayerSettingsSetPolygonOffset(OCCTZLayerSettingsRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -846,6 +873,7 @@ void OCCTZLayerSettingsGetPolygonOffset(OCCTZLayerSettingsRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -859,6 +887,7 @@ void OCCTZLayerSettingsSetDepthOffsetPositive(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -872,6 +901,7 @@ void OCCTZLayerSettingsSetDepthOffsetNegative(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -885,6 +915,7 @@ void OCCTZLayerSettingsSetImmediate(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -898,6 +929,7 @@ bool OCCTZLayerSettingsGetImmediate(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -912,6 +944,7 @@ void OCCTZLayerSettingsSetRaytracable(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -925,6 +958,7 @@ bool OCCTZLayerSettingsGetRaytracable(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -939,6 +973,7 @@ void OCCTZLayerSettingsSetEnvironmentTexture(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -952,6 +987,7 @@ bool OCCTZLayerSettingsGetEnvironmentTexture(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -966,6 +1002,7 @@ void OCCTZLayerSettingsSetRenderInDepthPrepass(OCCTZLayerSettingsRef s, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -979,6 +1016,7 @@ bool OCCTZLayerSettingsGetRenderInDepthPrepass(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -993,6 +1031,7 @@ void OCCTZLayerSettingsSetCullingDistance(OCCTZLayerSettingsRef s, double distan
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1006,6 +1045,7 @@ double OCCTZLayerSettingsGetCullingDistance(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1020,6 +1060,7 @@ void OCCTZLayerSettingsSetCullingSize(OCCTZLayerSettingsRef s, double size)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1033,6 +1074,7 @@ double OCCTZLayerSettingsGetCullingSize(OCCTZLayerSettingsRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1047,6 +1089,7 @@ void OCCTZLayerSettingsSetOrigin(OCCTZLayerSettingsRef s, double x, double y, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1063,6 +1106,7 @@ void OCCTZLayerSettingsGetOrigin(OCCTZLayerSettingsRef s, double* x, double* y, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1083,6 +1127,7 @@ bool OCCTColorFromName(const char* _Nonnull name,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1104,6 +1149,7 @@ bool OCCTColorFromHex(const char* _Nonnull hex,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1122,6 +1168,7 @@ const char* _Nullable OCCTColorToHex(double r, double g, double b, bool includeH
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1136,6 +1183,7 @@ double OCCTColorDistance(double r1, double g1, double b1, double r2, double g2, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1150,6 +1198,7 @@ double OCCTColorSquareDistance(double r1, double g1, double b1, double r2, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1164,6 +1213,7 @@ double OCCTColorDeltaE2000(double r1, double g1, double b1, double r2, double g2
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1180,6 +1230,7 @@ OCCTColorHLS OCCTColorToHLS(double r, double g, double b)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1200,6 +1251,7 @@ void OCCTColorFromHLS(double h,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outR = 0;
     *outG = 0;
     *outB = 0;
@@ -1221,6 +1273,7 @@ void OCCTColorChangeIntensity(double* _Nonnull r,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1239,6 +1292,7 @@ void OCCTColorChangeContrast(double* _Nonnull r,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1259,6 +1313,7 @@ void OCCTColorLinearToSRGB(float inR,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outR = inR;
     *outG = inG;
     *outB = inB;
@@ -1282,6 +1337,7 @@ void OCCTColorSRGBToLinear(float inR,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outR = inR;
     *outG = inG;
     *outB = inB;
@@ -1302,6 +1358,7 @@ OCCTColorLab OCCTColorToLab(double r, double g, double b)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1321,6 +1378,7 @@ const char* _Nullable OCCTColorStringName(int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1349,6 +1407,7 @@ bool OCCTColorRGBAFromHex(const char* _Nonnull hex,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1372,6 +1431,7 @@ const char* _Nullable OCCTColorRGBAToHex(double r,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1396,6 +1456,7 @@ const char* _Nullable OCCTMaterialName(int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1413,6 +1474,7 @@ bool OCCTMaterialFromName(const char* _Nonnull name, OCCTMaterialProperties* _No
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1431,6 +1493,7 @@ bool OCCTMaterialFromIndex(int index, OCCTMaterialProperties* _Nonnull outProps)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1449,6 +1512,7 @@ float OCCTMaterialRoughnessFromSpecular(double specR, double specG, double specB
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.5f;
   }
 }
@@ -1462,6 +1526,7 @@ float OCCTMaterialMetallicFromSpecular(double specR, double specG, double specB)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0f;
   }
 }
@@ -1478,6 +1543,7 @@ bool OCCTPeriodCreate(int dd, int hh, int mn, int ss, int mis, int mics, int* ou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1494,6 +1560,7 @@ bool OCCTPeriodCreateFromSeconds(int ss, int mics, int* outSec, int* outUSec)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1513,6 +1580,7 @@ OCCTPeriodComponents OCCTPeriodValues(int sec, int usec)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1526,6 +1594,7 @@ void OCCTPeriodTotalSeconds(int sec, int usec, int* outSec, int* outUSec)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSec  = 0;
     *outUSec = 0;
   }
@@ -1542,6 +1611,7 @@ void OCCTPeriodAdd(int sec1, int usec1, int sec2, int usec2, int* outSec, int* o
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSec  = 0;
     *outUSec = 0;
   }
@@ -1558,6 +1628,7 @@ void OCCTPeriodSubtract(int sec1, int usec1, int sec2, int usec2, int* outSec, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSec  = 0;
     *outUSec = 0;
   }
@@ -1577,6 +1648,7 @@ int OCCTPeriodCompare(int sec1, int usec1, int sec2, int usec2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1620,6 +1692,7 @@ bool OCCTDateCreate(int  mm,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1646,6 +1719,7 @@ OCCTDateComponents OCCTDateValues(int sec, int usec)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1672,6 +1746,7 @@ void OCCTDateAddPeriod(int  dateSec,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSec  = 0;
     *outUSec = 0;
   }
@@ -1700,6 +1775,7 @@ bool OCCTDateSubtractPeriod(int  dateSec,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSec  = 0;
     *outUSec = 0;
     return false;
@@ -1727,6 +1803,7 @@ void OCCTDateDifference(int  sec1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outPeriodSec  = 0;
     *outPeriodUSec = 0;
   }

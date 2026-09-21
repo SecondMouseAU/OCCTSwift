@@ -107,6 +107,7 @@ OCCTCurve2DRef OCCTSurfaceProjectCurve2D(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -146,6 +147,7 @@ int32_t OCCTSurfaceProjectCurveSegments(OCCTSurfaceRef  surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -165,6 +167,7 @@ OCCTCurve3DRef OCCTSurfaceProjectCurve3D(OCCTSurfaceRef surface, OCCTCurve3DRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -197,6 +200,7 @@ OCCTCurve3DRef OCCTCurve3DProjectOnPlane(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -224,6 +228,7 @@ bool OCCTSurfaceProjectPoint(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -272,6 +277,7 @@ occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return occ::handle<Geom_BSplineSurface>();
   }
 }
@@ -327,6 +333,7 @@ OCCTShapeRef OCCTShapePlatePointsAdvanced(const double*  points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -412,6 +419,7 @@ OCCTShapeRef OCCTShapePlateMixed(const double*      points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -455,6 +463,7 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -661,6 +670,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -709,6 +719,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -778,6 +789,7 @@ OCCTShapeRef OCCTGeomPlateSurface(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -826,6 +838,7 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApprox(OCCTShapeRef edgeShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -875,6 +888,7 @@ OCCTShapeRef _Nullable OCCTProjLibComputeApproxOnPolarSurface(OCCTShapeRef edgeS
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -936,6 +950,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -989,6 +1004,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1029,6 +1045,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1073,6 +1090,7 @@ bool OCCTSurfaceNLPlateEvaluateDerivative(OCCTSurfaceRef initialSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1088,6 +1106,7 @@ OCCTPlateRef OCCTPlateCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1116,6 +1135,7 @@ void OCCTPlateLoadPinpoint(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1130,6 +1150,7 @@ void OCCTPlateLoadGtoC(OCCTPlateRef plate, double u, double v, const double* d1s
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1143,6 +1164,7 @@ bool OCCTPlateSolve(OCCTPlateRef plate, int32_t order, double anisotropy)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1155,6 +1177,7 @@ bool OCCTPlateIsDone(OCCTPlateRef plate)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1176,6 +1199,7 @@ void OCCTPlateEvaluate(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outX = *outY = *outZ = 0;
   }
 }
@@ -1199,6 +1223,7 @@ void OCCTPlateEvaluateDerivative(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outX = *outY = *outZ = 0;
   }
 }
@@ -1212,6 +1237,7 @@ void OCCTPlateUVBox(OCCTPlateRef plate, double* umin, double* umax, double* vmin
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *umin = *umax = *vmin = *vmax = 0;
   }
 }
@@ -1224,6 +1250,7 @@ int32_t OCCTPlateContinuity(OCCTPlateRef plate)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1285,6 +1312,7 @@ OCCTAveragePlaneResult OCCTGeomPlateBuildAveragePlane(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1320,6 +1348,7 @@ OCCTCurve2DRef _Nullable OCCTProjectCurveOnSurface(OCCTCurve3DRef _Nonnull curve
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1357,6 +1386,7 @@ OCCTCurve3DRef _Nullable OCCTProjLibProjectOnSurface(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1390,6 +1420,7 @@ bool OCCTPlateLoadPlaneConstraint(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1415,6 +1446,7 @@ bool OCCTPlateLoadLineConstraint(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1448,6 +1480,7 @@ bool OCCTPlateLoadFreeG1Constraint(OCCTPlateRef plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1476,6 +1509,7 @@ bool OCCTPlateLoadGlobalTranslation(OCCTPlateRef plate, const double* uvs, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1507,6 +1541,7 @@ bool OCCTPlateLoadLinearXYZ(OCCTPlateRef  plate,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1547,6 +1582,7 @@ bool OCCTProjLibPlaneProjectLine(double plnPx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1588,6 +1624,7 @@ bool OCCTProjLibCylinderProjectLine(double cylPx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1627,6 +1664,7 @@ bool OCCTProjLibPlaneProjectCircle(double plnPx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

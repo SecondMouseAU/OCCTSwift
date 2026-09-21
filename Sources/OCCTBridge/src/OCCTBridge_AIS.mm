@@ -110,6 +110,7 @@ OCCTDimensionRef OCCTDimensionCreateLengthFromPoints(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -145,6 +146,7 @@ OCCTDimensionRef OCCTDimensionCreateLengthFromEdge(OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -170,6 +172,7 @@ OCCTDimensionRef OCCTDimensionCreateLengthFromFaces(OCCTShapeRef face1, OCCTShap
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -195,6 +198,7 @@ OCCTDimensionRef OCCTDimensionCreateRadiusFromShape(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -220,6 +224,7 @@ OCCTDimensionRef OCCTDimensionCreateAngleFromEdges(OCCTShapeRef edge1, OCCTShape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -248,6 +253,7 @@ OCCTDimensionRef OCCTDimensionCreateAngleFromPoints(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -273,6 +279,7 @@ OCCTDimensionRef OCCTDimensionCreateAngleFromFaces(OCCTShapeRef face1, OCCTShape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -291,6 +298,7 @@ OCCTDimensionRef OCCTDimensionCreateDiameterFromShape(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -312,6 +320,7 @@ double OCCTDimensionGetValue(OCCTDimensionRef dim)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -443,6 +452,7 @@ bool OCCTDimensionGetGeometry(OCCTDimensionRef dim, OCCTDimensionGeometry* out)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -457,6 +467,7 @@ void OCCTDimensionSetCustomValue(OCCTDimensionRef dim, double value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -470,6 +481,7 @@ bool OCCTDimensionIsValid(OCCTDimensionRef dim)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -498,6 +510,7 @@ OCCTTextLabelRef OCCTTextLabelCreate(const char* text, double x, double y, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -517,6 +530,7 @@ void OCCTTextLabelSetText(OCCTTextLabelRef label, const char* text)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -530,6 +544,7 @@ void OCCTTextLabelSetPosition(OCCTTextLabelRef label, double x, double y, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -543,6 +558,7 @@ void OCCTTextLabelSetHeight(OCCTTextLabelRef label, double height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -572,6 +588,7 @@ bool OCCTTextLabelGetInfo(OCCTTextLabelRef label, OCCTTextLabelInfo* out)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -616,6 +633,7 @@ OCCTPointCloudRef OCCTPointCloudCreate(const double* coords, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -637,6 +655,7 @@ OCCTPointCloudRef OCCTPointCloudCreateColored(const double* coords,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

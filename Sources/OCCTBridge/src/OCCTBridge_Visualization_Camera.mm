@@ -393,6 +393,7 @@ OCCTCameraRef OCCTCameraCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -446,6 +447,7 @@ void OCCTCameraSetUp(OCCTCameraRef cam, double x, double y, double z)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -573,6 +575,7 @@ void OCCTCameraProject(OCCTCameraRef cam,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *sX = *sY = *sZ = 0;
   }
 }
@@ -596,6 +599,7 @@ void OCCTCameraUnproject(OCCTCameraRef cam,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *wX = *wY = *wZ = 0;
   }
 }
@@ -618,6 +622,7 @@ void OCCTCameraFitBBox(OCCTCameraRef cam,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -643,6 +648,7 @@ int32_t OCCTSelectorPick(OCCTSelectorRef sel,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -671,6 +677,7 @@ int32_t OCCTSelectorPickRect(OCCTSelectorRef sel,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -703,6 +710,7 @@ int32_t OCCTSelectorPickPoly(OCCTSelectorRef sel,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

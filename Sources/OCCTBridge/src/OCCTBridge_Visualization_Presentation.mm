@@ -553,6 +553,7 @@ bool OCCTShapeGetShadedMesh(OCCTShapeRef shape, double deflection, OCCTShadedMes
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     free(out->vertices);
     free(out->indices);
     out->vertices      = nullptr;
@@ -686,6 +687,10 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
           }
           catch (...)
           {
+            // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers:
+            // an edge that cannot be discretised contributes no segment and the rest of the mesh
+            // is still built, so the call goes on to succeed unless every edge fails, which the
+            // allVerts.empty() check below already reports.
           }
         }
       }
@@ -718,6 +723,7 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     free(out->vertices);
     free(out->segmentStarts);
     out->vertices      = nullptr;
@@ -748,6 +754,7 @@ OCCTSelectorRef OCCTSelectorCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -779,6 +786,7 @@ bool OCCTSelectorAddShape(OCCTSelectorRef sel, OCCTShapeRef shape, int32_t shape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -798,6 +806,7 @@ bool OCCTSelectorRemoveShape(OCCTSelectorRef sel, int32_t shapeId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -818,6 +827,7 @@ void OCCTSelectorClear(OCCTSelectorRef sel)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -832,6 +842,7 @@ void OCCTSelectorActivateMode(OCCTSelectorRef sel, int32_t shapeId, int32_t mode
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -846,6 +857,7 @@ void OCCTSelectorDeactivateMode(OCCTSelectorRef sel, int32_t shapeId, int32_t mo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -860,6 +872,7 @@ bool OCCTSelectorIsModeActive(OCCTSelectorRef sel, int32_t shapeId, int32_t mode
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -887,6 +900,7 @@ OCCTDrawerRef OCCTDrawerCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -906,6 +920,7 @@ void OCCTDrawerSetDeviationCoefficient(OCCTDrawerRef d, double coeff)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -919,6 +934,7 @@ double OCCTDrawerGetDeviationCoefficient(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.001;
   }
 }
@@ -933,6 +949,7 @@ void OCCTDrawerSetDeviationAngle(OCCTDrawerRef d, double angle)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -946,6 +963,7 @@ double OCCTDrawerGetDeviationAngle(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 20.0 * M_PI / 180.0;
   }
 }
@@ -960,6 +978,7 @@ void OCCTDrawerSetMaximalChordialDeviation(OCCTDrawerRef d, double deviation)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -973,6 +992,7 @@ double OCCTDrawerGetMaximalChordialDeviation(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.1;
   }
 }
@@ -987,6 +1007,7 @@ void OCCTDrawerSetTypeOfDeflection(OCCTDrawerRef d, int32_t type)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1000,6 +1021,7 @@ int32_t OCCTDrawerGetTypeOfDeflection(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1014,6 +1036,7 @@ void OCCTDrawerSetAutoTriangulation(OCCTDrawerRef d, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1027,6 +1050,7 @@ bool OCCTDrawerGetAutoTriangulation(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1041,6 +1065,7 @@ void OCCTDrawerSetIsoOnTriangulation(OCCTDrawerRef d, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1054,6 +1079,7 @@ bool OCCTDrawerGetIsoOnTriangulation(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1068,6 +1094,7 @@ void OCCTDrawerSetDiscretisation(OCCTDrawerRef d, int32_t value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1081,6 +1108,7 @@ int32_t OCCTDrawerGetDiscretisation(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 30;
   }
 }
@@ -1095,6 +1123,7 @@ void OCCTDrawerSetFaceBoundaryDraw(OCCTDrawerRef d, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1108,6 +1137,7 @@ bool OCCTDrawerGetFaceBoundaryDraw(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1122,6 +1152,7 @@ void OCCTDrawerSetWireDraw(OCCTDrawerRef d, bool on)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1135,6 +1166,7 @@ bool OCCTDrawerGetWireDraw(OCCTDrawerRef d)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1162,6 +1194,7 @@ bool OCCTShapeGetShadedMeshWithDrawer(OCCTShapeRef        shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1187,6 +1220,7 @@ bool OCCTShapeGetEdgeMeshWithDrawer(OCCTShapeRef shape, OCCTDrawerRef drawer, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

@@ -162,6 +162,7 @@ static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -277,6 +278,7 @@ void OCCTBndLibLine(double  px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -306,6 +308,7 @@ void OCCTBndLibCircle(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -331,6 +334,7 @@ void OCCTBndLibSphere(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -361,6 +365,7 @@ void OCCTBndLibCylinder(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -390,6 +395,7 @@ void OCCTBndLibTorus(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -418,6 +424,7 @@ void OCCTBndLibEdge(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -446,6 +453,7 @@ void OCCTBndLibFace(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *xmin = *ymin = *zmin = *xmax = *ymax = *zmax = 0;
   }
 }
@@ -474,6 +482,7 @@ void OCCTBndLibEllipse(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -502,6 +511,7 @@ void OCCTBndLibCone(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -529,6 +539,7 @@ void OCCTBndLibCircleArc(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -560,6 +571,7 @@ void OCCTBndLibEllipseArc(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -590,6 +602,7 @@ void OCCTBndLibParabolaArc(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -621,6 +634,7 @@ void OCCTBndLibHyperbolaArc(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int i = 0; i < 6; i++)
       bounds6[i] = 0;
   }
@@ -654,6 +668,7 @@ int32_t OCCTIntfToolLinBox(OCCTIntfToolRef tool,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

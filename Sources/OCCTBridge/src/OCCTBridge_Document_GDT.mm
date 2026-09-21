@@ -498,6 +498,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -544,6 +545,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -711,6 +713,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -756,6 +759,7 @@ int32_t OCCTDocumentGetDimensionCount(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -773,6 +777,7 @@ int32_t OCCTDocumentGetGeomToleranceCount(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -790,6 +795,7 @@ int32_t OCCTDocumentGetDatumCount(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -810,6 +816,7 @@ int32_t OCCTDocumentGetRefDimensionCount(OCCTDocumentRef doc, int64_t shapeLabel
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -898,6 +905,7 @@ OCCTDimensionInfo OCCTDocumentGetDimensionInfo(OCCTDocumentRef doc, int32_t inde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return info;
   }
 }
@@ -924,6 +932,7 @@ int32_t OCCTDocumentGetDimensionModifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -981,6 +990,7 @@ OCCTGeomToleranceInfo OCCTDocumentGetGeomToleranceInfo(OCCTDocumentRef doc, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return info;
   }
 }
@@ -1006,6 +1016,7 @@ int32_t OCCTDocumentGetGeomToleranceModifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1067,6 +1078,7 @@ OCCTDatumInfo OCCTDocumentGetDatumInfo(OCCTDocumentRef doc, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return info;
   }
 }
@@ -1101,6 +1113,7 @@ int32_t OCCTDocumentGetDatumName(OCCTDocumentRef doc, int32_t index, char* outNa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1124,6 +1137,7 @@ int32_t OCCTDocumentGetDatumModifier(OCCTDocumentRef doc, int32_t datumIndex, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1171,6 +1185,7 @@ int32_t OCCTDocumentCreateGeomTolerance(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1206,6 +1221,7 @@ int32_t OCCTDocumentCreateDatum(OCCTDocumentRef doc, const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1230,6 +1246,7 @@ bool OCCTDocumentSetDimensionTolerance(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1270,6 +1287,7 @@ bool OCCTDocumentSetDimensionBounds(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1302,6 +1320,7 @@ bool OCCTDocumentSetDimensionClassOfTolerance(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1325,6 +1344,7 @@ bool OCCTDocumentSetDimensionQualifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1348,6 +1368,7 @@ bool OCCTDocumentSetDimensionAngularQualifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1372,6 +1393,7 @@ bool OCCTDocumentSetDimensionDecimalPlaces(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1404,6 +1426,7 @@ bool OCCTDocumentSetDimensionModifiers(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1428,6 +1451,7 @@ bool OCCTDocumentSetGeomToleranceTypeOfValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1453,6 +1477,7 @@ bool OCCTDocumentSetGeomToleranceMaterialRequirement(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1486,6 +1511,7 @@ bool OCCTDocumentSetGeomToleranceZoneModifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1507,6 +1533,7 @@ bool OCCTDocumentSetGeomToleranceMaxValueModifier(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1537,6 +1564,7 @@ bool OCCTDocumentSetGeomToleranceModifiers(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1556,6 +1584,7 @@ bool OCCTDocumentSetDatumPosition(OCCTDocumentRef doc, int32_t datumIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1586,6 +1615,7 @@ bool OCCTDocumentSetDatumModifiers(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1614,6 +1644,7 @@ bool OCCTDocumentSetDatumModifierWithValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1645,6 +1676,7 @@ bool OCCTDocumentSetDatumTarget(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1689,6 +1721,7 @@ bool OCCTDocumentSetDatumTargetPlacement(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1708,6 +1741,7 @@ bool OCCTDocumentSetGraphNodeAttr(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1733,6 +1767,7 @@ bool OCCTDocumentGraphNodeSetChild(OCCTDocumentRef ref, int64_t parentLabelId, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1760,6 +1795,7 @@ bool OCCTDocumentGraphNodeSetFather(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1787,6 +1823,7 @@ bool OCCTDocumentGraphNodeUnSetChild(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1814,6 +1851,7 @@ bool OCCTDocumentGraphNodeUnSetFather(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1835,6 +1873,7 @@ int32_t OCCTDocumentGraphNodeNbChildren(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1856,6 +1895,7 @@ int32_t OCCTDocumentGraphNodeNbFathers(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1880,6 +1920,7 @@ bool OCCTDocumentGraphNodeIsFather(OCCTDocumentRef ref, int64_t labelId, int64_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1904,6 +1945,7 @@ bool OCCTDocumentGraphNodeIsChild(OCCTDocumentRef ref, int64_t labelId, int64_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1921,6 +1963,7 @@ int OCCTDocumentDimTolDimensionCount(OCCTDocumentRef document)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1946,6 +1989,7 @@ int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef document)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1983,6 +2027,7 @@ bool OCCTDocumentSetDimTol(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2001,6 +2046,7 @@ int32_t OCCTDocumentGetDimTolKind(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2022,6 +2068,7 @@ const char* OCCTDocumentGetDimTolName(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2043,6 +2090,7 @@ const char* OCCTDocumentGetDimTolDescription(OCCTDocumentRef doc, int64_t labelI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2072,6 +2120,7 @@ int32_t OCCTDocumentGetDimTolValues(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

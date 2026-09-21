@@ -397,6 +397,7 @@ void OCCTFontMgrInitDatabase(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -410,6 +411,7 @@ int OCCTFontMgrFontCount(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -437,6 +439,7 @@ const char* _Nullable OCCTFontMgrFontName(int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -469,6 +472,7 @@ const char* _Nullable OCCTFontMgrFontPath(int index, int aspect)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -494,6 +498,7 @@ bool OCCTFontMgrFontHasAspect(int index, int aspect)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -511,6 +516,7 @@ OCCTImageRef OCCTImageCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -531,6 +537,7 @@ bool OCCTImageInitTrash(OCCTImageRef ref, int format, int width, int height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -547,6 +554,7 @@ bool OCCTImageInitCopy(OCCTImageRef dst, OCCTImageRef src)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -561,6 +569,7 @@ void OCCTImageClear(OCCTImageRef ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -612,6 +621,7 @@ void OCCTImageGetPixel(OCCTImageRef ref, int x, int y, float* r, float* g, float
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *r = 0;
     *g = 0;
     *b = 0;
@@ -630,6 +640,7 @@ void OCCTImageSetPixel(OCCTImageRef ref, int x, int y, float r, float g, float b
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -643,6 +654,7 @@ bool OCCTImageSave(OCCTImageRef ref, const char* filePath)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -657,6 +669,7 @@ bool OCCTImageLoad(OCCTImageRef ref, const char* filePath)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -671,6 +684,7 @@ bool OCCTImageAdjustGamma(OCCTImageRef ref, double gamma)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
