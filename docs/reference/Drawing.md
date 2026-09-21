@@ -69,6 +69,7 @@ through `.rawValue` switches over the cases instead:
 
 ```swift
 // Was: UInt32(type.rawValue)
+let type: Drawing.ProjectionType = .perspective(focus: 50)
 let code: UInt32
 switch type {
 case .orthographic: code = 0
@@ -883,7 +884,7 @@ ISO 5457 paper size enumeration.
 
 ```swift
 public enum PaperSize: String, Sendable, Hashable, CaseIterable {
-    case A0, A1, A2, A3, A4
+    case a0, a1, a2, a3, a4
 }
 ```
 
@@ -898,7 +899,7 @@ public var dimensions: SIMD2<Double> { get }
 - A0 → (1189, 841), A1 → (841, 594), A2 → (594, 420), A3 → (420, 297), A4 → (297, 210).
 - **Example:**
   ```swift
-  let w = PaperSize.A3.dimensions.x  // 420.0
+  let w = PaperSize.a3.dimensions.x  // 420.0
   ```
 
 ---
@@ -915,7 +916,7 @@ public func size(in orientation: Orientation) -> SIMD2<Double>
 - **Returns:** Width × Height in mm.
 - **Example:**
   ```swift
-  let sz = PaperSize.A4.size(in: .portrait)  // (210, 297)
+  let sz = PaperSize.a4.size(in: .portrait)  // (210, 297)
   ```
 
 ---
@@ -1065,7 +1066,7 @@ public init(size: PaperSize,
   - `scale`: drawing scale string displayed in the title block (default `"1:1"`).
 - **Example:**
   ```swift
-  let sheet = Sheet(size: .A3, orientation: .landscape,
+  let sheet = Sheet(size: .a3, orientation: .landscape,
                     projection: .first,
                     title: TitleBlock(title: "Bracket", drawingNumber: "B-001"),
                     scale: "1:2")
@@ -1135,7 +1136,7 @@ Delegates to `size.size(in: orientation)`.
 
 - **Example:**
   ```swift
-  let sheet = Sheet(size: .A3)
+  let sheet = Sheet(size: .a3)
   let w = sheet.dimensions.x  // 420.0
   ```
 
@@ -1152,7 +1153,7 @@ public var inset: (left: Double, right: Double, top: Double, bottom: Double) { g
 - **Returns:** Tuple `(left: 20, right: 10, top: 10, bottom: 10)` for all sizes (A0–A4).
 - **Example:**
   ```swift
-  let ins = Sheet(size: .A3).inset  // (left: 20, right: 10, top: 10, bottom: 10)
+  let ins = Sheet(size: .a3).inset  // (left: 20, right: 10, top: 10, bottom: 10)
   ```
 
 ---
@@ -1168,7 +1169,7 @@ public var innerFrame: (min: SIMD2<Double>, max: SIMD2<Double>) { get }
 - **Returns:** `min` = `(inset.left, inset.bottom)`, `max` = `(width − inset.right, height − inset.top)`.
 - **Example:**
   ```swift
-  let frame = Sheet(size: .A3).innerFrame
+  let frame = Sheet(size: .a3).innerFrame
   // frame.min = (20, 10), frame.max = (410, 287)
   ```
 
@@ -1201,15 +1202,15 @@ body).
 - **Note:** Pure-Swift; no OCCT bridge call.
 - **Example:**
   ```swift
-  let sheet = Sheet(size: .A3, title: TitleBlock(title: "Part A"))
+  let sheet = Sheet(size: .a3, title: TitleBlock(title: "Part A"))
   let writer = DXFWriter()
   sheet.render(into: writer)
   // Now add view geometry into writer, then call writer.write(to:)
 
   // Or, composing a PDF the same way:
-  try Exporter.writePDF(sheet: sheet, to: URL(fileURLWithPath: "/tmp/part-a.pdf")) { pdf in
+  try Exporter.writePDF(sheet: sheet, body: { pdf in
       sheet.render(into: pdf)
-  }
+  }, to: URL(fileURLWithPath: "/tmp/part-a.pdf"))
   ```
 
 ---
