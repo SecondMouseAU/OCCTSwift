@@ -461,7 +461,9 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
     # Output capture - print result info
     output_code = [
         "    std::cout << \"status=success\" << std::endl;",
-        "    std::cout << \"result_type=\" << typeid(result).name() << std::endl;",
+        "#include <string>",
+        "#include <typeinfo>",
+        "",
     ]
 
     # Add shape-specific output if result is a shape
