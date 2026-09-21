@@ -102,7 +102,7 @@ All need `__wasi__` guards with alternative implementations or stubs.
 
 ## Patch Files
 
-Current patches in `Scripts/patches/`:
+Current patches in `Scripts/patches-wasi/`:
 - `wasi-osd-chronometer.patch` - Guards for OSD_Chronometer
 - `wasi-osd-directory.patch` - Guards for OSD_Directory
 
