@@ -145,6 +145,7 @@ import os
 import pathlib
 import re
 import shutil
+import platform
 import subprocess
 import sys
 import tempfile
@@ -503,9 +504,24 @@ def parse_diags(lines, index, outdir):
 
 # The deployment floor `-target` needs. SwiftPM names a built module `<arch>-apple-macos.swiftmodule`
 # with no version component, and `-target arm64-apple-macos` is refused outright ("Swift requires a
-# minimum deployment target of macOS 10.9.0"), so the version has to come from somewhere. It mirrors
-# `Package.swift`'s `.macOS(.v12)`; the architecture is derived rather than assumed.
-MACOS_DEPLOYMENT = '12.0'
+# minimum deployment target of macOS 10.9.0"), so the version has to come from somewhere.
+#
+# Read out of Package.swift rather than mirrored by hand: a hand-copy is a second statement of the
+# same fact with no update path, which is the failure mode check-inventory-prose.py exists to catch
+# elsewhere in this repo. The fallback is only for a Package.swift this cannot parse.
+MACOS_DEPLOYMENT_FALLBACK = '12.0'
+
+
+def macos_deployment():
+    """The macOS deployment floor, from `Package.swift`'s `.macOS(.vN)`."""
+    try:
+        text = (REPO / 'Package.swift').read_text()
+    except OSError:
+        return MACOS_DEPLOYMENT_FALLBACK
+    m = re.search(r'\.macOS\(\.v(\d+)(?:_(\d+))?\)', text)
+    if not m:
+        return MACOS_DEPLOYMENT_FALLBACK
+    return f'{m.group(1)}.{m.group(2) or "0"}'
 
 
 def module_arch(swiftmodule_dir):
@@ -516,9 +532,14 @@ def module_arch(swiftmodule_dir):
     which reads as a broken script rather than a mismatched flag: `macos-15` runners are arm64 today
     and were x86_64 not long ago.
     """
-    for f in sorted(swiftmodule_dir.glob('*.swiftmodule')):
-        return f.stem.split('-', 1)[0]
-    return None
+    arches = [f.stem.split('-', 1)[0] for f in sorted(swiftmodule_dir.glob('*.swiftmodule'))]
+    if not arches:
+        return None
+    # A universal build leaves several. Prefer the host's, because that is what an unqualified
+    # `swiftc` invocation targets; taking the alphabetically-first would pick arm64 on an x86_64
+    # host and fail with "no such module", which reads as a broken script rather than a mismatch.
+    host = platform.machine()
+    return host if host in arches else arches[0]
 
 
 def toolchain_args():
@@ -532,7 +553,7 @@ def toolchain_args():
     if not any((c / 'OCCTSwift.swiftmodule').exists() for c in candidates):
         try:
             proc = subprocess.run(['swift', 'build', '--show-bin-path'], cwd=str(REPO),
-                                  capture_output=True, text=True, timeout=300)
+                                  capture_output=True, text=True, timeout=60)
             if proc.returncode == 0 and proc.stdout.strip():
                 candidates.insert(0, pathlib.Path(proc.stdout.strip().splitlines()[-1].strip()))
         except (OSError, subprocess.SubprocessError):
@@ -548,7 +569,7 @@ def toolchain_args():
     arch = module_arch(module_dir / 'OCCTSwift.swiftmodule')
     if arch is None:
         return None, None, f'no *.swiftmodule inside {module_dir / "OCCTSwift.swiftmodule"}'
-    triple = f'{arch}-apple-macos{MACOS_DEPLOYMENT}'
+    triple = f'{arch}-apple-macos{macos_deployment()}'
     modmap = REPO / 'Sources' / 'OCCTBridge' / 'include' / 'module.modulemap'
     if not modmap.is_file():
         return None, None, f'missing {modmap.relative_to(REPO)}'
@@ -644,6 +665,14 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
         # blinding it.
         # Stage 1 needs no module, only a target, and it uses the built module's so that a snippet
         # guarded by `#if arch(...)` parses the same way in both stages.
+        # Stage 1 is worth running even when stage 2 cannot: it needs no module, and an
+        # unparseable fence is a real finding on a machine with no built package. What is NOT worth
+        # running is stage 1 when there is nothing to report it to, so the skip below is checked
+        # first when the toolchain is absent entirely rather than merely unbuilt.
+        if why_not is not None and triple is None:
+            return ({name: ('skipped', []) for name in index},
+                    f'both stages SKIPPED: {why_not}')
+
         parse_args = ['-target', triple] if triple else []
         parse_raw = run_stage('-parse', snippet_files, parse_args,
                               outdir, CANARY_PARSE, canaries, jobs, 'stage 1, parse', verbose,
