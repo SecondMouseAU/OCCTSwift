@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0039.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0041.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1606,6 +1606,67 @@ construction and callers run it *after* a record's parameters rather than before
 (`StepFile_Read.cxx:153`), so a finalised record's base offset never moves and the memo cannot go
 stale in documented use. The two lines make the dependency explicit and cost nothing; they close no
 hole.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0040-controller-one-time-init-thread-safe-1403.patch
+
+**Fixes three unguarded one-time-init flags** in the STEP and IGES controllers
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)):
+
+| Site | Before |
+|---|---|
+| `STEPControl_Controller::Init()` | unguarded `static bool inic` |
+| `IGESControl_Controller::Init()` | unguarded `static bool inic` |
+| `IGESControl_Controller` constructor | unguarded `static bool init` |
+
+Two threads can both read the flag as false and both run the one-time work, which for the two
+`Init()` functions means constructing and `AutoRecord()`ing a second controller under the same name.
+
+**#1403's re-scope called this "matching STEP's existing mutex" and that was wrong.** Only
+`STEPControl_Controller`'s *constructor* has a mutex; both `Init()` functions are unguarded, STEP's
+included. Three sites, not one asymmetry.
+
+All three become function-local static initialisation, which C++11 guarantees runs exactly once even
+when several threads arrive together, so the check-then-act disappears rather than being locked
+around. No mutex is added and STEP's existing constructor mutex is left alone.
+
+**Re-entry checked first**, because a lambda that re-enters its own static initialisation deadlocks,
+which is how the first attempt at `0031` self-deadlocked: `XSAlgo::Init`, `IGESToBRep::Init`,
+`IGESSolid::Init` and `IGESAppli::Init` do not call back into either controller's `Init`, and every
+caller of those is an entry point.
+
+Carries a GTest (`XSControl_ControllerInit_Test`). It is a smoke guard rather than a demonstration:
+the previous check-then-act usually also produced a working registration, because a second
+`Record()` of the same controller kind returns early. The race is what TSan measures.
+
+Not yet filed upstream.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0041-DE-registry-maps-synchronised-1403.patch
+
+**Synchronises two process-wide name-keyed registries**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)):
+
+- `listad`, `XSControl_Controller.cxx:59`, controllers by format name. `Record` does `IsBound`, then
+  `ChangeFind`, then `Bind`, so two threads recording controllers can rehash under each other.
+- `atemp`, `Interface_InterfaceModel.cxx:44`, template models by name. `Template()` calls
+  `HasTemplate()` and then `ChangeFind`, a check-then-act across two lookups.
+
+**A lock is the right tool here, unlike the rest of this series.** These are registries: one per
+process is the design, so the state is shared deliberately rather than wrongly made global, which is
+the distinction `docs/thread-safety.md` draws.
+
+**Recursive is required, not preferred**, for `atemp`: `Template()` calls `HasTemplate()` before
+reading the map, so a plain mutex self-deadlocks on the same thread.
+
+**`astats` is deliberately excluded**, and it is the third registry of this shape. Every access
+reaches it through `Interface_Static`, whose seventeen entry points `0033` already mutexes, and it
+stopped being reported once `0033` was in the build. A second lock on the same data through a
+different path invites lock-order inversion for no gain.
+
+Not yet filed upstream.
 
 **Retire** once the bundled OCCT includes this fix.
 

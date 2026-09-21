@@ -57,6 +57,8 @@ without silently closing it, see
 | `0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061` | `STEPControl_ActorRead`'s `NM_DETECTED` is an anonymous-namespace global holding per-operation state: it gates whether a `COMPOUND` component is flattened into its parent or kept nested, so concurrent STEP reads share it. Relocated to a per-instance `myIsNMDetected`, no lock, no signature change, the #363 pattern. 5-of-5 runs report the race unpatched, 0-of-5 patched. The wrong-shape outcome follows by inspection but was NOT reproduced ([#2061](https://github.com/SecondMouseAU/OCCTSwift/issues/2061)) | to file | bundled OCCT includes the fix |
 | `0038-Interface_CheckTool-errh-per-instance-1403` | `Interface_CheckTool`'s file-scope `errh` decides whether `FillCheck` guards each module `CheckCase` call. The six bulk list builders clear it and never restore it, so any bulk list operation leaves error handling off process-wide and a later direct `FillCheck` runs unguarded, losing a `Standard_Failure` that should have been reported as a check fail. Reachable single-threaded, not only a race. Relocated to a private member, no signature change. 7 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **[OCCT#1555](https://github.com/Open-Cascade-SAS/OCCT/pull/1555)** (our fix PR) | bundled OCCT includes the fix |
 | `0039-Interface_FileReaderData-per-instance-param-cache-1403` | `Param()`/`ChangeParam()` memoised the last record and its base offset in file-scope statics, gated by a global counter so only the newest instance could use the memo. `mutable` answers the declaration's own blocker ("Fields not possible, because Param is const") and also makes the optimisation apply at all, since any second construction disabled it for every earlier instance. `InitParams()` now invalidates the memo, which the original never needed to. 4 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **held from upstream, not filed**: no test can demonstrate it, see the patch README | bundled OCCT includes the fix |
+| `0040-controller-one-time-init-thread-safe-1403` | Three unguarded check-then-act one-time-init flags: both `STEPControl_Controller::Init()` and `IGESControl_Controller::Init()`, plus the IGES constructor. Only STEP's *constructor* had a mutex, so this was three sites rather than the one asymmetry #1403's re-scope claimed. All become function-local statics, removing the check-then-act instead of locking it. Guarding the outermost init also serialises the whole chain beneath it, which is why six further one-time-init globals stopped being reported ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
+| `0041-DE-registry-maps-synchronised-1403` | `listad` (`XSControl_Controller.cxx:59`) and `atemp` (`Interface_InterfaceModel.cxx:44`), two process-wide name-keyed registries mutated without synchronisation. A lock is correct here rather than relocation, because one registry per process is the design. Recursive is required: `Template()` calls `HasTemplate()` before reading the map. `astats` excluded, already covered by `0033` ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -86,8 +88,8 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-seven patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The ten it lacks, and why each matters, per
+`Scripts/patches/` holds twenty-nine patches; the v3.0.0 release asset `Package.swift` pins holds
+seventeen. The twelve it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Patch | Exposure today |
@@ -102,6 +104,8 @@ seventeen. The ten it lacks, and why each matters, per
 | `0037` (#2061) | A live data race on every pair of concurrent STEP reads, on a flag that decides whether an assembly component's compound is flattened. Masked today by the bridge's `igesMutex()`, which serialises the whole DE surface, so no consumer can reach it until that mutex narrows. |
 | `0038` (#1403) | Any consumer whose code path runs a bulk `Interface_CheckTool` list operation and later calls `FillCheck` directly loses exception reporting for that check, single-threaded. Masked here because the bridge never calls `FillCheck` outside a bulk builder, so no OCCTSwift consumer reaches the sequence today. |
 | `0039` (#1403) | A data race between concurrent STEP/IGES reads on the parameter memo, masked by the bridge's `igesMutex()`. Also a silent performance loss on every platform: the memo is dead for all but the most recently constructed reader, which a repin would restore. |
+| `0040` (#1403) | Concurrent first use of the STEP or IGES controller can run the one-time setup twice, constructing and recording a second controller under the same name. Masked by the bridge's `igesMutex()`, which serialises the whole DE surface. |
+| `0041` (#1403) | Concurrent controller registration or template-model lookup can rehash a shared map under another thread. Same masking by `igesMutex()`; a repin protects callers outside it. |
 
 `kernel-integration.yml` builds these, and nothing else does: it is the only job that compiles an
 unpinned patch, and `build-and-test` resolves the pinned asset instead. It runs on the PR that adds
