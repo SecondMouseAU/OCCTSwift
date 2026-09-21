@@ -822,7 +822,7 @@ Converts a `Surface` to a topological shell shape (a single face inside a shell,
 - **OCCT:** `BRepBuilderAPI_MakeShell` (via `OCCTShapeCreateShellFromSurface`).
 - **Example:**
   ```swift
-  let cyl = Surface.cylinder(radius: 5, height: 10)!
+  let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
   if let shell = Shape.shell(from: cyl) { }
   ```
 
@@ -1498,7 +1498,7 @@ public static func face(from surface: Surface,
 - **OCCT:** `BRepBuilderAPI_MakeFace` (via `OCCTShapeCreateFaceFromSurface`).
 - **Example:**
   ```swift
-  let cyl = Surface.cylinder(radius: 5, height: 10)!
+  let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
   if let face = Shape.face(from: cyl, uRange: 0...(.pi), vRange: 0...10) { }
   ```
 
