@@ -78,7 +78,9 @@ def apply_remove_guard(lines: List[str], line_idx: int) -> List[str]:
     line = lines[line_idx]
     stripped = line.strip()
     # Match specific null-check patterns, not generic !=
-    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped or "!= nullptr" in stripped):
+    # Guard patterns: if (!ptr || ptr->field.IsNull()) or if (ptr == nullptr)
+    # NOT: if (ptr != nullptr) which is a valid non-null check
+    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped):
         indent = len(line) - len(line.lstrip())
         lines[line_idx] = " " * indent + "// INJECTED: " + line.lstrip()
     return lines
@@ -97,57 +99,6 @@ def apply_revert_fix(lines: List[str], line_idx: int, target: str) -> List[str]:
         elif "return" in line and "error" in line.lower():
             lines[line_idx] = line.replace("return", "/* INJECTED: was return error */")
     return lines
-
-
-def _line_starts_with_catch(line: str) -> bool:
-    """Check if a line starts with 'catch' (not in string/char/comment) using state machine."""
-    in_string = False
-    in_char = False
-    in_line_comment = False
-    in_block_comment = False
-    escape_next = False
-    
-    for char_idx, ch in enumerate(line):
-        if in_line_comment:
-            break
-        if in_block_comment:
-            if ch == '*' and char_idx + 1 < len(line) and line[char_idx + 1] == '/':
-                in_block_comment = False
-            continue
-        if in_string:
-            if escape_next:
-                escape_next = False
-            elif ch == '\\':
-                escape_next = True
-            elif ch == '"':
-                in_string = False
-            continue
-        if in_char:
-            if escape_next:
-                escape_next = False
-            elif ch == '\\':
-                escape_next = True
-            elif ch == "'":
-                in_char = False
-            continue
-        if ch == '/' and char_idx + 1 < len(line):
-            next_ch = line[char_idx + 1]
-            if next_ch == '/':
-                in_line_comment = True
-                continue
-            elif next_ch == '*':
-                in_block_comment = True
-                continue
-        if ch == '"':
-            in_string = True
-            continue
-        if ch == "'":
-            in_char = True
-            continue
-    
-    # Check if line starts with 'catch' after whitespace
-    stripped = line.lstrip()
-    return stripped.startswith("catch")
 
 
 def apply_remove_try_catch(lines: List[str], line_idx: int) -> List[str]:

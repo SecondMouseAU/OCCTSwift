@@ -463,8 +463,11 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
         "    std::cout << \"status=success\" << std::endl;",
     ]
 
+    # Track if a result variable is created (more robust than string search)
+    has_result = any("result" in code and "=" in code for code in call_code)
+
     # Add shape-specific output if result is a shape
-    if "result" in " ".join(call_code):
+    if has_result:
         output_code.extend([
             "    std::cout << \"result_null=\" << (result.IsNull() ? \"true\" : \"false\") << std::endl;",
             "    if (!result.IsNull()) {",
@@ -525,8 +528,8 @@ def compile_and_run(cpp_code: str, xcframework_paths: Dict[str, Path], work_dir:
         "-std=c++17",
         "-ObjC++",
         "-w",
-        f"-I{headers}",
-        f"-L{library.parent}",
+        f"-I{shlex.quote(str(headers))}",
+        f"-L{shlex.quote(str(library.parent))}",
         "-lOCCT-macos",
         "-framework", "Foundation",
         "-framework", "AppKit",
