@@ -113,11 +113,23 @@ fi
 # --------------------
 # Apply local OCCT patches (idempotent)
 # --------------------
-# Patches in Scripts/patches/ are upstream-bound bug fixes we carry until they
-# ship in an OCCT release. Each is applied with -p1 relative to occt-src.
-if [ -d "$SCRIPT_DIR/patches" ] && ls "$SCRIPT_DIR"/patches/*.patch >/dev/null 2>&1; then
-    echo ">>> Applying local OCCT patches..."
-    for p in "$SCRIPT_DIR"/patches/*.patch; do
+# TWO directories, and the split is deliberate.
+#
+# Scripts/patches/ holds the NNNN- numbered, upstream-bound bug fixes every platform carries.
+# Scripts/patches-wasi/ holds WASI-only source changes, and ONLY this script applies them.
+#
+# They must not share a directory. build-occt.sh globs patches/*.patch with no filter, so a WASI
+# patch left there is applied to the macOS, iOS and ThreadSanitizer kernels as well; both of the
+# current ones apply cleanly to the pinned source, so that would happen SILENTLY rather than
+# failing loudly. check-inventory-prose.py also parses each filename's first four characters as
+# the patch number and raises on a non-numeric name, and both the kernel cache key and the TSan
+# stamp hash patches/*.patch, so a WASI-only change would move them for no native-kernel reason.
+apply_patch_dir() {
+    local dir="$1" label="$2"
+    [ -d "$dir" ] && ls "$dir"/*.patch >/dev/null 2>&1 || return 0
+    echo ">>> Applying $label..."
+    local p
+    for p in "$dir"/*.patch; do
         if git -C occt-src apply --reverse --check "$p" 2>/dev/null; then
             echo "    already applied: $(basename "$p")"
         elif git -C occt-src apply --check "$p" 2>/dev/null; then
@@ -128,7 +140,10 @@ if [ -d "$SCRIPT_DIR/patches" ] && ls "$SCRIPT_DIR"/patches/*.patch >/dev/null 2
             exit 1
         fi
     done
-fi
+}
+
+apply_patch_dir "$SCRIPT_DIR/patches" "carried OCCT patches"
+apply_patch_dir "$SCRIPT_DIR/patches-wasi" "WASI-only OCCT patches"
 
 # --------------------
 # Clean stale install prefixes

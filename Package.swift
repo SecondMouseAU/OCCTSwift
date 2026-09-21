@@ -22,17 +22,59 @@ import Foundation
 // on every build. Do NOT commit that churn: the committed Package.resolved must be the URL-pinned one
 // produced with NO local sibling present (i.e. on CI / a fresh clone). See docs/guides/sharing-the-xcframework.md.
 let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
-let useLocalBinary: Bool = {
+
+// Detect WASI platform - check multiple indicators for reliability
+// 1. Explicit flag (most reliable): OCCTSWIFT_WASI=1
+// 2. SWIFT_SDK env var (set by swift build --swift-sdk): contains "wasm" or "wasi"
+// 3. SWIFT_PLATFORM env var: may contain "wasi" in some SwiftPM versions
+// Note: Target triple inspection is not available in Package.swift context;
+// SwiftPM does not expose the target triple to the manifest.
+let isExplicitWASI = ProcessInfo.processInfo.environment["OCCTSWIFT_WASI"] == "1"
+let swiftSDK = ProcessInfo.processInfo.environment["SWIFT_SDK"]
+let swiftPlatform = ProcessInfo.processInfo.environment["SWIFT_PLATFORM"]
+let isWASI = isExplicitWASI ||
+    (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi"))) ||
+    (swiftPlatform != nil && swiftPlatform!.contains("wasi"))
+
+// For WASI, we use a locally built static library (libOCCT-wasm.a), not an xcframework.
+// For native platforms, we prefer the local xcframework if present, otherwise download the remote one.
+let useLocalXCFramework: Bool = {
+    if isWASI { return false } // WASI never uses xcframework
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
     if ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1" { return true }
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-let occtTarget: Target = useLocalBinary
-    ? .binaryTarget(
+// OCCT V8.0.1 plus the seventeen carried patches are documented in Scripts/patches/README.md
+// (patch list, verification status, and CI coverage gaps for maintainers).
+let occtTarget: Target = isWASI
+    // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
+    // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
+    // The `path: "Libraries"` sets the base for headerSearchPath("occt-headers-wasm") -> Libraries/occt-headers-wasm/
+    // dummy.c is required by SwiftPM (targets must have at least one source file)
+    ? .target(
         name: "OCCT",
-        path: "Libraries/OCCT.xcframework"
+        path: "Libraries",
+        sources: ["dummy.c"], // Required by SwiftPM; file can be empty
+        cxxSettings: [
+            .headerSearchPath("occt-headers-wasm"),
+            .define("__wasi__"),
+            .define("OCCT_NO_DEPRECATED"),
+            .define("_WASI_EMULATED_PROCESS_CLOCKS"),
+            .define("_WASI_EMULATED_GETPID"),
+        ],
+        linkerSettings: [
+            .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
+            // Build directory is .build/<config>/OCCT.build/, so ../../Libraries reaches package root
+            .unsafeFlags(["-L", "../../Libraries"])
+        ]
     )
+    : useLocalXCFramework
+        // Local xcframework for native development
+        ? .binaryTarget(
+            name: "OCCT",
+            path: "Libraries/OCCT.xcframework"
+        )
     // OCCT V8_0_1 + the seventeen carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
@@ -249,11 +291,12 @@ let occtTarget: Target = useLocalBinary
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
-    : .binaryTarget(
-        name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0/OCCT.xcframework.zip",
-        checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
-    )
+        // Remote binary xcframework for native platforms
+        : .binaryTarget(
+            name: "OCCT",
+            url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0/OCCT.xcframework.zip",
+            checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
+        )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
 // it from source on every consumer of OCCTSwift (#339 measured 51.6s wall / 186.5s CPU per rebuild in
@@ -302,42 +345,67 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
         url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.17.0/OCCTBridge.xcframework.zip",
         checksum: "d9eab319f0dfad49b83d1776f1c0a74310c0ddb12a7ed391fe0a0b260778091b"
     )
-    : .target(
-        name: "OCCTBridge",
-        dependencies: ["OCCT"],
-        path: "Sources/OCCTBridge",
-        sources: ["src"],
-        publicHeadersPath: "include",
-        cxxSettings: [
-            // Platform-specific header search paths for XCFramework
-            .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
-            .define("OCCT_AVAILABLE", to: "1"),
-            // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
-            // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
-            // and explicit NCollection_* templates. This bridge still uses the legacy names, so
-            // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files,
-            // drowning out real warnings downstream (issue #281).
-            //
-            // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
-            // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
-            // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
-            // is rejected by SwiftPM for any package consumed as a dependency, which would break
-            // every downstream consumer.
-            //
-            // This buys quiet, not absolution: the legacy spellings are still deprecated and
-            // will eventually be removed upstream. Migrating the call sites is tracked in #281.
-            .define("OCCT_NO_DEPRECATED")
-        ],
-        linkerSettings: [
-            .linkedLibrary("c++")
-        ]
-    )
+    : isWASI
+        // WASI: Build from source with WASI-specific settings
+        ? .target(
+            name: "OCCTBridge",
+            dependencies: ["OCCT"],
+            path: "Sources/OCCTBridge",
+            sources: ["src"],
+            publicHeadersPath: "include",
+            cxxSettings: [
+                // Use WASI-built OCCT headers
+                .headerSearchPath("../../Libraries/occt-headers-wasm"),
+                .define("OCCT_AVAILABLE", to: "1"),
+                .define("OCCT_NO_DEPRECATED"),
+                .define("__wasi__"),
+                // WASI doesn't have full POSIX; guard Foundation imports in headers
+                .define("_WASI_EMULATED_PROCESS_CLOCKS"),
+                .define("_WASI_EMULATED_GETPID"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++"),
+                .linkedLibrary("OCCT-wasm"),
+                .unsafeFlags(["-L", "../../Libraries"])
+            ]
+        )
+        // Native platforms: source build with XCFramework header search paths
+        : .target(
+            name: "OCCTBridge",
+            dependencies: ["OCCT"],
+            path: "Sources/OCCTBridge",
+            sources: ["src"],
+            publicHeadersPath: "include",
+            cxxSettings: [
+                // Platform-specific header search paths for XCFramework
+                .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
+                .define("OCCT_AVAILABLE", to: "1"),
+                // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
+                // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
+                // and explicit NCollection_* templates. This bridge still uses the legacy names, so
+                // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files,
+                // drowning out real warnings downstream (issue #281).
+                //
+                // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
+                // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
+                // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
+                // is rejected by SwiftPM for any package consumed as a dependency, which would break
+                // every downstream consumer.
+                //
+                // This buys quiet, not absolution: the legacy spellings are still deprecated and
+                // will eventually be removed upstream. Migrating the call sites is tracked in #281.
+                .define("OCCT_NO_DEPRECATED")
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++")
+            ]
+        )
 
 let package = Package(
     name: "OCCTSwift",
