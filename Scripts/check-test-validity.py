@@ -137,7 +137,7 @@ def main():
     parser = argparse.ArgumentParser(description="Check test validity evidence coverage (Red→Green + Bridge-Kernel Parity)")
     parser.add_argument("--sample-rg", type=int, default=10, help="Number of sample Red→Green injections to run")
     parser.add_argument("--sample-kp", type=int, default=5, help="Number of sample Kernel Parity checks to run")
-    parser.add_argument("--strict", action="store_true", help="Fail if coverage < 100%")
+    parser.add_argument("--strict", action="store_true", help="Fail if coverage < 100%%")
     parser.add_argument("--gate", choices=["red-green", "kernel-parity", "both"], default="both", help="Which gate to check")
     args = parser.parse_args()
     
