@@ -37,6 +37,11 @@
 | **Shape Analysis Tests** | Shape Analysis Tests | Shape analysis | Remove shape analysis |
 | **Shape Fixing Tests** | Shape Fixing Tests | Shape fixing | Remove shape fixing |
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
+| **Hatch Patterns** | Generate horizontal hatches in rectangle | Hatch generation | Remove hatch generation |
+| **Hatch Patterns** | Diagonal hatches | Hatch generation | Remove hatch generation |
+| **Hatch Patterns** | Empty boundary returns nothing | Hatch boundary | Remove boundary |
+| **Hatch Patterns** | Triangle boundary | Hatch boundary | Remove triangle boundary |
+| **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Hatch islands | Remove island polygon |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -126,6 +131,11 @@
 | Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis | ✅ | ✅ |  |
 | Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
+| Hatch Patterns: horizontal hatches | OCCTHatchPatternHorizontal | Hatch generation | Remove hatch generation | ✅ | ✅ |  |
+| Hatch Patterns: diagonal hatches | OCCTHatchPatternDiagonal | Hatch generation | Remove hatch generation | ✅ | ✅ |  |
+| Hatch Patterns: empty boundary | OCCTHatchPatternEmptyBoundary | Hatch boundary | Remove boundary | ✅ | ✅ |  |
+| Hatch Patterns: triangle boundary | OCCTHatchPatternTriangleBoundary | Hatch boundary | Remove triangle boundary | ✅ | ✅ |  |
+| Hatch Patterns: island polygon | OCCTHatchPatternIslandPolygon | Hatch islands | Remove island polygon | ✅ | ✅ |  |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -210,6 +220,11 @@ For each test, run ground-truth C++ comparison:
 | Shape Analysis Tests | ✅ | ✅ | ✅ |
 | Shape Fixing Tests | ✅ | ✅ | ✅ |
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
+| Hatch Patterns: horizontal hatches | ✅ | ✅ | ✅ |
+| Hatch Patterns: diagonal hatches | ✅ | ✅ | ✅ |
+| Hatch Patterns: empty boundary | ✅ | ✅ | ✅ |
+| Hatch Patterns: triangle boundary | ✅ | ✅ | ✅ |
+| Hatch Patterns: island polygon | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
@@ -251,4 +266,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 546 tests
+**Total**: 551 tests
