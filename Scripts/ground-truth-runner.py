@@ -461,7 +461,7 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
     # Output capture - print result info
     output_code = [
         "    std::cout << \"status=success\" << std::endl;",
-        "#include <string>",
+        "    std::cout << \"status=success\" << std::endl;",
         "#include <typeinfo>",
         "",
     ]
