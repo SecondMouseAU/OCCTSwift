@@ -614,7 +614,7 @@ extension Edge {
     /// Compute curve linear inertia (length and center of mass).
     ///
     /// ```swift
-    /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
+    /// let e = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!.edges()[0]
     /// e.curveInertia.length          // 10
     /// e.curveInertia.centerOfMass    // (5,0,0)
     /// ```
