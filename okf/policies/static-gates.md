@@ -122,6 +122,44 @@ running the report, so writing `count-operations.py --self-test` to match its si
 instead of passing forever. `check-bridge-index`, `check-null-handle-guards`, `derive-gdt-enums`
 and `derive-bridge-header-split` exit 2 if run from anywhere but the repo root (#625).
 
+## A self-test is not enough: validate the view, not just the verdict
+
+`--self-test` proves the detector catches the failure modes **you thought of**. It cannot prove the
+detector looked at the real input at all. Those are different claims, and the second is the one that
+keeps failing.
+
+Three detectors were caught in one day, **all three with a passing `--self-test`**:
+
+| Detector | Reported | Actually saw |
+|---|---|---|
+| `derive-bridge-header-split.py` | `misfiled: 0` | 2 of `OCCTBridge.h`'s 16 declarations (#2080) |
+| `census-doc-snippets.py` in CI | step green | 24 of 3,105 snippets; 3,081 skipped (#2098) |
+| `census-doc-snippets.py`'s canary | 51/51 locally | the stubbed path never ran in CI (#2097) |
+
+Each self-test passed because no fixture contained the trigger: a `/*` inside a line comment, an
+absent build directory, a skip that only fires where the author's machine has a build. Adding a
+fixture per trigger is chasing; the triggers are unbounded.
+
+**So a detector must also assert, on the real run, that its own view is plausible, and fail rather
+than report clean when it is not.** The assertion is cheap and specific to what the script reads:
+
+- Parsing headers? Assert every header yields at least one declaration. A header declaring nothing
+  would not be in the split.
+- Compiling? Carry a **canary** that must fail, and abort when it passes. `census-doc-snippets.py`
+  does this, and it caught a second bug within the hour of being added.
+- Depending on a build, a clone, a checkout? Assert it is there and **fail in CI** even where
+  skipping is right locally, because a contributor without a build still wants partial results while
+  a green CI step that examined nothing is a false green.
+- Reading a population you can size independently? Compare the two and fail on a large divergence.
+
+The distinction worth holding: **a wrong answer is a bug, an answer about a population that was
+never examined is a lie.** The first gets found. The second is invisible precisely when it matters,
+because it looks identical to success.
+
+This is not new; it is the sixth instance. #618, #624/#630 and #626 are the same shape three years
+of tooling earlier.
+
+
 ## The pre-commit hook
 
 `Scripts/git-hooks/pre-commit` runs twenty-seven of `gate-scripts`' twenty-eight invocations, flag for

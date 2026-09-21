@@ -54,8 +54,18 @@ DEFN = re.compile(r"^[A-Za-z_][\w\s\*\(\)<>,:]*?\b(OCCT[A-Za-z0-9_]+)\s*\(", re.
 DECL = re.compile(r"\b(OCCT[A-Za-z0-9_]+)\s*\(")
 # Opaque handle typedefs stay in the umbrella header, they are not functions.
 TYPEDEF = re.compile(r"typedef\s+struct\s+\w+\s*\*\s*(OCCT[A-Za-z0-9_]+)\s*;")
-LINE_COMMENT = re.compile(r"//[^\n]*")
-BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+# One pass, leftmost-match-wins, so whichever of these opens first consumes the others (#2080).
+# Two separate passes cannot work in either order: BLOCK_COMMENT first lets a `/*` inside a `//`
+# comment open a block that runs to the next real `*/`, and LINE_COMMENT first lets a `//` inside
+# a block comment truncate the block's own closing `*/`. String and character literals are matched
+# only so they are skipped intact, since a literal may hold `//` or `/*`.
+COMMENT_OR_LITERAL = re.compile(
+    r'"(?:\\.|[^"\\\n])*"'  # string literal, kept
+    r"|'(?:\\.|[^'\\\n])*'"  # character literal, kept
+    r"|//[^\n]*"  # line comment, removed
+    r"|/\*.*?\*/",  # block comment, removed
+    re.S,
+)
 
 
 def strip_comments(text):
@@ -66,8 +76,24 @@ def strip_comments(text):
     right after the name matches the same `name(` shape DECL looks for. Left in, a mention
     inside a comment reads as a second declaration of a symbol that is for real declared
     somewhere else -- the false "duplicate" shape #673's hand check found.
+
+    #2080: this was two independent `re.sub` passes, block comments first, which made any `//`
+    comment containing the text `/*` open a block comment that was never closed. `// ... src/*.mm`
+    swallowed 14 of the umbrella header's 16 declarations and the gate still printed `misfiled: 0`.
+    Comments in this tree mention globs routinely, so the trigger is ordinary prose, not a freak
+    input. A single alternation is the fix, because the leftmost opener is the only one that can
+    be in effect.
     """
-    return LINE_COMMENT.sub("", BLOCK_COMMENT.sub(" ", text))
+
+    def keep_or_drop(match):
+        token = match.group(0)
+        if token.startswith("//"):
+            return ""
+        if token.startswith("/*"):
+            return " "
+        return token
+
+    return COMMENT_OR_LITERAL.sub(keep_or_drop, text)
 
 
 def target_header(mm_name, known_headers=None):
@@ -261,6 +287,33 @@ SELF_TEST = [
         {"OCCTBridge_A.h": "void OCCTFooA(void);\n"},
         lambda mapping, ambiguous, unmapped, misfiled: not ambiguous and mapping.get("OCCTFooA") == "OCCTBridge_A.h",
     ),
+    (
+        # #2080 itself. The trailing `#endif /* ... */` is load-bearing: it is the real `*/` that
+        # the phantom comment ran to, and without it the two-pass version leaves an unterminated
+        # `/*` that BLOCK_COMMENT never matches, so the bug does not reproduce and the case proves
+        # nothing. Every bridge header ends in exactly this guard.
+        "a '/*' inside a // comment does not swallow the declarations after it (#2080)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": "// index: written across Sources/OCCTBridge/src/*.mm\n"
+            "void OCCTFooA(void);\n"
+            "#endif /* OCCTBridge_A_h */\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: mapping.get("OCCTFooA") == "OCCTBridge_A.h",
+    ),
+    (
+        # The same blindness through the other opener a literal can hide. #2080 names only the
+        # comment case; this one costs nothing to cover and the single-pass fix handles both, so
+        # leaving it out would mean the fix is wider than anything proving it.
+        "a '/*' inside a string literal does not swallow the declarations after it (#2080)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": 'static const char* const kSources = "src/*.mm";\n'
+            "void OCCTFooA(void);\n"
+            "#endif /* OCCTBridge_A_h */\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: mapping.get("OCCTFooA") == "OCCTBridge_A.h",
+    ),
 ]
 
 
@@ -272,9 +325,46 @@ def self_test():
         ok = check(mapping, ambiguous, unmapped, misfiled)
         failed += not ok
         print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
-    total = len(SELF_TEST)
+
+    # #2080: the blindness check, which no fixture above can cover because it is about this
+    # script's view of the real tree rather than about a mapping it was handed. A header the
+    # split owns that yields nothing is the observable form of a swallowed file.
+    blind_cases = [
+        ("a header yielding no declarations is refused",
+         bool(implausible_view({"OCCTShapeBox": "OCCTBridge_Modeling.h"}, ["OCCTBridge.h"]))),
+        ("a header yielding declarations is accepted",
+         not implausible_view({"OCCTShapeBox": "OCCTBridge.h"}, ["OCCTBridge.h"])),
+    ]
+    for name, ok in blind_cases:
+        failed += not ok
+        print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
+
+    total = len(SELF_TEST) + len(blind_cases)
     print(f"{total - failed}/{total} cases correct")
     return 1 if failed else 0
+
+
+def implausible_view(mapping, headers=None):
+    """Header files this script read as declaring nothing, which cannot be true.
+
+    #2080, and the rule in okf/policies/static-gates.md: a detector must assert that its own view of
+    its input is plausible, not only that its fixtures pass. This one reported `misfiled: 0` while
+    seeing 2 of the umbrella's 16 declarations, because a comment containing `src/*.mm` opened a
+    block comment it never saw closed. Its --self-test passed throughout: no fixture carried the
+    trigger, and the triggers are unbounded.
+
+    A header in the split that yields no declaration is the observable form of that blindness. A
+    header legitimately declaring nothing would not be in the split.
+    """
+    if headers is None:
+        headers = sorted(glob.glob(os.path.join(HEADER_DIR, "OCCTBridge_*.h"))) + [UMBRELLA]
+    seen = collections.Counter(mapping.values())
+    problems = []
+    for path in headers:
+        name = os.path.basename(path)
+        if seen.get(name, 0) == 0:
+            problems.append(f"{name} yielded no declarations")
+    return problems
 
 
 def main():
@@ -293,6 +383,16 @@ def main():
         return 2
 
     mapping, ambiguous, unmapped, misfiled = derive()
+
+    blind = implausible_view(mapping)
+    if blind:
+        for line in blind:
+            print(f"  BLIND      {line}", file=sys.stderr)
+        print("\nThis script's view of the headers is implausible, so its verdict means nothing "
+              "and it is\nrefusing to report one. A '/*' inside a // comment is the known cause "
+              "(#2080): it opens a\nblock comment that is never closed, swallowing the rest of the "
+              "header.", file=sys.stderr)
+        return 2
 
     if args.list:
         for symbol, header in sorted(mapping.items(), key=lambda kv: (kv[1], kv[0])):
