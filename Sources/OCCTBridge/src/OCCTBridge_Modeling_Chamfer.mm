@@ -374,6 +374,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -484,6 +485,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+      // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+      // it would report a failure for a call that did not fail. The diagnostics channel is for
+      // catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -611,6 +616,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -673,6 +679,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -923,6 +930,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -953,6 +961,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1069,6 +1078,7 @@ OCCTAnaFilletResult OCCTChFi2dAnaFillet(OCCTShapeRef edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1099,6 +1109,7 @@ OCCTShapeRef _Nullable OCCTChFi2dAddFillet(OCCTShapeRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1135,6 +1146,7 @@ OCCTShapeRef _Nullable OCCTChFi2dAddChamfer(OCCTShapeRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1172,6 +1184,7 @@ OCCTShapeRef _Nullable OCCTChFi2dAddChamferAngle(OCCTShapeRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1205,6 +1218,7 @@ OCCTShapeRef _Nullable OCCTChFi2dModifyFillet(OCCTShapeRef _Nonnull originalFace
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1237,6 +1251,7 @@ OCCTShapeRef _Nullable OCCTChFi2dRemoveFillet(OCCTShapeRef _Nonnull originalFace
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1269,6 +1284,7 @@ OCCTShapeRef _Nullable OCCTChFi2dRemoveChamfer(OCCTShapeRef _Nonnull originalFac
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1297,6 +1313,7 @@ OCCTChamfer2DResult OCCTChFi2dChamferEdges(OCCTShapeRef _Nonnull edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1336,6 +1353,7 @@ OCCTFillet2DResult OCCTChFi2dFilletEdges(OCCTShapeRef _Nonnull edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1350,6 +1368,7 @@ OCCTChamferBuilderRef OCCTChamferBuilderCreate(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1370,6 +1389,7 @@ bool OCCTChamferBuilderAddEdge(OCCTChamferBuilderRef builder, OCCTEdgeRef edge, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1389,6 +1409,7 @@ bool OCCTChamferBuilderAddEdgeTwoDists(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1408,6 +1429,7 @@ bool OCCTChamferBuilderAddEdgeDistAngle(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1425,6 +1447,7 @@ OCCTShapeRef OCCTChamferBuilderBuild(OCCTChamferBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1439,6 +1462,7 @@ int32_t OCCTChamferBuilderNbContours(OCCTChamferBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1453,6 +1477,7 @@ bool OCCTChamferBuilderIsDistAngle(OCCTChamferBuilderRef builder, int32_t contou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1467,6 +1492,7 @@ int32_t OCCTChamferBuilderNbEdges(OCCTChamferBuilderRef builder, int32_t contour
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1481,6 +1507,7 @@ void OCCTChamferBuilderGetDist(OCCTChamferBuilderRef builder, int32_t contourInd
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *dist = -1.0;
   }
 }
@@ -1498,6 +1525,7 @@ void OCCTChamferBuilderGetDists(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *d1 = -1.0;
     *d2 = -1.0;
   }
@@ -1516,6 +1544,7 @@ void OCCTChamferBuilderGetDistAngle(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *dist  = -1.0;
     *angle = -1.0;
   }
@@ -1535,6 +1564,7 @@ bool OCCTChamferBuilderSetDist(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1554,6 +1584,7 @@ bool OCCTChamferBuilderSetDists(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1573,6 +1604,7 @@ bool OCCTChamferBuilderSetDistAngle(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1587,6 +1619,7 @@ double OCCTChamferBuilderLength(OCCTChamferBuilderRef builder, int32_t contourIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1602,6 +1635,7 @@ bool OCCTChamferBuilderRemoveEdge(OCCTChamferBuilderRef builder, OCCTEdgeRef edg
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1616,6 +1650,7 @@ void OCCTChamferBuilderReset(OCCTChamferBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1629,6 +1664,7 @@ bool OCCTChamferBuilderClosed(OCCTChamferBuilderRef builder, int32_t contourInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1643,6 +1679,7 @@ bool OCCTChamferBuilderClosedAndTangent(OCCTChamferBuilderRef builder, int32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1657,6 +1694,7 @@ bool OCCTChamferBuilderIsSymmetric(OCCTChamferBuilderRef builder, int32_t contou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1671,6 +1709,7 @@ bool OCCTChamferBuilderIsTwoDists(OCCTChamferBuilderRef builder, int32_t contour
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1690,6 +1729,7 @@ OCCTShapeRef OCCTChamferBuilderEdge(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1707,6 +1747,7 @@ OCCTShapeRef OCCTChamferBuilderFirstVertex(OCCTChamferBuilderRef builder, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1724,6 +1765,7 @@ OCCTShapeRef OCCTChamferBuilderLastVertex(OCCTChamferBuilderRef builder, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1738,6 +1780,7 @@ int32_t OCCTChamferBuilderContour(OCCTChamferBuilderRef builder, OCCTEdgeRef edg
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1754,6 +1797,7 @@ double OCCTChamferBuilderAbscissa(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1770,6 +1814,7 @@ double OCCTChamferBuilderRelativeAbscissa(OCCTChamferBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1804,6 +1849,7 @@ bool OCCTChamferBuilderIsDeleted(OCCTChamferBuilderRef builder, OCCTShapeRef sha
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1831,6 +1877,7 @@ void OCCTChamferBuilderSetMode(OCCTChamferBuilderRef builder, int32_t mode)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1845,6 +1892,7 @@ bool OCCTChamferBuilderSimulate(OCCTChamferBuilderRef builder, int32_t contourIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1859,6 +1907,7 @@ int32_t OCCTChamferBuilderNbSurf(OCCTChamferBuilderRef builder, int32_t contourI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
