@@ -10,7 +10,7 @@ for what that takes.
 **Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0037.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0039.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1508,6 +1508,68 @@ thread pool measured worse, in
 [`Scripts/repro/2061-nm-detected/`](../repro/2061-nm-detected/README.md).
 
 Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0038-Interface_CheckTool-errh-per-instance-1403.patch
+
+**Fixes a shared error-handling sentinel in `Interface_CheckTool`**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)). `errh`
+(`Interface_CheckTool.cxx:39`) decided whether `FillCheck` wraps each module `CheckCase` call in its
+own `try`. The six bulk list builders clear it because they wrap the whole loop; `Check(num)` sets it
+because it does not.
+
+**It is not only a race.** The bulk builders clear the flag and never restore it, so any bulk list
+operation leaves error handling off **process-wide**. A later direct `FillCheck` call, on any
+instance, then runs unguarded and a `Standard_Failure` that should have been caught and reported as
+a check fail escapes instead. `FillCheck` is public, so that sequence is reachable single-threaded.
+
+Relocated to a private member; all eight sites are already inside `Interface_CheckTool` member
+functions, so **no signature changes**. Same shape as `0036`.
+
+**Measured**: `errh` reported as a racing global **7 times before, 0 after**, across the five
+registered DE scenarios.
+
+Not yet filed upstream: the fix and the measurement are done, but demonstrating the escape in a
+GTest needs an `Interface_GeneralModule` whose `CheckCase` raises plus a protocol selecting it, more
+machinery than `0036`'s test needed. Held rather than filed without one.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0039-Interface_FileReaderData-per-instance-param-cache-1403.patch
+
+**Gives `Interface_FileReaderData` its own parameter cache**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)). `Param()`/`ChangeParam()`
+memoised the last resolved record and its base offset in three file-scope statics
+(`thefic`/`thenm0`/`thenp0`), guarded by a global counter so only the most recently constructed
+instance could use the memo. The declaration says why:
+
+> Optimization : Fields not possible, because Param is const. Too bad
+> So, we assume that we read one file at a time (reasonable assumption)
+
+`mutable` removes that blocker, so the fields the comment wanted are available.
+
+**Two things follow, and the second was not expected.** Concurrent readers stop sharing the memo.
+And the optimisation starts working at all: constructing any second `Interface_FileReaderData` made
+`thefic != thenum0` permanently true for the first, so every earlier instance fell back to the
+uncached path for the rest of its life.
+
+The guarded slow path computed `theparams->Param(thenumpar(num - 1) + nump)` and the fast path
+computed `theparams->Param(thenp0 + nump)` where `thenp0` was that same `thenumpar(num - 1)`, so the
+branch only ever chose between a cached and an uncached way of producing one value. Dropping it
+loses nothing; that equivalence was checked before deleting it, which is the check `0035` taught.
+
+**`InitParams()` now clears the memo**, which the original did not need to do. It is the only writer
+of `thenumpar` after construction and the memo caches an offset read out of it, so the memo must not
+outlive a write. The old code got that by accident, because constructing the next instance disabled
+the memo anyway.
+
+`thenum0` was private and referenced only here. The base subobject changes size, so both subclasses
+were compile-checked: `StepData_StepReaderData` and `IGESData_IGESReaderData`.
+
+**Measured**: `thenm0` **3 before, 0 after**; `thefic` **1 before, 0 after**.
+
+Not yet filed upstream: no GTest yet.
 
 **Retire** once the bundled OCCT includes this fix.
 

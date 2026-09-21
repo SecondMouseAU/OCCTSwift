@@ -55,6 +55,8 @@ without silently closing it, see
 | `0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515` | `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]`/`bound[2]` are the U-direction sides. For any boundary set with straight V-direction sides the surface is independent of `U` and collapses onto the `U == V` diagonal; only `U == V` samples were right. Two lines, coefficients untouched, and `D1U` is exactly its derivative ([#1515](https://github.com/SecondMouseAU/OCCTSwift/issues/1515)) | not yet filed | bundled OCCT includes the fix |
 | `0036-IFSelect_WorkSession-per-instance-error-guard-1403` | `IFSelect_WorkSession`'s file-scope `errhand` is a recursion sentinel, not a value: one thread clearing it makes another take the **unguarded** path and lose its exception handling. Relocated to a per-instance `myInErrorHandler`, no lock, the #363 pattern. 6 race access sites to 0, measured ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 | `0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061` | `STEPControl_ActorRead`'s `NM_DETECTED` is an anonymous-namespace global holding per-operation state: it gates whether a `COMPOUND` component is flattened into its parent or kept nested, so concurrent STEP reads share it. Relocated to a per-instance `myIsNMDetected`, no lock, no signature change, the #363 pattern. 5-of-5 runs report the race unpatched, 0-of-5 patched. The wrong-shape outcome follows by inspection but was NOT reproduced ([#2061](https://github.com/SecondMouseAU/OCCTSwift/issues/2061)) | to file | bundled OCCT includes the fix |
+| `0038-Interface_CheckTool-errh-per-instance-1403` | `Interface_CheckTool`'s file-scope `errh` decides whether `FillCheck` guards each module `CheckCase` call. The six bulk list builders clear it and never restore it, so any bulk list operation leaves error handling off process-wide and a later direct `FillCheck` runs unguarded, losing a `Standard_Failure` that should have been reported as a check fail. Reachable single-threaded, not only a race. Relocated to a private member, no signature change. 7 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file, needs a GTest | bundled OCCT includes the fix |
+| `0039-Interface_FileReaderData-per-instance-param-cache-1403` | `Param()`/`ChangeParam()` memoised the last record and its base offset in file-scope statics, gated by a global counter so only the newest instance could use the memo. `mutable` answers the declaration's own blocker ("Fields not possible, because Param is const") and also makes the optimisation apply at all, since any second construction disabled it for every earlier instance. `InitParams()` now invalidates the memo, which the original never needed to. 4 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file, needs a GTest | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -84,8 +86,8 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-five patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The eight it lacks, and why each matters, per
+`Scripts/patches/` holds twenty-seven patches; the v3.0.0 release asset `Package.swift` pins holds
+seventeen. The ten it lacks, and why each matters, per
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Patch | Exposure today |
@@ -98,6 +100,8 @@ seventeen. The eight it lacks, and why each matters, per
 | `0034` (#1515) | `Shape.coonsAlgPatch` returns a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently: the array shape and the API are unaffected, so nothing reads as an error. The one kernel consumer, `GeomFill_ConstrainedFilling`, never calls `Value()` and is not affected. |
 | `0036` (#1403) | Every concurrent STEP/IGES operation can lose its exception handling when another thread clears the shared sentinel, so a `Standard_Failure` that should have been caught and reported escapes instead. Masked today by the bridge's `igesMutex()`, which serialises the whole DE surface; a repin protects callers outside it. |
 | `0037` (#2061) | A live data race on every pair of concurrent STEP reads, on a flag that decides whether an assembly component's compound is flattened. Masked today by the bridge's `igesMutex()`, which serialises the whole DE surface, so no consumer can reach it until that mutex narrows. |
+| `0038` (#1403) | Any consumer whose code path runs a bulk `Interface_CheckTool` list operation and later calls `FillCheck` directly loses exception reporting for that check, single-threaded. Masked here because the bridge never calls `FillCheck` outside a bulk builder, so no OCCTSwift consumer reaches the sequence today. |
+| `0039` (#1403) | A data race between concurrent STEP/IGES reads on the parameter memo, masked by the bridge's `igesMutex()`. Also a silent performance loss on every platform: the memo is dead for all but the most recently constructed reader, which a repin would restore. |
 
 `kernel-integration.yml` builds these, and nothing else does: it is the only job that compiles an
 unpinned patch, and `build-and-test` resolves the pinned asset instead. It runs on the PR that adds
