@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Shape, Edge, Face and Wire reference snippets now compile (#2093)
+
+Forty-one fenced examples across `Shape-Features.md`, `Shape-Completions.md`, `Shape-Builders-1.md`, `Annotation.md`, `Edge.md`, `Face.md` and `Wire.md`, and in `Shape.swift`, `Shape+Topology.swift`, `MedialAxis.swift`, `Edge.swift`, `Wire.swift` and `WireOrder.swift` doc comments. `Shape.box(dx:dy:dz:)` is `box(width:height:depth:)`. `Wire.asShape`, `Face.shape` and `Edge.shape` never existed: the conversions are `Shape.fromWire(_:)`, `fromFace(_:)` and `fromEdge(_:)`. `Wire` has no `translated(by:)` at all, so the profile examples now place the circle at construction with `Wire.circle(origin:normal:radius:)`. `Shape.makeFace` and `Shape.makePolygon` are `Shape.face(from:)` with `Wire.polygon3D(_:closed:)`; `Edge.line(from:to:)` is `Wire.line(from:to:)!.edges()[0]`; `SurfaceContinuity` has no `.c0`; `Edge.adjacentFaces(in:)` returns an array, not a pair; and the `≈` operator one example used is defined nowhere in the package.
+
 ### The bridge header split gate validated its own view, not just its verdict (#2080)
 
 `Scripts/derive-bridge-header-split.py` stripped C comments in two passes, block comments first, so
