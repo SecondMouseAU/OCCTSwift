@@ -195,6 +195,11 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          // Recorded even though this is not the outermost catch (#1161/#2077). The three inner
+          // catches in this switch neither rethrow nor recover: each converts the exception into
+          // a refusal that the function-level catch below will never see, so without a record
+          // here the reason a query came back empty is lost entirely.
+          occtRecordCaughtException(__func__);
           // Matches the pre-consolidation behavior of every surface-returning caller: a
           // throwing Surface() was caught by that caller's own single try/catch and
           // treated as "not found" (OCCTShapeFindSurfaceEx set *outFound = false in
@@ -210,6 +215,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.toleranceReached = -1.0;
         }
         break;
@@ -220,6 +226,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.existed = false;
         }
         break;
@@ -227,6 +234,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     result = OCCTFindSurfaceResult();
   }
   return result;
@@ -248,6 +256,7 @@ static OCCTSurfaceRef occtSurfaceRefOrNull(const OCCTFindSurfaceResult& result)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -368,6 +377,7 @@ static void occtComputeAxisExtent(const TopoDS_Shape& forShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     outMin       = 0.0;
     outMax       = 0.0;
     outHasExtent = false;
@@ -478,6 +488,7 @@ OCCTTopAbsState OCCTClassifyPointInSolid(OCCTShapeRef solid,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3; // UNKNOWN
   }
 }
@@ -498,6 +509,7 @@ OCCTTopAbsState OCCTClassifyPointOnFace(OCCTFaceRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3; // UNKNOWN
   }
 }
@@ -514,6 +526,7 @@ OCCTTopAbsState OCCTClassifyPointOnFaceUV(OCCTFaceRef face, double u, double v, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3; // UNKNOWN
   }
 }
@@ -554,6 +567,7 @@ bool OCCTShapeOrientedBoundingBox(OCCTShapeRef shape, bool optimal, OCCTOriented
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -626,6 +640,7 @@ OCCTOBBRef OCCTOBBCreate(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     ref->obb =
       Bnd_OBB(gp_Pnt(cx, cy, cz), gp_Dir(1, 0, 0), gp_Dir(0, 1, 0), gp_Dir(0, 0, 1), hx, hy, hz);
   }
@@ -646,6 +661,7 @@ OCCTOBBRef OCCTOBBCreateFromShape(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -717,6 +733,7 @@ int32_t OCCTShapeClassifyPoint(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3;
   }
 }
@@ -741,6 +758,7 @@ int32_t OCCTShapeClassifyPoint2D(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3;
   }
 }
@@ -769,6 +787,7 @@ OCCTBoundSortBoxRef OCCTBoundSortBoxCreate(const double* boxData, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return new OCCTBoundSortBox();
   }
 }
@@ -813,6 +832,7 @@ int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef bsb,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -833,6 +853,7 @@ double OCCTShapeOBBVolume(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -854,6 +875,7 @@ double OCCTShapeBoundingDiagonal(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
