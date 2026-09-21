@@ -37,12 +37,16 @@
 | **Shape Analysis Tests** | Shape Analysis Tests | Shape analysis | Remove shape analysis |
 | **Shape Fixing Tests** | Shape Fixing Tests | Shape fixing | Remove shape fixing |
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
+<<<<<<< HEAD
 | **Extrema Tests** | Point on circle distance | Extrema point-on-circle | Remove point-on-circle |
 | **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
 | **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
 | **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
 | **Shape Measurements** | Cylinder totals are finite | Shape measurements cylinder | Remove cylinder totals |
 | **Shape Measurements** | Box face centroids | Shape measurements box faces | Remove box face centroids |
+=======
+| **Shape Measurements** | Cylinder top/bottom centroids | Shape measurements cylinder | Remove cylinder centroids |
+>>>>>>> 95d1d907 (fix/1711: Add shape measurements cylinderTopBottomCentroids test to evidence file)
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -132,12 +136,16 @@
 | Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis | ✅ | ✅ |  |
 | Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
+<<<<<<< HEAD
 | Extrema: pointOnCircle | OCCTExtremaPointOnCircle | Extrema point-on-circle | Remove point-on-circle | ✅ | ✅ |  |
 | Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
 | Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
 | Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
 | Shape Measurements: cylinderTotalsAreFinite | OCCTShapeMeasurementsCylinderTotalsAreFinite | Shape measurements cylinder | Remove cylinder totals | ✅ | ✅ |  |
 | Shape Measurements: boxFaceCentroids | OCCTShapeMeasurementsBoxFaceCentroids | Shape measurements box faces | Remove box face centroids | ✅ | ✅ |  |
+=======
+| Shape Measurements: cylinderTopBottomCentroids | OCCTShapeMeasurementsCylinderTopBottomCentroids | Shape measurements cylinder | Remove cylinder centroids | ✅ | ✅ |  |
+>>>>>>> 95d1d907 (fix/1711: Add shape measurements cylinderTopBottomCentroids test to evidence file)
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -222,12 +230,16 @@ For each test, run ground-truth C++ comparison:
 | Shape Analysis Tests | ✅ | ✅ | ✅ |
 | Shape Fixing Tests | ✅ | ✅ | ✅ |
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
+<<<<<<< HEAD
 | Extrema: pointOnCircle | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
 | Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFacePerimeters | ✅ | ✅ | ✅ |
 | Shape Measurements: cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceCentroids | ✅ | ✅ | ✅ |
+=======
+| Shape Measurements: cylinderTopBottomCentroids | ✅ | ✅ | ✅ |
+>>>>>>> 95d1d907 (fix/1711: Add shape measurements cylinderTopBottomCentroids test to evidence file)
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
@@ -269,4 +281,8 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
+<<<<<<< HEAD
 **Total**: 550 tests
+=======
+**Total**: 547 tests
+>>>>>>> 95d1d907 (fix/1711: Add shape measurements cylinderTopBottomCentroids test to evidence file)
