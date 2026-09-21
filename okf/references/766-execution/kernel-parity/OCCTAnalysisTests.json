@@ -1,6 +1,41 @@
-{
-  "note": "Kernel parity JSON for OCCTAnalysisTests not yet generated. This domain has 546 tests requiring bridge-kernel parity verification.",
-  "status": "PENDING",
-  "test_count": 546,
-  "domain": "Analysis"
-}
+[
+  {
+    "test_name": "Point Cloud Analysis::Collinear points detected as linear",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "linear",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "direction": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "linear",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "direction": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  }
+]
