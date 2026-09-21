@@ -47,7 +47,10 @@ struct STEPWriterCAFCorruptionTests {
     /// `InitializeMissingParameters()`, which re-sets `DirectFaces` when the shared actor's
     /// `OperationsFlags` are empty. Carried patch `0035` deleted that call and this test caught
     /// the regression in `kernel-integration.yml`; see `Scripts/patches/README.md`'s retired
-    /// `0035` entry (#2056). Anything proposing to remove that call again must make this pass.
+    /// `0035` entry (#2056). Anything proposing to remove that call again must make this pass, and
+    /// `Scripts/check-patch-deletes-guarded-symbol.py` now fails at patch-authoring time on a
+    /// carried patch that deletes a line naming `InitializeMissingParameters` in
+    /// `STEPControl_Writer.cxx`, which is how it reads the two symbols this comment names (#2058).
     ///
     /// This is also the cause of the long-standing `cone()` failure in OCCTStressTests, which
     /// passed in isolation and failed in every full run purely because OCCTIOTests reads a STEP

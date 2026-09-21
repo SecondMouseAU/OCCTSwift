@@ -412,6 +412,29 @@ DEFECT_CLASSES = [
               "records the promotion criterion (a run of real merges with no false positives) as "
               "not yet met.",
     ),
+    DefectClass(
+        id="patch-deletes-guarded-kernel-line",
+        name="A carried OCCT patch deletes a kernel line that a regression test's comment says its "
+             "invariant depends on",
+        example_issues="#2056 (patch 0035 removed STEPControl_Writer::Transfer's "
+                       "InitializeMissingParameters() call, reintroducing #280; #280's test caught "
+                       "it 1h5m later in kernel-integration.yml, and the test's own comment still "
+                       "described the bridge workaround deleted in f2469da2, so reading the test "
+                       "while assessing the patch argued FOR the patch), filed as #2058",
+        mechanism="A patch author reads the guarding test to decide whether a removal is safe. "
+                   "Nothing checks that the line being removed is one a test names, and "
+                   "census-comment-staleness.py scans comments in Sources/ only.",
+        covered_by="check-patch-deletes-guarded-symbol.py (#2058), which indexes the OCCT symbols "
+                   "Tests/**/*.swift comments name and fails when a hunk in Scripts/patches/ "
+                   "removes a line naming one. It reads the patch diffs, not Libraries/occt-src, "
+                   "so it runs in gate-scripts rather than kernel-integration.yml",
+        disposition="gated",
+        notes="Scoped to the class's own source file (a removal in STEPControl_Writer.cxx against "
+              "a test naming STEPControl_Writer), because the unscoped form measures 12 false "
+              "positives over the 27 patches on disk: OCCT method names are Add, Initialize, Set, "
+              "IsDone. A symbol removed on one line and re-added on another is a rewrite and is "
+              "not reported, which is another 14 sites across four patches.",
+    ),
     # -- Detector-quality: process-gated only ----------------------------------------------------
     DefectClass(
         id="detector-itself-wrong",
@@ -430,8 +453,10 @@ DEFECT_CLASSES = [
                    "(okf/policies/prove-the-test-fails.md), enforced by code review and CI running "
                    "every self-test, not by any script that audits a new detector's self-test "
                    "quality before merge.",
-        covered_by="Every current gate/census/audit's own --self-test (14/14, including this "
-                   "script's)",
+        covered_by="Every current gate/census/audit's own --self-test: every script the job runs "
+                   "except count-operations.py, which has none by design, plus this script's own. "
+                   "Stated as a property rather than a count, because the count it used to state "
+                   "(14/14) had gone stale by one before anyone read it",
         disposition="process-only",
         notes="Nothing here catches a FIFTH such defect in a gate not yet built, or a self-test "
               "whose removal-matrix case looks like coverage but proves nothing (the exact trap "
