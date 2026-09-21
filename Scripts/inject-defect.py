@@ -107,11 +107,11 @@ def _line_starts_with_catch(line: str) -> bool:
     in_block_comment = False
     escape_next = False
     
-    for ch in line:
+    for char_idx, ch in enumerate(line):
         if in_line_comment:
             break
         if in_block_comment:
-            if ch == '*' and len(line) > line.index(ch) + 1 and line[line.index(ch) + 1] == '/':
+            if ch == '*' and char_idx + 1 < len(line) and line[char_idx + 1] == '/':
                 in_block_comment = False
             continue
         if in_string:
@@ -130,8 +130,8 @@ def _line_starts_with_catch(line: str) -> bool:
             elif ch == "'":
                 in_char = False
             continue
-        if ch == '/' and len(line) > line.index(ch) + 1:
-            next_ch = line[line.index(ch) + 1]
+        if ch == '/' and char_idx + 1 < len(line):
+            next_ch = line[char_idx + 1]
             if next_ch == '/':
                 in_line_comment = True
                 continue
