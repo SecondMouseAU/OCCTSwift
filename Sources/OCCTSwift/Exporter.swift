@@ -3,6 +3,18 @@ import OCCTBridge
 
 /// Export shapes to various file formats.
 ///
+/// ## Thread safety
+///
+/// `writeSTEP` and `writeIGES` are **already serialized inside the bridge** against
+/// each other and against `Shape.load(from:)` / `Document.loadSTEP`, because OCCT
+/// routes every data-exchange operation through process-global state. Calling them
+/// concurrently is safe and gains nothing: they take a process-wide lock for the
+/// whole call. Wrapping them in `OCCTSerial.withLock` is harmless but redundant.
+///
+/// The mesh and BREP writers carry no such lock, so the usual advice applies to
+/// them: give each thread its own `Shape.deepCopy()`. See `OCCTSerialQueue.swift`
+/// and docs/thread-safety.md.
+///
 /// ## Supported Formats
 ///
 /// - **STL**: Standard Tessellation Language - for 3D printing
