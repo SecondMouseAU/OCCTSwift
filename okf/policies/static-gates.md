@@ -65,8 +65,9 @@ history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 ## The one census outside `gate-scripts`
 
 `census-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
-doc comments, which is the only thing that has ever read inside those fences: `docs-current.md` asks
-for a runnable snippet on every documented API and nothing checked that any of them compile, which is
+doc comments. `docs-current.md` asks for a runnable snippet on every documented API and nothing had
+ever *compiled* one: `check-docs-defaults.py` reads the declaration a reference page restates, and
+`check-docs-existence.py` reads its headings and prose, but the example fences went unread, which is
 how a factory that never existed reached 18 call sites (#1675). It is the one census this page's rules
 do not fully cover, in two ways, both deliberate.
 
@@ -102,7 +103,10 @@ Two of its design choices are worth carrying to any detector that shells out to 
   ran without `-continue-building-after-errors`, the driver stopped scheduling frontend jobs after
   the first batch that failed, and four of eight self-test fixtures reported clean while never being
   compiled at all. A green run and a blind run were indistinguishable, which is this page's own
-  opening argument, met in practice.
+  opening argument, met in practice. It fired a second time within the hour, on a `-target` whose
+  architecture was derived from the built module but whose deployment version was dropped: `swiftc`
+  rejected the target before reading a file, produced no per-file diagnostic, and the canary turned
+  what would have been "3,096 snippets clean" into an abort.
 
 ## Every detector proves it is not blind
 
