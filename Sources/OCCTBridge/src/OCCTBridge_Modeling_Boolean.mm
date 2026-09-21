@@ -7,6 +7,14 @@
 //  every sibling file does. No symbol changes, pure file move -- see
 //  Scripts/repro/396-modeling-mm-split/ for how.
 //
+//  #1161: this is the first file instrumented for the caught-exception diagnostics channel. Every
+//  function-level `catch (...)` here calls occtRecordCaughtException(__func__) as its first
+//  statement, so a boolean that refuses can say which OCCT exception it refused on. Booleans went
+//  first because they are the failure a caller hits most often and the one a bare nil explains
+//  least. The one catch block deliberately left out (occtSampleWirePoints) says so in place.
+//  The mechanism and what it cannot see (an OS signal) are documented at occtRecordCaughtException
+//  in OCCTBridge_Internal.h.
+//
 
 //
 //  OCCTBridge_Modeling.mm
@@ -375,6 +383,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -485,6 +494,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here, and the only catch block in this
+      // file that does not (#1161). This one recovers: an edge with no 3D curve is skipped and the
+      // sampling pass goes on to succeed, so recording it would report a failure for a call that
+      // did not fail. The diagnostics channel is for catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -612,6 +625,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -674,6 +688,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -924,6 +939,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -954,6 +970,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1041,6 +1058,7 @@ OCCTShapeRef OCCTShapeSection(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1080,6 +1098,7 @@ OCCTShapeRef OCCTShapeFuseMulti(const OCCTShapeRef* shapes, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1115,6 +1134,7 @@ int32_t OCCTShapeFuseWithHistory(OCCTShapeRef  shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1138,6 +1158,7 @@ OCCTBooleanHistoryRef OCCTBooleanUnionWithHistory(OCCTShapeRef  shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1161,6 +1182,7 @@ OCCTBooleanHistoryRef OCCTBooleanSubtractWithHistory(OCCTShapeRef  shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1184,6 +1206,7 @@ OCCTBooleanHistoryRef OCCTBooleanIntersectWithHistory(OCCTShapeRef  shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1214,6 +1237,7 @@ OCCTBooleanHistoryRef OCCTBooleanSplitWithHistory(OCCTShapeRef  shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1245,6 +1269,7 @@ int32_t OCCTBooleanHistoryModified(OCCTBooleanHistoryRef h,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1277,6 +1302,7 @@ int32_t OCCTBooleanHistoryGenerated(OCCTBooleanHistoryRef h,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1292,6 +1318,7 @@ bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef h, OCCTShapeRef inputSubS
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1335,6 +1362,7 @@ OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef h)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1383,6 +1411,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1430,6 +1459,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef  shape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1471,6 +1501,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1519,6 +1550,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromShell(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1551,6 +1583,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromDefeature(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1581,6 +1614,7 @@ OCCTShapeRef OCCTShapeCommonMulti(const OCCTShapeRef* shapes, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1657,6 +1691,7 @@ OCCTShapeRef OCCTShapeFuseAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1726,6 +1761,7 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1772,6 +1808,7 @@ OCCTBooleanHistoryRef OCCTShapeSewWithHistory(const OCCTShapeRef* shapes,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1818,6 +1855,7 @@ OCCTBooleanHistoryRef OCCTShapeSewSingleWithHistory(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1867,6 +1905,7 @@ OCCTBooleanHistoryRef OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1896,6 +1935,7 @@ OCCTBooleanHistoryRef OCCTShapeHealWithHistory(OCCTShapeRef shape, OCCTShapeRef*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1973,6 +2013,7 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef  she
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2004,6 +2045,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromTranslate(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2037,6 +2079,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromRotate(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2066,6 +2109,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromScale(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2101,6 +2145,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromMirror(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2134,6 +2179,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromLinearPattern(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2170,6 +2216,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromCircularPattern(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2227,6 +2274,7 @@ OCCTShapeRef OCCTShapePrism(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2295,6 +2343,7 @@ OCCTShapeRef* OCCTShapeSplit(OCCTShapeRef shape, OCCTShapeRef tool, int32_t* out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outCount = 0;
     return nullptr;
   }
@@ -2335,6 +2384,7 @@ OCCTShapeRef OCCTShapeGlue(OCCTShapeRef shape1, OCCTShapeRef shape2, double tole
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2364,6 +2414,7 @@ OCCTShapeRef OCCTFaceIntersect(OCCTFaceRef face1, OCCTFaceRef face2, double tole
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2378,6 +2429,7 @@ OCCTHistoryRef OCCTHistoryCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2393,6 +2445,7 @@ void OCCTHistoryAddModified(OCCTHistoryRef history, OCCTShapeRef initial, OCCTSh
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2407,6 +2460,7 @@ void OCCTHistoryAddGenerated(OCCTHistoryRef history, OCCTShapeRef initial, OCCTS
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2421,6 +2475,7 @@ void OCCTHistoryRemove(OCCTHistoryRef history, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2435,6 +2490,7 @@ bool OCCTHistoryIsRemoved(OCCTHistoryRef history, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2474,6 +2530,7 @@ int32_t OCCTHistoryModifiedCount(OCCTHistoryRef history, OCCTShapeRef initial)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2489,6 +2546,7 @@ int32_t OCCTHistoryGeneratedCount(OCCTHistoryRef history, OCCTShapeRef initial)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2530,6 +2588,7 @@ OCCTShapeRef OCCTBOPAlgoSplit(const OCCTShapeRef* objects,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2552,6 +2611,7 @@ bool OCCTBOPAlgoAnalyzeArguments(OCCTShapeRef shape1, OCCTShapeRef shape2, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2586,6 +2646,7 @@ OCCTShapeRef _Nullable OCCTBOPAlgoSection(const OCCTShapeRef _Nonnull* _Nonnull 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2627,6 +2688,7 @@ bool OCCTIntToolsEdgeEdge(OCCTShapeRef _Nonnull edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outParts = nullptr;
     *outCount = 0;
     return false;
@@ -2685,6 +2747,7 @@ bool OCCTIntToolsEdgeFace(OCCTShapeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outParts = nullptr;
     *outCount = 0;
     return false;
@@ -2785,6 +2848,7 @@ bool OCCTIntToolsFaceFace(OCCTShapeRef _Nonnull face1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outCurves     = nullptr;
     *outCurveCount = 0;
     *outPoints     = nullptr;
@@ -2818,6 +2882,7 @@ int32_t OCCTIntToolsFClass2dPerform(OCCTShapeRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3; // UNKNOWN
   }
 }
@@ -2832,6 +2897,7 @@ bool OCCTIntToolsFClass2dIsHole(OCCTShapeRef _Nonnull face, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2882,6 +2948,7 @@ bool OCCTBOPAlgoBuilderFace(OCCTShapeRef _Nonnull baseFace,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outFaces     = nullptr;
     *outFaceCount = 0;
     return false;
@@ -2930,6 +2997,7 @@ bool OCCTBOPAlgoBuilderSolid(const OCCTShapeRef _Nonnull* _Nonnull faces,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSolids     = nullptr;
     *outSolidCount = 0;
     return false;
@@ -2974,6 +3042,7 @@ bool OCCTBOPAlgoShellSplitter(OCCTShapeRef _Nonnull shell,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outShells     = nullptr;
     *outShellCount = 0;
     return false;
@@ -2993,6 +3062,7 @@ OCCTShapeRef _Nullable OCCTBOPAlgoEdgesToWires(OCCTShapeRef _Nonnull edges, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3009,6 +3079,7 @@ OCCTShapeRef _Nullable OCCTBOPAlgoWiresToFaces(OCCTShapeRef _Nonnull wires, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3033,6 +3104,7 @@ bool OCCTBOPToolsNormalOnEdge(OCCTShapeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outNX = *outNY = *outNZ = 0;
     return false;
   }
@@ -3061,6 +3133,7 @@ bool OCCTBOPToolsPointInFace(OCCTShapeRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outX = *outY = *outZ = 0;
     return false;
   }
@@ -3074,6 +3147,7 @@ bool OCCTBOPToolsIsEmptyShape(OCCTShapeRef _Nonnull shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -3087,6 +3161,7 @@ bool OCCTBOPToolsIsOpenShell(OCCTShapeRef _Nonnull shell)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -3128,6 +3203,7 @@ bool OCCTIntToolsBeanFaceIntersect(OCCTShapeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3150,6 +3226,7 @@ OCCTShapeRef _Nullable OCCTBOPAlgoMakeWire(const OCCTShapeRef _Nonnull* _Nonnull
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3165,6 +3242,7 @@ int32_t OCCTIntToolsComputeVV(OCCTShapeRef vertex1, OCCTShapeRef vertex2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3177,6 +3255,7 @@ double OCCTIntToolsIntermediatePoint(double first, double last)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.5 * (first + last);
   }
 }
@@ -3194,6 +3273,7 @@ bool OCCTIntToolsIsDirsCoinside(double dx1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3212,6 +3292,7 @@ bool OCCTIntToolsIsDirsCoinisdeWithTol(double dx1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3224,6 +3305,7 @@ double OCCTIntToolsComputeIntRange(double tol1, double tol2, double angle)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -3293,6 +3375,7 @@ int32_t OCCTShapeBuildLoops(OCCTShapeRef shape, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3317,6 +3400,7 @@ void OCCTAsDesAdd(OCCTAsDesRef ad, OCCTShapeRef parent, OCCTShapeRef child)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3330,6 +3414,7 @@ bool OCCTAsDesHasDescendant(OCCTAsDesRef ad, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3347,6 +3432,7 @@ int32_t OCCTAsDesDescendantCount(OCCTAsDesRef ad, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3368,6 +3454,7 @@ OCCTShapeRef OCCTBooleanFuseWithTolerance(OCCTShapeRef s1, OCCTShapeRef s2, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3389,6 +3476,7 @@ OCCTShapeRef OCCTBooleanCutWithTolerance(OCCTShapeRef s1, OCCTShapeRef s2, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3410,6 +3498,7 @@ OCCTShapeRef OCCTBooleanCommonWithTolerance(OCCTShapeRef s1, OCCTShapeRef s2, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3431,6 +3520,7 @@ OCCTShapeRef OCCTBooleanFuseGlue(OCCTShapeRef s1, OCCTShapeRef s2, int32_t glueM
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3452,6 +3542,7 @@ OCCTShapeRef OCCTBooleanCutGlue(OCCTShapeRef s1, OCCTShapeRef s2, int32_t glueMo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3473,6 +3564,7 @@ OCCTShapeRef OCCTBooleanCommonGlue(OCCTShapeRef s1, OCCTShapeRef s2, int32_t glu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3494,6 +3586,7 @@ OCCTShapeRef OCCTBooleanSectionWithTolerance(OCCTShapeRef s1, OCCTShapeRef s2, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3528,6 +3621,7 @@ OCCTShapeRef OCCTBooleanSplitMulti(OCCTShapeRef        shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3566,6 +3660,7 @@ OCCTShapeRef OCCTBooleanCutWithHistory(OCCTShapeRef s1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3592,6 +3687,7 @@ OCCTShapeRef OCCTShapeDefeature(OCCTShapeRef shape, const OCCTShapeRef* faces, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3611,6 +3707,7 @@ void OCCTHistoryMerge(OCCTHistoryRef history, OCCTHistoryRef other)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3630,6 +3727,7 @@ void OCCTHistoryReplaceGenerated(OCCTHistoryRef history,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3647,6 +3745,7 @@ void OCCTHistoryReplaceModified(OCCTHistoryRef history, OCCTShapeRef initial, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3674,6 +3773,7 @@ int32_t OCCTHistoryGetModifiedShapes(OCCTHistoryRef history,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3702,6 +3802,7 @@ int32_t OCCTHistoryGetGeneratedShapes(OCCTHistoryRef history,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3730,6 +3831,7 @@ OCCTShapeRef OCCTShapeSectionWithOptions(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3761,6 +3863,7 @@ OCCTShapeRef OCCTSectionAncestorFaceOn1(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3792,6 +3895,7 @@ OCCTShapeRef OCCTSectionAncestorFaceOn2(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3817,6 +3921,7 @@ OCCTShapeRef OCCTShapeSectionWithPlane(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3835,6 +3940,7 @@ OCCTShapeRef OCCTShapeSectionWithSurface(OCCTShapeRef shape, OCCTSurfaceRef surf
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3855,6 +3961,7 @@ OCCTShapeRef OCCTShapeUnion(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3873,6 +3980,7 @@ OCCTShapeRef OCCTShapeSubtract(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3891,6 +3999,7 @@ OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3972,6 +4081,7 @@ static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     if (outTimedOut && !breaker.IsNull() && breaker->tripped())
       *outTimedOut = 1;
     return nullptr;
@@ -4120,6 +4230,7 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1; // interrupted by the watchdog, or analyzer error, either way indeterminate
   }
 }
@@ -4250,6 +4361,7 @@ int32_t OCCTShapeSelfIntersectsDetailed(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     auto endTime = std::chrono::steady_clock::now();
     if (outTimeSpent)
     {
@@ -4284,6 +4396,7 @@ OCCTShapeRef OCCTShapeSliceAtZ(OCCTShapeRef shape, double z)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4309,6 +4422,7 @@ bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing&    defeaturing,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

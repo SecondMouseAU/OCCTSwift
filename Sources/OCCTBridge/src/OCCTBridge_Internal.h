@@ -402,6 +402,35 @@ std::mutex& tobjApplicationMutex();
 // the input instead.
 void occtEnsureSignals();
 
+// === #1161: caught-exception diagnostics ===
+//
+// Call from INSIDE a `catch (...)` block, as its first statement:
+//
+//   catch (...)
+//   {
+//     occtRecordCaughtException(__func__);
+//     return nullptr;
+//   }
+//
+// It classifies the exception that is already in flight with a bare `throw;` and records the
+// Standard_Failure's type name, message and (if a depth is set) stack trace, so the caller can
+// read back WHY a call refused instead of only that it did. Control flow is untouched: the
+// exception stays caught, the catch block still returns whatever it returned before. Definition
+// lives in OCCTBridge.mm, public accessors in OCCTBridge.h under "Caught-exception diagnostics".
+//
+// Two rules, both load-bearing:
+//
+//   * Only from inside a catch block. A bare `throw;` with no exception in flight calls
+//     std::terminate. There is a std::current_exception() guard here so a misplaced call returns
+//     instead of killing the process, but the guard is a backstop, not a licence.
+//   * Only from a catch block that FAILS the call. A `catch (...) { continue; }` inside a loop is
+//     ordinary control flow, not a diagnostic: recording it would report an error for a call that
+//     went on to succeed.
+//
+// Costs one thread-local read and one relaxed atomic load when neither capture nor logging is on,
+// which is the default.
+void occtRecordCaughtException(const char* theContext);
+
 // === #263: self-intersecting-wire guard ===
 //
 // Returns true if `s` contains a wire that BRepCheck flags as SelfIntersectingWire
