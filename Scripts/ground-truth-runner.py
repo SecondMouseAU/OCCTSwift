@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import shutil
 import time
+import shlex
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
@@ -241,6 +242,7 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
         "#include <cmath>",
         "#include <vector>",
         "#include <string>",
+        "#include <typeinfo>",
         "",
         "// OCCT headers",
         "#include <Standard.hxx>",
@@ -423,13 +425,13 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
             if requires_base_shape:
                 call_code.append(f"    {occt_class} analyzer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} analyzer(shape);")
+                call_code.append(f"    {occt_class} analyzer;")
             call_code.append(f"    Standard_Boolean result = analyzer.IsValid();")
         elif occt_class == "ShapeHealing_ShapeTolerance":
             if requires_base_shape:
                 call_code.append(f"    {occt_class} healer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} healer(shape);")
+                call_code.append(f"    {occt_class} healer;")
             call_code.append(f"    healer.Perform();")
             call_code.append(f"    TopoDS_Shape result = healer.Shape();")
         elif occt_class == "GeomAPI_Interpolate":
@@ -459,7 +461,6 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
     # Output capture - print result info
     output_code = [
         "    std::cout << \"status=success\" << std::endl;",
-        "    std::cout << \"result_type=\" << typeid(result).name() << std::endl;",
     ]
 
     # Add shape-specific output if result is a shape
@@ -481,8 +482,6 @@ int main() {{
 {chr(10).join(input_decls)}
 
 {chr(10).join(input_setup)}
-
-{spec.setup_code}
 
 {chr(10).join(call_code)}
 

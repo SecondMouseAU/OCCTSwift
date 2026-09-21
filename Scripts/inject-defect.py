@@ -77,7 +77,8 @@ def apply_remove_guard(lines: List[str], line_idx: int) -> List[str]:
     """Comment out a null-handle guard line (e.g., if (!x || x->field.IsNull()))"""
     line = lines[line_idx]
     stripped = line.strip()
-    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped or "!=" in stripped):
+    # Match specific null-check patterns, not generic !=
+    if stripped.startswith("if") and ("IsNull()" in stripped or "== nullptr" in stripped or "!= nullptr" in stripped):
         indent = len(line) - len(line.lstrip())
         lines[line_idx] = " " * indent + "// INJECTED: " + line.lstrip()
     return lines
@@ -98,24 +99,335 @@ def apply_revert_fix(lines: List[str], line_idx: int, target: str) -> List[str]:
     return lines
 
 
+def _line_starts_with_catch(line: str) -> bool:
+    """Check if a line starts with 'catch' (not in string/char/comment) using state machine."""
+    in_string = False
+    in_char = False
+    in_line_comment = False
+    in_block_comment = False
+    escape_next = False
+    
+    for char_idx, ch in enumerate(line):
+        if in_line_comment:
+            break
+        if in_block_comment:
+            if ch == '*' and char_idx + 1 < len(line) and line[char_idx + 1] == '/':
+                in_block_comment = False
+            continue
+        if in_string:
+            if escape_next:
+                escape_next = False
+            elif ch == '\\':
+                escape_next = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if in_char:
+            if escape_next:
+                escape_next = False
+            elif ch == '\\':
+                escape_next = True
+            elif ch == "'":
+                in_char = False
+            continue
+        if ch == '/' and char_idx + 1 < len(line):
+            next_ch = line[char_idx + 1]
+            if next_ch == '/':
+                in_line_comment = True
+                continue
+            elif next_ch == '*':
+                in_block_comment = True
+                continue
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == "'":
+            in_char = True
+            continue
+    
+    # Check if line starts with 'catch' after whitespace
+    stripped = line.lstrip()
+    return stripped.startswith("catch")
+
+
 def apply_remove_try_catch(lines: List[str], line_idx: int) -> List[str]:
-    """Remove try/catch wrapper around OCCT call"""
+    """Remove try/catch wrapper around OCCT call by commenting out the entire block.
+    
+    Uses a character-level state machine to:
+    - Track string literals, char constants, // and /* */ comments
+    - Handle nested try-catch blocks
+    - Handle multiple catch blocks
+    - Handle blank lines and comments between try/catch
+    """
+    if line_idx >= len(lines):
+        return lines
+    
     line = lines[line_idx]
     stripped = line.strip()
-    if stripped.startswith("try"):
-        i = line_idx
-        brace_count = 0
-        in_try = True
-        while i < len(lines):
-            brace_count += lines[i].count("{")
-            brace_count -= lines[i].count("}")
-            if brace_count == 0 and in_try:
-                lines[i] = "// INJECTED: " + lines[i]
-                in_try = False
-            elif "catch" in lines[i] and not in_try:
-                lines[i] = "// INJECTED: " + lines[i]
+    if not stripped.startswith("try"):
+        return lines
+    
+    # Phase 1: Find the try block (from 'try' to its matching '}')
+    # We need to track: brace depth, string/char/comment context
+    in_string = False
+    in_char = False
+    in_line_comment = False
+    in_block_comment = False
+    escape_next = False
+    
+    brace_depth = 0
+    try_start = line_idx
+    try_brace_started = False
+    try_end_idx = -1
+    
+    # Start scanning from the 'try' line
+    for i in range(line_idx, len(lines)):
+        current_line = lines[i]
+        char_idx = 0
+        
+        while char_idx < len(current_line):
+            ch = current_line[char_idx]
+            
+            if in_line_comment:
+                break  # Rest of line is comment
+            if in_block_comment:
+                if ch == '*' and char_idx + 1 < len(current_line) and current_line[char_idx + 1] == '/':
+                    in_block_comment = False
+                    char_idx += 2
+                    continue
+                char_idx += 1
+                continue
+            if in_string:
+                if escape_next:
+                    escape_next = False
+                elif ch == '\\':
+                    escape_next = True
+                elif ch == '"':
+                    in_string = False
+                char_idx += 1
+                continue
+            if in_char:
+                if escape_next:
+                    escape_next = False
+                elif ch == '\\':
+                    escape_next = True
+                elif ch == "'":
+                    in_char = False
+                char_idx += 1
+                continue
+            
+            # Not in string/char/comment
+            if ch == '/' and char_idx + 1 < len(current_line):
+                next_ch = current_line[char_idx + 1]
+                if next_ch == '/':
+                    in_line_comment = True
+                    char_idx += 2
+                    continue
+                elif next_ch == '*':
+                    in_block_comment = True
+                    char_idx += 2
+                    continue
+            if ch == '"':
+                in_string = True
+                char_idx += 1
+                continue
+            if ch == "'":
+                in_char = True
+                char_idx += 1
+                continue
+            if ch == '{':
+                brace_depth += 1
+                if not try_brace_started:
+                    try_brace_started = True
+                char_idx += 1
+                continue
+            if ch == '}':
+                brace_depth -= 1
+                if try_brace_started and brace_depth == 0:
+                    # Found the end of the try block
+                    try_end_idx = i
+                    break
+                char_idx += 1
+                continue
+            
+            char_idx += 1
+        
+        if try_end_idx != -1:
+            break
+    
+    if try_end_idx == -1:
+        return lines  # Couldn't find try block end
+    
+    # Phase 2: Find all catch blocks after the try block
+    # Reset state for phase 2
+    in_string = False
+    in_char = False
+    in_line_comment = False
+    in_block_comment = False
+    escape_next = False
+    
+    brace_depth = 0
+    catch_blocks = []  # List of (start_line, end_line)
+    i = try_end_idx + 1
+    
+    # Skip to find first catch
+    while i < len(lines):
+        # Check if this line starts a catch block (at brace_depth 0)
+        line_stripped = lines[i].lstrip()
+        if line_stripped.startswith("catch") and brace_depth == 0:
+            catch_start = i
+            # Find the end of this catch block
+            catch_brace_depth = 0
+            catch_brace_started = False
+            catch_end = -1
+            
+            for j in range(i, len(lines)):
+                current_line = lines[j]
+                char_idx = 0
+                
+                while char_idx < len(current_line):
+                    ch = current_line[char_idx]
+                    
+                    if in_line_comment:
+                        break
+                    if in_block_comment:
+                        if ch == '*' and char_idx + 1 < len(current_line) and current_line[char_idx + 1] == '/':
+                            in_block_comment = False
+                            char_idx += 2
+                            continue
+                        char_idx += 1
+                        continue
+                    if in_string:
+                        if escape_next:
+                            escape_next = False
+                        elif ch == '\\':
+                            escape_next = True
+                        elif ch == '"':
+                            in_string = False
+                        char_idx += 1
+                        continue
+                    if in_char:
+                        if escape_next:
+                            escape_next = False
+                        elif ch == '\\':
+                            escape_next = True
+                        elif ch == "'":
+                            in_char = False
+                        char_idx += 1
+                        continue
+                    
+                    if ch == '/' and char_idx + 1 < len(current_line):
+                        next_ch = current_line[char_idx + 1]
+                        if next_ch == '/':
+                            in_line_comment = True
+                            char_idx += 2
+                            continue
+                        elif next_ch == '*':
+                            in_block_comment = True
+                            char_idx += 2
+                            continue
+                    if ch == '"':
+                        in_string = True
+                        char_idx += 1
+                        continue
+                    if ch == "'":
+                        in_char = True
+                        char_idx += 1
+                        continue
+                    if ch == '{':
+                        catch_brace_depth += 1
+                        if not catch_brace_started:
+                            catch_brace_started = True
+                        char_idx += 1
+                        continue
+                    if ch == '}':
+                        catch_brace_depth -= 1
+                        if catch_brace_started and catch_brace_depth == 0:
+                            catch_end = j
+                            break
+                        char_idx += 1
+                        continue
+                    
+                    char_idx += 1
+                
+                if catch_end != -1:
+                    catch_blocks.append((catch_start, catch_end))
+                    i = catch_end + 1
+                    break
+            else:
+                # No end found for this catch block
                 break
+        else:
+            # Not a catch line at depth 0, check for braces to track nesting
+            char_idx = 0
+            current_line = lines[i]
+            while char_idx < len(current_line):
+                ch = current_line[char_idx]
+                if in_line_comment:
+                    break
+                if in_block_comment:
+                    if ch == '*' and char_idx + 1 < len(current_line) and current_line[char_idx + 1] == '/':
+                        in_block_comment = False
+                        char_idx += 2
+                        continue
+                    char_idx += 1
+                    continue
+                if in_string:
+                    if escape_next:
+                        escape_next = False
+                    elif ch == '\\':
+                        escape_next = True
+                    elif ch == '"':
+                        in_string = False
+                    char_idx += 1
+                    continue
+                if in_char:
+                    if escape_next:
+                        escape_next = False
+                    elif ch == '\\':
+                        escape_next = True
+                    elif ch == "'":
+                        in_char = False
+                    char_idx += 1
+                    continue
+                
+                if ch == '/' and char_idx + 1 < len(current_line):
+                    next_ch = current_line[char_idx + 1]
+                    if next_ch == '/':
+                        in_line_comment = True
+                        char_idx += 2
+                        continue
+                    elif next_ch == '*':
+                        in_block_comment = True
+                        char_idx += 2
+                        continue
+                if ch == '"':
+                    in_string = True
+                    char_idx += 1
+                    continue
+                if ch == "'":
+                    in_char = True
+                    char_idx += 1
+                    continue
+                if ch == '{':
+                    brace_depth += 1
+                    char_idx += 1
+                    continue
+                if ch == '}':
+                    brace_depth -= 1
+                    char_idx += 1
+                    continue
+                char_idx += 1
+            
             i += 1
+    
+    # Phase 3: Comment out everything from try_start to last catch end
+    if catch_blocks:
+        last_catch_end = catch_blocks[-1][1]
+        for j in range(try_start, last_catch_end + 1):
+            if not lines[j].lstrip().startswith("//"):
+                lines[j] = "// INJECTED: " + lines[j]
+    
     return lines
 
 
