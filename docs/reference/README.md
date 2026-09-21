@@ -125,3 +125,4 @@ Coverage tracker, update as pages land. (Counts = public decls in the source fil
 | Geometry Solvers & Builders (BSplineApproxInterp, PlateSolver, FillingSurface, LawFunction, PolynomialSolver, KDTree) | 60 | `GeometrySolvers.md` | ✅ done |
 | Concurrency & Progress (OCCTSerial, ImportProgress) | 6 | `Concurrency.md` | ✅ done |
 | Data-exchange status (IOStatus, and the ImportError / ExportError / DocumentError cases carrying it) | 1 | `IOStatus.md` | ✅ done |
+| Bridge diagnostics (OCCTDiagnostics) | 8 | `Diagnostics.md` | ✅ done |

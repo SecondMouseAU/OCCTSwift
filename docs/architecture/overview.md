@@ -148,7 +148,19 @@ OCCT operations can fail (e.g., self-intersecting boolean). Current strategy:
 - `isValid` property for validation
 - `healed()` for repair attempts
 
-Future consideration: Swift `throws` for explicit error handling.
+Every bridge function does this by wrapping its OCCT calls in
+`try { } catch (...) { return <refusal>; }`, which is what keeps a `Standard_Failure` from
+reaching the Swift boundary, where it would be uncatchable (#345). The cost is that the failure's
+type and message were discarded with it, measured in
+[#1161](https://github.com/SecondMouseAU/OCCTSwift/issues/1161) as 3,652 catch-all handlers and
+none catching `Standard_Failure`.
+
+The answer to that is a **side channel, not a signature change**: instrumented catch sites record
+the exception's OCCT class and message, and Swift reads them back through `OCCTDiagnostics`. Every
+signature stays as it was, so nothing in the public surface has to become
+`Result<T, OCCTError>` for a caller to find out why a call refused. Coverage is per catch site and
+partial; see [Bridge Diagnostics](../reference/Diagnostics.md) for how to derive it, and for the
+one thing the channel cannot see, an OS signal.
 
 ### 6. The Bridge Is Internal: No Frozen C ABI
 
