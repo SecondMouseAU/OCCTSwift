@@ -665,13 +665,16 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
         # blinding it.
         # Stage 1 needs no module, only a target, and it uses the built module's so that a snippet
         # guarded by `#if arch(...)` parses the same way in both stages.
-        # Stage 1 is worth running even when stage 2 cannot: it needs no module, and an
-        # unparseable fence is a real finding on a machine with no built package. What is NOT worth
-        # running is stage 1 when there is nothing to report it to, so the skip below is checked
-        # first when the toolchain is absent entirely rather than merely unbuilt.
-        if why_not is not None and triple is None:
-            return ({name: ('skipped', []) for name in index},
-                    f'both stages SKIPPED: {why_not}')
+        # Stage 1 runs even when stage 2 cannot. It needs no module, and an unparseable fence is a
+        # real finding on a machine with no built package.
+        #
+        # Kilo suggested skipping it when the toolchain is unavailable, as wasted work before the
+        # early return below, and that skip was added and then REVERTED here: the "wasted" run is
+        # load-bearing. It is the only path that reaches run_swiftc when there is no built package,
+        # and the canary self-test stubs run_swiftc to prove a silent compiler is refused rather
+        # than believed. Skipping it made that case pass locally (where a build exists, so the skip
+        # never fires) and FAIL in CI (where it does), which is the precise shape of blindness the
+        # canary exists to catch. The cost being avoided is one no-op swiftc batch.
 
         parse_args = ['-target', triple] if triple else []
         parse_raw = run_stage('-parse', snippet_files, parse_args,
