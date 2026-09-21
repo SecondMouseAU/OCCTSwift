@@ -272,9 +272,46 @@ def self_test():
         ok = check(mapping, ambiguous, unmapped, misfiled)
         failed += not ok
         print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
-    total = len(SELF_TEST)
+
+    # #2080: the blindness check, which no fixture above can cover because it is about this
+    # script's view of the real tree rather than about a mapping it was handed. A header the
+    # split owns that yields nothing is the observable form of a swallowed file.
+    blind_cases = [
+        ("a header yielding no declarations is refused",
+         bool(implausible_view({"OCCTShapeBox": "OCCTBridge_Modeling.h"}, ["OCCTBridge.h"]))),
+        ("a header yielding declarations is accepted",
+         not implausible_view({"OCCTShapeBox": "OCCTBridge.h"}, ["OCCTBridge.h"])),
+    ]
+    for name, ok in blind_cases:
+        failed += not ok
+        print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
+
+    total = len(SELF_TEST) + len(blind_cases)
     print(f"{total - failed}/{total} cases correct")
     return 1 if failed else 0
+
+
+def implausible_view(mapping, headers=None):
+    """Header files this script read as declaring nothing, which cannot be true.
+
+    #2080, and the rule in okf/policies/static-gates.md: a detector must assert that its own view of
+    its input is plausible, not only that its fixtures pass. This one reported `misfiled: 0` while
+    seeing 2 of the umbrella's 16 declarations, because a comment containing `src/*.mm` opened a
+    block comment it never saw closed. Its --self-test passed throughout: no fixture carried the
+    trigger, and the triggers are unbounded.
+
+    A header in the split that yields no declaration is the observable form of that blindness. A
+    header legitimately declaring nothing would not be in the split.
+    """
+    if headers is None:
+        headers = sorted(glob.glob(os.path.join(HEADER_DIR, "OCCTBridge_*.h"))) + [UMBRELLA]
+    seen = collections.Counter(mapping.values())
+    problems = []
+    for path in headers:
+        name = os.path.basename(path)
+        if seen.get(name, 0) == 0:
+            problems.append(f"{name} yielded no declarations")
+    return problems
 
 
 def main():
@@ -293,6 +330,16 @@ def main():
         return 2
 
     mapping, ambiguous, unmapped, misfiled = derive()
+
+    blind = implausible_view(mapping)
+    if blind:
+        for line in blind:
+            print(f"  BLIND      {line}", file=sys.stderr)
+        print("\nThis script's view of the headers is implausible, so its verdict means nothing "
+              "and it is\nrefusing to report one. A '/*' inside a // comment is the known cause "
+              "(#2080): it opens a\nblock comment that is never closed, swallowing the rest of the "
+              "header.", file=sys.stderr)
+        return 2
 
     if args.list:
         for symbol, header in sorted(mapping.items(), key=lambda kv: (kv[1], kv[0])):
