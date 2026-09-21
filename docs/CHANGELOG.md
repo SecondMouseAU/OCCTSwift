@@ -21,6 +21,33 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patches `0038` and `0039`: two more data-exchange globals become per-instance (#1403)
+
+**`0038`, `Interface_CheckTool`'s `errh` sentinel.** It decided whether `FillCheck` wraps each module
+`CheckCase` call in its own `try`. The six bulk list builders clear it because they wrap the whole
+loop, and they never restore it, so any bulk list operation left error handling off **process-wide**.
+A later direct `FillCheck` call then ran unguarded and a `Standard_Failure` that should have been
+caught and reported as a check fail escaped instead. `FillCheck` is public, so that sequence is
+reachable without threads at all.
+
+**`0039`, `Interface_FileReaderData`'s parameter memo.** `Param()`/`ChangeParam()` cached the last
+resolved record in file-scope statics, gated by a global counter so only the most recently
+constructed instance could use the cache. `mutable` answers the declaration's own stated blocker,
+"Fields not possible, because Param is const", and the fix also makes the optimisation work at all:
+constructing any second reader disabled the memo for every earlier one, permanently. `InitParams()`
+now invalidates the memo, which the original never needed to because the next construction disabled
+it anyway.
+
+Both follow #363's relocate-to-the-owner precedent, with no locks and no signature changes. Measured
+by rebuilding the ThreadSanitizer kernel and re-running the five registered data-exchange scenarios:
+`errh` 7 reports to 0, `thenm0` 3 to 0, `thefic` 1 to 0. Across `0036`, `0037`, `0038` and `0039`
+together the five targeted globals all reach zero and total reports fall from 178 to 96
+(`Scripts/repro/1157-interface-static-thread-safety/gate-baseline-1403/`).
+
+Neither is in the pinned asset, so nothing changes for consumers until a rebuild. Both defects are
+live in current OCCT master, and both are held from upstream pending a GTest rather than filed
+without one.
+
 ### Carried patch `0037`: the STEP read actor's non-manifold flag is per instance (#2061)
 
 `STEPControl_ActorRead` held its non-manifold marker, `NM_DETECTED`, as a process-global. It is

@@ -122,9 +122,9 @@ let occtTarget: Target = useLocalBinary
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds TWENTY-FIVE patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 25 against a list of
-    // 17, and those eight are the difference:
+    // Scripts/patches/ holds TWENTY-SEVEN patches; the pinned asset holds the
+    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 27 against a list of
+    // 17, and those ten are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
@@ -145,6 +145,14 @@ let occtTarget: Target = useLocalBinary
     //         (a race on a flag that gates whether a COMPOUND component is flattened;
     //         5-of-5 runs report it unpatched, 0-of-5 patched. The wrong-shape outcome
     //         follows by inspection but was NOT reproduced; see the repro README)
+    //   0038  Interface_CheckTool's errh error-handling sentinel is per-instance        #1403
+    //         (not only a race: the bulk list builders clear it and never restore it, so
+    //         any bulk operation leaves error handling off PROCESS-WIDE and a later direct
+    //         FillCheck runs unguarded. Reachable single-threaded. 7 reports to 0)
+    //   0039  Interface_FileReaderData's Param() memo cache is per-instance             #1403
+    //         (mutable answers its own comment, "Fields not possible, because Param is
+    //         const". Also makes the optimisation work at all: constructing any second
+    //         instance disabled the memo for every earlier one. 4 reports to 0)
     //         (a lost-protection bug, not only a torn flag: one thread clearing the global
     //         made another take the UNGUARDED path and lose its exception handling. The
     //         busiest racing site in the DE path; 6 race access sites to 0, measured)

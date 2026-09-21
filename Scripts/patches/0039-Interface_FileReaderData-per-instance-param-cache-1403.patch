@@ -1,0 +1,89 @@
+diff --git a/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.cxx b/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.cxx
+index 70331ea9..94aeaae3 100644
+--- a/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.cxx
++++ b/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.cxx
+@@ -32,12 +32,6 @@ IMPLEMENT_STANDARD_RTTIEXT(Interface_FileReaderData, Standard_Transient)
+ //  Each standard can use it as a base (literal parameter lists,
+ //  associated entities) and add its own data to it.
+ //  Works under the control of FileReaderTool
+-//  Optimization : Fields not possible, because Param is const. Too bad
+-//  So, we assume that we read one file at a time (reasonable assumption)
+-//  We note in field a file number, relative to which we optimize
+-static int thefic = 0;
+-static int thenm0 = -1;
+-static int thenp0 = -1;
+ 
+ Interface_FileReaderData::Interface_FileReaderData(const int nbr, const int npar)
+     : therrload(0),
+@@ -46,8 +40,6 @@ Interface_FileReaderData::Interface_FileReaderData(const int nbr, const int npar
+ {
+   theparams = new Interface_ParamSet(npar);
+   thenumpar.Init(0);
+-  thenm0  = -1;
+-  thenum0 = ++thefic;
+ }
+ 
+ int Interface_FileReaderData::NbRecords() const
+@@ -71,6 +63,7 @@ int Interface_FileReaderData::NbEntities() const
+ void Interface_FileReaderData::InitParams(const int num)
+ {
+   thenumpar.SetValue(num, theparams->NbParams());
++  theCacheRecord = -1;
+ }
+ 
+ void Interface_FileReaderData::AddParam(const int /*num*/,
+@@ -135,30 +128,22 @@ occ::handle<Interface_ParamList> Interface_FileReaderData::Params(const int num)
+ 
+ const Interface_FileParameter& Interface_FileReaderData::Param(const int num, const int nump) const
+ {
+-  if (thefic != thenum0)
++  if (theCacheRecord != num)
+   {
+-    return theparams->Param(thenumpar(num - 1) + nump);
++    theCacheOffset = thenumpar(num - 1);
++    theCacheRecord = num;
+   }
+-  if (thenm0 != num)
+-  {
+-    thenp0 = thenumpar(num - 1);
+-    thenm0 = num;
+-  }
+-  return theparams->Param(thenp0 + nump);
++  return theparams->Param(theCacheOffset + nump);
+ }
+ 
+ Interface_FileParameter& Interface_FileReaderData::ChangeParam(const int num, const int nump)
+ {
+-  if (thefic != thenum0)
+-  {
+-    return theparams->ChangeParam(thenumpar(num - 1) + nump);
+-  }
+-  if (thenm0 != num)
++  if (theCacheRecord != num)
+   {
+-    thenp0 = thenumpar(num - 1);
+-    thenm0 = num;
++    theCacheOffset = thenumpar(num - 1);
++    theCacheRecord = num;
+   }
+-  return theparams->ChangeParam(thenp0 + nump);
++  return theparams->ChangeParam(theCacheOffset + nump);
+ }
+ 
+ Interface_ParamType Interface_FileReaderData::ParamType(const int num, const int nump) const
+diff --git a/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.hxx b/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.hxx
+index 26d1dee4..840c8acd 100644
+--- a/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.hxx
++++ b/src/DataExchange/TKXSBase/Interface/Interface_FileReaderData.hxx
+@@ -196,7 +196,10 @@ protected:
+   Standard_EXPORT void ParamPosition(const int numpar, int& num, int& nump) const;
+ 
+ private:
+-  int                                                 thenum0;
++  //! Memo for Param()/ChangeParam(): the record last resolved and its base offset. Mutable
++  //! because Param() is const, which is what the file-scope statics used to work around.
++  mutable int                                         theCacheRecord = -1;
++  mutable int                                         theCacheOffset = -1;
+   int                                                 therrload;
+   occ::handle<Interface_ParamSet>                     theparams;
+   NCollection_Array1<int>                             thenumpar;
