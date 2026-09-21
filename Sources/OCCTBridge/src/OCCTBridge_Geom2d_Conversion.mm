@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -579,6 +584,7 @@ int32_t OCCTCurve2DEvaluateGrid(OCCTCurve2DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -610,6 +616,7 @@ int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -630,6 +637,7 @@ OCCTCurve2DRef _Nullable OCCTCurve2DMakeLineThroughPoints(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -652,6 +660,7 @@ OCCTCurve2DRef _Nullable OCCTCurve2DMakeLineParallel(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -667,6 +676,7 @@ OCCTShapeRef _Nullable OCCTMakeEdge2dFromPoints(double x1, double y1, double x2,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -691,6 +701,7 @@ OCCTShapeRef _Nullable OCCTMakeEdge2dFromCircle(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -737,6 +748,7 @@ OCCTCurve2DRef _Nullable OCCTFairCurveBatten(double  p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outCode = -1;
     return nullptr;
   }
@@ -790,6 +802,7 @@ OCCTCurve2DRef _Nullable OCCTFairCurveMinimalVariation(double  p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outCode = -1;
     return nullptr;
   }
@@ -831,6 +844,7 @@ int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -866,6 +880,7 @@ int OCCTConvertCurve2dToBezier(OCCTCurve2DRef _Nonnull curveRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -898,6 +913,7 @@ OCCTCurve2DRef OCCTCurve2DInterpolate2D(const double* xs,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -925,6 +941,7 @@ OCCTCurve2DRef OCCTCurve2DApproximate2D(const double* xs, const double* ys, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -948,6 +965,7 @@ OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -971,6 +989,7 @@ OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -993,6 +1012,7 @@ OCCTCurve2DRef OCCTConvertParabolaToBSpline2D(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1015,6 +1035,7 @@ OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1034,6 +1055,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleCenterRadius(double cx, double cy, double ra
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1056,6 +1078,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircle3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1073,6 +1096,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleCenterPoint(double cx, double cy, double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1102,6 +1126,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleParallel(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1122,6 +1147,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleAxis(double cx, double cy, double dx, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1145,6 +1171,7 @@ OCCTCurve2DRef OCCTCurve2DMakeEllipse(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1167,6 +1194,7 @@ OCCTCurve2DRef OCCTCurve2DMakeEllipse3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1192,6 +1220,7 @@ OCCTCurve2DRef OCCTCurve2DMakeEllipseAxis22d(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1215,6 +1244,7 @@ OCCTCurve2DRef OCCTCurve2DMakeHyperbola(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1237,6 +1267,7 @@ OCCTCurve2DRef OCCTCurve2DMakeHyperbola3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1255,6 +1286,7 @@ OCCTCurve2DRef OCCTCurve2DMakeParabola(double cx, double cy, double dx, double d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1278,6 +1310,7 @@ OCCTCurve2DRef OCCTCurve2DMakeParabolaDirectrixFocus(double dx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1303,6 +1336,7 @@ OCCTShapeRef OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1329,6 +1363,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipse(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1357,6 +1392,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipseArc(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1376,6 +1412,7 @@ OCCTShapeRef OCCTMakeEdge2dCurve(OCCTCurve2DRef curve)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1395,6 +1432,7 @@ OCCTShapeRef OCCTMakeEdge2dCurveRange(OCCTCurve2DRef curve, double u1, double u2
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1455,6 +1493,7 @@ OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1472,6 +1511,7 @@ OCCTCurve2DRef OCCTCurve2DCreateSegment(double p1x, double p1y, double p2x, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1495,6 +1535,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcThrough(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1521,6 +1562,7 @@ OCCTCurve2DRef OCCTCurve2DInterpolate(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1553,6 +1595,7 @@ OCCTCurve2DRef OCCTCurve2DInterpolateWithTangents(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1579,6 +1622,7 @@ OCCTCurve2DRef OCCTCurve2DFitPoints(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1610,6 +1654,7 @@ int32_t OCCTCurve2DIntersect(OCCTCurve2DRef           c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1640,6 +1685,7 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef           c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1669,6 +1715,7 @@ int32_t OCCTCurve2DProjectPointAll(OCCTCurve2DRef         c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1711,6 +1758,7 @@ OCCTCurve2DExtrema OCCTCurve2DMinDistance(OCCTCurve2DRef c1, OCCTCurve2DRef c2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1756,6 +1804,7 @@ int32_t OCCTCurve2DAllExtrema(OCCTCurve2DRef      c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1781,6 +1830,7 @@ OCCTCurve2DRef OCCTCurve2DToBSpline(OCCTCurve2DRef c, OCCTParameterisationType p
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1820,6 +1870,7 @@ static OCCTApproxCurve2DResult occtApproxCurve2D(OCCTCurve2DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1882,6 +1933,7 @@ OCCTCurve2DRef OCCTCurve2DInterpolateWithInteriorTangents(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

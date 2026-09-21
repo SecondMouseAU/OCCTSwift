@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -575,6 +580,7 @@ OCCTCurve2DRef _Nullable OCCTApproxCurve2d(OCCTCurve2DRef curve2D,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -599,6 +605,7 @@ bool OCCTEdgePCurveParams(OCCTShapeRef edge, OCCTShapeRef face, double* outFirst
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -619,6 +626,7 @@ bool OCCTEdgePCurveValue(OCCTShapeRef edge, OCCTShapeRef face, double t, double*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -677,6 +685,7 @@ int32_t OCCTLPropAnalyticCurInf(int32_t curveType,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -714,6 +723,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -729,6 +739,7 @@ int32_t OCCTCurve2DCurveType(OCCTCurve2DRef curve)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 8; // OtherCurve
   }
 }
@@ -757,6 +768,7 @@ int32_t OCCTCurve2DDrawAdaptive(OCCTCurve2DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -786,6 +798,7 @@ int32_t OCCTCurve2DDrawUniform(OCCTCurve2DRef c, int32_t pointCount, double* out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -815,6 +828,7 @@ int32_t OCCTCurve2DDrawDeflection(OCCTCurve2DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -833,6 +847,7 @@ double OCCTCurve2DGetLength(OCCTCurve2DRef c)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -854,6 +869,7 @@ double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -878,6 +894,7 @@ bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -902,6 +919,7 @@ bool OCCTCurve2DGetNormal(OCCTCurve2DRef c, double u, double* nx, double* ny)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -923,6 +941,7 @@ bool OCCTCurve2DGetTangentDir(OCCTCurve2DRef c, double u, double* tx, double* ty
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -947,6 +966,7 @@ bool OCCTCurve2DGetCenterOfCurvature(OCCTCurve2DRef c, double u, double* cx, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -973,6 +993,7 @@ int32_t OCCTCurve2DGetInflectionPoints(OCCTCurve2DRef c, double* outParams, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -999,6 +1020,7 @@ int32_t OCCTCurve2DGetCurvatureExtrema(OCCTCurve2DRef c, OCCTCurve2DCurvePoint* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1024,6 +1046,7 @@ int32_t OCCTCurve2DGetAllSpecialPoints(OCCTCurve2DRef c, OCCTCurve2DCurvePoint* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1051,6 +1074,7 @@ int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef  c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1070,6 +1094,7 @@ double OCCTCurve2DParameterAtLength(OCCTCurve2DRef c, double arcLength, double f
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -DBL_MAX;
   }
 }

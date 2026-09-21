@@ -265,6 +265,7 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -354,6 +355,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -441,6 +443,7 @@ static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -494,6 +497,7 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -549,6 +553,11 @@ struct OCCTBSplineApproxInterp
     }
     catch (...)
     {
+      // Recorded even though this is not the outermost catch (#1161/#2077). This one neither
+      // rethrows nor recovers: it converts the exception into `done = false`, which every caller
+      // reports as a refused fit, and no function-level catch ever sees it. __func__ would read
+      // just "run" here, so the context is spelled out.
+      occtRecordCaughtException("OCCTBSplineApproxInterp::run");
       done = false;
       result.Nullify();
       maxErr = -1.0;
@@ -670,6 +679,7 @@ double OCCTCurve3DGetLength(OCCTCurve3DRef c)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -696,6 +706,7 @@ int32_t OCCTCurve3DQuasiUniformAbscissa(OCCTCurve3DRef curve, int32_t nbPoints, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -725,6 +736,7 @@ int32_t OCCTCurve3DQuasiUniformDeflection(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -788,6 +800,7 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -818,6 +831,7 @@ int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -844,6 +858,7 @@ int32_t OCCTUniformAbscissaByDistance(OCCTShapeRef edge, double abscissa, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -874,6 +889,7 @@ int32_t OCCTUniformAbscissaByCountRange(OCCTShapeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -904,6 +920,7 @@ int32_t OCCTUniformAbscissaByDistanceRange(OCCTShapeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -925,6 +942,7 @@ double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

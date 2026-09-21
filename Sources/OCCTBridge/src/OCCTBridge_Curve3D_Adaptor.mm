@@ -265,6 +265,7 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -354,6 +355,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -441,6 +443,7 @@ static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -494,6 +497,7 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -549,6 +553,11 @@ struct OCCTBSplineApproxInterp
     }
     catch (...)
     {
+      // Recorded even though this is not the outermost catch (#1161/#2077). This one neither
+      // rethrows nor recovers: it converts the exception into `done = false`, which every caller
+      // reports as a refused fit, and no function-level catch ever sees it. __func__ would read
+      // just "run" here, so the context is spelled out.
+      occtRecordCaughtException("OCCTBSplineApproxInterp::run");
       done = false;
       result.Nullify();
       maxErr = -1.0;
@@ -671,6 +680,7 @@ double OCCTCurve3DGetLengthBetween(OCCTCurve3DRef c, double u1, double u2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -699,6 +709,7 @@ int32_t OCCTCurve3DDrawAdaptive(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -729,6 +740,7 @@ int32_t OCCTCurve3DDrawUniform(OCCTCurve3DRef c, int32_t pointCount, double* out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -758,6 +770,7 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -784,6 +797,7 @@ bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -818,6 +832,7 @@ bool OCCTEdgeApproxCurveInfo(OCCTEdgeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -867,6 +882,7 @@ OCCTShapeRef OCCTApproxCurveOnSurface(OCCTShapeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -895,6 +911,7 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -932,6 +949,7 @@ int32_t OCCTGCPntsTangentialDeflection(OCCTEdgeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -969,6 +987,7 @@ int32_t OCCTGCPntsTangentialDeflectionCurve(OCCTCurve3DRef _Nonnull curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -998,6 +1017,7 @@ OCCTExtremaExtCCResult OCCTExtremaExtCC(OCCTCurve3DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1035,6 +1055,7 @@ OCCTExtremaPointPair OCCTExtremaExtCCPoint(OCCTCurve3DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1062,6 +1083,7 @@ OCCTExtremaExtCSResult OCCTExtremaExtCS(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1102,6 +1124,7 @@ OCCTExtremaCSPointPair OCCTExtremaExtCSPoint(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1141,6 +1164,7 @@ OCCTExtremaLocateExtCCResult OCCTExtremaLocateExtCC(OCCTCurve3DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1156,6 +1180,7 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 8;
   }
 }
@@ -1186,6 +1211,7 @@ bool OCCTExtremaLocateOnSurface(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

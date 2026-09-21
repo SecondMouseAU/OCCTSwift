@@ -309,6 +309,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -343,6 +344,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -599,6 +601,7 @@ int32_t OCCTExtremaElSSPlanePlane(double  pl1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -641,6 +644,7 @@ int32_t OCCTExtremaExtPElSPlane(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -681,6 +685,7 @@ int32_t OCCTExtremaExtPElSSphere(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -724,6 +729,7 @@ int32_t OCCTExtremaExtPElSCylinder(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -768,6 +774,7 @@ int32_t OCCTExtremaExtPElSCone(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -812,6 +819,7 @@ int32_t OCCTExtremaExtPElSTorus(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }

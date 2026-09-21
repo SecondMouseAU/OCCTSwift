@@ -311,6 +311,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -345,6 +346,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -580,6 +582,7 @@ OCCTSurfaceRef OCCTSurfaceCreatePipe(OCCTCurve3DRef path, double radius)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -599,6 +602,7 @@ OCCTSurfaceRef OCCTSurfaceCreatePipeWithSection(OCCTCurve3DRef path, OCCTCurve3D
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -633,6 +637,7 @@ OCCTSurfaceRef OCCTSurfaceBezierFill4(OCCTCurve3DRef c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -660,6 +665,7 @@ OCCTSurfaceRef OCCTSurfaceBezierFill2(OCCTCurve3DRef c1, OCCTCurve3DRef c2, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -691,6 +697,7 @@ OCCTSurfaceRef OCCTSurfaceFillBSpline2Curves(OCCTCurve3DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -728,6 +735,7 @@ OCCTSurfaceRef OCCTSurfaceFillBSpline4Curves(OCCTCurve3DRef c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -793,6 +801,7 @@ OCCTShapeRef OCCTGeomFillConstrained(OCCTEdgeRef edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -829,6 +838,7 @@ int OCCTGeomFillCoonsPoles(const double* b1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -865,6 +875,7 @@ int OCCTGeomFillCurvedPoles(const double* b1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -944,6 +955,7 @@ void OCCTGeomFillCoonsAlgPatchEval(OCCTShapeRef edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1017,6 +1029,7 @@ OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sec
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1047,6 +1060,7 @@ OCCTEvolvedSectionInfo OCCTGeomFillEvolvedSectionInfo(OCCTShapeRef edgeShape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1080,6 +1094,7 @@ OCCTTrihedronFrame OCCTGeomFillFixedTrihedron(double tangentX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return frame;
 }
@@ -1113,6 +1128,7 @@ OCCTSurfaceRef OCCTGeomFillNSections(const OCCTCurve3DRef* curveRefs,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1149,6 +1165,7 @@ void OCCTGeomFillNSectionsInfo(const OCCTCurve3DRef* curveRefs,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1179,6 +1196,7 @@ OCCTSurfaceRef OCCTGeomFillGenerator(const OCCTCurve3DRef* curves,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1202,6 +1220,7 @@ OCCTBoundaryPoint OCCTGeomFillDegeneratedBoundValue(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1220,6 +1239,7 @@ bool OCCTGeomFillDegeneratedBoundIsDegenerated(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1243,6 +1263,7 @@ void OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1291,6 +1312,7 @@ OCCTStretchFillResult OCCTGeomFillStretch(const double* _Nonnull p1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1308,6 +1330,7 @@ OCCTLocationDraftRef OCCTGeomFillLocationDraftCreate(double dirX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1359,6 +1382,7 @@ OCCTSectionPlacementResult OCCTGeomFillSectionPlacement(OCCTCurve3DRef _Nonnull 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1425,6 +1449,7 @@ OCCTAppSurfResult OCCTGeomFillAppSurf(const OCCTCurve3DRef _Nonnull* _Nonnull cu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1470,6 +1495,7 @@ OCCTSurfaceRef OCCTGeomFillGordon(const OCCTCurve3DRef* profiles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1535,6 +1561,7 @@ OCCTSurfaceRef OCCTGeomFillGordonReport(const OCCTCurve3DRef* profiles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1727,6 +1754,7 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
