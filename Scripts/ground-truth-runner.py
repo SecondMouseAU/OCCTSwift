@@ -480,7 +480,9 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
 
 {spec.setup_code}
 
-int main() {
+{spec.setup_code}
+
+int main() {{
 
 int main() {{
     try {{
