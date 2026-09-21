@@ -54,12 +54,17 @@ The five censuses today and what each is for:
   category labels (`boss`), and no mechanical rule separates those from a stale entry: 79 of 2,588
   identifier-shaped entries resolve to nothing, and most of them are correct documentation.
 
+One gate reads `Scripts/patches/` rather than `Sources/`: `check-patch-deletes-guarded-symbol.py`
+(#2058), which fails when a carried patch deletes a line naming an OCCT symbol a `Tests/` comment
+says its invariant depends on. It scans the patch diffs, not `Libraries/occt-src`, which is what
+keeps it in this job instead of an hour into `kernel-integration.yml` where #2056 was found.
+
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
 ## Every detector proves it is not blind
 
-Nine of the ten gates, all five censuses and the merge-history audit take `--self-test`, a
+Ten of the eleven gates, all five censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
@@ -73,7 +78,7 @@ and `derive-bridge-header-split` exit 2 if run from anywhere but the repo root (
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs twenty of `gate-scripts`' twenty-one invocations, flag for
+`Scripts/git-hooks/pre-commit` runs twenty-seven of `gate-scripts`' twenty-eight invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

@@ -96,6 +96,19 @@ run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-spl
 run "derive-gdt-enums.py --self-test"         Scripts/derive-gdt-enums.py --self-test
 run "derive-gdt-enums.py --verify"            Scripts/derive-gdt-enums.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
+# #1408. Fast, and it is the gate a change like adding a script or a patch trips, so finding out
+# from the commit rather than from CI is the whole point of this hook.
+run "check-inventory-prose.py --self-test"    Scripts/check-inventory-prose.py --self-test
+run "check-inventory-prose.py"                Scripts/check-inventory-prose.py
+# #1407. Every throwing OCCT construction and D1/D2 evaluator sits inside a try, is guarded, or is
+# unreachable. OCC_CATCH_SIGNALS is inert in this build, so an uncaught one is an uncatchable crash.
+run "check-throwing-calls.py --self-test"     Scripts/check-throwing-calls.py --self-test
+run "check-throwing-calls.py"                 Scripts/check-throwing-calls.py
+# #2058, from the #2056 incident: a carried patch deleting the one kernel line a regression test
+# says its invariant depends on. Cheap and local, and the alternative signal is #280's test failing
+# an hour into kernel-integration.yml, which is how 0035 was found.
+run "check-patch-deletes-guarded-symbol.py --self-test" Scripts/check-patch-deletes-guarded-symbol.py --self-test
+run "check-patch-deletes-guarded-symbol.py"   Scripts/check-patch-deletes-guarded-symbol.py
 
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
 # a resolver written for the default two-way style strips <<<<<<< / ======= / >>>>>>> and leaves the
@@ -126,6 +139,9 @@ run "census-arguments-tuple-shapes.py --self-test" Scripts/census-arguments-tupl
 # way, since a bare run lists dotted `Type.member` comment mentions (plus Scripts/*.py usage-flag
 # and CLAUDE.md patch-number citations) that no longer resolve, for a human to adjudicate.
 run "census-comment-staleness.py --self-test" Scripts/census-comment-staleness.py --self-test
+# #1679's census. Self-test only, like the four above and for the same reason: a bare run lists
+# docs/API_REFERENCE.md category rows that resolve to no declaration, for a human to adjudicate.
+run "census-api-reference-rows.py --self-test" Scripts/census-api-reference-rows.py --self-test
 
 # The bridge's clang-format check, from a DIFFERENT CI job (`code-style`, not `gate-scripts`) and
 # not a Python gate, so it does not go through run() either. Here because it is the check that was
