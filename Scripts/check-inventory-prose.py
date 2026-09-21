@@ -101,6 +101,33 @@ def gate_job_scripts(text=None):
     return bare, selftest
 
 
+def gate_job_invocations(text=None):
+    """How many `python3 Scripts/...` steps ci.yml's gate-scripts job runs, invocations not scripts.
+
+    Distinct from gate_job_scripts(), which de-duplicates a script's bare and --self-test runs into
+    one name. static-gates.md's hook paragraph counts invocations, so it needs this number.
+    """
+    text = read(".github/workflows/ci.yml") if text is None else text
+    start = text.find("\n  gate-scripts:")
+    if start < 0:
+        return 0
+    rest = text[start + 1:]
+    end = re.search(r"\n  [A-Za-z0-9_-]+:\n", rest)
+    job = rest[: end.start()] if end else rest
+    return len(re.findall(r"run:\s*python3 Scripts/[A-Za-z0-9_.-]+\.py", job))
+
+
+def hook_invocations(text=None):
+    """How many of those invocations Scripts/git-hooks/pre-commit runs.
+
+    #2058 found this sentence stale by six: the hook had drifted to twenty of twenty-eight while the
+    policy still said twenty of twenty-one, flag for flag with one named exception. A hand-counted
+    number in a sentence about an inventory is exactly what this gate exists for, so it is derived.
+    """
+    text = read("Scripts/git-hooks/pre-commit") if text is None else text
+    return len(re.findall(r'^run "[^"]+"\s+Scripts/[A-Za-z0-9_.-]+\.py', text, re.MULTILINE))
+
+
 def classify():
     """The gate/census/audit split, derived from the job rather than from a hand-kept list."""
     bare, selftest = gate_job_scripts()
@@ -133,6 +160,10 @@ def facts():
         "job_scripts": len(split["all"]),
         "job_scripts_minus_one": len(split["all"]) - 1,
         "gates_with_selftest": len(gates_with_selftest),
+        # #2058: the two numbers in static-gates.md's pre-commit-hook paragraph. Invocations, not
+        # scripts, because that is what the sentence counts.
+        "job_invocations": gate_job_invocations(),
+        "hook_invocations": hook_invocations(),
     }
 
 
@@ -165,6 +196,11 @@ CLAIMS = [
     ("okf/policies/static-gates.md", r"\S+ of the (\S+) gates, all \S+ censuses", "gate_scripts"),
     ("okf/policies/static-gates.md", r"\S+ of the \S+ gates, all (\S+) censuses", "census_scripts"),
     ("okf/policies/static-gates.md", r"The (\S+) censuses today", "census_scripts"),
+    # #2058. Both halves of the hook paragraph's sentence, which had gone stale at both ends.
+    ("okf/policies/static-gates.md",
+     r"pre-commit` runs ([A-Za-z-]+) of `gate-scripts`'", "hook_invocations"),
+    ("okf/policies/static-gates.md",
+     r"of `gate-scripts`' ([A-Za-z-]+) invocations", "job_invocations"),
 ]
 
 
@@ -332,6 +368,20 @@ def self_test():
     case("job-parser-bounded",
          bare == {"check-a.py"} and selftest == {"check-a.py", "census-b.py"},
          "bare=%s selftest=%s" % (sorted(bare), sorted(selftest)))
+
+    # 5b. #2058: the invocation counters. gate_job_invocations counts steps rather than scripts, and
+    #     the hook parser reads only its own `run "label" Scripts/x.py` lines.
+    case("job-invocation-counter-bounded", gate_job_invocations(sample) == 3,
+         str(gate_job_invocations(sample)))
+    hook_sample = (
+        '# run "check-commented-out.py"        Scripts/check-commented-out.py\n'
+        'run "check-a.py --self-test"          Scripts/check-a.py --self-test\n'
+        'run "check-a.py"                      Scripts/check-a.py\n'
+        'if git grep -nE \'marker\' -- . ; then\n'
+        '    failed+=("conflict-markers")\n'
+        'fi\n')
+    case("hook-invocation-counter-bounded", hook_invocations(hook_sample) == 2,
+         str(hook_invocations(hook_sample)))
 
     # 6. The pinned-list parser reads the enumerated numbers, not every four-digit run in the file.
     pkg = ("// survive, all present in Scripts/patches/, are:\n"
