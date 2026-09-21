@@ -15,7 +15,7 @@
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
 #if !defined(__wasi__)
-#import <Foundation/Foundation.h>
+  #import <Foundation/Foundation.h>
 #endif
 
 // MARK: - Continuity vocabularies

@@ -20,7 +20,8 @@
     "accessLevel" : "private"
   },
   "orderedImports" : {
-    "includeConditionalImports" : false
+    "includeConditionalImports" : false,
+    "shouldGroupImports" : true
   },
   "noAssignmentInExpressions" : {
     "allowedFunctions" : [
