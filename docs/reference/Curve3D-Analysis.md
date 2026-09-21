@@ -57,7 +57,7 @@ public func tangentDirection(at u: Double) -> SIMD3<Double>?
 - **OCCT:** `GeomLProp_CLProps::Tangent`.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(1, 0, 0)),
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(1, 0, 0)),
      let t = c.tangentDirection(at: 0) {
       // t ≈ SIMD3(1, 0, 0)
   }
@@ -483,8 +483,8 @@ public func minDistance(to other: Curve3D) -> Double?
 - **OCCT:** `GeomAPI_ExtremaCurveCurve::LowerDistance`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)),
-     let c2 = Curve3D.line(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)),
+  if let c1 = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)),
+     let c2 = Curve3D.segment(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)),
      let d  = c1.minDistance(to: c2) {
       print(d)  // ≈ 5.0
   }
@@ -539,7 +539,7 @@ Returns an empty array when the curve does not pierce the surface. Both transver
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
      let srf  = Surface.sphere(radius: 5) {
       let hits = line.intersections(with: srf)
       // hits.count == 2 for a line passing through the center of the sphere
@@ -561,7 +561,7 @@ public func minDistance(to surface: Surface) -> Double?
 - **OCCT:** `GeomAPI_ExtremaCurveSurface::LowerDistance`.
 - **Example:**
   ```swift
-  if let c   = Curve3D.line(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
+  if let c   = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
      let srf = Surface.sphere(radius: 5),
      let d   = c.minDistance(to: srf) {
       print(d)  // ≈ 5.0 (line is 10 units from center, sphere radius 5)
@@ -685,7 +685,7 @@ The answer is always inside the curve's own `domain`, and always the true neares
 - **OCCT:** `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve`, minimised together with the domain's ends, no one of the three is correct alone (#539).
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)) {
       let proj = c.projectPoint(SIMD3(5, 3, 0))
       print(proj.point)     // ≈ SIMD3(5, 0, 0)
       print(proj.distance)  // ≈ 3.0
@@ -721,7 +721,7 @@ Convenience wrapper over `projectPoint(_:precision:)` when only the scalar dista
 - **OCCT:** Delegates to `projectPoint(_:precision:)`, and inherits its #539 fix.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)) {
       let d = c.distance(to: SIMD3(5, 3, 0))  // ≈ 3.0
   }
   ```
@@ -1016,7 +1016,7 @@ public func extremaCS(
 - **OCCT:** `Extrema_ExtCS`.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
+  if let c = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
      let s = Surface.sphere(radius: 5) {
       let ex = c.extremaCS(surface: s)
       if ex.isDone {
@@ -1101,7 +1101,7 @@ Uses `ProjLib_ProjectOnSurface` / `ProjLib_ComputeApprox` to produce a B-spline 
 - **OCCT:** `OCCTProjLibProjectOnSurface` → `ProjLib_ProjectOnSurface`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
      let sph  = Surface.sphere(radius: 10),
      let onSph = line.projectOnSurface(sph) {
       // onSph is a B-spline arc along the sphere meridian
@@ -1299,7 +1299,7 @@ The format is OCCT's internal text stream format, suitable for persistence or in
 - **OCCT:** `GeomTools_CurveSet::Write`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.line(from: .zero, to: SIMD3(1, 0, 0)),
+  if let c1 = Curve3D.segment(from: .zero, to: SIMD3(1, 0, 0)),
      let c2 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let data = Curve3D.serializeCurves([c1, c2]) {
       // store or transmit `data`

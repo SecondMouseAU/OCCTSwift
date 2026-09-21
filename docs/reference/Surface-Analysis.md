@@ -595,7 +595,7 @@ Uses `GeomProjLib::Curve2d` for analytic (normal) projection. The resulting `Cur
 - **Example:**
   ```swift
   if let srf  = Surface.cylinder(radius: 10, height: 50),
-     let line = Curve3D.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 0, 50)),
+     let line = Curve3D.segment(from: SIMD3(10, 0, 0), to: SIMD3(10, 0, 50)),
      let uv   = srf.projectCurve(line) {
       // uv is the isoline in cylinder UV space
   }
@@ -643,7 +643,7 @@ Uses `GeomProjLib::Project` for normal projection. The result is a 3D curve, unl
 - **Example:**
   ```swift
   if let srf  = Surface.sphere(radius: 10),
-     let line = Curve3D.line(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)),
+     let line = Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)),
      let onSrf = srf.projectCurve3D(line) {
       // onSrf is the meridian arc on the sphere
   }
@@ -798,7 +798,7 @@ Returns all intersection points (tangent and transverse) up to an internal cap o
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
      let srf  = Surface.sphere(radius: 5) {
       let hits = line.intersections(with: srf)
       // hits.count == 2 for a line passing through a sphere

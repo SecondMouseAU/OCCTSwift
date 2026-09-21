@@ -580,7 +580,7 @@ Produces a `Geom_SurfaceOfLinearExtrusion`. The U parameter follows the profile 
 - **OCCT:** `Geom_SurfaceOfLinearExtrusion(profile, direction)`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)),
+  if let line = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)),
      let surf = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 1)) {
       let trimmed = surf.trimmed(u1: 0, u2: 1, v1: 0, v2: 20)
   }
@@ -605,7 +605,7 @@ The U parameter is the angle of revolution (0 to 2π); V follows the meridian cu
 - **OCCT:** `Geom_SurfaceOfRevolution(meridian, gp_Ax1)`.
 - **Example:**
   ```swift
-  if let profile = Curve3D.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)),
+  if let profile = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)),
      let surf = Surface.revolution(meridian: profile,
                                     axisOrigin: .zero,
                                     axisDirection: SIMD3(0, 0, 1)) {
@@ -1032,7 +1032,7 @@ The section curve defines the cross-sectional shape at each point along `path`.
   ```swift
   if let arc = Curve3D.arcOfCircle(center: .zero, radius: 3,
                                     startAngle: 0, endAngle: .pi),
-     let line = Curve3D.line(from: .zero, to: SIMD3(0, 0, 10)),
+     let line = Curve3D.segment(from: .zero, to: SIMD3(0, 0, 10)),
      let pipe = Surface.pipe(path: line, section: arc) {
       let trimmed = pipe.trimmed(u1: 0, u2: 1, v1: 0, v2: 1)
   }

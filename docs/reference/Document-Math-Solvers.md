@@ -132,7 +132,7 @@ public static func ellipse(
 `Conic2D` (their only way to report a degenerate input was an all-zero struct describing no conic),
 were deprecated in favour of the factories above and removed at v2.0.0 (#784):
 
-```swift
+```swift no-typecheck: the "before" half names a factory removed at v2.0.0, on purpose
 // before (removed)
 let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
                             majorRadius: 5, minorRadius: 3)
