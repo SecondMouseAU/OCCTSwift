@@ -461,9 +461,6 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
     # Output capture - print result info
     output_code = [
         "    std::cout << \"status=success\" << std::endl;",
-        "",
-        "",
-        "",
     ]
 
     # Add shape-specific output if result is a shape
@@ -479,9 +476,6 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
 {chr(10).join(includes)}
 
 {spec.setup_code}
-
-
-int main() {{
 
 int main() {{
     try {{
