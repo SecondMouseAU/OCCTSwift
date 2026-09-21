@@ -11,18 +11,29 @@ a block that already has the call is left alone, so re-running after a merge is 
 
 Why a script and not a hand pass: #1161 measured 3,652 `catch (...)` blocks in
 Sources/OCCTBridge/src, 3,597 of them at function level. One file (OCCTBridge_Modeling_Boolean.mm)
-was instrumented with this script when the channel shipped; the rest is a mechanical sweep that
-should be done a domain at a time, reviewed as "this script's output plus clang-format", never by
-hand.
+was instrumented with this script when the channel shipped, and #2077 swept the other 73 a domain at
+a time, each pass reviewed as "this script's output plus clang-format" rather than by hand.
+
+THE SWEEP IS DONE, so this script's remaining job is a NEW bridge file or a new bridge function:
+run it, run Scripts/format-bridge.sh, and Scripts/check-bridge-diagnostics.py will confirm. That
+gate is also what will tell you this script was needed in the first place.
 
 WHAT "FUNCTION LEVEL" MEANS, and why it is the whole safety argument: under this tree's
 clang-format config the bridge is indented two spaces per level with the brace on its own line, so a
 catch block at indent 2 is the one that fails the entire call, which is exactly what the channel is
 for. A deeper one sits inside a loop or an inner try and may be ordinary recover-and-continue
 control flow; recording one of those would report a failure for a call that went on to succeed.
-Those are reported, never edited, and each needs a human verdict. In the first file, one of 103
-blocks was such a case (occtSampleWirePoints, which skips an edge carrying no 3D curve) and is
-deliberately left out with a comment saying so.
+Those are reported, never edited, and each needs a human verdict. Of the 54 deeper blocks in the
+bridge, #2077 instrumented 21 by hand (the ones that swallow the exception and convert it into a
+refusal no outer handler will see) and left 33 out with a comment at each saying why.
+
+That comment is load-bearing and not only documentation: the idempotence check below treats a block
+whose first lines mention occtRecordCaughtException as already handled, so the comment is what stops
+the next run of this script reinserting the call. #2077 measured both halves of that in OCCTBridge.mm
+on one pass: occtDiagnosticsLog's clause already carried such a comment and was left alone, while
+occtRecordCaughtException's own classification ladder did not, and the call this script inserted
+there would have rethrown the same exception into the same clause and recursed until the stack ran
+out. Both now carry one, and both are on check-bridge-diagnostics.py's exemption list.
 
 Run Scripts/format-bridge.sh on any file this touches: the inserted line is written at a fixed
 indent and clang-format is the authority on what the file should look like.

@@ -209,15 +209,44 @@ public enum Kind: Int32, Sendable, CaseIterable {
 
 ## Coverage
 
-Recording is per catch site, and most sites are not instrumented yet. `OCCTBridge_Modeling_Boolean.mm` is, in full; every other bridge file still discards what it catches. **A capture that comes back empty therefore means "no instrumented site reported", not "nothing was caught."**
+**Every function-level `catch (...)` block in the bridge records what it caught.** [#2077](https://github.com/SecondMouseAU/OCCTSwift/issues/2077) swept the channel across all 74 `Sources/OCCTBridge/src/*.mm` files, and `Scripts/check-bridge-diagnostics.py` is what keeps it that way: a gate in CI's `gate-scripts` job that fails when a bridge function's outermost catch block does not call `occtRecordCaughtException(__func__);` as its first statement.
 
-Derive the current coverage from the source rather than trusting a number written down anywhere:
+Two function-level sites are exempt, both in `OCCTBridge.mm`, both on the gate's own exemption list with a written reason and both inside this channel's own machinery, where a record would feed itself:
+
+- `occtRecordCaughtException` is the classifier. A call inside its own `catch (...)` clause would `throw;` the same exception, land back in the same clause, and recurse until the stack ran out.
+- `occtDiagnosticsLog` is that function's tail, reached only while a record is being sent. A diagnostic that throws must not become the failure being diagnosed.
+
+So an empty capture no longer means "the site was never instrumented". It means the failure raised nothing to classify, which is the second of the two cases under [What this cannot report](#what-this-cannot-report): `IsDone() == false`, a null result handle, a rejected argument. The first case, an OS signal, never returns a `nil` to read a capture beside, because it ends the process.
+
+Numbers still come from the source, never from a page:
 
 ```bash
-grep -rc '^ *occtRecordCaughtException(__func__);' Sources/OCCTBridge/src
+python3 Scripts/check-bridge-diagnostics.py          # the verdict, and the counts behind it
+python3 Scripts/check-bridge-diagnostics.py --list   # every site, one line each
 ```
 
-Extending coverage is a scripted pass, not a hand edit:
+### Deeper catch blocks, and why the gate stops at function level
+
+A `catch (...)` nested inside a loop or an inner `try` is a different question, and the gate deliberately does not answer it. Many of them are ordinary recover-and-continue control flow, where recording would report a failure for a call that went on to succeed:
+
+```cpp
+catch (...)
+{
+  // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+  // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+  // it would report a failure for a call that did not fail. The diagnostics channel is for
+  // catch blocks that refuse the call.
+  continue;
+} // no 3D curve on this edge, nothing to sample
+```
+
+Others swallow the exception and convert it into a refusal the outermost handler will never see, and those **are** instrumented, because otherwise the reason is lost entirely: `occtFindSurface`'s three inner catches in each `OCCTBridge_Topology_*.mm` file, and `OCCTBSplineApproxInterp::run()` in each `OCCTBridge_Curve3D_*.mm` file. Each carries a note saying why it records despite not being outermost. Of the bridge's 54 deeper blocks, 21 record and 33 say in place why they do not.
+
+Only a function-level block is unambiguously "this call refused", which is measurable rather than assumed: every one of the bridge's function-level `catch (...)` blocks is the only function-level `try`/`catch` in its own function, so none of them is a first attempt with a fallback behind it.
+
+### Adding a bridge file, or a bridge function
+
+The gate reports the site; this writes the call:
 
 ```bash
 python3 Scripts/add-bridge-diagnostics.py --dry-run Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
@@ -225,9 +254,7 @@ python3 Scripts/add-bridge-diagnostics.py Sources/OCCTBridge/src/OCCTBridge_Mesh
 Scripts/format-bridge.sh Sources/OCCTBridge/src/OCCTBridge_Mesh.mm
 ```
 
-It instruments every function-level catch block, reports every deeper one instead of touching it, and is idempotent, so re-running after a merge is safe. The deeper ones each need a verdict, which is why the sweep is a domain at a time rather than one commit over 73 files.
-
-One catch block in the instrumented file is deliberately left out and says so in place: `occtSampleWirePoints`' `catch (...) { continue; }` recovers, so the sampling pass goes on to succeed and recording it would report a failure for a call that did not fail. The channel is for catch blocks that refuse the call.
+It instruments every function-level catch block, reports every deeper one instead of touching it, and is idempotent, so re-running after a merge is safe. A block whose first lines already mention `occtRecordCaughtException` is left alone, which is why an exemption comment is load-bearing and not only documentation: it is what stops the next run reinserting the call.
 
 ## What this cannot report
 

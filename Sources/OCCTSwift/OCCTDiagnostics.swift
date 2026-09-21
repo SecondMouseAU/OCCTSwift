@@ -27,15 +27,20 @@ import OCCTBridge
 /// }
 /// ```
 ///
-/// ## Coverage is partial
+/// ## Coverage
 ///
-/// Recording is per catch site and most sites are not instrumented yet, so a capture that comes
-/// back empty means "no instrumented site reported", not "nothing was caught". Derive the current
-/// coverage from the source rather than trusting a number written down anywhere:
+/// Every function-level `catch (...)` block in the bridge records what it caught, across all 74
+/// bridge files, and `Scripts/check-bridge-diagnostics.py` is the CI gate that keeps it that way.
+/// The two exemptions are this channel's own internals, where a record would feed itself. So an
+/// empty capture means the failure raised nothing to classify, not that the site was never
+/// instrumented. Re-derive rather than trusting a number written down anywhere:
 ///
 /// ```
-/// grep -rc '^ *occtRecordCaughtException(__func__);' Sources/OCCTBridge/src
+/// python3 Scripts/check-bridge-diagnostics.py
 /// ```
+///
+/// A `catch (...)` nested inside a loop is a separate question, and some are deliberately silent
+/// because they recover and let the call succeed. See `docs/reference/Diagnostics.md`.
 ///
 /// ## What this cannot report
 ///

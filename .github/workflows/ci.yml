@@ -38,14 +38,14 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all seventeen are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all eighteen are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other sixteen. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other seventeen. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -194,6 +194,18 @@ jobs:
       - name: check-patch-deletes-guarded-symbol.py
         if: '!cancelled()'
         run: python3 Scripts/check-patch-deletes-guarded-symbol.py
+
+      # #2077. #1161's caught-exception diagnostics channel shipped with 1 of the 74 bridge .mm
+      # files instrumented and was swept across the rest; this is what stops the sweep decaying.
+      # A new bridge function written with a bare `catch (...) { return nullptr; }` returns a nil
+      # that explains nothing, and nothing else in CI would notice.
+      - name: check-bridge-diagnostics.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-diagnostics.py --self-test
+
+      - name: check-bridge-diagnostics.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-diagnostics.py
 
       # A hand-resolved conflict can leave a marker behind, and this repo sets
       # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
