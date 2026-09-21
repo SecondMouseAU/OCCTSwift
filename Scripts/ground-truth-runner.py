@@ -532,7 +532,7 @@ def compile_and_run(cpp_code: str, xcframework_paths: Dict[str, Path], work_dir:
         "-std=c++17",
         "-ObjC++",
         "-w",
-        f"-I{shlex.quote(str(headers))}",
+        f"-I{headers}",
         f"-L{shlex.quote(str(library.parent))}",
         "-lOCCT-macos",
         "-framework", "Foundation",
