@@ -1,5 +1,5 @@
 diff --git a/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx b/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
-index 029c03e5..419baed8 100644
+index 029c03e5..0b780c65 100644
 --- a/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
 +++ b/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
 @@ -23,6 +23,8 @@
@@ -51,16 +51,17 @@ index 029c03e5..419baed8 100644
    return atemp.Bind(name, model);
  }
  
-@@ -1131,6 +1145,7 @@ bool Interface_InterfaceModel::SetTemplate(const char* const
+@@ -1131,6 +1145,8 @@ bool Interface_InterfaceModel::SetTemplate(const char* const
  occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> Interface_InterfaceModel::
    ListTemplates()
  {
-+  std::lock_guard<std::recursive_mutex>                                     aLock(atempMutex());
++  std::lock_guard<std::recursive_mutex> aLock(atempMutex());
++
    occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> list =
      new NCollection_HSequence<occ::handle<TCollection_HAsciiString>>();
    if (atemp.IsEmpty())
 diff --git a/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx b/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
-index fa18006e..09c3422f 100644
+index fa18006e..9654934c 100644
 --- a/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
 +++ b/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
 @@ -47,6 +47,8 @@
@@ -72,14 +73,13 @@ index fa18006e..09c3422f 100644
  #include <XSControl_SelectForTransfer.hxx>
  #include <XSControl_SignTransferStatus.hxx>
  #include <XSControl_WorkSession.hxx>
-@@ -58,6 +60,16 @@ IMPLEMENT_STANDARD_RTTIEXT(XSControl_Controller, Standard_Transient)
+@@ -58,6 +60,15 @@ IMPLEMENT_STANDARD_RTTIEXT(XSControl_Controller, Standard_Transient)
  
  static NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>> listad;
  
 +//! Guards listad, the process-wide registry of controllers by format name. One registry per process
-+//! is the design here, so the state is shared deliberately and a lock is the right tool rather than
-+//! relocating it. Recursive for the same reason Interface_Static's is: an entry point may reach
-+//! another through the map.
++//! is the design, so the state is shared deliberately and a lock is the right tool rather than
++//! relocating it. Recursive for consistency with the other registry locks in this layer.
 +static std::recursive_mutex& listadMutex()
 +{
 +  static std::recursive_mutex THE_MUTEX;
@@ -89,7 +89,7 @@ index fa18006e..09c3422f 100644
  //=================================================================================================
  
  XSControl_Controller::XSControl_Controller(const char* const theLongName,
-@@ -106,6 +118,7 @@ void XSControl_Controller::SetNames(const char* const theLongName, const char* c
+@@ -106,6 +117,7 @@ void XSControl_Controller::SetNames(const char* const theLongName, const char* c
  
  void XSControl_Controller::Record(const char* const theName) const
  {
@@ -97,13 +97,12 @@ index fa18006e..09c3422f 100644
    if (listad.IsBound(theName))
    {
      occ::handle<Standard_Transient> thisadapt(this);
-@@ -126,7 +139,8 @@ void XSControl_Controller::Record(const char* const theName) const
+@@ -126,6 +138,8 @@ void XSControl_Controller::Record(const char* const theName) const
  
  occ::handle<XSControl_Controller> XSControl_Controller::Recorded(const char* const theName)
  {
--  occ::handle<Standard_Transient> recorded;
 +  std::lock_guard<std::recursive_mutex> aLock(listadMutex());
-+  occ::handle<Standard_Transient>       recorded;
++
+   occ::handle<Standard_Transient> recorded;
    return (listad.Find(theName, recorded) ? occ::down_cast<XSControl_Controller>(recorded)
                                           : occ::handle<XSControl_Controller>());
- }

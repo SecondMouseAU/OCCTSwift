@@ -1,5 +1,5 @@
 diff --git a/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx b/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
-index 46eb0348..e6ce9d75 100644
+index 46eb0348..35a84fcc 100644
 --- a/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
 +++ b/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
 @@ -73,13 +73,14 @@ IGESControl_Controller::IGESControl_Controller(const bool mod)
@@ -9,8 +9,8 @@ index 46eb0348..e6ce9d75 100644
 -  static bool init = false;
 -  if (!init)
 -  {
-+  // Thread-safe by the same mechanism as Init() above. STEPControl_Controller's equivalent uses an
-+  // explicit mutex; this needs none.
++  // Function-local static initialisation is thread-safe, so the one-time work runs exactly once
++  // even when several threads construct a controller together.
 +  static const bool init = []() {
      IGESSolid::Init();
      IGESAppli::Init();
@@ -29,8 +29,8 @@ index 46eb0348..e6ce9d75 100644
 -  static bool inic = false;
 -  if (!inic)
 -  {
-+  // Function-local static initialisation is thread-safe, so the one-time work runs exactly once
-+  // without the check-then-act two threads could both pass.
++  // Thread-safe by the same mechanism as the constructor above: the check-then-act two threads
++  // could both pass is gone rather than locked around.
 +  static const bool inic = []() {
      occ::handle<IGESControl_Controller> ADIGES = new IGESControl_Controller(false);
      ADIGES->AutoRecord();
@@ -45,18 +45,10 @@ index 46eb0348..e6ce9d75 100644
 +  return inic;
  }
 diff --git a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
-index 14803e7c..46a89141 100644
+index 14803e7c..b49e6b72 100644
 --- a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
 +++ b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
-@@ -31,7 +31,6 @@
- #include <STEPControl_ActorRead.hxx>
- #include <STEPControl_ActorWrite.hxx>
- #include <STEPControl_Controller.hxx>
--#include <StepData_FileProtocol.hxx>
- #include <StepData_StepModel.hxx>
- #include <STEPEdit.hxx>
- #include <STEPEdit_EditContext.hxx>
-@@ -488,15 +487,15 @@ IFSelect_ReturnStatus STEPControl_Controller::TransferWriteShape(
+@@ -488,15 +488,15 @@ IFSelect_ReturnStatus STEPControl_Controller::TransferWriteShape(
  
  bool STEPControl_Controller::Init()
  {
