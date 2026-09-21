@@ -1530,9 +1530,27 @@ functions, so **no signature changes**. Same shape as `0036`.
 **Measured**: `errh` reported as a racing global **7 times before, 0 after**, across the five
 registered DE scenarios.
 
-Not yet filed upstream: the fix and the measurement are done, but demonstrating the escape in a
-GTest needs an `Interface_GeneralModule` whose `CheckCase` raises plus a protocol selecting it, more
-machinery than `0036`'s test needed. Held rather than filed without one.
+**Filed as [OCCT#1555](https://github.com/Open-Cascade-SAS/OCCT/pull/1555)** with a test that
+provably fails without the fix, which is what `0039` could not manage and why the two were treated
+differently.
+
+`Interface_CheckTool_Test.ErrorHandlingSentinelIsPerInstance` has one tool run `CompleteCheckList`
+and then asserts a second, untouched tool still guards its own `FillCheck`. Verified by
+override-linking the unpatched `Interface_CheckTool.cxx` against an otherwise identical build:
+
+```
+Actual: it throws Standard_Failure with description "deliberate failure from ThrowingModule".
+another tool's bulk list operation disabled this tool's error handling
+[  FAILED  ] Interface_CheckTool_Test.ErrorHandlingSentinelIsPerInstance
+```
+
+1 failed before, 2 passed after. A second case, `FillCheckCatchesARaisingModule`, pins that the
+guard is real rather than absent, so the first is not vacuous.
+
+The machinery this needed (a raising `Interface_GeneralModule`, a protocol selecting it, a concrete
+model) is why it was held at first. `Interface_CheckTool(model, protocol)` builds its own `GTool`
+per instance, which is what made it tractable without leaning on global registration for the tool
+itself.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1569,7 +1587,25 @@ were compile-checked: `StepData_StepReaderData` and `IGESData_IGESReaderData`.
 
 **Measured**: `thenm0` **3 before, 0 after**; `thefic` **1 before, 0 after**.
 
-Not yet filed upstream: no GTest yet.
+**HELD FROM UPSTREAM, decided 2026-09-21. Not to be filed as-is.**
+
+No test can demonstrate this change. The guarded and unguarded paths always computed the same value,
+which is why the branch could be deleted at all, so **no deterministic single-threaded test
+distinguishes before from after**. A draft test that appeared to, asserting the memo does not outlive
+`InitParams`, was found to pass without the fix: `Interface_ParamSet::Append` appends to the end
+(`thenbpar++`), so a stale base offset still resolves to the right slot, and calling `InitParams` for
+an earlier record corrupts the record table regardless, so the sequence is not meaningful use.
+
+Offering upstream a PR whose tests cannot fail invites a review question with no good answer, and
+`okf/policies/prove-the-test-fails.md` is the rule being respected rather than worked around. Carried
+locally instead, where the measured race removal and the restored optimisation are the whole benefit.
+
+**Also correcting this entry's own earlier claim**: the `InitParams()` memo invalidation is
+**defensive, not a fix for a reachable bug**. `InitParams` is the only writer of `thenumpar` after
+construction and callers run it *after* a record's parameters rather than before
+(`StepFile_Read.cxx:153`), so a finalised record's base offset never moves and the memo cannot go
+stale in documented use. The two lines make the dependency explicit and cost nothing; they close no
+hole.
 
 **Retire** once the bundled OCCT includes this fix.
 
