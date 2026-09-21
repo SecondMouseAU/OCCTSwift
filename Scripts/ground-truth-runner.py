@@ -425,7 +425,7 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
             if requires_base_shape:
                 call_code.append(f"    {occt_class} analyzer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} analyzer(baseShape);")
+                call_code.append(f"    {occt_class} analyzer;")
             call_code.append(f"    Standard_Boolean result = analyzer.IsValid();")
         elif occt_class == "ShapeHealing_ShapeTolerance":
             if requires_base_shape:
