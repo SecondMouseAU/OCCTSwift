@@ -247,8 +247,8 @@ def run():
         found += findings_for_patch(name, patches[name], index)
 
     if not found:
-        print('check-patch-deletes-guarded-symbol: clean, none of the %d carried patches removes '
-              'a line naming one of the %d OCCT symbols %d test files guard'
+        print('check-patch-deletes-guarded-symbol: clean, no carried patch removes a line naming '
+              'a guarded symbol (%d patches, %d OCCT symbols named by %d test files)'
               % (len(patches), index.symbol_count(), len(index.files())))
         return 0
 
