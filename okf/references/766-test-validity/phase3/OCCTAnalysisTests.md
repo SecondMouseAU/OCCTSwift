@@ -11,6 +11,7 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+| **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -100,6 +101,7 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -184,6 +186,7 @@ For each test, run ground-truth C++ comparison:
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| Single point detected as point | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
@@ -251,4 +254,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 546 tests
+**Total**: 547 tests
