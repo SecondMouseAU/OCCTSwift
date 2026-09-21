@@ -1,6 +1,41 @@
-{
-  "note": "Kernel parity JSON for OCCTAnalysisTests not yet generated. This domain has 546 tests requiring bridge-kernel parity verification.",
-  "status": "PENDING",
-  "test_count": 546,
-  "domain": "Analysis"
-}
+[
+  {
+    "test_name": "Point Cloud Analysis::Coplanar points detected as planar",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "planar",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "normal": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "planar",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "normal": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  }
+]
