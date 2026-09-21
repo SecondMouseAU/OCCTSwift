@@ -300,8 +300,47 @@ def check_carried_sequence():
     return problems
 
 
+def tsan_suppression_patches(text=None):
+    """Every `Scripts/patches/NNNN` a `Scripts/tsan.supp` comment cites, as a set of ints."""
+    if text is None:
+        text = read("Scripts/tsan.supp")
+    return {int(n) for n in re.findall(r"Scripts/patches/(\d{4})", text)}
+
+
+def check_tsan_suppressions():
+    """A tsan.supp suppression must cite an UNPINNED patch that exists on disk.
+
+    #1409. A suppression exists because the fix is not in the pinned kernel yet. The moment a repin
+    ships that patch the suppression is dead, and it then hides a race nobody is looking for any
+    more. CLAUDE.md lists retiring it as due at the repin and says of that class outright: "None of
+    their tests can signal that they have outlived their fix." This is that signal.
+
+    Deliberately implemented here rather than as its own gate: exactly ONE suppression cites a patch
+    today (0030, for #1154), and a standalone script for one case is disproportionate. This file
+    already reads Scripts/patches/ and Package.swift to decide what is pinned.
+
+    The second half catches the mirror-image drift, a suppression citing a patch that no longer
+    exists. Neither 0032 nor 0035 left one behind, but both were retired within a month, so the
+    shape is live rather than hypothetical.
+    """
+    cited = tsan_suppression_patches()
+    if not cited:
+        return []
+    on_disk = {int(stem[:4]) for stem in patch_files()}
+    pinned = {int(n) for n in pinned_patch_numbers()}
+    problems = []
+    for n in sorted(cited - on_disk):
+        problems.append("Scripts/tsan.supp: cites Scripts/patches/%04d, which is not on disk. If "
+                        "that patch was retired, the suppression it justified goes with it." % n)
+    for n in sorted(cited & pinned):
+        problems.append("Scripts/tsan.supp: cites Scripts/patches/%04d, which IS now pinned, so "
+                        "the suppression is dead and is hiding a race the kernel already fixes. "
+                        "Delete that entry (#1409)." % n)
+    return problems
+
+
 def run():
-    problems = check_claims() + check_patch_rows() + check_carried_sequence()
+    problems = check_claims() + check_patch_rows() + check_carried_sequence() + check_tsan_suppressions()
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -330,7 +369,7 @@ def self_test():
         cases.append((name, ok, detail))
 
     # 1. The real repo is clean, which is what the gate asserts in CI.
-    problems = check_claims() + check_patch_rows() + check_carried_sequence()
+    problems = check_claims() + check_patch_rows() + check_carried_sequence() + check_tsan_suppressions()
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -425,6 +464,25 @@ def self_test():
     case("carried-sequence-accepts-a-wrap-inside-the-phrase",
          carried_sequence_numbers("so the carried\nsequence now reads 0010\u20130012.")
          == {10, 11, 12})
+
+    # 9. #1409: a tsan.supp suppression must cite an unpinned patch that is still on disk. Exactly
+    #    one cites a patch today (0030), so these exercise the parser and both failure directions
+    #    against literal text rather than against the tree, which would only test today's state.
+    case("tsan-supp-extracts-a-cited-patch",
+         tsan_suppression_patches("# making myState atomic (Scripts/patches/0030-*). Remove once")
+         == {30})
+    case("tsan-supp-extracts-several",
+         tsan_suppression_patches("Scripts/patches/0030-a and Scripts/patches/0031-b") == {30, 31})
+    case("tsan-supp-ignores-prose-without-a-patch-path",
+         tsan_suppression_patches("# see patch 0030 and issue #1154") == set())
+    case("tsan-supp-no-citation-is-not-a-problem",
+         tsan_suppression_patches("race:SomeClass::Method\n# no patch cited here") == set())
+    # This one exists because the first version of check_tsan_suppressions() could NOT fire:
+    # pinned_patch_numbers() returns STRINGS, so comparing it against a set of ints never matched
+    # and the check reported clean on a deliberately-broken tree. Caught by injection, not by
+    # review. The case pins the type so it cannot regress.
+    case("tsan-supp-pinned-numbers-compare-as-ints",
+         {int(n) for n in pinned_patch_numbers()} & {21} == {21})
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
