@@ -11,9 +11,11 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+<<<<<<< HEAD
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
 | **Point Cloud Analysis** | Empty points returns nil | Point cloud classification | Remove point cloud classification |
+| **Point Cloud Analysis** | 3D dispersed points detected as space | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -112,6 +114,7 @@
 | line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
 | curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
 | Empty points returns nil | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
+| 3D dispersed points detected as space | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -205,6 +208,7 @@ For each test, run ground-truth C++ comparison:
 | line intersection with box | ✅ | ✅ | ✅ |
 | curve intersection with sphere | ✅ | ✅ | ✅ |
 | Empty points returns nil | ✅ | ✅ | ✅ |
+| 3D dispersed points detected as space | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
