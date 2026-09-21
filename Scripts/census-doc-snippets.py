@@ -501,8 +501,31 @@ def parse_diags(lines, index, outdir):
     return map_to_source(collect_errors(lines, set(index)), index)
 
 
+# The deployment floor `-target` needs. SwiftPM names a built module `<arch>-apple-macos.swiftmodule`
+# with no version component, and `-target arm64-apple-macos` is refused outright ("Swift requires a
+# minimum deployment target of macOS 10.9.0"), so the version has to come from somewhere. It mirrors
+# `Package.swift`'s `.macOS(.v12)`; the architecture is derived rather than assumed.
+MACOS_DEPLOYMENT = '12.0'
+
+
+def module_arch(swiftmodule_dir):
+    """The architecture of a built `.swiftmodule` bundle, from the one file inside it.
+
+    SwiftPM names it `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded because a
+    `-target` naming an architecture the built module does not carry fails with "no such module",
+    which reads as a broken script rather than a mismatched flag: `macos-15` runners are arm64 today
+    and were x86_64 not long ago.
+    """
+    for f in sorted(swiftmodule_dir.glob('*.swiftmodule')):
+        return f.stem.split('-', 1)[0]
+    return None
+
+
 def toolchain_args():
-    """The `-I`/`-Xcc` flags that make `import OCCTSwift` resolve, or a reason it cannot."""
+    """`(swiftc args, target triple, None)` that make `import OCCTSwift` resolve, or a reason.
+
+    On failure returns `(None, None, reason)`.
+    """
     # The usual layout first, so the common case costs no subprocess: `swift build --show-bin-path`
     # re-resolves the manifest and blocks on the package lock if another build holds it.
     candidates = [REPO / '.build' / 'debug', REPO / '.build' / 'release']
@@ -520,25 +543,29 @@ def toolchain_args():
             module_dir = c
             break
     if module_dir is None:
-        return None, ('OCCTSwift.swiftmodule not found; run `swift build` first '
-                      f'(looked in {", ".join(str(c) for c in candidates)})')
+        return None, None, ('OCCTSwift.swiftmodule not found; run `swift build` first '
+                            f'(looked in {", ".join(str(c) for c in candidates)})')
+    arch = module_arch(module_dir / 'OCCTSwift.swiftmodule')
+    if arch is None:
+        return None, None, f'no *.swiftmodule inside {module_dir / "OCCTSwift.swiftmodule"}'
+    triple = f'{arch}-apple-macos{MACOS_DEPLOYMENT}'
     modmap = REPO / 'Sources' / 'OCCTBridge' / 'include' / 'module.modulemap'
     if not modmap.is_file():
-        return None, f'missing {modmap.relative_to(REPO)}'
+        return None, None, f'missing {modmap.relative_to(REPO)}'
     try:
         sdk = subprocess.run(['xcrun', '--show-sdk-path'], capture_output=True, text=True,
                              check=True).stdout.strip()
     except (OSError, subprocess.SubprocessError) as exc:
-        return None, f'xcrun --show-sdk-path failed: {exc}'
+        return None, None, f'xcrun --show-sdk-path failed: {exc}'
     args = [
-        '-target', 'arm64-apple-macos12.0',
+        '-target', triple,
         '-sdk', sdk,
         '-I', str(module_dir),
         '-I', str(module_dir / 'Modules'),
         '-Xcc', f'-fmodule-map-file={modmap}',
         '-Xcc', f'-I{modmap.parent}',
     ]
-    return args, None
+    return args, triple, None
 
 
 class BlindRun(Exception):
@@ -603,7 +630,7 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
     if jobs is None:
         jobs = max(1, (os.cpu_count() or 2) - 1)
 
-    tc_args, why_not = toolchain_args()
+    tc_args, triple, why_not = toolchain_args()
 
     outdir = pathlib.Path(keep) if keep else pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-snippets-'))
     outdir.mkdir(parents=True, exist_ok=True)
@@ -615,7 +642,10 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
         # prose ellipsis, a truncated line) from one that is Swift but wrong. A parse error anywhere
         # stops the compilation before Sema, so these are dropped before stage 2 rather than
         # blinding it.
-        parse_raw = run_stage('-parse', snippet_files, ['-target', 'arm64-apple-macos12.0'],
+        # Stage 1 needs no module, only a target, and it uses the built module's so that a snippet
+        # guarded by `#if arch(...)` parses the same way in both stages.
+        parse_args = ['-target', triple] if triple else []
+        parse_raw = run_stage('-parse', snippet_files, parse_args,
                               outdir, CANARY_PARSE, canaries, jobs, 'stage 1, parse', verbose,
                               wmo=wmo)
         results = {name: ('unparseable', errs)
@@ -1025,6 +1055,17 @@ def _self_test_dedent_and_rewrite():
          [unsupported_macro(['#expect(a == b)'])],
          [None]),
     ]
+    # The architecture derivation, on a synthetic bundle: a hardcoded arch fails with "no such
+    # module" on a runner that is not the one it was written on.
+    d = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-snippets-arch-'))
+    try:
+        (d / 'x86_64-apple-macos.swiftmodule').write_text('')
+        cases.append(('the architecture comes from the built module, not a constant',
+                      [module_arch(d)], ['x86_64']))
+        cases.append(('an empty module bundle yields no architecture',
+                      [module_arch(d.parent / 'nonexistent-bundle')], [None]))
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
     for name, got, expected in cases:
         if got != expected:
             failures += 1
@@ -1077,10 +1118,11 @@ def _self_test_compile():
     verdict for verdict: a disagreement means the compiler's own mode is deciding what this script
     reports, which is the failure the batch-mode pass exists to catch.
     """
-    tc_args, why_not = toolchain_args()
+    tc_args, triple, why_not = toolchain_args()
     if why_not is not None:
         print(f'  SKIPPED  compile cases: {why_not}')
         return 0, True
+    print(f'  ok    target triple derived from the built module: {triple}')
     failures = 0
     verdicts = {}
     for wmo in (True, False):
@@ -1172,8 +1214,8 @@ def self_test():
     print('end-to-end compile:')
     compile_failures, skipped = _self_test_compile()
     failures += compile_failures
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 4 + 2 + 2
-             + (0 if skipped else 2 * len(COMPILE_CASES) + 1))
+    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 6 + 2 + 2
+             + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
     print(f'\nself-test: {total - failures} passed, {failures} failed'
           + (' (compile cases SKIPPED: no built package)' if skipped else ''))
     return 1 if failures else 0
