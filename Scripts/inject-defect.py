@@ -99,24 +99,231 @@ def apply_revert_fix(lines: List[str], line_idx: int, target: str) -> List[str]:
 
 
 def apply_remove_try_catch(lines: List[str], line_idx: int) -> List[str]:
-    """Remove try/catch wrapper around OCCT call"""
+    """Remove try/catch wrapper around OCCT call using a robust state machine.
+
+    Handles:
+    - Nested try-catch blocks
+    - String literals (single/double quotes, with escape sequences)
+    - Character constants
+    - Single-line (//) and multi-line (/* */) comments
+    - Multiple catch blocks
+    - Whitespace/comments between try and catch
+    """
     line = lines[line_idx]
     stripped = line.strip()
-    if stripped.startswith("try"):
-        i = line_idx
-        brace_count = 0
-        in_try = True
-        while i < len(lines):
-            brace_count += lines[i].count("{")
-            brace_count -= lines[i].count("}")
-            if brace_count == 0 and in_try:
-                lines[i] = "// INJECTED: " + lines[i]
-                in_try = False
-            elif "catch" in lines[i] and not in_try:
-                lines[i] = "// INJECTED: " + lines[i]
+    if not stripped.startswith("try"):
+        return lines
+
+    n_lines = len(lines)
+
+    # State tracking for string/comment/char context
+    in_single_line_comment = False
+    in_multi_line_comment = False
+    in_double_quote_string = False
+    in_single_quote_char = False
+    escape_next = False
+
+    # Phase 1: Find the try block
+    try_brace_level = 0  # Nesting level within the try block
+    found_try_opening_brace = False
+    try_block_end_line = -1
+
+    # Phase 2: After try block, track function-level scope for catch blocks
+    scope_level = 0  # Brace level relative to function scope (after try block)
+    in_catch_sequence = False
+    catch_lines: List[int] = []
+
+    i = line_idx
+    while i < n_lines:
+        line_text = lines[i]
+
+        # Check for catch at the START of the line (using scope_level from end of previous line)
+        if try_block_end_line != -1 and i > try_block_end_line and in_catch_sequence:
+            if scope_level == 0 and _line_starts_with_catch(line_text):
+                catch_lines.append(i)
+            else:
+                # Check if this line has actual code at scope level 0 (not just whitespace/comments/braces)
+                # If so, we're done with the catch sequence
+                # But allow comments and blank lines to not break the sequence
+                stripped_line = line_text.strip()
+                if scope_level == 0 and stripped_line and not stripped_line.startswith("//") and not stripped_line.startswith("/*"):
+                    # Check if line only contains braces/whitespace
+                    if any(c not in ' \t\r\n{}' for c in stripped_line):
+                        in_catch_sequence = False
+
+        # Now process the line character by character
+        j = 0
+        line_len = len(line_text)
+
+        while j < line_len:
+            ch = line_text[j]
+            next_ch = line_text[j + 1] if j + 1 < line_len else '\0'
+
+            # Handle escape sequences inside strings/chars
+            if escape_next:
+                escape_next = False
+                j += 1
+                continue
+
+            if ch == '\\' and (in_double_quote_string or in_single_quote_char):
+                escape_next = True
+                j += 1
+                continue
+
+            # Handle comment start/end
+            if not in_double_quote_string and not in_single_quote_char:
+                if not in_multi_line_comment and not in_single_line_comment:
+                    if ch == '/' and next_ch == '/':
+                        in_single_line_comment = True
+                        j += 2
+                        continue
+                    elif ch == '/' and next_ch == '*':
+                        in_multi_line_comment = True
+                        j += 2
+                        continue
+                elif in_single_line_comment:
+                    if ch == '\n':
+                        in_single_line_comment = False
+                    j += 1
+                    continue
+                elif in_multi_line_comment:
+                    if ch == '*' and next_ch == '/':
+                        in_multi_line_comment = False
+                        j += 2
+                        continue
+                    j += 1
+                    continue
+
+            # Handle string/char delimiters
+            if not in_single_line_comment and not in_multi_line_comment:
+                if ch == '"' and not in_single_quote_char:
+                    in_double_quote_string = not in_double_quote_string
+                    j += 1
+                    continue
+                elif ch == '\'' and not in_double_quote_string:
+                    in_single_quote_char = not in_single_quote_char
+                    j += 1
+                    continue
+
+            # Count braces
+            if not in_single_line_comment and not in_multi_line_comment and not in_double_quote_string and not in_single_quote_char:
+                if try_block_end_line == -1:
+                    # Phase 1: Looking for try block end
+                    if ch == '{':
+                        if not found_try_opening_brace:
+                            found_try_opening_brace = True
+                        try_brace_level += 1
+                    elif ch == '}':
+                        if found_try_opening_brace:
+                            try_brace_level -= 1
+                            if try_brace_level == 0:
+                                try_block_end_line = i
+                                scope_level = 0  # Reset scope level after try block
+                                in_catch_sequence = True
+                                # Check if this same line also contains a catch block
+                                if _line_starts_with_catch(line_text):
+                                    catch_lines.append(i)
+                else:
+                    # Phase 2: After try block, track function scope level
+                    if ch == '{':
+                        scope_level += 1
+                    elif ch == '}':
+                        if scope_level > 0:
+                            scope_level -= 1
+                            # If scope_level returns to 0, check if rest of line has a catch
+                            if scope_level == 0:
+                                # Check remainder of line for catch keyword
+                                remaining = line_text[j + 1:]
+                                if _line_starts_with_catch(remaining):
+                                    catch_lines.append(i)
+
+            j += 1
+
+        # Optimization: if we've found try end and at least one catch, and we're past
+        # a non-catch line at scope level 0, we can stop
+        if try_block_end_line != -1 and catch_lines and i > try_block_end_line:
+            if not in_catch_sequence:
                 break
-            i += 1
+
+        i += 1
+
+    # Only apply injection if we found a try block end AND at least one catch block
+    if try_block_end_line != -1 and catch_lines:
+        # Inject try block end line
+        lines[try_block_end_line] = "// INJECTED: " + lines[try_block_end_line]
+        # Inject catch lines (skip if same as try block end line to avoid double injection)
+        for catch_line_idx in catch_lines:
+            if catch_line_idx != try_block_end_line:
+                lines[catch_line_idx] = "// INJECTED: " + lines[catch_line_idx]
+
     return lines
+
+
+def _line_starts_with_catch(line: str) -> bool:
+    """Check if a line starts with 'catch' keyword (not in string/comment/char)."""
+    in_single_line_comment = False
+    in_multi_line_comment = False
+    in_double_quote_string = False
+    in_single_quote_char = False
+    escape_next = False
+
+    i = 0
+    n = len(line)
+    while i < n:
+        ch = line[i]
+        next_ch = line[i + 1] if i + 1 < n else '\0'
+
+        if escape_next:
+            escape_next = False
+            i += 1
+            continue
+
+        if ch == '\\' and (in_double_quote_string or in_single_quote_char):
+            escape_next = True
+            i += 1
+            continue
+
+        if not in_double_quote_string and not in_single_quote_char:
+            if not in_multi_line_comment and not in_single_line_comment:
+                if ch == '/' and next_ch == '/':
+                    in_single_line_comment = True
+                    i += 2
+                    continue
+                elif ch == '/' and next_ch == '*':
+                    in_multi_line_comment = True
+                    i += 2
+                    continue
+            elif in_single_line_comment:
+                return False  # Rest of line is comment
+            elif in_multi_line_comment:
+                if ch == '*' and next_ch == '/':
+                    in_multi_line_comment = False
+                    i += 2
+                    continue
+                i += 1
+                continue
+
+        if not in_single_line_comment and not in_multi_line_comment:
+            if ch == '"' and not in_single_quote_char:
+                in_double_quote_string = not in_double_quote_string
+                i += 1
+                continue
+            elif ch == '\'' and not in_double_quote_string:
+                in_single_quote_char = not in_single_quote_char
+                i += 1
+                continue
+
+        # Check for 'catch' keyword at current position (only if not in string/comment/char)
+        if not in_single_line_comment and not in_multi_line_comment and not in_double_quote_string and not in_single_quote_char:
+            if line[i:].startswith("catch"):
+                # Verify it's a keyword (followed by space, (, {, or end)
+                after = line[i + 5:] if i + 5 <= n else ""
+                if not after or after[0] in ' \t\r\n({':
+                    return True
+
+        i += 1
+
+    return False
 
 
 DEFECT_HANDLERS = {
