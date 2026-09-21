@@ -1,6 +1,6 @@
 # Phase 3: OCCTAnalysisTests Injection Matrix
 
-**Target**: `OCCTAnalysisTests` (546 tests) — Shape analysis, extrema, free bounds, properties
+**Target**: `OCCTAnalysisTests` (547 tests) — Shape analysis, extrema, free bounds, properties
 **Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
 **Priority**: 🔴 P1 (shape analysis, extrema, free bounds, crash fixes #318, #319, #603, #636, #655)
 
@@ -11,8 +11,7 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
-| **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
-| **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
+| **Point Cloud Analysis** | Coincident points detected as point | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -39,12 +38,6 @@
 | **Shape Analysis Tests** | Shape Analysis Tests | Shape analysis | Remove shape analysis |
 | **Shape Fixing Tests** | Shape Fixing Tests | Shape fixing | Remove shape fixing |
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
-| **Extrema Tests** | Point on circle distance | Extrema point-on-circle | Remove point-on-circle |
-| **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
-| **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
-| **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
-| **Shape Measurements** | Cylinder totals are finite | Shape measurements cylinder | Remove cylinder totals |
-| **Shape Measurements** | Box face centroids | Shape measurements box faces | Remove box face centroids |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -108,8 +101,7 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
-| line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
-| curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
+| Coincident points detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -136,12 +128,6 @@
 | Shape Analysis Tests | OCCTShapeAnalysis | Shape analysis | Remove shape analysis | ✅ | ✅ |  |
 | Shape Fixing Tests | OCCTShapeFixing | Shape fixing | Remove shape fixing | ✅ | ✅ |  |
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
-| Extrema: pointOnCircle | OCCTExtremaPointOnCircle | Extrema point-on-circle | Remove point-on-circle | ✅ | ✅ |  |
-| Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
-| Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
-| Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
-| Shape Measurements: cylinderTotalsAreFinite | OCCTShapeMeasurementsCylinderTotalsAreFinite | Shape measurements cylinder | Remove cylinder totals | ✅ | ✅ |  |
-| Shape Measurements: boxFaceCentroids | OCCTShapeMeasurementsBoxFaceCentroids | Shape measurements box faces | Remove box face centroids | ✅ | ✅ |  |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -200,8 +186,7 @@ For each test, run ground-truth C++ comparison:
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
-| line intersection with box | ✅ | ✅ | ✅ |
-| curve intersection with sphere | ✅ | ✅ | ✅ |
+| Coincident points detected as point | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
@@ -228,12 +213,6 @@ For each test, run ground-truth C++ comparison:
 | Shape Analysis Tests | ✅ | ✅ | ✅ |
 | Shape Fixing Tests | ✅ | ✅ | ✅ |
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
-| Extrema: pointOnCircle | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
-| Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFacePerimeters | ✅ | ✅ | ✅ |
-| Shape Measurements: cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
-| Shape Measurements: boxFaceCentroids | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
@@ -275,4 +254,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 551 tests
+**Total**: 547 tests
