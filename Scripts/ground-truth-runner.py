@@ -431,7 +431,7 @@ def generate_cpp_test(spec: TestSpec, xcframework_paths: Dict[str, Path]) -> str
             if requires_base_shape:
                 call_code.append(f"    {occt_class} healer(baseShape);")
             else:
-                call_code.append(f"    {occt_class} healer(baseShape);")
+                call_code.append(f"    {occt_class} healer;")
             call_code.append(f"    healer.Perform();")
             call_code.append(f"    TopoDS_Shape result = healer.Shape();")
         elif occt_class == "GeomAPI_Interpolate":
