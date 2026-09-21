@@ -21,6 +21,26 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A misnamed carried patch is reported, not a crash (#2148)
+
+`check-inventory-prose.py` read the leading `NNNN` off every `.patch` in `Scripts/patches/`, so one file that was not `NNNN`-named raised `ValueError: invalid literal for int() with base 10: 'wasi'` and took all twenty-one of the gate's claims down with it. The odd file is now reported, with the directory a patch for another build target belongs in.
+
+### The doc-snippet census stops passing on a population it never examined (#2098, #2092)
+
+`census-doc-snippets.py` type-checked **24 of 3,105** snippets in CI while the step passed. The built
+module's path was guessed from a list of layouts SwiftPM no longer uses, and the guess missed on the
+one machine that matters. Two things were wrong: the module sits under `Modules/` in CI, and it is a
+plain file there rather than the directory bundle a local build produces. The path is now searched
+for rather than guessed, and `--require-typecheck` fails the step instead of reporting on a
+population it never examined. CI's self-test went from 27 cases to 56, so every compile case,
+including the canary cases that exist to catch a silent compiler, now runs where it counts.
+
+Separately, reference pages elide content the reader is expected to supply (`= ...`, `{ ... }`,
+`[...]`, `= // prose`), which does not parse and is not a documentation defect. Those 24 snippets
+were reported as failures; they are fragments. Reclassifying them left exactly one real finding the
+rule refused to excuse, a `Package.swift` manifest fragment fenced as `swift`, now exempt with a
+written reason. `unparseable` is zero.
+
 ### Shape, Edge, Face and Wire reference snippets now compile (#2093)
 
 Forty-one fenced examples across `Shape-Features.md`, `Shape-Completions.md`, `Shape-Builders-1.md`, `Annotation.md`, `Edge.md`, `Face.md` and `Wire.md`, and in `Shape.swift`, `Shape+Topology.swift`, `MedialAxis.swift`, `Edge.swift`, `Wire.swift` and `WireOrder.swift` doc comments. `Shape.box(dx:dy:dz:)` is `box(width:height:depth:)`. `Wire.asShape`, `Face.shape` and `Edge.shape` never existed: the conversions are `Shape.fromWire(_:)`, `fromFace(_:)` and `fromEdge(_:)`. `Wire` has no `translated(by:)` at all, so the profile examples now place the circle at construction with `Wire.circle(origin:normal:radius:)`. `Shape.makeFace` and `Shape.makePolygon` are `Shape.face(from:)` with `Wire.polygon3D(_:closed:)`; `Edge.line(from:to:)` is `Wire.line(from:to:)!.edges()[0]`; `SurfaceContinuity` has no `.c0`; `Edge.adjacentFaces(in:)` returns an array, not a pair; and the `≈` operator one example used is defined nowhere in the package.
