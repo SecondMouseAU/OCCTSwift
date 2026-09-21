@@ -63,6 +63,28 @@ def patch_files():
     return sorted(os.path.basename(p)[: -len(".patch")] for p in paths)
 
 
+def patch_number(stem):
+    """The leading NNNN of a carried patch stem, or None when it is not NNNN-named (#2148)."""
+    return int(stem[:4]) if stem[:4].isdigit() else None
+
+
+def numbered_patch_files():
+    """`patch_files()` restricted to the NNNN-named ones, which is every counted fact's subject.
+
+    #2148: two checks and three counted facts read `int(stem[:4])` off these stems, so one file in
+    `Scripts/patches/` that is not NNNN-named took the whole gate down with a `ValueError`
+    traceback instead of reporting anything. A crash tells the reader the tool is broken when what
+    is broken is the tree, and it takes the other twenty-one claims down with it.
+
+    This is not hypothetical. The WASI branch named its kernel patches `wasi-*.patch`, CI died on
+    `invalid literal for int() with base 10: 'wasi'`, and the resulting bug report concluded the
+    census script "does not exist in the repository at all". Those patches belong in
+    `Scripts/patches-wasi/` and now live there, but nothing in this gate ever said so, which is the
+    part worth fixing: `check_patch_naming` below now says it.
+    """
+    return [stem for stem in patch_files() if patch_number(stem) is not None]
+
+
 def pinned_patch_numbers(text=None):
     """The patch numbers enumerated in Package.swift's pinned-asset comment."""
     text = read("Package.swift") if text is None else text
@@ -148,12 +170,12 @@ def facts():
     split = classify()
     gates_with_selftest = split["gates"] & split["selftest"]
     return {
-        "patches_on_disk": len(patch_files()),
+        "patches_on_disk": len(numbered_patch_files()),
         "patches_pinned": len(pinned_patch_numbers()),
         # #1403: the count of patches the pinned asset LACKS. Package.swift and
         # carried-occt-patches.md both introduce their unpinned lists with this number, and both
         # went stale at 0032, 0033 AND 0034 because no claim read it.
-        "patches_unpinned": len(patch_files()) - len(pinned_patch_numbers()),
+        "patches_unpinned": len(numbered_patch_files()) - len(pinned_patch_numbers()),
         "gate_scripts": len(split["gates"]),
         "census_scripts": len(split["censuses"]),
         "audit_scripts": len(split["audits"]),
@@ -289,7 +311,7 @@ def check_carried_sequence():
     if stated is None:
         return ["Scripts/patches/README.md: could not find or parse the 'carried sequence now "
                 "reads ...' range list. Reword it and this check must be updated with it."]
-    on_disk = {int(stem[:4]) for stem in patch_files()}
+    on_disk = {patch_number(stem) for stem in numbered_patch_files()}
     problems = []
     for missing in sorted(on_disk - stated):
         problems.append("Scripts/patches/README.md: the carried sequence omits %04d, which is on "
@@ -326,7 +348,7 @@ def check_tsan_suppressions():
     cited = tsan_suppression_patches()
     if not cited:
         return []
-    on_disk = {int(stem[:4]) for stem in patch_files()}
+    on_disk = {patch_number(stem) for stem in numbered_patch_files()}
     pinned = {int(n) for n in pinned_patch_numbers()}
     problems = []
     for n in sorted(cited - on_disk):
@@ -339,8 +361,33 @@ def check_tsan_suppressions():
     return problems
 
 
+def check_patch_naming():
+    """Every .patch in Scripts/patches/ is NNNN-named (#2148).
+
+    Ignoring an odd file would be the wrong repair for the crash it used to cause: the counted
+    facts would then quietly exclude it and `patches: N on disk` would disagree with `ls`, which is
+    exactly the class of silent divergence this gate exists to catch. So the non-numbered file is
+    reported, with the directory it probably belongs in.
+
+    `Scripts/patches-wasi/` is deliberately NOT swept up here. It is a separate sequence with its
+    own naming, applied by `build-occt-wasm.sh` rather than `build-occt.sh`, and it is not pinned
+    into any release asset, so none of this gate's counted claims are about it.
+    """
+    problems = []
+    for stem in patch_files():
+        if patch_number(stem) is not None:
+            continue
+        problems.append(
+            "Scripts/patches/%s.patch: carried patches are NNNN-named (CLAUDE.md, 'numbers are "
+            "never reused'), and every counted claim in this gate reads that number. A patch for "
+            "another target belongs in its own directory, as the WASI patches do in "
+            "Scripts/patches-wasi/ (#2148)." % stem)
+    return problems
+
+
 def run():
-    problems = check_claims() + check_patch_rows() + check_carried_sequence() + check_tsan_suppressions()
+    problems = (check_claims() + check_patch_rows() + check_carried_sequence()
+                + check_tsan_suppressions() + check_patch_naming())
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -369,7 +416,8 @@ def self_test():
         cases.append((name, ok, detail))
 
     # 1. The real repo is clean, which is what the gate asserts in CI.
-    problems = check_claims() + check_patch_rows() + check_carried_sequence() + check_tsan_suppressions()
+    problems = (check_claims() + check_patch_rows() + check_carried_sequence()
+                + check_tsan_suppressions() + check_patch_naming())
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -483,6 +531,34 @@ def self_test():
     # review. The case pins the type so it cannot regress.
     case("tsan-supp-pinned-numbers-compare-as-ints",
          {int(n) for n in pinned_patch_numbers()} & {21} == {21})
+
+    # 10. #2148: a .patch in Scripts/patches/ that is not NNNN-named. Monkeypatched rather than
+    #     written into the real directory, because the behaviour under test is what the glob
+    #     returns, and a real file would make three cases depend on cleanup having run.
+    real_patch_files = globals()["patch_files"]
+    try:
+        globals()["patch_files"] = lambda: sorted(real_patch_files() + ["wasi-osd-environment"])
+        case("odd-patch-name-reported",
+             any("wasi-osd-environment" in problem and "patches-wasi" in problem
+                 for problem in check_patch_naming()))
+        # The crash this replaces. Both readers take the number off every stem, and before #2148
+        # they raised ValueError("invalid literal for int() with base 10: 'wasi'"), which took the
+        # other twenty-one claims down with them and was reported as the gate being broken.
+        crashed = None
+        try:
+            check_carried_sequence()
+            check_tsan_suppressions()
+        except ValueError as exc:
+            crashed = str(exc)
+        case("odd-patch-name-does-not-crash-the-number-readers", crashed is None, crashed or "")
+        case("odd-patch-name-excluded-from-the-counted-facts",
+             len(numbered_patch_files()) == len(real_patch_files()))
+    finally:
+        globals()["patch_files"] = real_patch_files
+
+    case("patch-number-reads-nnnn-and-rejects-the-rest",
+         patch_number("0010-Intf-319") == 10 and patch_number("wasi-osd-environment") is None
+         and patch_number("001-too-short") is None)
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
