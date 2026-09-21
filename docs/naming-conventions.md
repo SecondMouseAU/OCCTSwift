@@ -97,7 +97,7 @@ GeomAbs_C0, GeomAbs_C1, GeomAbs_G1
 
 OCCTSwift uses Swift-style dot-syntax with lowercase cases:
 
-```swift
+```swift no-typecheck: a listing of case spellings, not statements
 ShapeType.solid, .face, .edge, .vertex
 ParametricContinuity.c0, .c1, .c2
 SurfaceContinuity.g0, .g1, .g2

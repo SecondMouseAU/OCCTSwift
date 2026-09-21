@@ -62,6 +62,52 @@ keeps it in this job instead of an hour into `kernel-integration.yml` where #205
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
+## The one census outside `gate-scripts`
+
+`census-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
+doc comments. `docs-current.md` asks for a runnable snippet on every documented API and nothing had
+ever *compiled* one: `check-docs-defaults.py` reads the declaration a reference page restates, and
+`check-docs-existence.py` reads its headings and prose, but the example fences went unread, which is
+how a factory that never existed reached 18 call sites (#1675). It is the one census this page's rules
+do not fully cover, in two ways, both deliberate.
+
+**It is not in `gate-scripts`, because it cannot be.** That job's whole property is pure Python over
+the repo's own text, no OCCT and no build; this one needs `OCCTSwift` built to compile a snippet
+against. It runs in `ci.yml`'s `swift build + test (macOS)` job instead, after the build it reuses,
+and its scripts are outside every count on this page and in `CLAUDE.md`, all of which are derived from
+the `gate-scripts` job body alone.
+
+**Its bare run is in CI, unlike every other census's.** The rule above says CI runs only a census's
+`--self-test`, since a bare run that always exits 0 could never signal. That reasoning holds for a
+census whose output is a list of sites to adjudicate. This one's output is a *number*, the count of
+snippets that do not compile, and the number is what tells anyone whether promotion is close; printing
+it on every build costs about a minute against a build already paid for. The `--self-test` runs too.
+
+**Why it is a census at all, given the compiler adjudicates.** Not false positives: there is no
+measured false-positive class here to discount the way `census-doc-occt-attribution.py` has its 41%.
+It is volume. 211 of 3,096 snippets do not compile on `main`, so a required check would be red for
+every PR, which is the failure mode in
+[required-status-checks](required-status-checks.md) and worse than no check at all. `--strict` exits 1
+for anyone who wants gate behaviour on the page they are editing, and promotion is that flag becoming
+the default plus a rename to `check-`, once the backlog is zero. #1407 is the precedent: measure the
+rate, then gate.
+
+Two of its design choices are worth carrying to any detector that shells out to a compiler:
+
+- **It compiles rather than parsing.** #1675 holds two attempts at a regex that matched argument
+  labels against declarations, and a record of how each reported a real API as missing. A Swift
+  signature parser good enough to avoid that is a fraction of a compiler, and a compiler is already
+  in the build.
+- **Every `swiftc` invocation carries a canary**, a file holding a defect the compiler cannot miss,
+  and a canary that comes back clean aborts the run. This was not precautionary. The first version
+  ran without `-continue-building-after-errors`, the driver stopped scheduling frontend jobs after
+  the first batch that failed, and four of eight self-test fixtures reported clean while never being
+  compiled at all. A green run and a blind run were indistinguishable, which is this page's own
+  opening argument, met in practice. It fired a second time within the hour, on a `-target` whose
+  architecture was derived from the built module but whose deployment version was dropped: `swiftc`
+  rejected the target before reading a file, produced no per-file diagnostic, and the canary turned
+  what would have been "3,096 snippets clean" into an abort.
+
 ## Every detector proves it is not blind
 
 Ten of the eleven gates, all five censuses and the merge-history audit take `--self-test`, a

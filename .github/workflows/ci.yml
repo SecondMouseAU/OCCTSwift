@@ -298,6 +298,18 @@ jobs:
       - name: swift build
         run: swift build
 
+      # #1683. This one cannot live in gate-scripts: that job is pure Python with no OCCT and no
+      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just built.
+      # It is a CENSUS, so it exits 0 whatever it finds; the bare run still earns its place here
+      # because its output IS the number, and a minute against a build already paid for is the
+      # cheapest place to print it. Promotion to a gate is `--strict` plus a rename to `check-`,
+      # once the backlog it reports reaches zero. See okf/policies/static-gates.md.
+      - name: census-doc-snippets --self-test
+        run: python3 Scripts/census-doc-snippets.py --self-test
+
+      - name: census-doc-snippets (every fenced Swift snippet type-checks)
+        run: python3 Scripts/census-doc-snippets.py
+
       - name: swift test
         run: swift test
 

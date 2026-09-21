@@ -360,7 +360,7 @@ Projects the 3D point to the face's surface and tests whether the resulting UV c
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass_FaceClassifier` (via `OCCTClassifyPointOnFace`).
 - **Example:**
-  ```swift
+  ```swift no-typecheck: `let face: Face = ...` is a placeholder binding, not a call
   let face: Face = ...
   let cls = face.classify(point: SIMD3(1, 1, 0))
   ```

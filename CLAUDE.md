@@ -86,6 +86,33 @@ on the option. Four scripts exit 2 if run from anywhere but the repo root (#625)
 the main checkout, or `git config core.hooksPath Scripts/git-hooks` in a linked worktree (its
 `.git` is a file, so the symlink fails). CI is the authority; the hook is the preview.
 
+### Doc Snippet Type-Check
+
+```bash
+python3 Scripts/census-doc-snippets.py              # CENSUS: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
+python3 Scripts/census-doc-snippets.py --strict     # ...and exit 1 on a non-compiling snippet
+python3 Scripts/census-doc-snippets.py --list       # inventory per kind, no compile
+python3 Scripts/census-doc-snippets.py --self-test
+```
+
+**Outside `gate-scripts`**, because it compiles the snippets against the built `OCCTSwift` module
+and that job is pure Python with no OCCT and no build. It runs in `ci.yml`'s
+`swift build + test (macOS)` job, after the build it reuses, in about a minute, and it does not
+count toward the gate/census totals above, which are derived from `gate-scripts` alone.
+
+It hands every snippet to `swiftc` rather than matching argument labels with a regex: #1675 holds
+two attempts at the regex and a record of how each reported a real API as missing, and a checker
+that does that is worse than no checker. Of 8,181 fences, 5,082 are signature restatements a
+bodiless `func` makes uncompilable anywhere, 3,096 are snippets, and of those **1,470 compile,
+1,415 are fragments opening mid-flow with a receiver the prose introduced, and 211 do not
+compile**. A snippet that is deliberately not compilable carries its exemption on the page, in the
+fence info string:
+
+    ```swift no-typecheck: a listing of case spellings, not statements
+
+The reason after the colon is required. It stays a census while that 211 stands: promotion is
+`--strict` by default plus a rename to `check-`.
+
 ### Compile a Ground Truth C++ Test
 
 ```bash
