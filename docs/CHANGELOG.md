@@ -21,6 +21,40 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Carried patches `0040` and `0041`: the data-exchange globals reach zero (#1403)
+
+**`0040`, three unguarded one-time-init flags.** Both `STEPControl_Controller::Init()` and
+`IGESControl_Controller::Init()`, plus the IGES constructor, used a check-then-act `static bool` that
+two threads could both pass, running the one-time setup twice and recording a second controller under
+the same name. #1403's own re-scope described this as "matching STEP's existing mutex"; that was
+wrong, since only STEP's *constructor* had one. All three become function-local static
+initialisation, which removes the check-then-act rather than locking around it.
+
+**`0041`, two shared registries.** `listad` (controllers by format name) and `atemp` (template models
+by name) are process-wide `NCollection_DataMap`s mutated without synchronisation. Unlike the rest of
+this series these are legitimately one-per-process, so a recursive mutex is the right tool rather
+than relocating ownership. Recursive is required, not preferred: `Interface_InterfaceModel::Template`
+calls `HasTemplate` before reading the map.
+
+**Measured by rebuilding the ThreadSanitizer kernel and re-running the five registered
+data-exchange scenarios. Every named racing global is now gone:**
+
+| | Reports | Named globals |
+|---|---|---|
+| Before `0036` | 178 | 16 |
+| After `0036`-`0039` | 96 | 7 |
+| After `0040`-`0041` | **37** | **0** |
+
+`0040` reaches further than its three sites: guarding the outermost init serialises the whole chain
+beneath it, so `IGESData::Init`'s `proto`/`stmod`/`speci`, `XSAlgo::Init`'s flag,
+`IGESToBRep::theContainer` and `Interface_Static`'s `THE_Interface_Static_deja` all stopped being
+reported without being touched.
+
+The remaining 37 are all heap objects owned by the two controllers and shared with every work
+session, which is the ownership change #1403 is named for and which needs an API decision rather than
+a lock. None of these patches is in the pinned asset, so nothing changes for consumers until a
+rebuild.
+
 ### Carried patches `0038` and `0039`: two more data-exchange globals become per-instance (#1403)
 
 **`0038`, `Interface_CheckTool`'s `errh` sentinel.** It decided whether `FillCheck` wraps each module

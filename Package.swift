@@ -164,9 +164,9 @@ let occtTarget: Target = isWASI
     // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
     // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-    // Scripts/patches/ holds TWENTY-SEVEN patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 27 against a list of
-    // 17, and those ten are the difference:
+    // Scripts/patches/ holds TWENTY-NINE patches; the pinned asset holds the
+    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 29 against a list of
+    // 17, and those twelve are the difference:
     //
     //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
     //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
@@ -198,6 +198,14 @@ let occtTarget: Target = isWASI
     //         (mutable answers its own comment, "Fields not possible, because Param is
     //         const". Also makes the optimisation work at all: constructing any second
     //         instance disabled the memo for every earlier one. 4 reports to 0)
+    //   0040  STEP/IGES controller one-time-init flags are thread-safe                  #1403
+    //         (THREE unguarded check-then-act flags, not the one asymmetry the re-scope
+    //         claimed: only STEP's CONSTRUCTOR had a mutex, both Init() functions were
+    //         unguarded. Now function-local statics, so the check-then-act is gone)
+    //   0041  XSControl_Controller's listad and Interface_InterfaceModel's atemp locked    #1403
+    //         (registries, one per process BY DESIGN, so a lock is right here where
+    //         relocation was right elsewhere. Recursive is required: Template() calls
+    //         HasTemplate(). astats excluded, already covered by 0033's mutex)
     //
     // What that difference means is narrower than "untested", and the narrowing is worth having.
     // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But

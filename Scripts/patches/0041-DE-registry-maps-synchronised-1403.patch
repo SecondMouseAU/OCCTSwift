@@ -1,0 +1,109 @@
+diff --git a/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx b/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
+index 029c03e5..419baed8 100644
+--- a/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
++++ b/src/DataExchange/TKXSBase/Interface/Interface_InterfaceModel.cxx
+@@ -23,6 +23,8 @@
+ #include <Interface_GTool.hxx>
+ #include <Interface_InterfaceMismatch.hxx>
+ #include <Interface_InterfaceModel.hxx>
++
++#include <mutex>
+ #include <Interface_Protocol.hxx>
+ #include <Interface_ReportEntity.hxx>
+ #include <Interface_SignType.hxx>
+@@ -43,6 +45,15 @@ IMPLEMENT_STANDARD_RTTIEXT(Interface_InterfaceModel, Standard_Transient)
+ // STATICS : the TEMPLATES
+ static NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>> atemp;
+ 
++//! Guards atemp, the process-wide template-model registry. Recursive is required rather than
++//! preferred: Template() calls HasTemplate() before reading the map, so a plain mutex would
++//! self-deadlock on the same thread.
++static std::recursive_mutex& atempMutex()
++{
++  static std::recursive_mutex THE_MUTEX;
++  return THE_MUTEX;
++}
++
+ static const occ::handle<Standard_Type>& typerep()
+ {
+   return STANDARD_TYPE(Interface_ReportEntity);
+@@ -1100,6 +1111,7 @@ int Interface_InterfaceModel::NextNumberForLabel(const char* const label,
+ 
+ bool Interface_InterfaceModel::HasTemplate(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(atempMutex());
+   return atemp.IsBound(name);
+ }
+ 
+@@ -1107,6 +1119,7 @@ bool Interface_InterfaceModel::HasTemplate(const char* const name)
+ 
+ occ::handle<Interface_InterfaceModel> Interface_InterfaceModel::Template(const char* const name)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(atempMutex());
+   occ::handle<Interface_InterfaceModel> model, newmod;
+   if (!HasTemplate(name))
+   {
+@@ -1123,6 +1136,7 @@ occ::handle<Interface_InterfaceModel> Interface_InterfaceModel::Template(const c
+ bool Interface_InterfaceModel::SetTemplate(const char* const                            name,
+                                            const occ::handle<Interface_InterfaceModel>& model)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(atempMutex());
+   return atemp.Bind(name, model);
+ }
+ 
+@@ -1131,6 +1145,7 @@ bool Interface_InterfaceModel::SetTemplate(const char* const
+ occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> Interface_InterfaceModel::
+   ListTemplates()
+ {
++  std::lock_guard<std::recursive_mutex>                                     aLock(atempMutex());
+   occ::handle<NCollection_HSequence<occ::handle<TCollection_HAsciiString>>> list =
+     new NCollection_HSequence<occ::handle<TCollection_HAsciiString>>();
+   if (atemp.IsEmpty())
+diff --git a/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx b/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
+index fa18006e..09c3422f 100644
+--- a/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
++++ b/src/DataExchange/TKXSBase/XSControl/XSControl_Controller.cxx
+@@ -47,6 +47,8 @@
+ #include <TransferBRep_ShapeMapper.hxx>
+ #include <XSControl_ConnectedShapes.hxx>
+ #include <XSControl_Controller.hxx>
++
++#include <mutex>
+ #include <XSControl_SelectForTransfer.hxx>
+ #include <XSControl_SignTransferStatus.hxx>
+ #include <XSControl_WorkSession.hxx>
+@@ -58,6 +60,16 @@ IMPLEMENT_STANDARD_RTTIEXT(XSControl_Controller, Standard_Transient)
+ 
+ static NCollection_DataMap<TCollection_AsciiString, occ::handle<Standard_Transient>> listad;
+ 
++//! Guards listad, the process-wide registry of controllers by format name. One registry per process
++//! is the design here, so the state is shared deliberately and a lock is the right tool rather than
++//! relocating it. Recursive for the same reason Interface_Static's is: an entry point may reach
++//! another through the map.
++static std::recursive_mutex& listadMutex()
++{
++  static std::recursive_mutex THE_MUTEX;
++  return THE_MUTEX;
++}
++
+ //=================================================================================================
+ 
+ XSControl_Controller::XSControl_Controller(const char* const theLongName,
+@@ -106,6 +118,7 @@ void XSControl_Controller::SetNames(const char* const theLongName, const char* c
+ 
+ void XSControl_Controller::Record(const char* const theName) const
+ {
++  std::lock_guard<std::recursive_mutex> aLock(listadMutex());
+   if (listad.IsBound(theName))
+   {
+     occ::handle<Standard_Transient> thisadapt(this);
+@@ -126,7 +139,8 @@ void XSControl_Controller::Record(const char* const theName) const
+ 
+ occ::handle<XSControl_Controller> XSControl_Controller::Recorded(const char* const theName)
+ {
+-  occ::handle<Standard_Transient> recorded;
++  std::lock_guard<std::recursive_mutex> aLock(listadMutex());
++  occ::handle<Standard_Transient>       recorded;
+   return (listad.Find(theName, recorded) ? occ::down_cast<XSControl_Controller>(recorded)
+                                          : occ::handle<XSControl_Controller>());
+ }
