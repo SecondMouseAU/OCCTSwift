@@ -11,6 +11,7 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+| **ShapeRayIntersection Tests** | hit face access | Face access | Remove face access |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -101,6 +102,7 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| hit face access | OCCTCurveSurfaceInterFace | Face access | Remove face access | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -186,6 +188,7 @@ For each test, run ground-truth C++ comparison:
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| hit face access | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |

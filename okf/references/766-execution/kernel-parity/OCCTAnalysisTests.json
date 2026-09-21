@@ -1,6 +1,23 @@
-{
-  "note": "Kernel parity JSON for OCCTAnalysisTests not yet generated. This domain has 546 tests requiring bridge-kernel parity verification.",
-  "status": "PENDING",
-  "test_count": 546,
-  "domain": "Analysis"
-}
+[
+  {
+    "test_name": "ShapeRayIntersection Tests::hit face access",
+    "bridge_function": "OCCTCurveSurfaceInterFace",
+    "bridge_output": {
+      "type": "face_access",
+      "data": {
+        "area": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "face_access",
+      "data": {
+        "area": 100.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  }
+]
