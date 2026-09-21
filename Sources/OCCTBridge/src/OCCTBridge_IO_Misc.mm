@@ -290,6 +290,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -342,6 +343,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -393,6 +395,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -461,6 +464,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -536,6 +540,7 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
