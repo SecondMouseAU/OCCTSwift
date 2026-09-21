@@ -54,8 +54,18 @@ DEFN = re.compile(r"^[A-Za-z_][\w\s\*\(\)<>,:]*?\b(OCCT[A-Za-z0-9_]+)\s*\(", re.
 DECL = re.compile(r"\b(OCCT[A-Za-z0-9_]+)\s*\(")
 # Opaque handle typedefs stay in the umbrella header, they are not functions.
 TYPEDEF = re.compile(r"typedef\s+struct\s+\w+\s*\*\s*(OCCT[A-Za-z0-9_]+)\s*;")
-LINE_COMMENT = re.compile(r"//[^\n]*")
-BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+# One pass, leftmost-match-wins, so whichever of these opens first consumes the others (#2080).
+# Two separate passes cannot work in either order: BLOCK_COMMENT first lets a `/*` inside a `//`
+# comment open a block that runs to the next real `*/`, and LINE_COMMENT first lets a `//` inside
+# a block comment truncate the block's own closing `*/`. String and character literals are matched
+# only so they are skipped intact, since a literal may hold `//` or `/*`.
+COMMENT_OR_LITERAL = re.compile(
+    r'"(?:\\.|[^"\\\n])*"'  # string literal, kept
+    r"|'(?:\\.|[^'\\\n])*'"  # character literal, kept
+    r"|//[^\n]*"  # line comment, removed
+    r"|/\*.*?\*/",  # block comment, removed
+    re.S,
+)
 
 
 def strip_comments(text):
@@ -66,8 +76,24 @@ def strip_comments(text):
     right after the name matches the same `name(` shape DECL looks for. Left in, a mention
     inside a comment reads as a second declaration of a symbol that is for real declared
     somewhere else -- the false "duplicate" shape #673's hand check found.
+
+    #2080: this was two independent `re.sub` passes, block comments first, which made any `//`
+    comment containing the text `/*` open a block comment that was never closed. `// ... src/*.mm`
+    swallowed 14 of the umbrella header's 16 declarations and the gate still printed `misfiled: 0`.
+    Comments in this tree mention globs routinely, so the trigger is ordinary prose, not a freak
+    input. A single alternation is the fix, because the leftmost opener is the only one that can
+    be in effect.
     """
-    return LINE_COMMENT.sub("", BLOCK_COMMENT.sub(" ", text))
+
+    def keep_or_drop(match):
+        token = match.group(0)
+        if token.startswith("//"):
+            return ""
+        if token.startswith("/*"):
+            return " "
+        return token
+
+    return COMMENT_OR_LITERAL.sub(keep_or_drop, text)
 
 
 def target_header(mm_name, known_headers=None):
@@ -260,6 +286,33 @@ SELF_TEST = [
         },
         {"OCCTBridge_A.h": "void OCCTFooA(void);\n"},
         lambda mapping, ambiguous, unmapped, misfiled: not ambiguous and mapping.get("OCCTFooA") == "OCCTBridge_A.h",
+    ),
+    (
+        # #2080 itself. The trailing `#endif /* ... */` is load-bearing: it is the real `*/` that
+        # the phantom comment ran to, and without it the two-pass version leaves an unterminated
+        # `/*` that BLOCK_COMMENT never matches, so the bug does not reproduce and the case proves
+        # nothing. Every bridge header ends in exactly this guard.
+        "a '/*' inside a // comment does not swallow the declarations after it (#2080)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": "// index: written across Sources/OCCTBridge/src/*.mm\n"
+            "void OCCTFooA(void);\n"
+            "#endif /* OCCTBridge_A_h */\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: mapping.get("OCCTFooA") == "OCCTBridge_A.h",
+    ),
+    (
+        # The same blindness through the other opener a literal can hide. #2080 names only the
+        # comment case; this one costs nothing to cover and the single-pass fix handles both, so
+        # leaving it out would mean the fix is wider than anything proving it.
+        "a '/*' inside a string literal does not swallow the declarations after it (#2080)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": 'static const char* const kSources = "src/*.mm";\n'
+            "void OCCTFooA(void);\n"
+            "#endif /* OCCTBridge_A_h */\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: mapping.get("OCCTFooA") == "OCCTBridge_A.h",
     ),
 ]
 
