@@ -529,15 +529,24 @@ def macos_deployment():
     return f'{m.group(1)}.{m.group(2) or "0"}'
 
 
-def module_arch(swiftmodule_dir):
-    """The architecture of a built `.swiftmodule` bundle, from the one file inside it.
+def module_arch(swiftmodule_path):
+    """The architecture of a built `.swiftmodule`, from the bundle's contents or from the host.
 
-    SwiftPM names it `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded because a
-    `-target` naming an architecture the built module does not carry fails with "no such module",
-    which reads as a broken script rather than a mismatched flag: `macos-15` runners are arm64 today
-    and were x86_64 not long ago.
+    SwiftPM names a bundle's members `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded
+    because a `-target` naming an architecture the built module does not carry fails with "no such
+    module", which reads as a broken script rather than a mismatched flag: `macos-15` runners are
+    arm64 today and were x86_64 not long ago.
+
+    #2098: SwiftPM emits two shapes and this script meets both. A **directory** bundle holds one
+    file per architecture, which is what a local build produces here. A **plain file** is the
+    single-architecture form, which is what CI produces, and it carries no name to read. The only
+    architecture it can be is the host's, because SwiftPM built it on this machine. Without this
+    branch CI reported `no *.swiftmodule inside .../OCCTSwift.swiftmodule` and skipped the whole
+    compile stage, which is the second half of what made that step a false green.
     """
-    arches = [f.stem.split('-', 1)[0] for f in sorted(swiftmodule_dir.glob('*.swiftmodule'))]
+    if swiftmodule_path.is_file():
+        return platform.machine()
+    arches = [f.stem.split('-', 1)[0] for f in sorted(swiftmodule_path.glob('*.swiftmodule'))]
     if not arches:
         return None
     # A universal build leaves several. Prefer the host's, because that is what an unqualified
@@ -620,14 +629,16 @@ def toolchain_args():
                              check=True).stdout.strip()
     except (OSError, subprocess.SubprocessError) as exc:
         return None, None, f'xcrun --show-sdk-path failed: {exc}'
-    args = [
-        '-target', triple,
-        '-sdk', sdk,
-        '-I', str(module_dir),
-        '-I', str(module_dir / 'Modules'),
-        '-Xcc', f'-fmodule-map-file={modmap}',
-        '-Xcc', f'-I{modmap.parent}',
-    ]
+    # Both, because the module sits directly in the bin path under one layout and in a `Modules/`
+    # subdirectory under another, and when it is the latter the bin path itself still carries the
+    # other targets' artefacts (#2098).
+    search = [module_dir, module_dir / 'Modules']
+    if module_dir.name == 'Modules':
+        search.append(module_dir.parent)
+    args = ['-target', triple, '-sdk', sdk]
+    for d in search:
+        args += ['-I', str(d)]
+    args += ['-Xcc', f'-fmodule-map-file={modmap}', '-Xcc', f'-I{modmap.parent}']
     return args, triple, None
 
 
@@ -1210,6 +1221,13 @@ def _self_test_dedent_and_rewrite():
                       [module_arch(d)], ['x86_64']))
         cases.append(('an empty module bundle yields no architecture',
                       [module_arch(d.parent / 'nonexistent-bundle')], [None]))
+        # #2098. SwiftPM's other shape: a plain file, not a bundle, which is what CI produces.
+        # There is no name to read the arch from, and the host's is the only one it can be. Without
+        # this branch CI skipped every compile case while printing "0 failed".
+        single = d / 'OCCTSwift.swiftmodule'
+        single.write_text('')
+        cases.append(('a single-file .swiftmodule takes the host architecture (#2098)',
+                      [module_arch(single)], [platform.machine()]))
     finally:
         shutil.rmtree(d, ignore_errors=True)
     for name, got, expected in cases:
@@ -1360,7 +1378,8 @@ def self_test(require_typecheck=False):
     print('end-to-end compile:')
     compile_failures, skipped = _self_test_compile()
     failures += compile_failures
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 6 + 2 + 2
+    # 7 is _self_test_dedent_and_rewrite's case count, 2 each for attribution and the canary guard.
+    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2
              + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
     print(f'\nself-test: {total - failures} passed, {failures} failed'
           + (' (compile cases SKIPPED: no built package)' if skipped else ''))
