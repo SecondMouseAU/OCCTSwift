@@ -40,6 +40,7 @@
 | **Extrema Tests** | Point on circle distance | Extrema point-on-circle | Remove point-on-circle |
 | **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
 | **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
+| **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
 | **Shape Measurements** | Cylinder totals are finite | Shape measurements cylinder | Remove cylinder totals |
 | **Shape Measurements** | Box face centroids | Shape measurements box faces | Remove box face centroids |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
@@ -134,6 +135,7 @@
 | Extrema: pointOnCircle | OCCTExtremaPointOnCircle | Extrema point-on-circle | Remove point-on-circle | ✅ | ✅ |  |
 | Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
 | Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
+| Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
 | Shape Measurements: cylinderTotalsAreFinite | OCCTShapeMeasurementsCylinderTotalsAreFinite | Shape measurements cylinder | Remove cylinder totals | ✅ | ✅ |  |
 | Shape Measurements: boxFaceCentroids | OCCTShapeMeasurementsBoxFaceCentroids | Shape measurements box faces | Remove box face centroids | ✅ | ✅ |  |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
@@ -223,6 +225,7 @@ For each test, run ground-truth C++ comparison:
 | Extrema: pointOnCircle | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
 | Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
+| Shape Measurements: boxFacePerimeters | ✅ | ✅ | ✅ |
 | Shape Measurements: cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceCentroids | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
@@ -266,4 +269,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 549 tests
+**Total**: 550 tests
