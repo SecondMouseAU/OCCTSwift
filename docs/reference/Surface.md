@@ -181,8 +181,17 @@ public var continuityClass: ContinuityClass { get }
 - **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
   ```swift
-  let bsp = Surface.bspline(poles: ..., ...)!
-  print(bsp.continuityClass)                  // typically .c2
+  let poles: [[SIMD3<Double>]] = [
+      [SIMD3(0, 0, 0), SIMD3(0, 10, 0)],
+      [SIMD3(10, 0, 0), SIMD3(10, 10, 2)]
+  ]
+  let bsp = Surface.bspline(
+      poles: poles,
+      knotsU: [0, 1], multiplicitiesU: [2, 2],
+      knotsV: [0, 1], multiplicitiesV: [2, 2],
+      degreeU: 1, degreeV: 1
+  )!
+  print(bsp.continuityClass)                  // .cN, a single-span patch has no interior knots
   print(bsp.continuityClass.satisfies(.c2))   // true
   ```
 - **Note:** `satisfies(_:)` and `>=` answer different questions and are not interchangeable.
@@ -1007,8 +1016,8 @@ The cross-section is a circle of the given radius. Orientation is determined by 
 - **OCCT:** `GeomFill_Pipe(path, radius)::Perform`.
 - **Example:**
   ```swift
-  if let helix = Curve3D.bspline(throughPoints: [SIMD3(0,0,0), SIMD3(5,5,5)]),
-     let pipe = Surface.pipe(path: helix, radius: 2) {
+  if let spine = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 2), SIMD3(5, 5, 5)]),
+     let pipe = Surface.pipe(path: spine, radius: 2) {
       let face = pipe.toFace()
   }
   ```
@@ -1030,8 +1039,8 @@ The section curve defines the cross-sectional shape at each point along `path`.
 - **OCCT:** `GeomFill_Pipe(path, section)::Perform`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arcOfCircle(center: .zero, radius: 3,
-                                    startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(3, 0, 0), interior: SIMD3(0, 3, 0),
+                                   end: SIMD3(-3, 0, 0)),
      let line = Curve3D.segment(from: .zero, to: SIMD3(0, 0, 10)),
      let pipe = Surface.pipe(path: line, section: arc) {
       let trimmed = pipe.trimmed(u1: 0, u2: 1, v1: 0, v2: 1)

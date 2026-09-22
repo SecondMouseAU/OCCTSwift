@@ -2248,7 +2248,7 @@ public static func gcCircleParallel(center: SIMD3<Double>, normal: SIMD3<Double>
 - **Example:**
   ```swift
   if let c = Curve3D.gcCircle(center: .zero, normal: SIMD3(0,0,1), radius: 10) {
-      print(c.length())
+      print(c.length ?? 0)
   }
   ```
 
@@ -2402,7 +2402,7 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
 - **Example:**
   ```swift
   if let c = Curve2D.gceCircle(center: SIMD2(0, 0), radius: 5) {
-      print(c.length())
+      print(c.length ?? 0)
   }
   ```
 

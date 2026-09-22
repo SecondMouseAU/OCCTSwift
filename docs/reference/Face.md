@@ -463,7 +463,7 @@ public func area(tolerance: Double = 1e-6) -> Double
   ```swift
   let topFace = Shape.box(width: 10, height: 5, depth: 2)!
       .faces().filter { $0.isUpwardFacing() }.first!
-  #expect(topFace.area() ≈ 50.0)
+  #expect(abs(topFace.area() - 50.0) < 1e-9)
   ```
 
 ---

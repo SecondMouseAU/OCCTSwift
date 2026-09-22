@@ -21,6 +21,83 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Document reference snippets now compile (#2093)
+
+Thirty-eight fenced examples across the eleven `Document-*` reference pages and `Construction.md`. Nineteen were `PipeShellBuilder` examples whose only statement was `pipe.<member>(...)`: `pipe` is declared nowhere in those fences and also names a libc function, so every one resolved to `(UnsafeMutablePointer<Int32>?) -> Int32` and failed. Each now constructs its receiver. Also corrected: `Shape.edgeFromLine(from:to:)`, which is `edgeFromLine(origin:direction:p1:p2:)`; `Wire.asShape()`, which is `Shape.fromWire(_:)`; `Document()`, whose initializer is internal, so the factory is `Document.create()`; `Document.isValid`, which does not exist; `TrigRoots.solve(B:)`, whose `sin(x)` coefficient is `b:`; and `Curve3D.line`/`Surface.plane` scalar-component spellings that have never existed.
+
+### Curve3D and Curve2D reference snippets now compile (#2093)
+
+Thirty-seven fenced examples across `Curve2D-Analytic-Types.md`, `Curve2D-Constraint-Solvers.md`, `Curve3D-Analysis.md`, `Curve3D-Analytic-Types.md`, `CurveAdaptors.md`, `Geometry2D.md` and `Shape-Recognition.md`, and in `Curve2D.swift`, `Curve3D.swift` and `Continuity.swift` doc comments, named members and labels that have never existed. `Curve3D.line(origin:direction:)` is `line(through:direction:)`; `parabola(vertex:...)` is `parabola(center:...)`; `curveKind` is `curveType`, an `Int` where `1` is Circle, so the examples no longer claim to print `.circle`; `Curve2D.parameterRange` is `domain`, which is not optional, so the force-unwraps go too. `Curve2D.ellipse`, `hyperbola` and `parabola` all take a placement the examples omitted, and `Curve2D.bspline(points:)` had been resolving to the instance accessor of the same name.
+
+### Surface reference snippets now compile (#2093)
+
+Forty-four fenced examples on `Surface.md`, `Surface-Analysis.md`, `Surface-Analytic-Types.md` and `Surface-Advanced.md`, and in `Surface.swift` and `Shape+Surface.swift` doc comments, called `Surface` factories with argument lists that have never existed. An analytic surface is unbounded, so `Surface.cylinder(radius: 10, height: 50)` was never a call: the placement is `cylinder(origin:axis:radius:)`. Also corrected: `sphere(center:radius:)`, `cone(origin:axis:radius:semiAngle:)`, `torus(origin:axis:majorRadius:minorRadius:)`, `plane(origin:normal:)`, and `extrusion(profile:direction:)`, whose profile is a `Curve3D` rather than a `Wire`. `Surface.md`'s `continuityClass` example now uses a real B-spline patch and reports a measured `.cN` instead of a guessed `.c2`.
+
+### A misnamed carried patch is reported, not a crash (#2148)
+
+`check-inventory-prose.py` read the leading `NNNN` off every `.patch` in `Scripts/patches/`, so one file that was not `NNNN`-named raised `ValueError: invalid literal for int() with base 10: 'wasi'` and took all twenty-one of the gate's claims down with it. The odd file is now reported, with the directory a patch for another build target belongs in.
+
+### The doc-snippet census stops passing on a population it never examined (#2098, #2092)
+
+`census-doc-snippets.py` type-checked **24 of 3,105** snippets in CI while the step passed. The built
+module's path was guessed from a list of layouts SwiftPM no longer uses, and the guess missed on the
+one machine that matters. Two things were wrong: the module sits under `Modules/` in CI, and it is a
+plain file there rather than the directory bundle a local build produces. The path is now searched
+for rather than guessed, and `--require-typecheck` fails the step instead of reporting on a
+population it never examined. CI's self-test went from 27 cases to 56, so every compile case,
+including the canary cases that exist to catch a silent compiler, now runs where it counts.
+
+Separately, reference pages elide content the reader is expected to supply (`= ...`, `{ ... }`,
+`[...]`, `= // prose`), which does not parse and is not a documentation defect. Those 24 snippets
+were reported as failures; they are fragments. Reclassifying them left exactly one real finding the
+rule refused to excuse, a `Package.swift` manifest fragment fenced as `swift`, now exempt with a
+written reason. `unparseable` is zero.
+
+### Shape, Edge, Face and Wire reference snippets now compile (#2093)
+
+Forty-one fenced examples across `Shape-Features.md`, `Shape-Completions.md`, `Shape-Builders-1.md`, `Annotation.md`, `Edge.md`, `Face.md` and `Wire.md`, and in `Shape.swift`, `Shape+Topology.swift`, `MedialAxis.swift`, `Edge.swift`, `Wire.swift` and `WireOrder.swift` doc comments. `Shape.box(dx:dy:dz:)` is `box(width:height:depth:)`. `Wire.asShape`, `Face.shape` and `Edge.shape` never existed: the conversions are `Shape.fromWire(_:)`, `fromFace(_:)` and `fromEdge(_:)`. `Wire` has no `translated(by:)` at all, so the profile examples now place the circle at construction with `Wire.circle(origin:normal:radius:)`. `Shape.makeFace` and `Shape.makePolygon` are `Shape.face(from:)` with `Wire.polygon3D(_:closed:)`; `Edge.line(from:to:)` is `Wire.line(from:to:)!.edges()[0]`; `SurfaceContinuity` has no `.c0`; `Edge.adjacentFaces(in:)` returns an array, not a pair; and the `≈` operator one example used is defined nowhere in the package.
+
+### The bridge header split gate validated its own view, not just its verdict (#2080)
+
+`Scripts/derive-bridge-header-split.py` stripped C comments in two passes, block comments first, so
+any `//` comment containing the text `/*` opened a block comment that was never closed. In
+`OCCTBridge.h` a comment mentioning `Sources/OCCTBridge/src/*.mm` ran to the file's own
+`#endif /* OCCTBridge_h */`, hiding 14 of its 16 declarations, and the gate printed `misfiled: 0`
+throughout. Its `--self-test` passed as well, because no fixture carried the trigger, and comments
+naming a glob are ordinary here.
+
+Both halves are fixed. Comments are now stripped in one pass, so the opener that actually opened
+first is the one in effect, and string and character literals are skipped intact because either can
+hide an opener. Separately the script now refuses to report at all when a header the split owns
+yields no declaration, which is the observable form of a swallowed file and would have caught this
+without anyone guessing the trigger.
+
+The general rule is written up in `okf/policies/static-gates.md`: a detector must assert on the real
+run that its own view is plausible, because a self-test only proves it catches the failure modes its
+author thought of. Three detectors were caught in one day with passing self-tests, and #618,
+#624/#630 and #626 are the same shape years earlier.
+
+### Every fenced Swift snippet in the docs is now type-checked (#1683)
+
+`Scripts/census-doc-snippets.py` hands every fenced ```swift``` block in `docs/` and in every `///`
+doc comment to `swiftc`, which is the first thing to read inside those fences at all.
+`docs-current.md` has always asked for a runnable snippet on every documented API and nothing checked
+that any of them compiled, which is how `Curve3D.arc(center:radius:startAngle:endAngle:)`, a factory
+that has never existed, reached 18 call sites (#1675). It compiles rather than matching argument
+labels with a regex: #1675 holds two attempts at the regex, and each reported a real API as missing.
+
+Of 8,181 fences, 5,082 are signature restatements that a bodiless `func` makes uncompilable in any
+context, and 3,096 are snippets. Of those, 1,470 compile, 1,415 open mid-flow on a name the
+surrounding prose introduced, and **211 do not compile**. A census rather than a gate for that reason
+alone: `--strict` exits 1, and promotion is that flag becoming the default plus a rename, once the
+backlog is zero. It runs in `swift build + test (macOS)` rather than `gate-scripts`, which is pure
+Python with no build.
+
+Corrected here: the 17-site `Curve3D.line(from:to:)` cluster, which is `segment(from:to:)`, across
+`Curve3D-Analysis.md`, `Surface.md`, `Surface-Analysis.md` and
+`Document-Geometry-Constructors.md`. A snippet that is deliberately not compilable now carries its
+exemption on the page, as `no-typecheck: <reason>` in the fence info string, with the reason required.
+
 ### Carried patches `0040` and `0041`: the data-exchange globals reach zero (#1403)
 
 **`0040`, three unguarded one-time-init flags.** Both `STEPControl_Controller::Init()` and

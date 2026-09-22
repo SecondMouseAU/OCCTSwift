@@ -36,7 +36,7 @@ The bisector is the locus of points equidistant from both curves. `origin` steer
   let c1 = Curve2D.circle(center: .zero, radius: 3)!
   let c2 = Curve2D.circle(center: SIMD2(6, 0), radius: 2)!
   if let bis = c1.bisector(with: c2, origin: SIMD2(3, 0)) {
-      let pt = bis.point(at: bis.parameterRange!.lowerBound)
+      let pt = bis.point(at: bis.domain.lowerBound)
   }
   ```
 
@@ -1048,7 +1048,7 @@ The bisector is the locus of points equidistant from both curves. `referencePoin
       referencePoint: SIMD2(1, 1),
       direction1: SIMD2(1, 0), direction2: SIMD2(0, 1)
   ) {
-      let pt = bis.point(at: bis.parameterRange!.lowerBound)
+      let pt = bis.point(at: bis.domain.lowerBound)
   }
   ```
 - **Note:** This overload's label set (`with:referencePoint:direction1:direction2:`) distinguishes it from the approximate `bisector(with:origin:side:)` overload.
@@ -1079,7 +1079,7 @@ public func bisector(
       referencePoint: SIMD2(4, 0),
       direction1: SIMD2(0, 1), direction2: SIMD2(-1, 0)
   ) {
-      let range = bis.parameterRange
+      let range = bis.domain
   }
   ```
 
@@ -1108,6 +1108,6 @@ public static func bisectorBetweenPoints(
       referencePoint: SIMD2(3, 1),
       direction1: SIMD2(1, 0), direction2: SIMD2(-1, 0)
   ) {
-      let pt = bis.point(at: bis.parameterRange!.lowerBound)
+      let pt = bis.point(at: bis.domain.lowerBound)
   }
   ```
