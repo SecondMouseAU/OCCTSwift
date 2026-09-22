@@ -38,7 +38,19 @@ func pin(_ key: String) -> String {
 
 /// The wasi-sdk install, which supplies the exception-enabled C++ runtime the Swift SDK's sysroot
 /// does not carry. `Scripts/install-wasm-toolchain.sh` exports it; a manual build must too.
-let wasiSDKPrefix = ProcessInfo.processInfo.environment["WASI_SDK_PREFIX"] ?? ""
+///
+/// Unset is refused rather than defaulted. An empty prefix builds the link path
+/// `/share/wasi-sysroot/...` from the filesystem root, which exists nowhere and surfaces as a pile
+/// of undefined `__cxa_*` symbols rather than as the one missing variable.
+guard let wasiSDKPrefix = ProcessInfo.processInfo.environment["WASI_SDK_PREFIX"],
+      !wasiSDKPrefix.isEmpty
+else {
+    fatalError("""
+        WASI_SDK_PREFIX is not set, and this package builds only for wasm.
+        Build it through Scripts/install-wasm-toolchain.sh --verify, which sets it, or export it \
+        to a wasi-sdk install of the pinned version.
+        """)
+}
 let exceptionLibraries = "\(wasiSDKPrefix)/share/wasi-sysroot/lib/wasm32-wasip1/eh"
 
 let package = Package(
