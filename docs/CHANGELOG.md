@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach surfaces, curves and 2D geometry (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused surface, 3D curve or 2D curve operation. 1,045 function-level `catch (...)` blocks across the seven `OCCTBridge_Surface_*.mm`, six `OCCTBridge_Curve3D_*.mm` and seven `OCCTBridge_Geom2d_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them. This is the largest of the sweep's domains and takes bridge coverage past half.
+
+Six deeper blocks are instrumented too, all of them `OCCTBSplineApproxInterp::run()`'s catch, once per Curve3D translation unit. It neither rethrows nor recovers: it turns the exception into `done = false`, which every caller reports as a refused fit, and no enclosing handler ever runs. It records under the explicit context `OCCTBSplineApproxInterp::run`, because `__func__` inside that member function reads only `run`.
+
+Ten deeper blocks stay uninstrumented with the reason in place, all recover-and-continue: the boundary-curve distance loop's per-curve skip in each `Geom2d` file, the two medial-axis fallbacks to node-position interpolation, and `occtSignedGeom2dCurvesArea`'s per-sample skip.
+
 ### Caught-exception diagnostics reach topology and measurement (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused topology query, adjacency walk, bounding box, extrema search or mass/length/area measurement. 333 function-level `catch (...)` blocks across the five `OCCTBridge_Topology_*.mm` files and `OCCTBridge_Properties.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
