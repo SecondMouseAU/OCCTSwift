@@ -21,6 +21,18 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach sweep, fillet and chamfer (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused draft, sweep, loft, fillet or chamfer. 189 function-level `catch (...)` blocks in `OCCTBridge_Modeling_Sweep.mm`, `OCCTBridge_Modeling_Fillet.mm` and `OCCTBridge_Modeling_Chamfer.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so `Shape.draft(wire:direction:angle:length:)` returning `nil` on a zero direction now says `Standard_ConstructionError: gp_Dir() - input vector has zero norm` rather than nothing at all.
+
+Coverage is still partial while #2077's sweep runs, and a capture that comes back empty still means "no instrumented site reported" rather than "nothing was caught". Derive it from the source:
+
+```bash
+grep -rc occtRecordCaughtException Sources/OCCTBridge/src
+```
+
+Each file's one deeper `catch (...)`, the shared `occtSampleWirePoints` block, is deliberately left out with the reason in place: it recovers, so recording it would report a failure for a call that went on to succeed.
+
 ### Guide and architecture snippets now compile (#2093)
 
 Eleven fenced examples in `docs/architecture/overview.md`, `docs/guides/occt-concepts.md`, and the `///` comments of `BRepGraph.swift`, `Exporter.swift`, `FeatureRecognition.swift`, `Mesh.swift` and `Selection.swift`, all of them using a failable factory's result without unwrapping it. The guide snippets are the longest in the docs and the optionals come in layers: `occt-concepts.md`'s rail example needed six, ending at `Shape`'s `-` operator, which returns `Shape?` and so cannot chain as `a - b - c`. Also corrected: `ShapeMeasurements.faceCentroids` is `[SIMD3<Double>?]` and `Edge.bounds` is `(min:max:)?`, which three comparison closures had been reading through as if they were not.
