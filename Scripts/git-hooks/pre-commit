@@ -109,6 +109,11 @@ run "check-throwing-calls.py"                 Scripts/check-throwing-calls.py
 # an hour into kernel-integration.yml, which is how 0035 was found.
 run "check-patch-deletes-guarded-symbol.py --self-test" Scripts/check-patch-deletes-guarded-symbol.py --self-test
 run "check-patch-deletes-guarded-symbol.py"   Scripts/check-patch-deletes-guarded-symbol.py
+# #2167, from PR #2076: a WASI patch that unbalances a file's #if/#else/#endif breaks it on every
+# platform, and "the patch applies cleanly" does not measure that. Reads the patch text only; the
+# deeper --tree mode needs a checkout and is not run here, matching CI.
+run "check-preprocessor-balance.py --self-test" Scripts/check-preprocessor-balance.py --self-test
+run "check-preprocessor-balance.py"           Scripts/check-preprocessor-balance.py
 # #2077. Every function-level `catch (...)` in the bridge records the OCCT exception it caught, so a
 # nil return can say why. Cheapest possible check on the newest bridge convention, and the one a
 # hand-written bridge function is most likely to miss.

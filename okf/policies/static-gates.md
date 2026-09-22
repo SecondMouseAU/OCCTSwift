@@ -54,10 +54,17 @@ The five censuses today and what each is for:
   category labels (`boss`), and no mechanical rule separates those from a stale entry: 79 of 2,588
   identifier-shaped entries resolve to nothing, and most of them are correct documentation.
 
-One gate reads `Scripts/patches/` rather than `Sources/`: `check-patch-deletes-guarded-symbol.py`
-(#2058), which fails when a carried patch deletes a line naming an OCCT symbol a `Tests/` comment
-says its invariant depends on. It scans the patch diffs, not `Libraries/occt-src`, which is what
-keeps it in this job instead of an hour into `kernel-integration.yml` where #2056 was found.
+Two gates read `Scripts/patches/` rather than `Sources/`, and both for the same reason:
+`check-patch-deletes-guarded-symbol.py` (#2058), which fails when a carried patch deletes a line
+naming an OCCT symbol a `Tests/` comment says its invariant depends on, and
+`check-preprocessor-balance.py` (#2167), which fails when a patch's conditional-directive deltas do
+not balance. Both scan the patch diffs, not `Libraries/occt-src`, which is what keeps them in this
+job instead of an hour into `kernel-integration.yml` where #2056 was found. #2167's subject is PR
+#2076, where three of fifteen WASI patches left a source file no compiler could preprocess on any
+platform, behind a green check that read "all 14 patches apply cleanly": applying cleanly and
+preprocessing are different properties. It carries a deeper `--tree` mode that parses whole files
+in a real checkout, which `gate-scripts` does not have, so that mode stays out of this job and
+takes `--require-tree` where it runs, on the #2098 precedent below.
 
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
@@ -110,7 +117,7 @@ Two of its design choices are worth carrying to any detector that shells out to 
 
 ## Every detector proves it is not blind
 
-Eleven of the twelve gates, all five censuses and the merge-history audit take `--self-test`, a
+Twelve of the thirteen gates, all five censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
@@ -162,7 +169,7 @@ of tooling earlier.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs twenty-nine of `gate-scripts`' thirty invocations, flag for
+`Scripts/git-hooks/pre-commit` runs thirty-one of `gate-scripts`' thirty-two invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

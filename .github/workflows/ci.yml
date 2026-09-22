@@ -35,14 +35,14 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all eighteen are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all nineteen are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other seventeen. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other eighteen. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -191,6 +191,20 @@ jobs:
       - name: check-patch-deletes-guarded-symbol.py
         if: '!cancelled()'
         run: python3 Scripts/check-patch-deletes-guarded-symbol.py
+
+      # #2167, from PR #2076: three of its fifteen WASI patches left an OCCT source file that no
+      # compiler could preprocess, on EVERY platform rather than only WASI, behind a green check
+      # reading "all 14 patches apply cleanly". Applying cleanly and preprocessing are different
+      # properties. This reads the patch text for directive deltas, so like its #2058 sibling it
+      # needs no Libraries/occt-src and belongs here. Its deeper --tree mode does need a checkout
+      # and is deliberately NOT run in this job; the wasm build job is where that belongs.
+      - name: check-preprocessor-balance.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-preprocessor-balance.py --self-test
+
+      - name: check-preprocessor-balance.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-preprocessor-balance.py
 
       # #2077. #1161's caught-exception diagnostics channel shipped with 1 of the 74 bridge .mm
       # files instrumented and was swept across the rest; this is what stops the sweep decaying.
