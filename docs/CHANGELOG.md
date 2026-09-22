@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Guide and architecture snippets now compile (#2093)
+
+Eleven fenced examples in `docs/architecture/overview.md`, `docs/guides/occt-concepts.md`, and the `///` comments of `BRepGraph.swift`, `Exporter.swift`, `FeatureRecognition.swift`, `Mesh.swift` and `Selection.swift`, all of them using a failable factory's result without unwrapping it. The guide snippets are the longest in the docs and the optionals come in layers: `occt-concepts.md`'s rail example needed six, ending at `Shape`'s `-` operator, which returns `Shape?` and so cannot chain as `a - b - c`. Also corrected: `ShapeMeasurements.faceCentroids` is `[SIMD3<Double>?]` and `Edge.bounds` is `(min:max:)?`, which three comparison closures had been reading through as if they were not.
+
 ### Drawing, vector-export and sheet-metal snippets now compile (#2093)
 
 Fourteen fenced examples on `Drawing.md`, `Export-Vector.md`, `SheetMetal.md` and in `Drawing.swift` doc comments. Seven said `PaperSize.A3` or `.A4`, whose real cases are `.a3` and `.a4`: that is a rename that reached `Sources/` before the #1103 merge and never reached the page, and it survived because the signature restatement at `Drawing.md:886` still declared the uppercase form, in the one fence population the snippet census skips by design. Also corrected: `writePDF`/`writeSVG` written with a trailing closure, which their `sheet:body:to:deflection:` order makes impossible; `DrawingScale.oneToTwo`, which is `.reduction(2)`; `DXFWriter.dxfString()`, which is `write(to:)`; and `DrawingDimension.Linear(value:)`, where `value` is a computed property rather than an init parameter.
