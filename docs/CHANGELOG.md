@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach shape healing (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused heal, fix, upgrade, sewing, blend or filling. 266 function-level `catch (...)` blocks across the seven `OCCTBridge_Healing_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so a `nil` from `ShapeFix`-backed API can now name the OCCT exception the kernel raised rather than only that something refused.
+
+`OCCTShapeAnalyze`'s per-shell orientation scan keeps its inner `catch (...)` uninstrumented, with the reason in place: it skips one unusable shell and the analysis goes on to return a full result, so recording it would report a failure for a call that did not fail.
+
 ### Caught-exception diagnostics reach sweep, fillet and chamfer (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused draft, sweep, loft, fillet or chamfer. 189 function-level `catch (...)` blocks in `OCCTBridge_Modeling_Sweep.mm`, `OCCTBridge_Modeling_Fillet.mm` and `OCCTBridge_Modeling_Chamfer.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so `Shape.draft(wire:direction:angle:length:)` returning `nil` on a zero direction now says `Standard_ConstructionError: gp_Dir() - input vector has zero norm` rather than nothing at all.
