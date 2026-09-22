@@ -46,12 +46,34 @@ rather than merely self-consistent.
 
 So no test expectation needs changing, and the injection site in the issue is correct.
 
-## What this does NOT settle
+## Settled: the loop is retired, and here is the measurement that settled it
 
-Whether to retire the bridge-side loop. The measurement above is one ellipse; the suite also covers
-a parabola, a hyperbola, a whipping Bezier and a multi-span interpolated BSpline, and a retirement
-should measure those before deleting code that costs nothing to keep. Retirement is a behaviour
-change with its own risk and belongs in its own issue, not folded into an investigation.
+This section used to say the question was open, that one ellipse was not enough, and that a
+retirement should measure the parabola, hyperbola, whipping Bezier and multi-span interpolated
+BSpline first. That was right, and it also missed something: `pieces` feeds
+`occtAdaptorParameterAtLength`, which re-walks the subdivision the length was summed from, so the
+loop was never only about length accuracy. Removing it hands the whole interval to
+`GCPnts_AbscissaPoint` instead of a half, and that is a solver question rather than a quadrature
+one.
+
+Rather than measure five curves by hand, the loop itself was instrumented: report any convergence
+past `n=2`, and any exhaustion of the ceiling. Then the **full** suite was run.
+
+```
+6,384 tests in 1,573 suites
+[ARCPIECES] reports: 0
+```
+
+It converged on its first comparison every time, on every curve the tree touches, which is a
+superset of the five. The loop cost one extra quadrature pass per interval and changed no answer.
+
+Retired at the v4.0.0-kernel.1 repin, along with `kOCCTArcLengthTolerance` and
+`kOCCTArcLengthMaxPieces`, which had no other callers. The full suite passes with it gone, the
+arc-length and parameter-at-length suites included.
+
+`Issue603SingleSpanQuadratureTests` is the regression: it already covers all five curve shapes and
+both directions, and it computes its references in Swift (a Richardson extrapolated chord sum and a
+composite Simpson integral) rather than from the code under test.
 
 ## Reproducing
 

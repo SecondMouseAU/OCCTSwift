@@ -268,11 +268,12 @@ the reproducer). What a bridge author needs without opening it:
   merged solid; comparing the two is #367's mistake, not a kernel bug.
 - `GeomPlate_MakeApprox::ApproxError()` and `MakeFilling::G0Error()` are not gates for "accepted
   an approximation unread"; both were tried and both broke correct results (#597).
-- **Retire when the kernel is repinned**: the bridge-side arc-length subdivision
-  (`occtAdaptorArcLength`, #603, redundant against patch `0021`), the datum lookup guard in
-  `occtDocumentDatumObjectAt` (#1030, blocks a readable datum once `0029` is in), and the
-  `Scripts/tsan.supp` lines for `TopoDS_TShape::myState` (`0030`). None of their tests can signal
-  that they have outlived their fix.
+- **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
+  carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
+  datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`
+  (`0030`), and the bridge-side arc-length subdivision (`occtAdaptorArcLength`, #603, redundant
+  against `0021`). None of their tests could signal that they had outlived their fix, which is why
+  this list existed; each now has a regression test that fails if the mitigation comes back.
 - `OCCTShapeFuseMulti` runs with `SetRunParallel(false)`; re-enabling it is very likely safe (#369)
   and is a separate, open decision.
 
