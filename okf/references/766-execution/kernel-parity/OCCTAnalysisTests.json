@@ -19,5 +19,26 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "ShapeRayIntersection Tests::curve intersection with sphere",
+    "bridge_function": "OCCTCurveSurfaceInterCreateCurve",
+    "bridge_output": {
+      "type": "intersection_count",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_count",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
