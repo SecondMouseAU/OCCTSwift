@@ -39,6 +39,7 @@
 | **Self-Intersecting Profile Crash Guard (#263)** | Self-Intersecting Profile Crash Guard (#263) | Self-intersection | Remove self-intersection guard |
 | **Extrema Tests** | Point on circle distance | Extrema point-on-circle | Remove point-on-circle |
 | **Shape Measurements** | Box face areas | Shape measurements box faces | Remove box face areas |
+| **Shape Measurements** | Box edge lengths | Shape measurements box edges | Remove box edge lengths |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -130,6 +131,7 @@
 | Self-Intersecting Profile Crash Guard (#263) | OCCTSelfIntersectingProfileGuard | Self-intersection | Remove SEGV guard | ✅ | ✅ |  |
 | Extrema: pointOnCircle | OCCTExtremaPointOnCircle | Extrema point-on-circle | Remove point-on-circle | ✅ | ✅ |  |
 | Shape Measurements: boxFaceAreas | OCCTShapeMeasurementsBoxFaceAreas | Shape measurements box faces | Remove box face areas | ✅ | ✅ |  |
+| Shape Measurements: boxEdgeLengths | OCCTShapeMeasurementsBoxEdgeLengths | Shape measurements box edges | Remove box edge lengths | ✅ | ✅ |  |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -216,6 +218,7 @@ For each test, run ground-truth C++ comparison:
 | Self-Intersecting Profile Crash Guard (#263) | ✅ | ✅ | ✅ |
 | Extrema: pointOnCircle | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceAreas | ✅ | ✅ | ✅ |
+| Shape Measurements: boxEdgeLengths | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
