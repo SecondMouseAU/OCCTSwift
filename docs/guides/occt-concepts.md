@@ -309,20 +309,20 @@ let railProfile = Wire.polygon([
     SIMD2(0.7, 6.5),       // Head start left
     SIMD2(0.7, 0.8),       // Web left
     SIMD2(0, 0.8)          // Back to base
-], closed: true)
+], closed: true)!
 
 // 2. Define the track path (3D curve)
 let straightPath = Wire.line(
     from: SIMD3(0, 0, 0),
     to: SIMD3(100, 0, 0)
-)
+)!
 
 // 3. Sweep to create the rail
-let rail = Shape.sweep(profile: railProfile, along: straightPath)
+let rail = Shape.sweep(profile: railProfile, along: straightPath)!
 
 // 4. Position for left/right rail
-let leftRail = rail.translated(by: SIMD3(0, 0, -6))  // Half gauge
-let rightRail = rail.translated(by: SIMD3(0, 0, 6))
+let leftRail = rail.translated(by: SIMD3(0, 0, -6))!  // Half gauge
+let rightRail = rail.translated(by: SIMD3(0, 0, 6))!
 
 // 5. Combine
 let trackSection = Shape.compound([leftRail, rightRail])
@@ -332,18 +332,18 @@ let trackSection = Shape.compound([leftRail, rightRail])
 
 ```swift
 // Base sleeper block
-let sleeper = Shape.box(width: 25, height: 2, depth: 4)
+let sleeper = Shape.box(width: 25, height: 2, depth: 4)!
 
 // Mounting holes for clips
-let hole = Shape.cylinder(radius: 0.4, height: 2.5)
-    .translated(by: SIMD3(0, -0.25, 0))  // Slightly below top
+let hole = Shape.cylinder(radius: 0.4, height: 2.5)!
+    .translated(by: SIMD3(0, -0.25, 0))!  // Slightly below top
 
 // Position holes at rail locations
-let holeLeft = hole.translated(by: SIMD3(0, 0, -6))
-let holeRight = hole.translated(by: SIMD3(0, 0, 6))
+let holeLeft = hole.translated(by: SIMD3(0, 0, -6))!
+let holeRight = hole.translated(by: SIMD3(0, 0, 6))!
 
 // Subtract holes from sleeper
-let sleeperWithHoles = sleeper - holeLeft - holeRight
+let sleeperWithHoles = (sleeper - holeLeft)! - holeRight
 ```
 
 ### Exporting for 3D Printing
