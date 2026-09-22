@@ -57,19 +57,31 @@ and is in pre-release as `v4.0.0-beta.3`.
 carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own. What
 forces the major is Rule 2, carried by **fifteen** breaking changes across 196 merged pull requests.
 
-Most of those fifteen share one shape, and it is worth naming because it explains the size of this
-release: **a function that could not fail, and did, gains the ability to say so.** Sixteen
-`SAWireAnalysis` checks return `Bool?` where they returned `Bool`, because a refused check and a
-clean verdict were the same answer. `BoundSortBox.compare` returned indices that were off by one
-against its own documented contract. `featFuse` and `featCut` silently returned the wrong shape for
-every call ever made. None of these had a correct behaviour to preserve, which is why several of
-them have no migration beyond reading the new answer.
+Many of the fifteen share one shape, and it is worth naming because it explains the release:
+**a function that could not fail, and did, gains the ability to say so.**
+`SAWireAnalysis.checkOuterBound` returns `Bool?` where it returned `Bool`, because a refused check
+and a clean verdict were the same answer. `BoundSortBox.compare` returned indices that were off by
+one against its own documented contract. `featFuse` and `featCut` silently returned the wrong shape
+for every call ever made, and `dividedByNumber` always returned `nil`. None of these had a correct
+behaviour to preserve, which is why several have no migration beyond reading the new answer.
 
 **Two of the fifteen were not declared by the PR that made them**, and were re-derived from the
 diff while assembling this section, which is the failure mode
 [`semver-at-release.md`](../okf/policies/semver-at-release.md) names and accepts. They are marked
 below. One of them, `PaperSize`, had also gone undetected in the documentation for months; the gate
 that now catches that class is #2145.
+
+**And one declared MAJOR is not in this list, because the change never landed.** #1138's body says
+"Consumers calling any of the 14 `SAWireAnalysis` check functions must now handle the optional
+return". Its merged diff is nine lines of comment in `OCCTBridge_Healing.mm` plus a census document,
+it touches no header and no Swift file, and `checkOrder` and its thirteen siblings return plain
+`Bool` today exactly as they did before. Only `checkOuterBound` returns `Bool?`, from #1096.
+
+Checking the claim against the diff is the reviewer's job under that policy and it did not happen
+here, so the release assembly is where it surfaced. Every other MAJOR in this section was then
+verified against the current source rather than taken from its PR body: fourteen of fifteen held,
+and this was the one that did not. Documenting it would have told consumers to change working
+code.
 
 Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
 #1551), the data-exchange thread-safety series (#1403), and the gate work. Read the entries in
@@ -79,8 +91,7 @@ Everything else in this release is internal: the bridge and Swift correctness sw
 
 | Break | Kind | Detail |
 |---|---|---|
-| 14 `SAWireAnalysis` check functions return `Bool?` | compile error | [#1138](#v400-a-refused-check-is-no-longer-a-clean-verdict-1096-1138) |
-| `SAWireAnalysis.checkOuterBound(wire:face:)` returns `Bool?` | compile error | [#1096](#v400-a-refused-check-is-no-longer-a-clean-verdict-1096-1138) |
+| `SAWireAnalysis.checkOuterBound(wire:face:)` returns `Bool?` | compile error | [#1096](#v400-a-refused-check-is-no-longer-a-clean-verdict-1096) |
 | `Edge.adjacentFaces(in:)` returns `[Face]?`, was `(Face, Face?)?` | compile error | [#1116](#v400-edgeadjacentfacesin-returns-every-adjacent-face-1116) **undeclared** |
 | `PaperSize` cases renamed `.A0`...`.A4` to `.a0`...`.a4` | compile error | [#1103](#v400-papersize-cases-are-lowercased-1103) **undeclared** |
 | `WireOrder.Status` drops `.closed`/`.open`/`.gaps`, adds four | compile error | [#1607](#v400-wireorderstatus-reports-what-the-kernel-actually-returns-1607) |
@@ -92,14 +103,18 @@ Everything else in this release is internal: the bridge and Swift correctness sw
 | `EdgeCurve` and `WireCurve` lose `@unchecked Sendable` | compile error across a concurrency boundary | [#1406](#v400-edgecurve-and-wirecurve-lose-unchecked-sendable-1406) |
 | `OCCTDatumInfo.name` removed from the C header | compile error, C consumers only | [#1084](#v400-the-datum-names-length-is-answerable-1084) |
 | GD&T tables move to the `0:1:4` document label | data written by an older version is unreadable | [#1112](#v400-gdt-tables-move-to-the-document-tool-label-1112) |
-| `Shape.featFuse(with:)` and `.featCut(with:)` return real geometry | different result, no signature change | [#1467](#v400-three-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
-| `BoundSortBox.compare(...)` returns 0-based indices | different result, no signature change | [#1471](#v400-three-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+| `Shape.featFuse(with:)` and `.featCut(with:)` return real geometry | different result, no signature change | [#1467](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+| `BoundSortBox.compare(...)` returns 0-based indices | different result, no signature change | [#1471](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+| `Shape.dividedByNumber(_:)` divides, where it always returned `nil` | different result, no signature change | [#1526](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
 
-##### v4.0.0: a refused check is no longer a clean verdict (#1096, #1138)
+##### v4.0.0: a refused check is no longer a clean verdict (#1096)
 
-Fifteen `SAWireAnalysis` check functions returned `Bool`, and returned `false` both when the wire
-was clean and when the check could not be evaluated at all. Those are different answers and a
-caller could not tell them apart. They now return `Bool?`, where `nil` means refused.
+`SAWireAnalysis.checkOuterBound(wire:face:)` returned `Bool`, and returned `false` both when the
+wire was clean and when the check could not be evaluated at all. Those are different answers and a
+caller could not tell them apart. It now returns `Bool?`, where `nil` means refused.
+
+The other fourteen `SAWireAnalysis` checks still return plain `Bool` and are unaffected, despite
+what #1138's body claims. See the note above.
 
 **Migration.** `if check(...)` no longer compiles. Decide what the call should do for `nil`, which
 is new information rather than a renamed old answer:
@@ -238,7 +253,7 @@ new label only.
 
 **Migration.** Re-save affected documents with this version to move their datums onto the new label.
 
-##### v4.0.0: three functions stop returning a wrong answer (#1467, #1471, #1526)
+##### v4.0.0: four functions stop returning a wrong answer (#1467, #1471, #1526)
 
 No signature changes, so nothing stops compiling. Each returns a different value than it did:
 
@@ -252,7 +267,7 @@ No signature changes, so nothing stops compiling. Each returns a different value
 - `Shape.dividedByNumber(_:)` always returned `nil` and now divides.
 
 These are listed as breaks because a caller's output changes, not because their code stops
-compiling. There was no correct behaviour to depend on in any of the three.
+compiling. There was no correct behaviour to depend on in any of the four.
 
 #### v3.0.0
 
