@@ -70,6 +70,12 @@ were run:
 | Drop the `-L.../eh -lc++abi -lunwind` linker settings from `standalone/Package.swift` | Link fails: `undefined symbol: __cxa_throw`, `__cxa_begin_catch`, `_Unwind_CallPersonality` and five more |
 | Replace `WASM_CXX_EH_FLAGS` with a bare `-fwasm-exceptions` | Builds, then wasmkit refuses it: `Illegal opcode: [6]` |
 
+**Re-running these needs one thing that is not obvious.** SwiftPM caches the compiled manifest
+against `Package.swift`, not against `Scripts/wasm-toolchain-versions.txt` that the manifest reads,
+and `rm -rf .build` does not clear it. Injecting the second case by editing the pins file alone
+gives a 0.26s no-op rebuild and a module that still runs clean, which reads as evidence that the
+flag was unnecessary. `touch Package.swift` after the edit, and the injection lands.
+
 A third case is covered by the package itself rather than by the toolchain: `wasm_probe_sum`
 returns minus the length of the caught message, and `main.swift` checks for `-26.0`, so a build
 where the throw never happened or the message was lost fails instead of printing a plausible

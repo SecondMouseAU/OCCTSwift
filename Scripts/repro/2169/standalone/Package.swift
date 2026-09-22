@@ -20,6 +20,15 @@ import PackageDescription
 ///
 /// The manifest reads the pins rather than restating them, so a toolchain bump does not leave a
 /// stale copy here that still builds and quietly disagrees with everything else.
+///
+/// **Editing a pin does not reach the next build on its own.** SwiftPM caches the compiled
+/// manifest against `Package.swift`, not against the files the manifest reads, and `rm -rf .build`
+/// does not clear that cache. After changing a value read here, `touch Package.swift`.
+///
+/// Measured: with `WASM_CXX_EH_FLAGS` cut down to a bare `-fwasm-exceptions`, the rebuild was a
+/// 0.26s no-op and the module still ran clean. One `touch Package.swift` later, the same edit
+/// produced `Illegal opcode: [6]` at offset 0x282. A reviewer re-running this package's negative
+/// cases hit the stale build first and nearly concluded the second flag was unjustified.
 func pin(_ key: String) -> String {
     let pinsFile = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // .../standalone
