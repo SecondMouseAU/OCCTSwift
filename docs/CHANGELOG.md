@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Documentation: the STEP/IGES bridge surface is already serialized (#342)
+
+`OCCTSerialQueue` and `Exporter` now state that `writeSTEP`, `writeIGES`, `Shape.load(from:)` and `Document.loadSTEP` are serialized inside the bridge, so they neither need `OCCTSerial.withLock` nor gain concurrency from it. `OCCTSerialQueue` previously said the opposite, which is the file a caller reads before deciding. The mesh and BREP writers carry no such lock and the deep-copy advice still applies to them.
+
 ### The pinned kernel carries all twenty-nine patches (#1408)
 
 `Package.swift` pins `v4.0.0-kernel.1`, which is OCCT `V8_0_1` plus every carried patch. Twelve had been on disk and in no CI job, because `build-and-test` resolves the pinned asset rather than building from source, so they reached no consumer: an uncatchable SIGSEGV through `Document.datums` (`0029`), data races on `TopoDS_TShape::myState` and the B-spline caches (`0030`, `0031`), a wrong surface from `Shape.coonsAlgPatch` (`0034`), and the #1403 data-exchange series (`0036`-`0041`), which took named racing globals from 16 to 0. `Scripts/tsan.supp` loses the `TopoDS_TShape::myState` suppressions, which were hiding a race the kernel now fixes.
