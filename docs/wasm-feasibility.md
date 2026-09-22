@@ -8,7 +8,9 @@ search_exclude: true
 This doc captures the analysis of building OCCTSwift for WebAssembly so that the
 **OCCTSwift Swift API can be reused inside a SwiftWasm app** (e.g. a browser app
 driven by JavaScriptKit, or a server-side wasm runtime). Written June 2026 as a
-forward plan; **not yet started**, deferred until the cookbook/docs work lands.
+forward plan. The toolchain is now pinned and has been run end to end, see
+[Pinned toolchain](#pinned-toolchain); nothing has been attempted against OCCT
+itself yet.
 
 The goal is fixed. The *path* to reach it is deliberately left open, see
 [Three paths](#three-paths-to-one-wasm-module). The path choice is the **output of
@@ -63,6 +65,49 @@ This is the fact that dominates the whole effort.
 
 Everything below is about how to bridge that gap.
 
+## C++ exceptions on wasip1: what is proven (#2171)
+
+The bridge answers a failed OCCT call by catching at the C boundary and returning a refusal, and
+`check-throwing-calls.py` gates that. On `wasm32-unknown-wasip1` that contract **holds**, on
+conditions that are now measured rather than assumed. The probe is
+[`Scripts/repro/2171`](../Scripts/repro/2171), re-runnable as `Scripts/repro/2171/run.sh`, and its
+measurement log is [that directory's README](../Scripts/repro/2171/README.md).
+
+**Proven.** A failure type raised through a static `Raise` entry point is caught across separately
+compiled targets by its own type, by reference to its base, and by `catch (...)`, which is the shape
+every `OCCTBridge` function's outermost handler uses. A `std::out_of_range` raised inside libc++
+itself is caught too, so the seam between the Swift SDK's no-exceptions C++ runtime and wasi-sdk's
+exception-enabled one holds for a throw neither side of our code wrote. When the whole path carries
+the flags, every destructor between the raise and the catch runs. setjmp and longjmp work in a
+translation unit that also carries the exception flags.
+
+**Three conditions, each of which fails silently if missed.**
+
+| Condition | What happens without it |
+|-----------|-------------------------|
+| `WASM_CXX_EH_FLAGS` reaches **every** C++ translation unit, OCCT's included | The exception still propagates, but frames compiled without the flags skip their stack cleanup, and a `try`/`catch` written inside such a frame never fires. No error, no warning. |
+| `-lc++abi -lunwind` from wasi-sdk's `eh` directory are on the link line | The link fails on `__cxa_throw` and seven more, which is at least loud |
+| setjmp users are compiled `-mllvm -wasm-enable-sjlj` and linked `-lsetjmp` | The link fails on `setjmp` and `longjmp`; `-fwasm-exceptions` does nothing for them |
+
+The first is the one that matters for OCCT, because OCCT does not only raise `Standard_Failure`, it
+catches it internally to turn a failure into an `IsDone() == false`. Those handlers disappear with
+no diagnostic if OCCT's CMake never receives the flags, and every OCCT frame between the raise and
+the bridge leaks the `Handle`s and shapes it held. `Scripts/build-occt-wasm.sh` says nothing about
+exceptions today; wiring the flags into `CMAKE_CXX_FLAGS` is the first thing #2172 has to do.
+
+**Cost.** The same program with and without exceptions differs by about 200 KB, near enough
+constant between `-O0` and `-Os`, so it is mostly the fixed cost of the exception runtime. The
+per-function landing pads, which are the part that scales with OCCT, are not in that number.
+
+**An uncaught exception is better off here than natively.** It leaves the module as a wasm exception
+the host reports, rather than the uncatchable in-process failure of #345. The instance is still
+unusable afterwards, so this changes the diagnostics and not the duty to catch at the bridge.
+
+**Not established.** None of this has met OCCT. The probe's largest object is a few kilobytes,
+the libc++ seam rests on weak symbol resolution that a larger link could resolve the other way, and
+`operator new` and `std::bad_alloc` under the 4 GB ceiling were not probed. Those move to #2172,
+the first OCCT compile, and #2174, the full library.
+
 ## What breaks in the Swift layer
 
 The Swift API leans on Foundation harder than the bridge does: **~70 files**
@@ -89,6 +134,80 @@ the winner with evidence.
 | **B. OCCT-on-wasi-sdk** | Port OCCT to build with wasi-sdk so it matches standard SwiftWasm. | Standard, well-supported Swift side; OCCT side is uncharted (OCCT assumes POSIX/threads). | OCCT headless core has no hard Emscripten dep, but no known wasi-sdk port exists. |
 | **C. Two components** | Keep OCCT (Emscripten) and Swift (wasi) as separate wasm modules; bridge via the **Component Model / WIT** at a typed interface, not the C ABI. | Avoids ABI linking entirely; adds a serialization boundary across every call. | WASI 0.2 shipped; 0.3 landing 2026. Heaviest runtime model. |
 
+The toolchain pinned below is **path B's**: it is the one the bounded work items
+(#2169 through #2175) attempt, and #2175 is still the go/no-go that can send the
+question back to A or C. Pinning a toolchain is not the path decision; it is what
+makes an attempt at one reproducible.
+
+## Pinned toolchain
+
+Every version is held in [`Scripts/wasm-toolchain-versions.txt`](../Scripts/wasm-toolchain-versions.txt)
+and read from there by the scripts. The table below names them; it does not
+restate the URLs or checksums, which would be a copy with no update path.
+
+| Piece | Pin | Why it is pinned there |
+|-------|-----|------------------------|
+| Swift toolchain | 6.4.0-RELEASE, **from swift.org, not Xcode** | Xcode's toolchain has no `wasm-ld` and no `swift-autolink-extract`, so it compiles for wasm and then cannot link. The swift.org build of the same version carries both, plus the wasm32 compiler-rt builtins and the runtime. |
+| Swift SDK | `swift-6.4.0-RELEASE_wasm`, target `wasm32-unknown-wasip1` | Installed by URL and checksum, so the SDK cannot drift. Non-threads, by the decision in #2169: the threads variant left swift.org at 6.3 and a shared-memory module would force COOP/COEP cross-origin isolation on the browser consumer. |
+| wasi-sdk | 34.0, checksummed per host | Supplies the one thing the Swift SDK's sysroot lacks, an exception-enabled C++ runtime. Not a second compiler. |
+| Runtime | `wasmkit`, shipped inside the pinned Swift toolchain | Nothing extra to install, and it cannot drift away from the toolchain that produced the module. |
+
+### The one command
+
+```bash
+Scripts/install-wasm-toolchain.sh
+```
+
+It reads the pins, installs the Swift SDK by checksum, downloads and verifies
+wasi-sdk into `Libraries/`, then builds and runs
+[`Scripts/repro/2169/standalone`](../Scripts/repro/2169), a Swift target calling a
+C++ target over a flat C surface, which is the shape this package has. It prints
+what the module printed. `--print-plan` resolves everything and downloads
+nothing; `--verify` skips straight to the build and run.
+
+The one step it will not take is installing the swift.org toolchain itself, since
+that wants an administrator on macOS and an unpack location on Linux. It prints
+the exact command and stops.
+
+By hand, the build and run are:
+
+```bash
+export TOOLCHAINS=swift        # macOS: select the swift.org toolchain over Xcode's
+swift build --swift-sdk swift-6.4.0-RELEASE_wasm --triple wasm32-unknown-wasip1
+wasmkit run .build/out/Products/Debug-webassembly-wasm32/<product>.wasm
+```
+
+Both parts of the `swift build` invocation are load-bearing. The artifact bundle
+carries an Embedded Swift SDK alongside the wasip1 one, so naming only the triple
+is ambiguous and SwiftPM refuses it.
+
+### What wasi-sdk is for
+
+The Swift SDK's artifact bundle already contains a complete WASI sysroot,
+including libc++ and its headers, and the swift.org clang compiles and links C++
+against it unaided. Throwing C++ is the exception: the bundled `libc++abi.a` is
+the no-exceptions build, defines no `__cxa_throw`, and the link fails. wasi-sdk
+ships its C++ runtime twice, under `eh` and `noeh`, and linking the `eh` flavour's
+`libc++abi` and `libunwind` is what makes a throwing target work. OCCT throws
+`Standard_Failure` pervasively, so this is not optional for us.
+
+### What the runtime choice costs
+
+wasmkit implements the standardised exception encoding and rejects the legacy one
+with `Illegal opcode: [6]`, so C++ compiled with `-fwasm-exceptions` also needs
+`-mllvm -wasm-use-legacy-eh=false`. Both flags are pinned together as
+`WASM_CXX_EH_FLAGS`, because dropping the second one produces a module that builds
+cleanly and then cannot run.
+
+### What this does not settle
+
+The verification package links Swift built against the Swift SDK's no-exceptions
+C++ runtime together with a C++ target using wasi-sdk's exception-enabled one.
+That holds for one file. Whether it holds across a kernel the size of OCCT is the
+exception spike (#2171), and building OCCT itself is #2174. The measurement log,
+including the failure output of each negative case, is
+[`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md).
+
 ## Plan
 
 ### Phase 0. Decision spike (gates everything)
@@ -96,8 +215,9 @@ the winner with evidence.
 The one thing that can kill the whole idea is the ABI seam. Validate it cheaply
 before porting 3,500 operations.
 
-1. Stand up a SwiftWasm toolchain (swift.org Swift SDK for WebAssembly, current
-   6.3.x line) and confirm a trivial `swift build --swift-sdk … wasm` runs.
+1. ~~Stand up a SwiftWasm toolchain (swift.org Swift SDK for WebAssembly) and
+   confirm a trivial `swift build --swift-sdk … wasm` runs.~~ Done in #2169, see
+   [Pinned toolchain](#pinned-toolchain).
 2. Pick **3 representative bridge functions**: `OCCTShapeBox` (pure compute),
    one boolean (e.g. `OCCTShapeFuse`, exercises the allocator hard), and one
    STEP/STL export (exercises the virtual FS + string I/O).
@@ -139,7 +259,7 @@ before porting 3,500 operations.
 
 ### Phase 4. Test + CI
 
-- A wasm test path (wasmtime or a headless browser runner) for a **subset** of the
+- A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
   per-domain suites. Full parity is unrealistic initially; target the modeling +
   IO domains first.
 - A GitHub Actions matrix entry that builds the wasm slice and runs the subset.
@@ -152,7 +272,7 @@ before porting 3,500 operations.
 ## Effort & risk
 
 - **Phase 0 (spike):** ~1 week. **High information value, low cost.** Do this first.
-- **Phases 1–5:** weeks-to-months and **highly path-dependent**. Path A's risk is
+- **Phases 1 to 5:** weeks-to-months and **highly path-dependent**. Path A's risk is
   toolchain immaturity, Path B's is an uncharted OCCT port, Path C's is per-call
   overhead and the component tooling. The spike retires the dominant risk before
   any of that is committed.

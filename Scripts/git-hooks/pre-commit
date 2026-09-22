@@ -114,6 +114,11 @@ run "check-patch-deletes-guarded-symbol.py"   Scripts/check-patch-deletes-guarde
 # deeper --tree mode needs a checkout and is not run here, matching CI.
 run "check-preprocessor-balance.py --self-test" Scripts/check-preprocessor-balance.py --self-test
 run "check-preprocessor-balance.py"           Scripts/check-preprocessor-balance.py
+# #2168, same PR: a WASI patch is cut from the tree with Scripts/patches/ applied, not from a
+# pristine V8_0_1. Reads both patch sets as text; the --tree mode that runs the real
+# `git apply --check` needs a checkout and is not run here, matching CI.
+run "check-wasi-patch-base.py --self-test"    Scripts/check-wasi-patch-base.py --self-test
+run "check-wasi-patch-base.py"                Scripts/check-wasi-patch-base.py
 # #2077. Every function-level `catch (...)` in the bridge records the OCCT exception it caught, so a
 # nil return can say why. Cheapest possible check on the newest bridge convention, and the one a
 # hand-written bridge function is most likely to miss.

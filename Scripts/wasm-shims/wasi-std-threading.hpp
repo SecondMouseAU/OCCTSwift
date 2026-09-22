@@ -396,7 +396,7 @@ namespace this_thread
 //! Stands in for std::this_thread::yield. Nothing to yield to.
 //!
 //! No file in the four modules this build compiles calls it (measured at zero occurrences); it is
-//! here because #2170 counts it among the six names the SDK removes, and because a kernel bump
+//! here because #2170 counts it among the eight names the SDK removes, and because a kernel bump
 //! adding one call should not reopen this question.
 inline void yield() noexcept {}
 
