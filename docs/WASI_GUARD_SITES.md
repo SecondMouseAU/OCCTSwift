@@ -75,15 +75,29 @@ The shim keeps the types and drops the enforcement, which is sound here for the 
 | `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `Build()` | `umask()` | `wasi-osd-directory.patch` |
 | `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `BuildTemporary()` | `mkdtemp()` | `wasi-osd-directory.patch` |
 
-Two properties of that set are unverified, because no wasm build has completed:
+One property of that set is settled, and one is not.
 
-- **The chronometer patch's `times()` stub sits inside the source's `#ifndef CLK_TCK` block**, so it
-  exists only in translation units where `CLK_TCK` is undefined. The same patch also makes
-  `GetProcessCPU()` return zeros without calling `times()` at all, so the stub may be dead weight
-  rather than load-bearing. Which of the two it is gets settled by the first TKernel compile, not by
-  reading.
-- **`BuildTemporary()`'s WASI branch calls `getpid()`**, which wasi-libc supplies only under
-  `-D_WASI_EMULATED_GETPID` with `-lwasi-emulated-getpid`. See the next section.
+**Settled: `wasi-osd-chronometer.patch` cannot compile, in either configuration.** Tracked as
+[#2179](https://github.com/SecondMouseAU/OCCTSwift/issues/2179). `OSD_Chronometer.cxx:27` includes
+`<sys/times.h>` unguarded, and in this SDK's sysroot that header opens with
+`#ifndef _WASI_EMULATED_PROCESS_CLOCKS` / `#error WASI lacks process-associated clocks`. Compiled
+against that sysroot:
+
+- with no emulation define, which is how `Scripts/build-occt-wasm.sh` runs today, the translation
+  unit dies at the include and the patch's guard never executes;
+- with `-D_WASI_EMULATED_PROCESS_CLOCKS`, the header then declares `clock_t times (struct tms *);`
+  and the patch's own `static clock_t times(struct tms *buf)` fails as "static declaration of
+  'times' follows non-static declaration".
+
+`CLK_TCK` is defined nowhere in the sysroot, so the `#ifndef CLK_TCK` branch holding that stub is
+taken rather than skipped. The stub is also unnecessary, because the same patch makes
+`GetProcessCPU()` return zeros without calling `times()` at all. #2179 carries the fix: delete the
+stub, guard the include.
+
+**Unverified: `BuildTemporary()`'s WASI branch calls `getpid()`**, which wasi-libc supplies only
+under `-D_WASI_EMULATED_GETPID` with `-lwasi-emulated-getpid`. See the next section. Unlike the
+chronometer site, this one has not been reduced to a probe, so it stays a question for the first
+compile that reaches it.
 
 ## CMake flags: none are passed
 
@@ -93,9 +107,15 @@ An earlier version of this page listed `_WASI_EMULATED_PROCESS_CLOCKS`, `_WASI_E
 heading, and PR #2076's body claimed the build passed them. They exist on no branch that survived
 that PR.
 
-Whether any of them are actually required is a question for the first compile that gets far enough
-to answer it, and `getpid()` in the directory patch is the one concrete candidate. Nothing should
-be added to the build script on the strength of this page.
+`_WASI_EMULATED_PROCESS_CLOCKS` is no longer an open question, and it is the reason this section
+is worded the way it is. It is **required** for `OSD_Chronometer.cxx` to compile at all, because
+that file includes `<sys/times.h>` unguarded and the header `#error`s without it. It also
+**breaks** the chronometer patch as written, by declaring the `times()` the patch redeclares
+`static`. Adding it would trade one hard error for another. The answer there is to guard the
+include and stop needing the define, which is #2179, not to pass the flag.
+
+`_WASI_EMULATED_GETPID` remains genuinely open, with `getpid()` in the directory patch as the one
+concrete candidate. Nothing should be added to the build script on the strength of this page.
 
 ## Gaps that are known and not yet closed
 

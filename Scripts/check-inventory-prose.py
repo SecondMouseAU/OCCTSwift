@@ -224,8 +224,11 @@ CLAIMS = [
     # #2166: the WASI sequence. `Scripts/patches-wasi/` was outside this gate entirely until the
     # patch-number parser stopped being the reason, and its README said "both patches here apply
     # cleanly" while PR #2076 had fifteen sitting in the same directory.
+    # `(\S+)` and a tolerant plural for the same reason every sibling entry uses them: a count
+    # written as a digit, or a drop to one patch making the noun singular, should fail as a count
+    # mismatch rather than as "no sentence matches", which reads like the regex rotted.
     ("Scripts/patches-wasi/README.md",
-     r"`Scripts/patches-wasi/` holds ([A-Za-z-]+) patches", "wasi_patches_on_disk"),
+     r"`Scripts/patches-wasi/` holds (\S+) patch(?:es)?\b", "wasi_patches_on_disk"),
     ("CLAUDE.md", r"\((\S+) on disk, \S+ pinned", "patches_on_disk"),
     ("CLAUDE.md", r"\(\S+ on disk, (\S+) pinned", "patches_pinned"),
     ("CLAUDE.md", r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
