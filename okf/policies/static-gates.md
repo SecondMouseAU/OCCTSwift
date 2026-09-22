@@ -62,35 +62,35 @@ keeps it in this job instead of an hour into `kernel-integration.yml` where #205
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
-## The one census outside `gate-scripts`
+## The one gate outside `gate-scripts`
 
-`census-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
+`check-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
 doc comments. `docs-current.md` asks for a runnable snippet on every documented API and nothing had
 ever *compiled* one: `check-docs-defaults.py` reads the declaration a reference page restates, and
 `check-docs-existence.py` reads its headings and prose, but the example fences went unread, which is
-how a factory that never existed reached 18 call sites (#1675). It is the one census this page's rules
-do not fully cover, in two ways, both deliberate.
+how a factory that never existed reached 18 call sites (#1675).
 
 **It is not in `gate-scripts`, because it cannot be.** That job's whole property is pure Python over
 the repo's own text, no OCCT and no build; this one needs `OCCTSwift` built to compile a snippet
 against. It runs in `ci.yml`'s `swift build + test (macOS)` job instead, after the build it reuses,
-and its scripts are outside every count on this page and in `CLAUDE.md`, all of which are derived from
-the `gate-scripts` job body alone.
+and it is outside every count on this page and in `CLAUDE.md`, all of which are derived from the
+`gate-scripts` job body alone.
 
-**Its bare run is in CI, unlike every other census's.** The rule above says CI runs only a census's
-`--self-test`, since a bare run that always exits 0 could never signal. That reasoning holds for a
-census whose output is a list of sites to adjudicate. This one's output is a *number*, the count of
-snippets that do not compile, and the number is what tells anyone whether promotion is close; printing
-it on every build costs about a minute against a build already paid for. The `--self-test` runs too.
+**It was a census first, and the promotion is what the measuring was for.** It landed at 211
+failures, which is the state [required-status-checks](required-status-checks.md) warns about: a
+required check red for every PR is worse than no check. So it reported a *number* rather than a
+verdict, and the number is what told anyone whether promotion was close. It reached zero when #2092
+reclassified 24 unparseable reference pages that were eliding content the reader supplies, and #2093
+fixed the remaining 187 page by page. Then, and only then, `--strict` became the default and the
+script was renamed `check-`.
 
-**Why it is a census at all, given the compiler adjudicates.** Not false positives: there is no
-measured false-positive class here to discount the way `census-doc-occt-attribution.py` has its 41%.
-It is volume. 187 of 3,105 snippets do not compile on `main`, so a required check would be red for
-every PR, which is the failure mode in
-[required-status-checks](required-status-checks.md) and worse than no check at all. `--strict` exits 1
-for anyone who wants gate behaviour on the page they are editing, and promotion is that flag becoming
-the default plus a rename to `check-`, once the backlog is zero. #1407 is the precedent: measure the
-rate, then gate.
+That sequence is the rule worth carrying, not the outcome: **measure the rate, fix the backlog,
+then gate.** #1407 is the same precedent. A detector promoted before its backlog is zero teaches
+people to ignore a red check, which costs more than the check was ever worth.
+
+There was never a false-positive argument against gating it. Nothing here has a measured
+false-positive class to discount the way `census-doc-occt-attribution.py` has its 41%: the compiler
+adjudicates. It was volume, and volume is fixable.
 
 Two of its design choices are worth carrying to any detector that shells out to a compiler:
 
@@ -133,8 +133,8 @@ Three detectors were caught in one day, **all three with a passing `--self-test`
 | Detector | Reported | Actually saw |
 |---|---|---|
 | `derive-bridge-header-split.py` | `misfiled: 0` | 2 of `OCCTBridge.h`'s 16 declarations (#2080) |
-| `census-doc-snippets.py` in CI | step green | 24 of 3,105 snippets; 3,081 skipped (#2098) |
-| `census-doc-snippets.py`'s canary | 51/51 locally | the stubbed path never ran in CI (#2097) |
+| `check-doc-snippets.py` in CI | step green | 24 of 3,105 snippets; 3,081 skipped (#2098) |
+| `check-doc-snippets.py`'s canary | 51/51 locally | the stubbed path never ran in CI (#2097) |
 
 Each self-test passed because no fixture contained the trigger: a `/*` inside a line comment, an
 absent build directory, a skip that only fires where the author's machine has a build. Adding a
@@ -145,7 +145,7 @@ than report clean when it is not.** The assertion is cheap and specific to what 
 
 - Parsing headers? Assert every header yields at least one declaration. A header declaring nothing
   would not be in the split.
-- Compiling? Carry a **canary** that must fail, and abort when it passes. `census-doc-snippets.py`
+- Compiling? Carry a **canary** that must fail, and abort when it passes. `check-doc-snippets.py`
   does this, and it caught a second bug within the hour of being added.
 - Depending on a build, a clone, a checkout? Assert it is there and **fail in CI** even where
   skipping is right locally, because a contributor without a build still wants partial results while

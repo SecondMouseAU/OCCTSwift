@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-r"""CENSUS, not a gate: type-check every fenced Swift snippet in `docs/` and in `///` doc comments.
+r"""Gate: type-check every fenced Swift snippet in `docs/` and in `///` doc comments.
 
 #1683. `okf/policies/docs-current.md` asks for a runnable ```swift``` snippet on every documented
 API, because context7 ranks on code-example density and a snippet is what a reader or an agent
@@ -107,40 +107,40 @@ without SwiftPM's own build plan. `_ = (a == b)` type-checks the identical expre
 whole content of the check; no snippet uses `#expect(throws:)` or `#require`, the two forms this
 rewrite would not preserve, and `--self-test` has a case that fails if one appears.
 
-## Where it lives, and why it is a census
+## Where it lives, and why it is a gate
 
 **Not in `ci.yml`'s `gate-scripts`.** That job is pure Python over the repo's own text, no OCCT and
 no build, about three seconds for the lot, and this needs `OCCTSwift` built to type-check against.
 It runs in `swift build + test (macOS)` instead, after the build it reuses, in about two minutes.
 
-**The measurement** (3,105 snippets): 1,474 clean, 1,444 fragment, 187 broken, 0 unparseable. So
-187 snippets do not compile, and 1,444 more cannot be judged until they get a preamble. That is the
-backlog, not a verdict on the checker.
+**The measurement** (3,105 snippets): 1,661 clean, 1,444 fragment, 0 broken, 0 unparseable. The
+1,444 fragments cannot be judged until they get a preamble, which is a design question rather than
+a backlog, and they do not fail the run.
 
-It landed reporting 211 (187 broken, 24 unparseable). The 24 were reference pages eliding content
-the reader supplies, and #2092 reclassified them: see `ELISION_FORMS`. One of the 24 was a real
-finding, a `Package.swift` manifest fragment fenced as `swift`, and it now carries a
-`no-typecheck:` reason.
+**It was a census until the backlog reached zero, and the promotion is the whole point of having
+measured.** It landed at 211 failures (187 broken, 24 unparseable) and gated at 0:
 
-**A census rather than a gate, on volume and not on trust.** Nothing here has a measured
-false-positive class to discount, the way `census-doc-occt-attribution.py` has its 41%: the compiler
-adjudicates, the block classifier errs only toward skipping a check, the fragment rule errs only
-toward excusing one, and a canary in every `swiftc` invocation aborts the run rather than letting a
-blind compiler report clean. What stops it gating today is that `main` carries a backlog of
-non-compiling snippets, and a required check that is red for every PR is worse than no check
-(`okf/policies/required-status-checks.md`). So it exits 0 and prints the count, `--strict` exits 1 for
-anyone who wants the gate behaviour on their own page, and **promotion is a rename to `check-` plus
-making `--strict` the default**, once the backlog is zero. #1407 is the precedent for measuring
-before gating.
+  - the 24 unparseable were reference pages eliding content the reader supplies, reclassified by
+    #2092 (see `ELISION_FORMS`) except one real finding, a `Package.swift` manifest fragment fenced
+    as `swift`, which now carries a `no-typecheck:` reason;
+  - the 187 broken were fixed page by page under #2093.
+
+A required check that is red for every PR is worse than no check
+(`okf/policies/required-status-checks.md`), which is why this waited rather than gating on day one.
+#1407 is the same precedent: measure the rate, then gate.
+
+Nothing here has a measured false-positive class to discount, the way
+`census-doc-occt-attribution.py` has its 41%: the compiler adjudicates, the block classifier errs
+only toward skipping a check, the fragment rule errs only toward excusing one, and a canary in every
+`swiftc` invocation aborts the run rather than letting a blind compiler report clean.
 
 ## Usage
 
-    python3 Scripts/census-doc-snippets.py              # extract, type-check, report (always exits 0)
-    python3 Scripts/census-doc-snippets.py --strict     # ...and exit 1 on a non-compiling snippet
-    python3 Scripts/census-doc-snippets.py --list       # inventory per kind, no compile
-    python3 Scripts/census-doc-snippets.py --fragments  # also list the fragment sites
-    python3 Scripts/census-doc-snippets.py --self-test  # prove the detector is not blind
-    python3 Scripts/census-doc-snippets.py --paths docs/reference/Curve3D-Analysis.md
+    python3 Scripts/check-doc-snippets.py              # extract, type-check, report; exit 1 on a failure
+    python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
+    python3 Scripts/check-doc-snippets.py --fragments  # also list the fragment sites
+    python3 Scripts/check-doc-snippets.py --self-test  # prove the detector is not blind
+    python3 Scripts/check-doc-snippets.py --paths docs/reference/Curve3D-Analysis.md
 """
 
 from __future__ import annotations
@@ -1399,7 +1399,8 @@ def main():
     ap.add_argument('--self-test', action='store_true',
                     help='run the fixture battery instead of scanning the tree')
     ap.add_argument('--strict', action='store_true',
-                    help='exit 1 on a non-compiling snippet (a census exits 0 by default)')
+                    help='accepted and ignored: strict IS the default since #1683 promoted this '
+                         'to a gate. Kept so existing invocations keep working')
     ap.add_argument('--require-typecheck', action='store_true',
                     help='exit 2 if the type-check stage is skipped, rather than reporting a '
                          'population that was never examined (for CI, where a skip is a false green)')
@@ -1423,9 +1424,9 @@ def main():
 
     blocks = collect(args.paths)
     if args.list:
-        status = report(blocks, {}, show_fragments=args.fragments,
-                        show_declarations=args.declarations)
-        return status if args.strict else 0
+        # --list does not compile, so it cannot judge a snippet. Inventory only, never a verdict.
+        report(blocks, {}, show_fragments=args.fragments, show_declarations=args.declarations)
+        return 0
 
     try:
         results, note = check(blocks, verbose=args.verbose, keep=args.keep,
@@ -1445,10 +1446,6 @@ def main():
         print(note)
     status = report(blocks, results, show_fragments=args.fragments,
                     show_declarations=args.declarations)
-    if status and not args.strict:
-        print('\nCENSUS: exiting 0. Run with --strict to fail on the above, and see this script\'s'
-              '\n  docstring under "Where it lives" for what promotion to a gate needs.')
-        return 0
     return status
 
 
