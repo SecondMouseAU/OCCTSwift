@@ -111,12 +111,13 @@ An earlier version of this page listed `_WASI_EMULATED_PROCESS_CLOCKS`, `_WASI_E
 heading, and PR #2076's body claimed the build passed them. They exist on no branch that survived
 that PR.
 
-`_WASI_EMULATED_PROCESS_CLOCKS` is no longer an open question, and it is the reason this section
-is worded the way it is. It is **required** for `OSD_Chronometer.cxx` to compile at all, because
-that file includes `<sys/times.h>` unguarded and the header `#error`s without it. It also
-**breaks** the chronometer patch as written, by declaring the `times()` the patch redeclares
-`static`. Adding it would trade one hard error for another. The answer there is to guard the
-include and stop needing the define, which is #2179, not to pass the flag.
+`_WASI_EMULATED_PROCESS_CLOCKS` was briefly the counter-example to that, and #2179 is why it no
+longer is. `OSD_Chronometer.cxx` included `<sys/times.h>` unguarded, and that header `#error`s
+without the define, so the define looked required; supplying it then broke the patch instead, by
+declaring the `times()` the patch redeclared `static`. Either way was a hard error. The fix was to
+guard the include and stop needing the define at all, which is what the patch now does. **No
+emulation define is required by anything currently patched**, and the episode is the argument for
+this section's rule rather than an exception to it.
 
 `_WASI_EMULATED_GETPID` remains genuinely open, with `getpid()` in the directory patch as the one
 concrete candidate. Nothing should be added to the build script on the strength of this page.
