@@ -176,8 +176,20 @@ def any_catch_all(text):
     return 'catch (...)' in text
 
 
+def read(path):
+    """One source file's text, with the handle closed deterministically.
+
+    A `with` block rather than `open(path).read()`: the bare form leaves the handle to the garbage
+    collector, which happens to be prompt on CPython and is not guaranteed anywhere else, and it
+    raises a ResourceWarning under `-W error::ResourceWarning`. `check-inventory-prose.py` and
+    `check-docs-existence.py` already read this way.
+    """
+    with open(path, encoding='utf-8') as handle:
+        return handle.read()
+
+
 def collect(glob_pattern=SRC_GLOB):
-    return {path: open(path, encoding='utf-8').read() for path in sorted(glob.glob(glob_pattern))}
+    return {path: read(path) for path in sorted(glob.glob(glob_pattern))}
 
 
 def findings(sources):
