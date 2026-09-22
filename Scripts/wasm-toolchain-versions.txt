@@ -7,13 +7,16 @@
 # Format: comment lines and blank lines are ignored; every other line is KEY=value, with no quoting
 # and no shell expansion. Parse it, do not source it: it is data, not code.
 #
-# To bump a value: change it here, and if it is one the probe package's manifest reads, also
-# `touch Scripts/repro/2169/standalone/Package.swift`. SwiftPM caches the compiled manifest against
-# Package.swift rather than against the files that manifest reads, and `rm -rf .build` does not
-# clear that cache, so an edit here alone leaves the next build on the old value. Measured with
-# WASM_CXX_EH_FLAGS cut to a bare -fwasm-exceptions: the rebuild was a 0.26s no-op and the module
-# still ran clean; one touch later the same edit produced `Illegal opcode: [6]`. The shell scripts
-# have no such cache and pick a change up at once, which is what makes the mismatch easy to miss.
+# To bump a value: change it here, and if it is one the probe package's manifest reads, also pass
+# `--manifest-cache none` to the next `swift build`. SwiftPM caches the compiled manifest against
+# Package.swift's CONTENT, not against the files that manifest reads, and neither `rm -rf .build`
+# nor `touch Package.swift` clears it, so an edit here alone leaves the next build on the old
+# value. Measured over seven cases with WASM_CXX_EH_FLAGS cut to a bare -fwasm-exceptions: the
+# pins edit alone ran clean (stale), `touch Package.swift` still ran clean (stale), and appending
+# a comment line to Package.swift, `--manifest-cache none`, or deleting
+# ~/Library/Caches/org.swift.swiftpm/manifests/manifest.db* each produced `Illegal opcode: [6]`.
+# The shell scripts have no such cache and pick a change up at once, which is what makes the
+# mismatch easy to miss.
 #
 # Why pinned at all: a wasm build has three moving parts that version independently (the Swift
 # toolchain, the Swift SDK for WebAssembly, and wasi-sdk), and two of them are downloads with no
