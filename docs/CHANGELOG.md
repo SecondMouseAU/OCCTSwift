@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Restated enum case lists are checked against their declaration (#2145)
+
+`check-docs-defaults.py` now compares the case list a `docs/reference/` page restates against the enum it documents, resolving same-named enums by the page's heading chain. Previously nothing checked a restatement at all: the doc-snippet census skips all 5,092 of them because a bodiless declaration compiles in no context, which is how `Drawing.md` came to declare `case A0, A1, A2, A3, A4` against a source reading `case a0, a1, a2, a3, a4` and seed seven wrong examples. `Construction.md` was missing three `MaterializationFailure` cases and now lists all nine.
+
 ### Documentation snippets are now gated, not censused (#1683)
 
 `census-doc-snippets.py` is renamed `check-doc-snippets.py` and a non-compiling snippet fails the build. It reported rather than gated while a 211-snippet backlog stood, since a required check red for every PR is worse than no check; #2092 reclassified 24 reference pages that were eliding content the reader supplies, #2093 fixed the remaining 187, and the gate was promoted at zero. 3,105 snippets: 1,661 compile and 1,444 are fragments that open mid-flow and are not failures.
