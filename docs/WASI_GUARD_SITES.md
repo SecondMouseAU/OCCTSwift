@@ -71,28 +71,32 @@ The shim keeps the types and drops the enforcement, which is sound here for the 
 
 | File | Site | Gap in wasi-libc | Patch |
 |---|---|---|---|
-| `src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx` | `GetProcessCPU()` | `times()`, `struct tms` | `wasi-osd-chronometer.patch` |
+| `src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx` | `#include <sys/times.h>` at `:27`, and `GetProcessCPU()` | `<sys/times.h>` itself, `times()`, `struct tms` | `wasi-osd-chronometer.patch` |
 | `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `Build()` | `umask()` | `wasi-osd-directory.patch` |
 | `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `BuildTemporary()` | `mkdtemp()` | `wasi-osd-directory.patch` |
 
 One property of that set is settled, and one is not.
 
-**Settled: `wasi-osd-chronometer.patch` cannot compile, in either configuration.** Tracked as
-[#2179](https://github.com/SecondMouseAU/OCCTSwift/issues/2179). `OSD_Chronometer.cxx:27` includes
-`<sys/times.h>` unguarded, and in this SDK's sysroot that header opens with
-`#ifndef _WASI_EMULATED_PROCESS_CLOCKS` / `#error WASI lacks process-associated clocks`. Compiled
-against that sysroot:
+**Settled: `wasi-osd-chronometer.patch` compiles, and until
+[#2179](https://github.com/SecondMouseAU/OCCTSwift/issues/2179) it could not, in either
+configuration.** As merged in PR #2043 it included `<sys/times.h>` at `OSD_Chronometer.cxx:27`
+unguarded, and in this SDK's sysroot that header opens with `#ifndef _WASI_EMULATED_PROCESS_CLOCKS`
+/ `#error WASI lacks process-associated clocks`. Compiled against that sysroot:
 
-- with no emulation define, which is how `Scripts/build-occt-wasm.sh` runs today, the translation
-  unit dies at the include and the patch's guard never executes;
-- with `-D_WASI_EMULATED_PROCESS_CLOCKS`, the header then declares `clock_t times (struct tms *);`
-  and the patch's own `static clock_t times(struct tms *buf)` fails as "static declaration of
-  'times' follows non-static declaration".
+- with no emulation define, which is how `Scripts/build-occt-wasm.sh` runs, the translation unit
+  died at the include and the patch's own guard never executed;
+- with `-D_WASI_EMULATED_PROCESS_CLOCKS`, the header then declared `clock_t times (struct tms *);`
+  and the patch's `static clock_t times(struct tms *buf)` failed as "static declaration of 'times'
+  follows non-static declaration".
 
-`CLK_TCK` is defined nowhere in the sysroot, so the `#ifndef CLK_TCK` branch holding that stub is
-taken rather than skipped. The stub is also unnecessary, because the same patch makes
-`GetProcessCPU()` return zeros without calling `times()` at all. #2179 carries the fix: delete the
-stub, guard the include.
+The patch now guards the include and both uses of what it supplies, with the same `#ifndef __wasi__`
+in each place, and carries no `times()` stub: `GetProcessCPU()` already returned zeros without
+calling `times()`, so the stub was never reachable and only ever collided. Widening an existing
+condition was not available at `:27`, which is the usual answer and the one this page's rules ask
+for first: the only condition in force there is the file-wide `#ifndef _WIN32`, and excluding WASI
+from that sends WASI into the Windows branch below. The measurement is
+`Scripts/repro/2179/run.sh`, which compiles the reduced probe and the real file, before and after,
+in both configurations, and checks that the guards change nothing on native macOS.
 
 **Unverified: `BuildTemporary()`'s WASI branch calls `getpid()`**, which wasi-libc supplies only
 under `-D_WASI_EMULATED_GETPID` with `-lwasi-emulated-getpid`. See the next section. Unlike the
