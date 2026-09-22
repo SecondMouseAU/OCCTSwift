@@ -102,10 +102,10 @@ extension Shape {
     ///
     /// ```swift
     /// // Fill a 4-sided boundary with a smooth surface
-    /// let wire1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
-    /// let wire2 = Wire.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 5))
-    /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))
-    /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))
+    /// let wire1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    /// let wire2 = Wire.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 5))!
+    /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))!
+    /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))!
     ///
     /// // Free-standing wires have no surface to be tangent to, so fill positionally.
     /// let patch = Shape.fill(
@@ -155,7 +155,7 @@ extension Shape {
     /// // the open rim is the topmost closed edge
     /// let rim = bowl.edges()
     ///     .filter { $0.isClosed3D }
-    ///     .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
+    ///     .max(by: { ($0.bounds?.max.z ?? -.infinity) < ($1.bounds?.max.z ?? -.infinity) })!
     ///
     /// let cap = Shape.fill(
     ///     boundaries: [Wire.wireFromEdges([rim])!],
