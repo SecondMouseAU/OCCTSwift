@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Documentation snippets are now gated, not censused (#1683)
+
+`census-doc-snippets.py` is renamed `check-doc-snippets.py` and a non-compiling snippet fails the build. It reported rather than gated while a 211-snippet backlog stood, since a required check red for every PR is worse than no check; #2092 reclassified 24 reference pages that were eliding content the reader supplies, #2093 fixed the remaining 187, and the gate was promoted at zero. 3,105 snippets: 1,661 compile and 1,444 are fragments that open mid-flow and are not failures.
+
 ### A gate on the bridge's caught-exception diagnostics (#2077)
 
 `Scripts/check-bridge-diagnostics.py` fails when a function-level `catch (...)` block in `Sources/OCCTBridge/src/*.mm` does not call `occtRecordCaughtException(__func__);` as its first statement, unless the site is on an exemption list carrying a written reason. It runs in `ci.yml`'s `gate-scripts` job and in the optional pre-commit hook, the twelfth gate in that job, and it is what stops a newly written bridge function returning a `nil` that explains nothing.
