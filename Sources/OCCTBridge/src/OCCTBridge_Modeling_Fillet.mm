@@ -374,6 +374,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -484,6 +485,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+      // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+      // it would report a failure for a call that did not fail. The diagnostics channel is for
+      // catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -611,6 +616,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -673,6 +679,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -923,6 +930,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -953,6 +961,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1054,6 +1063,7 @@ OCCTShapeRef OCCTShapeChamferTwoDistances(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1092,6 +1102,7 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1167,6 +1178,7 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef                 shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1210,6 +1222,7 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1286,6 +1299,7 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1337,6 +1351,7 @@ int32_t OCCTFilletSurfBuild(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 1;
   }
 }
@@ -1359,6 +1374,7 @@ int32_t OCCTFilletSurfError(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // FilletSurf_ErrorTypeStatus is EmptyList=0, EdgeNotG1=1, FacesNotG1=2, EdgeNotOnShape=3,
     // NotSharpEdge=4, PbFilletCompute=5 (#1439); an exception here has no verdict of its own, so
     // this reports PbFilletCompute, the closest real category, and deliberately not 4, which
@@ -1418,6 +1434,7 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1457,6 +1474,7 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return info;
 }
@@ -1471,6 +1489,7 @@ OCCTFilletBuilderRef OCCTFilletBuilderCreate(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1491,6 +1510,7 @@ bool OCCTFilletBuilderAddEdge(OCCTFilletBuilderRef builder, OCCTEdgeRef edge, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1509,6 +1529,7 @@ bool OCCTFilletBuilderAddEdgeEvolving(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1526,6 +1547,7 @@ OCCTShapeRef OCCTFilletBuilderBuild(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1540,6 +1562,7 @@ int32_t OCCTFilletBuilderNbContours(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1554,6 +1577,7 @@ int32_t OCCTFilletBuilderNbEdges(OCCTFilletBuilderRef builder, int32_t contourIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1568,6 +1592,7 @@ bool OCCTFilletBuilderHasResult(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1585,6 +1610,7 @@ OCCTShapeRef OCCTFilletBuilderBadShape(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1599,6 +1625,7 @@ int32_t OCCTFilletBuilderNbFaultyContours(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1613,6 +1640,7 @@ int32_t OCCTFilletBuilderNbFaultyVertices(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1627,6 +1655,7 @@ double OCCTFilletBuilderGetRadius(OCCTFilletBuilderRef builder, int32_t contourI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1641,6 +1670,7 @@ double OCCTFilletBuilderGetLength(OCCTFilletBuilderRef builder, int32_t contourI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1655,6 +1685,7 @@ bool OCCTFilletBuilderIsConstant(OCCTFilletBuilderRef builder, int32_t contourIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1670,6 +1701,7 @@ bool OCCTFilletBuilderRemoveEdge(OCCTFilletBuilderRef builder, OCCTEdgeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1684,6 +1716,7 @@ void OCCTFilletBuilderReset(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1701,6 +1734,7 @@ bool OCCTFilletBuilderSetRadiusOnEdge(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1719,6 +1753,7 @@ bool OCCTFilletBuilderSetRadiusAtVertex(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1738,6 +1773,7 @@ bool OCCTFilletBuilderSetTwoRadii(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1752,6 +1788,7 @@ int32_t OCCTFilletBuilderContour(OCCTFilletBuilderRef builder, OCCTEdgeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1771,6 +1808,7 @@ OCCTShapeRef OCCTFilletBuilderEdge(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1788,6 +1826,7 @@ OCCTShapeRef OCCTFilletBuilderFirstVertex(OCCTFilletBuilderRef builder, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1805,6 +1844,7 @@ OCCTShapeRef OCCTFilletBuilderLastVertex(OCCTFilletBuilderRef builder, int32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1821,6 +1861,7 @@ double OCCTFilletBuilderAbscissa(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1837,6 +1878,7 @@ double OCCTFilletBuilderRelativeAbscissa(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1851,6 +1893,7 @@ bool OCCTFilletBuilderClosedAndTangent(OCCTFilletBuilderRef builder, int32_t con
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1865,6 +1908,7 @@ bool OCCTFilletBuilderClosed(OCCTFilletBuilderRef builder, int32_t contourIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1879,6 +1923,7 @@ int32_t OCCTFilletBuilderNbSurfaces(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1893,6 +1938,7 @@ int32_t OCCTFilletBuilderNbComputedSurfaces(OCCTFilletBuilderRef builder, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1907,6 +1953,7 @@ int32_t OCCTFilletBuilderStripeStatus(OCCTFilletBuilderRef builder, int32_t cont
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1921,6 +1968,7 @@ int32_t OCCTFilletBuilderFaultyContour(OCCTFilletBuilderRef builder, int32_t fau
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1938,6 +1986,7 @@ OCCTShapeRef OCCTFilletBuilderFaultyVertex(OCCTFilletBuilderRef builder, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1959,6 +2008,7 @@ void OCCTFilletBuilderSetParams(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1980,6 +2030,7 @@ void OCCTFilletBuilderSetContinuity(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1993,6 +2044,7 @@ void OCCTFilletBuilderSetFilletShape(OCCTFilletBuilderRef builder, int32_t fille
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2006,6 +2058,7 @@ int32_t OCCTFilletBuilderGetFilletShape(OCCTFilletBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2020,6 +2073,7 @@ void OCCTFilletBuilderResetContour(OCCTFilletBuilderRef builder, int32_t contour
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2033,6 +2087,7 @@ void OCCTFilletBuilderSimulate(OCCTFilletBuilderRef builder, int32_t contourInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2046,6 +2101,7 @@ int32_t OCCTFilletBuilderNbSimulatedSurf(OCCTFilletBuilderRef builder, int32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2066,6 +2122,7 @@ bool OCCTFilletBuilderGetBounds(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2087,6 +2144,7 @@ OCCTLawFunctionRef OCCTFilletBuilderGetLaw(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2107,6 +2165,7 @@ bool OCCTFilletBuilderSetLaw(OCCTFilletBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2141,6 +2200,7 @@ bool OCCTFilletBuilderIsDeleted(OCCTFilletBuilderRef builder, OCCTShapeRef shape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2168,6 +2228,7 @@ OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2195,6 +2256,7 @@ OCCTShapeRef OCCTShapeChamfer(OCCTShapeRef shape, double distance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

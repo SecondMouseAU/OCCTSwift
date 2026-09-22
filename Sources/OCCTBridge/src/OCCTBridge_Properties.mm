@@ -110,6 +110,7 @@ bool OCCTFaceGetUVBounds(OCCTFaceRef face, double* uMin, double* uMax, double* v
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -134,6 +135,7 @@ bool OCCTFaceEvaluateAtUV(OCCTFaceRef face, double u, double v, double* px, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -166,6 +168,7 @@ bool OCCTFaceGetNormalAtUV(OCCTFaceRef face, double u, double v, double* nx, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -190,6 +193,7 @@ bool OCCTFaceGetGaussianCurvature(OCCTFaceRef face, double u, double v, double* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -214,6 +218,7 @@ bool OCCTFaceGetMeanCurvature(OCCTFaceRef face, double u, double v, double* curv
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +268,7 @@ bool OCCTFaceGetPrincipalCurvatures(OCCTFaceRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -303,6 +309,7 @@ int32_t OCCTFaceGetSurfaceType(OCCTFaceRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 10;
   }
 }
@@ -320,6 +327,7 @@ double OCCTFaceGetArea(OCCTFaceRef face, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -413,6 +421,7 @@ bool OCCTFaceGetPrimaryAxis(OCCTFaceRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -437,6 +446,7 @@ bool OCCTEdgeGetParameterBounds(OCCTEdgeRef edge, double* first, double* last)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -462,6 +472,7 @@ bool OCCTEdgeGetCurvature3D(OCCTEdgeRef edge, double param, double* curvature)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -491,6 +502,7 @@ bool OCCTEdgeGetTangent3D(OCCTEdgeRef edge, double param, double* tx, double* ty
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -520,6 +532,7 @@ bool OCCTEdgeGetNormal3D(OCCTEdgeRef edge, double param, double* nx, double* ny,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -558,6 +571,7 @@ bool OCCTEdgeGetCenterOfCurvature3D(OCCTEdgeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -592,6 +606,7 @@ bool OCCTEdgeGetTorsion(OCCTEdgeRef edge, double param, double* torsion)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -617,6 +632,7 @@ bool OCCTEdgeGetPointAtParam(OCCTEdgeRef edge, double param, double* px, double*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -653,6 +669,7 @@ int32_t OCCTEdgeGetCurveType(OCCTEdgeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 8;
   }
 }
@@ -691,6 +708,7 @@ OCCTSurfaceProjectionResult OCCTFaceProjectPoint(OCCTFaceRef face, double px, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -732,6 +750,7 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef                  face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -777,6 +796,7 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge, double px, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -856,6 +876,7 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -915,6 +936,7 @@ bool OCCTShapeSelfIntersects(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -973,6 +995,7 @@ bool OCCTShapeInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties* outPr
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1031,6 +1054,7 @@ bool OCCTShapeSurfaceInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1074,6 +1098,7 @@ OCCTCurveInfo OCCTWireGetCurveInfo(OCCTWireRef wire)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1093,6 +1118,7 @@ double OCCTWireGetLength(OCCTWireRef wire)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -1119,6 +1145,7 @@ bool OCCTWireGetPointAt(OCCTWireRef wire, double param, double* x, double* y, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1154,6 +1181,7 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1196,6 +1224,7 @@ bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* curvature)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1272,6 +1301,7 @@ OCCTCurvePoint OCCTWireGetCurvePointAt(OCCTWireRef wire, double param)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1293,6 +1323,7 @@ bool OCCTFaceGetNaturalBounds(OCCTFaceRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1325,6 +1356,7 @@ bool OCCTFaceEvaluateNormalAtUV(OCCTFaceRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1396,6 +1428,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1443,6 +1476,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1508,6 +1542,7 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1573,6 +1608,7 @@ OCCTSurfaceLocalProps OCCTGeomLPropSLProps(OCCTShapeRef faceShape, double u, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1604,6 +1640,7 @@ int32_t OCCTMeshCinertPreparePolygon(OCCTEdgeRef _Nonnull edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1631,6 +1668,7 @@ OCCTMeshCinertResult OCCTMeshCinertCompute(const double* _Nonnull coords, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1662,6 +1700,7 @@ OCCTMeshPropsResult OCCTMeshPropsCompute(OCCTFaceRef _Nonnull face, OCCTMeshProp
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1686,6 +1725,7 @@ OCCTCurveInertiaResult OCCTBRepGPropCinert(OCCTEdgeRef _Nonnull edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1711,6 +1751,7 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinert(OCCTFaceRef _Nonnull face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1735,6 +1776,7 @@ OCCTFaceSurfaceInertia OCCTBRepGPropSinertAdaptive(OCCTFaceRef _Nonnull face, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1760,6 +1802,7 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1788,6 +1831,7 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1826,6 +1870,7 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1857,6 +1902,7 @@ int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1903,6 +1949,7 @@ bool OCCTGPropLineSegment(double  x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1937,6 +1984,7 @@ bool OCCTGPropCircularArc(double  centerX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1963,6 +2011,7 @@ double OCCTGPropPointSetCentroid(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1981,6 +2030,7 @@ double OCCTGPropSphereSurface(double radius, double* cx, double* cy, double* cz)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1999,6 +2049,7 @@ double OCCTGPropSphereVolume(double radius, double* cx, double* cy, double* cz)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2015,6 +2066,7 @@ double OCCTGPropCylinderSurface(double radius, double height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2029,6 +2081,7 @@ double OCCTGPropCylinderVolume(double radius, double height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2043,6 +2096,7 @@ double OCCTGPropConeSurface(double semiAngle, double refRadius, double height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2057,6 +2111,7 @@ double OCCTGPropConeVolume(double semiAngle, double refRadius, double height)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2074,6 +2129,7 @@ double OCCTGPropTorusSurface(double majorRadius, double minorRadius)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2088,6 +2144,7 @@ double OCCTGPropTorusVolume(double majorRadius, double minorRadius)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2120,6 +2177,7 @@ double OCCTGPropPointSetWeightedCentroid(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2149,6 +2207,7 @@ bool OCCTGPropBarycentre(const double* points, int32_t count, double* cx, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2183,6 +2242,7 @@ bool OCCTEdgeLPropValue(OCCTShapeRef edge, double param, double* x, double* y, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2209,6 +2269,7 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2234,6 +2295,7 @@ bool OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param, double* curvature)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2265,6 +2327,7 @@ bool OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2302,6 +2365,7 @@ bool OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2325,6 +2389,7 @@ bool OCCTEdgeLPropD1(OCCTShapeRef edge, double param, double* d1x, double* d1y, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2358,6 +2423,7 @@ bool OCCTFaceLPropValue(OCCTShapeRef face, double u, double v, double* x, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2383,6 +2449,7 @@ bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2403,6 +2470,7 @@ bool OCCTFaceLPropMaxCurvature(OCCTShapeRef face, double u, double v, double* cu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2423,6 +2491,7 @@ bool OCCTFaceLPropMinCurvature(OCCTShapeRef face, double u, double v, double* cu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2443,6 +2512,7 @@ bool OCCTFaceLPropMeanCurvature(OCCTShapeRef face, double u, double v, double* c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2463,6 +2533,7 @@ bool OCCTFaceLPropGaussianCurvature(OCCTShapeRef face, double u, double v, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2485,6 +2556,7 @@ bool OCCTFaceLPropIsUmbilic(OCCTShapeRef face, double u, double v, bool* isUmbil
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2516,6 +2588,7 @@ bool OCCTFaceLPropTangentU(OCCTShapeRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2547,6 +2620,7 @@ bool OCCTFaceLPropTangentV(OCCTShapeRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2576,6 +2650,7 @@ bool OCCTShapeLinearProperties(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2606,6 +2681,7 @@ bool OCCTShapeMomentOfInertia(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2639,6 +2715,7 @@ bool OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2669,6 +2746,7 @@ bool OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2726,6 +2804,7 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Return with isValid = false
   }
 
@@ -2749,6 +2828,7 @@ bool OCCTShapeGetVolume(OCCTShapeRef shape, double* outVolume)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2779,6 +2859,7 @@ bool OCCTShapeSignedVolumeFlux(OCCTShapeRef shape, double* outFlux)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2796,6 +2877,7 @@ double OCCTShapeGetSurfaceArea(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -2820,6 +2902,7 @@ bool OCCTShapeGetCenterOfMass(OCCTShapeRef shape, double* outX, double* outY, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2857,6 +2940,7 @@ OCCTDistanceResult OCCTShapeDistance(OCCTShapeRef shape1, OCCTShapeRef shape2, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Return with isValid = false
   }
 
@@ -2880,6 +2964,7 @@ bool OCCTShapeIntersects(OCCTShapeRef shape1, OCCTShapeRef shape2, double tolera
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2916,6 +3001,7 @@ bool OCCTShapeGetVertexAt(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2941,6 +3027,7 @@ int32_t OCCTShapeGetVertices(OCCTShapeRef shape, double* outVertices)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

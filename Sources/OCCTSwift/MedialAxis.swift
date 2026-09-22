@@ -66,8 +66,8 @@ public struct MedialAxisArc: Sendable {
 /// boundary participates in the skeleton just as the outer wire does.
 ///
 /// ```swift
-/// let rect = Shape.makeFace(
-///     wire: Shape.makePolygon([
+/// let rect = Shape.face(
+///     from: Wire.polygon3D([
 ///         SIMD3(0, 0, 0), SIMD3(10, 0, 0),
 ///         SIMD3(10, 4, 0), SIMD3(0, 4, 0)
 ///     ], closed: true)!

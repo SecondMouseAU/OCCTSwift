@@ -405,6 +405,7 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -545,6 +546,7 @@ static double occtShapeToleranceOfType(OCCTShapeRef shape, int32_t shapeType, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -582,6 +584,7 @@ static bool occtFreeBoundsPerformed(OCCTFreeBoundsPropsRef props)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -605,6 +608,7 @@ static Handle(ShapeAnalysis_FreeBoundData) occtFreeBound(OCCTFreeBoundsPropsRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -660,6 +664,7 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -708,6 +713,7 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -730,6 +736,7 @@ OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -775,6 +782,7 @@ OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -804,6 +812,7 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -825,6 +834,7 @@ OCCTShapeRef OCCTShapeFixWireframe(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -846,6 +856,7 @@ OCCTShapeRef OCCTShapeFixSmallFaces(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -864,6 +875,7 @@ OCCTShapeRef OCCTShapeDirectFaces(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -882,6 +894,7 @@ OCCTShapeRef OCCTShapeScaleGeometry(OCCTShapeRef shape, double factor)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -900,6 +913,7 @@ OCCTShapeRef OCCTShapeSweptToElementary(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -925,6 +939,7 @@ OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -946,6 +961,7 @@ OCCTShapeRef OCCTShapeDropSmallEdges(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1009,6 +1025,7 @@ OCCTShapeRef OCCTShapeFixFreeBounds(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1031,6 +1048,7 @@ OCCTShapeRef OCCTShapeCustomConvertToBSpline(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1048,6 +1066,7 @@ OCCTShapeRef OCCTShapeCustomConvertToRevolution(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1066,6 +1085,7 @@ OCCTShapeRef OCCTShapeConnectEdges(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1102,6 +1122,7 @@ bool OCCTShapeFixLimitTolerance(OCCTShapeRef shape, double minTolerance, double 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1117,6 +1138,7 @@ void OCCTShapeFixSetTolerance(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1136,6 +1158,7 @@ OCCTShapeRef OCCTShapeFixSplitCommonVertex(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1214,6 +1237,7 @@ OCCTShapeRef OCCTShapeFixFaceConnect(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1238,6 +1262,7 @@ int32_t OCCTShapeFixEdgeSameParameter(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1262,6 +1287,7 @@ int32_t OCCTShapeFixEdgeVertexTolerance(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1284,6 +1310,7 @@ int32_t OCCTShapeFixWireVertex(OCCTShapeRef shape, double precision)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1305,6 +1332,7 @@ OCCTShapeRef OCCTShapeFixRemoveSmallSolids(OCCTShapeRef shape, double volumeThre
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1326,6 +1354,7 @@ OCCTShapeRef OCCTShapeFixMergeSmallSolids(OCCTShapeRef shape, double widthFactor
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1343,6 +1372,7 @@ OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1409,6 +1439,7 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1485,6 +1516,7 @@ OCCTShapeRef OCCTShapeFixSolid(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1568,6 +1600,7 @@ OCCTShapeRef OCCTShapeSolidFromShell(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1588,6 +1621,7 @@ OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1609,6 +1643,7 @@ OCCTShellAnalysisResult OCCTShapeAnalyzeShell(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1648,6 +1683,7 @@ bool OCCTShapeFixEdgeProjAux(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1668,6 +1704,7 @@ OCCTShapeRef OCCTShapeFixWireGaps(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1694,6 +1731,7 @@ OCCTShapeRef OCCTShapeFixSmallEdges(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1746,6 +1784,7 @@ bool OCCTShapeFixTolerance(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1762,6 +1801,7 @@ bool OCCTShapeLimitMaxTolerance(OCCTShapeRef shape, double maxTol)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1779,6 +1819,7 @@ OCCTWireFixerRef OCCTWireFixerCreate(OCCTShapeRef wire, OCCTShapeRef face, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1798,6 +1839,7 @@ bool OCCTWireFixerFixReorder(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1812,6 +1854,7 @@ bool OCCTWireFixerFixConnected(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1826,6 +1869,7 @@ bool OCCTWireFixerFixSmall(OCCTWireFixerRef fixer, double precSmall)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1840,6 +1884,7 @@ bool OCCTWireFixerFixDegenerated(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1854,6 +1899,7 @@ bool OCCTWireFixerFixSelfIntersection(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1868,6 +1914,7 @@ bool OCCTWireFixerFixLacking(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1882,6 +1929,7 @@ bool OCCTWireFixerFixClosed(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1896,6 +1944,7 @@ bool OCCTWireFixerFixGaps3d(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1910,6 +1959,7 @@ bool OCCTWireFixerFixEdgeCurves(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1929,6 +1979,7 @@ OCCTShapeRef OCCTWireFixerWire(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1950,6 +2001,7 @@ OCCTFaceFixerRef OCCTFaceFixerCreate(OCCTShapeRef face, double precision)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1969,6 +2021,7 @@ bool OCCTFaceFixerPerform(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1983,6 +2036,7 @@ bool OCCTFaceFixerFixOrientation(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1997,6 +2051,7 @@ bool OCCTFaceFixerFixAddNaturalBound(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2011,6 +2066,7 @@ bool OCCTFaceFixerFixMissingSeam(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2025,6 +2081,7 @@ bool OCCTFaceFixerFixSmallAreaWire(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2044,6 +2101,7 @@ OCCTShapeRef OCCTFaceFixerFace(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2096,6 +2154,7 @@ void OCCTFaceFixerSetMode(OCCTFaceFixerRef fixer, int32_t modeId, int32_t value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2109,6 +2168,7 @@ bool OCCTFaceFixerFixIntersectingWires(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2123,6 +2183,7 @@ bool OCCTFaceFixerFixPeriodicDegenerated(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2137,6 +2198,7 @@ bool OCCTFaceFixerFixWiresTwoCoincEdges(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2152,6 +2214,7 @@ bool OCCTFaceFixerFixLoopWire(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2171,6 +2234,7 @@ OCCTShapeRef OCCTFaceFixerResult(OCCTFaceFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2185,6 +2249,7 @@ bool OCCTFaceFixerStatus(OCCTFaceFixerRef fixer, int32_t status)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2199,6 +2264,7 @@ void OCCTFaceFixerSetMaxTolerance(OCCTFaceFixerRef fixer, double maxTolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2212,6 +2278,7 @@ void OCCTFaceFixerSetMinTolerance(OCCTFaceFixerRef fixer, double minTolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2225,6 +2292,7 @@ bool OCCTWireFixerFixGaps2d(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2239,6 +2307,7 @@ bool OCCTWireFixerFixSeam(OCCTWireFixerRef fixer, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2253,6 +2322,7 @@ bool OCCTWireFixerFixShifted(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2267,6 +2337,7 @@ bool OCCTWireFixerFixNotchedEdges(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2281,6 +2352,7 @@ bool OCCTWireFixerFixTails(OCCTWireFixerRef fixer)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2295,6 +2367,7 @@ void OCCTWireFixerSetMaxTailAngle(OCCTWireFixerRef fixer, double angle)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2308,6 +2381,7 @@ void OCCTWireFixerSetMaxTailWidth(OCCTWireFixerRef fixer, double width)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2361,6 +2435,7 @@ bool OCCTShapeFixerPerform(OCCTShapeFixerRef ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2379,6 +2454,7 @@ OCCTShapeRef OCCTShapeFixerShape(OCCTShapeFixerRef ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2409,6 +2485,7 @@ bool OCCTShapeFixerStatus(OCCTShapeFixerRef ref, int32_t statusType)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2425,6 +2502,7 @@ bool OCCTShapeFixerStatusFlag(OCCTShapeFixerRef ref, int32_t flag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2445,6 +2523,7 @@ bool OCCTShapeBooleanCheckSingle(OCCTShapeRef shape, bool testSmallEdges, bool t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2470,6 +2549,7 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2485,6 +2565,7 @@ bool OCCTShapeFixEdgeAddCurve3d(OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2500,6 +2581,7 @@ bool OCCTShapeFixEdgeAddPCurve(OCCTShapeRef edge, OCCTShapeRef face, bool isSeam
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2515,6 +2597,7 @@ bool OCCTShapeFixEdgeRemoveCurve3d(OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2530,6 +2613,7 @@ bool OCCTShapeFixEdgeRemovePCurve(OCCTShapeRef edge, OCCTShapeRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2545,6 +2629,7 @@ bool OCCTShapeFixEdgeFixReversed2d(OCCTShapeRef edge, OCCTShapeRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2569,6 +2654,7 @@ OCCTShapeRef OCCTShapeHeal(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

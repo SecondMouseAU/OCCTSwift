@@ -85,7 +85,7 @@ it on every build costs about a minute against a build already paid for. The `--
 
 **Why it is a census at all, given the compiler adjudicates.** Not false positives: there is no
 measured false-positive class here to discount the way `census-doc-occt-attribution.py` has its 41%.
-It is volume. 211 of 3,096 snippets do not compile on `main`, so a required check would be red for
+It is volume. 187 of 3,105 snippets do not compile on `main`, so a required check would be red for
 every PR, which is the failure mode in
 [required-status-checks](required-status-checks.md) and worse than no check at all. `--strict` exits 1
 for anyone who wants gate behaviour on the page they are editing, and promotion is that flag becoming

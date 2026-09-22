@@ -7,8 +7,8 @@ import simd
 /// Use `Drawing` to create technical drawings, 2D views, or DXF exports.
 ///
 /// ```swift
-/// let box = Shape.box(width: 100, height: 50, depth: 30)
-/// let topView = Drawing.project(box, direction: SIMD3(0, 0, 1))
+/// let box = Shape.box(width: 100, height: 50, depth: 30)!
+/// let topView = Drawing.project(box, direction: SIMD3(0, 0, 1))!
 /// let visibleEdges = topView.edges(ofType: .visible)
 /// ```
 ///
@@ -375,7 +375,7 @@ public final class Drawing: @unchecked Sendable {
     /// Create a 2D projection of a 3D shape.
     ///
     /// ```swift
-    /// let box = Shape.box(width: 100, height: 50, depth: 30)
+    /// let box = Shape.box(width: 100, height: 50, depth: 30)!
     /// let flat = Drawing.project(box, direction: SIMD3(0, 0, 1))
     /// let near = Drawing.project(box, direction: SIMD3(0, 0, 1),
     ///                            type: .perspective(focus: 50))
