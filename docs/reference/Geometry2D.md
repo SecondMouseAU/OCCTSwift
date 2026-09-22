@@ -716,7 +716,7 @@ public func apply(to curve: Curve2D) -> Curve2D?
 - **Example:**
   ```swift
   if let t = Transform2D.translation(dx: 10.0, dy: 0.0),
-     let line = Curve2D.line(origin: SIMD2(0, 0), direction: SIMD2(1, 0)),
+     let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
      let shifted = t.apply(to: line) {
       // shifted is a line offset by 10 in X
   }
@@ -964,7 +964,7 @@ Returns `nil` if the surface is not a torus.
 - **OCCT:** `OCCTSurfaceTorusAxis`, reads `Geom_ToroidalSurface::Axis()` (inherited from `Geom_ElementarySurface`, returns `gp_Ax1` from `gp_Ax3`); no `gp_Torus` is constructed.
 - **Example:**
   ```swift
-  let torus = Surface.torus(majorRadius: 10, minorRadius: 2)!
+  let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2)!
   if let ax = torus.torusAxis {
       print(ax.origin, ax.direction)
   }

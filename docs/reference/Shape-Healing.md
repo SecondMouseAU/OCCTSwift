@@ -360,7 +360,7 @@ Projects the 3D point to the face's surface and tests whether the resulting UV c
 - **Returns:** `.inside`, `.outside`, `.onBoundary`, or `.unknown`.
 - **OCCT:** `BRepClass_FaceClassifier` (via `OCCTClassifyPointOnFace`).
 - **Example:**
-  ```swift no-typecheck: `let face: Face = ...` is a placeholder binding, not a call
+  ```swift
   let face: Face = ...
   let cls = face.classify(point: SIMD3(1, 1, 0))
   ```
@@ -822,7 +822,7 @@ Converts a `Surface` to a topological shell shape (a single face inside a shell,
 - **OCCT:** `BRepBuilderAPI_MakeShell` (via `OCCTShapeCreateShellFromSurface`).
 - **Example:**
   ```swift
-  let cyl = Surface.cylinder(radius: 5, height: 10)!
+  let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
   if let shell = Shape.shell(from: cyl) { }
   ```
 
@@ -1498,7 +1498,7 @@ public static func face(from surface: Surface,
 - **OCCT:** `BRepBuilderAPI_MakeFace` (via `OCCTShapeCreateFaceFromSurface`).
 - **Example:**
   ```swift
-  let cyl = Surface.cylinder(radius: 5, height: 10)!
+  let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
   if let face = Shape.face(from: cyl, uRange: 0...(.pi), vRange: 0...10) { }
   ```
 

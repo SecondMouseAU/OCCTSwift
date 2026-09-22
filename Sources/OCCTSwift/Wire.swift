@@ -349,14 +349,14 @@ public final class Wire: @unchecked Sendable {
     ///
     /// ```swift
     /// // A rational quadratic B-spline (can represent exact circle arcs)
-    /// let poles = [
+    /// let poles: [SIMD3<Double>] = [
     ///     SIMD3(0, 0, 0),
     ///     SIMD3(1, 1, 0),  // Off-curve control point
     ///     SIMD3(2, 0, 0)
     /// ]
     /// let weights = [1.0, 0.707, 1.0]  // sqrt(2)/2 for quarter circle
     /// let knots = [0.0, 1.0]
-    /// let mults = [3, 3]  // Clamped at endpoints
+    /// let mults: [Int32] = [3, 3]  // Clamped at endpoints
     ///
     /// let arc = Wire.nurbs(poles: poles, weights: weights,
     ///                      knots: knots, multiplicities: mults, degree: 2)
@@ -453,7 +453,7 @@ public final class Wire: @unchecked Sendable {
     /// ## Example: Cubic B-Spline with Control Polygon
     ///
     /// ```swift
-    /// let controlPolygon = [
+    /// let controlPolygon: [SIMD3<Double>] = [
     ///     SIMD3(0, 0, 0),
     ///     SIMD3(10, 5, 0),
     ///     SIMD3(20, 0, 0),
@@ -512,7 +512,7 @@ public final class Wire: @unchecked Sendable {
     /// ## Example: Transition Curve Path
     ///
     /// ```swift
-    /// let transitionPoles = [
+    /// let transitionPoles: [SIMD3<Double>] = [
     ///     SIMD3(0, 0, 0),      // Start tangent to straight
     ///     SIMD3(20, 0, 0),
     ///     SIMD3(40, 2, 0),     // Begin curving

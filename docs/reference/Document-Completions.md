@@ -1034,6 +1034,13 @@ public var status: PipeShellStatus
 - **OCCT:** `BRepFill_PipeShell::GetStatus`.
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   if pipe.status == .ok { print("success") }
   ```
 
@@ -1052,6 +1059,12 @@ public func simulate(numberOfSections: Int) -> [Shape]
 - **OCCT:** `BRepFill_PipeShell::Simulate`.
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
   let sections = pipe.simulate(numberOfSections: 10)
   ```
 

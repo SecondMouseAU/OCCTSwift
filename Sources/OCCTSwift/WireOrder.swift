@@ -8,7 +8,7 @@ import simd
 /// the order in which they should be connected to form continuous chains.
 ///
 /// ```swift
-/// let edges = [
+/// let edges: [(start: SIMD3<Double>, end: SIMD3<Double>)] = [
 ///     (start: SIMD3(0,0,0), end: SIMD3(10,0,0)),
 ///     (start: SIMD3(10,10,0), end: SIMD3(0,10,0)),
 ///     (start: SIMD3(0,10,0), end: SIMD3(0,0,0)),
