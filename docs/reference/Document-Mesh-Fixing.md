@@ -386,7 +386,7 @@ public func descendantCount(_ shape: Shape) -> Int
   ```swift
   let tracker = AsDesTracker()
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  let face = box.faces().first!
+  let face = Shape.fromFace(box.faces().first!)!
   tracker.add(parent: box, child: face)
   print(tracker.hasDescendant(box))        // true
   print(tracker.descendantCount(box))      // 1
@@ -625,8 +625,8 @@ public static func wireFromEdges(_ edges: [Shape]) -> Shape?
 - **OCCT:** `BRepBuilderAPI_MakeWire` (via `OCCTMakeWireFromEdges`).
 - **Example:**
   ```swift
-  let e1 = Shape.edgeFromLine(from: .zero, to: SIMD3(10, 0, 0))!
-  let e2 = Shape.edgeFromLine(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 0))!
+  let e1 = Shape.edgeFromLine(origin: .zero, direction: SIMD3(1, 0, 0), p1: 0, p2: 10)!
+  let e2 = Shape.edgeFromLine(origin: SIMD3(10, 0, 0), direction: SIMD3(0, 1, 0), p1: 0, p2: 10)!
   if let wire = Shape.wireFromEdges([e1, e2]) {
       print(wire.isValid)
   }
@@ -1458,7 +1458,7 @@ public var lowerParameters: (u: Double, v: Double) { get }
 
 - **Example:**
   ```swift
-  if let plane = Surface.plane(),
+  if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
      let proj = ProjectionOnSurface(surface: plane, point: SIMD3(3, 4, 5)) {
       let (u, v) = proj.lowerParameters
       print("nearest UV:", u, v)
@@ -1756,7 +1756,7 @@ public var wire: Shape? { get }
 - **Example:**
   ```swift
   let face = Shape.faceFromPlane(uBounds: -10...10, vBounds: -10...10)!
-  let wire = Wire.rectangle(width: 5, height: 5)!.asShape()
+  let wire = Shape.fromWire(Wire.rectangle(width: 5, height: 5)!)!
   if let fixer = WireFixer(wire: wire, face: face) {
       _ = fixer.fixReorder()
       _ = fixer.fixConnected()
@@ -2099,8 +2099,8 @@ public func point(at index: Int) -> IntersectionPoint
 - **OCCT:** `GeomAPI_IntCS::Point` (1-based internally).
 - **Example:**
   ```swift
-  if let line = Curve3D.line(origin: SIMD3(0, 0, -5), direction: SIMD3(0, 0, 1)),
-     let plane = Surface.plane(),
+  if let line = Curve3D.line(through: SIMD3(0, 0, -5), direction: SIMD3(0, 0, 1)),
+     let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
      let result = IntCSResult(curve: line, surface: plane) {
       for i in 0..<result.pointCount {
           let ip = result.point(at: i)
@@ -2963,8 +2963,8 @@ public var error: WireError { get }
 - **Example:**
   ```swift
   let builder = WireBuilder()
-  builder.addEdge(Shape.edgeFromLine(from: .zero, to: SIMD3(5, 0, 0))!)
-  builder.addEdge(Shape.edgeFromLine(from: SIMD3(5, 0, 0), to: SIMD3(5, 5, 0))!)
+  builder.addEdge(Shape.edgeFromLine(origin: .zero, direction: SIMD3(1, 0, 0), p1: 0, p2: 5)!)
+  builder.addEdge(Shape.edgeFromLine(origin: SIMD3(5, 0, 0), direction: SIMD3(0, 1, 0), p1: 0, p2: 5)!)
   if builder.isDone, let wire = builder.wire {
       print("built wire with", wire.edges().count, "edges")
   } else {
@@ -3142,7 +3142,7 @@ public func offsetWireOnPlane(
 - **OCCT:** `BRepOffsetAPI_MakeOffset` (via `OCCTOffsetWireOnPlane`).
 - **Example:**
   ```swift
-  if let rect = Wire.rectangle(width: 10, height: 5)?.asShape(),
+  if let rect = Wire.rectangle(width: 10, height: 5).flatMap(Shape.fromWire),
      let offsetWire = rect.offsetWireOnPlane(distance: 2) {
       print(offsetWire.isValid)
   }
@@ -3187,8 +3187,8 @@ public func thickSolid(
 - **Example:**
   ```swift
   let box = Shape.box(width: 20, height: 20, depth: 20)!
-  let topFace = box.faces().max(by: { $0.area < $1.area })!
-  if let hollow = box.thickSolid(facesToRemove: [topFace], offset: -2) {
+  let topFace = box.faces().max(by: { $0.area() < $1.area() })!
+  if let hollow = box.thickSolid(facesToRemove: [Shape.fromFace(topFace)!], offset: -2) {
       print(hollow.isValid)
   }
   ```

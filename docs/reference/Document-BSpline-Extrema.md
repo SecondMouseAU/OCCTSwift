@@ -2138,7 +2138,7 @@ public static func solve(
 - **Example:**
   ```swift
   // Solve sin(x) = 0 on [0, 2π]
-  let roots = TrigRoots.solve(B: 1, from: 0, to: 2 * .pi)
+  let roots = TrigRoots.solve(b: 1, from: 0, to: 2 * .pi)
   // roots ≈ [0.0, π, 2π]
   ```
 

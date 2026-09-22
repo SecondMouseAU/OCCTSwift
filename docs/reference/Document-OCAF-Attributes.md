@@ -1398,8 +1398,7 @@ public static func offset(
 - **OCCT:** `Geom_OffsetCurve` constructor.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(originX: 0, originY: 0, originZ: 0,
-                              dirX: 1, dirY: 0, dirZ: 0),
+  if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
      let off = Curve3D.offset(basis: line, offset: 2.0,
                                dirX: 0, dirY: 1, dirZ: 0) {
       // off is a parallel line at y = 2
@@ -1454,8 +1453,7 @@ public static func rectangularTrimmed(
 - **Note:** Infinite OCCT surfaces (planes, cylinders, cones) must be trimmed before converting to BSpline, this is the standard approach.
 - **Example:**
   ```swift
-  if let plane = Surface.plane(originX: 0, originY: 0, originZ: 0,
-                                normalX: 0, normalY: 0, normalZ: 1),
+  if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
      let patch = Surface.rectangularTrimmed(basis: plane,
                                              u1: 0, u2: 10,
                                              v1: 0, v2: 10) {

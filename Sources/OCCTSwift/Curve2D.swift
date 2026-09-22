@@ -180,9 +180,9 @@ public final class Curve2D: @unchecked Sendable {
     /// let involute = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(1, 0), radius: 5)
     ///
     /// // Involute at (10, 20) rotated 45 degrees
-    /// let angle = .pi / 4
+    /// let angle = Double.pi / 4
     /// let dir = SIMD2(cos(angle), sin(angle))
-    /// let involute = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: dir, radius: 5)
+    /// let rotated = Curve2D.circleInvolute(origin: SIMD2(10, 20), direction: dir, radius: 5)
     ///
     /// // Mirror for opposite flank (negate X direction to flip YDir)
     /// let mirrored = Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 5)
@@ -987,7 +987,7 @@ public final class Curve2D: @unchecked Sendable {
     /// takes none, where `Bisector_BisecCC::Perform` does.
     ///
     /// ```swift
-    /// let line = Curve2D.line(point: .zero, direction: SIMD2(1, 0))!
+    /// let line = Curve2D.line(through: .zero, direction: SIMD2(1, 0))!
     /// line.bisector(withPoint: SIMD2(0, 4), maxDistance: 10)    // parametrised over [-8, 8]
     /// line.bisector(withPoint: SIMD2(0, 4), maxDistance: 100)   // parametrised over [-28, 28]
     /// ```
