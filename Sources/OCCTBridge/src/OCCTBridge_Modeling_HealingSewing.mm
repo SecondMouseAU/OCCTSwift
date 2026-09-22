@@ -375,6 +375,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -485,6 +486,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+      // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+      // it would report a failure for a call that did not fail. The diagnostics channel is for
+      // catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -612,6 +617,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -674,6 +680,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -924,6 +931,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -954,6 +962,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1037,6 +1046,7 @@ OCCTShapeRef OCCTShapeSimpleOffset(OCCTShapeRef shape, double offsetValue)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1072,6 +1082,7 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWire
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1128,6 +1139,7 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1180,6 +1192,7 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1225,6 +1238,7 @@ OCCTShapeRef OCCTShapeSew(const OCCTShapeRef* shapes, int32_t count, double tole
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1258,6 +1272,7 @@ OCCTShapeRef _Nullable OCCTBRepOffsetSimpleOffset(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1277,6 +1292,7 @@ OCCTShapeRef _Nullable OCCTBRepOffsetOffsetFace(OCCTShapeRef faceShape, double o
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1401,6 +1417,7 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1413,6 +1430,7 @@ OCCTSewingRef OCCTSewingCreate(double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1432,6 +1450,7 @@ void OCCTSewingAdd(OCCTSewingRef sewing, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1445,6 +1464,7 @@ void OCCTSewingPerform(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1463,6 +1483,7 @@ OCCTShapeRef OCCTSewingResult(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1477,6 +1498,7 @@ int32_t OCCTSewingNbFreeEdges(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1491,6 +1513,7 @@ int32_t OCCTSewingNbContigousEdges(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1505,6 +1528,7 @@ int32_t OCCTSewingNbDegeneratedShapes(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1522,6 +1546,7 @@ int32_t OCCTMakeEdgeError(OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1546,6 +1571,7 @@ OCCTUnifySameDomainRef OCCTUnifySameDomainCreate(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1571,6 +1597,7 @@ void OCCTUnifySameDomainAllowInternalEdges(OCCTUnifySameDomainRef ref, bool allo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1587,6 +1614,7 @@ void OCCTUnifySameDomainKeepShape(OCCTUnifySameDomainRef ref, OCCTShapeRef shape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1601,6 +1629,7 @@ void OCCTUnifySameDomainSetSafeInputMode(OCCTUnifySameDomainRef ref, bool safe)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1615,6 +1644,7 @@ void OCCTUnifySameDomainSetLinearTolerance(OCCTUnifySameDomainRef ref, double to
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1629,6 +1659,7 @@ void OCCTUnifySameDomainSetAngularTolerance(OCCTUnifySameDomainRef ref, double t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1643,6 +1674,7 @@ void OCCTUnifySameDomainBuild(OCCTUnifySameDomainRef ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1660,6 +1692,7 @@ OCCTShapeRef OCCTUnifySameDomainShape(OCCTUnifySameDomainRef ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1674,6 +1707,7 @@ int32_t OCCTSewingNbMultipleEdges(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1700,6 +1734,7 @@ bool OCCTSewingIsMultipleEdge(OCCTSewingRef sewing, int32_t index, OCCTShapeRef*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outEdge = nullptr;
     return false;
   }
@@ -1715,6 +1750,7 @@ int32_t OCCTSewingNbDeletedFaces(OCCTSewingRef sewing)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1734,6 +1770,7 @@ OCCTShapeRef OCCTSewingDeletedFace(OCCTSewingRef sewing, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1748,6 +1785,7 @@ bool OCCTSewingIsModified(OCCTSewingRef sewing, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1767,6 +1805,7 @@ OCCTShapeRef OCCTSewingModified(OCCTSewingRef sewing, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1781,6 +1820,7 @@ bool OCCTSewingIsDegenerated(OCCTSewingRef sewing, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1795,6 +1835,7 @@ bool OCCTSewingIsSectionBound(OCCTSewingRef sewing, OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1814,6 +1855,7 @@ OCCTShapeRef OCCTSewingWhichFace(OCCTSewingRef sewing, OCCTShapeRef edge)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1828,6 +1870,7 @@ void OCCTSewingLoad(OCCTSewingRef sewing, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1841,6 +1884,7 @@ void OCCTSewingSetNonManifoldMode(OCCTSewingRef sewing, bool nonManifold)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1854,6 +1898,7 @@ void OCCTSewingSetFaceMode(OCCTSewingRef sewing, bool faceMode)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1867,6 +1912,7 @@ void OCCTSewingSetFloatingEdgesMode(OCCTSewingRef sewing, bool floatingEdges)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1880,6 +1926,7 @@ void OCCTSewingSetMinTolerance(OCCTSewingRef sewing, double minTol)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1893,6 +1940,7 @@ void OCCTSewingSetMaxTolerance(OCCTSewingRef sewing, double maxTol)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1956,6 +2004,7 @@ OCCTWireRef* OCCTShapeSectionWiresAtZ(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

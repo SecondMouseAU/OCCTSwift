@@ -310,6 +310,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -344,6 +345,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -586,6 +588,7 @@ bool OCCTSurfaceGetBoundingBox(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -620,6 +623,7 @@ OCCTTrihedronFrame OCCTGeomFillDraftTrihedron(OCCTShapeRef edgeShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return makeEmptyFrame();
   }
 }
@@ -649,6 +653,7 @@ OCCTTrihedronFrame OCCTGeomFillDiscreteTrihedron(OCCTShapeRef edgeShape, double 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return makeEmptyFrame();
   }
 }
@@ -678,6 +683,7 @@ OCCTTrihedronFrame OCCTGeomFillCorrectedFrenet(OCCTShapeRef edgeShape, double pa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return makeEmptyFrame();
   }
 }
@@ -721,6 +727,7 @@ void OCCTAdaptor3dIsoCurveEval(OCCTShapeRef faceShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -774,6 +781,7 @@ OCCTTrihedronFrame OCCTGeomFillDarbouxTrihedron(OCCTShapeRef edgeShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return frame;
 }
@@ -808,6 +816,7 @@ OCCTTrihedronFrame OCCTGeomFillFrenetTrihedron(OCCTShapeRef edgeShape, double pa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return frame;
 }
@@ -847,6 +856,7 @@ OCCTTrihedronFrame OCCTGeomFillConstantBiNormalTrihedron(OCCTShapeRef edgeShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return frame;
 }
@@ -896,6 +906,7 @@ bool OCCTGeomFillBoundWithSurfEvaluate(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -912,6 +923,7 @@ bool OCCTGeomFillLocationDraftSetCurve(OCCTLocationDraftRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -928,6 +940,7 @@ OCCTGuideTrihedronACRef OCCTGeomFillGuideTrihedronACCreate(OCCTCurve3DRef _Nonnu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -944,6 +957,7 @@ bool OCCTGeomFillGuideTrihedronACSetCurve(OCCTGuideTrihedronACRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -961,6 +975,7 @@ OCCTGuideTrihedronPlanRef OCCTGeomFillGuideTrihedronPlanCreate(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -977,6 +992,7 @@ bool OCCTGeomFillGuideTrihedronPlanSetCurve(OCCTGuideTrihedronPlanRef _Nonnull r
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -995,6 +1011,7 @@ OCCTExtremaExtPSResult OCCTExtremaExtPS(double px, double py, double pz, OCCTSur
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1023,6 +1040,7 @@ OCCTExtremaPointOnSurf OCCTExtremaExtPSPoint(double         px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1047,6 +1065,7 @@ OCCTExtremaExtSSResult OCCTExtremaExtSS(OCCTSurfaceRef surface1, OCCTSurfaceRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1080,6 +1099,7 @@ OCCTExtremaSSPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1095,6 +1115,7 @@ int32_t OCCTSurfaceGetType(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 10;
   }
 }

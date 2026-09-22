@@ -113,9 +113,14 @@ rewrite would not preserve, and `--self-test` has a case that fails if one appea
 no build, about three seconds for the lot, and this needs `OCCTSwift` built to type-check against.
 It runs in `swift build + test (macOS)` instead, after the build it reuses, in about two minutes.
 
-**The measurement, on the tree this landed in** (3,096 snippets): 1,470 clean, 1,415 fragment, 187
-broken, 24 unparseable. So 211 snippets do not compile, and 1,415 more cannot be judged until they
-get a preamble. That is the backlog, not a verdict on the checker.
+**The measurement** (3,105 snippets): 1,474 clean, 1,444 fragment, 187 broken, 0 unparseable. So
+187 snippets do not compile, and 1,444 more cannot be judged until they get a preamble. That is the
+backlog, not a verdict on the checker.
+
+It landed reporting 211 (187 broken, 24 unparseable). The 24 were reference pages eliding content
+the reader supplies, and #2092 reclassified them: see `ELISION_FORMS`. One of the 24 was a real
+finding, a `Package.swift` manifest fragment fenced as `swift`, and it now carries a
+`no-typecheck:` reason.
 
 **A census rather than a gate, on volume and not on trust.** Nothing here has a measured
 false-positive class to discount, the way `census-doc-occt-attribution.py` has its 41%: the compiler
@@ -524,15 +529,24 @@ def macos_deployment():
     return f'{m.group(1)}.{m.group(2) or "0"}'
 
 
-def module_arch(swiftmodule_dir):
-    """The architecture of a built `.swiftmodule` bundle, from the one file inside it.
+def module_arch(swiftmodule_path):
+    """The architecture of a built `.swiftmodule`, from the bundle's contents or from the host.
 
-    SwiftPM names it `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded because a
-    `-target` naming an architecture the built module does not carry fails with "no such module",
-    which reads as a broken script rather than a mismatched flag: `macos-15` runners are arm64 today
-    and were x86_64 not long ago.
+    SwiftPM names a bundle's members `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded
+    because a `-target` naming an architecture the built module does not carry fails with "no such
+    module", which reads as a broken script rather than a mismatched flag: `macos-15` runners are
+    arm64 today and were x86_64 not long ago.
+
+    #2098: SwiftPM emits two shapes and this script meets both. A **directory** bundle holds one
+    file per architecture, which is what a local build produces here. A **plain file** is the
+    single-architecture form, which is what CI produces, and it carries no name to read. The only
+    architecture it can be is the host's, because SwiftPM built it on this machine. Without this
+    branch CI reported `no *.swiftmodule inside .../OCCTSwift.swiftmodule` and skipped the whole
+    compile stage, which is the second half of what made that step a false green.
     """
-    arches = [f.stem.split('-', 1)[0] for f in sorted(swiftmodule_dir.glob('*.swiftmodule'))]
+    if swiftmodule_path.is_file():
+        return platform.machine()
+    arches = [f.stem.split('-', 1)[0] for f in sorted(swiftmodule_path.glob('*.swiftmodule'))]
     if not arches:
         return None
     # A universal build leaves several. Prefer the host's, because that is what an unqualified
@@ -540,6 +554,37 @@ def module_arch(swiftmodule_dir):
     # host and fail with "no such module", which reads as a broken script rather than a mismatch.
     host = platform.machine()
     return host if host in arches else arches[0]
+
+
+# How deep under `.build` to look for the module. `.build/out/Products/Debug` is four, so five
+# leaves room for one more nesting level without another change here.
+MODULE_SEARCH_DEPTH = 5
+
+
+def module_dirs():
+    """Directories under `.build` holding an `OCCTSwift.swiftmodule`, most recently built first.
+
+    #2098: the layout used to be guessed, from two hardcoded candidates plus
+    `swift build --show-bin-path`. In CI every guess missed while the module was on disk, so the
+    census type-checked 24 of 3,105 snippets and exited 0. SwiftPM has shipped at least three
+    layouts this script has met (`.build/debug`, `.build/<triple>/debug`, and
+    `.build/out/Products/Debug` under the Swift Build backend, which is what a local build produces
+    here today), so a fixed list is a guess that goes stale on a toolchain bump and goes stale
+    silently. Searching is not a guess.
+
+    Newest first, because a tree can hold several: a cached `.build` restored in CI over a build
+    from a different toolchain leaves both, and the one this build just wrote is the one to compile
+    against.
+    """
+    hits = []
+    for depth in range(1, MODULE_SEARCH_DEPTH + 1):
+        pattern = '/'.join(['.build'] + ['*'] * depth + ['OCCTSwift.swiftmodule'])
+        hits.extend(REPO.glob(pattern))
+    ordered = []
+    for hit in sorted(hits, key=lambda h: h.stat().st_mtime, reverse=True):
+        if hit.parent not in ordered:
+            ordered.append(hit.parent)
+    return ordered
 
 
 def toolchain_args():
@@ -563,9 +608,15 @@ def toolchain_args():
         if (c / 'OCCTSwift.swiftmodule').exists():
             module_dir = c
             break
+    searched = []
+    if module_dir is None:
+        searched = module_dirs()
+        if searched:
+            module_dir = searched[0]
     if module_dir is None:
         return None, None, ('OCCTSwift.swiftmodule not found; run `swift build` first '
-                            f'(looked in {", ".join(str(c) for c in candidates)})')
+                            f'(looked in {", ".join(str(c) for c in candidates)}, '
+                            f'then searched {REPO / ".build"} to depth {MODULE_SEARCH_DEPTH})')
     arch = module_arch(module_dir / 'OCCTSwift.swiftmodule')
     if arch is None:
         return None, None, f'no *.swiftmodule inside {module_dir / "OCCTSwift.swiftmodule"}'
@@ -578,15 +629,61 @@ def toolchain_args():
                              check=True).stdout.strip()
     except (OSError, subprocess.SubprocessError) as exc:
         return None, None, f'xcrun --show-sdk-path failed: {exc}'
-    args = [
-        '-target', triple,
-        '-sdk', sdk,
-        '-I', str(module_dir),
-        '-I', str(module_dir / 'Modules'),
-        '-Xcc', f'-fmodule-map-file={modmap}',
-        '-Xcc', f'-I{modmap.parent}',
-    ]
+    # Both, because the module sits directly in the bin path under one layout and in a `Modules/`
+    # subdirectory under another, and when it is the latter the bin path itself still carries the
+    # other targets' artefacts (#2098).
+    search = [module_dir, module_dir / 'Modules']
+    if module_dir.name == 'Modules':
+        search.append(module_dir.parent)
+    args = ['-target', triple, '-sdk', sdk]
+    for d in search:
+        args += ['-I', str(d)]
+    args += ['-Xcc', f'-fmodule-map-file={modmap}', '-Xcc', f'-I{modmap.parent}']
     return args, triple, None
+
+
+# #2092. Reference pages elide content the reader is expected to supply, which does not parse and
+# is not a documentation defect. A page for `isCN` has no business constructing a curve from
+# scratch, and one for `modified` has no business inventing a body for the `if let`:
+#
+#     let curve: Curve3D = ...                     <- the value is elided
+#     if let sewn = sewer.modified(face) { ... }    <- the block body is elided
+#     Curve2D.bspline(poles: [...], degree: 3)     <- the collection contents are elided
+#     let sub: Shape = // an edge from the box      <- the value is elided as prose
+#
+# All four are the `fragment` category exactly: a name the prose introduces whose value the prose
+# also supplies. #2092 proposed the first form alone, having measured 22 sites by counting every
+# snippet whose errors included the parse class. Measured by reclassification the first form is
+# only 6 of them, and the other three forms are the rest, so the rule covers the family the tree
+# actually contains rather than the one example the issue named.
+#
+# Every form is anchored to the line it appears on, and `placeholder_only` requires EVERY parse
+# error to sit on such a line. A stray `...` mid-expression, a truncated call, a mis-fenced
+# `Package.swift` manifest fragment: all still reported. That is what keeps this from widening into
+# excusing real breakage, and it is what the second self-test case below pins.
+ELISION_FORMS = (
+    re.compile(r'=\s*\.\.\.\s*(?://.*)?$'),   # = ...
+    re.compile(r'=\s*(?://|/\*)'),               # = // prose      = /* prose */
+    re.compile(r'\{\s*\.\.\.\s*\}'),        # { ... }
+    re.compile(r'\{\s*/\*.*?\*/\s*\}'),      # { /* prose */ }
+    re.compile(r'\[\s*\.\.\.\s*\]'),        # [...]
+)
+
+
+def is_elision(line_text):
+    """True when this line stands in for content the reader supplies (#2092)."""
+    return any(form.search(line_text) for form in ELISION_FORMS)
+
+
+def placeholder_only(block, errs):
+    """True when every parse error sits on an elided-placeholder line (#2092)."""
+    if not errs:
+        return False
+    for line, _msg in errs:
+        i = line - block.start_line
+        if not (0 <= i < len(block.body)) or not is_elision(block.body[i]):
+            return False
+    return True
 
 
 class BlindRun(Exception):
@@ -600,6 +697,12 @@ def run_stage(mode, files, extra_args, outdir, canary_body, canaries, jobs, labe
     Returns {generated filename: [(generated line, message)]}. Raises `BlindRun` if any chunk's
     canary came back clean, which means that chunk's compiler dropped work.
     """
+    # Nothing to compile is a real state, not an impossible one: stage 2 gets an empty list whenever
+    # every snippet in the run failed to parse. Found while writing #2092's fixtures, where a
+    # one-snippet run of a placeholder-ellipsis block reached `ThreadPoolExecutor(max_workers=0)`
+    # and raised ValueError. No canary is owed for a stage that had no work.
+    if not files:
+        return {}
     chunks = chunk(files, jobs)
     if verbose:
         print(f'{label}: {len(files)} files in {len(chunks)} chunk(s)', file=sys.stderr)
@@ -680,8 +783,11 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
         parse_raw = run_stage('-parse', snippet_files, parse_args,
                               outdir, CANARY_PARSE, canaries, jobs, 'stage 1, parse', verbose,
                               wmo=wmo)
-        results = {name: ('unparseable', errs)
-                   for name, errs in map_to_source(parse_raw, index).items()}
+        results = {}
+        for name, errs in map_to_source(parse_raw, index).items():
+            block, _ = index[name]
+            kind = 'fragment' if placeholder_only(block, errs) else 'unparseable'
+            results[name] = (kind, errs)
 
         # Stage 2: type-check whatever parses.
         rest = [f for f in snippet_files if f.name not in results]
@@ -1017,6 +1123,25 @@ COMPILE_CASES = [
          '_ = s?.isValid'],
         'clean',
     ),
+    (
+        # #2092. `docs/reference/**`'s placeholder idiom. Not valid Swift, and not a doc defect:
+        # see PLACEHOLDER_ELLIPSIS. 22 pages were reported as failures for writing correct
+        # documentation, which is the class that would have made promotion to a gate red on merge.
+        "a `= ...` placeholder is a fragment, not unparseable (#2092)",
+        ['let curve: Curve3D = ...',
+         '_ = curve.isCN(2)'],
+        'fragment',
+    ),
+    (
+        # The other half of the same rule, and the reason it is anchored to the placeholder's own
+        # line: a real truncation elsewhere in the snippet must still be reported. Without this
+        # case the rule could widen to "any snippet containing a placeholder is excused" and
+        # nothing would fail.
+        "a real truncation alongside a placeholder is still reported (#2092)",
+        ['let curve: Curve3D = ...',
+         'let p = curve.value(at:'],
+        'unparseable',
+    ),
 ]
 
 
@@ -1096,6 +1221,13 @@ def _self_test_dedent_and_rewrite():
                       [module_arch(d)], ['x86_64']))
         cases.append(('an empty module bundle yields no architecture',
                       [module_arch(d.parent / 'nonexistent-bundle')], [None]))
+        # #2098. SwiftPM's other shape: a plain file, not a bundle, which is what CI produces.
+        # There is no name to read the arch from, and the host's is the only one it can be. Without
+        # this branch CI skipped every compile case while printing "0 failed".
+        single = d / 'OCCTSwift.swiftmodule'
+        single.write_text('')
+        cases.append(('a single-file .swiftmodule takes the host architecture (#2098)',
+                      [module_arch(single)], [platform.machine()]))
     finally:
         shutil.rmtree(d, ignore_errors=True)
     for name, got, expected in cases:
@@ -1230,7 +1362,7 @@ def _self_test_canary():
     return failures
 
 
-def self_test():
+def self_test(require_typecheck=False):
     print('extraction and classification:')
     failures = _self_test_extract()
     print('extracted bodies:')
@@ -1246,10 +1378,18 @@ def self_test():
     print('end-to-end compile:')
     compile_failures, skipped = _self_test_compile()
     failures += compile_failures
-    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 6 + 2 + 2
+    # 7 is _self_test_dedent_and_rewrite's case count, 2 each for attribution and the canary guard.
+    total = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2
              + (0 if skipped else 2 * len(COMPILE_CASES) + 2))
     print(f'\nself-test: {total - failures} passed, {failures} failed'
           + (' (compile cases SKIPPED: no built package)' if skipped else ''))
+    if skipped and require_typecheck:
+        # #2098: in CI this skip took the battery from 51 cases to 27 and still exited 0, so the
+        # step proved nothing about the compile path while looking exactly like the local pass.
+        print('\nABORTED: --require-typecheck was given and the compile cases were skipped, so '
+              'this run\n  proves nothing about the compile path. Build the package first.',
+              file=sys.stderr)
+        return 2
     return 1 if failures else 0
 
 
@@ -1260,6 +1400,9 @@ def main():
                     help='run the fixture battery instead of scanning the tree')
     ap.add_argument('--strict', action='store_true',
                     help='exit 1 on a non-compiling snippet (a census exits 0 by default)')
+    ap.add_argument('--require-typecheck', action='store_true',
+                    help='exit 2 if the type-check stage is skipped, rather than reporting a '
+                         'population that was never examined (for CI, where a skip is a false green)')
     ap.add_argument('--list', action='store_true',
                     help='census per kind, no compile')
     ap.add_argument('--fragments', action='store_true',
@@ -1276,7 +1419,7 @@ def main():
     args = ap.parse_args()
 
     if args.self_test:
-        return self_test()
+        return self_test(require_typecheck=args.require_typecheck)
 
     blocks = collect(args.paths)
     if args.list:
@@ -1289,6 +1432,14 @@ def main():
                                   jobs=args.jobs)
     except BlindRun as exc:
         print(f'ABORTED: {exc}', file=sys.stderr)
+        return 2
+    if note and args.require_typecheck:
+        # A census exits 0 by design, because its output is a population to adjudicate. A census
+        # that examined none of that population is not a census result, it is silence dressed as
+        # one, and in CI that is a false green (#2098).
+        print(f'ABORTED: {note}', file=sys.stderr)
+        print('--require-typecheck was given, so a skipped type-check stage is a failure rather '
+              'than a\n  census result. Build the package first.', file=sys.stderr)
         return 2
     if note:
         print(note)

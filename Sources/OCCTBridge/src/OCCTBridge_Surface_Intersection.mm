@@ -313,6 +313,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -347,6 +348,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -623,6 +625,7 @@ int32_t OCCTContapSphereDir(double   cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -696,6 +699,7 @@ int32_t OCCTContapCylinderDir(double   px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -756,6 +760,7 @@ int32_t OCCTContapSphereEye(double   cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -781,6 +786,7 @@ OCCTContapContourRef _Nullable OCCTContapContourDirection(OCCTShapeRef faceShape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -806,6 +812,7 @@ OCCTContapContourRef _Nullable OCCTContapContourEye(OCCTShapeRef faceShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -835,6 +842,7 @@ int OCCTContapContourLinePointCount(OCCTContapContourRef ref, int lineIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -863,6 +871,7 @@ void OCCTContapContourLinePoint(OCCTContapContourRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -882,6 +891,7 @@ int OCCTContapContourLineType(OCCTContapContourRef ref, int lineIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -930,6 +940,7 @@ bool OCCTContapContourLineAsLine(OCCTContapContourRef ref, int lineIndex, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -958,6 +969,7 @@ bool OCCTContapContourLineAsCircle(OCCTContapContourRef ref, int lineIndex, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -983,6 +995,7 @@ bool OCCTContapContourLineArcRange(OCCTContapContourRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1010,6 +1023,7 @@ bool OCCTContapContourLineArcPoint(OCCTContapContourRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1025,6 +1039,7 @@ int OCCTContapContourLineVertexCount(OCCTContapContourRef ref, int lineIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1062,6 +1077,7 @@ bool OCCTContapContourLineVertex(OCCTContapContourRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

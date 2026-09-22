@@ -490,6 +490,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -536,6 +537,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -703,6 +705,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -796,6 +799,7 @@ OCCTColor OCCTDocumentGetLabelColor(OCCTDocumentRef doc, int64_t labelId, OCCTCo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -836,6 +840,7 @@ void OCCTDocumentSetLabelColor(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Ignore errors
   }
 }
@@ -934,6 +939,7 @@ OCCTMaterial OCCTDocumentGetLabelMaterial(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -978,6 +984,7 @@ void OCCTDocumentSetLabelMaterial(OCCTDocumentRef doc, int64_t labelId, OCCTMate
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Ignore errors
   }
 }
@@ -997,6 +1004,7 @@ int32_t OCCTDocumentGetMaterialCount(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1042,6 +1050,7 @@ bool OCCTDocumentGetMaterialInfo(OCCTDocumentRef doc, int32_t index, OCCTMateria
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1063,6 +1072,7 @@ void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1091,6 +1101,7 @@ OCCTColor OCCTDocumentGetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1105,6 +1116,7 @@ bool OCCTDocumentIsShapeColorSet(OCCTDocumentRef doc, OCCTShapeRef shape, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1131,6 +1143,7 @@ bool OCCTDocumentSetColorAttr(OCCTDocumentRef ref, int64_t labelId, double r, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1158,6 +1171,7 @@ bool OCCTDocumentSetColorRGBAAttr(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1178,6 +1192,7 @@ bool OCCTDocumentSetColorNOCAttr(OCCTDocumentRef ref, int64_t labelId, int32_t n
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1207,6 +1222,7 @@ bool OCCTDocumentGetColorAttr(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1238,6 +1254,7 @@ bool OCCTDocumentGetColorRGBAAttr(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1259,6 +1276,7 @@ float OCCTDocumentGetColorAlphaAttr(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 1.0f;
   }
 }
@@ -1280,6 +1298,7 @@ int32_t OCCTDocumentGetColorNOCAttr(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1310,6 +1329,7 @@ bool OCCTDocumentSetMaterialAttr(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1339,6 +1359,7 @@ const char* _Nullable OCCTDocumentGetMaterialAttrName(OCCTDocumentRef ref, int64
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1368,6 +1389,7 @@ const char* _Nullable OCCTDocumentGetMaterialAttrDescription(OCCTDocumentRef ref
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1390,6 +1412,7 @@ bool OCCTDocumentGetMaterialAttrDensity(OCCTDocumentRef ref, int64_t labelId, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1409,6 +1432,7 @@ bool OCCTDocumentHasMaterialAttr(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1442,6 +1466,7 @@ int64_t OCCTDocumentClipPlaneToolAdd(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1485,6 +1510,7 @@ bool OCCTDocumentClipPlaneToolGet(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1505,6 +1531,7 @@ bool OCCTDocumentClipPlaneToolIsClipPlane(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1525,6 +1552,7 @@ bool OCCTDocumentClipPlaneToolRemove(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1601,6 +1629,7 @@ bool OCCTXCAFPrsStyleIsEqual(const OCCTXCAFPrsStyle* s1, const OCCTXCAFPrsStyle*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1652,6 +1681,7 @@ bool OCCTVisMaterialCommonIsEqual(const OCCTVisMaterialCommon* a, const OCCTVisM
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1703,6 +1733,7 @@ bool OCCTVisMaterialPBRIsEqual(const OCCTVisMaterialPBR* a, const OCCTVisMateria
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1720,6 +1751,7 @@ bool OCCTDocumentColorToolIsVisible(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }

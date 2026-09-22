@@ -199,6 +199,11 @@ void occtRecordCaughtException(const char* theContext)
   }
   catch (...)
   {
+    // Deliberately NOT calling occtRecordCaughtException here (#1161/#2077), and this is the one
+    // site in the bridge where recording would not merely be wrong but fatal: this IS that
+    // function's own classification ladder, so a call here would `throw;` the same exception,
+    // reach this clause again and recurse until the stack ran out. #2077's sweep script inserted
+    // one and it was reverted; the comment is what stops the next run reinserting it.
     aRecord.kind = OCCTDiagnosticKindUnknown;
   }
 
@@ -726,12 +731,15 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
       {
         // Couldn't face/check this one wire; fall through to whatever the other wires (or the
         // original analyzer walk above) already found rather than treating this as fatal.
+        // Deliberately NOT calling occtRecordCaughtException here (#1161): this one recovers, and
+        // the guard goes on to return a real verdict.
         continue;
       }
     }
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // A BRepCheck that itself throws on the input is a strong "do not proceed" signal.
     return true;
   }

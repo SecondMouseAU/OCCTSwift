@@ -109,7 +109,7 @@ public final class Shape {
 Operations return new `Shape` instances (immutable pattern):
 
 ```swift
-let box = Shape.box(width: 10, height: 5, depth: 3)
+let box = Shape.box(width: 10, height: 5, depth: 3)!
 let rounded = box.filleted(radius: 0.5)  // New shape, box unchanged
 ```
 
@@ -135,8 +135,8 @@ let moved = shape.translated(by: offset)
 - **Different uses**: Mesh for display/export; Shape for operations
 
 ```swift
-let shape = Shape.box(width: 10, height: 5, depth: 3)
-let mesh = shape.mesh(linearDeflection: 0.1)  // Tessellate
+let shape = Shape.box(width: 10, height: 5, depth: 3)!
+let mesh = shape.mesh(linearDeflection: 0.1)!  // Tessellate
 let geometry = mesh.sceneKitGeometry()         // For display
 ```
 

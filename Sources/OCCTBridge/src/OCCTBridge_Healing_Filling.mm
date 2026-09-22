@@ -403,6 +403,7 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -543,6 +544,7 @@ static double occtShapeToleranceOfType(OCCTShapeRef shape, int32_t shapeType, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -580,6 +582,7 @@ static bool occtFreeBoundsPerformed(OCCTFreeBoundsPropsRef props)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -603,6 +606,7 @@ static Handle(ShapeAnalysis_FreeBoundData) occtFreeBound(OCCTFreeBoundsPropsRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -771,6 +775,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -826,6 +831,7 @@ OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -873,6 +879,7 @@ OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -925,6 +932,7 @@ OCCTShapeRef OCCTShapePlatePoints(const double* points, int32_t pointCount, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -992,6 +1000,7 @@ OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

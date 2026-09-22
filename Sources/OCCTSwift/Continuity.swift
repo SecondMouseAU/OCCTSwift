@@ -173,7 +173,7 @@ public enum ParametricContinuity: Int32, Sendable, CaseIterable {
 /// print(bspline?.continuityClass)          // .c1
 ///
 /// // Analytic geometry is infinitely smooth.
-/// print(Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))?.continuityClass)  // .cN
+/// print(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))?.continuityClass)  // .cN
 /// ```
 ///
 /// - Note: Do not compare a raw value against ``ParametricContinuity`` or ``SurfaceContinuity``.

@@ -307,7 +307,7 @@ Passes directly to `Geom_BSplineCurve`. Provides exact representation of conic s
 - **Example:**
   ```swift
   // Rational quadratic B-spline, can represent exact quarter-circle arcs
-  let poles = [SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)]
+  let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)]
   let weights = [1.0, 0.707, 1.0]
   let knots = [0.0, 1.0]
   let mults: [Int32] = [3, 3]

@@ -164,6 +164,7 @@ static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -563,6 +564,7 @@ bool OCCTAnalyzePointCloud(const double*           coords,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -758,6 +760,7 @@ double OCCTMathMatrixDeterminant(OCCTMathMatrixRef m)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -771,6 +774,7 @@ bool OCCTMathMatrixInvert(OCCTMathMatrixRef m)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -807,6 +811,7 @@ bool OCCTMathGaussSolve(const double* matrixData, int32_t n, const double* rhs, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -826,6 +831,7 @@ double OCCTMathGaussDeterminant(const double* matrixData, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -856,6 +862,7 @@ bool OCCTMathSVDSolve(const double* matrixData,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -896,6 +903,7 @@ int32_t OCCTMathPolynomialRoots(const double* coeffs, int32_t nCoeffs, double* o
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -917,6 +925,7 @@ bool OCCTMathJacobiEigenvalues(const double* matrixData, int32_t n, double* outE
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -947,6 +956,7 @@ bool OCCTMathHouseholderSolve(const double* matrixData,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -973,6 +983,7 @@ bool OCCTMathCroutSolve(const double* matrixData, int32_t n, const double* rhs, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -992,6 +1003,7 @@ double OCCTMathCroutDeterminant(const double* matrixData, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1095,6 +1107,7 @@ int32_t OCCTTrigRoots(double  A,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1110,6 +1123,7 @@ bool OCCTTrigRootsInfinite(double A, double B, double C, double D, double E, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1131,6 +1145,7 @@ double OCCTMathFunctionRoot(OCCTMathFuncDerivCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1154,6 +1169,7 @@ double OCCTMathFunctionRootBounded(OCCTMathFuncDerivCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1177,6 +1193,7 @@ double OCCTMathBissecNewton(OCCTMathFuncDerivCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1209,6 +1226,7 @@ bool OCCTMathFunctionSetRoot(int32_t                      nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1240,6 +1258,7 @@ bool OCCTMathBFGS(int32_t                      nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1274,6 +1293,7 @@ bool OCCTMathPowell(int32_t                  nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1301,6 +1321,7 @@ bool OCCTMathBrentMinimum(OCCTMathFuncDerivCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1337,6 +1358,7 @@ bool OCCTMathPSO(int32_t                  nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1371,6 +1393,7 @@ bool OCCTMathGlobOptMin(int32_t                  nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1396,6 +1419,7 @@ int32_t OCCTMathFunctionRoots(OCCTMathFuncDerivCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1416,6 +1440,7 @@ double OCCTMathGaussIntegrate(OCCTMathSimpleFuncCallback callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1448,6 +1473,7 @@ bool OCCTMathNewtonFuncSetRoot(int32_t                      nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1469,6 +1495,7 @@ int32_t OCCTPolyLaguerreRoots(const double* coefficients,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1494,6 +1521,7 @@ int32_t OCCTPolyLaguerreComplexRoots(const double* coefficients,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1519,6 +1547,7 @@ int32_t OCCTPolyQuinticRoots(double  a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1550,6 +1579,7 @@ bool OCCTMathNewtonMinimum(int32_t                 nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1574,6 +1604,7 @@ double OCCTIntfToolBeginParam(OCCTIntfToolRef tool, int32_t segIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1588,6 +1619,7 @@ double OCCTIntfToolEndParam(OCCTIntfToolRef tool, int32_t segIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1620,6 +1652,7 @@ bool OCCTXYNormalize(double x, double y, double* _Nonnull rx, double* _Nonnull r
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *rx = *ry = 0;
     return false;
   }
@@ -1671,6 +1704,7 @@ double OCCTMathBracketedRoot(OCCTMathFuncDerivCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *nbIter = 0;
     return 0;
@@ -1715,6 +1749,7 @@ bool OCCTMathBracketMinimum(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1790,6 +1825,7 @@ bool OCCTMathFRPR(int32_t nVars,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1847,6 +1883,7 @@ int32_t OCCTMathFunctionAllRoots(OCCTMathFuncDerivCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1877,6 +1914,7 @@ bool OCCTMathGaussLeastSquare(const double* _Nonnull matA,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1929,6 +1967,7 @@ double OCCTMathNewtonFunctionRoot(OCCTMathFuncDerivCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone     = false;
     *derivative = 0;
     *nbIter     = 0;
@@ -1982,6 +2021,7 @@ double OCCTMathNewtonFunctionRootBounded(OCCTMathFuncDerivCallback _Nonnull call
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     return 0;
   }
@@ -2021,6 +2061,7 @@ bool OCCTMathUzawa(const double* _Nonnull contData,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2053,6 +2094,7 @@ int32_t OCCTMathEigenValues(const double* _Nonnull diagonal,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2090,6 +2132,7 @@ int32_t OCCTMathEigenValuesAndVectors(const double* _Nonnull diagonal,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2127,6 +2170,7 @@ double OCCTMathKronrodIntegration(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone       = false;
     *errorReached = 0;
     return 0;
@@ -2170,6 +2214,7 @@ double OCCTMathKronrodIntegrationAdaptive(OCCTMathSimpleFuncCallback _Nonnull ca
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone        = false;
     *errorReached  = 0;
     *nbIterReached = 0;
@@ -2221,6 +2266,7 @@ double OCCTMathGaussMultipleIntegration(OCCTMathMultiVarCallback _Nonnull callba
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     return 0;
   }
@@ -2285,6 +2331,7 @@ bool OCCTMathGaussSetIntegration(OCCTMathFuncSetCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2303,6 +2350,7 @@ int32_t OCCTMathPolyLinear(double a, double b, double* _Nonnull roots, int32_t m
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2325,6 +2373,7 @@ int32_t OCCTMathPolyQuadratic(double a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2348,6 +2397,7 @@ int32_t OCCTMathPolyCubic(double a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2372,6 +2422,7 @@ int32_t OCCTMathPolyQuartic(double a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2394,6 +2445,7 @@ double OCCTMathIntegGauss(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *error  = 0.0;
     return 0.0;
@@ -2424,6 +2476,7 @@ double OCCTMathIntegGaussAdaptive(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *error  = 0.0;
     *nbIter = 0;
@@ -2449,6 +2502,7 @@ double OCCTMathIntegKronrod(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *error  = 0.0;
     return 0.0;
@@ -2482,6 +2536,7 @@ double OCCTMathIntegKronrodAdaptive(OCCTMathSimpleFuncCallback _Nonnull callback
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *error  = 0.0;
     *nbIter = 0;
@@ -2513,6 +2568,7 @@ double OCCTMathIntegTanhSinh(OCCTMathSimpleFuncCallback _Nonnull callback,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDone = false;
     *error  = 0.0;
     *nbIter = 0;
@@ -2585,6 +2641,7 @@ bool OCCTConvertPolynomialToPoles(int32_t       dimension,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outPoles     = nullptr;
     *outKnots     = nullptr;
     *outPoleCount = *outKnotCount = *outDegree = 0;
@@ -2638,6 +2695,7 @@ void OCCTTrsfTransformation(double  fromPx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *a11 = 1;
     *a12 = 0;
     *a13 = 0;
@@ -2670,6 +2728,7 @@ double OCCTPlaneDistanceToPoint(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -2695,6 +2754,7 @@ double OCCTPlaneDistanceToLine(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -2717,6 +2777,7 @@ bool OCCTPlaneContainsPoint(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2738,6 +2799,7 @@ double OCCTLineDistanceToPoint(double lx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -2763,6 +2825,7 @@ double OCCTLineDistanceToLine(double l1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -2785,6 +2848,7 @@ bool OCCTLineContainsPoint(double lx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2824,6 +2888,7 @@ bool OCCTDirIsOpposite(double d1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2844,6 +2909,7 @@ bool OCCTDirIsNormal(double d1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2944,6 +3010,7 @@ int32_t OCCTShapeRaycast(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }

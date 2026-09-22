@@ -290,6 +290,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -342,6 +343,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -393,6 +395,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -461,6 +464,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -538,6 +542,7 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path, OCCTReturnStatus* _Nul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -578,6 +583,7 @@ bool OCCTExportSTEPWithName(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -617,6 +623,7 @@ OCCTShapeRef OCCTImportSTEPProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -727,6 +734,7 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -775,6 +783,7 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -837,6 +846,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     delete document;
     return nullptr;
@@ -877,6 +887,7 @@ bool OCCTExportSTEPProgress(OCCTShapeRef              shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return false;
   }
@@ -917,6 +928,7 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef              shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return false;
   }
@@ -964,6 +976,7 @@ bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef           doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return false;
   }
@@ -1033,6 +1046,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char*               
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     delete document;
     return nullptr;
@@ -1065,6 +1079,7 @@ OCCTShapeRef OCCTImportSTEP(const char* path, OCCTReturnStatus* _Nullable outSta
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1144,6 +1159,7 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path, OCCTReturnStatus* _Nullable 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1224,6 +1240,7 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1260,6 +1277,7 @@ bool OCCTStepTidyOptimize(const char* inputPath,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1285,6 +1303,7 @@ bool OCCTExportSTEPWithMode(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1312,6 +1331,7 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1338,6 +1358,7 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1358,6 +1379,7 @@ int32_t OCCTSTEPReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outS
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1388,6 +1410,7 @@ OCCTShapeRef OCCTImportSTEPRoot(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1417,6 +1440,7 @@ OCCTShapeRef OCCTImportSTEPWithUnit(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1438,6 +1462,7 @@ int32_t OCCTSTEPReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1493,6 +1518,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     delete document;
     return nullptr;
   }
@@ -1531,6 +1557,7 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1545,6 +1572,7 @@ OCCTStepHeaderRef OCCTStepHeaderCreate(const char* filename)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1564,6 +1592,7 @@ bool OCCTStepHeaderIsDone(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1581,6 +1610,7 @@ char* OCCTStepHeaderGetName(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1595,6 +1625,7 @@ void OCCTStepHeaderSetName(OCCTStepHeaderRef header, const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1611,6 +1642,7 @@ char* OCCTStepHeaderGetTimeStamp(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1625,6 +1657,7 @@ void OCCTStepHeaderSetTimeStamp(OCCTStepHeaderRef header, const char* timestamp)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1643,6 +1676,7 @@ char* OCCTStepHeaderGetAuthor(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1657,6 +1691,7 @@ void OCCTStepHeaderSetAuthor(OCCTStepHeaderRef header, const char* author)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1675,6 +1710,7 @@ char* OCCTStepHeaderGetOrganization(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1689,6 +1725,7 @@ void OCCTStepHeaderSetOrganization(OCCTStepHeaderRef header, const char* org)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1705,6 +1742,7 @@ char* OCCTStepHeaderGetPreprocessorVersion(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1719,6 +1757,7 @@ void OCCTStepHeaderSetPreprocessorVersion(OCCTStepHeaderRef header, const char* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1735,6 +1774,7 @@ char* OCCTStepHeaderGetOriginatingSystem(OCCTStepHeaderRef header)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1749,5 +1789,6 @@ void OCCTStepHeaderSetOriginatingSystem(OCCTStepHeaderRef header, const char* os
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }

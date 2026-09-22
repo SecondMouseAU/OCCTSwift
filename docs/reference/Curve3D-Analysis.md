@@ -540,7 +540,7 @@ Returns an empty array when the curve does not pierce the surface. Both transver
 - **Example:**
   ```swift
   if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
-     let srf  = Surface.sphere(radius: 5) {
+     let srf  = Surface.sphere(center: .zero, radius: 5) {
       let hits = line.intersections(with: srf)
       // hits.count == 2 for a line passing through the center of the sphere
   }
@@ -562,7 +562,7 @@ public func minDistance(to surface: Surface) -> Double?
 - **Example:**
   ```swift
   if let c   = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
-     let srf = Surface.sphere(radius: 5),
+     let srf = Surface.sphere(center: .zero, radius: 5),
      let d   = c.minDistance(to: srf) {
       print(d)  // ≈ 5.0 (line is 10 units from center, sphere radius 5)
   }
@@ -1017,7 +1017,7 @@ public func extremaCS(
 - **Example:**
   ```swift
   if let c = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
-     let s = Surface.sphere(radius: 5) {
+     let s = Surface.sphere(center: .zero, radius: 5) {
       let ex = c.extremaCS(surface: s)
       if ex.isDone {
           let pair = c.extremaCSPoint(surface: s, index: 1)
@@ -1102,7 +1102,7 @@ Uses `ProjLib_ProjectOnSurface` / `ProjLib_ComputeApprox` to produce a B-spline 
 - **Example:**
   ```swift
   if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
-     let sph  = Surface.sphere(radius: 10),
+     let sph  = Surface.sphere(center: .zero, radius: 10),
      let onSph = line.projectOnSurface(sph) {
       // onSph is a B-spline arc along the sphere meridian
   }

@@ -153,6 +153,7 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -187,6 +188,7 @@ OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -251,6 +253,7 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef        spine,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -362,6 +365,7 @@ OCCTShapeRef OCCTShapeBuildThreadCutter(double  ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -432,6 +436,7 @@ OCCTShapeRef OCCTShapeCreateBSplineSurface(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -455,6 +460,7 @@ OCCTShapeRef OCCTShapeCreateRuled(OCCTWireRef wire1, OCCTWireRef wire2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -498,6 +504,7 @@ OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef   shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

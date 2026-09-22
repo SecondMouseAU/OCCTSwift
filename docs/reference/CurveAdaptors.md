@@ -703,7 +703,7 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
 - **OCCT:** `ShapeAnalysis_WireOrder(true, tolerance)`, bridge extracts endpoints from each `TopoDS_Edge` in the wire before analysis.
 - **Example:**
   ```swift
-  let wire = Wire.polygon(points: [
+  let wire = Wire.polygon3D([
       SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0)
   ])!
   if let wo = WireOrder.analyze(wire: wire) {

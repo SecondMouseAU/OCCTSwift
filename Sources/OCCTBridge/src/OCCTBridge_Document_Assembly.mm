@@ -491,6 +491,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -537,6 +538,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -704,6 +706,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -749,6 +752,7 @@ bool OCCTDocumentIsSubShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -766,6 +770,7 @@ bool OCCTDocumentEditorExpand(OCCTDocumentRef doc, int64_t labelId, bool recursi
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -791,6 +796,7 @@ bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -813,6 +819,7 @@ bool OCCTDocumentSetLocation(OCCTDocumentRef ref, int64_t labelId, double tx, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -843,6 +850,7 @@ bool OCCTDocumentGetLocationTranslation(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -862,6 +870,7 @@ bool OCCTDocumentHasLocation(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -881,6 +890,7 @@ bool OCCTDocumentSetShapeMapTool(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -903,6 +913,7 @@ bool OCCTDocumentShapeMapToolSetShape(OCCTDocumentRef ref, int64_t labelId, OCCT
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -924,6 +935,7 @@ bool OCCTDocumentShapeMapToolIsSubShape(OCCTDocumentRef ref, int64_t labelId, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -945,6 +957,7 @@ int32_t OCCTDocumentShapeMapToolExtent(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -959,6 +972,7 @@ bool OCCTAssemblyItemIdIsValid(const char* str)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -973,6 +987,7 @@ int32_t OCCTAssemblyItemIdPathCount(const char* str)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -989,6 +1004,7 @@ bool OCCTAssemblyItemIdIsEqual(const char* str1, const char* str2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1041,6 +1057,7 @@ int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef doc, int32_t maxDepth, boo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1061,6 +1078,7 @@ bool OCCTDocumentSetAssemblyItemRef(OCCTDocumentRef doc, int64_t labelId, const 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1080,6 +1098,7 @@ const char* OCCTDocumentGetAssemblyItemRef(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1099,6 +1118,7 @@ bool OCCTDocumentAssemblyItemRefSetSubshape(OCCTDocumentRef doc, int64_t labelId
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1119,6 +1139,7 @@ int32_t OCCTDocumentAssemblyItemRefGetSubshape(OCCTDocumentRef doc, int64_t labe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1137,6 +1158,7 @@ bool OCCTDocumentAssemblyItemRefHasExtra(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1156,6 +1178,7 @@ bool OCCTDocumentAssemblyItemRefClearExtra(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1174,6 +1197,7 @@ bool OCCTDocumentAssemblyItemRefIsOrphan(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1196,6 +1220,7 @@ int32_t OCCTDocumentExplorerCount(OCCTDocumentRef docRef)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1232,6 +1257,7 @@ OCCTShapeRef OCCTDocumentExplorerShape(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1258,6 +1284,7 @@ char* OCCTDocumentExplorerPathId(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1284,6 +1311,7 @@ int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1318,6 +1346,7 @@ bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1370,5 +1399,6 @@ void OCCTDocumentExplorerLocation(OCCTDocumentRef docRef, int32_t index, double*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }

@@ -1979,7 +1979,7 @@ public func createDocument() -> Document?
 - **Example:**
   ```swift
   if let app = TObjApplication.shared, let doc = app.createDocument() {
-      print(doc.isValid)
+      print(doc.shapeCount)   // 0, a fresh document
   }
   ```
 

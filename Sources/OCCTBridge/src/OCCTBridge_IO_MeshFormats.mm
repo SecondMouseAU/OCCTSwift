@@ -290,6 +290,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -342,6 +343,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -393,6 +395,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -461,6 +464,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -526,6 +530,7 @@ bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -546,6 +551,7 @@ bool OCCTExportSTLWithMode(OCCTShapeRef shape, const char* path, double deflecti
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -586,6 +592,7 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef              shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -635,6 +642,7 @@ OCCTShapeRef OCCTImportOBJ(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -674,6 +682,7 @@ OCCTDocumentRef OCCTDocumentLoadOBJ(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -714,6 +723,7 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -795,6 +805,7 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithCS(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -824,6 +835,7 @@ OCCTShapeRef _Nullable OCCTImportGLTF(const char* _Nonnull path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -851,6 +863,7 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -881,6 +894,7 @@ OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -898,6 +912,7 @@ bool OCCTDocumentWriteGLTF(OCCTDocumentRef _Nonnull doc, const char* _Nonnull pa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

@@ -317,10 +317,10 @@ jobs:
       # cheapest place to print it. Promotion to a gate is `--strict` plus a rename to `check-`,
       # once the backlog it reports reaches zero. See okf/policies/static-gates.md.
       - name: census-doc-snippets --self-test
-        run: python3 Scripts/census-doc-snippets.py --self-test
+        run: python3 Scripts/census-doc-snippets.py --self-test --require-typecheck
 
       - name: census-doc-snippets (every fenced Swift snippet type-checks)
-        run: python3 Scripts/census-doc-snippets.py
+        run: python3 Scripts/census-doc-snippets.py --require-typecheck
 
       - name: swift test
         run: swift test

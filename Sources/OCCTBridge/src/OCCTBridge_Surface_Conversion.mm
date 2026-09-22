@@ -311,6 +311,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -345,6 +346,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -608,6 +610,7 @@ int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -655,6 +658,7 @@ int32_t OCCTSurfaceEvaluateGridD1(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -690,6 +694,7 @@ int32_t OCCTCurve3DIntersectSurface(OCCTCurve3DRef                curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -725,6 +730,7 @@ int32_t OCCTSurfaceIntersect(OCCTSurfaceRef  s1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -742,6 +748,7 @@ double OCCTCurve3DDistanceToSurface(OCCTCurve3DRef curve, OCCTSurfaceRef surface
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -779,6 +786,7 @@ int32_t OCCTSurfaceSurfaceIntersect(OCCTSurfaceRef  surface1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -815,6 +823,7 @@ int32_t OCCTCurveSurfaceIntersect(OCCTCurve3DRef         curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -858,6 +867,7 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -882,6 +892,7 @@ OCCTSurfaceAnalyticalResult OCCTSurfaceConvertToAnalytical(OCCTSurfaceRef surfac
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -902,6 +913,7 @@ OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull su
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -932,6 +944,7 @@ OCCTBiTgteCurveOnEdgeRef OCCTBiTgteCurveOnEdgeCreate(OCCTShapeRef edgeOnFace, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -952,6 +965,7 @@ void OCCTBiTgteCurveOnEdgeDomain(OCCTBiTgteCurveOnEdgeRef curve, double* first, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -973,6 +987,7 @@ void OCCTBiTgteCurveOnEdgeValue(OCCTBiTgteCurveOnEdgeRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1010,6 +1025,7 @@ OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1061,6 +1077,7 @@ bool OCCTGeomEvalEllipsoidD0(double  a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *px = 0.0;
     *py = 0.0;
     *pz = 0.0;
@@ -1081,6 +1098,7 @@ OCCTSurfaceRef OCCTGeomEvalEllipsoidCreate(double a, double b, double c)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1109,6 +1127,7 @@ bool OCCTGeomEvalHyperboloidD0(double  r1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *px = 0.0;
     *py = 0.0;
     *pz = 0.0;
@@ -1131,6 +1150,7 @@ OCCTSurfaceRef OCCTGeomEvalHyperboloidCreate(double r1, double r2, int32_t mode)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1150,6 +1170,7 @@ bool OCCTGeomEvalParaboloidD0(double focal, double u, double v, double* px, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *px = 0.0;
     *py = 0.0;
     *pz = 0.0;
@@ -1170,6 +1191,7 @@ OCCTSurfaceRef OCCTGeomEvalParaboloidCreate(double focal)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1194,6 +1216,7 @@ bool OCCTGeomEvalCircularHelicoidD0(double  pitch,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *px = 0.0;
     *py = 0.0;
     *pz = 0.0;
@@ -1214,6 +1237,7 @@ OCCTSurfaceRef OCCTGeomEvalCircularHelicoidCreate(double pitch)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1239,6 +1263,7 @@ bool OCCTGeomEvalHypParaboloidD0(double  a,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *px = 0.0;
     *py = 0.0;
     *pz = 0.0;
@@ -1259,6 +1284,7 @@ OCCTSurfaceRef OCCTGeomEvalHypParaboloidCreate(double a, double b)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1287,6 +1313,7 @@ OCCTSurfaceRef OCCTGeomEvalTBezierSurfaceCreate(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1320,6 +1347,7 @@ OCCTSurfaceRef OCCTGeomEvalAHTBezierSurfaceCreate(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -585,6 +590,9 @@ static double occtSignedGeom2dCurvesArea(const OCCTCurve2DRef* curves, int32_t c
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // sample the curve cannot evaluate is skipped and the shoelace sum over the rest still
+        // gives the sign this function exists to report.
         continue;
       }
       if (!hasPrev)
@@ -731,6 +739,7 @@ int32_t OCCTHatchLines(const double*  boundaryXY,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -861,6 +870,7 @@ int32_t OCCTCurve2DHatch(const OCCTCurve2DRef* boundaries,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -873,6 +883,7 @@ OCCTHatcherRef OCCTHatcherCreate(double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -892,6 +903,7 @@ void OCCTHatcherAddXLine(OCCTHatcherRef hatcher, double x)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -905,6 +917,7 @@ void OCCTHatcherAddYLine(OCCTHatcherRef hatcher, double y)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -918,6 +931,7 @@ void OCCTHatcherTrim(OCCTHatcherRef hatcher, double x1, double y1, double x2, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -931,6 +945,7 @@ int32_t OCCTHatcherNbLines(OCCTHatcherRef hatcher)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -945,6 +960,7 @@ int32_t OCCTHatcherNbIntervals(OCCTHatcherRef hatcher, int32_t lineIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
