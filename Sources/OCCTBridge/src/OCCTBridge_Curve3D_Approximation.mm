@@ -268,6 +268,7 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -357,6 +358,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -444,6 +446,7 @@ static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -497,6 +500,7 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -552,6 +556,11 @@ struct OCCTBSplineApproxInterp
     }
     catch (...)
     {
+      // Recorded even though this is not the outermost catch (#1161/#2077). This one neither
+      // rethrows nor recovers: it converts the exception into `done = false`, which every caller
+      // reports as a refused fit, and no function-level catch ever sees it. __func__ would read
+      // just "run" here, so the context is spelled out.
+      occtRecordCaughtException("OCCTBSplineApproxInterp::run");
       done = false;
       result.Nullify();
       maxErr = -1.0;
@@ -682,6 +691,7 @@ OCCTCurve3DRef OCCTEdgeApproxCurve(OCCTEdgeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -731,6 +741,7 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -773,6 +784,7 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -796,6 +808,7 @@ bool OCCTGeomLibToolParameter3D(OCCTCurve3DRef _Nonnull curveRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -827,6 +840,7 @@ bool OCCTGeomLibCheckBSpline3D(OCCTCurve3DRef _Nonnull curveRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -851,6 +865,7 @@ OCCTCurve3DRef _Nullable OCCTGeomLibFixBSpline3D(OCCTCurve3DRef _Nonnull curveRe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -879,6 +894,7 @@ OCCTCurve3DRef _Nullable OCCTGeomLibInterpolate(int degree,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -904,6 +920,7 @@ bool OCCTApproxSameParameter(OCCTCurve3DRef _Nonnull curve3dRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -920,6 +937,7 @@ void OCCTLogSample(double a, double b, int32_t n, double* params)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     for (int32_t i = 0; i < n; i++)
       params[i] = 0;
   }
@@ -980,6 +998,7 @@ bool OCCTGeomEvalCircularHelixD0(double  radius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     occtEval3dZero({px, py, pz});
     return false;
   }
@@ -1017,6 +1036,7 @@ bool OCCTGeomEvalCircularHelixD1(double  radius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     occtEval3dZero({px, py, pz, vx, vy, vz});
     return false;
   }
@@ -1062,6 +1082,7 @@ bool OCCTGeomEvalCircularHelixD2(double  radius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     occtEval3dZero({px, py, pz, d1x, d1y, d1z, d2x, d2y, d2z});
     return false;
   }
@@ -1080,6 +1101,7 @@ OCCTCurve3DRef OCCTGeomEvalCircularHelixCurveCreate(double radius, double pitch)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1103,6 +1125,7 @@ bool OCCTGeomEvalSineWaveD0(double  amplitude,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     occtEval3dZero({px, py, pz});
     return false;
   }
@@ -1141,6 +1164,7 @@ bool OCCTGeomEvalSineWaveD1(double  amplitude,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     occtEval3dZero({px, py, pz, vx, vy, vz});
     return false;
   }
@@ -1159,6 +1183,7 @@ OCCTCurve3DRef OCCTGeomEvalSineWaveCurveCreate(double amplitude, double omega, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1180,6 +1205,7 @@ OCCTCurve3DRef OCCTGeomEvalTBezierCurveCreate(const double* poles, int32_t count
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1208,6 +1234,7 @@ OCCTCurve3DRef OCCTGeomEvalTBezierCurveCreateRational(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1233,6 +1260,7 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreate(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1263,6 +1291,7 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

@@ -309,6 +309,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -343,6 +344,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -682,6 +684,7 @@ OCCTCanonicalForm OCCTShapeRecognizeCanonical(OCCTShapeRef shape, double toleran
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -734,6 +737,7 @@ int32_t OCCTSurfaceToBezierPatches(OCCTSurfaceRef  surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -749,6 +753,7 @@ int32_t OCCTSurfaceSingularityCount(OCCTSurfaceRef surface, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -769,6 +774,7 @@ bool OCCTSurfaceIsDegenerated(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -793,6 +799,7 @@ OCCTSurfaceUVResult OCCTSurfaceValueOfUV(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -819,6 +826,7 @@ OCCTSurfaceUVResult OCCTSurfaceNextValueOfUV(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -888,6 +896,7 @@ OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -934,6 +943,7 @@ OCCTSurfaceRef OCCTSurfaceJoinBezierPatches(const OCCTSurfaceRef* patches,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -975,6 +985,7 @@ bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1019,6 +1030,7 @@ int32_t OCCTLocalAnalysisSurfaceContinuityFlags(OCCTSurfaceRef _Nonnull surface1
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1046,6 +1058,7 @@ bool OCCTGeomLibToolParametersSurface(OCCTSurfaceRef _Nonnull surfRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1060,6 +1073,7 @@ bool OCCTGeomLibIsPlanarSurface(OCCTSurfaceRef _Nonnull surfRef, double toleranc
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1099,6 +1113,7 @@ bool OCCTGeomLibPlanarSurfacePlane(OCCTSurfaceRef _Nonnull surfRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1112,6 +1127,7 @@ bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1140,6 +1156,7 @@ double OCCTSurfaceProjectPointUV(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *u = 0;
     *v = 0;
     return -1.0;
@@ -1157,6 +1174,7 @@ bool OCCTSurfaceHasSingularities(OCCTSurfaceRef surface, double preci)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1172,6 +1190,7 @@ int32_t OCCTSurfaceNbSingularities(OCCTSurfaceRef surface, double preci)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1187,6 +1206,7 @@ bool OCCTSurfaceIsUClosedSA(OCCTSurfaceRef surface, double preci)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1202,6 +1222,7 @@ bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef surface, double preci)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1237,6 +1258,7 @@ double OCCTSurfaceUVFromIso(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     if (u)
       *u = 0;
     if (v)
@@ -1299,6 +1321,7 @@ bool OCCTSurfaceSingularityDetail(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1335,6 +1358,7 @@ bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1375,6 +1399,7 @@ double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     if (u)
       *u = 0;
     if (v)

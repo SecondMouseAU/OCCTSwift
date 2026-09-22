@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -572,6 +577,7 @@ OCCTCurve2DRef OCCTCurve2DBisectorCC(OCCTCurve2DRef c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -602,6 +608,7 @@ OCCTCurve2DRef OCCTCurve2DBisectorPC(double         px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -662,6 +669,7 @@ OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -709,6 +717,7 @@ bool OCCTMedialAxisGetNode(OCCTMedialAxisRef ma, int32_t index, OCCTMedialAxisNo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -735,6 +744,7 @@ bool OCCTMedialAxisGetArc(OCCTMedialAxisRef ma, int32_t index, OCCTMedialAxisArc
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -787,7 +797,9 @@ int32_t OCCTMedialAxisDrawArc(OCCTMedialAxisRef ma,
       }
       catch (...)
       {
-        // Fallback: interpolate between node positions
+        // Fallback: interpolate between node positions. Deliberately NOT calling
+        // occtRecordCaughtException here (#1161): this one recovers, the point is filled in from
+        // the node positions and the call goes on to return every sample it was asked for.
         double tx        = firstPt.X() + t * (lastPt.X() - firstPt.X());
         double ty        = firstPt.Y() + t * (lastPt.Y() - firstPt.Y());
         outXY[i * 2 + 0] = tx;
@@ -798,6 +810,7 @@ int32_t OCCTMedialAxisDrawArc(OCCTMedialAxisRef ma,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -888,7 +901,9 @@ double OCCTMedialAxisDistanceOnArc(OCCTMedialAxisRef ma, int32_t arcIndex, doubl
     }
     catch (...)
     {
-      // Fall through with the node-position interpolation already computed above.
+      // Fall through with the node-position interpolation already computed above. Deliberately
+      // NOT calling occtRecordCaughtException here (#1161): this one recovers, and the distance
+      // measured from the fallback point below is a real answer rather than a refusal.
     }
 
     // Measure from the real curve point (or its fallback), not by interpolating the
@@ -898,6 +913,7 @@ double OCCTMedialAxisDistanceOnArc(OCCTMedialAxisRef ma, int32_t arcIndex, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -925,6 +941,7 @@ double OCCTMedialAxisMinThickness(OCCTMedialAxisRef ma)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -970,6 +987,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurveCurve(OCCTCurve2DRef curve1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1008,6 +1026,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurvePoint(OCCTCurve2DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1041,6 +1060,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaPointPoint(double pt1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1183,6 +1203,7 @@ int OCCTBisectorInterPointPoint(double                         ax,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
