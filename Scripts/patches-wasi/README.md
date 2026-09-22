@@ -52,9 +52,65 @@ carries.** Anything platform-specific gets its own directory and its own applier
 
 ## Adding one
 
-Drop a `git diff` (`-p1`, prefixes `a/`, `b/`) here, and add its row to the table above.
-`build-occt-wasm.sh` applies this directory after the carried set, idempotently, and aborts if a
-patch does not apply cleanly.
+**Generate the diff with [`../patches/`](../patches/README.md) already applied, and verify it in
+that same state.** That is the rule, it is owned by
+[`okf/policies/wasi-patch-base.md`](../../okf/policies/wasi-patch-base.md), and PR #2076 is why it
+is written down: its fifteen patches were authored against a pristine `V8_0_1` and checked by
+applying them to one, which is how nobody noticed that nine carried patches inject `std::mutex`
+and `std::recursive_mutex` into OCCT and that 15 of the 76 threading-dependent files are files we
+patch ourselves.
+
+```bash
+cd Libraries/occt-src
+git checkout .                                   # a clean V8_0_1
+for p in ../../Scripts/patches/*.patch; do git apply "$p"; done
+# ... make the WASI change ...
+git diff -- src/path/to/File.cxx > ../../Scripts/patches-wasi/wasi-<thing>.patch
+git apply --check ../../Scripts/patches-wasi/wasi-<thing>.patch   # in THIS state
+```
+
+A patch that applies to vanilla but not to the patched tree, or the reverse, is a defect. Keep the
+`diff --git` and `index` lines `git diff` emits (`-p1`, prefixes `a/`, `b/`): the `index` pre-image
+blob is the exact identity of the tree the patch was cut from, and
+`check-wasi-patch-base.py --tree` checks it against the real file. The two patches here today were
+hand trimmed and carry no `index` line, which is not a defect, only a weaker patch.
+
+Then add the patch's row to the table above. `build-occt-wasm.sh` applies this directory after the
+carried set, idempotently, and aborts if a patch does not apply cleanly.
+
+**If the file is one a carried patch also touches**, declare it in the patch preamble, one line per
+carried patch:
+
+```
+Applies-After: 0033-Interface_Static-thread-safety-mutex-1157.patch
+```
+
+That is the record that the diff was regenerated in the patched state, and it is what fails loudly
+at the next kernel repin rather than quietly: a retired or renumbered carried patch leaves the
+trailer unresolvable, and the WASI patch gets re-verified instead of sitting on a state that no
+longer exists. No file here collides today, which is why the rule is worth having before
+[#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173) writes the patches that may create
+one.
 
 Numbering is deliberately not used here: these are not upstream-bound, so they have no place in the
 carried sequence and nothing cites them by number.
+
+## What checks a patch here, and what it cannot
+
+Three checks, none of which needs a wasm build:
+
+- `python3 Scripts/check-wasi-patch-base.py` (#2168) reads both patch sets as text and fails on a
+  shared target file with no `Applies-After:`, an `Applies-After:` that no longer resolves, a
+  context line the carried set deletes, an added line using a member belonging to some other class,
+  or two patches here editing one file. It **cannot** run `git apply --check`, so a patch whose
+  context simply is not in the patched tree, for a file no carried patch touches, is invisible to
+  it. `--tree Libraries/occt-src --require-tree` is the mode that does the real check, and it is
+  not in `gate-scripts`, which has no checkout.
+- `python3 Scripts/check-preprocessor-balance.py` (#2167) fails when a patch leaves a file's
+  `#if`/`#else`/`#endif` unbalanced, which three of #2076's fifteen did on every platform rather
+  than only WASI.
+- `python3 Scripts/check-inventory-prose.py` (#1408) fails when the count and the table above stop
+  matching this directory.
+
+"The patch applies cleanly" is a narrow claim, and each of the properties #2076 got wrong (it
+preprocesses, it was cut from the right tree, it edits the class it names) needs its own check.
