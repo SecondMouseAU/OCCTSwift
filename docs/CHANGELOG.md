@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach topology and measurement (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused topology query, adjacency walk, bounding box, extrema search or mass/length/area measurement. 333 function-level `catch (...)` blocks across the five `OCCTBridge_Topology_*.mm` files and `OCCTBridge_Properties.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
+
+Fifteen deeper blocks are instrumented too, all of them `occtFindSurface`'s three inner `catch (...)` clauses, once per Topology translation unit. Those neither rethrow nor recover: each turns the exception into the refusal the caller sees (`found == false`, `toleranceReached == -1.0`, `existed == false`) without the outer handler ever running, so recording there is the only place the reason exists. A note at each site says so.
+
+Three deeper blocks stay uninstrumented with the reason in place, all recover-and-continue: `OCCTBRepExtremaExtCCEdges`' perpendicular-foot count, `OCCTShapeOuterShells`' per-solid skip, and the axis-collection walk's per-face skip.
+
 ### Caught-exception diagnostics reach data exchange (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused STEP, IGES, BREP, mesh or OSD operation. 192 function-level `catch (...)` blocks across the seven `OCCTBridge_IO_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
