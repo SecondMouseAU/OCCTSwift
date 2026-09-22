@@ -88,24 +88,33 @@ what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift
 
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-nine patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The twelve it lacks, and why each matters, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+`Scripts/patches/` holds twenty-nine patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
+twenty-nine. The zero it lacks, and why each matters, per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): **there are none.**
 
-| Patch | Exposure today |
+That is new as of 2026-09-22 and it is what the rebuild was for. Twelve patches (`0028`-`0031`,
+`0033`, `0034`, `0036`-`0041`) had been on disk and in no CI job, because `build-and-test` resolves
+the pinned asset rather than building from source. Four of the twelve were live consumer exposure
+rather than bookkeeping, and all four now ship:
+
+| Patch | What shipping it closed |
 |---|---|
-| `0028` (#1018) | Nothing observable here: `OCCTGeomPlateErrors`, its only bridge reader, was deleted by #999. The upstream GTests are its only coverage anywhere. |
-| `0029` (#1022) | Uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. Bridge guard #1030 refuses that shape until a repin, then must be retired. |
-| `0030` (#1154) | Live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result; invisible to `swift test`, suppressed in `Scripts/tsan.supp` until a repin. |
-| `0031` (#1153) | Same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression exists, so nothing to retire. |
-| `0033` (#1157) | Memory-safety hole in `Interface_Static`, reachable by every STEP/IGES read or write, masked in practice by the bridge's `igesMutex()`. A repin buys defence in depth for callers outside that mutex. |
-| `0034` (#1515) | `Shape.coonsAlgPatch` returns a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently: the array shape and the API are unaffected, so nothing reads as an error. The one kernel consumer, `GeomFill_ConstrainedFilling`, never calls `Value()` and is not affected. |
-| `0036` (#1403) | Every concurrent STEP/IGES operation can lose its exception handling when another thread clears the shared sentinel, so a `Standard_Failure` that should have been caught and reported escapes instead. Masked today by the bridge's `igesMutex()`, which serialises the whole DE surface; a repin protects callers outside it. |
-| `0037` (#2061) | A live data race on every pair of concurrent STEP reads, on a flag that decides whether an assembly component's compound is flattened. Masked today by the bridge's `igesMutex()`, which serialises the whole DE surface, so no consumer can reach it until that mutex narrows. |
-| `0038` (#1403) | Any consumer whose code path runs a bulk `Interface_CheckTool` list operation and later calls `FillCheck` directly loses exception reporting for that check, single-threaded. Masked here because the bridge never calls `FillCheck` outside a bulk builder, so no OCCTSwift consumer reaches the sequence today. |
-| `0039` (#1403) | A data race between concurrent STEP/IGES reads on the parameter memo, masked by the bridge's `igesMutex()`. Also a silent performance loss on every platform: the memo is dead for all but the most recently constructed reader, which a repin would restore. |
-| `0040` (#1403) | Concurrent first use of the STEP or IGES controller can run the one-time setup twice, constructing and recording a second controller under the same name. Masked by the bridge's `igesMutex()`, which serialises the whole DE surface. |
-| `0041` (#1403) | Concurrent controller registration or template-model lookup can rehash a shared map under another thread. Same masking by `igesMutex()`; a repin protects callers outside it. |
+| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is now due for retirement**, since it refuses a shape the kernel can read. |
+| `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
+| `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. |
+| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. **A Swift test asserting the correct surface is now writable** and was not before, because `build-and-test` resolved the unpatched asset. |
+
+The other eight (`0028`, `0033`, `0036`-`0041`) were either unreachable from the bridge (`0028`'s
+only reader was deleted by #999) or masked by the bridge's own `igesMutex()`, which serialises the
+whole data-exchange surface. Shipping them buys defence in depth for any caller outside that mutex,
+and is what makes narrowing the mutex thinkable later. `0036`-`0041` are the #1403 series: named
+racing globals **16 to 0**, TSan reports **178 to 37**.
+
+**Two bridge-side mitigations are now due for retirement**, both listed in `CLAUDE.md` under Known
+OCCT Bugs as "retire when the kernel is repinned": the datum lookup guard in
+`occtDocumentDatumObjectAt` (#1030, now blocking a datum the kernel can read) and the bridge-side
+arc-length subdivision `occtAdaptorArcLength` (#603, measured redundant against `0021`). Each is a
+behaviour change with its own tests and belongs in its own PR, not in the repin.
 
 `kernel-integration.yml` builds these, and nothing else does: it is the only job that compiles an
 unpinned patch, and `build-and-test` resolves the pinned asset instead. It runs on the PR that adds

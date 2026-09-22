@@ -21,8 +21,8 @@ source. Before trusting "the fix is in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (twenty-nine on disk, seventeen pinned, as of 2026-09-21) and what each unpinned patch
-leaves exposed. A divergence with a written reason is expected; one without is a finding.
+divergence (twenty-nine on disk, twenty-nine pinned, as of 2026-09-22: none, since the
+v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
 
 ## Build & Test Commands
 
