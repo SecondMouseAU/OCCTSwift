@@ -291,6 +291,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -343,6 +344,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -394,6 +396,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -462,6 +465,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -554,6 +558,7 @@ int64_t OCCTMemInfoHeapUsage()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -567,6 +572,7 @@ int64_t OCCTMemInfoWorkingSet()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -580,6 +586,7 @@ double OCCTMemInfoHeapUsageMiB()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -593,6 +600,7 @@ const char* OCCTMemInfoString()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -616,6 +624,7 @@ const char* OCCTEnvironmentGet(const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -632,6 +641,7 @@ bool OCCTEnvironmentSet(const char* name, const char* value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -646,6 +656,7 @@ void OCCTEnvironmentRemove(const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -687,6 +698,7 @@ void OCCTOSDPathFolderAndFile(const char* path, const char** outFolder, const ch
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outFolder = nullptr;
     *outFile   = nullptr;
   }
@@ -701,6 +713,7 @@ bool OCCTOSDPathIsValid(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -745,6 +758,7 @@ int32_t OCCTProcessId()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -759,6 +773,7 @@ const char* OCCTProcessUserName()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -774,6 +789,7 @@ const char* OCCTProcessExecutablePath()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -789,6 +805,7 @@ const char* OCCTProcessExecutableFolder()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -809,6 +826,7 @@ OCCTOSDFileRef OCCTFileCreate(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return new OCCTOSDFile();
   }
 }
@@ -823,6 +841,7 @@ OCCTOSDFileRef OCCTFileCreateTemporary(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return new OCCTOSDFile();
   }
 }
@@ -843,6 +862,7 @@ bool OCCTFileOpen(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -858,6 +878,7 @@ bool OCCTFileOpenReadOnly(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -874,6 +895,7 @@ bool OCCTFileWrite(OCCTOSDFileRef file, const char* data, int32_t length)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -898,6 +920,7 @@ char* OCCTFileReadLine(OCCTOSDFileRef file, int32_t bufSize)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -942,6 +965,7 @@ char* OCCTFileReadAll(OCCTOSDFileRef file, int32_t* outLength)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -956,6 +980,7 @@ void OCCTFileClose(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -969,6 +994,7 @@ bool OCCTFileIsOpen(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -986,6 +1012,7 @@ int64_t OCCTFileSize(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1000,6 +1027,7 @@ void OCCTFileRewind(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1013,6 +1041,7 @@ bool OCCTFileIsAtEnd(OCCTOSDFileRef file)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1042,6 +1071,7 @@ void OCCTResourceManagerSetString(OCCTResourceManagerRef mgr, const char* key, c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1053,6 +1083,7 @@ void OCCTResourceManagerSetInt(OCCTResourceManagerRef mgr, const char* key, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1064,6 +1095,7 @@ void OCCTResourceManagerSetReal(OCCTResourceManagerRef mgr, const char* key, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1075,6 +1107,7 @@ bool OCCTResourceManagerFind(OCCTResourceManagerRef mgr, const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1088,6 +1121,7 @@ char* OCCTResourceManagerGetString(OCCTResourceManagerRef mgr, const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1100,6 +1134,7 @@ int32_t OCCTResourceManagerGetInt(OCCTResourceManagerRef mgr, const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1112,6 +1147,7 @@ double OCCTResourceManagerGetReal(OCCTResourceManagerRef mgr, const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1125,6 +1161,7 @@ char* OCCTHostName(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1138,6 +1175,7 @@ char* OCCTSystemVersion(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1151,6 +1189,7 @@ char* OCCTInternetAddress(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1195,6 +1234,7 @@ bool OCCTDirectoryExists(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1212,6 +1252,7 @@ bool OCCTDirectoryCreate(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1229,6 +1270,7 @@ char* OCCTDirectoryBuildTemporary(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1247,6 +1289,7 @@ bool OCCTDirectoryRemove(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1278,6 +1321,7 @@ void OCCTUnicodeSetFormat(int32_t format)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1302,6 +1346,7 @@ int32_t OCCTUnicodeGetFormat(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 3;
   }
 }
@@ -1340,6 +1385,7 @@ char* OCCTUnicodeConvertToUnicode(const char* input)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1388,6 +1434,7 @@ int32_t OCCTUnicodeConvertFromUnicode(const char* utf8Input,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1412,6 +1459,7 @@ int32_t OCCTDirectoryIteratorCount(const char* path, const char* mask)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1445,6 +1493,7 @@ char* OCCTDirectoryIteratorName(const char* path, const char* mask, int32_t inde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1473,6 +1522,7 @@ int32_t OCCTDirectoryList(const char* path, const char* mask, char** names, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1497,6 +1547,7 @@ int32_t OCCTFileIteratorCount(const char* path, const char* mask)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1530,6 +1581,7 @@ char* OCCTFileIteratorName(const char* path, const char* mask, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1558,6 +1610,7 @@ int32_t OCCTFileList(const char* path, const char* mask, char** names, int32_t m
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1580,6 +1633,7 @@ int64_t OCCTDiskSize(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1595,6 +1649,7 @@ int64_t OCCTDiskFree(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1612,6 +1667,7 @@ bool OCCTDiskIsValid(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1630,6 +1686,7 @@ char* OCCTDiskName(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1642,6 +1699,7 @@ OCCTSharedLibRef OCCTSharedLibCreate(const char* name)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1661,6 +1719,7 @@ bool OCCTSharedLibOpen(OCCTSharedLibRef lib)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1675,6 +1734,7 @@ void OCCTSharedLibClose(OCCTSharedLibRef lib)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1689,6 +1749,7 @@ char* OCCTSharedLibName(OCCTSharedLibRef lib)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

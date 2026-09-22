@@ -290,6 +290,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -342,6 +343,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -393,6 +395,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -461,6 +464,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -544,6 +548,7 @@ const char* _Nullable OCCTGeomToolsCurveSetWrite(const OCCTCurve3DRef* curveRefs
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -569,6 +574,10 @@ OCCTCurve3DRef* _Nullable OCCTGeomToolsCurveSetRead(const char* data, int* outCo
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). GeomTools_*Set is
+        // 1-based with no count accessor, so walking off the end is how the loop LEARNS the
+        // size: this catch is the normal exit, not a failure, and the read goes on to return
+        // every element it found. The function's own outermost catch does record.
         break;
       }
     }
@@ -585,6 +594,7 @@ OCCTCurve3DRef* _Nullable OCCTGeomToolsCurveSetRead(const char* data, int* outCo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -627,6 +637,7 @@ const char* _Nullable OCCTGeomToolsCurve2dSetWrite(const OCCTCurve2DRef* curveRe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -651,6 +662,10 @@ OCCTCurve2DRef* _Nullable OCCTGeomToolsCurve2dSetRead(const char* data, int* out
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). GeomTools_*Set is
+        // 1-based with no count accessor, so walking off the end is how the loop LEARNS the
+        // size: this catch is the normal exit, not a failure, and the read goes on to return
+        // every element it found. The function's own outermost catch does record.
         break;
       }
     }
@@ -667,6 +682,7 @@ OCCTCurve2DRef* _Nullable OCCTGeomToolsCurve2dSetRead(const char* data, int* out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -709,6 +725,7 @@ const char* _Nullable OCCTGeomToolsSurfaceSetWrite(const OCCTSurfaceRef* surfRef
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -733,6 +750,10 @@ OCCTSurfaceRef* _Nullable OCCTGeomToolsSurfaceSetRead(const char* data, int* out
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). GeomTools_*Set is
+        // 1-based with no count accessor, so walking off the end is how the loop LEARNS the
+        // size: this catch is the normal exit, not a failure, and the read goes on to return
+        // every element it found. The function's own outermost catch does record.
         break;
       }
     }
@@ -749,6 +770,7 @@ OCCTSurfaceRef* _Nullable OCCTGeomToolsSurfaceSetRead(const char* data, int* out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -801,6 +823,7 @@ bool OCCTVrmlWriteShape(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -814,6 +837,7 @@ bool OCCTVrmlWriteDocument(OCCTDocumentRef document, const char* filePath, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -833,6 +857,7 @@ const void* OCCTBinToolsWriteShape(OCCTShapeRef shape, int* outLength)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outLength = 0;
     return nullptr;
   }
@@ -853,6 +878,7 @@ OCCTShapeRef OCCTBinToolsReadShape(const void* data, int length)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -870,6 +896,7 @@ bool OCCTBinToolsWriteShapeToFile(OCCTShapeRef shape, const char* filePath)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -890,6 +917,7 @@ OCCTShapeRef OCCTBinToolsReadShapeFromFile(const char* filePath)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -910,6 +938,7 @@ char* OCCTShapeToBREPString(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -930,6 +959,7 @@ OCCTShapeRef OCCTShapeFromBREPString(const char* brepString)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -956,6 +986,7 @@ OCCTShapeRef OCCTImportBREP(const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -971,6 +1002,7 @@ bool OCCTExportBREP(OCCTShapeRef shape, const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -993,6 +1025,7 @@ bool OCCTExportBREPWithTriangles(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

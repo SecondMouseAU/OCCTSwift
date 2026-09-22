@@ -61,10 +61,12 @@ Verify it rather than assume it, the fit is a least-squares approximation, not a
 and a plate that genuinely cannot be fitted still returns its best effort:
 
 ```swift
-let points: [SIMD3<Double>] = (0..<5).flatMap { i in
-    (0..<5).map { j in
-        SIMD3(Double(i) * 4, Double(j) * 4,
-              4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+let points: [SIMD3<Double>] = (0..<5).flatMap { i -> [SIMD3<Double>] in
+    (0..<5).map { j -> SIMD3<Double> in
+        let x = Double(i) * 4
+        let y = Double(j) * 4
+        let z = 4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1)
+        return SIMD3(x, y, z)
     }
 }
 if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
