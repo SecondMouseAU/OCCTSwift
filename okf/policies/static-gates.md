@@ -110,7 +110,7 @@ Two of its design choices are worth carrying to any detector that shells out to 
 
 ## Every detector proves it is not blind
 
-Ten of the eleven gates, all five censuses and the merge-history audit take `--self-test`, a
+Eleven of the twelve gates, all five censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
@@ -162,7 +162,7 @@ of tooling earlier.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs twenty-seven of `gate-scripts`' twenty-eight invocations, flag for
+`Scripts/git-hooks/pre-commit` runs twenty-nine of `gate-scripts`' thirty invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

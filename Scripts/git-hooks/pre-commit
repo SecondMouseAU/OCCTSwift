@@ -109,6 +109,11 @@ run "check-throwing-calls.py"                 Scripts/check-throwing-calls.py
 # an hour into kernel-integration.yml, which is how 0035 was found.
 run "check-patch-deletes-guarded-symbol.py --self-test" Scripts/check-patch-deletes-guarded-symbol.py --self-test
 run "check-patch-deletes-guarded-symbol.py"   Scripts/check-patch-deletes-guarded-symbol.py
+# #2077. Every function-level `catch (...)` in the bridge records the OCCT exception it caught, so a
+# nil return can say why. Cheapest possible check on the newest bridge convention, and the one a
+# hand-written bridge function is most likely to miss.
+run "check-bridge-diagnostics.py --self-test" Scripts/check-bridge-diagnostics.py --self-test
+run "check-bridge-diagnostics.py"             Scripts/check-bridge-diagnostics.py
 
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
 # a resolver written for the default two-way style strips <<<<<<< / ======= / >>>>>>> and leaves the

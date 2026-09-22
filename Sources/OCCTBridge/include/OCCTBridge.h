@@ -842,12 +842,17 @@ extern "C"
   // records what it finds. Recording costs one thread-local read and one relaxed atomic load when
   // neither capture nor logging is on, which is the default.
   //
-  // COVERAGE IS PARTIAL AND PER-SITE. Re-derive it, never quote a number for it:
+  // COVERAGE IS COMPLETE at function level, and Scripts/check-bridge-diagnostics.py is the gate
+  // that keeps it that way: #2077 swept every function-level catch block in all 74 bridge .mm
+  // files. The two exemptions are this channel's own internals (occtRecordCaughtException's
+  // classification ladder, which would recurse, and occtDiagnosticsLog's tail), both on the gate's
+  // exemption list with a written reason. Re-derive rather than quoting:
   //
-  //     grep -rc '^ *occtRecordCaughtException(__func__);' Sources/OCCTBridge/src
+  //     python3 Scripts/check-bridge-diagnostics.py
   //
-  // A capture that comes back empty therefore means "no instrumented site reported", NOT "nothing
-  // was caught".
+  // An empty capture therefore means the failure raised nothing to classify (IsDone() == false, a
+  // null result handle, a rejected argument), not that the site was never instrumented. A deeper
+  // catch block nested in a loop may also be deliberately silent, which it says in place.
   //
   // WHAT THIS CANNOT REPORT: an OS signal. OCC_CATCH_SIGNALS is inert in this build, because
   // OCC_CONVERT_SIGNALS is undefined, so a SIGSEGV/SIGBUS/SIGFPE raised inside OCCT never becomes
