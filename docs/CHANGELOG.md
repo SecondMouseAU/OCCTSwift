@@ -21,6 +21,62 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach sweep, fillet and chamfer (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused draft, sweep, loft, fillet or chamfer. 189 function-level `catch (...)` blocks in `OCCTBridge_Modeling_Sweep.mm`, `OCCTBridge_Modeling_Fillet.mm` and `OCCTBridge_Modeling_Chamfer.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so `Shape.draft(wire:direction:angle:length:)` returning `nil` on a zero direction now says `Standard_ConstructionError: gp_Dir() - input vector has zero norm` rather than nothing at all.
+
+Coverage is still partial while #2077's sweep runs, and a capture that comes back empty still means "no instrumented site reported" rather than "nothing was caught". Derive it from the source:
+
+```bash
+grep -rc occtRecordCaughtException Sources/OCCTBridge/src
+```
+
+Each file's one deeper `catch (...)`, the shared `occtSampleWirePoints` block, is deliberately left out with the reason in place: it recovers, so recording it would report a failure for a call that went on to succeed.
+
+### Guide and architecture snippets now compile (#2093)
+
+Eleven fenced examples in `docs/architecture/overview.md`, `docs/guides/occt-concepts.md`, and the `///` comments of `BRepGraph.swift`, `Exporter.swift`, `FeatureRecognition.swift`, `Mesh.swift` and `Selection.swift`, all of them using a failable factory's result without unwrapping it. The guide snippets are the longest in the docs and the optionals come in layers: `occt-concepts.md`'s rail example needed six, ending at `Shape`'s `-` operator, which returns `Shape?` and so cannot chain as `a - b - c`. Also corrected: `ShapeMeasurements.faceCentroids` is `[SIMD3<Double>?]` and `Edge.bounds` is `(min:max:)?`, which three comparison closures had been reading through as if they were not.
+
+### Drawing, vector-export and sheet-metal snippets now compile (#2093)
+
+Fourteen fenced examples on `Drawing.md`, `Export-Vector.md`, `SheetMetal.md` and in `Drawing.swift` doc comments. Seven said `PaperSize.A3` or `.A4`, whose real cases are `.a3` and `.a4`: that is a rename that reached `Sources/` before the #1103 merge and never reached the page, and it survived because the signature restatement at `Drawing.md:886` still declared the uppercase form, in the one fence population the snippet census skips by design. Also corrected: `writePDF`/`writeSVG` written with a trailing closure, which their `sheet:body:to:deflection:` order makes impossible; `DrawingScale.oneToTwo`, which is `.reduction(2)`; `DXFWriter.dxfString()`, which is `write(to:)`; and `DrawingDimension.Linear(value:)`, where `value` is a computed property rather than an init parameter.
+
+### Document reference snippets now compile (#2093)
+
+Thirty-eight fenced examples across the eleven `Document-*` reference pages and `Construction.md`. Nineteen were `PipeShellBuilder` examples whose only statement was `pipe.<member>(...)`: `pipe` is declared nowhere in those fences and also names a libc function, so every one resolved to `(UnsafeMutablePointer<Int32>?) -> Int32` and failed. Each now constructs its receiver. Also corrected: `Shape.edgeFromLine(from:to:)`, which is `edgeFromLine(origin:direction:p1:p2:)`; `Wire.asShape()`, which is `Shape.fromWire(_:)`; `Document()`, whose initializer is internal, so the factory is `Document.create()`; `Document.isValid`, which does not exist; `TrigRoots.solve(B:)`, whose `sin(x)` coefficient is `b:`; and `Curve3D.line`/`Surface.plane` scalar-component spellings that have never existed.
+
+### Curve3D and Curve2D reference snippets now compile (#2093)
+
+Thirty-seven fenced examples across `Curve2D-Analytic-Types.md`, `Curve2D-Constraint-Solvers.md`, `Curve3D-Analysis.md`, `Curve3D-Analytic-Types.md`, `CurveAdaptors.md`, `Geometry2D.md` and `Shape-Recognition.md`, and in `Curve2D.swift`, `Curve3D.swift` and `Continuity.swift` doc comments, named members and labels that have never existed. `Curve3D.line(origin:direction:)` is `line(through:direction:)`; `parabola(vertex:...)` is `parabola(center:...)`; `curveKind` is `curveType`, an `Int` where `1` is Circle, so the examples no longer claim to print `.circle`; `Curve2D.parameterRange` is `domain`, which is not optional, so the force-unwraps go too. `Curve2D.ellipse`, `hyperbola` and `parabola` all take a placement the examples omitted, and `Curve2D.bspline(points:)` had been resolving to the instance accessor of the same name.
+
+### Surface reference snippets now compile (#2093)
+
+Forty-four fenced examples on `Surface.md`, `Surface-Analysis.md`, `Surface-Analytic-Types.md` and `Surface-Advanced.md`, and in `Surface.swift` and `Shape+Surface.swift` doc comments, called `Surface` factories with argument lists that have never existed. An analytic surface is unbounded, so `Surface.cylinder(radius: 10, height: 50)` was never a call: the placement is `cylinder(origin:axis:radius:)`. Also corrected: `sphere(center:radius:)`, `cone(origin:axis:radius:semiAngle:)`, `torus(origin:axis:majorRadius:minorRadius:)`, `plane(origin:normal:)`, and `extrusion(profile:direction:)`, whose profile is a `Curve3D` rather than a `Wire`. `Surface.md`'s `continuityClass` example now uses a real B-spline patch and reports a measured `.cN` instead of a guessed `.c2`.
+
+### A misnamed carried patch is reported, not a crash (#2148)
+
+`check-inventory-prose.py` read the leading `NNNN` off every `.patch` in `Scripts/patches/`, so one file that was not `NNNN`-named raised `ValueError: invalid literal for int() with base 10: 'wasi'` and took all twenty-one of the gate's claims down with it. The odd file is now reported, with the directory a patch for another build target belongs in.
+
+### The doc-snippet census stops passing on a population it never examined (#2098, #2092)
+
+`census-doc-snippets.py` type-checked **24 of 3,105** snippets in CI while the step passed. The built
+module's path was guessed from a list of layouts SwiftPM no longer uses, and the guess missed on the
+one machine that matters. Two things were wrong: the module sits under `Modules/` in CI, and it is a
+plain file there rather than the directory bundle a local build produces. The path is now searched
+for rather than guessed, and `--require-typecheck` fails the step instead of reporting on a
+population it never examined. CI's self-test went from 27 cases to 56, so every compile case,
+including the canary cases that exist to catch a silent compiler, now runs where it counts.
+
+Separately, reference pages elide content the reader is expected to supply (`= ...`, `{ ... }`,
+`[...]`, `= // prose`), which does not parse and is not a documentation defect. Those 24 snippets
+were reported as failures; they are fragments. Reclassifying them left exactly one real finding the
+rule refused to excuse, a `Package.swift` manifest fragment fenced as `swift`, now exempt with a
+written reason. `unparseable` is zero.
+
+### Shape, Edge, Face and Wire reference snippets now compile (#2093)
+
+Forty-one fenced examples across `Shape-Features.md`, `Shape-Completions.md`, `Shape-Builders-1.md`, `Annotation.md`, `Edge.md`, `Face.md` and `Wire.md`, and in `Shape.swift`, `Shape+Topology.swift`, `MedialAxis.swift`, `Edge.swift`, `Wire.swift` and `WireOrder.swift` doc comments. `Shape.box(dx:dy:dz:)` is `box(width:height:depth:)`. `Wire.asShape`, `Face.shape` and `Edge.shape` never existed: the conversions are `Shape.fromWire(_:)`, `fromFace(_:)` and `fromEdge(_:)`. `Wire` has no `translated(by:)` at all, so the profile examples now place the circle at construction with `Wire.circle(origin:normal:radius:)`. `Shape.makeFace` and `Shape.makePolygon` are `Shape.face(from:)` with `Wire.polygon3D(_:closed:)`; `Edge.line(from:to:)` is `Wire.line(from:to:)!.edges()[0]`; `SurfaceContinuity` has no `.c0`; `Edge.adjacentFaces(in:)` returns an array, not a pair; and the `≈` operator one example used is defined nowhere in the package.
+
 ### The bridge header split gate validated its own view, not just its verdict (#2080)
 
 `Scripts/derive-bridge-header-split.py` stripped C comments in two passes, block comments first, so

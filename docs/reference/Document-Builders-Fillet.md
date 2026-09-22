@@ -1642,7 +1642,7 @@ public init?(wire: Wire, face: Shape, precision: Double = 1e-7)
 - **OCCT:** `ShapeAnalysis_Wire` (via `OCCTWireAnalyzerCreate`).
 - **Example:**
   ```swift
-  if let face = Shape.box(width: 10, height: 10, depth: 1)?.faces().first,
+  if let face = Shape.box(width: 10, height: 10, depth: 1)?.faces().first.flatMap(Shape.fromFace),
      let wire = Wire.rectangle(width: 5, height: 5),
      let analyzer = WireAnalyzer(wire: wire, face: face) {
       _ = analyzer.perform()

@@ -35,7 +35,7 @@ func occtDep(_ name: String, from version: String) -> Package.Dependency {
 }
 ```
 
-```swift
+```swift no-typecheck: a Package.swift manifest fragment, not a statement and not OCCTSwift API
 dependencies: [ occtDep("OCCTSwift", from: "1.7.1") ]
 ```
 

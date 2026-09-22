@@ -102,16 +102,20 @@ count toward the gate/census totals above, which are derived from `gate-scripts`
 
 It hands every snippet to `swiftc` rather than matching argument labels with a regex: #1675 holds
 two attempts at the regex and a record of how each reported a real API as missing, and a checker
-that does that is worse than no checker. Of 8,181 fences, 5,082 are signature restatements a
-bodiless `func` makes uncompilable anywhere, 3,096 are snippets, and of those **1,470 compile,
-1,415 are fragments opening mid-flow with a receiver the prose introduced, and 211 do not
+that does that is worse than no checker. Of 8,200 fences, 5,092 are signature restatements a
+bodiless `func` makes uncompilable anywhere, 3,105 are snippets, and of those **1,474 compile,
+1,444 are fragments opening mid-flow with a receiver the prose introduced, and 187 do not
 compile**. A snippet that is deliberately not compilable carries its exemption on the page, in the
 fence info string:
 
     ```swift no-typecheck: a listing of case spellings, not statements
 
-The reason after the colon is required. It stays a census while that 211 stands: promotion is
-`--strict` by default plus a rename to `check-`.
+The reason after the colon is required, and it is for a snippet that is uncompilable for a reason
+the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, `[...]` and
+`= // prose` are recognised as fragments (#2092), so they need no marker and should not carry one.
+It stays a census while that 187 stands: promotion is `--strict` by default plus a rename to
+`check-`. In CI both invocations take `--require-typecheck`, which fails the step rather than
+reporting on a population it never examined (#2098).
 
 ### Compile a Ground Truth C++ Test
 
