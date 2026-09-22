@@ -145,7 +145,7 @@ public struct Triangle: Sendable {
 /// ## Creating a Mesh
 ///
 /// ```swift
-/// let box = Shape.box(width: 10, height: 5, depth: 3)
+/// let box = Shape.box(width: 10, height: 5, depth: 3)!
 /// let mesh = box.mesh(linearDeflection: 0.1)
 /// ```
 ///
@@ -656,7 +656,7 @@ extension Mesh {
         /// ## Example
         ///
         /// ```swift
-        /// let box = Shape.box(width: 10, height: 5, depth: 3)
+        /// let box = Shape.box(width: 10, height: 5, depth: 3)!
         /// let mesh = box.mesh(linearDeflection: 0.1)
         /// let meshResource = try mesh.realityKitMeshResource()
         ///

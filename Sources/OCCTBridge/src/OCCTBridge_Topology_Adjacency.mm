@@ -195,6 +195,11 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          // Recorded even though this is not the outermost catch (#1161/#2077). The three inner
+          // catches in this switch neither rethrow nor recover: each converts the exception into
+          // a refusal that the function-level catch below will never see, so without a record
+          // here the reason a query came back empty is lost entirely.
+          occtRecordCaughtException(__func__);
           // Matches the pre-consolidation behavior of every surface-returning caller: a
           // throwing Surface() was caught by that caller's own single try/catch and
           // treated as "not found" (OCCTShapeFindSurfaceEx set *outFound = false in
@@ -210,6 +215,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.toleranceReached = -1.0;
         }
         break;
@@ -220,6 +226,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.existed = false;
         }
         break;
@@ -227,6 +234,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     result = OCCTFindSurfaceResult();
   }
   return result;
@@ -248,6 +256,7 @@ static OCCTSurfaceRef occtSurfaceRefOrNull(const OCCTFindSurfaceResult& result)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -368,6 +377,7 @@ static void occtComputeAxisExtent(const TopoDS_Shape& forShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     outMin       = 0.0;
     outMax       = 0.0;
     outHasExtent = false;
@@ -477,6 +487,7 @@ int32_t OCCTWireExplorerEdgeCount(OCCTWireRef wire)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -516,6 +527,7 @@ bool OCCTWireExplorerGetEdge(OCCTWireRef wire,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -542,6 +554,7 @@ int32_t OCCTWireExplorerGetEdgePointCount(OCCTWireRef wire, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -561,6 +574,7 @@ OCCTShapeRef OCCTShapeReplaceSubShape(OCCTShapeRef shape, OCCTShapeRef oldSub, O
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -580,6 +594,7 @@ OCCTShapeRef OCCTShapeRemoveSubShape(OCCTShapeRef shape, OCCTShapeRef subToRemov
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -597,6 +612,7 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -622,6 +638,7 @@ OCCTShapeRef OCCTShapeRemoveSubShapes(OCCTShapeRef shape, OCCTShapeRef* subShape
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -650,6 +667,7 @@ OCCTShapeRef OCCTShapeReplaceSubShapes(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -665,6 +683,7 @@ int32_t OCCTShapeGetSubShapeCount(OCCTShapeRef shape, int32_t type)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -689,6 +708,7 @@ int32_t OCCTShapeGetSubShapes(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -706,6 +726,7 @@ OCCTShapeRef OCCTShapeGetSubShapeByTypeIndex(OCCTShapeRef shape, int32_t type, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -730,6 +751,7 @@ int32_t OCCTEdgeFaceAdjacency(OCCTShapeRef shape, int32_t* adjacentFaceCounts)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -754,6 +776,7 @@ int32_t OCCTVertexEdgeAdjacency(OCCTShapeRef shape, int32_t* adjacentEdgeCounts)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -791,6 +814,7 @@ int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -825,6 +849,7 @@ int32_t OCCTVertexAdjacentEdges(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -860,6 +885,7 @@ int32_t OCCTWireExplorerOrientations(OCCTShapeRef wire, OCCTShapeRef face, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -906,6 +932,7 @@ int32_t OCCTWireExplorerVertices(OCCTShapeRef wire,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -930,6 +957,7 @@ void OCCTReShapeClear(OCCTReShapeRef rs)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -943,6 +971,7 @@ void OCCTReShapeRemove(OCCTReShapeRef rs, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -956,6 +985,7 @@ void OCCTReShapeReplace(OCCTReShapeRef rs, OCCTShapeRef oldShape, OCCTShapeRef n
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -969,6 +999,7 @@ bool OCCTReShapeIsRecorded(OCCTReShapeRef rs, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -986,6 +1017,7 @@ OCCTShapeRef OCCTReShapeApply(OCCTReShapeRef rs, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1003,6 +1035,7 @@ OCCTShapeRef OCCTReShapeValue(OCCTReShapeRef rs, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1037,6 +1070,7 @@ OCCTShapeRef OCCTShapeSubstitute(OCCTShapeRef  shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1055,6 +1089,7 @@ bool OCCTSubstitutionIsCopied(OCCTShapeRef shape, OCCTShapeRef subshape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1072,6 +1107,7 @@ OCCTShapeRef OCCTShapeLocated(OCCTShapeRef shape, const double* matrix12)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1097,6 +1133,7 @@ bool OCCTShapeTransformIsNegative(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1111,6 +1148,7 @@ void OCCTBRepToolsCleanTriangulation(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1124,6 +1162,7 @@ void OCCTBRepToolsRemoveInternals(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1140,6 +1179,7 @@ void OCCTBRepToolsDetectClosedness(OCCTShapeRef face, bool* isClosedU, bool* isC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isClosedU = false;
     *isClosedV = false;
   }
@@ -1169,6 +1209,7 @@ double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef edge, OCCTShapeRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1185,6 +1226,7 @@ int32_t OCCTBRepToolsMap3DEdgeCount(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1199,6 +1241,7 @@ void OCCTBRepToolsUpdateFaceUVPoints(OCCTShapeRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1212,6 +1255,7 @@ bool OCCTBRepToolsCompareVertices(OCCTShapeRef v1, OCCTShapeRef v2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1226,6 +1270,7 @@ bool OCCTBRepToolsCompareEdges(OCCTShapeRef e1, OCCTShapeRef e2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1240,6 +1285,7 @@ bool OCCTBRepToolsIsReallyClosed(OCCTShapeRef edge, OCCTShapeRef face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1254,6 +1300,7 @@ void OCCTBRepToolsUpdate(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1272,6 +1319,7 @@ OCCTShapeRef OCCTShapeMoved(OCCTShapeRef shape, double dx, double dy, double dz)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1297,6 +1345,7 @@ OCCTCurve2DRef OCCTBRepToolCurveOnPlane(OCCTShapeRef   edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1333,6 +1382,7 @@ int32_t OCCTBRepToolPolygon3D(OCCTShapeRef edge, double** outPoints)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1366,6 +1416,7 @@ int32_t OCCTBRepToolPolygonOnTriangulation(OCCTShapeRef edge, int32_t** outIndic
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

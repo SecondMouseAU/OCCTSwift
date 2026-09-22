@@ -23,7 +23,7 @@ import OCCTBridge
 /// ## STL Export
 ///
 /// ```swift
-/// let shape = Shape.box(width: 10, height: 5, depth: 3)
+/// let shape = Shape.box(width: 10, height: 5, depth: 3)!
 /// try Exporter.writeSTL(
 ///     shape: shape,
 ///     to: URL(fileURLWithPath: "box.stl"),
@@ -478,7 +478,7 @@ public enum Exporter {
     /// - Throws: `ExportError` if export fails
     ///
     /// ```swift
-    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
     /// try Exporter.writeBREP(shape: box, to: URL(fileURLWithPath: "/tmp/box.brep"))
     ///
     /// // Persist an in-progress reconstruction that has not been healed yet.
@@ -835,7 +835,7 @@ extension Shape {
     ///     (default: false). See ``Exporter/writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)``.
     ///
     /// ```swift
-    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
     /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
     /// ```
     /// - Throws: `Exporter.ExportError` if export fails

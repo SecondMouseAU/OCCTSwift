@@ -49,7 +49,7 @@ public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1) -> C
 - **OCCT:** `Poly_CoherentTriangulation`, `BRep_Tool::Triangulation`.
 - **Example:**
   ```swift
-  let box = Shape.box(dx: 10, dy: 10, dz: 10)!
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
   if let ct = CoherentTriangulation.createFromMesh(box) {
       print(ct.triangleCount)
   }
@@ -232,8 +232,8 @@ public static func evolved(spineFace: Shape, profileWire: Shape,
 - **OCCT:** `BRepFill_Evolved`.
 - **Example:**
   ```swift
-  let face = Shape.box(dx: 20, dy: 10, dz: 1)!
-  let profile = Wire.rectangle(width: 2, height: 2)!.asShape
+  let face = Shape.box(width: 20, height: 10, depth: 1)!
+  let profile = Shape.fromWire(Wire.rectangle(width: 2, height: 2)!)!
   if let evo = Shape.evolved(spineFace: face, profileWire: profile) {
       print(evo.isValid)
   }
@@ -333,8 +333,8 @@ public func distanceSS(to other: Shape, deflection: Double = 1e-7) -> DistanceSS
 - **OCCT:** `BRepExtrema_DistanceSS`.
 - **Example:**
   ```swift
-  let a = Shape.box(dx: 5, dy: 5, dz: 5)!
-  let b = Shape.box(dx: 5, dy: 5, dz: 5)!.translated(x: 10, y: 0, z: 0)!
+  let a = Shape.box(width: 5, height: 5, depth: 5)!
+  let b = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(10, 0, 0))!
   let r = a.distanceSS(to: b)
   if r.isDone { print(r.distance) }
   ```
@@ -391,7 +391,8 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
   near-zero-mass branch, so the field was removed rather than kept as a second silent zero.
 - **Example:**
   ```swift
-  let face = Shape.box(dx: 10, dy: 10, dz: 10)!.faces.first!
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let face = Shape.fromFace(box.faces()[0])!
   let gi = face.vinertGK()
   print(gi.mass, gi.center as Any)
   ```

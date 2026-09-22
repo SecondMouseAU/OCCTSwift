@@ -719,7 +719,7 @@ Meaningful only when the curve wraps a `Geom_Parabola`. Accessing members on a n
 - **OCCT:** `Geom_Parabola`, accessed via `Handle(Geom_Parabola)::DownCast`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let pp = curve.parabolaProperties
   }
   ```
@@ -740,7 +740,7 @@ Distance from the vertex to the focus. The directrix is the same distance on the
 - **OCCT:** `Geom_Parabola::Focal`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let f = curve.parabolaProperties.focal  // 3.0
   }
   ```
@@ -782,7 +782,7 @@ public var focus: SIMD3<Double> { get }
 - **OCCT:** `Geom_Parabola::Focus`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let fpt = curve.parabolaProperties.focus
   }
   ```
@@ -801,7 +801,7 @@ public var eccentricity: Double { get }
 - **OCCT:** `Geom_Parabola::Eccentricity`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let e = curve.parabolaProperties.eccentricity  // 1.0
   }
   ```
@@ -822,7 +822,7 @@ Half the length of the latus rectum; the perpendicular chord through the focus.
 - **OCCT:** `Geom_Parabola::Parameter`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let p = curve.parabolaProperties.parameter  // 6.0
   }
   ```
@@ -843,7 +843,7 @@ The directrix is a line perpendicular to the parabola's axis at distance `focal`
 - **OCCT:** `Geom_Parabola::Directrix` → `gp_Ax1::Location` + `gp_Ax1::Direction`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
       let d = curve.parabolaProperties.directrix
   }
   ```
@@ -866,7 +866,7 @@ Meaningful only when the curve wraps a `Geom_Line`. Accessing members on a non-l
 - **OCCT:** `Geom_Line`, accessed via `Handle(Geom_Line)::DownCast`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0)) {
+  if let curve = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
       let lp = curve.lineProperties
   }
   ```
@@ -885,7 +885,7 @@ public var direction: SIMD3<Double> { get }
 - **OCCT:** `Geom_Line::Lin().Direction()`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0)) {
+  if let curve = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
       let d = curve.lineProperties.direction  // SIMD3(1, 0, 0)
   }
   ```
@@ -904,7 +904,7 @@ public var location: SIMD3<Double> { get }
 - **OCCT:** `Geom_Line::Lin().Location()`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1)) {
+  if let curve = Curve3D.line(through: SIMD3(1, 2, 3), direction: SIMD3(0, 0, 1)) {
       let loc = curve.lineProperties.location  // SIMD3(1, 2, 3)
   }
   ```
@@ -925,7 +925,7 @@ public func setDirection(_ d: SIMD3<Double>) -> Bool
 - **OCCT:** `Geom_Line::SetDirection`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0)) {
+  if let curve = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
       curve.lineProperties.setDirection(SIMD3(0, 1, 0))
   }
   ```
@@ -946,7 +946,7 @@ public func setLocation(_ p: SIMD3<Double>) -> Bool
 - **OCCT:** `Geom_Line::SetLocation`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0)) {
+  if let curve = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
       curve.lineProperties.setLocation(SIMD3(5, 0, 0))
   }
   ```
@@ -967,7 +967,7 @@ Combines location and direction into a single call via the underlying `gp_Ax1`.
 - **OCCT:** `Geom_Line::Position` → `gp_Ax1::Location` + `gp_Ax1::Direction`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: SIMD3(1, 0, 0), direction: SIMD3(0, 1, 0)) {
+  if let curve = Curve3D.line(through: SIMD3(1, 0, 0), direction: SIMD3(0, 1, 0)) {
       let pos = curve.lineProperties.position
   }
   ```
@@ -988,7 +988,7 @@ Equivalent to `position` but reads the data via `Geom_Line::Lin()` rather than `
 - **OCCT:** `Geom_Line::Lin()` → `gp_Lin::Location` + `gp_Lin::Direction`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.line(origin: .zero, direction: SIMD3(0, 0, 1)) {
+  if let curve = Curve3D.line(through: .zero, direction: SIMD3(0, 0, 1)) {
       let l = curve.lineProperties.lin
   }
   ```

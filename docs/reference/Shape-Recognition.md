@@ -1035,7 +1035,7 @@ public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D?
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
   if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
-      print(analytical.curveKind)   // .circle
+      print(analytical.curveType)   // 1 (Circle)
   }
   ```
 
@@ -1080,7 +1080,7 @@ public func toAnalytical(tolerance: Double, first: Double, last: Double) -> Curv
 - **Example:**
   ```swift
   if let r = bsplineCurve.toAnalytical(tolerance: 1e-4, first: 0, last: 1) {
-      print(r.curve.curveKind, r.gap)
+      print(r.curve.curveType, r.gap)
   }
   ```
 

@@ -195,6 +195,11 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          // Recorded even though this is not the outermost catch (#1161/#2077). The three inner
+          // catches in this switch neither rethrow nor recover: each converts the exception into
+          // a refusal that the function-level catch below will never see, so without a record
+          // here the reason a query came back empty is lost entirely.
+          occtRecordCaughtException(__func__);
           // Matches the pre-consolidation behavior of every surface-returning caller: a
           // throwing Surface() was caught by that caller's own single try/catch and
           // treated as "not found" (OCCTShapeFindSurfaceEx set *outFound = false in
@@ -210,6 +215,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.toleranceReached = -1.0;
         }
         break;
@@ -220,6 +226,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
         }
         catch (...)
         {
+          occtRecordCaughtException(__func__);
           result.existed = false;
         }
         break;
@@ -227,6 +234,7 @@ static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     result = OCCTFindSurfaceResult();
   }
   return result;
@@ -248,6 +256,7 @@ static OCCTSurfaceRef occtSurfaceRefOrNull(const OCCTFindSurfaceResult& result)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -368,6 +377,7 @@ static void occtComputeAxisExtent(const TopoDS_Shape& forShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     outMin       = 0.0;
     outMax       = 0.0;
     outHasExtent = false;
@@ -494,6 +504,7 @@ int32_t OCCTShapeAllDistanceSolutions(OCCTShapeRef          shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -511,6 +522,7 @@ int32_t OCCTShapeIsInnerDistance(OCCTShapeRef shape1, OCCTShapeRef shape2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -570,6 +582,7 @@ bool OCCTShapeDistanceSolutionDetail(OCCTShapeRef                shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -599,6 +612,7 @@ OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -659,6 +673,7 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -710,6 +725,7 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCCEdges(OCCTShapeRef edge1, OCCTShap
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -748,6 +764,7 @@ OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double       px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -790,6 +807,7 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -867,7 +885,9 @@ OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double       px,
     }
     catch (...)
     {
-      // A count we could not take is zero feet reported, not a failed distance.
+      // A count we could not take is zero feet reported, not a failed distance. Deliberately NOT
+      // calling occtRecordCaughtException here (#1161): this one recovers, the distance above it
+      // still stands and the call goes on to return a valid result.
     }
 
     result.isValid = true;
@@ -875,6 +895,7 @@ OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double       px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -938,6 +959,7 @@ OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -967,6 +989,7 @@ OCCTPolyDistanceResult OCCTShapePolyhedralDistance(OCCTShapeRef shape1, OCCTShap
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1009,6 +1032,7 @@ int32_t OCCTIntersectLineFace(OCCTShapeRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1055,6 +1079,7 @@ bool OCCTIntCurvesFaceShapeIntersect(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1090,6 +1115,7 @@ bool OCCTIntCurvesFaceShapeIntersectNearest(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1122,6 +1148,7 @@ void OCCTTopTransSurfaceTransition(double  tgtX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outStateBefore = 3; // UNKNOWN
     *outStateAfter  = 3;
   }
@@ -1180,6 +1207,7 @@ void OCCTTopTransSurfaceTransitionCurvature(double  tgtX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outStateBefore = 3;
     *outStateAfter  = 3;
   }
@@ -1216,6 +1244,7 @@ void OCCTTopTransCurveTransition(double   tgtX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outStateBefore = 3;
     *outStateAfter  = 3;
   }
@@ -1256,6 +1285,7 @@ void OCCTTopTransCurveTransitionWithCurvature(double   tgtX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outStateBefore = 3;
     *outStateAfter  = 3;
   }
@@ -1315,6 +1345,7 @@ OCCTEdgeFaceTransitionResult OCCTTopCnxEdgeFaceTransition(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1339,6 +1370,7 @@ OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateLine(OCCTShapeRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1358,6 +1390,7 @@ OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateCurve(OCCTShapeRef
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1375,6 +1408,7 @@ bool OCCTCurveSurfaceInterMore(OCCTCurveSurfaceInterRef _Nonnull inter)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1387,6 +1421,7 @@ void OCCTCurveSurfaceInterNext(OCCTCurveSurfaceInterRef _Nonnull inter)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1405,6 +1440,7 @@ OCCTCurveSurfaceHit OCCTCurveSurfaceInterHit(OCCTCurveSurfaceInterRef _Nonnull i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return hit;
 }
@@ -1422,6 +1458,7 @@ OCCTFaceRef _Nullable OCCTCurveSurfaceInterFace(OCCTCurveSurfaceInterRef _Nonnul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1448,6 +1485,7 @@ int32_t OCCTCurveSurfaceInterAllHits(OCCTCurveSurfaceInterRef _Nonnull inter,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return count;
 }
@@ -1487,6 +1525,7 @@ OCCTDistanceSSResult OCCTBRepExtremaDistanceSS(OCCTShapeRef _Nonnull shape1Ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1535,6 +1574,7 @@ int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1553,6 +1593,7 @@ OCCTDistSSRef OCCTDistSSCreate(OCCTShapeRef s1, OCCTShapeRef s2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1579,6 +1620,7 @@ double OCCTDistSSValue(OCCTDistSSRef dist)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1593,6 +1635,7 @@ int32_t OCCTDistSSNbSolution(OCCTDistSSRef dist)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1613,6 +1656,7 @@ void OCCTDistSSPointOnShape1(OCCTDistSSRef dist, int32_t index, double* x, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -1633,6 +1677,7 @@ void OCCTDistSSPointOnShape2(OCCTDistSSRef dist, int32_t index, double* x, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -1658,6 +1703,7 @@ int32_t OCCTDistSSSupportType1(OCCTDistSSRef dist, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1683,6 +1729,7 @@ int32_t OCCTDistSSSupportType2(OCCTDistSSRef dist, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1702,6 +1749,7 @@ OCCTShapeRef OCCTDistSSSupportShape1(OCCTDistSSRef dist, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1721,6 +1769,7 @@ OCCTShapeRef OCCTDistSSSupportShape2(OCCTDistSSRef dist, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

@@ -265,6 +265,7 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -354,6 +355,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -441,6 +443,7 @@ static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -494,6 +497,7 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -549,6 +553,11 @@ struct OCCTBSplineApproxInterp
     }
     catch (...)
     {
+      // Recorded even though this is not the outermost catch (#1161/#2077). This one neither
+      // rethrows nor recovers: it converts the exception into `done = false`, which every caller
+      // reports as a refused fit, and no function-level catch ever sees it. __func__ would read
+      // just "run" here, so the context is spelled out.
+      occtRecordCaughtException("OCCTBSplineApproxInterp::run");
       done = false;
       result.Nullify();
       maxErr = -1.0;
@@ -672,6 +681,7 @@ double OCCTCurve3DMinDistanceToCurve(OCCTCurve3DRef c1, OCCTCurve3DRef c2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -721,6 +731,7 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef    c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -784,6 +795,7 @@ int32_t OCCTExtremaElCLinLin(double               l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -845,6 +857,7 @@ int32_t OCCTExtremaElCLinCirc(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -906,6 +919,7 @@ int32_t OCCTExtremaElCCircCirc(double               c1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -975,6 +989,7 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1038,6 +1053,7 @@ int32_t OCCTExtremaElCSLinPlane(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1082,6 +1098,7 @@ int32_t OCCTExtremaElCSLinSphere(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1135,6 +1152,7 @@ int32_t OCCTExtremaElCSLinCylinder(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1183,6 +1201,7 @@ int32_t OCCTExtremaExtPElCLin(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1226,6 +1245,7 @@ int32_t OCCTExtremaExtPElCCirc(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1279,6 +1299,7 @@ int32_t OCCTExtremaExtPElCElips(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1329,6 +1350,7 @@ int32_t OCCTExtremaExtPElCParab(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }

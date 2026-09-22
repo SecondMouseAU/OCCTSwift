@@ -38,7 +38,7 @@ extension Shape {
     /// Cast a ray against the shape and find all intersections.
     ///
     /// ```swift
-    /// let box = Shape.box(width: 10, height: 10, depth: 10)
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// for hit in box.raycast(origin: SIMD3(0, 0, 20), direction: SIMD3(0, 0, -1)) {
     ///     print("\(hit.distance) away, normal \(hit.normalDefined ? "\(hit.normal)" : "undefined")")
     /// }

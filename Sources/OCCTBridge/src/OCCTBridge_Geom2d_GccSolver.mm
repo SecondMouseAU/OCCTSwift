@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -587,6 +592,7 @@ int32_t OCCTGccCircle2d3Tan(OCCTCurve2DRef         c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -628,6 +634,7 @@ int32_t OCCTGccCircle2d2TanPt(OCCTCurve2DRef         c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -664,6 +671,7 @@ int32_t OCCTGccCircle2dTanCen(OCCTCurve2DRef         curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -705,6 +713,7 @@ int32_t OCCTGccCircle2d2TanRad(OCCTCurve2DRef         c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -744,6 +753,7 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef         curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -783,6 +793,7 @@ int32_t OCCTGccLine2d2Tan(OCCTCurve2DRef       c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -820,6 +831,7 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef       curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -848,6 +860,7 @@ bool OCCTGccAnaPnt2dBisec(double  p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -885,6 +898,7 @@ int32_t OCCTGccAnaLin2dBisec(double               l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -910,6 +924,7 @@ bool OCCTGccAnaLinPnt2dBisec(double             lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -943,6 +958,7 @@ int32_t OCCTGccAnaCirc2dBisec(double             c1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -977,6 +993,7 @@ int32_t OCCTGccAnaCircLin2dBisec(double             cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1008,6 +1025,7 @@ int32_t OCCTGccAnaCircPnt2dBisec(double             cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1043,6 +1061,7 @@ int32_t OCCTGccAnaLin2dTanParPt(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1085,6 +1104,7 @@ int32_t OCCTGccAnaLin2dTanParCirc(double               cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1120,6 +1140,7 @@ int32_t OCCTGccAnaLin2dTanPerPtLin(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1162,6 +1183,7 @@ int32_t OCCTGccAnaLin2dTanPerCircLin(double               cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1198,6 +1220,7 @@ int32_t OCCTGccAnaLin2dTanOblPt(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1240,6 +1263,7 @@ int32_t OCCTGeom2dGccLin2dTanObl(OCCTCurve2DRef       curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1288,6 +1312,7 @@ int32_t OCCTGccAnaCirc2d2TanOnLinLin(double                 l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1332,6 +1357,7 @@ int32_t OCCTGccAnaCirc2dTanOnRadLin(double                 lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1376,6 +1402,7 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef         c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1415,6 +1442,7 @@ int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef         curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1438,6 +1466,7 @@ int32_t OCCTGccAnaCirc2d3TanPoints(double                p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1473,6 +1502,7 @@ int32_t OCCTGccAnaCirc2d3TanLines(double                l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1507,6 +1537,7 @@ int32_t OCCTGccAnaCirc2d3TanCircles(double                c1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1539,6 +1570,7 @@ int32_t OCCTGccAnaCirc2d2CirclesPoint(double                c1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1569,6 +1601,7 @@ int32_t OCCTGccAnaCirc2dCircle2Points(double                cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1601,6 +1634,7 @@ int32_t OCCTGccAnaCirc2d2LinesPoint(double                l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1646,6 +1680,7 @@ int OCCTGccAnaCirc2d2TanRadLineLin(double l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1683,6 +1718,7 @@ int OCCTGccAnaCirc2d2TanRadPntPnt(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1716,6 +1752,7 @@ int OCCTGccAnaCirc2dTanCenPntPnt(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1752,6 +1789,7 @@ int OCCTGccAnaCirc2dTanCenLinPnt(double lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1787,6 +1825,7 @@ int OCCTGccAnaLin2d2TanPntPnt(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1827,6 +1866,7 @@ int OCCTGccAnaLin2d2TanCircPnt(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
