@@ -1,0 +1,40 @@
+Recorded 2026-09-22 on macOS 27.0 / arm64, against issue #2169.
+Swift toolchain: Apple Swift version 6.4 (swift-6.4-RELEASE)
+Runtime: wasmkit 0.3.1
+
+$ Scripts/install-wasm-toolchain.sh
+========================================
+Pinned wasm toolchain
+========================================
+  Swift toolchain : 6.4.0-RELEASE (swift.org)
+  Swift SDK       : swift-6.4.0-RELEASE_wasm
+  Target triple   : wasm32-unknown-wasip1
+  wasi-sdk        : 34.0 -> /Users/elb/Projects/worktrees/OCCTSwift-wasm-2169/Libraries/wasi-sdk-34.0-arm64-macos
+  Runtime         : wasmkit (shipped inside the Swift toolchain)
+
+>>> Swift toolchain: /Library/Developer/Toolchains/swift-6.4.0-RELEASE.xctoolchain/usr/bin
+>>> Swift SDK swift-6.4.0-RELEASE_wasm already installed
+>>> Downloading wasi-sdk-34.0-arm64-macos.tar.gz...
+    checksum verified: 9c59398106b417f8f14913380fdf0097a8cc0ff4af9eb3ce0065a859e88d49e9
+    unpacked to /Users/elb/Projects/worktrees/OCCTSwift-wasm-2169/Libraries/wasi-sdk-34.0-arm64-macos
+
+>>> Building the verification package for wasm32-unknown-wasip1...
+Building for debugging...
+[Constructing description]
+[Planning deferred tasks]
+[22 / 26] wasmprobe-product
+[23 / 26] WasmProbeCxx
+[24 / 26] wasmprobe-product
+[25 / 27] wasmprobe-product
+[27 / 27] wasmprobe-product
+/Users/elb/Projects/worktrees/OCCTSwift-wasm-2169/Scripts/repro/2169/standalone/Package.swift: wasmprobe-product: clang: warning: argument unused during compilation: '-rdynamic' [-Wunused-command-line-argument]
+Build complete! (5.01 sec.)
+
+>>> Running /Users/elb/Projects/worktrees/OCCTSwift-wasm-2169/Scripts/repro/2169/standalone/.build/out/Products/Debug-webassembly-wasm32/wasmprobe.wasm under wasmkit...
+libc++ compute path: 6.75
+C++ throw/catch path: -26.0
+hello from wasm32-unknown-wasip1
+
+========================================
+Toolchain verified: a wasm module built and ran.
+========================================
