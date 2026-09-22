@@ -23,34 +23,50 @@ body that the patch on disk had stopped containing. Read
 
 The Swift wasip1 SDK ships a libc++ configured with `_LIBCPP_HAS_THREADS 0`. Measured against that
 SDK's sysroot by syntax-only compile, in
-[#2170](https://github.com/SecondMouseAU/OCCTSwift/issues/2170), exactly six names are gone and the
-rest of the surface OCCT uses survives:
+[#2170](https://github.com/SecondMouseAU/OCCTSwift/issues/2170), eight names are gone and the rest
+of the surface OCCT uses survives:
 
 | Missing | Still present |
 |---|---|
 | `std::mutex` | `std::lock_guard` |
 | `std::recursive_mutex` | `std::unique_lock` |
-| `std::shared_mutex` | `std::once_flag` |
-| `std::shared_lock` | `std::defer_lock` |
-| `std::condition_variable` | `std::atomic`, `std::atomic_flag` |
+| `std::shared_mutex` | `std::once_flag`, `std::call_once` |
+| `std::shared_lock` | `std::defer_lock`, `std::try_to_lock`, `std::adopt_lock` |
+| `std::condition_variable`, `std::cv_status` | `std::atomic`, `std::atomic_flag` |
 | `std::this_thread::yield` | |
+| `std::lock` | |
 
-**One force-included shim header supplies those six names, and no OCCT source is patched for this
-class at all.** The shim is wired into the WASI build's `CMAKE_CXX_FLAGS` as `-include` and is
-tracked in #2170. A patch in `Scripts/patches-wasi/` that touches any of the six names is wrong by
-construction, whether or not it compiles.
+Six of those eight are the ones #2170 measured by probe. `std::cv_status` and `std::lock` were
+found by compiling the real files, and neither is reachable by grepping for the other six:
+`cv_status` is `condition_variable`'s return type and nothing names it directly, and `std::lock`
+is called on two deferred `unique_lock`s in `BRepGraph_CacheRegistry.cxx:47` and
+`BRepGraph_LayerRegistry.cxx:54`, statements that name none of the six.
+
+**One force-included shim header supplies all eight, and no OCCT source is patched for this class
+at all.** It is [`Scripts/wasm-shims/wasi-std-threading.hpp`](../Scripts/wasm-shims/wasi-std-threading.hpp),
+wired into the WASI build's `CMAKE_CXX_FLAGS` as `-include`. A patch in `Scripts/patches-wasi/`
+that touches any of those names is wrong by construction, whether or not it compiles.
+
+The shim adds to namespace `std`, which is formally undefined behaviour, and it says so in its own
+header comment. What makes it defensible is that it targets one pinned libc++ and checks that
+libc++'s configuration rather than assuming it: a `static_assert` fails if `_LIBCPP_HAS_THREADS` is
+ever non-zero, the definitions sit inside `#if !_LIBCPP_HAS_THREADS` so they vanish rather than
+collide, and `Scripts/build-occt-wasm.sh` runs a preflight compile before CMake starts so the
+mismatch is one legible error instead of "the C++ compiler is not able to compile a simple test
+program".
 
 ### Why a shim rather than patches
 
 Two reasons, and the second is the expensive one.
 
-**Patching per site does not terminate.** 76 files across the four modules this build compiles
-(`FoundationClasses`, `ModelingData`, `ModelingAlgorithms`, `DataExchange`) use the missing names.
-Fifteen of those 76 are files our own carried patches already modify, because nine carried patches
-inject `std::mutex` or `std::recursive_mutex` as thread-safety fixes (#341, #344, #349, #353, #374,
-#1153, #1154, #1157, #1403). `Standard_Mutex.hxx` is deprecated in 8.0.0 in favour of `std::mutex`,
-and upstream's mutable-static-elimination series keeps converting more internals to it, so the
-surface grows at every kernel bump.
+**Patching per site does not terminate.** 75 files across the four modules this build compiles
+(`FoundationClasses`, `ModelingData`, `ModelingAlgorithms`, `DataExchange`) use the missing names,
+excluding `GTests/`, which this build does not compile; 76 if `GTests/` is counted, which is where
+#2170's own figure came from. Fifteen of the 75 are files our own carried patches already modify,
+because nine carried patches inject `std::mutex` or `std::recursive_mutex` as thread-safety fixes
+(#341, #344, #349, #353, #374, #1153, #1154, #1157, #1403). `Standard_Mutex.hxx` is deprecated in
+8.0.0 in favour of `std::mutex`, and upstream's mutable-static-elimination series keeps converting
+more internals to it, so the surface grows at every kernel bump.
 
 **The substitute that was tried is unsound.** Closed PR #2076 replaced the missing types with
 hand-written spinlocks in `OSD/OSD_Environment.cxx`, `Plugin/Plugin.cxx`, `Units/Units.cxx`,
@@ -63,9 +79,39 @@ sites, where a reader lock taken twice is ordinary and expected. Substituting a 
 primitive for a recursive one is not a WASI problem; it converts a working lock into a hang on any
 platform that takes that branch.
 
+That failure compiles. `Scripts/repro/2170/run.sh` rebuilt it deliberately, against the shim's own
+probe, and the module built clean and then hung at the second acquisition until it was killed,
+which is why the probe is linked and run rather than only type-checked.
+
 The shim keeps the types and drops the enforcement, which is sound here for the reason
 `docs/wasm-feasibility.md` already gives: the bridge serialises every OCCT call through one
-`std::recursive_mutex`, TBB is off, and the runtime is single-threaded.
+`std::recursive_mutex`, TBB is off, and the runtime is single-threaded. Every `lock()` returns at
+once and every `try_lock()` returns true, so re-entrancy is safe by construction rather than by
+bookkeeping.
+
+### Which sysroot, and why the shim can be wrong for a build
+
+Whether the eight names are missing is a property of the sysroot, and the two in play disagree.
+wasi-sdk 34.0's own `wasm32-wasip1` sysroot sets `_LIBCPP_HAS_THREADS 1` in both its `eh` and
+`noeh` `__config_site` and supplies all eight itself; the Swift SDK's `WASI.sdk` sets it to 0.
+`Scripts/build-occt-wasm.sh` resolves `swift-wasi-sdk.cmake` first and falls back to
+`wasi-sdk-p1.cmake`, and no `swift-wasi-sdk.cmake` exists in either the wasi-sdk install or the
+Swift SDK artifact bundle, so the fallback is what runs today and it selects wasi-sdk's compiler
+and default sysroot.
+
+Which sysroot the kernel should be built against is
+[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)'s, and it reaches past this shim:
+the Swift side links the Swift SDK's threadless libc++, so a kernel built against a libc++ with
+threads meets it across the ABI. What #2170 adds is that the mismatch cannot pass unnoticed, and
+that the answer to the preflight's error is never "drop the shim" by reflex. The preflight names
+both causes and their opposite fixes.
+
+### Rejected: shadowing `__config_site` with `-I`
+
+libc++'s sanctioned extension point for a platform with no threads is
+`_LIBCPP_HAS_THREAD_API_EXTERNAL`, set in `__config_site`. It is not reachable from here. The
+sysroot's `include/c++/v1` is searched ahead of any user `-I`, so taking that route would mean
+editing the installed SDK, which is out of scope. Measured in #2170.
 
 ## What is patched today
 

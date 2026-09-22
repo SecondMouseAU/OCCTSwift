@@ -151,6 +151,30 @@ apply_patch_dir "$SCRIPT_DIR/patches-wasi" "WASI-only OCCT patches"
 rm -rf occt-install-wasm occt-build-wasm
 
 # --------------------
+# The std threading shim (#2170)
+# --------------------
+# The pinned SDK's libc++ is built with _LIBCPP_HAS_THREADS 0, which removes std::mutex,
+# std::recursive_mutex, std::shared_mutex, std::shared_lock, std::condition_variable,
+# std::this_thread::yield, std::cv_status and std::lock. 75 files across the four modules this
+# script builds use them, fifteen of them files Scripts/patches/ already modifies.
+#
+# One -include supplies all of it, and NO OCCT source is patched for this class. A patch in
+# Scripts/patches-wasi/ that touches any of those names is wrong by construction; edit the shim.
+# The reasoning, the measurement and what the previous attempt cost are in
+# docs/WASI_GUARD_SITES.md.
+#
+# It is force-included rather than reached through libc++'s own _LIBCPP_HAS_THREAD_API_EXTERNAL
+# extension point because that one needs __config_site edited, and the sysroot's include/c++/v1 is
+# searched ahead of any -I we could pass, so it cannot be shadowed from here.
+WASI_THREADING_SHIM="$SCRIPT_DIR/wasm-shims/wasi-std-threading.hpp"
+if [ ! -f "$WASI_THREADING_SHIM" ]; then
+    echo "ERROR: the std threading shim is missing at '$WASI_THREADING_SHIM'." >&2
+    echo "       Without it the build fails at the first std::mutex it meets, in one of 75 files." >&2
+    echo "       See docs/WASI_GUARD_SITES.md; do not answer this by writing a patch." >&2
+    exit 1
+fi
+
+# --------------------
 # Common CMake options (minimal build for modeling + export)
 # Same as build-occt.sh but for WASI
 # --------------------
@@ -185,6 +209,9 @@ CMAKE_COMMON_OPTS=(
     -DINSTALL_TEST_CASES=OFF
     -DINSTALL_DOC_Overview=OFF
     -DCMAKE_CXX_STANDARD=17
+    # Quoted inside the flag value so a checkout path containing a space still reaches the
+    # compiler as one argument. CMake inserts this string into the build command verbatim.
+    "-DCMAKE_CXX_FLAGS=-include \"$WASI_THREADING_SHIM\""
 )
 
 # --------------------
@@ -216,6 +243,78 @@ if [ ! -f "$WASI_TOOLCHAIN" ]; then
         echo "  $WASI_SDK_PREFIX/share/cmake/wasi-sdk-p1.cmake" >&2
         exit 1
     fi
+fi
+
+# --------------------
+# Preflight: does the threading shim match the libc++ this toolchain selects? (#2170)
+# --------------------
+# The shim asserts _LIBCPP_HAS_THREADS == 0 and adds names to namespace std, so it is only
+# defensible against a libc++ that really is missing them. That is a property of the SYSROOT, and
+# the two sysroots in play disagree:
+#
+#   * the Swift SDK's WASI.sdk sets _LIBCPP_HAS_THREADS 0, which is what #2170 measured and what
+#     the shim exists for;
+#   * wasi-sdk 34.0's own wasm32-wasip1 sysroot sets it to 1, in both the eh and noeh flavours,
+#     and supplies all six names itself.
+#
+# Which one this build uses is decided by the toolchain file above and is #2172's open question.
+# Without this check the mismatch surfaces as CMake's "the C++ compiler is not able to compile a
+# simple test program", with the shim's own explanation buried in CMakeError.log.
+# Read the compiler, triple and sysroot straight out of the toolchain file CMake is about to use,
+# so the preflight asks the same libc++ the build will.
+toolchain_setting() {
+    local value
+    value="$(sed -n "s/^[[:space:]]*set($1[[:space:]]\{1,\}\([^)]*\))[[:space:]]*\$/\1/p" "$WASI_TOOLCHAIN" | head -1)"
+    value="${value%\"}"
+    value="${value#\"}"
+    value="${value//\$\{WASI_SDK_PREFIX\}/$WASI_SDK_PREFIX}"
+    value="${value//\$\{WASI_HOST_EXE_SUFFIX\}/}"
+    printf '%s' "$value"
+}
+
+PREFLIGHT_CXX=""
+PREFLIGHT_TRIPLE=""
+PREFLIGHT_SYSROOT=""
+if [ -f "$WASI_TOOLCHAIN" ]; then
+    PREFLIGHT_CXX="$(toolchain_setting CMAKE_CXX_COMPILER)"
+    PREFLIGHT_TRIPLE="$(toolchain_setting triple)"
+    PREFLIGHT_SYSROOT="$(toolchain_setting CMAKE_SYSROOT)"
+fi
+if [ -n "$PREFLIGHT_CXX" ] && [ -x "$PREFLIGHT_CXX" ]; then
+    PREFLIGHT_SRC="$(mktemp -t occt-wasm-shim-preflight).cpp"
+    printf '#include <version>\nint main() { return 0; }\n' > "$PREFLIGHT_SRC"
+    PREFLIGHT_TARGET_OPT=()
+    [ -n "$PREFLIGHT_TRIPLE" ] && PREFLIGHT_TARGET_OPT+=(--target="$PREFLIGHT_TRIPLE")
+    [ -n "$PREFLIGHT_SYSROOT" ] && PREFLIGHT_TARGET_OPT+=(--sysroot="$PREFLIGHT_SYSROOT")
+    if ! PREFLIGHT_OUT="$("$PREFLIGHT_CXX" "${PREFLIGHT_TARGET_OPT[@]}" -std=c++17 -fsyntax-only \
+            -include "$WASI_THREADING_SHIM" "$PREFLIGHT_SRC" 2>&1)"; then
+        rm -f "$PREFLIGHT_SRC"
+        echo "ERROR: the std threading shim does not apply to the libc++ this toolchain selects." >&2
+        echo "" >&2
+        echo "  toolchain file: $WASI_TOOLCHAIN" >&2
+        echo "  compiler:       $PREFLIGHT_CXX" >&2
+        echo "" >&2
+        printf '%s\n' "$PREFLIGHT_OUT" >&2
+        echo "" >&2
+        echo "       Two causes, and they want opposite fixes." >&2
+        echo "" >&2
+        echo "       1. This sysroot's libc++ HAS threads, so the six names are already there and" >&2
+        echo "          the shim is not merely unnecessary, it is a redefinition. wasi-sdk's own" >&2
+        echo "          wasm32-wasip1 sysroot is in this category. Building OCCT against it while" >&2
+        echo "          the Swift side links the Swift SDK's threadless libc++ is the mismatch" >&2
+        echo "          #2172 exists to settle; do not paper over it by dropping the shim." >&2
+        echo "" >&2
+        echo "       2. The pinned Swift SDK itself gained threads. Then the shim has served its" >&2
+        echo "          purpose: remove this preflight and the -include, and delete" >&2
+        echo "          Scripts/wasm-shims/ and Scripts/repro/2170/." >&2
+        exit 1
+    fi
+    rm -f "$PREFLIGHT_SRC"
+    echo ">>> Threading shim preflight passed: $(basename "$WASI_THREADING_SHIM")"
+else
+    echo ">>> Threading shim preflight skipped: no CMAKE_CXX_COMPILER found in $WASI_TOOLCHAIN." >&2
+    echo "    CMake will still apply the shim, and a mismatch will surface as a failed compiler" >&2
+    echo "    check with the detail in CMakeError.log." >&2
 fi
 
 cmake ../occt-src \
