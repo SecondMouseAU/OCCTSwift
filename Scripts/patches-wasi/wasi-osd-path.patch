@@ -1,0 +1,28 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
+index a39c0c84..792070c6 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Path.cxx
+@@ -40,6 +40,14 @@ static OSD_SysType whereAmI()
+   return OSD_LinuxREDHAT;
+ #elif defined(_AIX) || defined(AIX)
+   return OSD_Aix;
++#else
++#ifdef __wasi__
++  // WASI doesn't have utsname/uname
++  return OSD_Default;
++#else
++#ifdef __wasi__
++  // WASI doesn't have utsname/uname
++  return OSD_Default;
+ #else
+   struct utsname info;
+   uname(&info);
+@@ -50,6 +58,8 @@ static OSD_SysType whereAmI()
+   std::cout << info.machine << std::endl;
+   return OSD_Default;
+ #endif
++#endif
++#endif
+ }
+ 
+ #if !(defined(_WIN32) || defined(__WIN32__))

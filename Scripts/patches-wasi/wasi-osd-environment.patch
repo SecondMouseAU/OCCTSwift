@@ -1,0 +1,30 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Environment.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Environment.cxx
+index 4fc62983..15bd93fe 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Environment.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Environment.cxx
+@@ -134,8 +134,14 @@ void OSD_Environment::Build()
+   static int    Ibuffer = 0;       // Tout ca pour putenv,getenv
+ 
+   // Use mutex to avoid concurrent access to the buffer
++#ifdef __wasi__
++  // WASI noeh libc++ doesn't have std::mutex; use a simple spinlock
++  static std::atomic_flag aSpinlock = ATOMIC_FLAG_INIT;
++  while (aSpinlock.test_and_set(std::memory_order_acquire)) {}
++#else
+   static std::mutex           aMutex;
+   std::lock_guard<std::mutex> aLock(aMutex);
++#endif
+ 
+   // check if such variable has already been created in the buffer
+   int index = -1, len = myName.Length();
+@@ -179,6 +185,10 @@ void OSD_Environment::Build()
+   // then (and only then!) free old entry, if existed
+   free(old_value);
+ 
++#ifdef __wasi__
++  aSpinlock.clear(std::memory_order_release);
++#endif
++
+   // check the result
+   char* result = getenv(myName.ToCString());
+   if (result == nullptr)

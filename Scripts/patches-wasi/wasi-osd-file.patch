@@ -1,0 +1,53 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_File.cxx b/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
+index 19983384..15409f44 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_File.cxx
+@@ -1383,6 +1383,14 @@ void OSD_File::SetLock(const OSD_LockType theLock)
+     myLock = theLock;
+   }
+ #elif defined(SYSV)
++#ifdef __wasi__
++  // WASI doesn't have fcntl file locking; use simple busy-wait with spinlock
++  static thread_local std::atomic_flag fileLock = ATOMIC_FLAG_INIT;
++  while (fileLock.test_and_set(std::memory_order_acquire)) {
++    // busy wait
++  }
++  const int aStatus = 0;
++#else
+   struct flock aLockKey;
+   aLockKey.l_whence = 0;
+   aLockKey.l_start  = 0;
+@@ -1402,6 +1410,7 @@ void OSD_File::SetLock(const OSD_LockType theLock)
+   }
+ 
+   const int aStatus = fcntl(myFileChannel, F_SETLKW, &aLockKey);
++#endif
+   if (aStatus == -1)
+   {
+     myError.SetValue(errno, Iam, "SetLock");
+@@ -1420,6 +1429,7 @@ void OSD_File::SetLock(const OSD_LockType theLock)
+     chmod(aFilePath.ToCString(), aStatBuf.st_mode | S_ISGID);
+     ImperativeFlag = true;
+   }
++#endif
+ #else /* BSD */
+   int aLock = 0;
+   switch (theLock)
+@@ -1507,7 +1517,17 @@ void OSD_File::UnLock()
+ 
+   struct flock aLockKey;
+   aLockKey.l_type   = F_UNLCK;
++  aLockKey.l_whence = 0;
++  aLockKey.l_start  = 0;
++  aLockKey.l_len    = 0;
++#ifdef __wasi__
++  // WASI doesn't have fcntl file locking
++  static thread_local std::atomic_flag fileLock = ATOMIC_FLAG_INIT;
++  fileLock.clear(std::memory_order_release);
++  const int aStatus = 0;
++#else
+   const int aStatus = fcntl(myFileChannel, F_SETLK, &aLockKey);
++#endif
+   if (aStatus == -1)
+   {
+     myError.SetValue(errno, Iam, "UnSetLock");

@@ -1,6 +1,8 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx
+index 5dd52195..c2426330 100644
 --- a/src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx
 +++ b/src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx
-@@ -107,7 +107,11 @@
+@@ -107,7 +107,11 @@ void OSD_Directory::Build(const OSD_Protection& theProtect)
    TCollection_AsciiString aBuffer;
    mode_t                  anInternalProt = (mode_t)theProtect.Internal();
    myPath.SystemName(aBuffer);
@@ -12,20 +14,26 @@
    int aStatus = mkdir(aBuffer.ToCString(), anInternalProt);
    if (aStatus == -1 && errno == ENOENT)
    {
-@@ -151,8 +155,16 @@
-   return aDir;
+@@ -152,6 +156,16 @@ OSD_Directory OSD_Directory::BuildTemporary()
  #else
    // create a temporary directory with 0700 permissions
-+#ifdef __wasi__
-+  // WASI doesn't have mkdtemp, use a simple random name
-+  static int counter = 0;
-+  char aTmpName[64];
-+  snprintf(aTmpName, sizeof(aTmpName), "/tmp/occt_%d_%d", getpid(), counter++);
-+  if (mkdir(aTmpName, 0700) != 0)
-+#else
    char aTmpName[] = "/tmp/CSFXXXXXX";
++#ifdef __wasi__
++  // WASI doesn't have mkstemp, use a simple random name
++  static int counter = 0;
++  char aTmpName2[64];
++  snprintf(aTmpName2, sizeof(aTmpName2), "/tmp/occt_%d_%d", getpid(), counter++);
++  myFileChannel = open(aTmpName2, O_CREAT | O_EXCL | O_RDWR, 0600);
++  if (myFileChannel >= 0) {
++    strcpy(aTmpName, aTmpName2);  // use the generated name
++  }
++#else
    if (nullptr == mkdtemp(aTmpName))
-+#endif
    {
      return OSD_Directory(); // can't create a directory
-   }
+@@ -162,4 +176,5 @@ OSD_Directory OSD_Directory::BuildTemporary()
+   aDir.SetPath(TCollection_AsciiString(aTmpName));
+   return aDir;
+ #endif
++#endif
+ }

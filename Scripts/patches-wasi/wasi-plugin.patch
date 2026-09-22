@@ -1,0 +1,20 @@
+diff --git a/src/FoundationClasses/TKernel/Plugin/Plugin.cxx b/src/FoundationClasses/TKernel/Plugin/Plugin.cxx
+index 20a22877..20b01173 100644
+--- a/src/FoundationClasses/TKernel/Plugin/Plugin.cxx
++++ b/src/FoundationClasses/TKernel/Plugin/Plugin.cxx
+@@ -55,7 +55,15 @@ occ::handle<Standard_Transient> Plugin::Load(const Standard_GUID& aGUID, const b
+   }
+ 
+   // Slow path: exclusive lock for plugin loading.
++#ifndef __wasi__
+   std::unique_lock<std::shared_mutex> aWriteLock(aMapMutex);
++#else
++  // WASI: spinlock-based write lock
++  while (aWriterLock.test_and_set(std::memory_order_acquire)) {}
++  while (aReadersCount > 0) {
++    // wait for readers to finish
++  }
++#endif
+   if (!theMapOfFunctions.IsBound(pid))
+   {
+     occ::handle<Resource_Manager> PluginResource = new Resource_Manager("Plugin");

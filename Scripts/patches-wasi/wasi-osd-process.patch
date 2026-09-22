@@ -1,0 +1,13 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
+index dd9bc29e..e1364352 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Process.cxx
+@@ -40,7 +40,7 @@ const OSD_WhoAmI Iam = OSD_WProcess;
+   #include <cstdlib>
+   #include <sys/param.h>
+   #include <sys/time.h>
+-  #if !defined(__EMSCRIPTEN__)
++  #if !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+     #include <pwd.h> // For command getpwuid
+   #endif
+   #include <unistd.h>

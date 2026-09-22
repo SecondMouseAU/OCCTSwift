@@ -1,0 +1,38 @@
+diff --git a/src/FoundationClasses/TKernel/OSD/OSD_Parallel_Threads.cxx b/src/FoundationClasses/TKernel/OSD/OSD_Parallel_Threads.cxx
+index e50d23d2..de8659d1 100644
+--- a/src/FoundationClasses/TKernel/OSD/OSD_Parallel_Threads.cxx
++++ b/src/FoundationClasses/TKernel/OSD/OSD_Parallel_Threads.cxx
+@@ -21,7 +21,9 @@
+ #include <NCollection_Array1.hxx>
+ #include <OSD_Thread.hxx>
+ 
++#ifndef __wasi__
+ #include <mutex>
++#endif
+ 
+ namespace
+ {
+@@ -56,8 +58,13 @@ public:
+     //! Thread-safe method.
+     inline OSD_Parallel::UniversalIterator It() const
+     {
++#ifdef __wasi__
++      // WASI: no mutex, single-threaded
++      return (myIt != myEnd) ? myIt++ : myEnd;
++#else
+       std::lock_guard<std::mutex> aMutex(myMutex);
+       return (myIt != myEnd) ? myIt++ : myEnd;
++#endif
+     }
+ 
+   private: //! @name private methods
+@@ -72,7 +79,9 @@ public:
+     const OSD_Parallel::UniversalIterator& myEnd;   //!< Last element of range.
+                                                     // clang-format off
+       mutable OSD_Parallel::UniversalIterator   myIt;    //!< First non processed element of range.
++#ifndef __wasi__
+       mutable std::mutex                        myMutex; //!< Access controller for the first non processed element.
++#endif
+                                                     // clang-format on
+   };
+ 

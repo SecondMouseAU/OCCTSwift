@@ -1,0 +1,223 @@
+diff --git a/src/FoundationClasses/TKernel/Units/Units.cxx b/src/FoundationClasses/TKernel/Units/Units.cxx
+index 6c3a30c0..20a42819 100644
+--- a/src/FoundationClasses/TKernel/Units/Units.cxx
++++ b/src/FoundationClasses/TKernel/Units/Units.cxx
+@@ -34,7 +34,9 @@
+ #include <Units_Operators.hxx>
+ 
+ #include <cstdlib>
++#ifndef __wasi__
+ #include <mutex>
++#endif
+ 
+ static occ::handle<Units_Dimensions>      nulldimensions;
+ static occ::handle<Units_UnitsLexicon>    lexiconunits;
+@@ -48,13 +50,24 @@ static TCollection_AsciiString       lastunit;
+ static occ::handle<Units_Dimensions> lastdimension;
+ static double                        lastvalue, lastmove;
+ 
++#ifndef __wasi__
+ static std::recursive_mutex THE_UNITS_MUTEX;
++#else
++// WASI noeh libc++ doesn't have recursive_mutex - use spinlock
++static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++#endif
+ 
+ //=================================================================================================
+ 
+ void Units::UnitsFile(const char* const afile)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   unitsfile = TCollection_AsciiString(afile);
+ }
+ 
+@@ -62,7 +75,13 @@ void Units::UnitsFile(const char* const afile)
+ 
+ void Units::LexiconFile(const char* const afile)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   lexiconfile = TCollection_AsciiString(afile);
+ }
+ 
+@@ -70,7 +89,13 @@ void Units::LexiconFile(const char* const afile)
+ 
+ occ::handle<Units_UnitsDictionary> Units::DictionaryOfUnits(const bool amode)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (unitsdictionary.IsNull())
+   {
+     unitsdictionary = new Units_UnitsDictionary();
+@@ -87,7 +112,13 @@ occ::handle<Units_UnitsDictionary> Units::DictionaryOfUnits(const bool amode)
+ 
+ occ::handle<Units_Quantity> Units::Quantity(const char* const aquantity)
+ {
+-  std::lock_guard<std::recursive_mutex>                           aLock(THE_UNITS_MUTEX);
++  #ifndef __wasi__
++  std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   int                                                             index;
+   occ::handle<Units_Quantity>                                     quantity;
+   occ::handle<Units_Quantity>                                     nullquantity;
+@@ -111,7 +142,13 @@ static TCollection_AsciiString symbol_string, quantity_string;
+ 
+ const char* Units::FirstQuantity(const char* const aunit)
+ {
+-  std::lock_guard<std::recursive_mutex>                                     aLock(THE_UNITS_MUTEX);
++  #ifndef __wasi__
++  std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   int                                                                       i, j, k;
+   occ::handle<Units_Quantity>                                               thequantity;
+   occ::handle<NCollection_HSequence<occ::handle<Units_Quantity>>>           quantitiessequence;
+@@ -152,7 +189,13 @@ const char* Units::FirstQuantity(const char* const aunit)
+ 
+ occ::handle<Units_Lexicon> Units::LexiconUnits(const bool amode)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (lexiconunits.IsNull())
+   {
+     lexiconunits = new Units_UnitsLexicon();
+@@ -165,7 +208,13 @@ occ::handle<Units_Lexicon> Units::LexiconUnits(const bool amode)
+ 
+ occ::handle<Units_Lexicon> Units::LexiconFormula()
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (lexiconformula.IsNull())
+   {
+     lexiconformula = new Units_Lexicon();
+@@ -178,7 +227,13 @@ occ::handle<Units_Lexicon> Units::LexiconFormula()
+ 
+ occ::handle<Units_Dimensions> Units::NullDimensions()
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (nulldimensions.IsNull())
+   {
+     nulldimensions = new Units_Dimensions(0., 0., 0., 0., 0., 0., 0., 0., 0.);
+@@ -192,7 +247,13 @@ double Units::Convert(const double      avalue,
+                       const char* const afirstunit,
+                       const char* const asecondunit)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   Units_Measurement                     measurement(avalue, afirstunit);
+   if (!measurement.HasToken())
+   {
+@@ -210,7 +271,13 @@ double Units::Convert(const double      avalue,
+ 
+ double Units::ToSI(const double aData, const char* const aUnit)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   occ::handle<Units_Dimensions>         aDimBid;
+   return Units::ToSI(aData, aUnit, aDimBid);
+ }
+@@ -219,7 +286,13 @@ double Units::ToSI(const double aData, const char* const aUnit)
+ 
+ double Units::ToSI(const double aData, const char* const aUnit, occ::handle<Units_Dimensions>& dim)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (lastunit != aUnit)
+   {
+     Units_UnitSentence unitsentence(aUnit);
+@@ -246,7 +319,13 @@ double Units::ToSI(const double aData, const char* const aUnit, occ::handle<Unit
+ 
+ double Units::FromSI(const double aData, const char* const aUnit)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   occ::handle<Units_Dimensions>         aDimBid;
+   return Units::FromSI(aData, aUnit, aDimBid);
+ }
+@@ -257,7 +336,13 @@ double Units::FromSI(const double                   aData,
+                      const char* const              aUnit,
+                      occ::handle<Units_Dimensions>& dim)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (lastunit != aUnit)
+   {
+     Units_UnitSentence unitsentence(aUnit);
+@@ -284,7 +369,13 @@ double Units::FromSI(const double                   aData,
+ 
+ occ::handle<Units_Dimensions> Units::Dimensions(const char* const aType)
+ {
++  #ifndef __wasi__
+   std::lock_guard<std::recursive_mutex> aLock(THE_UNITS_MUTEX);
++#else
++  // WASI: no recursive_mutex, use spinlock
++  static std::atomic_flag THE_UNITS_SPINLOCK = ATOMIC_FLAG_INIT;
++  while (THE_UNITS_SPINLOCK.test_and_set(std::memory_order_acquire)) {}
++#endif
+   if (aType)
+   {
+     occ::handle<Units_UnitsDictionary> dico = Units::DictionaryOfUnits(false);
