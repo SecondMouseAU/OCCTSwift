@@ -21,9 +21,6 @@ name: Kernel Integration
 
 on:
   pull_request:
-    branches:
-      - main
-      - 'refactor/**'
     paths:
       - 'Scripts/patches/**'
       - 'Scripts/build-occt.sh'
