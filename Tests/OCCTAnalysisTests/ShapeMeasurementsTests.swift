@@ -122,4 +122,3 @@ struct ShapeMeasurementsTests {
         #expect(capCount == 2, "cylinder has 2 circular caps, found \(capCount)")
     }
 }
-# Trigger CI
