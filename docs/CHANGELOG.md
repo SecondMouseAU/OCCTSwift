@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Curve3D and Curve2D reference snippets now compile (#2093)
+
+Thirty-seven fenced examples across `Curve2D-Analytic-Types.md`, `Curve2D-Constraint-Solvers.md`, `Curve3D-Analysis.md`, `Curve3D-Analytic-Types.md`, `CurveAdaptors.md`, `Geometry2D.md` and `Shape-Recognition.md`, and in `Curve2D.swift`, `Curve3D.swift` and `Continuity.swift` doc comments, named members and labels that have never existed. `Curve3D.line(origin:direction:)` is `line(through:direction:)`; `parabola(vertex:...)` is `parabola(center:...)`; `curveKind` is `curveType`, an `Int` where `1` is Circle, so the examples no longer claim to print `.circle`; `Curve2D.parameterRange` is `domain`, which is not optional, so the force-unwraps go too. `Curve2D.ellipse`, `hyperbola` and `parabola` all take a placement the examples omitted, and `Curve2D.bspline(points:)` had been resolving to the instance accessor of the same name.
+
 ### Surface reference snippets now compile (#2093)
 
 Forty-four fenced examples on `Surface.md`, `Surface-Analysis.md`, `Surface-Analytic-Types.md` and `Surface-Advanced.md`, and in `Surface.swift` and `Shape+Surface.swift` doc comments, called `Surface` factories with argument lists that have never existed. An analytic surface is unbounded, so `Surface.cylinder(radius: 10, height: 50)` was never a call: the placement is `cylinder(origin:axis:radius:)`. Also corrected: `sphere(center:radius:)`, `cone(origin:axis:radius:semiAngle:)`, `torus(origin:axis:majorRadius:minorRadius:)`, `plane(origin:normal:)`, and `extrusion(profile:direction:)`, whose profile is a `Curve3D` rather than a `Wire`. `Surface.md`'s `continuityClass` example now uses a real B-spline patch and reports a measured `.cN` instead of a guessed `.c2`.
