@@ -9,10 +9,11 @@
 # The result is a set of static libraries and headers at Libraries/OCCT-wasm/
 #
 # Prerequisites:
-#   - wasi-sdk (installed at ../wasi-sdk/wasi-sdk-34.0-<arch>-<os> or WASI_SDK_PREFIX env)
+#   - the pinned wasm toolchain: run Scripts/install-wasm-toolchain.sh, which reads every version
+#     from Scripts/wasm-toolchain-versions.txt and leaves wasi-sdk under Libraries/
 #   - CMake 3.20+
 #   - rapidjson (via system package manager or RAPIDJSON_DIR env)
-#   - ~10GB free disk space
+#   - ~10GB free disk space, nearly all of it the OCCT build tree
 #
 # Build time: ~30-60 minutes depending on hardware
 #
@@ -41,11 +42,38 @@ case "$OS" in
     linux)  OS="linux" ;;
 esac
 
-# wasi-sdk location
-WASI_SDK_PREFIX="${WASI_SDK_PREFIX:-$PROJECT_DIR/../wasi-sdk/wasi-sdk-34.0-${ARCH}-${OS}}"
+# --------------------
+# Pinned toolchain versions
+# --------------------
+# Read, never restated: Scripts/wasm-toolchain-versions.txt is the single source of truth for every
+# wasm version in the repo, and a literal here would be a copy with no update path. The same file
+# is read by Scripts/install-wasm-toolchain.sh, which is what puts wasi-sdk where this script looks.
+PINS_FILE="$SCRIPT_DIR/wasm-toolchain-versions.txt"
+pin() {
+    local key="$1" line
+    while IFS= read -r line; do
+        case "$line" in
+            \#*|"") continue ;;
+            "$key="*) printf '%s\n' "${line#*=}"; return 0 ;;
+        esac
+    done < "$PINS_FILE"
+    echo "ERROR: $PINS_FILE has no '$key' line." >&2
+    exit 1
+}
+if [ ! -f "$PINS_FILE" ]; then
+    echo "ERROR: pinned versions file not found at '$PINS_FILE'." >&2
+    exit 1
+fi
+WASI_SDK_VERSION="$(pin WASI_SDK_VERSION)"
+
+# wasi-sdk location. Libraries/ is gitignored and already holds occt-src, so the toolchain sits
+# beside the source it compiles; WASI_SDK_PREFIX overrides for an install kept elsewhere.
+WASI_SDK_PREFIX="${WASI_SDK_PREFIX:-$LIBRARIES_DIR/wasi-sdk-${WASI_SDK_VERSION}-${ARCH}-${OS}}"
 if [ ! -d "$WASI_SDK_PREFIX" ]; then
     echo "ERROR: wasi-sdk not found at '$WASI_SDK_PREFIX'." >&2
-    echo "       Set WASI_SDK_PREFIX or install wasi-sdk at ../wasi-sdk/wasi-sdk-34.0-${ARCH}-${OS}" >&2
+    echo "       Install the pinned toolchain, which puts it there:" >&2
+    echo "         Scripts/install-wasm-toolchain.sh" >&2
+    echo "       Or set WASI_SDK_PREFIX to an existing wasi-sdk $WASI_SDK_VERSION install." >&2
     exit 1
 fi
 
@@ -119,9 +147,10 @@ fi
 # Scripts/patches-wasi/ holds WASI-only source changes, and ONLY this script applies them.
 #
 # They must not share a directory. build-occt.sh globs patches/*.patch with no filter, so a WASI
-# patch left there is applied to the macOS, iOS and ThreadSanitizer kernels as well; both of the
-# current ones apply cleanly to the pinned source, so that would happen SILENTLY rather than
-# failing loudly. check-inventory-prose.py also parses each filename's first four characters as
+# patch left there is applied to the macOS, iOS and ThreadSanitizer kernels as well. Whether that
+# fails loudly or lands silently depends on whether the patch happens to apply to the pinned
+# source, which nothing measures, so treat it as silent.
+# check-inventory-prose.py also parses each filename's first four characters as
 # the patch number and raises on a non-numeric name, and both the kernel cache key and the TSan
 # stamp hash patches/*.patch, so a WASI-only change would move them for no native-kernel reason.
 apply_patch_dir() {
@@ -205,18 +234,23 @@ rm -rf occt-build-wasm
 mkdir -p occt-build-wasm
 cd occt-build-wasm
 
-# Use Swift SDK's WASI.sdk toolchain file (provides complete libc++ headers)
-WASI_TOOLCHAIN="$WASI_SDK_PREFIX/share/cmake/swift-wasi-sdk.cmake"
+# wasi-sdk ships the CMake toolchain file for this target, one per WASI preview; p1 is ours.
+# An earlier version of this script preferred a swift-wasi-sdk.cmake inside the prefix and treated
+# wasi-sdk's own file as a fallback. No such file exists in either the wasi-sdk tarball or the
+# Swift SDK's WASI.sdk, so that branch could never be taken.
+WASI_TOOLCHAIN="$WASI_SDK_PREFIX/share/cmake/wasi-sdk-p1.cmake"
 if [ ! -f "$WASI_TOOLCHAIN" ]; then
-    # Fallback to wasi-sdk's own toolchain (may need manual libc++ symlinks)
-    WASI_TOOLCHAIN="$WASI_SDK_PREFIX/share/cmake/wasi-sdk-p1.cmake"
-    if [ ! -f "$WASI_TOOLCHAIN" ]; then
-        echo "ERROR: No suitable WASI CMake toolchain found at:" >&2
-        echo "  $WASI_SDK_PREFIX/share/cmake/swift-wasi-sdk.cmake" >&2
-        echo "  $WASI_SDK_PREFIX/share/cmake/wasi-sdk-p1.cmake" >&2
-        exit 1
-    fi
+    echo "ERROR: no WASI CMake toolchain file at '$WASI_TOOLCHAIN'." >&2
+    echo "       '$WASI_SDK_PREFIX' does not look like a wasi-sdk $WASI_SDK_VERSION install." >&2
+    exit 1
 fi
+
+# Exception handling is not settled here. OCCT throws Standard_Failure pervasively, and the
+# exception-enabled C++ runtime lives in $WASI_SDK_PREFIX/share/wasi-sysroot/lib/wasm32-wasip1/eh,
+# not in the Swift SDK's sysroot; the compile flags that make it usable under the pinned runtime
+# are WASM_CXX_EH_FLAGS in Scripts/wasm-toolchain-versions.txt. Which of those OCCT's own build
+# needs is #2171's spike, so nothing is asserted in CMAKE_COMMON_OPTS above. See
+# Scripts/repro/2169/README.md for what has actually been measured.
 
 cmake ../occt-src \
     -G "Unix Makefiles" \

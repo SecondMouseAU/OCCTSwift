@@ -1,0 +1,69 @@
+# The wasm toolchain this repo builds against, in one place every wasm script reads.
+#
+# Single source of truth: read by Scripts/install-wasm-toolchain.sh (which downloads exactly these
+# artifacts and verifies these checksums) and by Scripts/build-occt-wasm.sh (which resolves the
+# wasi-sdk prefix from WASI_SDK_VERSION rather than a literal baked into the script).
+#
+# Format: comment lines and blank lines are ignored; every other line is KEY=value, with no quoting
+# and no shell expansion. Parse it, do not source it: it is data, not code.
+#
+# To bump a value: change it here, and if it is one the probe package's manifest reads, also
+# `touch Scripts/repro/2169/standalone/Package.swift`. SwiftPM caches the compiled manifest against
+# Package.swift rather than against the files that manifest reads, and `rm -rf .build` does not
+# clear that cache, so an edit here alone leaves the next build on the old value. Measured with
+# WASM_CXX_EH_FLAGS cut to a bare -fwasm-exceptions: the rebuild was a 0.26s no-op and the module
+# still ran clean; one touch later the same edit produced `Illegal opcode: [6]`. The shell scripts
+# have no such cache and pick a change up at once, which is what makes the mismatch easy to miss.
+#
+# Why pinned at all: a wasm build has three moving parts that version independently (the Swift
+# toolchain, the Swift SDK for WebAssembly, and wasi-sdk), and two of them are downloads with no
+# package manager holding them still. An unpinned combination is not reproducible, and the previous
+# attempt at this build (PR #2076, closed) carried a wasi-sdk version as a literal in one script and
+# nothing at all for the other two.
+#
+# The target triple is wasm32-unknown-wasip1, non-threads. See docs/wasm-feasibility.md for why the
+# threads variant was rejected, and for the measured verification behind every line here.
+
+# --- Swift toolchain (swift.org, NOT Xcode's) ---
+# Xcode's toolchain cannot link for wasm: it has no wasm-ld and no swift-autolink-extract, and the
+# link step fails with `unableToFind(tool: "swift-autolink-extract")`. The swift.org toolchain of
+# the same version carries clang, wasm-ld, the wasm32 compiler-rt builtins and wasmkit. Select it
+# with TOOLCHAINS=swift (macOS) or by putting its bin directory first on PATH (Linux).
+SWIFT_TOOLCHAIN_VERSION=6.4.0-RELEASE
+SWIFT_TOOLCHAIN_URL_MACOS=https://download.swift.org/swift-6.4.0-release/xcode/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE-osx.pkg
+
+# --- Swift SDK for WebAssembly ---
+# Installed with `swift sdk install "$SWIFT_WASM_SDK_URL" --checksum "$SWIFT_WASM_SDK_CHECKSUM"`.
+# The bundle carries two artifacts, the wasip1 SDK and an Embedded Swift one, so `--swift-sdk` must
+# name the artifact ID and pass the triple separately; naming the triple alone is ambiguous and
+# SwiftPM refuses it.
+SWIFT_WASM_SDK_ID=swift-6.4.0-RELEASE_wasm
+SWIFT_WASM_SDK_URL=https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz
+SWIFT_WASM_SDK_CHECKSUM=f07b7be3c586d92d7a07051fc6d303b87ebea67eadc40640ba59d5a8b79aa86d
+SWIFT_WASM_TRIPLE=wasm32-unknown-wasip1
+
+# --- wasi-sdk ---
+# Needed for exactly one thing the Swift SDK does not ship: a libc++abi and libunwind built WITH
+# exception support. The Swift SDK's bundled WASI sysroot carries the no-exceptions flavour
+# (its libc++abi.a holds cxa_noexception.cpp.o and defines no __cxa_throw), so any throwing C++
+# compiles against its headers and then fails to link. wasi-sdk splits its C++ runtime into
+# lib/wasm32-wasip1/eh and .../noeh, and the eh flavour is what OCCT needs. It is NOT needed as a
+# compiler: the swift.org toolchain's clang targets wasm32 and links against either sysroot.
+WASI_SDK_VERSION=34.0
+WASI_SDK_URL_BASE=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34
+WASI_SDK_SHA256_arm64_macos=9c59398106b417f8f14913380fdf0097a8cc0ff4af9eb3ce0065a859e88d49e9
+WASI_SDK_SHA256_x86_64_macos=87d27fa8adc68dee59bfbf2e22a6d34ef717c34d6bf1d8af2a56fc929d9ce0eb
+WASI_SDK_SHA256_arm64_linux=f7e243dff54d60bcc576e94d6166b69f410f2500ae4a9ceef34315be10e77971
+WASI_SDK_SHA256_x86_64_linux=b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4
+
+# --- wasm runtime ---
+# wasmkit, because the pinned swift.org toolchain already ships it at usr/bin/wasmkit: nothing to
+# install, nothing to pin separately, and it cannot drift away from the toolchain that built the
+# module. wasmtime was the alternative and is a separate download with its own version to track.
+# The one constraint wasmkit imposes reaches the compiler: it implements the standardised
+# exception-handling encoding (try_table / exnref) and rejects the legacy one with
+# "Illegal opcode: [6]", so C++ compiled with -fwasm-exceptions also needs
+# -mllvm -wasm-use-legacy-eh=false, which is what WASM_CXX_EH_FLAGS carries.
+WASM_RUNTIME=wasmkit
+WASM_RUNTIME_VERSION=0.3.1
+WASM_CXX_EH_FLAGS=-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false
