@@ -54,6 +54,10 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 - [Sharing the xcframework](guides/sharing-the-xcframework.md), one shared local copy across repos + the `Package.resolved` pin footgun (#260).
 - [Thread Safety](thread-safety.md) · [Bridge Diagnostics](reference/Diagnostics.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
+- [WebAssembly feasibility](wasm-feasibility.md), the wasm32-wasip1 plan of record: what is
+  proven, what is not, and the Phase 0 go/no-go.
+- [WASI guard sites](WASI_GUARD_SITES.md), the `std` names the wasip1 libc++ removes, the files
+  that use them, and why they are answered by a shim rather than by a patch.
 - [v4.0.0 Release Plan](v4.0.0-plan.md), scope, order, and beta/RC criteria for the in-flight major.
 - [v2.0.0 Release Plan](v2.0.0-plan.md), scope, clusters, and the census-once rule the previous
   major shipped under.
