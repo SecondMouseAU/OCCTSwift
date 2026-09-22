@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Drawing, vector-export and sheet-metal snippets now compile (#2093)
+
+Fourteen fenced examples on `Drawing.md`, `Export-Vector.md`, `SheetMetal.md` and in `Drawing.swift` doc comments. Seven said `PaperSize.A3` or `.A4`, whose real cases are `.a3` and `.a4`: that is a rename that reached `Sources/` before the #1103 merge and never reached the page, and it survived because the signature restatement at `Drawing.md:886` still declared the uppercase form, in the one fence population the snippet census skips by design. Also corrected: `writePDF`/`writeSVG` written with a trailing closure, which their `sheet:body:to:deflection:` order makes impossible; `DrawingScale.oneToTwo`, which is `.reduction(2)`; `DXFWriter.dxfString()`, which is `write(to:)`; and `DrawingDimension.Linear(value:)`, where `value` is a computed property rather than an init parameter.
+
 ### Document reference snippets now compile (#2093)
 
 Thirty-eight fenced examples across the eleven `Document-*` reference pages and `Construction.md`. Nineteen were `PipeShellBuilder` examples whose only statement was `pipe.<member>(...)`: `pipe` is declared nowhere in those fences and also names a libc function, so every one resolved to `(UnsafeMutablePointer<Int32>?) -> Int32` and failed. Each now constructs its receiver. Also corrected: `Shape.edgeFromLine(from:to:)`, which is `edgeFromLine(origin:direction:p1:p2:)`; `Wire.asShape()`, which is `Shape.fromWire(_:)`; `Document()`, whose initializer is internal, so the factory is `Document.create()`; `Document.isValid`, which does not exist; `TrigRoots.solve(B:)`, whose `sin(x)` coefficient is `b:`; and `Curve3D.line`/`Surface.plane` scalar-component spellings that have never existed.

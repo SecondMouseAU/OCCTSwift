@@ -503,7 +503,7 @@ inline against `layout.placed` instead of calling `render(into:)`.
   ```swift
   let writer = DXFWriter()
   layout.render(into: writer)
-  let dxf = writer.dxfString()
+  try writer.write(to: URL(fileURLWithPath: "/tmp/layout.dxf"))
   ```
 
 ---
@@ -564,10 +564,9 @@ public func standardLayout(of shape: Shape,
   ```swift
   let sheet = Sheet(size: .a3, projection: .first)
   let box = Shape.box(width: 80, height: 50, depth: 30)!
-  if let layout = sheet.standardLayout(of: box, scale: .oneToTwo, margin: 15) {
+  if let layout = sheet.standardLayout(of: box, scale: .reduction(2), margin: 15) {
       let writer = DXFWriter()
       layout.render(into: writer)
-      try writer.dxfString().write(toFile: "/tmp/bracket.dxf",
-                                   atomically: true, encoding: .utf8)
+      try writer.write(to: URL(fileURLWithPath: "/tmp/bracket.dxf"))
   }
   ```
