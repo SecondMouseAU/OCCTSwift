@@ -61,7 +61,7 @@ job a `name:` key, never require a check that has not yet reported, `main` takes
 ```bash
 python3 Scripts/check-bridge-index.py            # OCCTBridge.h's class → symbol index: stale / misfiled entries
 python3 Scripts/check-null-handle-guards.py      # every bridge fn guards the Handle, not just the pointer
-python3 Scripts/check-docs-defaults.py           # every default docs/reference/ restates matches its declaration
+python3 Scripts/check-docs-defaults.py           # every default AND enum case list docs/reference/ restates matches its declaration (#2145)
 python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
