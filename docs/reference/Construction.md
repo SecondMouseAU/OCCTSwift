@@ -1151,10 +1151,13 @@ public enum MaterializationFailure: Sendable {
     case planeShapeFailed(PlaneID)
     case axisShapeFailed(AxisID)
     case pointShapeFailed(PointID)
+    case planeAddFailed(PlaneID)
+    case axisAddFailed(AxisID)
+    case pointAddFailed(PointID)
 }
 ```
 
-`*ResolveFailed` cases indicate that the recipe could not be evaluated against the graph; `*ShapeFailed` cases indicate that the recipe resolved but the representative shape could not be constructed (e.g. degenerate wire).
+`*ResolveFailed` cases indicate that the recipe could not be evaluated against the graph; `*ShapeFailed` cases indicate that the recipe resolved but the representative shape could not be constructed (e.g. degenerate wire). `*AddFailed` cases are distinct from those: the shape was built, and `Document.addConstructionShape` then refused to add it, returning a negative label ID.
 
 ---
 

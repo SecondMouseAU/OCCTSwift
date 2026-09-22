@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Verify that every default value a `docs/reference/` page restates matches its declaration.
+"""Verify that every fact a `docs/reference/` page restates matches its declaration.
+
+Two kinds of restated fact, both of which drift the same way: a parameter's **default
+value**, and an enum's **case list** (#2145). The second was added because the doc-snippet
+census (#1683) classifies a bodiless declaration as a restatement and skips all 5,092 of
+them, correctly, since they compile in no context. So a restatement could be wrong and
+nothing reported it: `Drawing.md` declared `case A0, A1, A2, A3, A4` against a source
+reading `case a0, a1, a2, a3, a4`, an unrecorded rename from #1103, and seven runnable
+examples were copied from it. The census caught the copies and was blind to the original.
 
 Each page under `docs/reference/` documents an API by *restating* its signature in a fenced
 ```swift block:
@@ -108,6 +116,17 @@ DOCS_GLOB = 'docs/reference/*.md'
 # The three today: a `requestCancel()` and a `printTree(_:indent:)` defined inside example
 # snippets, and `Shape.init(handle:)`, which the page restates as `internal init` on purpose.
 EXPECTED_UNMATCHED = 3
+
+# #2145: restated enums whose name exists on several types and whose page never says which one it
+# is documenting. Reported rather than compared, because picking one would invent a verdict: the
+# tree has three enums called `Kind` and three called `ProjectionType`, and an early version that
+# matched on the bare name paired a docs `Kind` with another type's `Kind` and called both drifted.
+#
+# Pinned so it cannot grow quietly. A new same-named enum, or a heading reworded so it stops naming
+# the owner, silently removes a page from the comparison, which is the same failure mode
+# EXPECTED_UNMATCHED exists for. The fix for an entry here is a heading that names the owning type,
+# not a higher number.
+EXPECTED_ENUM_UNVERIFIED = 13
 
 # A declaration this script can compare. The generic-parameter group follows the name, as Swift
 # writes it (`func f<T>(...)`); putting it first made every generic declaration invisible.
@@ -469,6 +488,201 @@ def type_matches(cand_type, hint):
     return cand_type.endswith('.' + hint) or hint.endswith('.' + cand_type)
 
 
+
+# --- restated enum cases (#2145) -----------------------------------------------------------------
+#
+# A reference page restates an enum the same way it restates a signature, and the same way it
+# drifts. The census in #1683 cannot see this: it classifies a bodiless declaration as a
+# `declaration` and skips all 5,092 of them, correctly, because they do not compile in any context.
+# So a restatement could be wrong and nothing reported it.
+#
+# Measured: `docs/reference/Drawing.md` declared `case A0, A1, A2, A3, A4` while
+# `DrawingSheet.swift` had `case a0, a1, a2, a3, a4`, an unrecorded rename from #1103 that stood
+# until #2134. Seven runnable examples were copied from it, and the census caught those copies
+# while being blind to the original they came from. That is the wrong way round: fixing the copies
+# leaves the source of the next seven in place.
+
+TYPE_OPEN_RE = re.compile(
+    r'(?:^|\n)[ \t]*(?:(?:public|open|internal|private|fileprivate|final|indirect|@\w+)\s+)*'
+    r'(class|struct|enum|actor|extension|protocol)\s+([A-Za-z_][A-Za-z0-9_.]*)')
+
+CASE_LINE_RE = re.compile(r'^[ \t]*case[ \t]+(.+?)[ \t]*$', re.M)
+
+
+def _brace_span(text, from_index):
+    """(open, close) indices of the brace block starting at or after `from_index`, or None."""
+    i = text.find('{', from_index)
+    if i < 0:
+        return None
+    depth = 0
+    for j in range(i, len(text)):
+        c = text[j]
+        if c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                return i, j
+    return None
+
+
+def scan_types(text):
+    """Every nominal type declaration, with the type path enclosing it.
+
+    Owner matters and a bare name is not enough: this tree has three enums called `Kind` and two
+    called `ProjectionType`, on different types. Matching by name alone paired a docs `Kind` with
+    a source `Kind` from another type and reported both as drifted, which is a false positive that
+    would have made this gate unusable.
+    """
+    spans = []
+    for m in TYPE_OPEN_RE.finditer(text):
+        span = _brace_span(text, m.end())
+        if span:
+            spans.append((m.group(1), m.group(2), span[0], span[1]))
+    out = []
+    for kind, name, open_i, close_i in spans:
+        owners = [n for k, n, o, c in spans if o < open_i and c > close_i]
+        out.append({'kind': kind, 'name': name, 'owner': owners[-1] if owners else None,
+                    'body': text[open_i + 1:close_i], 'open': open_i, 'close': close_i})
+    return out
+
+
+def _split_case_names(text):
+    """`a, b, c` -> [a, b, c]; splits only at paren depth 0 so an associated-value list survives."""
+    parts, buf, depth = [], '', 0
+    for ch in text:
+        if ch in '([':
+            depth += 1
+        elif ch in ')]':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            parts.append(buf)
+            buf = ''
+        else:
+            buf += ch
+    parts.append(buf)
+    names = []
+    for part in parts:
+        part = part.strip().split('(')[0].split('=')[0].split(':')[0].strip()
+        if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', part) and part not in ('let', 'var'):
+            names.append(part)
+    return names
+
+
+def enum_case_names(body):
+    """Case names declared directly in this enum body.
+
+    Two shapes broke a naive line scan, and both were found by checking a reported "drift" against
+    the source rather than believing it. They are written down because each one reported a correct
+    page as defective:
+
+    **Depth.** A `case` at the enum body's own brace depth is a declaration; a `case` deeper than
+    that is a switch arm inside a computed property or method. `Shape.CylindricalHoleExtent`
+    switches over itself, and `case .blind(let depth): return (3, depth, 0)` read as declaring a
+    case named `depth`, because the arm's return tuple contains a comma. A pattern arm also starts
+    `case .`, refused here as a second guard.
+
+    **Continuation.** A comma-separated case list wraps, and the continuation lines do not begin
+    with `case`. `docs/reference/Surface.md` restates all eighteen of `GordonResultStatus`'s cases
+    across six lines, and reading only the first reported thirteen of them missing.
+    """
+    names, depth, pending = [], 0, None
+    for raw in body.split('\n'):
+        line = strip_line_comment(raw)
+        stripped = line.strip()
+        if pending is not None:
+            pending += ' ' + stripped
+            if not _continues(pending):
+                names.extend(_split_case_names(pending))
+                pending = None
+        else:
+            m = re.match(r'case[ \t]+(.+)$', stripped)
+            if depth == 0 and m and not stripped.startswith('case .'):
+                text = m.group(1)
+                if _continues(text):
+                    pending = text
+                else:
+                    names.extend(_split_case_names(text))
+        depth += line.count('{') - line.count('}')
+        depth = max(depth, 0)
+    if pending is not None:
+        names.extend(_split_case_names(pending))
+    return names
+
+
+def _continues(text):
+    """True when a case declaration is unfinished: a trailing comma, or an open paren."""
+    if text.rstrip().endswith(','):
+        return True
+    return text.count('(') > text.count(')')
+
+
+def enums_in(text):
+    """{(owner, name): [case names]} for every enum declared in `text`."""
+    out = {}
+    for t in scan_types(text):
+        if t['kind'] != 'enum':
+            continue
+        cases = enum_case_names(t['body'])
+        if cases:
+            out[(t['owner'], t['name'])] = cases
+    return out
+
+
+def source_enums_from(files):
+    out = {}
+    for path in sorted(files):
+        for key, cases in enums_in(files[path]).items():
+            out.setdefault(key, []).append((path, cases))
+    return out
+
+
+def doc_enums_from(files):
+    """[(name, cases, path, line, heading chain)] for every enum a page restates."""
+    out = []
+    for path in sorted(files):
+        for body, base_line, heading in doc_swift_blocks(files[path]):
+            for key, cases in enums_in(body).items():
+                out.append((key[1], cases, path, base_line, heading))
+    return out
+
+
+def analyse_enums(src_enums, doc_enums, report):
+    """Compare each restated enum's case list against the declaration it documents."""
+    by_name = {}
+    for (owner, name), entries in src_enums.items():
+        by_name.setdefault(name, []).append((owner, entries))
+
+    for name, doc_cases, path, line, heading in doc_enums:
+        report.enum_checked += 1
+        cands = by_name.get(name)
+        if not cands:
+            report.enum_unmatched.append((path, line, name))
+            continue
+        chosen = None
+        if len(cands) == 1:
+            chosen = cands[0]
+        else:
+            hints = [h for h in (list(heading or []) + [filename_type(path)]) if h]
+            narrowed = [c for c in cands
+                        if any(type_matches(c[0], h) or type_matches(name, h)
+                               or (c[0] and h and c[0] == h) for h in hints)]
+            # A heading naming the OWNER is the reliable narrowing; several survivors means the
+            # page does not say which type's enum it is restating, and guessing is how a false
+            # positive gets reported as a defect.
+            if len(narrowed) == 1:
+                chosen = narrowed[0]
+        if chosen is None:
+            report.enum_unverified.append((path, line, name, len(cands)))
+            continue
+        owner, entries = chosen
+        src_path, src_cases = entries[0]
+        extra = sorted(set(doc_cases) - set(src_cases))
+        missing = sorted(set(src_cases) - set(doc_cases))
+        if extra or missing:
+            report.enum_drift.append((path, line, name, owner, extra, missing, src_path))
+
+
 class Report:
     """Buckets for one comparison run."""
 
@@ -483,6 +697,11 @@ class Report:
         self.compared_decls = 0
         self.no_defaults_either_side = 0
         self.resolved_by = {'unique': 0, 'heading': 0, 'filename': 0, 'unnarrowed': 0}
+        # #2145: restated enum cases, a second kind of restated fact this gate compares.
+        self.enum_checked = 0
+        self.enum_drift = []        # docs and source disagree on the case list
+        self.enum_unmatched = []    # no enum of that name in Sources (reported, not failed)
+        self.enum_unverified = []   # several same-named enums and the page does not say which
 
     @property
     def drift_total(self):
@@ -812,6 +1031,89 @@ SELF_TEST_CASES = [
 ]
 
 
+# (name, source files, doc files, expected {enum_drift, enum_unverified}) for the #2145 channel.
+ENUM_SELF_TEST_CASES = [
+    (
+        'matching case lists are not drift',
+        {'S.swift': 'public enum Paper: String {\n    case a0, a1\n}\n'},
+        {'docs/reference/P.md': '## Paper\n\n```swift\npublic enum Paper: String {\n'
+                                '    case a0, a1\n}\n```\n'},
+        {},
+    ),
+    (
+        'a case the source declares and the page omits is drift',
+        {'S.swift': 'public enum Paper: String {\n    case a0, a1, a2\n}\n'},
+        {'docs/reference/P.md': '## Paper\n\n```swift\npublic enum Paper: String {\n'
+                                '    case a0, a1\n}\n```\n'},
+        {'enum_drift': 1},
+    ),
+    (
+        'a case the page invents and the source lacks is drift',
+        {'S.swift': 'public enum Paper: String {\n    case a0\n}\n'},
+        {'docs/reference/P.md': '## Paper\n\n```swift\npublic enum Paper: String {\n'
+                                '    case a0, a9\n}\n```\n'},
+        {'enum_drift': 1},
+    ),
+    (
+        # The #1103 shape this channel was built for: a rename the page never learned.
+        'a case renamed in source and not on the page is drift (#2145)',
+        {'S.swift': 'public enum Paper: String {\n    case a0, a1\n}\n'},
+        {'docs/reference/P.md': '## Paper\n\n```swift\npublic enum Paper: String {\n'
+                                '    case A0, A1\n}\n```\n'},
+        {'enum_drift': 1},
+    ),
+    (
+        # Parser bug 1. Without the depth rule the switch arm's return tuple contributes a comma,
+        # and `depth` is read as a declared case, so a correct page is reported as drifted.
+        'a switch arm inside the enum body is not a declaration (#2145)',
+        # Two arm shapes, because they are caught by two different guards and a fixture carrying
+        # only the first proves only one of them. `case .blind(...)` is refused by the `case .`
+        # test; `case legacyCode:` is not dotted and is refused only by the depth rule.
+        {'S.swift': 'public enum Extent: Sendable {\n'
+                    '    case throughAll\n'
+                    '    case blind(depth: Double)\n'
+                    '    var code: (Int, Double) {\n'
+                    '        switch self {\n'
+                    '        case .throughAll: return (0, 0)\n'
+                    '        case .blind(let depth): return (3, depth)\n'
+                    '        }\n    }\n'
+                    '    var legacy: Int {\n'
+                    '        switch rawLegacy {\n'
+                    '        case legacyCode: return (1, 2).0\n'
+                    '        default: return 0\n'
+                    '        }\n    }\n}\n'},
+        {'docs/reference/E.md': '## Extent\n\n```swift\npublic enum Extent: Sendable {\n'
+                                '    case throughAll\n    case blind(depth: Double)\n}\n```\n'},
+        {},
+    ),
+    (
+        # Parser bug 2. Reading only the first line of a wrapped list reported the rest missing.
+        'a wrapped comma-separated case list is read whole (#2145)',
+        {'S.swift': 'public enum Status: Int {\n    case notStarted\n    case done\n'
+                    '    case failed\n}\n'},
+        {'docs/reference/St.md': '## Status\n\n```swift\npublic enum Status: Int {\n'
+                                 '    case notStarted, done,\n         failed\n}\n```\n'},
+        {},
+    ),
+    (
+        # Owner resolution. Two enums share a name and the page names neither, so comparing would
+        # invent a verdict. Reported as unverified, NOT as drift.
+        'two same-named enums with no owning heading are unverified, not drift (#2145)',
+        {'A.swift': 'public struct Alpha {\n    public enum Kind {\n        case one\n    }\n}\n',
+         'B.swift': 'public struct Beta {\n    public enum Kind {\n        case two\n    }\n}\n'},
+        {'docs/reference/K.md': '```swift\npublic enum Kind {\n    case one\n}\n```\n'},
+        {'enum_unverified': 1},
+    ),
+    (
+        'a heading naming the owner resolves the ambiguity and compares (#2145)',
+        {'A.swift': 'public struct Alpha {\n    public enum Kind {\n        case one\n    }\n}\n',
+         'B.swift': 'public struct Beta {\n    public enum Kind {\n        case two\n    }\n}\n'},
+        {'docs/reference/K.md': '## Beta\n\n```swift\npublic enum Kind {\n    case one\n}\n```\n'},
+        {'enum_drift': 1},
+    ),
+]
+
+
 def self_test():
     """Run the drift battery in memory. Returns the number of failing cases."""
     failures = 0
@@ -835,7 +1137,23 @@ def self_test():
             print(f'  FAIL  {name}')
             print(f'          expected {want}')
             print(f'          got      {got}')
-    print(f'\nself-test: {len(SELF_TEST_CASES) - failures} passed, {failures} failed')
+    for name, src_files, doc_files, expect in ENUM_SELF_TEST_CASES:
+        rep = Report()
+        analyse_enums(source_enums_from(src_files), doc_enums_from(doc_files), rep)
+        got = {'enum_drift': len(rep.enum_drift),
+               'enum_unverified': len(rep.enum_unverified),
+               'enum_unmatched': len(rep.enum_unmatched)}
+        want = {k: expect.get(k, 0) for k in got}
+        if got == want:
+            print(f'  PASS  {name}')
+        else:
+            failures += 1
+            print(f'  FAIL  {name}')
+            print(f'          expected {want}')
+            print(f'          got      {got}')
+
+    total = len(SELF_TEST_CASES) + len(ENUM_SELF_TEST_CASES)
+    print(f'\nself-test: {total - failures} passed, {failures} failed')
     return failures
 
 
@@ -863,6 +1181,7 @@ def main():
             doc_files[path] = fh.read()
 
     rep = analyse(source_decls_from(src_files), doc_decls_from(doc_files))
+    analyse_enums(source_enums_from(src_files), doc_enums_from(doc_files), rep)
 
     unmatched_grew = len(rep.unmatched) > EXPECTED_UNMATCHED
     if not args.quiet:
@@ -878,7 +1197,30 @@ def main():
                   f'silently. Check\n  each new entry, then raise EXPECTED_UNMATCHED if it is '
                   f'genuinely uncomparable.')
 
+    if not args.quiet:
+        print(f'\nrestated enum cases (#2145): {rep.enum_checked} checked, '
+              f'{len(rep.enum_drift)} drifted, {len(rep.enum_unverified)} unverified, '
+              f'{len(rep.enum_unmatched)} named no enum in Sources')
+        for path, line, name, owner, extra, missing, src_path in rep.enum_drift:
+            where = f'{owner}.{name}' if owner else name
+            print(f'  DRIFT  {path}:{line}  {where}  (declared in {src_path})')
+            if extra:
+                print(f'           restated but not declared: {", ".join(extra)}')
+            if missing:
+                print(f'           declared but not restated: {", ".join(missing)}')
+        for path, line, name, n in rep.enum_unverified:
+            print(f'  unverified  {path}:{line}  {name}: {n} same-named enums, no heading names '
+                  f'the owner')
+
+    enum_unverified_grew = len(rep.enum_unverified) > EXPECTED_ENUM_UNVERIFIED
+    if enum_unverified_grew and not args.quiet:
+        print(f'\n  Unverified enum restatements grew past the {EXPECTED_ENUM_UNVERIFIED} baseline '
+              f'to {len(rep.enum_unverified)}.\n  Each one is a page that stopped being compared. '
+              f'Give the section a heading naming the\n  owning type, rather than raising the '
+              f'baseline.')
+
     fail = bool(rep.changed) or bool(rep.docs_only) or bool(rep.unverified) or unmatched_grew
+    fail = fail or bool(rep.enum_drift) or enum_unverified_grew
     if not args.lenient:
         fail = fail or bool(rep.source_only)
     return 1 if fail else 0
