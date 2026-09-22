@@ -88,7 +88,8 @@ public init?(edge: Shape)
   ```swift
   let box = Shape.box(width: 10, height: 5, depth: 2)!
   for e in box.edges() {
-      if let dim = LengthDimension(edge: e), dim.isValid {
+      if let edgeShape = Shape.fromEdge(e),
+         let dim = LengthDimension(edge: edgeShape), dim.isValid {
           print(dim.value)
           break
       }
@@ -112,7 +113,8 @@ public init?(face1: Shape, face2: Shape)
   ```swift
   let box = Shape.box(width: 10, height: 5, depth: 2)!
   let faces = box.faces()
-  if let dim = LengthDimension(face1: faces[0].shape, face2: faces[1].shape) {
+  if let dim = LengthDimension(
+      face1: Shape.fromFace(faces[0])!, face2: Shape.fromFace(faces[1])!) {
       print(dim.value)
   }
   ```
@@ -278,7 +280,8 @@ public init?(edge1: Shape, edge2: Shape)
   let box = Shape.box(width: 10, height: 10, depth: 5)!
   let edges = box.edges()
   if edges.count >= 2,
-     let dim = AngleDimension(edge1: edges[0].shape, edge2: edges[1].shape) {
+     let dim = AngleDimension(
+         edge1: Shape.fromEdge(edges[0])!, edge2: Shape.fromEdge(edges[1])!) {
       print(dim.degrees)
   }
   ```
