@@ -290,6 +290,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -342,6 +343,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -393,6 +395,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -461,6 +464,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -543,6 +547,7 @@ OCCTShapeRef OCCTImportIGESProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -613,6 +618,7 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char*               path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return nullptr;
   }
@@ -654,6 +660,7 @@ bool OCCTExportIGESProgress(OCCTShapeRef              shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     setCancelOut(outCancelled, indicator);
     return false;
   }
@@ -674,6 +681,7 @@ int32_t OCCTIGESReaderNbRoots(const char* path, OCCTReturnStatus* _Nullable outS
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -703,6 +711,7 @@ OCCTShapeRef OCCTImportIGESRoot(const char* path,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -723,6 +732,7 @@ int32_t OCCTIGESReaderNbShapes(const char* path, OCCTReturnStatus* _Nullable out
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -747,6 +757,7 @@ OCCTShapeRef OCCTImportIGESVisible(const char* path, OCCTReturnStatus* _Nullable
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -771,6 +782,7 @@ bool OCCTExportIGESWithUnit(OCCTShapeRef shape, const char* path, const char* un
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -795,6 +807,7 @@ bool OCCTExportIGESBRepMode(OCCTShapeRef shape, const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -831,6 +844,7 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -872,6 +886,7 @@ OCCTShapeRef OCCTImportIGES(const char* path, OCCTReturnStatus* _Nullable outSta
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -915,6 +930,7 @@ OCCTShapeRef OCCTImportIGESRobust(const char* path, OCCTReturnStatus* _Nullable 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -963,6 +979,7 @@ bool OCCTExportIGES(OCCTShapeRef shape, const char* path)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

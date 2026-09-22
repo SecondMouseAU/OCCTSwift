@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach data exchange (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused STEP, IGES, BREP, mesh or OSD operation. 192 function-level `catch (...)` blocks across the seven `OCCTBridge_IO_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
+
+This sits alongside `OCCTReturnStatus` (#1644) rather than replacing it: the return status is what the translator concluded and is always present, while a diagnostic record appears only when the kernel actually raised. A failed read with a status and no record raised no exception.
+
+The three `GeomTools_*Set` counting loops in `OCCTBridge_IO_NativeFormats.mm` keep their inner `catch (...)` uninstrumented, with the reason in place: those sets are 1-based with no count accessor, so the catch is how the loop finds the end of the collection on a well-formed file, not a failure.
+
 ### Caught-exception diagnostics reach shape healing (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused heal, fix, upgrade, sewing, blend or filling. 266 function-level `catch (...)` blocks across the seven `OCCTBridge_Healing_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so a `nil` from `ShapeFix`-backed API can now name the OCCT exception the kernel raised rather than only that something refused.
