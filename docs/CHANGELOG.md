@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A gate on the bridge's caught-exception diagnostics (#2077)
+
+`Scripts/check-bridge-diagnostics.py` fails when a function-level `catch (...)` block in `Sources/OCCTBridge/src/*.mm` does not call `occtRecordCaughtException(__func__);` as its first statement, unless the site is on an exemption list carrying a written reason. It runs in `ci.yml`'s `gate-scripts` job and in the optional pre-commit hook, the twelfth gate in that job, and it is what stops a newly written bridge function returning a `nil` that explains nothing.
+
+Two sites are exempt, both the diagnostics channel's own internals, where a record would feed itself: `occtRecordCaughtException`'s classification ladder, where a call `throw;`s the same exception back into its own clause and recurses until the stack runs out, and `occtDiagnosticsLog`, its tail.
+
+With the gate in place, the coverage caveat that shipped with #1161 is gone from `docs/reference/Diagnostics.md`, `OCCTBridge.h` and `OCCTDiagnostics`' doc comment. An empty capture now means the failure raised nothing to classify (`IsDone() == false`, a null result handle, a rejected argument), not that the site was never instrumented. `Diagnostics.md` gains a section on deeper catch blocks: 21 of the bridge's 54 record, and 33 say in place why they do not.
+
 ### Caught-exception diagnostics reach the whole bridge (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused call from any bridge file. This PR finishes the sweep #1161 started: 1,470 function-level `catch (...)` blocks across the remaining 30 files, which is OCAF documents, the BRep graph, visualisation and AIS, meshing, the spatial and math solvers, ProjLib/NLPlate, HLR, eight more Modeling files and `OCCTBridge.mm` itself. Coverage reaches 3,597 of the bridge's 3,599 function-level catch blocks.
