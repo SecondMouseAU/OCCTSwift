@@ -22,7 +22,7 @@ set -e
 OCCT_VERSION="8.0.1"
 OCCT_RC=""
 # Pre-release tags use format V8.0.0-rc5 / V8.0.0-beta2 (with dash)
-# GA releases use V8_0_1 (with underscores)
+# GA releases use V8.0.1 (with dots)
 if [ -n "$OCCT_RC" ]; then
     OCCT_TAG="V${OCCT_VERSION}-${OCCT_RC}"
 else
