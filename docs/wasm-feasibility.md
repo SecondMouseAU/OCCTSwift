@@ -65,6 +65,49 @@ This is the fact that dominates the whole effort.
 
 Everything below is about how to bridge that gap.
 
+## C++ exceptions on wasip1: what is proven (#2171)
+
+The bridge answers a failed OCCT call by catching at the C boundary and returning a refusal, and
+`check-throwing-calls.py` gates that. On `wasm32-unknown-wasip1` that contract **holds**, on
+conditions that are now measured rather than assumed. The probe is
+[`Scripts/repro/2171`](../Scripts/repro/2171), re-runnable as `Scripts/repro/2171/run.sh`, and its
+measurement log is [that directory's README](../Scripts/repro/2171/README.md).
+
+**Proven.** A failure type raised through a static `Raise` entry point is caught across separately
+compiled targets by its own type, by reference to its base, and by `catch (...)`, which is the shape
+every `OCCTBridge` function's outermost handler uses. A `std::out_of_range` raised inside libc++
+itself is caught too, so the seam between the Swift SDK's no-exceptions C++ runtime and wasi-sdk's
+exception-enabled one holds for a throw neither side of our code wrote. When the whole path carries
+the flags, every destructor between the raise and the catch runs. setjmp and longjmp work in a
+translation unit that also carries the exception flags.
+
+**Three conditions, each of which fails silently if missed.**
+
+| Condition | What happens without it |
+|-----------|-------------------------|
+| `WASM_CXX_EH_FLAGS` reaches **every** C++ translation unit, OCCT's included | The exception still propagates, but frames compiled without the flags skip their stack cleanup, and a `try`/`catch` written inside such a frame never fires. No error, no warning. |
+| `-lc++abi -lunwind` from wasi-sdk's `eh` directory are on the link line | The link fails on `__cxa_throw` and seven more, which is at least loud |
+| setjmp users are compiled `-mllvm -wasm-enable-sjlj` and linked `-lsetjmp` | The link fails on `setjmp` and `longjmp`; `-fwasm-exceptions` does nothing for them |
+
+The first is the one that matters for OCCT, because OCCT does not only raise `Standard_Failure`, it
+catches it internally to turn a failure into an `IsDone() == false`. Those handlers disappear with
+no diagnostic if OCCT's CMake never receives the flags, and every OCCT frame between the raise and
+the bridge leaks the `Handle`s and shapes it held. `Scripts/build-occt-wasm.sh` says nothing about
+exceptions today; wiring the flags into `CMAKE_CXX_FLAGS` is the first thing #2172 has to do.
+
+**Cost.** The same program with and without exceptions differs by about 200 KB, near enough
+constant between `-O0` and `-Os`, so it is mostly the fixed cost of the exception runtime. The
+per-function landing pads, which are the part that scales with OCCT, are not in that number.
+
+**An uncaught exception is better off here than natively.** It leaves the module as a wasm exception
+the host reports, rather than the uncatchable in-process failure of #345. The instance is still
+unusable afterwards, so this changes the diagnostics and not the duty to catch at the bridge.
+
+**Not established.** None of this has met OCCT. The probe's largest object is a few kilobytes,
+the libc++ seam rests on weak symbol resolution that a larger link could resolve the other way, and
+`operator new` and `std::bad_alloc` under the 4 GB ceiling were not probed. Those move to #2172,
+the first OCCT compile, and #2174, the full library.
+
 ## What breaks in the Swift layer
 
 The Swift API leans on Foundation harder than the bridge does: **~70 files**
