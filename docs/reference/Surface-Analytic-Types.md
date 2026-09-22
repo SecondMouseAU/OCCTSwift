@@ -337,7 +337,7 @@ Meaningful only when the surface wraps a `Geom_ToroidalSurface`. Members return 
 - **OCCT:** `Geom_ToroidalSurface`, accessed via `Handle(Geom_ToroidalSurface)::DownCast`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       let tp = surf.torusProperties
   }
   ```
@@ -359,7 +359,7 @@ public var majorRadius: Double { get }
 - **OCCT:** `Geom_ToroidalSurface::MajorRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       let R = surf.torusProperties.majorRadius  // 10.0
   }
   ```
@@ -378,7 +378,7 @@ public var minorRadius: Double { get }
 - **OCCT:** `Geom_ToroidalSurface::MinorRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       let r = surf.torusProperties.minorRadius  // 2.0
   }
   ```
@@ -399,7 +399,7 @@ public func setMajorRadius(_ r: Double) -> Bool
 - **OCCT:** `Geom_ToroidalSurface::SetMajorRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       surf.torusProperties.setMajorRadius(12)
   }
   ```
@@ -420,7 +420,7 @@ public func setMinorRadius(_ r: Double) -> Bool
 - **OCCT:** `Geom_ToroidalSurface::SetMinorRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       surf.torusProperties.setMinorRadius(3)
   }
   ```
@@ -439,7 +439,7 @@ public var area: Double { get }
 - **OCCT:** `Geom_ToroidalSurface::Area`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       let a = surf.torusProperties.area  // ≈ 789.6 (4π²×10×2)
   }
   ```
@@ -458,7 +458,7 @@ public var volume: Double { get }
 - **OCCT:** `Geom_ToroidalSurface::Volume`.
 - **Example:**
   ```swift
-  if let surf = Surface.torus(majorRadius: 10, minorRadius: 2) {
+  if let surf = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 2) {
       let v = surf.torusProperties.volume  // ≈ 789.6 (2π²×10×4)
   }
   ```
@@ -481,7 +481,7 @@ Meaningful only when the surface wraps a `Geom_CylindricalSurface`. Members retu
 - **OCCT:** `Geom_CylindricalSurface`, accessed via `Handle(Geom_CylindricalSurface)::DownCast`.
 - **Example:**
   ```swift
-  if let surf = Surface.cylinder(radius: 5, height: 20) {
+  if let surf = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       let cp = surf.cylinderProperties
   }
   ```
@@ -500,7 +500,7 @@ public var radius: Double { get }
 - **OCCT:** `Geom_CylindricalSurface::Radius`.
 - **Example:**
   ```swift
-  if let surf = Surface.cylinder(radius: 5, height: 20) {
+  if let surf = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       let r = surf.cylinderProperties.radius  // 5.0
   }
   ```
@@ -521,7 +521,7 @@ public func setRadius(_ r: Double) -> Bool
 - **OCCT:** `Geom_CylindricalSurface::SetRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.cylinder(radius: 5, height: 20) {
+  if let surf = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       surf.cylinderProperties.setRadius(8)
   }
   ```
@@ -542,7 +542,7 @@ The axis runs through the cylinder centre along the height direction. The positi
 - **OCCT:** `Geom_CylindricalSurface::Cylinder().Axis()` → `gp_Ax1::Location` + `gp_Ax1::Direction`.
 - **Example:**
   ```swift
-  if let surf = Surface.cylinder(radius: 5, height: 20) {
+  if let surf = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       let ax = surf.cylinderProperties.axis
       // ax.direction ≈ SIMD3(0, 0, 1) for a Z-axis cylinder
   }
@@ -565,7 +565,7 @@ On `Geom_CylindricalSurface`, U is the angular parameter; a U iso-curve is a lin
 - **OCCT:** `Geom_CylindricalSurface::UIso`.
 - **Example:**
   ```swift
-  if let surf = Surface.cylinder(radius: 5, height: 20) {
+  if let surf = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       if let gen = surf.cylinderProperties.uIso(0) {
           // gen is the generator line at angle 0
       }
@@ -591,7 +591,7 @@ Meaningful only when the surface wraps a `Geom_ConicalSurface`. Members return z
 - **OCCT:** `Geom_ConicalSurface`, accessed via `Handle(Geom_ConicalSurface)::DownCast`.
 - **Example:**
   ```swift
-  if let surf = Surface.cone(semiAngle: .pi / 6, refRadius: 5) {
+  if let surf = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 6) {
       let cp = surf.coneProperties
   }
   ```
@@ -612,7 +612,7 @@ A semi-angle of 0 would be a cylinder; π/2 would be a flat disc. For physical c
 - **OCCT:** `Geom_ConicalSurface::SemiAngle`.
 - **Example:**
   ```swift
-  if let surf = Surface.cone(semiAngle: .pi / 6, refRadius: 5) {
+  if let surf = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 6) {
       let a = surf.coneProperties.semiAngle  // ≈ 0.524 (π/6)
   }
   ```
@@ -633,7 +633,7 @@ This is the radius at the cone's reference position (`gp_Cone::RefRadius`), i.e.
 - **OCCT:** `Geom_ConicalSurface::RefRadius`.
 - **Example:**
   ```swift
-  if let surf = Surface.cone(semiAngle: .pi / 6, refRadius: 5) {
+  if let surf = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 6) {
       let r0 = surf.coneProperties.refRadius  // 5.0
   }
   ```
@@ -654,7 +654,7 @@ The apex is where the cone's generator lines converge. For a cone with `refRadiu
 - **OCCT:** `Geom_ConicalSurface::Apex`.
 - **Example:**
   ```swift
-  if let surf = Surface.cone(semiAngle: .pi / 4, refRadius: 5) {
+  if let surf = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 4) {
       let tip = surf.coneProperties.apex
       // tip is 5.0 units along the axis from the reference plane
   }
@@ -676,7 +676,7 @@ The axis runs through the apex along the cone's height direction. The position i
 - **OCCT:** `Geom_ConicalSurface::Cone().Axis()` → `gp_Ax1::Location` + `gp_Ax1::Direction`.
 - **Example:**
   ```swift
-  if let surf = Surface.cone(semiAngle: .pi / 6, refRadius: 5) {
+  if let surf = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 6) {
       let ax = surf.coneProperties.axis
       // ax.direction ≈ SIMD3(0, 0, 1) for a Z-axis cone
   }
@@ -700,7 +700,8 @@ public var sweptProperties: SweptProperties { get }
 - **OCCT:** `Geom_SweptSurface`, accessed via `Handle(Geom_SweptSurface)::DownCast`.
 - **Example:**
   ```swift
-  if let surf = Surface.extrusion(profile: Wire.circle(radius: 3)!, direction: SIMD3(0, 0, 1)) {
+  let profile = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3)!
+  if let surf = Surface.extrusion(profile: profile, direction: SIMD3(0, 0, 1)) {
       let sp = surf.sweptProperties
   }
   ```
@@ -721,7 +722,8 @@ For a `Geom_SurfaceOfLinearExtrusion`, this is the extrusion direction. For `Geo
 - **OCCT:** `Geom_SweptSurface::Direction`.
 - **Example:**
   ```swift
-  if let surf = Surface.extrusion(profile: Wire.circle(radius: 3)!, direction: SIMD3(0, 0, 1)) {
+  let profile = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3)!
+  if let surf = Surface.extrusion(profile: profile, direction: SIMD3(0, 0, 1)) {
       let d = surf.sweptProperties.direction  // ≈ SIMD3(0, 0, 1)
   }
   ```
@@ -742,7 +744,8 @@ For an extrusion, this is the profile curve. For a revolution surface, this is t
 - **OCCT:** `Geom_SweptSurface::BasisCurve`.
 - **Example:**
   ```swift
-  if let surf = Surface.extrusion(profile: Wire.circle(radius: 3)!, direction: SIMD3(0, 0, 1)) {
+  let profile = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3)!
+  if let surf = Surface.extrusion(profile: profile, direction: SIMD3(0, 0, 1)) {
       if let basis = surf.sweptProperties.basisCurve {
           let len = basis.length
       }

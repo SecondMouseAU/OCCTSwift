@@ -27,7 +27,9 @@ public var poleCount: Int? { get }
 - **OCCT:** `Geom2d_BSplineCurve::NbPoles` / `Geom2d_BezierCurve::NbPoles`.
 - **Example:**
   ```swift
-  if let c = Curve2D.bspline(points: [.zero, SIMD2(1, 0), SIMD2(1, 1)]) {
+  let poles: [SIMD2<Double>] = [.zero, SIMD2(1, 0), SIMD2(1, 1)]
+  if let c = Curve2D.bspline(poles: poles, knots: [0, 1],
+                             multiplicities: [3, 3], degree: 2) {
       if let n = c.poleCount { /* n == 3 */ }
   }
   ```
@@ -203,7 +205,7 @@ public var ellipseProperties: EllipseProperties { get }
 - **OCCT:** `Geom2d_Ellipse`, accessed via `Handle(Geom2d_Ellipse)::DownCast`.
 - **Example:**
   ```swift
-  if let c = Curve2D.ellipse(majorRadius: 5, minorRadius: 3) {
+  if let c = Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 3) {
       let props = c.ellipseProperties
   }
   ```
@@ -350,7 +352,7 @@ public var hyperbolaProperties: HyperbolaProperties { get }
 - **OCCT:** `Geom2d_Hyperbola`, accessed via `Handle(Geom2d_Hyperbola)::DownCast`.
 - **Example:**
   ```swift
-  if let c = Curve2D.hyperbola(majorRadius: 4, minorRadius: 3) {
+  if let c = Curve2D.hyperbola(center: .zero, majorRadius: 4, minorRadius: 3) {
       let props = c.hyperbolaProperties
   }
   ```
@@ -456,7 +458,7 @@ public var parabolaProperties: ParabolaProperties { get }
 - **OCCT:** `Geom2d_Parabola`, accessed via `Handle(Geom2d_Parabola)::DownCast`.
 - **Example:**
   ```swift
-  if let c = Curve2D.parabola(focal: 2) {
+  if let c = Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 2) {
       let props = c.parabolaProperties
   }
   ```
@@ -564,7 +566,7 @@ public var lineProperties: LineProperties { get }
 - **OCCT:** `Geom2d_Line`, accessed via `Handle(Geom2d_Line)::DownCast`.
 - **Example:**
   ```swift
-  if let c = Curve2D.line(from: .zero, to: SIMD2(1, 0)) {
+  if let c = Curve2D.line(through: .zero, direction: SIMD2(1, 0)) {
       let props = c.lineProperties
   }
   ```

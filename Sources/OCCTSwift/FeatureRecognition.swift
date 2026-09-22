@@ -579,7 +579,10 @@ extension AAG {
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
     /// let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
     /// let cut = box.subtracting(pocketTool)!
-    /// let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+    /// let junctionEdges = cut.edges(where: {
+    ///     guard let b = $0.bounds else { return false }
+    ///     return abs(b.min.z) < 1e-6 && abs(b.max.z) < 1e-6
+    /// })
     /// let filleted = cut.filleted(edges: junctionEdges, radius: 1.0)!
     /// print(filleted.detectPocketsAAG().count)   // 1, was 0
     /// ```

@@ -1438,7 +1438,7 @@ extension Shape {
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.mesh(deflection: 0.1)
+    /// _ = box.mesh(linearDeflection: 0.1)
     /// if let cloud = box.pointCloudByDensity(0.0) {
     ///     print(cloud.points.count)
     /// }
@@ -3421,7 +3421,10 @@ extension Shape {
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let faces = box.faces(), edges = box.edges()
-    /// Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
+    /// Shape.continuityClassOfFaces(
+    ///     edge: Shape.fromEdge(edges[0])!,
+    ///     face1: Shape.fromFace(faces[0])!,
+    ///     face2: Shape.fromFace(faces[1])!)  // .c0
     /// ```
     ///
     /// - Returns: The measured class, or nil if the arguments are not an edge and two faces that

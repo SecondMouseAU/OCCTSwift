@@ -486,7 +486,7 @@ Each pair of adjacent wires generates a ruled surface between them. Wires should
 - **Example:**
   ```swift
   let bottom = Wire.rectangle(width: 10, height: 10)!
-  let top = Wire.circle(center: SIMD3(0, 0, 5), radius: 5)!
+  let top = Wire.circle(origin: SIMD3(0, 0, 5), radius: 5)!
   if let shell = Shape.ruledShell(from: [bottom, top]) { }
   ```
 

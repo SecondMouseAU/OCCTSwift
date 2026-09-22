@@ -403,6 +403,7 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -543,6 +544,7 @@ static double occtShapeToleranceOfType(OCCTShapeRef shape, int32_t shapeType, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -580,6 +582,7 @@ static bool occtFreeBoundsPerformed(OCCTFreeBoundsPropsRef props)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -603,6 +606,7 @@ static Handle(ShapeAnalysis_FreeBoundData) occtFreeBound(OCCTFreeBoundsPropsRef 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -667,6 +671,7 @@ OCCTWireRef OCCTWireFix(OCCTWireRef wire, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -682,6 +687,7 @@ TopoDS_Shape occtUnifySameDomainInput(const TopoDS_Shape& shape, BRepBuilderAPI_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return TopoDS_Shape();
   }
 }
@@ -696,6 +702,7 @@ TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_C
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return sub;
   }
 }
@@ -718,6 +725,7 @@ TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return TopoDS_Shape();
   }
 }
@@ -735,6 +743,7 @@ OCCTShapeRef OCCTShapeConvertToNURBS(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -755,6 +764,7 @@ OCCTShapeRef OCCTShapeFastSewn(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -791,6 +801,7 @@ OCCTShapeRef OCCTShapeSewSingle(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -849,6 +860,7 @@ OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -869,6 +881,7 @@ OCCTShapeRef OCCTShapeSameParameter(OCCTShapeRef shape, double tolerance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -889,6 +902,7 @@ OCCTShapeRef OCCTShapeEncodeRegularity(OCCTShapeRef shape, double toleranceAngle
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -908,6 +922,7 @@ OCCTShapeRef OCCTShapeUpdateTolerances(OCCTShapeRef shape, bool verifyFaceTolera
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -928,6 +943,7 @@ OCCTShapeRef OCCTShapePurgeLocations(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -956,6 +972,7 @@ OCCTShapeRef _Nullable OCCTBRepToolsSubstitute(OCCTShapeRef parentShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -976,6 +993,7 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeShellSewing(OCCTShapeRef shape, double to
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1037,6 +1055,7 @@ bool OCCTShapeFixSplitEdge(OCCTEdgeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
