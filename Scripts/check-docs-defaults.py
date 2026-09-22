@@ -506,7 +506,71 @@ TYPE_OPEN_RE = re.compile(
     r'(?:^|\n)[ \t]*(?:(?:public|open|internal|private|fileprivate|final|indirect|@\w+)\s+)*'
     r'(class|struct|enum|actor|extension|protocol)\s+([A-Za-z_][A-Za-z0-9_.]*)')
 
-CASE_LINE_RE = re.compile(r'^[ \t]*case[ \t]+(.+?)[ \t]*$', re.M)
+def mask_noncode(text):
+    """A same-length copy of `text` with string and comment bodies blanked to spaces.
+
+    Length-preserving on purpose: every index into the mask is an index into the original, so brace
+    matching and declaration spans can run on the mask while bodies are sliced from the real text.
+
+    `code_skeleton` above does the same job per line and DROPS characters, which is right for its
+    caller and wrong here. The first version of this channel used the raw text, and a block comment
+    containing a brace desynchronised `_brace_span` for the rest of the file: the enclosing enum's
+    span was wrong, so the enum vanished from the source index entirely and every page restating it
+    was reported as naming an enum that does not exist. Found by the Kilo review of #2161, one layer
+    deeper than the finding described.
+    """
+    out, i, n = [], 0, len(text)
+    in_str = in_block = in_line = False
+    while i < n:
+        c = text[i]
+        if in_line:
+            if c == '\n':
+                in_line = False
+                out.append(c)
+            else:
+                out.append(' ')
+            i += 1
+            continue
+        if in_block:
+            if c == '*' and i + 1 < n and text[i + 1] == '/':
+                in_block = False
+                out.append('  ')
+                i += 2
+                continue
+            out.append('\n' if c == '\n' else ' ')
+            i += 1
+            continue
+        if in_str:
+            if c == '\\':
+                out.append('  ')
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+                out.append(' ')
+            else:
+                out.append('\n' if c == '\n' else ' ')
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(' ')
+            i += 1
+            continue
+        if c == '/' and i + 1 < n:
+            if text[i + 1] == '/':
+                in_line = True
+                out.append('  ')
+                i += 2
+                continue
+            if text[i + 1] == '*':
+                in_block = True
+                out.append('  ')
+                i += 2
+                continue
+        out.append(c)
+        i += 1
+    return ''.join(out)
 
 
 def _brace_span(text, from_index):
@@ -534,9 +598,10 @@ def scan_types(text):
     a source `Kind` from another type and reported both as drifted, which is a false positive that
     would have made this gate unusable.
     """
+    mask = mask_noncode(text)
     spans = []
-    for m in TYPE_OPEN_RE.finditer(text):
-        span = _brace_span(text, m.end())
+    for m in TYPE_OPEN_RE.finditer(mask):
+        span = _brace_span(mask, m.end())
         if span:
             spans.append((m.group(1), m.group(2), span[0], span[1]))
     out = []
@@ -586,9 +651,13 @@ def enum_case_names(body):
     with `case`. `docs/reference/Surface.md` restates all eighteen of `GordonResultStatus`'s cases
     across six lines, and reading only the first reported thirteen of them missing.
     """
-    names, depth, pending = [], 0, None
+    names, depth, pending, in_block = [], 0, None, False
     for raw in body.split('\n'):
-        line = strip_line_comment(raw)
+        # `code_skeleton` rather than `strip_line_comment`, because a brace inside a block comment
+        # or a string literal is not a scope and counting it desynchronises `depth` for the rest of
+        # the body, which silently turns switch arms into declarations. This script already had the
+        # helper for exactly that reason; the first version of this loop did not use it.
+        line, in_block = code_skeleton(raw, in_block)
         stripped = line.strip()
         if pending is not None:
             pending += ' ' + stripped
@@ -597,7 +666,7 @@ def enum_case_names(body):
                 pending = None
         else:
             m = re.match(r'case[ \t]+(.+)$', stripped)
-            if depth == 0 and m and not stripped.startswith('case .'):
+            if depth == 0 and m and not _is_pattern_arm(stripped):
                 text = m.group(1)
                 if _continues(text):
                     pending = text
@@ -608,6 +677,16 @@ def enum_case_names(body):
     if pending is not None:
         names.extend(_split_case_names(pending))
     return names
+
+
+def _is_pattern_arm(stripped):
+    """True for a switch arm rather than a declaration: `case .x`, `case let x`, `case var x`.
+
+    Belt and braces. A switch sits inside a member, so a pattern arm is never at the enum body's own
+    depth in valid Swift, and the depth rule alone is enough. It stops being enough the moment depth
+    is wrong for any reason, and a wrong depth is silent.
+    """
+    return bool(re.match(r'case[ \t]+(\.|let[ \t]|var[ \t]|\()', stripped))
 
 
 def _continues(text):
@@ -1093,6 +1172,19 @@ ENUM_SELF_TEST_CASES = [
                     '    case failed\n}\n'},
         {'docs/reference/St.md': '## Status\n\n```swift\npublic enum Status: Int {\n'
                                  '    case notStarted, done,\n         failed\n}\n```\n'},
+        {},
+    ),
+    (
+        # Kilo review of #2161. A brace inside a block comment is not a scope. Counting it puts the
+        # rest of the body at depth 1, where every later declaration is skipped as a switch arm, and
+        # the page is reported as omitting cases it plainly lists.
+        'a brace inside a block comment does not skew the depth count (#2145)',
+        {'S.swift': 'public enum Kind {\n'
+                    '    case one\n'
+                    '    /* the opening { of a scope, in prose */\n'
+                    '    case two\n}\n'},
+        {'docs/reference/K.md': '## Kind\n\n```swift\npublic enum Kind {\n'
+                                '    case one\n    case two\n}\n```\n'},
         {},
     ),
     (
