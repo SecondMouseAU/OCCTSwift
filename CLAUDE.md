@@ -90,10 +90,9 @@ the main checkout, or `git config core.hooksPath Scripts/git-hooks` in a linked 
 ### Doc Snippet Type-Check
 
 ```bash
-python3 Scripts/census-doc-snippets.py              # CENSUS: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
-python3 Scripts/census-doc-snippets.py --strict     # ...and exit 1 on a non-compiling snippet
-python3 Scripts/census-doc-snippets.py --list       # inventory per kind, no compile
-python3 Scripts/census-doc-snippets.py --self-test
+python3 Scripts/check-doc-snippets.py              # GATE: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
+python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
+python3 Scripts/check-doc-snippets.py --self-test
 ```
 
 **Outside `gate-scripts`**, because it compiles the snippets against the built `OCCTSwift` module
@@ -104,19 +103,19 @@ count toward the gate/census totals above, which are derived from `gate-scripts`
 It hands every snippet to `swiftc` rather than matching argument labels with a regex: #1675 holds
 two attempts at the regex and a record of how each reported a real API as missing, and a checker
 that does that is worse than no checker. Of 8,200 fences, 5,092 are signature restatements a
-bodiless `func` makes uncompilable anywhere, 3,105 are snippets, and of those **1,474 compile,
-1,444 are fragments opening mid-flow with a receiver the prose introduced, and 187 do not
-compile**. A snippet that is deliberately not compilable carries its exemption on the page, in the
-fence info string:
+bodiless `func` makes uncompilable anywhere, 3,105 are snippets, and of those **1,661 compile and
+1,444 are fragments opening mid-flow with a receiver the prose introduced**. A snippet that is
+deliberately not compilable carries its exemption on the page, in the fence info string:
 
     ```swift no-typecheck: a listing of case spellings, not statements
 
 The reason after the colon is required, and it is for a snippet that is uncompilable for a reason
 the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, `[...]` and
 `= // prose` are recognised as fragments (#2092), so they need no marker and should not carry one.
-It stays a census while that 187 stands: promotion is `--strict` by default plus a rename to
-`check-`. In CI both invocations take `--require-typecheck`, which fails the step rather than
-reporting on a population it never examined (#2098).
+**It gates**: it was a census while a 211-snippet backlog stood, and was promoted once #2092 and
+#2093 took that to zero. In CI both invocations take `--require-typecheck`, which fails the step
+rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
+a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
 
 ### Compile a Ground Truth C++ Test
 
