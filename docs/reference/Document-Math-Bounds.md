@@ -675,7 +675,7 @@ public func classifyPoint(_ point: SIMD3<Double>, tolerance: Double = 1e-6) -> P
 - **OCCT:** `BRepClass3d_SolidClassifier::Perform` (via `OCCTShapeClassifyPoint`).
 - **Example:**
   ```swift
-  let box = Shape.box(dx: 10, dy: 10, dz: 10)!
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
   let state = box.classifyPoint(SIMD3(5, 5, 5))
   // state == .inside
   ```

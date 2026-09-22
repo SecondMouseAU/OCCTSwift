@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Document reference snippets now compile (#2093)
+
+Thirty-eight fenced examples across the eleven `Document-*` reference pages and `Construction.md`. Nineteen were `PipeShellBuilder` examples whose only statement was `pipe.<member>(...)`: `pipe` is declared nowhere in those fences and also names a libc function, so every one resolved to `(UnsafeMutablePointer<Int32>?) -> Int32` and failed. Each now constructs its receiver. Also corrected: `Shape.edgeFromLine(from:to:)`, which is `edgeFromLine(origin:direction:p1:p2:)`; `Wire.asShape()`, which is `Shape.fromWire(_:)`; `Document()`, whose initializer is internal, so the factory is `Document.create()`; `Document.isValid`, which does not exist; `TrigRoots.solve(B:)`, whose `sin(x)` coefficient is `b:`; and `Curve3D.line`/`Surface.plane` scalar-component spellings that have never existed.
+
 ### Curve3D and Curve2D reference snippets now compile (#2093)
 
 Thirty-seven fenced examples across `Curve2D-Analytic-Types.md`, `Curve2D-Constraint-Solvers.md`, `Curve3D-Analysis.md`, `Curve3D-Analytic-Types.md`, `CurveAdaptors.md`, `Geometry2D.md` and `Shape-Recognition.md`, and in `Curve2D.swift`, `Curve3D.swift` and `Continuity.swift` doc comments, named members and labels that have never existed. `Curve3D.line(origin:direction:)` is `line(through:direction:)`; `parabola(vertex:...)` is `parabola(center:...)`; `curveKind` is `curveType`, an `Int` where `1` is Circle, so the examples no longer claim to print `.circle`; `Curve2D.parameterRange` is `domain`, which is not optional, so the force-unwraps go too. `Curve2D.ellipse`, `hyperbola` and `parabola` all take a placement the examples omitted, and `Curve2D.bspline(points:)` had been resolving to the instance accessor of the same name.
