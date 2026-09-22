@@ -38,3 +38,14 @@ hello from wasm32-unknown-wasip1
 ========================================
 Toolchain verified: a wasm module built and ran.
 ========================================
+
+The run above found the Swift SDK already installed. The pinned URL and checksum were exercised
+separately, by the published install command itself; SwiftPM stops at the existing bundle only
+after downloading and verifying. Its stdout and stderr interleave, so the error line lands first:
+
+$ swift sdk install https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz --checksum f07b7be3c586d92d7a07051fc6d303b87ebea67eadc40640ba59d5a8b79aa86d
+Error: Swift SDK bundle with name `swift-6.4.0-RELEASE_wasm.artifactbundle` is already installed. Can't install a new bundle with the same name.
+Swift SDK bundle archive successfully downloaded from `https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz`.
+Verifying if checksum of the downloaded archive is valid...
+Downloaded archive has a valid checksum.
+Swift SDK bundle at `https://download.swift.org/swift-6.4.0-release/wasm-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_wasm.artifactbundle.tar.gz` is assumed to be an archive, unpacking...
