@@ -33,9 +33,28 @@ from `refactor/381-pass1b`, the integration branch, now merged.
 - **No pattern rule covers `refactor/**`, deliberately.** A pattern is what made #780 expensive:
   renaming a branch to move it out of the pattern **closed its open PR**, and GitHub will not
   reopen one whose head branch was renamed. Being *required* is separate from whether the job
-  runs: `gate-scripts` runs on any PR whose base carries `ci.yml`, which is every branch cut from
-  `main`. A PR based on a branch whose `ci.yml` predates the job never dispatches it, and requiring
-  it there is exactly the unrecoverable stall above.
+  runs, and that sentence used to read "`gate-scripts` runs on any PR whose base carries `ci.yml`",
+  which was **false** until #2146: every workflow filtered `pull_request` by base, so carrying the
+  file did nothing unless the base was also named in it. See the rule below. A PR based on a branch
+  whose `ci.yml` predates the job still never dispatches it, and requiring it there is exactly the
+  unrecoverable stall above.
+- **No workflow filters `pull_request` by base branch** (#2146). `ci.yml`, `code-style.yml`,
+  `code-structure.yml` and `kernel-integration.yml` all used to carry
+  `pull_request: branches: [main, 'refactor/**']`, and `branches:` on a `pull_request` trigger
+  filters the **base**, not the head. So a PR into any other base got **no CI at all**, while
+  GitHub reported it `mergeStateStatus: CLEAN`, because the ruleset protects `main` and an
+  unprotected base requires nothing. Green and never-ran were indistinguishable, which is
+  [static-gates](static-gates.md)'s own opening argument arriving through the workflow layer.
+
+  It was found on a stacked #2077 PR carrying thousands of lines of bridge instrumentation that
+  `swift build` had never seen. The `v5.0.0-766-execution` branch had already hit it and worked
+  around it per-branch, by adding a `766-execution.yml` naming itself as a base; that workaround is
+  the evidence the filter was wrong, not a pattern to copy. Every base now gets CI without needing
+  its own workflow.
+
+  `push:` keeps its `main` / `refactor/**` filter. A branch with an open PR is covered by
+  `pull_request`, so filtering pushes only avoids running everything twice.
+
 - **`build-and-test` is required nowhere, and that is still the right call.** It was 0-for-21 on
   the integration branch under #585 (see [Pinned kernel patch check](pinned-kernel-patch-check.md)),
   and it failed on `main` at the v2.0.0 release commit for an unrelated reason (the manifest

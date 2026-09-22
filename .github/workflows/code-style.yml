@@ -33,14 +33,15 @@ name: code-style
 
 on:
   pull_request:
-    branches:
-      - main
-      - 'refactor/**'
   push:
     branches:
       - main
       - 'refactor/**'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   code-style:
