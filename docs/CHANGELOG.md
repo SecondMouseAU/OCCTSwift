@@ -21,6 +21,14 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Caught-exception diagnostics reach the whole bridge (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused call from any bridge file. This PR finishes the sweep #1161 started: 1,470 function-level `catch (...)` blocks across the remaining 30 files, which is OCAF documents, the BRep graph, visualisation and AIS, meshing, the spatial and math solvers, ProjLib/NLPlate, HLR, eight more Modeling files and `OCCTBridge.mm` itself. Coverage reaches 3,597 of the bridge's 3,599 function-level catch blocks.
+
+The two that do not record are the channel's own internals, and both would feed themselves: `occtRecordCaughtException`'s classification ladder would `throw;` the same exception into its own clause and recurse until the stack ran out, and `occtDiagnosticsLog` is that function's tail, where a diagnostic that throws must not become the failure being diagnosed. Both carry the reason in place.
+
+Twelve deeper blocks stay uninstrumented, all recover-and-continue and all with the reason in place: `occtSampleWirePoints` in the eight remaining Modeling files, two per-solution skips in the `IntAna` intersection results, `OCCTShapeGetEdgeMesh`'s per-edge skip, and `occtHasSelfIntersectingWire`'s per-wire skip.
+
 ### Caught-exception diagnostics reach surfaces, curves and 2D geometry (#2077)
 
 `OCCTDiagnostics` now reports the OCCT exception behind a refused surface, 3D curve or 2D curve operation. 1,045 function-level `catch (...)` blocks across the seven `OCCTBridge_Surface_*.mm`, six `OCCTBridge_Curve3D_*.mm` and seven `OCCTBridge_Geom2d_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them. This is the largest of the sweep's domains and takes bridge coverage past half.

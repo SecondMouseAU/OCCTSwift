@@ -375,6 +375,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -485,6 +486,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+      // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+      // it would report a failure for a call that did not fail. The diagnostics channel is for
+      // catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -612,6 +617,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -674,6 +680,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -924,6 +931,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -954,6 +962,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1107,6 +1116,7 @@ OCCTShapeRef* OCCTShapeSplitByPlane(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outCount = 0;
     return nullptr;
   }
@@ -1144,6 +1154,7 @@ OCCTCellsBuilderRef OCCTCellsBuilderCreate(const OCCTShapeRef* shapes, int32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1163,6 +1174,7 @@ void OCCTCellsBuilderAddAllToResult(OCCTCellsBuilderRef builder, int32_t materia
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1176,6 +1188,7 @@ void OCCTCellsBuilderRemoveAllFromResult(OCCTCellsBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1189,6 +1202,7 @@ void OCCTCellsBuilderRemoveInternalBoundaries(OCCTCellsBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1205,6 +1219,7 @@ OCCTShapeRef OCCTCellsBuilderGetResult(OCCTCellsBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1236,6 +1251,7 @@ void OCCTCellsBuilderAddToResultSelective(OCCTCellsBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1264,6 +1280,7 @@ void OCCTCellsBuilderRemoveFromResult(OCCTCellsBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1280,6 +1297,7 @@ OCCTShapeRef OCCTCellsBuilderGetAllParts(OCCTCellsBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1294,6 +1312,7 @@ void OCCTCellsBuilderMakeContainers(OCCTCellsBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1315,6 +1334,7 @@ OCCTShapeRef _Nullable OCCTPreviewBox(double dx, double dy, double dz)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1332,6 +1352,7 @@ bool OCCTDocumentShapeToolIsFree(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1349,6 +1370,7 @@ bool OCCTDocumentShapeToolIsSimpleShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1366,6 +1388,7 @@ bool OCCTDocumentShapeToolIsComponent(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1383,6 +1406,7 @@ bool OCCTDocumentShapeToolIsCompound(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1400,6 +1424,7 @@ bool OCCTDocumentShapeToolIsSubShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1417,6 +1442,7 @@ bool OCCTDocumentShapeToolIsExternRef(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1435,6 +1461,7 @@ int32_t OCCTDocumentShapeToolGetUsers(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1453,6 +1480,7 @@ void OCCTDocumentShapeToolComputeShapes(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1469,6 +1497,7 @@ int32_t OCCTDocumentShapeToolNbComponents(OCCTDocumentRef doc, int64_t labelId, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1481,6 +1510,7 @@ OCCTSectionBuilderRef OCCTSectionBuilderCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1495,6 +1525,7 @@ OCCTSectionBuilderRef OCCTSectionBuilderCreateFromShapes(OCCTShapeRef shape1, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1515,6 +1546,7 @@ void OCCTSectionBuilderInit1Shape(OCCTSectionBuilderRef builder, OCCTShapeRef sh
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1534,6 +1566,7 @@ void OCCTSectionBuilderInit1Plane(OCCTSectionBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1548,6 +1581,7 @@ void OCCTSectionBuilderInit1Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1562,6 +1596,7 @@ void OCCTSectionBuilderInit2Shape(OCCTSectionBuilderRef builder, OCCTShapeRef sh
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1581,6 +1616,7 @@ void OCCTSectionBuilderInit2Plane(OCCTSectionBuilderRef builder,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1595,6 +1631,7 @@ void OCCTSectionBuilderInit2Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1608,6 +1645,7 @@ void OCCTSectionBuilderSetApproximation(OCCTSectionBuilderRef builder, bool appr
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1621,6 +1659,7 @@ void OCCTSectionBuilderComputePCurveOn1(OCCTSectionBuilderRef builder, bool comp
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1634,6 +1673,7 @@ void OCCTSectionBuilderComputePCurveOn2(OCCTSectionBuilderRef builder, bool comp
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1658,6 +1698,7 @@ OCCTShapeRef OCCTSectionBuilderBuild(OCCTSectionBuilderRef builder)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     builder->built = false;
     return nullptr;
   }
@@ -1678,6 +1719,7 @@ OCCTShapeRef OCCTSectionBuilderAncestorFaceOn1(OCCTSectionBuilderRef builder, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1697,6 +1739,7 @@ OCCTShapeRef OCCTSectionBuilderAncestorFaceOn2(OCCTSectionBuilderRef builder, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

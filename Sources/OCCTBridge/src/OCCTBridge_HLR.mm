@@ -123,6 +123,7 @@ OCCTDrawingRef OCCTDrawingCreate(OCCTShapeRef       shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -175,6 +176,7 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -213,6 +215,7 @@ OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

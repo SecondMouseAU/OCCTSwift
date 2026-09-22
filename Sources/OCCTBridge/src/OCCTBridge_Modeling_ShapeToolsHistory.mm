@@ -374,6 +374,7 @@ static OCCTShapeRef occtShapePeriodicImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -484,6 +485,10 @@ static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int sam
     }
     catch (...)
     {
+      // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: an
+      // edge with no 3D curve is skipped and the sampling pass goes on to succeed, so recording
+      // it would report a failure for a call that did not fail. The diagnostics channel is for
+      // catch blocks that refuse the call.
       continue;
     } // no 3D curve on this edge, nothing to sample
   }
@@ -611,6 +616,7 @@ static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                    
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -673,6 +679,7 @@ static OCCTWireRef occtWireInterpolateImpl(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -923,6 +930,7 @@ static int32_t occtFilletBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -953,6 +961,7 @@ static int32_t occtChamferBuilderHistoryQuery(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1097,6 +1106,7 @@ OCCTChFi2dFilletResult OCCTChFi2dFilletAlgo(OCCTShapeRef edge1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1116,6 +1126,7 @@ OCCTShapeRef _Nullable OCCTBRepToolsModifierNurbsConvert(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1143,6 +1154,7 @@ void OCCTEdgeVertex1(OCCTShapeRef edge, double* x, double* y, double* z)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -1170,6 +1182,7 @@ void OCCTEdgeVertex2(OCCTShapeRef edge, double* x, double* y, double* z)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -1247,6 +1260,7 @@ int32_t OCCTShapeSelfIntersectEstimateCost(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1276,6 +1290,7 @@ OCCTShapeRef OCCTShapeCreateCompound(const OCCTShapeRef* shapes, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1323,6 +1338,7 @@ int32_t OCCTShapeGetEdgePoints(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1362,6 +1378,7 @@ int32_t OCCTShapeGetContourPoints(OCCTShapeRef shape, double* outPoints, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

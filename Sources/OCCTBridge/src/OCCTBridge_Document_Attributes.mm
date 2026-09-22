@@ -495,6 +495,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -541,6 +542,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -708,6 +710,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -767,6 +770,7 @@ const char* OCCTDocumentGetLabelName(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -785,6 +789,7 @@ bool OCCTDocumentSetLabelName(OCCTDocumentRef doc, int64_t labelId, const char* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -803,6 +808,7 @@ bool OCCTDocumentSetIntegerAttr(OCCTDocumentRef doc, int64_t labelId, int32_t va
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -824,6 +830,7 @@ bool OCCTDocumentGetIntegerAttr(OCCTDocumentRef doc, int64_t labelId, int32_t* o
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -842,6 +849,7 @@ bool OCCTDocumentSetRealAttr(OCCTDocumentRef doc, int64_t labelId, double value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -863,6 +871,7 @@ bool OCCTDocumentGetRealAttr(OCCTDocumentRef doc, int64_t labelId, double* outVa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -881,6 +890,7 @@ bool OCCTDocumentSetAsciiStringAttr(OCCTDocumentRef doc, int64_t labelId, const 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -901,6 +911,7 @@ const char* OCCTDocumentGetAsciiStringAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -919,6 +930,7 @@ bool OCCTDocumentSetCommentAttr(OCCTDocumentRef doc, int64_t labelId, const char
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -940,6 +952,7 @@ const char* OCCTDocumentGetCommentAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -961,6 +974,7 @@ bool OCCTDocumentInitIntegerArray(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -985,6 +999,7 @@ bool OCCTDocumentSetIntegerArrayValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1011,6 +1026,7 @@ bool OCCTDocumentGetIntegerArrayValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1036,6 +1052,7 @@ bool OCCTDocumentGetIntegerArrayBounds(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1054,6 +1071,7 @@ bool OCCTDocumentInitRealArray(OCCTDocumentRef doc, int64_t labelId, int32_t low
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1078,6 +1096,7 @@ bool OCCTDocumentSetRealArrayValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1104,6 +1123,7 @@ bool OCCTDocumentGetRealArrayValue(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1129,6 +1149,7 @@ bool OCCTDocumentGetRealArrayBounds(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1147,6 +1168,7 @@ bool OCCTDocumentSetTreeNode(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1170,6 +1192,7 @@ bool OCCTDocumentAppendTreeChild(OCCTDocumentRef doc, int64_t parentLabelId, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1192,6 +1215,7 @@ int64_t OCCTDocumentTreeNodeFather(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1214,6 +1238,7 @@ int64_t OCCTDocumentTreeNodeFirst(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1236,6 +1261,7 @@ int64_t OCCTDocumentTreeNodeNext(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1256,6 +1282,7 @@ bool OCCTDocumentTreeNodeHasFather(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1276,6 +1303,7 @@ int32_t OCCTDocumentTreeNodeDepth(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1296,6 +1324,7 @@ int32_t OCCTDocumentTreeNodeNbChildren(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1323,6 +1352,7 @@ bool OCCTDocumentSetShapeAttr(OCCTDocumentRef doc, int64_t labelId, OCCTShapeRef
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1346,6 +1376,7 @@ OCCTShapeRef OCCTDocumentGetShapeAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1364,6 +1395,7 @@ bool OCCTDocumentHasShapeAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1382,6 +1414,7 @@ bool OCCTDocumentSetPositionAttr(OCCTDocumentRef doc, int64_t labelId, double x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1409,6 +1442,7 @@ bool OCCTDocumentGetPositionAttr(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1427,6 +1461,7 @@ bool OCCTDocumentHasPositionAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1448,6 +1483,7 @@ bool OCCTDocumentSetGeometryAttr(OCCTDocumentRef doc, int64_t labelId, int32_t g
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1468,6 +1504,7 @@ int32_t OCCTDocumentGetGeometryType(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1486,6 +1523,7 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1514,6 +1552,7 @@ bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1534,6 +1573,7 @@ int32_t OCCTDocumentTriangulationNbNodes(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1554,6 +1594,7 @@ int32_t OCCTDocumentTriangulationNbTriangles(OCCTDocumentRef doc, int64_t labelI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1587,6 +1628,7 @@ bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1619,6 +1661,7 @@ bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1639,6 +1682,7 @@ double OCCTDocumentTriangulationDeflection(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1657,6 +1701,7 @@ bool OCCTDocumentSetPointAttr(OCCTDocumentRef doc, int64_t labelId, double x, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1683,6 +1728,7 @@ bool OCCTDocumentSetAxisAttr(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1709,6 +1755,7 @@ bool OCCTDocumentSetPlaneAttr(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1723,6 +1770,7 @@ bool OCCTDocumentDirectoryNew(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1737,6 +1785,7 @@ bool OCCTDocumentDirectoryFind(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1756,6 +1805,7 @@ int OCCTDocumentDirectoryAddSubDirectory(OCCTDocumentRef document, int parentLab
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1775,6 +1825,7 @@ int OCCTDocumentDirectoryMakeObjectLabel(OCCTDocumentRef document, int parentLab
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1789,6 +1840,7 @@ bool OCCTDocumentVariableSet(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1806,6 +1858,7 @@ bool OCCTDocumentVariableSetName(OCCTDocumentRef document, int labelTag, const c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1825,6 +1878,7 @@ const char* OCCTDocumentVariableGetName(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1842,6 +1896,7 @@ bool OCCTDocumentVariableSetValue(OCCTDocumentRef document, int labelTag, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1860,6 +1915,7 @@ double OCCTDocumentVariableGetValue(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1876,6 +1932,7 @@ bool OCCTDocumentVariableIsValued(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1893,6 +1950,7 @@ bool OCCTDocumentVariableSetUnit(OCCTDocumentRef document, int labelTag, const c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1912,6 +1970,7 @@ const char* OCCTDocumentVariableGetUnit(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1929,6 +1988,7 @@ bool OCCTDocumentVariableSetConstant(OCCTDocumentRef document, int labelTag, boo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1945,6 +2005,7 @@ bool OCCTDocumentVariableIsConstant(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1959,6 +2020,7 @@ bool OCCTDocumentExpressionSet(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1976,6 +2038,7 @@ bool OCCTDocumentExpressionSetString(OCCTDocumentRef document, int labelTag, con
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1995,6 +2058,7 @@ const char* OCCTDocumentExpressionGetString(OCCTDocumentRef document, int labelT
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2014,6 +2078,7 @@ const char* OCCTDocumentExpressionGetName(OCCTDocumentRef document, int labelTag
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2031,6 +2096,7 @@ bool OCCTDocumentVariableAssignExpression(OCCTDocumentRef document, int labelTag
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2048,6 +2114,7 @@ bool OCCTDocumentVariableDesassignExpression(OCCTDocumentRef document, int label
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2064,6 +2131,7 @@ bool OCCTDocumentVariableIsAssigned(OCCTDocumentRef document, int labelTag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2088,6 +2156,7 @@ bool OCCTDocumentSetBooleanArray(OCCTDocumentRef document,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2113,6 +2182,7 @@ int OCCTDocumentGetBooleanArray(OCCTDocumentRef document, int tag, bool* values,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2127,6 +2197,7 @@ bool OCCTDocumentHasBooleanArray(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2146,6 +2217,7 @@ bool OCCTDocumentSetBooleanList(OCCTDocumentRef document, int tag, const bool* v
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2171,6 +2243,7 @@ int OCCTDocumentGetBooleanList(OCCTDocumentRef document, int tag, bool* values, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2190,6 +2263,7 @@ bool OCCTDocumentBooleanListAppend(OCCTDocumentRef document, int tag, bool value
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2207,6 +2281,7 @@ bool OCCTDocumentBooleanListClear(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2221,6 +2296,7 @@ bool OCCTDocumentHasBooleanList(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2245,6 +2321,7 @@ bool OCCTDocumentSetByteArray(OCCTDocumentRef document,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2270,6 +2347,7 @@ int OCCTDocumentGetByteArray(OCCTDocumentRef document, int tag, uint8_t* values,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2284,6 +2362,7 @@ bool OCCTDocumentHasByteArray(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2303,6 +2382,7 @@ bool OCCTDocumentSetIntegerList(OCCTDocumentRef document, int tag, const int* va
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2328,6 +2408,7 @@ int OCCTDocumentGetIntegerList(OCCTDocumentRef document, int tag, int* values, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2347,6 +2428,7 @@ bool OCCTDocumentIntegerListAppend(OCCTDocumentRef document, int tag, int value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2364,6 +2446,7 @@ bool OCCTDocumentIntegerListClear(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2378,6 +2461,7 @@ bool OCCTDocumentHasIntegerList(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2397,6 +2481,7 @@ bool OCCTDocumentSetRealList(OCCTDocumentRef document, int tag, const double* va
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2422,6 +2507,7 @@ int OCCTDocumentGetRealList(OCCTDocumentRef document, int tag, double* values, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2441,6 +2527,7 @@ bool OCCTDocumentRealListAppend(OCCTDocumentRef document, int tag, double value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2458,6 +2545,7 @@ bool OCCTDocumentRealListClear(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2472,6 +2560,7 @@ bool OCCTDocumentHasRealList(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2496,6 +2585,7 @@ bool OCCTDocumentSetExtStringArray(OCCTDocumentRef    document,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2516,6 +2606,7 @@ char* OCCTDocumentGetExtStringArrayValue(OCCTDocumentRef document, int tag, int 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2532,6 +2623,7 @@ int OCCTDocumentGetExtStringArrayLength(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2546,6 +2638,7 @@ bool OCCTDocumentHasExtStringArray(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2568,6 +2661,7 @@ bool OCCTDocumentSetExtStringList(OCCTDocumentRef    document,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2584,6 +2678,7 @@ int OCCTDocumentGetExtStringListCount(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2609,6 +2704,7 @@ char* OCCTDocumentGetExtStringListValue(OCCTDocumentRef document, int tag, int i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2628,6 +2724,7 @@ bool OCCTDocumentExtStringListAppend(OCCTDocumentRef document, int tag, const ch
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2645,6 +2742,7 @@ bool OCCTDocumentExtStringListClear(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2659,6 +2757,7 @@ bool OCCTDocumentHasExtStringList(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2684,6 +2783,7 @@ bool OCCTDocumentSetReferenceArray(OCCTDocumentRef document,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2709,6 +2809,7 @@ int OCCTDocumentGetReferenceArray(OCCTDocumentRef document, int tag, int* refTag
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2723,6 +2824,7 @@ bool OCCTDocumentHasReferenceArray(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2743,6 +2845,7 @@ bool OCCTDocumentSetReferenceList(OCCTDocumentRef document, int tag, const int* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2768,6 +2871,7 @@ int OCCTDocumentGetReferenceList(OCCTDocumentRef document, int tag, int* refTags
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2788,6 +2892,7 @@ bool OCCTDocumentReferenceListAppend(OCCTDocumentRef document, int tag, int refT
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2805,6 +2910,7 @@ bool OCCTDocumentReferenceListClear(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2819,6 +2925,7 @@ bool OCCTDocumentHasReferenceList(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2834,6 +2941,7 @@ bool OCCTDocumentSetRelation(OCCTDocumentRef document, int tag, const char* rela
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2851,6 +2959,7 @@ char* OCCTDocumentGetRelation(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2865,6 +2974,7 @@ bool OCCTDocumentHasRelation(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2879,6 +2989,7 @@ bool OCCTDocumentSetTick(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2893,6 +3004,7 @@ bool OCCTDocumentHasTick(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2910,6 +3022,7 @@ bool OCCTDocumentRemoveTick(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2924,6 +3037,7 @@ bool OCCTDocumentSetCurrentLabel(OCCTDocumentRef document, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2940,6 +3054,7 @@ int OCCTDocumentGetCurrentLabel(OCCTDocumentRef document)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2953,6 +3068,7 @@ bool OCCTDocumentHasCurrentLabel(OCCTDocumentRef document)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2967,6 +3083,7 @@ bool OCCTIntPackedMapSet(OCCTDocumentRef doc, int tag, bool isDelta)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2983,6 +3100,7 @@ bool OCCTIntPackedMapAdd(OCCTDocumentRef doc, int tag, int value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2999,6 +3117,7 @@ bool OCCTIntPackedMapRemove(OCCTDocumentRef doc, int tag, int value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3015,6 +3134,7 @@ bool OCCTIntPackedMapContains(OCCTDocumentRef doc, int tag, int value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3031,6 +3151,7 @@ int OCCTIntPackedMapExtent(OCCTDocumentRef doc, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3047,6 +3168,7 @@ bool OCCTIntPackedMapClear(OCCTDocumentRef doc, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3063,6 +3185,7 @@ bool OCCTIntPackedMapIsEmpty(OCCTDocumentRef doc, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -3097,6 +3220,7 @@ int OCCTIntPackedMapGetValues(OCCTDocumentRef doc, int tag, int** values)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *values = nullptr;
     return 0;
   }
@@ -3119,6 +3243,7 @@ bool OCCTIntPackedMapChangeValues(OCCTDocumentRef doc, int tag, const int* value
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3133,6 +3258,7 @@ bool OCCTNoteBookNew(OCCTDocumentRef doc, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3152,6 +3278,7 @@ int OCCTNoteBookAppendReal(OCCTDocumentRef doc, int tag, double value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3171,6 +3298,7 @@ int OCCTNoteBookAppendInteger(OCCTDocumentRef doc, int tag, int value)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3185,6 +3313,7 @@ bool OCCTNoteBookFind(OCCTDocumentRef doc, int tag)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3200,6 +3329,7 @@ bool OCCTUAttributeSet(OCCTDocumentRef doc, int tag, const char* guidString)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3215,6 +3345,7 @@ bool OCCTUAttributeHas(OCCTDocumentRef doc, int tag, const char* guidString)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3237,6 +3368,7 @@ const char* OCCTUAttributeGetID(OCCTDocumentRef doc, int tag, const char* guidSt
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3257,6 +3389,7 @@ int OCCTChildNodeIteratorCount(OCCTDocumentRef doc, int tag, bool allLevels)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3275,6 +3408,7 @@ bool OCCTDocumentSetPlacement(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3293,6 +3427,7 @@ bool OCCTDocumentHasPlacement(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3312,6 +3447,7 @@ bool OCCTDocumentSetPresentation(OCCTDocumentRef doc, int64_t labelId, const cha
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3328,6 +3464,7 @@ void OCCTDocumentUnsetPresentation(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3345,6 +3482,7 @@ bool OCCTDocumentHasPresentation(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3364,6 +3502,7 @@ bool OCCTDocumentPresentationSetDisplayed(OCCTDocumentRef doc, int64_t labelId, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3382,6 +3521,7 @@ bool OCCTDocumentPresentationIsDisplayed(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3401,6 +3541,7 @@ bool OCCTDocumentPresentationSetColor(OCCTDocumentRef doc, int64_t labelId, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3421,6 +3562,7 @@ int32_t OCCTDocumentPresentationGetColor(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3440,6 +3582,7 @@ bool OCCTDocumentPresentationSetTransparency(OCCTDocumentRef doc, int64_t labelI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3460,6 +3603,7 @@ double OCCTDocumentPresentationGetTransparency(OCCTDocumentRef doc, int64_t labe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -3479,6 +3623,7 @@ bool OCCTDocumentPresentationSetWidth(OCCTDocumentRef doc, int64_t labelId, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3499,6 +3644,7 @@ double OCCTDocumentPresentationGetWidth(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -3518,6 +3664,7 @@ bool OCCTDocumentPresentationSetMode(OCCTDocumentRef doc, int64_t labelId, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3538,6 +3685,7 @@ int32_t OCCTDocumentPresentationGetMode(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3556,6 +3704,7 @@ bool OCCTDocumentSetConstraint(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3575,6 +3724,7 @@ bool OCCTDocumentConstraintSetType(OCCTDocumentRef doc, int64_t labelId, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3593,6 +3743,7 @@ int32_t OCCTDocumentConstraintGetType(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3611,6 +3762,7 @@ int32_t OCCTDocumentConstraintNbGeometries(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3629,6 +3781,7 @@ bool OCCTDocumentConstraintIsPlanar(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3647,6 +3800,7 @@ bool OCCTDocumentConstraintIsDimension(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3666,6 +3820,7 @@ bool OCCTDocumentConstraintSetVerified(OCCTDocumentRef doc, int64_t labelId, boo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3684,6 +3839,7 @@ bool OCCTDocumentConstraintGetVerified(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3703,6 +3859,7 @@ bool OCCTDocumentConstraintClearGeometries(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3721,6 +3878,7 @@ bool OCCTDocumentSetPatternStd(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3740,6 +3898,7 @@ bool OCCTDocumentPatternSetSignature(OCCTDocumentRef doc, int64_t labelId, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3758,6 +3917,7 @@ int32_t OCCTDocumentPatternGetSignature(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3776,6 +3936,7 @@ int32_t OCCTDocumentPatternNbTrsfs(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3792,6 +3953,7 @@ bool OCCTDocumentHasPattern(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

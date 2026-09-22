@@ -491,6 +491,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -537,6 +538,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -704,6 +706,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -785,6 +788,7 @@ bool OCCTDocumentNamingRecord(OCCTDocumentRef     doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -813,6 +817,7 @@ OCCTShapeRef OCCTDocumentNamingGetCurrentShape(OCCTDocumentRef doc, int64_t labe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -841,6 +846,7 @@ OCCTShapeRef OCCTDocumentNamingGetShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -868,6 +874,7 @@ int32_t OCCTDocumentNamingHistoryCount(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -926,6 +933,7 @@ bool OCCTDocumentNamingGetHistoryEntry(OCCTDocumentRef         doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -959,6 +967,7 @@ OCCTShapeRef OCCTDocumentNamingGetOldShape(OCCTDocumentRef doc, int64_t labelId,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -992,6 +1001,7 @@ OCCTShapeRef OCCTDocumentNamingGetNewShape(OCCTDocumentRef doc, int64_t labelId,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1040,6 +1050,7 @@ bool OCCTDocumentNamingSelect(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1071,6 +1082,7 @@ OCCTShapeRef OCCTDocumentNamingResolve(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1107,6 +1119,7 @@ int32_t OCCTDocumentNamingGetEvolution(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1125,6 +1138,7 @@ bool OCCTDocumentSetLogbook(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1152,6 +1166,7 @@ bool OCCTDocumentLogbookSetTouched(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1178,6 +1193,7 @@ bool OCCTDocumentLogbookSetImpacted(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1203,6 +1219,7 @@ bool OCCTDocumentLogbookIsModified(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1224,6 +1241,7 @@ bool OCCTDocumentLogbookClear(OCCTDocumentRef doc, int64_t logbookLabelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1244,6 +1262,7 @@ bool OCCTDocumentLogbookIsEmpty(OCCTDocumentRef doc, int64_t logbookLabelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1262,6 +1281,7 @@ bool OCCTDocumentSetGraphNode(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1282,6 +1302,7 @@ bool OCCTDocumentGraphNodeAddPrevious(OCCTDocumentRef doc, int64_t labelId, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1302,6 +1323,7 @@ bool OCCTDocumentGraphNodeAddNext(OCCTDocumentRef doc, int64_t labelId, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1323,6 +1345,7 @@ bool OCCTDocumentGraphNodeSetStatus(OCCTDocumentRef doc, int64_t labelId, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1343,6 +1366,7 @@ int32_t OCCTDocumentGraphNodeGetStatus(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1364,6 +1388,7 @@ bool OCCTDocumentGraphNodeRemoveAllPrevious(OCCTDocumentRef doc, int64_t labelId
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1385,6 +1410,7 @@ bool OCCTDocumentGraphNodeRemoveAllNext(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1403,6 +1429,7 @@ bool OCCTDocumentSetFunctionAttr(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1423,6 +1450,7 @@ bool OCCTDocumentFunctionIsFailed(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1443,6 +1471,7 @@ int32_t OCCTDocumentFunctionGetFailure(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1464,6 +1493,7 @@ bool OCCTDocumentFunctionSetFailure(OCCTDocumentRef doc, int64_t labelId, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1485,6 +1515,7 @@ OCCTShapeRef OCCTShapeDeepCopy(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1505,6 +1536,7 @@ bool OCCTNamingIsEmpty(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1525,6 +1557,7 @@ int OCCTNamingGetVersion(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1546,6 +1579,7 @@ bool OCCTNamingSetVersion(OCCTDocumentRef doc, int64_t labelId, int version)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1571,6 +1605,7 @@ OCCTShapeRef OCCTNamingOriginalShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1586,6 +1621,7 @@ bool OCCTNamingHasLabel(OCCTDocumentRef doc, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1612,6 +1648,7 @@ int64_t OCCTNamingFindLabel(OCCTDocumentRef doc, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1627,6 +1664,7 @@ int OCCTNamingValidUntil(OCCTDocumentRef doc, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1645,6 +1683,7 @@ int32_t OCCTNamingSameShapeCount(OCCTDocumentRef doc, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1682,6 +1721,7 @@ int32_t OCCTNamingSameShapeLabels(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1706,6 +1746,7 @@ bool OCCTDocumentNewFunction(OCCTDocumentRef doc, int64_t labelId, const char* g
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1723,6 +1764,7 @@ bool OCCTDocumentDeleteFunction(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1746,6 +1788,7 @@ int32_t OCCTDocumentFunctionGetExecStatus(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1770,6 +1813,7 @@ bool OCCTDocumentFunctionSetExecStatus(OCCTDocumentRef doc, int64_t labelId, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1786,6 +1830,7 @@ bool OCCTDocumentSetFunctionScope(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1807,6 +1852,7 @@ bool OCCTDocumentFunctionScopeAdd(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1828,6 +1874,7 @@ bool OCCTDocumentFunctionScopeRemove(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1849,6 +1896,7 @@ bool OCCTDocumentFunctionScopeHas(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1868,6 +1916,7 @@ bool OCCTDocumentFunctionScopeRemoveAll(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1886,6 +1935,7 @@ int32_t OCCTDocumentFunctionScopeCount(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1904,6 +1954,7 @@ int32_t OCCTDocumentFunctionScopeGetFreeID(OCCTDocumentRef doc)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1920,6 +1971,7 @@ bool OCCTFunctionDriverTableHasDriver(const char* guidString)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1934,6 +1986,7 @@ void OCCTFunctionDriverTableClear()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1957,6 +2010,7 @@ OCCTShapeRef OCCTShapeTranslatorCopy(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1975,6 +2029,7 @@ bool OCCTDocumentInsertNaming(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1995,6 +2050,7 @@ bool OCCTDocumentNamingIsDefined(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

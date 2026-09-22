@@ -163,6 +163,7 @@ static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -273,6 +274,7 @@ void OCCTAx3Create(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // gp_Dir/gp_Ax3 raise Standard_ConstructionError for a zero-length direction/xDirection or a
     // parallel direction/xDirection pair (#1443). No valid axis exists to report: isDirect=false
     // plus an all-zero xDirection/yDirection is unambiguous, since a genuine gp_Ax3's
@@ -312,6 +314,7 @@ void OCCTAx3CreateFromNormal(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // gp_Dir raises Standard_ConstructionError for a zero-length normal (#1443, this overload has
     // no xDirection so the parallel case doesn't apply). Same unambiguous fallback as
     // OCCTAx3Create's catch.
@@ -348,6 +351,7 @@ double OCCTAx3Angle(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -381,6 +385,7 @@ bool OCCTAx3IsCoplanar(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -423,6 +428,7 @@ void OCCTAx3MirrorPoint(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
     // the only throw site here; gp_Ax3::Mirrored(const gp_Pnt&) is itself noexcept. No valid
     // mirrored axis exists to report: the input point unmoved, plus an all-zero
@@ -477,6 +483,7 @@ void OCCTAx3Rotate(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Two throw sites share this catch (#1443): the input ax3's own construction
     // (direction/xDirection zero-length or parallel), and the rotation axis's gp_Dir (a
     // zero-length rotation direction, e.g. axDx=axDy=axDz=0). Neither leaves a valid rotated axis
@@ -515,6 +522,7 @@ void OCCTAx3Translate(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // The input ax3's own construction (direction/xDirection zero-length or parallel, #1443) is
     // the only throw site here; gp_Ax3::Translated(const gp_Vec&) is itself noexcept. No valid
     // translated axis exists to report: fall back to the input point unmoved (this overload has
@@ -645,6 +653,7 @@ void OCCTTrsfInterpolate(double tx1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *rtx = *rty = *rtz = 0;
     *rqx = *rqy = *rqz = 0;
     *rqw               = 1;
@@ -708,6 +717,7 @@ bool OCCTXYZNormalize(double x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *rx = *ry = *rz = 0;
     return false;
   }
@@ -760,6 +770,7 @@ void OCCTTrsfDisplacement(double  fromPx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *a11 = 1;
     *a12 = 0;
     *a13 = 0;

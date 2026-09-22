@@ -201,6 +201,7 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     delete mesh;
     return nullptr;
   }
@@ -326,6 +327,7 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     delete mesh;
     return nullptr;
   }
@@ -379,6 +381,7 @@ int32_t DiscretizeEdgeInto(const TopoDS_Edge&                                   
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // BRepAdaptor_Curve failed, fall through to pcurve fallback
   }
 
@@ -455,6 +458,7 @@ int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -515,6 +519,7 @@ OCCTEdgePolylinesRef OCCTShapeComputeAllEdgePolylines(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -605,6 +610,7 @@ int32_t OCCTMeshGetTrianglesWithFaces(OCCTMeshRef mesh, OCCTTriangle* outTriangl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -672,6 +678,7 @@ OCCTShapeRef OCCTMeshToShapeWithTolerance(OCCTMeshRef mesh, double weldTolerance
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -720,6 +727,7 @@ static OCCTMeshRef occtMeshBoolean(OCCTMeshRef mesh1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -880,6 +888,7 @@ OCCTMeshRef OCCTMeshCreateFromArrays(const float*    vertices,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -901,6 +910,7 @@ double OCCTComputeAbsoluteDeflection(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1.0;
   }
 }
@@ -913,6 +923,7 @@ bool OCCTDeflectionIsConsistent(double current, double required, bool allowDecre
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -943,6 +954,7 @@ bool OCCTBRepLibComputeNormals(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1049,6 +1061,7 @@ bool OCCTBRepLibPointCloudByTriangulation(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1081,6 +1094,7 @@ bool OCCTBRepLibPointCloudByDensity(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1113,6 +1127,7 @@ OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromPoints(const double* _
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1136,6 +1151,7 @@ OCCTShapeRef _Nullable OCCTShapeConstructTriangulationFromWire(OCCTWireRef _Nonn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1153,6 +1169,7 @@ double OCCTMeshShapeToolMaxFaceTolerance(OCCTFaceRef _Nonnull face)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1171,6 +1188,7 @@ double OCCTMeshShapeToolBoxMaxDimension(OCCTShapeRef _Nonnull shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1195,6 +1213,7 @@ OCCTUVPointsResult OCCTMeshShapeToolUVPoints(OCCTEdgeRef _Nonnull edge, OCCTFace
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1217,6 +1236,7 @@ OCCTPolyPolygon2DRef _Nullable OCCTPolyPolygon2DCreate(const double* _Nonnull po
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1244,6 +1264,7 @@ bool OCCTPolyPolygon2DNode(OCCTPolyPolygon2DRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1291,6 +1312,7 @@ OCCTPolyTriangulationRef _Nullable OCCTPolyTriangulationCreate(const double* _No
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1325,6 +1347,7 @@ bool OCCTPolyTriangulationNode(OCCTPolyTriangulationRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1352,6 +1375,7 @@ bool OCCTPolyTriangulationTriangle(OCCTPolyTriangulationRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1387,6 +1411,7 @@ OCCTPolyPolygon3DRef _Nullable OCCTPolyPolygon3DCreate(const double* _Nonnull po
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1409,6 +1434,7 @@ OCCTPolyPolygon3DRef _Nullable OCCTPolyPolygon3DCreateWithParams(const double* _
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1438,6 +1464,7 @@ bool OCCTPolyPolygon3DNode(OCCTPolyPolygon3DRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1464,6 +1491,7 @@ double OCCTPolyPolygon3DParameter(OCCTPolyPolygon3DRef _Nonnull ref, int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1500,6 +1528,7 @@ OCCTPolyPolygonOnTriRef _Nullable OCCTPolyPolygonOnTriCreate(const int* _Nonnull
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1523,6 +1552,7 @@ OCCTPolyPolygonOnTriRef _Nullable OCCTPolyPolygonOnTriCreateWithParams(
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1541,6 +1571,7 @@ int OCCTPolyPolygonOnTriNode(OCCTPolyPolygonOnTriRef _Nonnull ref, int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1559,6 +1590,7 @@ double OCCTPolyPolygonOnTriParameter(OCCTPolyPolygonOnTriRef _Nonnull ref, int i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1592,6 +1624,7 @@ OCCTPolyPolygon2DRef _Nullable OCCTPolyPolygon2DCopy(OCCTPolyPolygon2DRef _Nonnu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1608,6 +1641,7 @@ OCCTPolyPolygonOnTriRef _Nullable OCCTPolyPolygonOnTriCopy(OCCTPolyPolygonOnTriR
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1630,6 +1664,7 @@ bool OCCTPolyPolygonOnTriSetNodes(OCCTPolyPolygonOnTriRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1654,6 +1689,7 @@ bool OCCTPolyPolygonOnTriSetParameters(OCCTPolyPolygonOnTriRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1762,6 +1798,7 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1786,6 +1823,7 @@ OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1815,6 +1853,7 @@ OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1831,6 +1870,7 @@ int OCCTCoherentTriangulationSetNode(OCCTCoherentTriangulationRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1853,6 +1893,7 @@ bool OCCTCoherentTriangulationAddTriangle(OCCTCoherentTriangulationRef _Nonnull 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1870,6 +1911,7 @@ bool OCCTCoherentTriangulationRemoveTriangle(OCCTCoherentTriangulationRef _Nonnu
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1883,6 +1925,7 @@ int OCCTCoherentTriangulationNTriangles(OCCTCoherentTriangulationRef _Nonnull re
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1896,6 +1939,7 @@ int OCCTCoherentTriangulationComputeLinks(OCCTCoherentTriangulationRef _Nonnull 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1909,6 +1953,7 @@ int OCCTCoherentTriangulationNLinks(OCCTCoherentTriangulationRef _Nonnull ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1923,6 +1968,7 @@ void OCCTCoherentTriangulationSetDeflection(OCCTCoherentTriangulationRef _Nonnul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1935,6 +1981,7 @@ double OCCTCoherentTriangulationDeflection(OCCTCoherentTriangulationRef _Nonnull
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -1949,6 +1996,7 @@ bool OCCTCoherentTriangulationRemoveDegenerated(OCCTCoherentTriangulationRef _No
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1969,6 +2017,7 @@ bool OCCTCoherentTriangulationGetResult(OCCTCoherentTriangulationRef _Nonnull re
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1992,6 +2041,7 @@ bool OCCTCoherentTriangulationNodeCoords(OCCTCoherentTriangulationRef _Nonnull r
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2041,6 +2091,7 @@ OCCTPoint3D OCCTCoordSystemConvert(double x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -2058,6 +2109,7 @@ OCCTPoint3D OCCTCoordSystemUpDirection(int system)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -2101,6 +2153,7 @@ OCCTShapeRef OCCTShapeReadSTL(const char* filePath)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2146,6 +2199,7 @@ bool OCCTMeshTriangleAdjacency(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2164,6 +2218,7 @@ int32_t OCCTMeshNodeTriangle(OCCTShapeRef shape, int32_t faceIndex, int32_t node
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2189,6 +2244,7 @@ int32_t OCCTMeshNodeTriangleCount(OCCTShapeRef shape, int32_t faceIndex, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2216,6 +2272,7 @@ OCCTMeshFaceIterRef OCCTMeshFaceIterCreate(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2242,6 +2299,7 @@ void OCCTMeshFaceIterNext(OCCTMeshFaceIterRef iter)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2272,6 +2330,7 @@ void OCCTMeshFaceIterNode(OCCTMeshFaceIterRef iter, int32_t index, double* x, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2299,6 +2358,7 @@ void OCCTMeshFaceIterNormal(OCCTMeshFaceIterRef iter,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2319,6 +2379,7 @@ void OCCTMeshFaceIterTriangle(OCCTMeshFaceIterRef iter,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2344,6 +2405,7 @@ OCCTMeshVertexIterRef OCCTMeshVertexIterCreate(OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2370,6 +2432,7 @@ void OCCTMeshVertexIterNext(OCCTMeshVertexIterRef iter)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2386,6 +2449,7 @@ void OCCTMeshVertexIterPoint(OCCTMeshVertexIterRef iter, double* x, double* y, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2403,6 +2467,7 @@ static Handle(Poly_Triangulation) getTriangulation(OCCTShapeRef face, TopLoc_Loc
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

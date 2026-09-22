@@ -256,6 +256,7 @@ OCCTBRepGraphRef OCCTBRepGraphCreate(OCCTShapeRef shape, bool parallel)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -413,6 +414,7 @@ int32_t OCCTBRepGraphFaceAdjacentCount(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -429,6 +431,7 @@ void OCCTBRepGraphFaceAdjacentIndices(OCCTBRepGraphRef g, int32_t faceIndex, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -442,6 +445,7 @@ int32_t OCCTBRepGraphFaceSharedEdgeCount(OCCTBRepGraphRef g, int32_t faceA, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -461,6 +465,7 @@ void OCCTBRepGraphFaceSharedEdgeIndices(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -476,6 +481,7 @@ int32_t OCCTBRepGraphFaceOuterWire(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -492,6 +498,7 @@ int32_t OCCTBRepGraphEdgeNbFaces(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -509,6 +516,7 @@ void OCCTBRepGraphEdgeFaceIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -522,6 +530,7 @@ bool OCCTBRepGraphEdgeIsBoundary(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -536,6 +545,7 @@ bool OCCTBRepGraphEdgeIsManifold(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -577,6 +587,7 @@ int32_t OCCTBRepGraphEdgeAdjacentCount(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -593,6 +604,7 @@ void OCCTBRepGraphEdgeAdjacentIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -609,6 +621,7 @@ int32_t OCCTBRepGraphVertexEdgeCount(OCCTBRepGraphRef g, int32_t vertexIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -625,6 +638,7 @@ void OCCTBRepGraphVertexEdgeIndices(OCCTBRepGraphRef g, int32_t vertexIndex, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -648,6 +662,7 @@ int32_t OCCTBRepGraphChildCount(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -679,6 +694,7 @@ int32_t OCCTBRepGraphChildIndices(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -700,6 +716,7 @@ int32_t OCCTBRepGraphParentCount(OCCTBRepGraphRef g, int32_t nodeKind, int32_t n
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -716,6 +733,7 @@ bool OCCTBRepGraphValidate(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -730,6 +748,7 @@ int32_t OCCTBRepGraphValidateIssueCount(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -748,6 +767,7 @@ OCCTBRepGraphValidateResult OCCTBRepGraphValidateDetailed(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -769,6 +789,7 @@ OCCTBRepGraphCompactResult OCCTBRepGraphCompact(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -790,6 +811,7 @@ OCCTBRepGraphDeduplicateResult OCCTBRepGraphDeduplicate(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -807,6 +829,7 @@ bool OCCTBRepGraphIsRemoved(OCCTBRepGraphRef g, int32_t nodeKind, int32_t nodeIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -823,6 +846,7 @@ int32_t OCCTBRepGraphRootCount(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -843,6 +867,7 @@ void OCCTBRepGraphRootNodes(OCCTBRepGraphRef g, int32_t* outKinds, int32_t* outI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -871,6 +896,7 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return s;
 }
@@ -898,6 +924,7 @@ OCCTShapeRef OCCTBRepGraphShapeFromNode(OCCTBRepGraphRef g, int32_t nodeKind, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -922,6 +949,7 @@ void OCCTBRepGraphFindNode(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -935,6 +963,7 @@ bool OCCTBRepGraphHasNode(OCCTBRepGraphRef g, OCCTShapeRef shape)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -961,6 +990,7 @@ void OCCTBRepGraphVertexPoint(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -974,6 +1004,7 @@ double OCCTBRepGraphVertexTolerance(OCCTBRepGraphRef g, int32_t vertexIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -990,6 +1021,7 @@ double OCCTBRepGraphEdgeTolerance(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1004,6 +1036,7 @@ bool OCCTBRepGraphEdgeIsDegenerated(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1036,6 +1069,7 @@ bool OCCTBRepGraphEdgeIsSameParameter(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1051,6 +1085,7 @@ bool OCCTBRepGraphEdgeIsSameRange(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1072,6 +1107,7 @@ void OCCTBRepGraphEdgeRange(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1085,6 +1121,7 @@ bool OCCTBRepGraphEdgeHasCurve(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1102,6 +1139,7 @@ bool OCCTBRepGraphEdgeIsClosedOnFace(OCCTBRepGraphRef g, int32_t edgeIndex, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1117,6 +1155,7 @@ bool OCCTBRepGraphEdgeHasPolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1142,6 +1181,7 @@ double OCCTBRepGraphFaceTolerance(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1160,6 +1200,7 @@ bool OCCTBRepGraphFaceIsNaturalRestriction(OCCTBRepGraphRef g, int32_t faceIndex
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1174,6 +1215,7 @@ bool OCCTBRepGraphFaceHasSurface(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1189,6 +1231,7 @@ bool OCCTBRepGraphFaceHasTriangulation(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1205,6 +1248,7 @@ bool OCCTBRepGraphWireIsClosed(OCCTBRepGraphRef g, int32_t wireIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1219,6 +1263,7 @@ int32_t OCCTBRepGraphWireNbCoEdges(OCCTBRepGraphRef g, int32_t wireIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1239,6 +1284,7 @@ int32_t OCCTBRepGraphWireFaceCount(OCCTBRepGraphRef g, int32_t wireIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1256,6 +1302,7 @@ void OCCTBRepGraphWireFaceIndices(OCCTBRepGraphRef g, int32_t wireIndex, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1272,6 +1319,7 @@ int32_t OCCTBRepGraphCoEdgeEdge(OCCTBRepGraphRef g, int32_t coedgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1287,6 +1335,7 @@ int32_t OCCTBRepGraphCoEdgeFace(OCCTBRepGraphRef g, int32_t coedgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1303,6 +1352,7 @@ int32_t OCCTBRepGraphCoEdgeSeamPair(OCCTBRepGraphRef g, int32_t coedgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1317,6 +1367,7 @@ bool OCCTBRepGraphCoEdgeHasPCurve(OCCTBRepGraphRef g, int32_t coedgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1338,6 +1389,7 @@ void OCCTBRepGraphCoEdgeRange(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1359,6 +1411,7 @@ int32_t OCCTBRepGraphShellSolidCount(OCCTBRepGraphRef g, int32_t shellIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1376,6 +1429,7 @@ void OCCTBRepGraphShellSolidIndices(OCCTBRepGraphRef g, int32_t shellIndex, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1396,6 +1450,7 @@ int32_t OCCTBRepGraphSolidCompSolidCount(OCCTBRepGraphRef g, int32_t solidIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1423,6 +1478,7 @@ int32_t OCCTBRepGraphHistoryNbRecords(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1438,6 +1494,7 @@ bool OCCTBRepGraphHistoryIsEnabled(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1460,6 +1517,7 @@ void OCCTBRepGraphHistorySetEnabled(OCCTBRepGraphRef g, bool enabled)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1475,6 +1533,7 @@ void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1512,6 +1571,7 @@ int32_t OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1530,6 +1590,7 @@ int32_t OCCTBRepGraphHistoryGetRecordOriginalsCount(OCCTBRepGraphRef g, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1563,6 +1624,7 @@ int32_t OCCTBRepGraphHistoryGetRecordOriginals(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1598,6 +1660,7 @@ int32_t OCCTBRepGraphHistoryGetRecordMapping(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1623,6 +1686,7 @@ bool OCCTBRepGraphHistoryFindOriginal(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1654,6 +1718,7 @@ int32_t OCCTBRepGraphHistoryFindDerived(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1684,6 +1749,7 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -1702,6 +1768,7 @@ bool OCCTBRepGraphHistoryIsDeleted(OCCTBRepGraphRef g, int32_t kind, int32_t ind
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1734,6 +1801,7 @@ int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1797,6 +1865,7 @@ bool OCCTBRepGraphAddWithHistory(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1815,6 +1884,7 @@ int32_t OCCTBRepGraphNbTriangulations(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1829,6 +1899,7 @@ int32_t OCCTBRepGraphNbPolygons3D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1845,6 +1916,7 @@ int32_t OCCTBRepGraphMeshNbPolygons2D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1859,6 +1931,7 @@ int32_t OCCTBRepGraphMeshNbPolygonsOnTri(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1873,6 +1946,7 @@ int32_t OCCTBRepGraphMeshNbActiveTriangulations(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1887,6 +1961,7 @@ int32_t OCCTBRepGraphMeshNbActivePolygons3D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1901,6 +1976,7 @@ int32_t OCCTBRepGraphMeshNbActivePolygons2D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1915,6 +1991,7 @@ int32_t OCCTBRepGraphMeshNbActivePolygonsOnTri(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1933,6 +2010,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1949,6 +2027,7 @@ int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1965,6 +2044,7 @@ bool OCCTBRepGraphMeshCoEdgeHasMesh(OCCTBRepGraphRef g, int32_t coedgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1990,6 +2070,7 @@ int32_t OCCTBRepGraphMeshCreateTriangulationRep(OCCTBRepGraphRef g, OCCTPolyTria
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2008,6 +2089,7 @@ int32_t OCCTBRepGraphMeshCreatePolygon3DRep(OCCTBRepGraphRef g, OCCTPolyPolygon3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2032,6 +2114,7 @@ int32_t OCCTBRepGraphMeshCreatePolygonOnTriRep(OCCTBRepGraphRef        g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2066,6 +2149,7 @@ void OCCTBRepGraphMeshSetCachedPolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2082,6 +2166,7 @@ void OCCTBRepGraphMeshAppendCachedPolygonOnTri(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2098,6 +2183,7 @@ void OCCTBRepGraphMeshSetCachedPolygon2D(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2113,6 +2199,7 @@ int32_t OCCTBRepGraphNbActiveSurfaces(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2127,6 +2214,7 @@ int32_t OCCTBRepGraphNbActiveCurves3D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2141,6 +2229,7 @@ int32_t OCCTBRepGraphNbActiveCurves2D(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2243,6 +2332,7 @@ int32_t OCCTBRepGraphFaceSameDomainCount(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2259,6 +2349,7 @@ void OCCTBRepGraphFaceSameDomainIndices(OCCTBRepGraphRef g, int32_t faceIndex, i
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2293,6 +2384,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2334,6 +2426,7 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2369,6 +2462,7 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2442,6 +2536,7 @@ int32_t OCCTBRepGraphNbProducts(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2456,6 +2551,7 @@ int32_t OCCTBRepGraphNbOccurrences(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2470,6 +2566,7 @@ bool OCCTBRepGraphProductIsAssembly(OCCTBRepGraphRef g, int32_t productIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2484,6 +2581,7 @@ bool OCCTBRepGraphProductIsPart(OCCTBRepGraphRef g, int32_t productIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2498,6 +2596,7 @@ int32_t OCCTBRepGraphProductNbComponents(OCCTBRepGraphRef g, int32_t productInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2515,6 +2614,7 @@ int32_t OCCTBRepGraphProductShapeRootKind(OCCTBRepGraphRef g, int32_t productInd
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2532,6 +2632,7 @@ int32_t OCCTBRepGraphProductShapeRootIndex(OCCTBRepGraphRef g, int32_t productIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2547,6 +2648,7 @@ int32_t OCCTBRepGraphOccurrenceProduct(OCCTBRepGraphRef g, int32_t occIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2562,6 +2664,7 @@ int32_t OCCTBRepGraphOccurrenceParentProduct(OCCTBRepGraphRef g, int32_t occInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2577,6 +2680,7 @@ int32_t OCCTBRepGraphRootProductCount(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2595,6 +2699,7 @@ void OCCTBRepGraphRootProductIndices(OCCTBRepGraphRef g, int32_t* outIndices)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2610,6 +2715,7 @@ int32_t OCCTBRepGraphNbShellRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2624,6 +2730,7 @@ int32_t OCCTBRepGraphNbFaceRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2638,6 +2745,7 @@ int32_t OCCTBRepGraphNbWireRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2654,6 +2762,7 @@ int32_t OCCTBRepGraphNbCoEdgeRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2668,6 +2777,7 @@ int32_t OCCTBRepGraphNbVertexRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2682,6 +2792,7 @@ int32_t OCCTBRepGraphNbSolidRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2696,6 +2807,7 @@ int32_t OCCTBRepGraphNbChildRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2710,6 +2822,7 @@ int32_t OCCTBRepGraphNbOccurrenceRefs(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2731,6 +2844,7 @@ int32_t OCCTBRepGraphRefChildNodeKind(OCCTBRepGraphRef g, int32_t refKind, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2749,6 +2863,7 @@ int32_t OCCTBRepGraphRefChildNodeIndex(OCCTBRepGraphRef g, int32_t refKind, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2764,6 +2879,7 @@ bool OCCTBRepGraphRefIsRemoved(OCCTBRepGraphRef g, int32_t refKind, int32_t refI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2779,6 +2895,7 @@ int32_t OCCTBRepGraphRefOrientation(OCCTBRepGraphRef g, int32_t refKind, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2796,6 +2913,7 @@ int32_t OCCTBRepGraphFaceNbWires(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2816,6 +2934,7 @@ int32_t OCCTBRepGraphFaceNbVertexRefs(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2845,6 +2964,7 @@ int32_t OCCTBRepGraphEdgeStartVertex(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2861,6 +2981,7 @@ int32_t OCCTBRepGraphEdgeEndVertex(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -2876,6 +2997,7 @@ bool OCCTBRepGraphEdgeIsClosed(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2898,6 +3020,7 @@ int32_t OCCTBRepGraphCompoundParentCount(OCCTBRepGraphRef g, int32_t compoundInd
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2914,6 +3037,7 @@ int32_t OCCTBRepGraphCompoundChildCount(OCCTBRepGraphRef g, int32_t compoundInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2930,6 +3054,7 @@ int32_t OCCTBRepGraphCompSolidSolidCount(OCCTBRepGraphRef g, int32_t compSolidIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2949,6 +3074,7 @@ int32_t OCCTBRepGraphCompSolidCompoundCount(OCCTBRepGraphRef g, int32_t compSoli
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2969,6 +3095,7 @@ int32_t OCCTBRepGraphEdgeWireCount(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2985,6 +3112,7 @@ void OCCTBRepGraphEdgeWireIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2999,6 +3127,7 @@ int32_t OCCTBRepGraphEdgeCoEdgeCount(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3017,6 +3146,7 @@ void OCCTBRepGraphEdgeCoEdgeIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3038,6 +3168,7 @@ int32_t OCCTBRepGraphFaceShellCount(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3055,6 +3186,7 @@ void OCCTBRepGraphFaceShellIndices(OCCTBRepGraphRef g, int32_t faceIndex, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3073,6 +3205,7 @@ int32_t OCCTBRepGraphFaceCompoundCount(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3094,6 +3227,7 @@ int32_t OCCTBRepGraphShellCompoundCount(OCCTBRepGraphRef g, int32_t shellIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3109,6 +3243,7 @@ bool OCCTBRepGraphShellIsClosed(OCCTBRepGraphRef g, int32_t shellIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3130,6 +3265,7 @@ int32_t OCCTBRepGraphSolidCompoundCount(OCCTBRepGraphRef g, int32_t solidIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3146,6 +3282,7 @@ int32_t OCCTBRepGraphNbCompSolids(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3166,6 +3303,7 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3211,6 +3349,7 @@ int32_t OCCTBRepGraphBuilderAddVertex(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3226,6 +3365,7 @@ int32_t OCCTBRepGraphBuilderAddShell(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3241,6 +3381,7 @@ int32_t OCCTBRepGraphBuilderAddSolid(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3262,6 +3403,7 @@ int32_t OCCTBRepGraphBuilderAddFaceToShell(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3283,6 +3425,7 @@ int32_t OCCTBRepGraphBuilderAddShellToSolid(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3307,6 +3450,7 @@ int32_t OCCTBRepGraphBuilderAddCompound(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3330,6 +3474,7 @@ int32_t OCCTBRepGraphBuilderAddCompSolid(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3346,6 +3491,7 @@ void OCCTBRepGraphBuilderRemoveNode(OCCTBRepGraphRef g, int32_t nodeKind, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3359,6 +3505,7 @@ void OCCTBRepGraphBuilderRemoveSubgraph(OCCTBRepGraphRef g, int32_t nodeKind, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3381,6 +3528,7 @@ void OCCTBRepGraphBuilderAppendFlattenedShape(OCCTBRepGraphRef g, OCCTShapeRef s
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3397,6 +3545,7 @@ void OCCTBRepGraphBuilderAppendFullShape(OCCTBRepGraphRef g, OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3412,6 +3561,7 @@ void OCCTBRepGraphBuilderBeginDeferred(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3425,6 +3575,7 @@ void OCCTBRepGraphBuilderEndDeferred(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3438,6 +3589,7 @@ bool OCCTBRepGraphBuilderIsDeferredMode(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3452,6 +3604,7 @@ void OCCTBRepGraphBuilderCommitMutation(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3485,6 +3638,7 @@ void OCCTBRepGraphBuilderSplitEdge(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *outSubA = -1;
     *outSubB = -1;
   }
@@ -3509,6 +3663,7 @@ void OCCTBRepGraphBuilderReplaceEdgeInWire(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3525,6 +3680,7 @@ bool OCCTBRepGraphBuilderRemoveRef(OCCTBRepGraphRef g, int32_t refKind, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3545,6 +3701,7 @@ void OCCTBRepGraphBuilderClearFaceMesh(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3558,6 +3715,7 @@ void OCCTBRepGraphBuilderClearEdgePolygon3D(OCCTBRepGraphRef g, int32_t edgeInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3573,6 +3731,7 @@ bool OCCTBRepGraphBuilderValidateMutation(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3599,6 +3758,7 @@ void OCCTBRepGraphSetVertexPoint(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3612,6 +3772,7 @@ void OCCTBRepGraphSetVertexTolerance(OCCTBRepGraphRef g, int32_t vertexIndex, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3627,6 +3788,7 @@ void OCCTBRepGraphSetEdgeTolerance(OCCTBRepGraphRef g, int32_t edgeIndex, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3643,6 +3805,7 @@ void OCCTBRepGraphSetEdgeParamRange(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3674,6 +3837,7 @@ void OCCTBRepGraphSetCoEdgeParamRange(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3688,6 +3852,7 @@ void OCCTBRepGraphSetCoEdgeOrientation(OCCTBRepGraphRef g, int32_t coedgeIndex, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3708,6 +3873,7 @@ void OCCTBRepGraphSetFaceTolerance(OCCTBRepGraphRef g, int32_t faceIndex, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3752,6 +3918,7 @@ int64_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3780,6 +3947,7 @@ int64_t OCCTBRepGraphFaceAddVertex(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3804,6 +3972,7 @@ int32_t OCCTBRepGraphShellAddChild(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3828,6 +3997,7 @@ int32_t OCCTBRepGraphSolidAddChild(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3851,6 +4021,7 @@ int32_t OCCTBRepGraphCompoundAddChild(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3872,6 +4043,7 @@ int32_t OCCTBRepGraphCompSolidAddSolid(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3889,6 +4061,7 @@ bool OCCTBRepGraphEdgeRemoveVertex(OCCTBRepGraphRef g, int32_t edgeIndex, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3909,6 +4082,7 @@ int32_t OCCTBRepGraphEdgeReplaceVertex(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -3925,6 +4099,7 @@ bool OCCTBRepGraphWireRemoveCoEdge(OCCTBRepGraphRef g, int32_t wireIndex, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3943,6 +4118,7 @@ bool OCCTBRepGraphFaceRemoveVertex(OCCTBRepGraphRef g, int32_t /*faceIndex*/, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3958,6 +4134,7 @@ bool OCCTBRepGraphFaceRemoveWire(OCCTBRepGraphRef g, int32_t faceIndex, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3973,6 +4150,7 @@ bool OCCTBRepGraphShellRemoveFace(OCCTBRepGraphRef g, int32_t shellIndex, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3990,6 +4168,7 @@ bool OCCTBRepGraphShellRemoveChild(OCCTBRepGraphRef g, int32_t shellIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4005,6 +4184,7 @@ bool OCCTBRepGraphSolidRemoveShell(OCCTBRepGraphRef g, int32_t solidIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4022,6 +4202,7 @@ bool OCCTBRepGraphSolidRemoveChild(OCCTBRepGraphRef g, int32_t solidIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4039,6 +4220,7 @@ bool OCCTBRepGraphCompoundRemoveChild(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4056,6 +4238,7 @@ bool OCCTBRepGraphCompSolidRemoveSolid(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4108,6 +4291,7 @@ void OCCTBRepGraphRemoveRep(OCCTBRepGraphRef g, int32_t repKind, int32_t repInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4126,6 +4310,7 @@ void OCCTBRepGraphSetVertexRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4143,6 +4328,7 @@ void OCCTBRepGraphSetVertexRefVertexDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4159,6 +4345,7 @@ void OCCTBRepGraphSetEdgeStartVertexRefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4175,6 +4362,7 @@ void OCCTBRepGraphSetEdgeEndVertexRefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4195,6 +4383,7 @@ void OCCTBRepGraphSetEdgeCurve3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4211,6 +4400,7 @@ void OCCTBRepGraphSetEdgePolygon3DRepId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4229,6 +4419,7 @@ void OCCTBRepGraphSetCoEdgeEdgeDefId(OCCTBRepGraphRef g, int32_t coedgeIndex, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4244,6 +4435,7 @@ void OCCTBRepGraphSetCoEdgeFaceDefId(OCCTBRepGraphRef g, int32_t coedgeIndex, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4262,6 +4454,7 @@ void OCCTBRepGraphSetCoEdgeCurve2DRepId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4278,6 +4471,7 @@ void OCCTBRepGraphSetCoEdgePolygon2DRepId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4294,6 +4488,7 @@ void OCCTBRepGraphSetCoEdgePolygonOnTriRepId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4308,6 +4503,7 @@ void OCCTBRepGraphClearCoEdgePCurveBinding(OCCTBRepGraphRef g, int32_t coedgeInd
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4328,6 +4524,7 @@ void OCCTBRepGraphSetWireRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4343,6 +4540,7 @@ void OCCTBRepGraphSetWireRefWireDefId(OCCTBRepGraphRef g, int32_t wireRefIndex, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4361,6 +4559,7 @@ void OCCTBRepGraphSetFaceSurfaceRepId(OCCTBRepGraphRef g, int32_t faceIndex, int
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4377,6 +4576,7 @@ void OCCTBRepGraphSetFaceRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4392,6 +4592,7 @@ void OCCTBRepGraphSetFaceRefFaceDefId(OCCTBRepGraphRef g, int32_t faceRefIndex, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4408,6 +4609,7 @@ void OCCTBRepGraphSetShellRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4425,6 +4627,7 @@ void OCCTBRepGraphSetShellRefShellDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4441,6 +4644,7 @@ void OCCTBRepGraphSetSolidRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4458,6 +4662,7 @@ void OCCTBRepGraphSetSolidRefSolidDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4477,6 +4682,7 @@ void OCCTBRepGraphSetOccurrenceChildDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4495,6 +4701,7 @@ void OCCTBRepGraphSetOccurrenceRefOccurrenceDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4511,6 +4718,7 @@ void OCCTBRepGraphSetChildRefOrientation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4530,6 +4738,7 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4569,6 +4778,7 @@ void OCCTBRepGraphSetFaceTriangulationRep(OCCTBRepGraphRef g, int32_t faceIndex,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4591,6 +4801,7 @@ int32_t OCCTBRepGraphCoEdgeCreateCurve2DRep(OCCTBRepGraphRef g, OCCTCurve2DRef c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4608,6 +4819,7 @@ void OCCTBRepGraphCoEdgeSetPCurve(OCCTBRepGraphRef g, int32_t coedgeIndex, OCCTC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4637,6 +4849,7 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4666,6 +4879,7 @@ void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4682,6 +4896,7 @@ void OCCTBRepGraphSetChildRefLocalLocation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4706,6 +4921,7 @@ bool OCCTBRepGraphGetOccurrenceRefLocalLocation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4724,6 +4940,7 @@ bool OCCTBRepGraphGetChildRefLocalLocation(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4752,6 +4969,7 @@ int32_t OCCTBRepGraphFindOccurrenceRefIndex(OCCTBRepGraphRef g, int32_t occurren
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4780,6 +4998,7 @@ int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4796,6 +5015,7 @@ int32_t OCCTBRepGraphCreateEmptyProduct(OCCTBRepGraphRef g)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4829,6 +5049,7 @@ int32_t OCCTBRepGraphLinkProducts(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     if (outOccurrenceRefId)
       *outOccurrenceRefId = -1;
     return -1;
@@ -4849,6 +5070,7 @@ bool OCCTBRepGraphProductRemoveOccurrence(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4863,6 +5085,7 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef g, int32_t productInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4965,6 +5188,7 @@ bool OCCTBRepGraphCachedFaceMeshIsPresent(OCCTBRepGraphRef g, int32_t faceIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4979,6 +5203,7 @@ int32_t OCCTBRepGraphCachedFaceMeshTriRepCount(OCCTBRepGraphRef g, int32_t faceI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4993,6 +5218,7 @@ int32_t OCCTBRepGraphCachedFaceMeshActiveIndex(OCCTBRepGraphRef g, int32_t faceI
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5008,6 +5234,7 @@ uint32_t OCCTBRepGraphCachedFaceMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t fac
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5023,6 +5250,7 @@ int32_t OCCTBRepGraphCachedFaceMeshTriRepId(OCCTBRepGraphRef g, int32_t faceInde
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5037,6 +5265,7 @@ bool OCCTBRepGraphCachedEdgeMeshIsPresent(OCCTBRepGraphRef g, int32_t edgeIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5052,6 +5281,7 @@ int32_t OCCTBRepGraphCachedEdgeMeshPolygon3DRepId(OCCTBRepGraphRef g, int32_t ed
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5067,6 +5297,7 @@ uint32_t OCCTBRepGraphCachedEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t edg
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5081,6 +5312,7 @@ bool OCCTBRepGraphCachedCoEdgeMeshIsPresent(OCCTBRepGraphRef g, int32_t coedgeIn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5098,6 +5330,7 @@ int32_t OCCTBRepGraphCachedCoEdgeMeshPolygon2DRepId(OCCTBRepGraphRef g, int32_t 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5116,6 +5349,7 @@ int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount(OCCTBRepGraphRef g, in
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5136,6 +5370,7 @@ int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5151,6 +5386,7 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5243,6 +5479,7 @@ int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5280,6 +5517,7 @@ int32_t OCCTBRepGraphSampleEdgeCurve(OCCTBRepGraphRef g,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5342,6 +5580,7 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5389,6 +5628,7 @@ int32_t OCCTEdgeGetAdjacentFacesArray(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // Release any faces we created before the exception
     for (int32_t i = 0; i < maxFaces; ++i)
     {
@@ -5462,6 +5702,7 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return OCCTEdgeConvexitySmooth;
   }
 }
@@ -5543,6 +5784,7 @@ int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5558,6 +5800,7 @@ int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFa
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5584,6 +5827,7 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     if (outFirstEdge)
       *outFirstEdge = nullptr;
     return 0;
@@ -5682,6 +5926,7 @@ double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -5739,6 +5984,7 @@ bool OCCTBRepGraphNodeUID(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5763,6 +6009,7 @@ bool OCCTBRepGraphNodeFromUID(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5778,6 +6025,7 @@ bool OCCTBRepGraphHasNodeUID(OCCTBRepGraphRef graph, int32_t uidKind, uint32_t c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5802,6 +6050,7 @@ bool OCCTBRepGraphRefUID(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5826,6 +6075,7 @@ bool OCCTBRepGraphRefFromUID(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5841,6 +6091,7 @@ bool OCCTBRepGraphHasRefUID(OCCTBRepGraphRef graph, int32_t uidKind, uint32_t co
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5868,6 +6119,7 @@ bool OCCTBRepGraphItemUIDOfNode(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5898,6 +6150,7 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef graph,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5916,6 +6169,7 @@ bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef graph, int32_t domain, int32_t kin
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
