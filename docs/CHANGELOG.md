@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The pinned kernel carries all twenty-nine patches (#1408)
+
+`Package.swift` pins `v4.0.0-kernel.1`, which is OCCT `V8_0_1` plus every carried patch. Twelve had been on disk and in no CI job, because `build-and-test` resolves the pinned asset rather than building from source, so they reached no consumer: an uncatchable SIGSEGV through `Document.datums` (`0029`), data races on `TopoDS_TShape::myState` and the B-spline caches (`0030`, `0031`), a wrong surface from `Shape.coonsAlgPatch` (`0034`), and the #1403 data-exchange series (`0036`-`0041`), which took named racing globals from 16 to 0. `Scripts/tsan.supp` loses the `TopoDS_TShape::myState` suppressions, which were hiding a race the kernel now fixes.
+
 ### Restated enum case lists are checked against their declaration (#2145)
 
 `check-docs-defaults.py` now compares the case list a `docs/reference/` page restates against the enum it documents, resolving same-named enums by the page's heading chain. Previously nothing checked a restatement at all: the doc-snippet census skips all 5,092 of them because a bodiless declaration compiles in no context, which is how `Drawing.md` came to declare `case A0, A1, A2, A3, A4` against a source reading `case a0, a1, a2, a3, a4` and seed seven wrong examples. `Construction.md` was missing three `MaterializationFailure` cases and now lists all nine.
