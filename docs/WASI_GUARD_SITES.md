@@ -1,124 +1,160 @@
-# WASI Build Guard Sites Documentation
+---
+nav_exclude: true
+search_exclude: true
+---
 
-This document lists all locations in OCCT source code that require `#ifdef __wasi__` guards for WASI compatibility.
+# WASI build guard sites
 
-## Current Status
+A record of which OCCT source sites the `wasm32-wasip1` build changes, which gaps are deliberately
+not changed there, and how a new guard is written. It describes the state of
+[`Scripts/patches-wasi/`](../Scripts/patches-wasi/README.md), not a plan.
 
-| File | Function/Location | Missing API | Status |
-|------|------------------|-------------|--------|
-| `src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx` | `GetProcessCPU()` | `times()`, `struct tms` | ✅ Patched (needs emulation flags) |
-| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `Build()` | `umask()` | ✅ Patched |
-| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `BuildTemporary()` | `mkdtemp()` | ✅ Patched |
-| `src/FoundationClasses/TKernel/OSD/OSD_Environment.cxx` | (global) | `std::mutex`, `std::lock_guard` | ❌ Needs patch |
-| `src/FoundationClasses/TKernel/OSD/OSD_File.cxx` | (multiple) | `mkstemp()`, `fcntl` locking | ❌ Needs patch |
+**This is not a status board.** It carries no task list and no progress marks, because the version
+of this page that did carry them listed work as pending that had been attempted and reverted, and
+work as required that no build ever performed. The plan of record is
+[`docs/wasm-feasibility.md`](wasm-feasibility.md) and the issue sequence it names.
 
-## Required CMake Flags
+It also does not restate patch bodies. The patch files are the text, and a copy of a hunk in a
+markdown page is a copy with no update path: this page previously showed an `OSD_Directory`
+body that the patch on disk had stopped containing. Read
+`Scripts/patches-wasi/wasi-osd-directory.patch` for what it does.
 
-Add to CMake configuration for WASI builds:
-```cmake
--DCMAKE_C_FLAGS="${CMAKE_C_FLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID"
--DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID"
--DCMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS} -lwasi-emulated-process-clocks -lwasi-emulated-getpid"
-```
+## The threading class is not patched. Not here, not ever.
 
-## Guard Sites Detail
+The Swift wasip1 SDK ships a libc++ configured with `_LIBCPP_HAS_THREADS 0`. Measured against that
+SDK's sysroot by syntax-only compile, in
+[#2170](https://github.com/SecondMouseAU/OCCTSwift/issues/2170), exactly six names are gone and the
+rest of the surface OCCT uses survives:
 
-### 1. OSD_Chronometer.cxx - GetProcessCPU()
-**Lines ~53-70** (original source)
-```cpp
-void OSD_Chronometer::GetProcessCPU(double& theUserSeconds, double& theSystemSeconds)
-{
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__ANDROID__) || defined(__QNX__) \
-    || defined(__EMSCRIPTEN__)
-  static const long aCLK_TCK = sysconf(_SC_CLK_TCK);
-#else
-  static const long aCLK_TCK = CLK_TCK;
-#endif
+| Missing | Still present |
+|---|---|
+| `std::mutex` | `std::lock_guard` |
+| `std::recursive_mutex` | `std::unique_lock` |
+| `std::shared_mutex` | `std::once_flag` |
+| `std::shared_lock` | `std::defer_lock` |
+| `std::condition_variable` | `std::atomic`, `std::atomic_flag` |
+| `std::this_thread::yield` | |
 
-#ifdef __wasi__
-  theUserSeconds = theSystemSeconds = 0.0;
-#else
-  tms aCurrentTMS{};
-  times(&aCurrentTMS);
-  theUserSeconds   = (double)aCurrentTMS.tms_utime / aCLK_TCK;
-  theSystemSeconds = (double)aCurrentTMS.tms_stime / aCLK_TCK;
-#endif
-}
-```
-**Also needs:** `times()` stub at top of file (after CLK_TCK define)
-```cpp
-#ifdef __wasi__
-// WASI doesn't have times() or struct tms
-static clock_t times(struct tms *buf) {
-  return 0;
-}
-#endif
-```
+**One force-included shim header supplies those six names, and no OCCT source is patched for this
+class at all.** The shim is wired into the WASI build's `CMAKE_CXX_FLAGS` as `-include` and is
+tracked in #2170. A patch in `Scripts/patches-wasi/` that touches any of the six names is wrong by
+construction, whether or not it compiles.
 
-### 2. OSD_Directory.cxx - Build()
-**Lines ~107-110** (original source)
-```cpp
-myPath.SystemName(aBuffer);
-#ifdef __wasi__
-  // WASI doesn't have umask
-#else
-  umask(0);
-#endif
-int aStatus = mkdir(aBuffer.ToCString(), anInternalProt);
-```
+### Why a shim rather than patches
 
-### 3. OSD_Directory.cxx - BuildTemporary()
-**Lines ~155-165** (original source)
-```cpp
-#ifdef __wasi__
-  // WASI doesn't have mkdtemp, use a simple random name
-  static int counter = 0;
-  char aTmpName[64];
-  snprintf(aTmpName, sizeof(aTmpName), "/tmp/occt_%d_%d", getpid(), counter++);
-  if (mkdir(aTmpName, 0700) != 0)
-#else
-  char aTmpName[] = "/tmp/CSFXXXXXX";
-  if (nullptr == mkdtemp(aTmpName))
-#endif
-  {
-    return OSD_Directory(); // can't create a directory
-  }
-```
+Two reasons, and the second is the expensive one.
 
-### 4. OSD_Environment.cxx - Global mutex usage
-**Lines ~137-138** (original source)
-```cpp
-static std::mutex           aMutex;
-std::lock_guard<std::mutex> aLock(aMutex);
-```
-**Guard needed:** Wrap mutex usage or use WASI-compatible synchronization.
+**Patching per site does not terminate.** 76 files across the four modules this build compiles
+(`FoundationClasses`, `ModelingData`, `ModelingAlgorithms`, `DataExchange`) use the missing names.
+Fifteen of those 76 are files our own carried patches already modify, because nine carried patches
+inject `std::mutex` or `std::recursive_mutex` as thread-safety fixes (#341, #344, #349, #353, #374,
+#1153, #1154, #1157, #1403). `Standard_Mutex.hxx` is deprecated in 8.0.0 in favour of `std::mutex`,
+and upstream's mutable-static-elimination series keeps converting more internals to it, so the
+surface grows at every kernel bump.
 
-### 5. OSD_File.cxx - Multiple locations
-- **Line ~767:** `mkstemp(aTmpName)` - temporary file creation
-- **Lines ~1394-1404:** `F_WRLCK`, `F_RDLCK`, `F_SETLKW`, `F_UNLCK`, `F_SETLK` - file locking
-- **Line ~1509-1510:** `F_UNLCK`, `F_SETLK` - file unlocking
+**The substitute that was tried is unsound.** Closed PR #2076 replaced the missing types with
+hand-written spinlocks in `OSD/OSD_Environment.cxx`, `Plugin/Plugin.cxx`, `Units/Units.cxx`,
+`UnitsAPI/UnitsAPI.cxx`, `Standard/Standard_Condition.hxx` and
+`NCollection/NCollection_IncAllocator.hxx`, all under `src/FoundationClasses/TKernel/`. A spinlock
+cannot stand in for a `std::recursive_mutex`, which is what the two units files hold: the second
+acquisition on the same thread spins on a flag only that thread could clear, and in a
+single-threaded runtime nothing ever will. The same argument retires the `std::shared_mutex`
+sites, where a reader lock taken twice is ordinary and expected. Substituting a non-recursive
+primitive for a recursive one is not a WASI problem; it converts a working lock into a hang on any
+platform that takes that branch.
 
-All need `__wasi__` guards with alternative implementations or stubs.
+The shim keeps the types and drops the enforcement, which is sound here for the reason
+`docs/wasm-feasibility.md` already gives: the bridge serialises every OCCT call through one
+`std::recursive_mutex`, TBB is off, and the runtime is single-threaded.
 
-## Patch Files
+## What is patched today
 
-Current patches in `Scripts/patches-wasi/`:
-- `wasi-osd-chronometer.patch` - Guards for OSD_Chronometer
-- `wasi-osd-directory.patch` - Guards for OSD_Directory
+| File | Site | Gap in wasi-libc | Patch |
+|---|---|---|---|
+| `src/FoundationClasses/TKernel/OSD/OSD_Chronometer.cxx` | `GetProcessCPU()` | `times()`, `struct tms` | `wasi-osd-chronometer.patch` |
+| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `Build()` | `umask()` | `wasi-osd-directory.patch` |
+| `src/FoundationClasses/TKernel/OSD/OSD_Directory.cxx` | `BuildTemporary()` | `mkdtemp()` | `wasi-osd-directory.patch` |
 
-## Next Steps
+One property of that set is settled, and one is not.
 
-1. Create patches for OSD_Environment.cxx (mutex)
-2. Create patches for OSD_File.cxx (mkstemp, fcntl locking)
-3. Add emulation flags to build script CMake configuration
-4. Test full build to identify any remaining guard sites
+**Settled: `wasi-osd-chronometer.patch` cannot compile, in either configuration.** Tracked as
+[#2179](https://github.com/SecondMouseAU/OCCTSwift/issues/2179). `OSD_Chronometer.cxx:27` includes
+`<sys/times.h>` unguarded, and in this SDK's sysroot that header opens with
+`#ifndef _WASI_EMULATED_PROCESS_CLOCKS` / `#error WASI lacks process-associated clocks`. Compiled
+against that sysroot:
 
-## Build Command
+- with no emulation define, which is how `Scripts/build-occt-wasm.sh` runs today, the translation
+  unit dies at the include and the patch's guard never executes;
+- with `-D_WASI_EMULATED_PROCESS_CLOCKS`, the header then declares `clock_t times (struct tms *);`
+  and the patch's own `static clock_t times(struct tms *buf)` fails as "static declaration of
+  'times' follows non-static declaration".
 
-```bash
-./Scripts/build-occt-wasm.sh
-```
+`CLK_TCK` is defined nowhere in the sysroot, so the `#ifndef CLK_TCK` branch holding that stub is
+taken rather than skipped. The stub is also unnecessary, because the same patch makes
+`GetProcessCPU()` return zeros without calling `times()` at all. #2179 carries the fix: delete the
+stub, guard the include.
 
-Output artifacts:
-- `Libraries/libOCCT-wasm.a` - Combined static library
-- `Libraries/occt-headers-wasm/` - Headers for SwiftPM linking
+**Unverified: `BuildTemporary()`'s WASI branch calls `getpid()`**, which wasi-libc supplies only
+under `-D_WASI_EMULATED_GETPID` with `-lwasi-emulated-getpid`. See the next section. Unlike the
+chronometer site, this one has not been reduced to a probe, so it stays a question for the first
+compile that reaches it.
+
+## CMake flags: none are passed
+
+`Scripts/build-occt-wasm.sh` passes **no** WASI emulation define and links **no** emulation library.
+An earlier version of this page listed `_WASI_EMULATED_PROCESS_CLOCKS`, `_WASI_EMULATED_GETPID`,
+`-lwasi-emulated-process-clocks` and `-lwasi-emulated-getpid` under a "Required CMake Flags"
+heading, and PR #2076's body claimed the build passed them. They exist on no branch that survived
+that PR.
+
+`_WASI_EMULATED_PROCESS_CLOCKS` is no longer an open question, and it is the reason this section
+is worded the way it is. It is **required** for `OSD_Chronometer.cxx` to compile at all, because
+that file includes `<sys/times.h>` unguarded and the header `#error`s without it. It also
+**breaks** the chronometer patch as written, by declaring the `times()` the patch redeclares
+`static`. Adding it would trade one hard error for another. The answer there is to guard the
+include and stop needing the define, which is #2179, not to pass the flag.
+
+`_WASI_EMULATED_GETPID` remains genuinely open, with `getpid()` in the directory patch as the one
+concrete candidate. Nothing should be added to the build script on the strength of this page.
+
+## Gaps that are known and not yet closed
+
+Not a checklist, and not complete: the authority on what is missing is a compile, which is what
+[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172) exists to run. What has been seen so
+far, outside the threading class, all of it under `src/FoundationClasses/TKernel/OSD/`:
+
+- `OSD_File.cxx`: `mkstemp()`, and `fcntl` record locking (`F_WRLCK`, `F_RDLCK`, `F_SETLKW`,
+  `F_UNLCK`, `F_SETLK`).
+- `OSD_Process.cxx`: `<pwd.h>` and the `getpwuid(getuid())` call that uses it.
+- `OSD_signal.cxx`: POSIX signal handling.
+- `OSD_Host.cxx`: `<netdb.h>` and `gethostbyname()`.
+- `OSD_Path.cxx`: `struct utsname` and `uname()`.
+
+These are the subject of [#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173), which
+writes them one file per patch.
+
+## How a new guard is written
+
+Upstream OCCT already supports WebAssembly through Emscripten, and its guards are sitting at most of
+these sites already. So:
+
+- **Extend the condition that is there.** `|| defined(__wasi__)` added to an existing
+  `defined(__EMSCRIPTEN__)` test is one token, and it leaves one structure for the next kernel bump
+  to merge. A parallel `#ifdef __wasi__` block beside the existing condition is wrong even when it
+  compiles. Exactly one of PR #2076's fifteen patches extended the existing condition; the other
+  fourteen built the parallel structure, and three of those left files that no compiler could
+  preprocess on any platform.
+- **Guard the call site, not only the `#include`.** PR #2076's `OSD_Process` patch excluded
+  `<pwd.h>` on WASI and left `getpwuid(getuid())` compiling below it.
+- **Say in the patch header what the WASI branch returns, and why that value is safe for every
+  caller.** `OSD_Directory::BuildTemporary` returning something that is not a directory is the
+  cautionary case.
+- **Author and verify against the patched tree**, meaning `Libraries/occt-src` after
+  `Scripts/patches/` has been applied, not a pristine `V8_0_1` checkout.
+
+## Related
+
+- [`Scripts/patches-wasi/README.md`](../Scripts/patches-wasi/README.md), the directory's own rules
+  and the reason it is separate from `Scripts/patches/`.
+- [`docs/wasm-feasibility.md`](wasm-feasibility.md), the plan of record.
+- [#1689](https://github.com/SecondMouseAU/OCCTSwift/issues/1689), the parent.

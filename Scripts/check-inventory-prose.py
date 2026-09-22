@@ -85,6 +85,18 @@ def numbered_patch_files():
     return [stem for stem in patch_files() if patch_number(stem) is not None]
 
 
+def wasi_patch_files():
+    """Stems of every WASI-only patch on disk, e.g. wasi-osd-chronometer.
+
+    A separate sequence from `patch_files()`: `Scripts/patches-wasi/` is applied by
+    `build-occt-wasm.sh` alone, is deliberately not NNNN-named, and is pinned into no release
+    asset. None of that made its prose unworth checking, which is what #2166 corrected: the two
+    counted claims in that directory's README were the only ones in the repo nothing read.
+    """
+    paths = glob.glob(os.path.join(REPO, "Scripts", "patches-wasi", "*.patch"))
+    return sorted(os.path.basename(p)[: -len(".patch")] for p in paths)
+
+
 def pinned_patch_numbers(text=None):
     """The patch numbers enumerated in Package.swift's pinned-asset comment."""
     text = read("Package.swift") if text is None else text
@@ -171,6 +183,8 @@ def facts():
     gates_with_selftest = split["gates"] & split["selftest"]
     return {
         "patches_on_disk": len(numbered_patch_files()),
+        # #2166: the WASI-only sequence, counted in Scripts/patches-wasi/README.md.
+        "wasi_patches_on_disk": len(wasi_patch_files()),
         "patches_pinned": len(pinned_patch_numbers()),
         # #1403: the count of patches the pinned asset LACKS. Package.swift and
         # carried-occt-patches.md both introduce their unpinned lists with this number, and both
@@ -207,6 +221,14 @@ CLAIMS = [
     ("okf/references/carried-occt-patches.md",
      r"The (\S+) it lacks, and why each matters", "patches_unpinned"),
     ("Package.swift", r"`ls Scripts/patches/\*\.patch \| wc -l` answers (\d+)", "patches_on_disk"),
+    # #2166: the WASI sequence. `Scripts/patches-wasi/` was outside this gate entirely until the
+    # patch-number parser stopped being the reason, and its README said "both patches here apply
+    # cleanly" while PR #2076 had fifteen sitting in the same directory.
+    # `(\S+)` and a tolerant plural for the same reason every sibling entry uses them: a count
+    # written as a digit, or a drop to one patch making the noun singular, should fail as a count
+    # mismatch rather than as "no sentence matches", which reads like the regex rotted.
+    ("Scripts/patches-wasi/README.md",
+     r"`Scripts/patches-wasi/` holds (\S+) patch(?:es)?\b", "wasi_patches_on_disk"),
     ("CLAUDE.md", r"\((\S+) on disk, \S+ pinned", "patches_on_disk"),
     ("CLAUDE.md", r"\(\S+ on disk, (\S+) pinned", "patches_pinned"),
     ("CLAUDE.md", r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
@@ -271,6 +293,45 @@ def check_patch_rows():
     for stem in sorted(on_disk - keyed):
         problems.append("Scripts/patches/%s.patch has no row in "
                         "okf/references/carried-occt-patches.md" % stem)
+    return problems
+
+
+def check_wasi_patch_rows():
+    """Every row in Scripts/patches-wasi/README.md names a file there, and every file has a row.
+
+    #2166. The sibling of `check_patch_rows()`, for the sequence that gate never looked at. A
+    count alone would not be enough: PR #2076 grew that directory from two patches to fifteen and
+    the README's table still described two, so the table itself is what has to be held to the
+    directory.
+
+    The empty-directory report is the "validate the view" rule from okf/policies/static-gates.md
+    rather than a defect the tree can currently have: a mistyped glob here would report clean
+    forever, exactly the way derive-bridge-header-split.py reported `misfiled: 0` while reading 2
+    declarations of 16 (#2080).
+    """
+    readme = os.path.join(REPO, "Scripts", "patches-wasi", "README.md")
+    if not os.path.exists(readme):
+        return ["Scripts/patches-wasi/README.md: missing. The directory's patches are described "
+                "nowhere, and this gate has nothing to check them against (#2166)."]
+    text = read("Scripts/patches-wasi/README.md")
+    on_disk = set(wasi_patch_files())
+    problems = []
+    if not on_disk and os.path.isdir(os.path.dirname(readme)):
+        problems.append(
+            "Scripts/patches-wasi/ yielded no .patch files. Either the directory really is empty, "
+            "in which case its README should say so, or this gate is reading the wrong path and "
+            "has been reporting clean without looking (#2166).")
+    keyed = set()
+    for match in re.finditer(r"^\|\s*`([A-Za-z0-9_.-]+)\.patch`", text, re.MULTILINE):
+        stem = match.group(1)
+        keyed.add(stem)
+        if stem not in on_disk:
+            problems.append(
+                "Scripts/patches-wasi/README.md: row `%s.patch` names no file in "
+                "Scripts/patches-wasi/." % stem)
+    for stem in sorted(on_disk - keyed):
+        problems.append("Scripts/patches-wasi/%s.patch has no row in "
+                        "Scripts/patches-wasi/README.md" % stem)
     return problems
 
 
@@ -369,9 +430,11 @@ def check_patch_naming():
     exactly the class of silent divergence this gate exists to catch. So the non-numbered file is
     reported, with the directory it probably belongs in.
 
-    `Scripts/patches-wasi/` is deliberately NOT swept up here. It is a separate sequence with its
-    own naming, applied by `build-occt-wasm.sh` rather than `build-occt.sh`, and it is not pinned
-    into any release asset, so none of this gate's counted claims are about it.
+    `Scripts/patches-wasi/` is deliberately NOT held to the NNNN rule here. It is a separate
+    sequence with its own naming, applied by `build-occt-wasm.sh` rather than `build-occt.sh`, and
+    it is not pinned into any release asset, so none of the counted facts above are about it. It is
+    no longer outside the gate, though: `check_wasi_patch_rows()` reads its README against the
+    directory, and one CLAIMS entry counts it (#2166).
     """
     problems = []
     for stem in patch_files():
@@ -387,7 +450,7 @@ def check_patch_naming():
 
 def run():
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
-                + check_tsan_suppressions() + check_patch_naming())
+                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows())
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -398,6 +461,7 @@ def run():
     values = facts()
     print("check-inventory-prose: clean")
     print("  patches: %d on disk, %d pinned" % (values["patches_on_disk"], values["patches_pinned"]))
+    print("  patches-wasi: %d on disk, each with a README row" % values["wasi_patches_on_disk"])
     print("  gate-scripts job: %d gates, %d censuses, %d merge-history audit, %d scripts total"
           % (values["gate_scripts"], values["census_scripts"], values["audit_scripts"],
              values["job_scripts"]))
@@ -417,7 +481,7 @@ def self_test():
 
     # 1. The real repo is clean, which is what the gate asserts in CI.
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
-                + check_tsan_suppressions() + check_patch_naming())
+                + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows())
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -555,6 +619,40 @@ def self_test():
              len(numbered_patch_files()) == len(real_patch_files()))
     finally:
         globals()["patch_files"] = real_patch_files
+
+    # 11. #2166: the WASI sequence. Monkeypatched for the same reason case 10 is, so no case
+    #     depends on a real file having been cleaned up afterwards.
+    real_wasi = globals()["wasi_patch_files"]
+    saved_read_11 = globals()["read"]
+    try:
+        globals()["wasi_patch_files"] = lambda: sorted(real_wasi() + ["wasi-osd-signal"])
+        case("wasi-patch-without-a-row-detected",
+             any("wasi-osd-signal.patch has no row" in problem
+                 for problem in check_wasi_patch_rows()))
+    finally:
+        globals()["wasi_patch_files"] = real_wasi
+
+    real_readme = read("Scripts/patches-wasi/README.md")
+    try:
+        globals()["read"] = lambda rel: (
+            real_readme + "\n| `wasi-not-on-disk.patch` | a row for nothing |\n"
+            if "patches-wasi/README" in rel else saved_read_11(rel))
+        case("wasi-row-naming-no-file-detected",
+             any("names no file" in problem for problem in check_wasi_patch_rows()))
+    finally:
+        globals()["read"] = saved_read_11
+
+    values_wasi = dict(facts())
+    values_wasi["wasi_patches_on_disk"] += 1
+    case("wasi-count-mismatch-detected",
+         any("wasi_patches_on_disk" in problem for problem in check_claims(values_wasi)))
+
+    # The view check, not the verdict: a mistyped glob would report clean forever. These assert
+    # the two sequences are read from different directories and neither comes back empty.
+    case("wasi-and-carried-sequences-are-distinct-populations",
+         bool(wasi_patch_files()) and bool(patch_files())
+         and not (set(wasi_patch_files()) & set(patch_files())),
+         "wasi=%d carried=%d" % (len(wasi_patch_files()), len(patch_files())))
 
     case("patch-number-reads-nnnn-and-rejects-the-rest",
          patch_number("0010-Intf-319") == 10 and patch_number("wasi-osd-environment") is None
