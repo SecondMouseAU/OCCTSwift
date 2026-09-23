@@ -221,3 +221,44 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `AdvancedModelingTests.swift` (28 tests)
+
+Probe: `Scripts/repro/766-modeling-advanced/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| filletSpecificEdges | `OCCTShapeFilletEdges` returns nullptr | `:23 Expectation failed: filleted != nil`, `:25 Expectation failed: filleted?.isValid ?? false` | pass | `OCCTShapeFilletEdges` | PASS |
+| filletSingleEdge | `OCCTShapeFilletEdges` returns nullptr | `:38 Expectation failed: filleted != nil` | pass | `OCCTShapeFilletEdges` | PASS |
+| filletVariableRadius | `OCCTShapeFilletEdgesLinear` returns nullptr | `:51 Expectation failed: filleted != nil` | pass | `OCCTShapeFilletEdgesLinear` | PASS |
+| edgeHasIndex | `Shape.edge(at:)` stamps `index + 1` on the Edge it returns | `:60 Expectation failed: edge?.index == 5` | pass | `OCCTShapeGetEdgeAtIndex` | N/A: the index is stamped by Swift's `edge(at:)`; the kernel only confirms index 5 is in range (12 edges) |
+| faceHasIndex | `Shape.face(at:)` stamps `index + 1` on the Face it returns | `:69 Expectation failed: face?.index == 3` | pass | `OCCTShapeGetFaceAtIndex` | N/A: the index is stamped by Swift's `face(at:)`; the kernel only confirms index 3 is in range (6 faces) |
+| draftVerticalFaces | `OCCTShapeDraft` returns nullptr | `:92 Expectation failed: drafted != nil` | pass | `OCCTShapeDraft` | PASS |
+| removeFeatures | `OCCTShapeRemoveFeatures` returns nullptr | `:118 Expectation failed: defeatured != nil` | pass | `OCCTShapeRemoveFeatures` | PASS |
+| pipeShellFrenet | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:150 Expectation failed: pipe != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS: the kernel's solid has zero volume: the profile circle lies in the XY plane, which contains the spine's start tangent (+X), so the sweep is degenerate; the test asserts only non-nil |
+| pipeShellCorrectedFrenet | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:174 Expectation failed: pipe != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| pipeShellFixedBinormal | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:199 Expectation failed: pipe != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS: the kernel's solid is invalid (BRepCheck) with zero volume: the XY rectangle contains the +X spine; the test asserts only non-nil |
+| pipeShellCreatesShell | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:215 Expectation failed: shell != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| multiSectionFrenetVaryingRadius | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:234 Expectation failed: pipe != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| multiSectionAuxiliarySpine | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:257 Expectation failed: pipe != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| multiSectionProfileCountBounds | `OCCTShapeCreatePipeShellMultiSection` returns nullptr | `:271 Expectation failed: Shape.pipeShellMultiSection(spine: spine, profiles: [one], mode: .frenet) != nil` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS: the empty-profile nil is refused before the kernel (Swift guard and bridge `profileCount < 1`), so only the single-profile half has a kernel counterpart |
+| wireLengthLine | `OCCTWireGetLength` returns twice the arc length | `:282 Expectation failed: abs(length! - 10.0) < 0.01` | pass | `OCCTWireGetLength` | PASS |
+| wireLengthCircle | `OCCTWireGetLength` returns twice the arc length | `:293 Expectation failed: abs(length! - expected) < 0.1` | pass | `OCCTWireGetLength` | PASS |
+| wireCurveInfoCircle | `OCCTWireGetCurveInfo` inverts `isClosed` | `:302 Expectation failed: info!.isClosed` | pass | `OCCTWireGetCurveInfo` | PASS |
+| wireCurveInfoLine | `OCCTWireGetCurveInfo` shifts `endX` by +1 | `:316 Expectation failed: abs(info!.endPoint.x - 20.0) < 0.01` | pass | `OCCTWireGetCurveInfo` | PASS |
+| wirePointAtParameter | `OCCTWireGetPointAt` shifts x by +1 | `:327 Expectation failed: abs(start!.x) < 0.01`, `:332 Expectation failed: abs(mid!.x - 10.0) < 0.01`, `:337 Expectation failed: abs(end!.x - 20.0) < 0.01` | pass | `OCCTWireGetPointAt` | PASS |
+| wireTangentAtParameter | `OCCTWireGetTangentAt` reverses the tangent | `:348 Expectation failed: abs(tangent!.x - 1.0) < 0.01` | pass | `OCCTWireGetTangentAt` | PASS |
+| wireCurvatureCircle | `OCCTWireGetCurvatureAt` divides by |d1|^2 instead of |d1|^3 | `:362 Expectation failed: abs(curvature! - 1.0 / radius) < 0.001` | pass | `OCCTWireGetCurvatureAt` | PASS |
+| wireCurvatureLine | `OCCTWireGetCurvatureAt` adds 0.01 to the curvature | `:372 Expectation failed: abs(curvature!) < 0.001` | pass | `OCCTWireGetCurvatureAt` | PASS |
+| wireCurvePointDerivatives | `OCCTWireGetCurvePointAt` divides by |d1|^2 instead of |d1|^3 | `:383 Expectation failed: abs(cp!.curvature - 1.0 / radius) < 0.001` | pass | `OCCTWireGetCurvePointAt` | PASS |
+| wireOffset3D | `OCCTWireOffset3D` translates by -distance | `:399 Expectation failed: abs(info!.startPoint.z - 10.0) < 0.01` | pass | `OCCTWireOffset3D` | PASS |
+| bsplineSurface | `OCCTShapeCreateBSplineSurface` returns nullptr | `:415 Expectation failed: surface != nil`, `:416 Expectation failed: surface?.isValid == true` | pass | `OCCTShapeCreateBSplineSurface` | PASS |
+| ruledSurfaceBetweenCircles | `OCCTShapeCreateRuled` returns nullptr | `:428 Expectation failed: ruled != nil` | pass | `OCCTShapeCreateRuled` | PASS |
+| shellWithOpenFaces | `OCCTShapeShellWithOpenFaces` returns nullptr | `:440 Expectation failed: shelled != nil`, `:441 Expectation failed: shelled?.isValid == true` | pass | `OCCTShapeShellWithOpenFaces` | PASS |
+| shellWithSpecificFaceOpen | `OCCTShapeShellWithOpenFaces` returns nullptr | `:453 Expectation failed: shelled != nil` | pass | `OCCTShapeShellWithOpenFaces` | PASS |

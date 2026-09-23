@@ -1,0 +1,29 @@
+filletSpecificEdges: edges=12 done=1 valid=1 volume=3951.56341
+filletSingleEdge: edges=12 done=1 valid=1 volume=1997.853982
+filletVariableRadius: edges=12 done=1 valid=1 volume=2990.523733
+edgeHasIndex/faceHasIndex: edges=12 faces=6 (index 5 and 3 both in range)
+draftVerticalFaces: vertical=4 done=1 valid=1 volume=12024.71918
+removeFeatures: faces=7 nonPlanar=1 done=1 valid=1 volume=8000
+pipeShellFrenet: done=1 makeSolid=1 type=2 valid=1 volume=-6.945052866e-16
+pipeShellCorrectedFrenet: done=1 makeSolid=1 type=2 valid=1 volume=84.95817472
+pipeShellFixedBinormal: done=1 makeSolid=1 type=2 valid=0 volume=0
+pipeShellCreatesShell: done=1 makeSolid=0 type=3 valid=1 volume=0
+multiSectionFrenetVaryingRadius: done=1 makeSolid=1 type=2 valid=1 volume=58.64306244
+multiSectionAuxiliarySpine: done=1 makeSolid=1 type=2 valid=1 volume=73.30382761
+multiSectionProfileCountBounds(single): done=1 makeSolid=1 type=2 valid=1 volume=125.6637061
+wireLengthLine: 10
+wireLengthCircle: 62.831853071795862 (2*pi*10 = 62.831853071795862)
+wireCurveInfoCircle: closed=1 length=31.415926535897931
+wireCurveInfoLine: closed=0 length=20 start=(0,0,0) end=(20,0,0)
+wirePointAtParameter t=0: (0, 0, 0)
+wirePointAtParameter t=0.5: (10, 0, 0)
+wirePointAtParameter t=1: (20, 0, 0)
+wireTangentAtParameter: (1, 0, 0)
+wireCurvatureLine: 0
+wireCurvatureCircle: 0.10000000000000002 (1/10)
+wireCurvePointDerivatives: point=(3.06162e-16, 5, 0) curvature=0.20000000000000004 normal=(-6.12323e-17, -1, 0)
+wireOffset3D: start=(5, 0, 10)
+bsplineSurface: done=1 valid=1
+ruledSurfaceBetweenCircles: null=0 type=3
+shellWithOpenFaces: upward=1 done=1 valid=1 volume=4519.409985
+shellWithSpecificFaceOpen: upward=0 done=1 valid=1 volume=3325.15484

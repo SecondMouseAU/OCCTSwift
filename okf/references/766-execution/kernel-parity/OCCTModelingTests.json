@@ -6,5 +6,683 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletSpecificEdges",
+    "bridge_function": "OCCTShapeFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 3951.56341
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletSingleEdge",
+    "bridge_function": "OCCTShapeFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 1997.853982
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletVariableRadius",
+    "bridge_function": "OCCTShapeFilletEdgesLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 2990.523733
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::edgeHasIndex",
+    "bridge_function": "OCCTShapeGetEdgeAtIndex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 12
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::faceHasIndex",
+    "bridge_function": "OCCTShapeGetFaceAtIndex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::draftVerticalFaces",
+    "bridge_function": "OCCTShapeDraft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "verticalFaces": 4,
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verticalFaces": 4,
+        "done": true,
+        "valid": true,
+        "volume": 12024.71918
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::removeFeatures",
+    "bridge_function": "OCCTShapeRemoveFeatures",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": ">6",
+        "nonPlanarFaces": ">=1",
+        "isValid": true,
+        "volume": "within 100 of 8000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 7,
+        "nonPlanarFaces": 1,
+        "done": true,
+        "valid": true,
+        "volume": 8000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "makeSolid": true,
+        "valid": true,
+        "volume": -6.945052866e-16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellCorrectedFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "makeSolid": true,
+        "valid": true,
+        "volume": 84.95817472
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellFixedBinormal",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "makeSolid": true,
+        "valid": false,
+        "volume": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellCreatesShell",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionFrenetVaryingRadius",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true,
+        "isValid": true,
+        "volume": ">0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 58.64306244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionAuxiliarySpine",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 73.30382761
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionProfileCountBounds",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "emptyProfiles": "nil",
+        "singleProfile": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "singleProfile": {
+          "done": true,
+          "valid": true,
+          "volume": 125.6637061
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireLengthLine",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": "within 0.01 of 10"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireLengthCircle",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": "within 0.1 of 62.8319"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 62.83185307179586
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurveInfoCircle",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isClosed": true,
+        "length": "within 0.1 of 31.4159"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "length": 31.41592653589793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurveInfoLine",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isClosed": false,
+        "length": "within 0.01 of 20",
+        "start.x": "~0",
+        "end.x": "~20"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": false,
+        "length": 20,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          20,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wirePointAtParameter",
+    "bridge_function": "OCCTWireGetPointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x@0": "~0",
+        "x@0.5": "~10",
+        "x@1": "~20"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x@0": 0,
+        "x@0.5": 10,
+        "x@1": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireTangentAtParameter",
+    "bridge_function": "OCCTWireGetTangentAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangent": "~(1, 0, 0)"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvatureCircle",
+    "bridge_function": "OCCTWireGetCurvatureAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "curvature": "within 0.001 of 0.1"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0.10000000000000002
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvatureLine",
+    "bridge_function": "OCCTWireGetCurvatureAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "curvature": "within 0.001 of 0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvePointDerivatives",
+    "bridge_function": "OCCTWireGetCurvePointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "curvature": "within 0.001 of 0.2",
+        "normal": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          0,
+          5,
+          0
+        ],
+        "curvature": 0.20000000000000004,
+        "normal": [
+          0,
+          -1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireOffset3D",
+    "bridge_function": "OCCTWireOffset3D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start.z": "within 0.01 of 10"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          0,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::bsplineSurface",
+    "bridge_function": "OCCTShapeCreateBSplineSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::ruledSurfaceBetweenCircles",
+    "bridge_function": "OCCTShapeCreateRuled",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": false,
+        "type": "SHELL"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::shellWithOpenFaces",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "upwardFaces": ">=1",
+        "nonNil": true,
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "upwardFaces": 1,
+        "done": true,
+        "valid": true,
+        "volume": 4519.409985
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::shellWithSpecificFaceOpen",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonNil": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 3325.15484
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
