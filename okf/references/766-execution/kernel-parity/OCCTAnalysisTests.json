@@ -4501,5 +4501,313 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::A point below a half arc gets the nearer end, not the far side",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "distance": 7.810249675906654,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "solutionCount": 1
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "distance": 7.810249675906654,
+        "point": [
+          5,
+          0,
+          0
+        ],
+        "solutionCount": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::A point on the circle but off the arc measures to the arc",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "distance": 4.47213595499958,
+        "point": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::A point past the end of a segment is answered, not refused",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "beyond": {
+          "distance": 92,
+          "point": [
+            8,
+            0,
+            0
+          ],
+          "solutionCount": 0
+        },
+        "before": {
+          "distance": 3,
+          "point": [
+            3,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "beyond": {
+          "distance": 92,
+          "point": [
+            8,
+            0,
+            0
+          ],
+          "solutionCount": 0
+        },
+        "before": {
+          "distance": 3,
+          "point": [
+            3,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::A point with a perpendicular foot reports it, and lands on it",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "segment": {
+          "distance": 2,
+          "point": [
+            5,
+            0,
+            0
+          ],
+          "solutionCount": 1
+        },
+        "arc": {
+          "distance": 1,
+          "point": [
+            3.061616997868383e-16,
+            5,
+            0
+          ],
+          "solutionCount": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "segment": {
+          "distance": 2,
+          "point": [
+            5,
+            0,
+            0
+          ],
+          "solutionCount": 1
+        },
+        "arc": {
+          "distance": 1,
+          "point": [
+            3.061616997868383e-16,
+            5,
+            0
+          ],
+          "solutionCount": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::nil is reserved for an index that names no edge",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "index 1": "nil",
+        "index -1": "nil",
+        "index 99": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "The refusal is occtEdgeAt finding no edge at indices 1, -1 and 99 of a one-edge shape, before any extrema call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::edgeIndex names the edge Shape.edges() names",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "per-edge distance",
+      "data": {
+        "distances": [
+          9.219544457292887,
+          6.324555320336759,
+          6.708203932499369,
+          10.0,
+          8.06225774829855,
+          4.47213595499958,
+          5.0,
+          8.94427190999916,
+          10.63014581273465,
+          7.280109889280518,
+          8.54400374531753,
+          3.605551275463989
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "per-edge distance",
+      "data": {
+        "distances": [
+          9.219544457292887,
+          6.324555320336759,
+          6.708203932499369,
+          10.0,
+          8.06225774829855,
+          4.47213595499958,
+          5.0,
+          8.94427190999916,
+          10.63014581273465,
+          7.280109889280518,
+          8.54400374531753,
+          3.605551275463989
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::Shape.pointEdgeExtrema and Edge.project agree",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "per-point distance",
+      "data": {
+        "distances": [
+          7.810249675906654,
+          4.47213595499958,
+          1.0,
+          5.0990195135927845,
+          1.0,
+          5.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "per-point distance",
+      "data": {
+        "distances": [
+          7.810249675906654,
+          4.47213595499958,
+          1.0,
+          5.0990195135927845,
+          1.0,
+          5.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
+  },
+  {
+    "test_name": "The nearest point on an edge of a shape (#580)::A proximity scan over a shape's edges reads the real distances",
+    "bridge_function": "OCCTBRepExtremaExtPC",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "answered": 12,
+        "nearest": 15.811388300841896
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "answered": 12,
+        "nearest": 15.811388300841896
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-issue580-point-edge-extrema/"
   }
 ]

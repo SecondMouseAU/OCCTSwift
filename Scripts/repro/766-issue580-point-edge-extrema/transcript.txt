@@ -1,0 +1,26 @@
+halfArc belowTheArc point (0, -6, 0): distance=7.810249675906654 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+halfArc onTheCircleButOffTheArc point (3, -4, 0): distance=4.4721359549995796 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+segment pastTheEnd point (100, 0, 0): distance=92 nearest=(8, 0, 0) ExtPC IsDone=0 NbExt=0
+segment before point (0, 0, 0): distance=3 nearest=(3, 0, 0) ExtPC IsDone=0 NbExt=0
+segment perpendicularFoot point (5, 2, 0): distance=2 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+halfArc above point (0, 6, 0): distance=1 nearest=(3.0616169978683831e-16, 5, 0) ExtPC IsDone=1 NbExt=1
+halfArc agreesWithEdgeProject point (0, -6, 0): distance=7.810249675906654 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+halfArc agreesWithEdgeProject point (3, -4, 0): distance=4.4721359549995796 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+halfArc agreesWithEdgeProject point (0, 6, 0): distance=1 nearest=(3.0616169978683831e-16, 5, 0) ExtPC IsDone=1 NbExt=1
+halfArc agreesWithEdgeProject point (0, -1, 0): distance=5.0990195135927845 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=1
+halfArc agreesWithEdgeProject point (6, 0, 0): distance=1 nearest=(5, 0, 0) ExtPC IsDone=1 NbExt=2
+halfArc agreesWithEdgeProject point (0, 0, 0): distance=5 nearest=(5, 0, 0) ExtPC IsDone=0 NbExt=0
+box edges=12
+box edge 0 point (1, 2, 3): distance=9.2195444572928871 nearest=(-5, -5, 3) ExtPC IsDone=1 NbExt=1
+box edge 1 point (1, 2, 3): distance=6.324555320336759 nearest=(-5, 2, 5) ExtPC IsDone=1 NbExt=1
+box edge 2 point (1, 2, 3): distance=6.7082039324993694 nearest=(-5, 5, 3) ExtPC IsDone=1 NbExt=1
+box edge 3 point (1, 2, 3): distance=10 nearest=(-5, 2, -5) ExtPC IsDone=1 NbExt=1
+box edge 4 point (1, 2, 3): distance=8.0622577482985491 nearest=(5, -5, 3) ExtPC IsDone=1 NbExt=1
+box edge 5 point (1, 2, 3): distance=4.4721359549995796 nearest=(5, 2, 5) ExtPC IsDone=1 NbExt=1
+box edge 6 point (1, 2, 3): distance=5 nearest=(5, 5, 3) ExtPC IsDone=1 NbExt=1
+box edge 7 point (1, 2, 3): distance=8.9442719099991592 nearest=(5, 2, -5) ExtPC IsDone=1 NbExt=1
+box edge 8 point (1, 2, 3): distance=10.63014581273465 nearest=(1, -5, -5) ExtPC IsDone=1 NbExt=1
+box edge 9 point (1, 2, 3): distance=7.2801098892805181 nearest=(1, -5, 5) ExtPC IsDone=1 NbExt=1
+box edge 10 point (1, 2, 3): distance=8.5440037453175304 nearest=(1, 5, -5) ExtPC IsDone=1 NbExt=1
+box edge 11 point (1, 2, 3): distance=3.6055512754639891 nearest=(1, 5, 5) ExtPC IsDone=1 NbExt=1
+box proximity scan from (20,0,0): nearest=15.811388300841896 (sqrt(250)=15.811388300841896)
