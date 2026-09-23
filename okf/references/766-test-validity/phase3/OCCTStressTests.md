@@ -288,3 +288,21 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBuilderLifecycleTests: CellsBuilder, SectionBuilder
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-builder-lifecycle/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: CellsBuilder Lifecycle | `normalCycle` | `OCCTCellsBuilderAddAllToResult, OCCTCellsBuilderGetResult` | EARLY:OCCTCellsBuilderGetResult | RED exit 1: StressBuilderLifecycleTests.swift:769 Expectation failed: builder.result() | ✔ | MATCH | yes |
+| Stress: CellsBuilder Lifecycle | `emptyInput` | `OCCTCellsBuilderCreate` | OCCTCellsBuilderCreate: empty-input and HasErrors guards removed | RED exit 1: StressBuilderLifecycleTests.swift:779 Expectation failed: builder == nil | ✔ | MATCH | yes |
+| Stress: CellsBuilder Lifecycle | `removeAll` | `OCCTCellsBuilderRemoveAllFromResult, OCCTCellsBuilderGetResult` | EARLY:OCCTCellsBuilderRemoveAllFromResult | RED exit 1: StressBuilderLifecycleTests.swift:790 Expectation failed: result.subShapeCount(ofType: .face) == 0 | ✔ | MATCH | yes |
+| Stress: CellsBuilder Lifecycle | `destroyWithoutResult` | `OCCTCellsBuilderRelease` | CRASH:OCCTCellsBuilderRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | yes |
+| Stress: SectionBuilder Lifecycle | `buildEmpty` | `OCCTSectionBuilderBuild` | OCCTSectionBuilderBuild returns an empty shape when not done | RED exit 1: StressBuilderLifecycleTests.swift:813 Expectation failed: builder.build() == nil | ✔ | MATCH | yes |
+| Stress: SectionBuilder Lifecycle | `normalCycleTwoShapes` | `OCCTSectionBuilderCreateFromShapes, OCCTSectionBuilderBuild` | OCCTSectionBuilderBuild returns nil | RED exit 1: StressBuilderLifecycleTests.swift:821 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: SectionBuilder Lifecycle | `initThenSetShapes` | `OCCTSectionBuilderInit1Shape, OCCTSectionBuilderInit2Shape, OCCTSectionBuilderBuild` | EARLY:OCCTSectionBuilderInit2Shape | RED exit 1: StressBuilderLifecycleTests.swift:830 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: SectionBuilder Lifecycle | `sectionWithPlane` | `OCCTSectionBuilderInit2Plane, OCCTSectionBuilderBuild` | EARLY:OCCTSectionBuilderInit2Plane | RED exit 1: StressBuilderLifecycleTests.swift:840 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: SectionBuilder Lifecycle | `destroyWithoutBuild` | `OCCTSectionBuilderRelease` | CRASH:OCCTSectionBuilderRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: SectionBuilder Lifecycle | `doubleBuild` | `OCCTSectionBuilderBuild` | OCCTSectionBuilderBuild returns nil | RED exit 1: StressBuilderLifecycleTests.swift:860 Expectation failed: r1 != nil | ✔ | MATCH | yes |
+| Stress: SectionBuilder Lifecycle | `ancestorFaceNilAfterReinitWithoutRebuild` | `OCCTSectionBuilderBuild, OCCTSectionBuilderAncestorFaceOn1` | OCCTSectionBuilderBuild returns nil | RED exit 1: StressBuilderLifecycleTests.swift:892 Expectation failed: builder.build() | ✔ | MATCH | no |
