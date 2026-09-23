@@ -182,5 +182,135 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomPoint3D Tests::create and read coordinates",
+    "bridge_function": "OCCTGeomPoint3DY",
+    "bridge_output": {"type": "observed", "data": "(1, 2, 3)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(1, 2, 3)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "OCCTGeomPoint3DY returns X()", "failing_expectation": ":15 `abs(p.y - 2) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomPoint3D Tests::create from SIMD3",
+    "bridge_function": "OCCTGeomPoint3DCreate / OCCTGeomPoint3DY",
+    "bridge_output": {"type": "observed", "data": "(4, 5, 6)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(4, 5, 6)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "OCCTGeomPoint3DY returns X()", "failing_expectation": ":24 `abs(c.y - 5) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomPoint3D Tests::setCoordinates",
+    "bridge_function": "OCCTGeomPoint3DSetCoord",
+    "bridge_output": {"type": "observed", "data": "(10, 20, 30)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(10, 20, 30)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetCoord(y, y, z)", "failing_expectation": ":31 `abs(p.x - 10) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomPoint3D Tests::distance between points",
+    "bridge_function": "OCCTGeomPoint3DDistance",
+    "bridge_output": {"type": "observed", "data": "5 (square 25)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "5 (square 25)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "return SquareDistance instead of Distance", "failing_expectation": ":38 `abs(p1.distance(to: p2) - 5.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomPoint3D Tests::translate",
+    "bridge_function": "OCCTGeomPoint3DTranslate",
+    "bridge_output": {"type": "observed", "data": "(11, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(11, 0, 0)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "translation vector negated", "failing_expectation": ":45 `abs(p.x - 11) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::identity",
+    "bridge_function": "OCCTGeomTransformScaleFactor / OCCTGeomTransformIsNegative",
+    "bridge_output": {"type": "observed", "data": "scale=1 negative=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "scale=1 negative=0", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "ScaleFactor() + 1; IsNegative negated", "failing_expectation": "original: red; rewritten: :15 `abs(t.scaleFactor - 1.0) < 1e-10`; :16 `!t.isNegative`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::translation",
+    "bridge_function": "OCCTGeomTransformSetTranslation",
+    "bridge_output": {"type": "observed", "data": "(0,0,0) -> (10, 20, 30)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0,0,0) -> (10, 20, 30)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_Vec(dx, dz, dy): Y and Z swapped", "failing_expectation": "original: red; rewritten: :24 `abs(p.y - 20) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::rotation",
+    "bridge_function": "OCCTGeomTransformSetRotation",
+    "bridge_output": {"type": "observed", "data": "(1,0,0) -> (1.1e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(1,0,0) -> (1.1e-16, 1, 0)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "angle negated", "failing_expectation": "original: red; rewritten: :36 `abs(p.y - 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::scale",
+    "bridge_function": "OCCTGeomTransformScaleFactor",
+    "bridge_output": {"type": "observed", "data": "scale=2", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "scale=2", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "ScaleFactor() + 1", "failing_expectation": "original: red; rewritten: :42 `abs(t.scaleFactor - 2.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::mirror",
+    "bridge_function": "OCCTGeomTransformIsNegative",
+    "bridge_output": {"type": "observed", "data": "negative=1 scale=-1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "negative=1 scale=-1", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "IsNegative negated", "failing_expectation": "original: red; rewritten: :48 `t.isNegative`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::multiply",
+    "bridge_function": "OCCTGeomTransformMultiplied",
+    "bridge_output": {"type": "observed", "data": "(0,0,0) -> (10, 5, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0,0,0) -> (10, 5, 0)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "t1 * t1 instead of t1 * t2", "failing_expectation": "original: red; rewritten: :58 `abs(p.x - 10) < 1e-10`; :59 `abs(p.y - 5) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::invert",
+    "bridge_function": "OCCTGeomTransformInverted",
+    "bridge_output": {"type": "observed", "data": "inverse applied to (10,20,30) -> (0, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "inverse applied to (10,20,30) -> (0, 0, 0)", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "return a copy instead of the inverse", "failing_expectation": "original: red; rewritten: :67 `abs(p.x) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomTransformation Tests::matrixValue",
+    "bridge_function": "OCCTGeomTransformValue",
+    "bridge_output": {"type": "observed", "data": "V(1,4)=10 V(2,4)=20 V(3,4)=30", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "V(1,4)=10 V(2,4)=20 V(3,4)=30", "source": "Scripts/repro/766-math-geom-point-transformation/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "translation column misread: col 4 mapped to col 1", "failing_expectation": "original: red; rewritten: :75 `abs(t.value(row: 1, col: 4) - 10) < 1e-10`"},
+    "green": true
   }
 ]
