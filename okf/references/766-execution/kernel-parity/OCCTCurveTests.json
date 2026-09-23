@@ -302,5 +302,144 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform sampling never exceeds the requested count",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "count == requested for all 16"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_QuasiUniformAbscissa: on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one parameter fewer kept",
+    "red": "GCPntsSamplerBoundsTests.swift:29 ellipse.quasiUniformParameters(count: count).count == count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform sampling still reaches the end of the curve when clamped",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "last == end"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "last parameter 1e-6 short of the end",
+    "red": "GCPntsSamplerBoundsTests.swift:43 abs(last - end) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent `guard ... else { return }` now records an issue. A first injection (index i + 1, the pre-#501 clamp) stayed green because nothing overshoots any more"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Quasi-uniform parameters stay ordered when clamped",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DQuasiUniformAbscissa",
+    "bridge_output": {
+      "type": "value",
+      "data": "strictly increasing"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "first two parameters swapped",
+    "red": "GCPntsSamplerBoundsTests.swift:57 params[i] > params[i - 1]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent guard now records an issue"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Uniform discretization never exceeds the requested count and reaches the end",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": "count == requested"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_UniformAbscissa: on the pinned kernel no listed count overshoots: NbPoints == requested, last parameter == end"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one point fewer kept",
+    "red": "GCPntsSamplerBoundsTests.swift:71 points.count == count",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt",
+    "note": "Silent guard now records an issue"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Sample counts below two are rejected, not passed to OCCT",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "none: Swift Sampling.requested guard",
+    "bridge_output": {
+      "type": "value",
+      "data": "empty for 0 and 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel (which SIGSEGVs on 0 for a Bezier/BSpline, #487)"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: count clamped to 2 instead of rejected",
+    "red": "GCPntsSamplerBoundsTests.swift:96 curve.quasiUniformParameters(count: count).isEmpty",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
+  },
+  {
+    "test_name": "GCPnts sampler bounds (#501)::Edge uniform abscissa rejects counts below two",
+    "test_file": "Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift",
+    "bridge_function": "none: Swift Sampling.requested guard",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for 0 and 1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: count clamped to 2 instead of rejected",
+    "red": "GCPntsSamplerBoundsTests.swift:111 edge.uniformAbscissa(pointCount: count) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-sampler-bounds/transcript.txt"
   }
 ]

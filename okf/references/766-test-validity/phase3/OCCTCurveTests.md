@@ -197,3 +197,16 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| GCPnts sampler bounds (#501) | Quasi-uniform sampling never exceeds the requested count | `OCCTCurve3DQuasiUniformAbscissa` | one parameter fewer kept | `GCPntsSamplerBoundsTests.swift:29 ellipse.quasiUniformParameters(count: count).count == count` | ✅ | MATCH |  |
+| GCPnts sampler bounds (#501) | Quasi-uniform sampling still reaches the end of the curve when clamped | `OCCTCurve3DQuasiUniformAbscissa` | last parameter 1e-6 short of the end | `GCPntsSamplerBoundsTests.swift:43 abs(last - end) < 1e-12` | ✅ | MATCH | Silent `guard ... else { return }` now records an issue. A first injection (index i + 1, the pre-#501 clamp) stayed green because nothing overshoots any more |
+| GCPnts sampler bounds (#501) | Quasi-uniform parameters stay ordered when clamped | `OCCTCurve3DQuasiUniformAbscissa` | first two parameters swapped | `GCPntsSamplerBoundsTests.swift:57 params[i] > params[i - 1]` | ✅ | MATCH | Silent guard now records an issue |
+| GCPnts sampler bounds (#501) | Uniform discretization never exceeds the requested count and reaches the end | `OCCTCurve3DDrawUniform` | one point fewer kept | `GCPntsSamplerBoundsTests.swift:71 points.count == count` | ✅ | MATCH | Silent guard now records an issue |
+| GCPnts sampler bounds (#501) | Sample counts below two are rejected, not passed to OCCT | `none: Swift Sampling.requested guard` | Swift: count clamped to 2 instead of rejected | `GCPntsSamplerBoundsTests.swift:96 curve.quasiUniformParameters(count: count).isEmpty` | ✅ | N/A |  |
+| GCPnts sampler bounds (#501) | Edge uniform abscissa rejects counts below two | `none: Swift Sampling.requested guard` | Swift: count clamped to 2 instead of rejected | `GCPntsSamplerBoundsTests.swift:111 edge.uniformAbscissa(pointCount: count) == nil` | ✅ | N/A |  |
