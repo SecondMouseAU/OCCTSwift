@@ -81,7 +81,8 @@ struct GraphHistoryAbsorbTests {
             inputRoots: [c.root], operationName: "channel-cut")
 
         #expect(added != nil, "add should return the result's topology root")
-        #expect(c.graph.historyRecordCount > 0, "absorb should have written history records")
+        // Kernel: ShapesView::AddWithHistory writes 11 records for this cut (Scripts/repro/766-brepgraph-history).
+        #expect(c.graph.historyRecordCount == 11, "absorb should have written the kernel's 11 history records")
     }
 
     /// The core of #290: the pre-cut face resolves to its two successor strips.

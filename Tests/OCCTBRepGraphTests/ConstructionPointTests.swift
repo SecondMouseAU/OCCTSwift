@@ -17,8 +17,9 @@ struct ConstructionPointTests {
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
         switch graph.resolve(ConstructionPoint.atVertex(v)) {
         case .success(let p):
-            // Box corner must be at (0, 0, 0) for some vertex or similar.
-            #expect(abs(p.x) < 20 && abs(p.y) < 20 && abs(p.z) < 20)
+            // Kernel: vertex 0 of the centered box is the (-5, -5, -5) corner. "Within 20 of the
+            // origin" passed any point in a 40-unit cube.
+            #expect(simd_distance(p, SIMD3(-5, -5, -5)) < 1e-9)
         case .failure: Issue.record("atVertex failed")
         }
     }
@@ -34,7 +35,8 @@ struct ConstructionPointTests {
         let edge = TopologyRef.literal(.init(kind: .edge, index: 0))
         switch graph.resolve(ConstructionPoint.midpointOfEdge(edge)) {
         case .success(let p):
-            #expect(abs(p.x) < 20 && abs(p.y) < 20 && abs(p.z) < 20)
+            // Kernel: edge 0 runs (-5,-5,-5) to (-5,-5,5), so its midpoint is (-5, -5, 0).
+            #expect(simd_distance(p, SIMD3(-5, -5, 0)) < 1e-9)
         case .failure: Issue.record("midpointOfEdge failed")
         }
     }

@@ -27,6 +27,9 @@
 #include <TopoDS.hxx>
 #include <TopExp_Explorer.hxx>
 #include <gp_Ax2.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
+#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <BRepGraph.hxx>
 #include <BRepGraph_TopoView.hxx>
 #include <BRepGraph_Tool.hxx>
@@ -176,6 +179,34 @@ int main()
              "%.6f), height along axis = %.6f\n",
              s->Axis().Direction().X(), s->Axis().Direction().Y(), s->Axis().Direction().Z(),
              p.X(), p.Y(), p.Z(), p.Z());
+  }
+
+  // alongEdgeEllipticalRim fixture: cylinder r5 h20 intersected with a big box tilted 25 degrees
+  // about Y (OCCTShapeRotate: gp_Ax1 through the origin, BRepBuilderAPI_Transform copy). For
+  // each elliptical edge: BRepGProp::LinearProperties length (what OCCTEdgeGetLength returns).
+  {
+    double       theta = 25.0 * M_PI / 180.0, z0 = 10.0 * cos(theta);
+    TopoDS_Shape cyl   = BRepPrimAPI_MakeCylinder(5, 20).Shape();
+    TopoDS_Shape big =
+      BRepPrimAPI_MakeBox(gp_Pnt(-500, -500, -1000), 1000, 1000, 1000 + z0).Shape();
+    gp_Trsf rot;
+    rot.SetRotation(gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0)), theta);
+    TopoDS_Shape tilted = BRepBuilderAPI_Transform(big, rot, Standard_True).Shape();
+    TopoDS_Shape cut    = BRepAlgoAPI_Common(cyl, tilted).Shape();
+    for (TopExp_Explorer ex(cut, TopAbs_EDGE); ex.More(); ex.Next())
+    {
+      TopoDS_Edge        e = TopoDS::Edge(ex.Current());
+      BRepAdaptor_Curve  c(e);
+      if (c.GetType() != GeomAbs_Ellipse)
+        continue;
+      GProp_GProps gp;
+      BRepGProp::LinearProperties(e, gp);
+      gp_Pnt p0 = c.Value(c.FirstParameter()), p1 = c.Value(c.LastParameter());
+      printf("ellipse rim edge: params [%.6f, %.6f] length=%.9f start=(%.4f,%.4f,%.4f) "
+             "end=(%.4f,%.4f,%.4f) closed=%d\n",
+             c.FirstParameter(), c.LastParameter(), gp.Mass(), p0.X(), p0.Y(), p0.Z(), p1.X(),
+             p1.Y(), p1.Z(), BRep_Tool::IsClosed(e) ? 1 : 0);
+    }
   }
 
   // Issue881: gp_Ax2(origin, dir) canonical X/Y for the oblique and the six axis normals.
