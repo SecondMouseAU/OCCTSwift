@@ -129,6 +129,10 @@
 | **Edge Curve Properties Tests** | Torsion of planar curve is zero | Edge curve torsion | Offset torsion |
 | **Edge Curve Properties Tests** | Curve type detection | Edge curve type | Misclassify lines |
 | **Edge Curve Properties Tests** | Point at parameter matches expected location | Edge curve evaluation | Offset point |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
 
 ---
 
@@ -270,6 +274,10 @@
 | Torsion of planar curve is zero | OCCTEdgeGetTorsion | Edge curve torsion | Add 1.0 to the computed torsion | ✅ | ✅ |  |
 | Curve type detection | OCCTEdgeGetCurveType | Edge curve type | Map GeomAbs_Line to 8 (other) | ✅ | ✅ |  |
 | Point at parameter matches expected location | OCCTEdgeGetPointAtParam | Edge curve evaluation | Add 1.0 to the evaluated point's Z | ✅ | ✅ |  |
+| Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
+| Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
+| Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
 
 ---
 
@@ -390,5 +398,9 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
+| Shape distance to Wire | ✅ | ✅ | ✅ |
+| Shape intersects Wire | ✅ | ✅ | ✅ |
+| Shape distance to Edge | ✅ | ✅ | ✅ |
+| Shape distance to Face | ✅ | ✅ | ✅ |
 
-**Total**: 577 tests
+**Total**: 581 tests
