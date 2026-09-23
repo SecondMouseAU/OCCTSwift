@@ -124,3 +124,19 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue1646EvaluatorContractTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-evaluator-contract/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Issue #1646, 2D evaluator contract::Every D0 evaluator refuses the argument its OCCT constructor rejects | `OCCTGeom2dEval*D0` | Swift wrapper ignores the bridge's bool (the pre-#1646 void contract) | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::Every D1 evaluator refuses the argument its OCCT constructor rejects | `OCCTGeom2dEval*D1` | Swift wrapper ignores the bridge's bool | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::The same evaluators answer the accepted argument beside each rejected one | `OCCTGeom2dEval*D0/D1` | D0 writer adds 1e-3 to x | ✅ | ✅ | MATCH | `isFinite` only; now all five pinned |
+| Issue #1646, 2D evaluator contract::A legitimate evaluation at the origin is a value, not a refusal | `OCCTGeom2dEvalSineWaveD0` | D0 writer refuses an exact (0, 0) | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A NaN argument is refused, not answered with a NaN point | `occtEval2dWriteD0/D1` | finite-output check skipped | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A NaN parameter is refused, and EvalD0 never raises on one | `occtEval2dWriteD0/D1` | finite-output check skipped | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::A finite argument whose evaluation overflows is refused | `OCCTGeom2dEvalLogSpiralD0` | finite-output check skipped | ✅ | ✅ | MATCH | neighbour was `isFinite`; now pinned |
+| Issue #1646, 2D evaluator contract::The placement overloads refuse a bad radius, direction, or non-finite argument | `OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement` | Swift wrapper ignores the bridge's bool | ✅ | ✅ | MATCH |  |
+| Issue #1646, 2D evaluator contract::The placement overloads answer a well-formed call | `OCCTGeom2dEvalCircleInvoluteD0/D1WithPlacement` | D0 writer adds 1e-3 to x | ✅ | ✅ | MATCH | D1 row was `isFinite` on one component each; now both pinned |
