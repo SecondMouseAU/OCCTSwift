@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepExtrema ExtCC Tests** | Edge-edge distance between box edges | Edge-edge extrema | solutionCount forced to 0 / distance written squared |
+| **BRepExtrema ExtCC Tests** | Edge-edge distance between standalone edge shapes | Edge-edge extrema | solutionCount forced to 0 / distance written squared |
 
 ---
 
@@ -216,6 +218,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Edge-edge distance between box edges | OCCTBRepExtremaExtCC | Edge-edge extrema | solutionCount forced to 0 / distance written squared | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: edge 0 of each box is parallel, so the result was always nil and no assertion ran |
+| Edge-edge distance between standalone edge shapes | OCCTBRepExtremaExtCCEdges | Edge-edge extrema | solutionCount forced to 0 / distance written squared | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: same parallel first-edge pair, same always-nil result |
 
 ---
 
@@ -318,5 +322,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Edge-edge distance between box edges | ✅ | ✅ | ✅ |
+| Edge-edge distance between standalone edge shapes | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
