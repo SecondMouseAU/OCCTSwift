@@ -222,3 +222,27 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: SurfaceContinuityQueriesTests.swift, SurfaceContinuityTests.swift, SurfaceConversionTests.swift, SurfaceCurvatureParityTests.swift (19 tests), probes Scripts/repro/766-surface-continuity/ and 766-surface-conversion/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Surface Continuity Queries v0.120.0 | isCNu | `OCCTSurfaceIsCNu` | returns n < 2 (INJ_SC_CN) | SurfaceContinuityQueriesTests.swift:22 s.isCNu(2) | ✅ | MATCH | Caught as written; plane made unconditional |
+| Surface Continuity Queries v0.120.0 | isCNv | `OCCTSurfaceIsCNv` | returns n < 2 (INJ_SC_CN) | SurfaceContinuityQueriesTests.swift:30 s.isCNv(2) | ✅ | MATCH | Caught as written |
+| Surface Continuity Queries v0.120.0 | uReversed | `OCCTSurfaceUReversed` | U and V reversal swapped (INJ_SC_REV_SWAP) | SurfaceContinuityQueriesTests.swift:39 rev.point(atU: 3, v: 4) == SIMD3(-3, 4, 0) | ✅ | MATCH | Rewritten: asserted only non-nil |
+| Surface Continuity Queries v0.120.0 | vReversed | `OCCTSurfaceVReversed` | U and V reversal swapped (INJ_SC_REV_SWAP) | SurfaceContinuityQueriesTests.swift:47 rev.point(atU: 3, v: 4) == SIMD3(3, -4, 0) | ✅ | MATCH | Rewritten: asserted only non-nil |
+| Surface Continuity Queries v0.120.0 | uReversedParameter | `OCCTSurfaceUReversedParameter` | parameter returned unreversed (INJ_SC_REVPARAM) | SurfaceContinuityQueriesTests.swift:55 rp == -0.5 | ✅ | MATCH | Rewritten: `isFinite` passed any value |
+| Surface Continuity Queries v0.120.0 | vReversedParameter | `OCCTSurfaceVReversedParameter` | parameter returned unreversed (INJ_SC_REVPARAM) | SurfaceContinuityQueriesTests.swift:62 rp == -0.5 | ✅ | MATCH | Rewritten: `isFinite` passed any value |
+| Surface Continuity Queries v0.120.0 | bezierMaxDegree | `OCCTSurfaceBezierMaxDegree` | MaxDegree() + 1 (INJ_SC_MAXDEG) | SurfaceContinuityQueriesTests.swift:68 md == 25 | ✅ | MATCH | Tightened `>= 25` |
+| Surface Continuity Queries v0.120.0 | bsplineMaxDegree | `OCCTSurfaceBSplineMaxDegree` | MaxDegree() + 1 (INJ_SC_MAXDEG) | SurfaceContinuityQueriesTests.swift:73 md == 25 | ✅ | MATCH | Tightened `>= 25` |
+| Surface Continuity Tests | planeContinuity | `OCCTSurfaceGetContinuity` | ordinal - 2 (INJ_SC_CONT) | SurfaceContinuityTests.swift:16 plane.continuity == 6 | ✅ | MATCH | Rewritten: `c >= 0` held for any ordinal |
+| Surface Continuity Tests | sphereContinuity | `OCCTSurfaceGetContinuity` | ordinal - 2 (INJ_SC_CONT) | SurfaceContinuityTests.swift:24 sphere.continuity == 6 | ✅ | MATCH | Rewritten: `c >= 0` held for any ordinal |
+| Surface Continuity Tests | surfaceNBounds | `OCCTSurfaceGetNBounds` | range comparison reversed (INJ_SC_NBOUNDS) | SurfaceContinuityTests.swift:33 bounds.uSpans == 1 | ✅ | MATCH | Rewritten: `>= 0` held for any count |
+| Surface Conversion | Sphere to BSpline conversion | `OCCTSurfaceToBSpline` | conversion returns null (INJ_TOBSPLINE_NIL) | SurfaceConversionTests.swift:12 bsp != nil | ✅ | MATCH | Caught as written |
+| Surface Conversion | Approximate surface | `OCCTSurfaceApproximate` | periodic input refused (INJ_APPROX_NOPERIODIC) | SurfaceConversionTests.swift:34 approx != nil | ✅ | MATCH | Rewritten: asserted only non-nil; degree and poles pinned |
+| Surface Conversion | U-iso curve from sphere | `OCCTSurfaceUIso` | iso parameter + 0.5 (INJ_ISO_OFF) | SurfaceConversionTests.swift:56 simd_length(iso.point(at: 0) - SIMD3(5, 0, 0)) < 1e-12 | ✅ | MATCH | Rewritten: any point at radius 5 passed |
+| Surface Conversion | V-iso curve from sphere | `OCCTSurfaceVIso` | iso parameter + 0.5 (INJ_ISO_OFF) | SurfaceConversionTests.swift:69 simd_length(iso.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-12 | ✅ | MATCH | Rewritten: any closed curve passed |
+| Surface curvature entry points agree (#405) | Well-conditioned points agree across all three entry points | `OCCTSurfaceCurvatures` | mean doubled in curvatures(u:v:) (INJ_CP_SCALE) | SurfaceCurvatureParityTests.swift:31 pair?.mean == surface.meanCurvature(atU: u, v: v) | ✅ | MATCH | Caught as written |
+| Surface curvature entry points agree (#405) | Inside the old tolerance window the two entry points no longer disagree | `OCCTSurfaceCurvatures` | own SLProps at 1e-6 resolution, the #405 regression (INJ_CP_RES) | SurfaceCurvatureParityTests.swift:31 pair?.mean == surface.meanCurvature(atU: u, v: v) | ✅ | MATCH | Caught as written; kernel value pinned |
+| Surface curvature entry points agree (#405) | Genuinely undefined points return nil from all three entry points | `OCCTSurfaceCurvatures` | reports defined where it is not (INJ_CP_DEFINED) | SurfaceCurvatureParityTests.swift:78 pair == nil | ✅ | MATCH | Caught as written |
+| Surface curvature entry points agree (#405) | Domain-boundary evaluation agrees on a BSpline patch | `OCCTSurfaceCurvatures` | mean doubled in curvatures(u:v:) (INJ_CP_SCALE) | SurfaceCurvatureParityTests.swift:31 pair?.mean == surface.meanCurvature(atU: u, v: v) | ✅ | MATCH | Its `guard let ... else { return }` skipped the test on a nil patch; now records an issue |
