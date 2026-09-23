@@ -327,3 +327,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue1479 null guards, Issue1491 divide-by-number axes and fixSmallEdges (10 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-1479-1491/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `composeShellOnNullifiedShapeReturnsNil` | Issue1479HealingFixNullGuardsTests.swift | `OCCTShapeFixComposeShell` | CSGUARD: drop the occtShapeIsPresent guard | process killed, signal 11 (SIGSEGV) inside the test | pass | N/A: the kernel dereferences a null TopoDS_Face; the guard is the bridge's |
+| `composeShellNullRawPointerReturnsNil` | Issue1479HealingFixNullGuardsTests.swift | `OCCTShapeFixComposeShell` | CSGUARD | process killed, signal 11 (SIGSEGV) | pass | N/A: null C pointer; no kernel call |
+| `composeShellOrdinaryFaceUnaffected` | Issue1479HealingFixNullGuardsTests.swift | `OCCTShapeFixComposeShell` | CSNULL: return nullptr | Issue1479HealingFixNullGuardsTests.swift:59 `#require(face.composeShell())` | pass | PASS |
+| `edgeConnectNullRawPointerReturnsNil` | Issue1479HealingFixNullGuardsTests.swift | `OCCTShapeFixEdgeConnect` | ECGUARD: drop the `if (!shape)` guard | process killed, signal 11 (SIGSEGV) | pass | N/A: null C pointer; no kernel call |
+| `edgeConnectOrdinaryShapeUnaffected` | Issue1479HealingFixNullGuardsTests.swift | `OCCTShapeFixEdgeConnect` | ECNULL: return nullptr | Issue1479HealingFixNullGuardsTests.swift:77 `#require(box.fixEdgeConnect())` | pass (1 known issue: result invalid) | PASS: FINDING: EdgeConnect leaves the valid box invalid, in place |
+| `exactSplitCountUOnly` | Issue1491DivideByNumberUVAxesTests.swift | `OCCTShapeDivideByNumber` | DIVUV: skip SetNumbersUVSplits (the #1491 defect) | Issue1491DivideByNumberUVAxesTests.swift:56 `faces().count == 5` | pass | PASS |
+| `exactSplitCountVOnly` | Issue1491DivideByNumberUVAxesTests.swift | `OCCTShapeDivideByNumber` | DIVUV | Issue1491DivideByNumberUVAxesTests.swift:72 `faces().count == 5` | pass | PASS |
+| `exactSplitCountAsymmetric` | Issue1491DivideByNumberUVAxesTests.swift | `OCCTShapeDivideByNumber` | DIVUV | Issue1491DivideByNumberUVAxesTests.swift:86 `faces().count == 6` | pass | PASS |
+| `smallEdgeIsActuallyMerged` | Issue1491FixSmallCurvesRemovalTests.swift | `OCCTShapeFixSmallEdges` | SMALLNOOP: return the input unchanged (the removed functions' no-op) | Issue1491FixSmallCurvesRemovalTests.swift:74 `fixed.edges().count < 6` | pass | PASS |
+| `largeEdgeIsUntouched` | Issue1491FixSmallCurvesRemovalTests.swift | `OCCTShapeFixSmallEdges` | SMALLTOLFIXED: SetPrecision(1.0) instead of the caller's tolerance | Issue1491FixSmallCurvesRemovalTests.swift:89 `fixed.edges().count == 6` | pass | PASS |
