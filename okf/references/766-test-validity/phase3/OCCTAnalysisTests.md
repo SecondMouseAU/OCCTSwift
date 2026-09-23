@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **CanonicalRecognition Detailed Tests** | recognizePlane | Canonical surface recognition | Skip IsPlane |
+| **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeEdgeLine | Canonical curve recognition | Skip IsLine |
 | **Geom_Plane Properties** | planeCoefficients | Plane equation coefficients | Drop D |
 | **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
 | **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
@@ -246,6 +250,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| recognizePlane | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | if (false && recog.IsPlane(...)) | ✅ | ✅ | Rewritten: if-let wrappers removed, plane position asserted |
+| recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
+| recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
+| recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
 | planeCoefficients | OCCTSurfacePlaneCoefficients | Plane equation coefficients | Zero *D after Geom_Plane::Coefficients | ✅ | ✅ | Rewritten: fixture moved to z = 2 so D is nonzero; if-let wrapper removed |
 | planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
 | planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
