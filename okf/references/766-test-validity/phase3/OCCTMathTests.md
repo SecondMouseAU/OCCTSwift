@@ -109,3 +109,18 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-line-logsample-crout (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **LineGeometry_Operations** | distanceToPointOnLine | `OCCTLineDistanceToPoint` | gp_Lin::Distance(point) + 0.5 | red | green | PASS |
+| **LineGeometry_Operations** | distanceToPointOffLine | `OCCTLineDistanceToPoint` | gp_Lin::Distance(point) + 0.5 | red | green | PASS |
+| **LineGeometry_Operations** | distanceBetweenParallelLines | `OCCTLineDistanceToLine` | gp_Lin::Distance(line) + 0.5 | red | green | PASS |
+| **LineGeometry_Operations** | distanceBetweenIntersectingLines | `OCCTLineDistanceToLine` | gp_Lin::Distance(line) + 0.5 | red | green | PASS |
+| **LineGeometry_Operations** | containsPointTrue | `OCCTLineContainsPoint` | negate gp_Lin::Contains | red | green | PASS |
+| **LineGeometry_Operations** | containsPointFalse | `OCCTLineContainsPoint` | negate gp_Lin::Contains | red | green | PASS |
+| **GeomLib_LogSample Tests** | logarithmicSampling | `OCCTLogSample` | linear spacing a + (b - a) * i / n instead of GetParameter(i) | red | green | PASS |
+| **GeomLib_LogSample Tests** | singleSample | `OCCTLogSample` | linear spacing a + (b - a) * i / n (gives 10 for n = 1) | red | green | PASS |
+| **MathCrout Tests** | symmetricSolve | `OCCTMathCroutSolve` | swap X(1) and X(n) after math_Crout::Solve | red | green | PASS |
+| **MathCrout Tests** | determinant | `OCCTMathCroutDeterminant` | negate math_Crout::Determinant | red | green | PASS |

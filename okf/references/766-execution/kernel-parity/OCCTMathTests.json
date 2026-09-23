@@ -182,5 +182,105 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "LineGeometry_Operations::distanceToPointOnLine",
+    "bridge_function": "OCCTLineDistanceToPoint",
+    "bridge_output": {"type": "observed", "data": "0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "0", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_Lin::Distance(point) + 0.5", "failing_expectation": ":13 `abs(d) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "LineGeometry_Operations::distanceToPointOffLine",
+    "bridge_function": "OCCTLineDistanceToPoint",
+    "bridge_output": {"type": "observed", "data": "3", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "3", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_Lin::Distance(point) + 0.5", "failing_expectation": ":20 `abs(d - 3.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "LineGeometry_Operations::distanceBetweenParallelLines",
+    "bridge_function": "OCCTLineDistanceToLine",
+    "bridge_output": {"type": "observed", "data": "4", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "4", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_Lin::Distance(line) + 0.5", "failing_expectation": ":27 `abs(d - 4.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "LineGeometry_Operations::distanceBetweenIntersectingLines",
+    "bridge_function": "OCCTLineDistanceToLine",
+    "bridge_output": {"type": "observed", "data": "0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "0", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_Lin::Distance(line) + 0.5", "failing_expectation": ":34 `abs(d) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "LineGeometry_Operations::containsPointTrue",
+    "bridge_function": "OCCTLineContainsPoint",
+    "bridge_output": {"type": "observed", "data": "true", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "true", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate gp_Lin::Contains", "failing_expectation": ":41 `r`"},
+    "green": true
+  },
+  {
+    "test_name": "LineGeometry_Operations::containsPointFalse",
+    "bridge_function": "OCCTLineContainsPoint",
+    "bridge_output": {"type": "observed", "data": "false", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "false", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate gp_Lin::Contains", "failing_expectation": ":48 `!r`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib_LogSample Tests::logarithmicSampling",
+    "bridge_function": "OCCTLogSample",
+    "bridge_output": {"type": "observed", "data": "1 6.2842590296848586 15.75364725297846 39.491911552175686 100", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1 6.2842590296848586 15.75364725297846 39.491911552175686 100", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "linear spacing a + (b - a) * i / n instead of GetParameter(i)", "failing_expectation": "original: **green**; rewritten: :21 `abs(got - want) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib_LogSample Tests::singleSample",
+    "bridge_function": "OCCTLogSample",
+    "bridge_output": {"type": "observed", "data": "1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "linear spacing a + (b - a) * i / n (gives 10 for n = 1)", "failing_expectation": "original: **green**; rewritten: :30 `abs(p - 1.0) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "MathCrout Tests::symmetricSolve",
+    "bridge_function": "OCCTMathCroutSolve",
+    "bridge_output": {"type": "observed", "data": "x = 1.25 1.5", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x = 1.25 1.5", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "swap X(1) and X(n) after math_Crout::Solve", "failing_expectation": ":15 `abs(x[0] - 1.25) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "MathCrout Tests::determinant",
+    "bridge_function": "OCCTMathCroutDeterminant",
+    "bridge_output": {"type": "observed", "data": "8", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "8", "source": "Scripts/repro/766-math-line-logsample-crout/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate math_Crout::Determinant", "failing_expectation": ":22 `abs(det - 8.0) < 1e-10`"},
+    "green": true
   }
 ]
