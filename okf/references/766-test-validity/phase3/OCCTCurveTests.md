@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Law Function Tests | Linear law default parameter range 0...1 | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:89 abs(law.value(at: 0.5) - 5) < 1e-6` | ✅ | MATCH |  |
+| Law Function Tests | S-curve law smooth transition | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:39 abs(law.value(at: 0)) < 1e-6  (+2 more)` | ✅ | MATCH |  |
+| Law Function Tests | Linear law ramps from start to end | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:30 abs(law.value(at: 0) - 1.0) < 1e-6  (+2 more)` | ✅ | MATCH |  |
+| Law Function Tests | Interpolated law passes through points | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:55 abs(law.value(at: 0)) < 1e-3  (+1 more)` | ✅ | MATCH |  |
+| Law Function Tests | Constant law returns uniform value | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:14 abs(law.value(at: 0) - 3.5) < 1e-10  (+2 more)` | ✅ | MATCH |  |
+| Law Composite Tests | compositeLaw | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawCompositeTests.swift:19 abs(comp.value(at: 0.0) - 1.0) < 1e-9  (+3 more)` | ✅ | MATCH |  |
+| Law Function Tests | BSpline law creation | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawval: LawFunction.value + 1e-3 | `LawFunctionTests.swift:78 abs(law.value(at: 0) - 1.0) < 1e-6  (+1 more)` | ✅ | MATCH |  |
+| Law Function Tests | Constant law bounds | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawbounds: bounds shifted by 0.5 | `LawFunctionTests.swift:23 abs(b.lowerBound - 2) < 1e-10  (+1 more)` | ✅ | MATCH |  |
+| Law Function Tests | BSpline law rejects a shorter multiplicities array | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawmult: mismatched multiplicities padded to the knot count | `LawFunctionTests.swift:103 law == nil` | ✅ | N/A |  |
+| Law Function Tests | BSpline law rejects a longer multiplicities array | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawmult: mismatched multiplicities padded to the knot count | `LawFunctionTests.swift:111 law == nil` | ✅ | N/A |  |
+| Law Function Tests | Interpolated law needs at least 2 points | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawinterp1: one point answers a constant law | `LawFunctionTests.swift:64 law == nil` | ✅ | N/A |  |
+| Law Composite Tests | bsplineKnotSplitting | `OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting` | lawnone: knot splitting always -1 | `LawCompositeTests.swift:40 splits.count >= 2  (+1 more)` | ✅ | MATCH |  |

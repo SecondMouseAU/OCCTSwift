@@ -41,6 +41,8 @@ struct LawFunctionTests {
         // Midpoint should be near 0.5 for a symmetric S-curve
         let mid = law.value(at: 0.5)
         #expect(abs(mid - 0.5) < 0.2)
+        // #766: 0.2 admitted almost any monotone ramp. Law_S is symmetric: exactly 0.5 at the middle.
+        #expect(abs(mid - 0.5) < 1e-9)
     }
 
     @Test("Interpolated law passes through points")

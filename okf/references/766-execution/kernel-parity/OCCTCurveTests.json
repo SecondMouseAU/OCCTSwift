@@ -302,5 +302,275 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Law Function Tests::Linear law default parameter range 0...1",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear 0->10 on [0,1]: 5 at 0.5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:89 abs(law.value(at: 0.5) - 5) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::S-curve law smooth transition",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_S 0->1: 0, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:39 abs(law.value(at: 0)) < 1e-6  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Linear law ramps from start to end",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Linear 1->3 on [0,10]: 1, 2, 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:30 abs(law.value(at: 0) - 1.0) < 1e-6  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Interpolated law passes through points",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Interpol: 0, 1, -1.1e-16, 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:55 abs(law.value(at: 0)) < 1e-3  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Constant law returns uniform value",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant 3.5: 3.5 at 0, 5, 10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:14 abs(law.value(at: 0) - 3.5) < 1e-10  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Composite Tests::compositeLaw",
+    "test_file": "Tests/OCCTCurveTests/LawCompositeTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Composite of the two linear pieces: 1, 2, 3, 1 at 0, 0.25, 0.5, 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawCompositeTests.swift:19 abs(comp.value(at: 0.0) - 1.0) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law creation",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSpline degree 1, poles 1 and 3: 1 at 0, 3 at 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawval: LawFunction.value + 1e-3",
+    "red": "LawFunctionTests.swift:78 abs(law.value(at: 0) - 1.0) < 1e-6  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Constant law bounds",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_Constant bounds are what Set() gives: [2, 8]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawbounds: bounds shifted by 0.5",
+    "red": "LawFunctionTests.swift:23 abs(b.lowerBound - 2) < 1e-10  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law rejects a shorter multiplicities array",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the multiplicity-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawmult: mismatched multiplicities padded to the knot count",
+    "red": "LawFunctionTests.swift:103 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::BSpline law rejects a longer multiplicities array",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the multiplicity-count check is Swift-side"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawmult: mismatched multiplicities padded to the knot count",
+    "red": "LawFunctionTests.swift:111 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Function Tests::Interpolated law needs at least 2 points",
+    "test_file": "Tests/OCCTCurveTests/LawFunctionTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: one point is refused in Swift before Law_Interpol"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "lawinterp1: one point answers a constant law",
+    "red": "LawFunctionTests.swift:64 law == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
+  },
+  {
+    "test_name": "Law Composite Tests::bsplineKnotSplitting",
+    "test_file": "Tests/OCCTCurveTests/LawCompositeTests.swift",
+    "bridge_function": "OCCTLawFunctionValue / Bounds / Create* / OCCTLawComposite / OCCTLawBSplineKnotSplitting",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Law_BSplineKnotSplitting at C2: 3 splits"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lawnone: knot splitting always -1",
+    "red": "LawCompositeTests.swift:40 splits.count >= 2  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-law-function/transcript.txt"
   }
 ]
