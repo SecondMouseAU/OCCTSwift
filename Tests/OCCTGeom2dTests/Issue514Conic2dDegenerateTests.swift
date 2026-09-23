@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -41,16 +42,22 @@ struct Issue514Conic2dDegenerateTests {
                 majorRadius: 3, minorRadius: 5, u1: 0, u2: .pi) == nil)
     }
 
-    @Test func ellipseArcAcceptsValidRadii() {
-        #expect(
+    @Test func ellipseArcAcceptsValidRadii() throws {
+        // #1979: `!= nil` only. Each arc now pins the endpoints Convert_EllipseToBSplineCurve
+        // gives (Scripts/repro/766-geom2d-conic-degenerate/).
+        let e = try #require(
             Curve2D.fromEllipseArc(
                 centerX: 0, centerY: 0,
-                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
+                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi))
+        #expect(simd_distance(e.startPoint, SIMD2(5, 0)) < 1e-9)
+        #expect(simd_distance(e.endPoint, SIMD2(-5, 0)) < 1e-9)
         // Equal radii are a circle, which gp_Elips2d documents as valid.
-        #expect(
+        let c = try #require(
             Curve2D.fromEllipseArc(
                 centerX: 0, centerY: 0,
-                majorRadius: 4, minorRadius: 4, u1: 0, u2: .pi) != nil)
+                majorRadius: 4, minorRadius: 4, u1: 0, u2: .pi))
+        #expect(simd_distance(c.startPoint, SIMD2(4, 0)) < 1e-9)
+        #expect(simd_distance(c.endPoint, SIMD2(-4, 0)) < 1e-9)
     }
 
     @Test func hyperbolaArcRejectsZeroRadii() {
@@ -68,13 +75,16 @@ struct Issue514Conic2dDegenerateTests {
                 majorRadius: 0, minorRadius: 3, u1: 0, u2: 1) == nil)
     }
 
-    @Test func hyperbolaArcAcceptsMinorLargerThanMajor() {
+    @Test func hyperbolaArcAcceptsMinorLargerThanMajor() throws {
         // A hyperbola puts no ordering on its radii: minor > major is an ordinary hyperbola.
         // Copying the ellipse rule here would reject it.
-        #expect(
+        let h = try #require(
             Curve2D.fromHyperbolaArc(
                 centerX: 0, centerY: 0,
-                majorRadius: 3, minorRadius: 5, u1: 0, u2: 1) != nil)
+                majorRadius: 3, minorRadius: 5, u1: 0, u2: 1))
+        // #1979: `!= nil` only. The arc runs (3, 0) to (3 cosh 1, 5 sinh 1).
+        #expect(simd_distance(h.startPoint, SIMD2(3, 0)) < 1e-9)
+        #expect(simd_distance(h.endPoint, SIMD2(4.62924190445, 5.87600596822)) < 1e-9)
     }
 
     @Test func parabolaArcRejectsZeroFocal() {
@@ -83,8 +93,11 @@ struct Issue514Conic2dDegenerateTests {
         #expect(Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 0, u1: 0, u2: 1) == nil)
     }
 
-    @Test func parabolaArcAcceptsPositiveFocal() {
-        #expect(Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 2, u1: 0, u2: 1) != nil)
+    @Test func parabolaArcAcceptsPositiveFocal() throws {
+        // #1979: `!= nil` only. The arc runs (0, 0) to (u^2 / 4f, u) = (0.125, 1).
+        let p = try #require(Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 2, u1: 0, u2: 1))
+        #expect(simd_distance(p.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(simd_distance(p.endPoint, SIMD2(0.125, 1)) < 1e-9)
     }
 
     @Test func circleArcRejectsZeroRadius() {
@@ -173,25 +186,18 @@ struct Issue514Conic2dDegenerateTests {
     /// The coefficient order is OCCT's: `A·x² + B·y² + 2C·xy + 2D·x + 2E·y + F = 0`. The Swift
     /// doc comment used to name a different equation (`A·x² + B·xy + C·y² + …`), which puts the
     /// xy term in `b` and the y² term in `c`, so a caller reading it built the wrong conic.
-    @Test func conicCoefficientOrderIsOCCTs() {
-        guard let c = Conic2D.circle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 5) else {
-            Issue.record("circle conic should build")
-            return
-        }
+    @Test func conicCoefficientOrderIsOCCTs() throws {
+        let c = try #require(Conic2D.circle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 5))
         // x² + y² - 25 = 0
         #expect(abs(c.a - 1) < 1e-9)
         #expect(abs(c.b - 1) < 1e-9)  // y², not xy
         #expect(abs(c.c) < 1e-9)  // xy, not y²
         #expect(abs(c.f + 25) < 1e-9)
 
-        guard
-            let e = Conic2D.ellipse(
+        let e = try #require(
+            Conic2D.ellipse(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                majorRadius: 5, minorRadius: 3)
-        else {
-            Issue.record("ellipse conic should build")
-            return
-        }
+                majorRadius: 5, minorRadius: 3))
         // x²/25 + y²/9 - 1 = 0
         #expect(abs(e.a - 1.0 / 25.0) < 1e-9)
         #expect(abs(e.b - 1.0 / 9.0) < 1e-9)
@@ -199,13 +205,12 @@ struct Issue514Conic2dDegenerateTests {
         #expect(abs(e.f + 1) < 1e-9)
     }
 
-    @Test func conicLineIsUnchangedForValidInput() {
-        guard let l = Conic2D.line(point: SIMD2(0, 0), direction: SIMD2(1, 0)) else {
-            Issue.record("line conic should build")
-            return
-        }
-        let magnitude = abs(l.a) + abs(l.b) + abs(l.c) + abs(l.d) + abs(l.e) + abs(l.f)
-        #expect(magnitude > 0)
+    @Test func conicLineIsUnchangedForValidInput() throws {
+        // #1979: asserted only that some coefficient was non-zero. IntAna2d_Conic of the x-axis
+        // is 2E·y = 0 with E = -1 and every other coefficient 0.
+        let l = try #require(Conic2D.line(point: SIMD2(0, 0), direction: SIMD2(1, 0)))
+        #expect(abs(l.a) + abs(l.b) + abs(l.c) + abs(l.d) + abs(l.f) < 1e-12)
+        #expect(abs(l.e + 1) < 1e-12)
     }
 
     @Test func lineCircleIntersectionRejectsZeroRadius() {
