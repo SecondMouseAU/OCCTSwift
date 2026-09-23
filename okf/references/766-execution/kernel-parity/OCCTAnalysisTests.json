@@ -3764,5 +3764,66 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "GProp Weighted Tests::weightedCentroid",
+    "bridge_function": "OCCTGPropPointSetWeightedCentroid",
+    "bridge_output": {
+      "type": "mass_centroid",
+      "data": {
+        "mass": 4,
+        "centroid": [
+          7.5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "mass_centroid",
+      "data": {
+        "mass": 4,
+        "centroid": [
+          7.5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Weighted Tests::barycentre",
+    "bridge_function": "OCCTGPropBarycentre",
+    "bridge_output": {
+      "type": "centroid",
+      "data": {
+        "centroid": [
+          3.3333333333333335,
+          3.3333333333333335,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "centroid",
+      "data": {
+        "mass": 3,
+        "centroid": [
+          3.3333333333333335,
+          3.3333333333333335,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

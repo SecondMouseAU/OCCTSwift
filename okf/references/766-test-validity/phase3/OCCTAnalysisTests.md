@@ -201,6 +201,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **GProp Weighted Tests** | weightedCentroid | Weighted point-set centroid | OCCTGPropPointSetWeightedCentroid drops the weight (AddPoint(p)) |
+| **GProp Weighted Tests** | barycentre | Point-set barycentre | OCCTGPropBarycentre skips the last point |
 | **Bnd Range Tests** | createAndQuery | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false |
 | **Bnd Range Tests** | contains | Bnd_Range membership | Contains returns true |
 | **Bnd Range Tests** | addValue | Bnd_Range add | Add is a no-op |
