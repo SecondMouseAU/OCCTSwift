@@ -9,9 +9,12 @@ This doc captures the analysis of building OCCTSwift for WebAssembly so that the
 **OCCTSwift Swift API can be reused inside a SwiftWasm app** (e.g. a browser app
 driven by JavaScriptKit, or a server-side wasm runtime). Written June 2026 as a
 forward plan. The toolchain is now pinned and has been run end to end, see
-[Pinned toolchain](#pinned-toolchain), and one OCCT toolkit compiles and archives
-for `wasm32-unknown-wasip1`. **Nothing containing OCCT has been linked**, which is
-the line every claim below is measured against.
+[Pinned toolchain](#pinned-toolchain). As of #2174, **5,487 of the 5,488 source
+files in the configured module set compile for `wasm32-unknown-wasip1`, and a C++
+module linked against them runs**: it builds a solid, measures it, meshes it, and
+catches a `Standard_Failure` OCCT raised from inside its own compiled code. No
+Swift is in that module yet, which is #2175's, and one source file does not
+compile, which blocks STEP.
 
 The goal is fixed. The *path* to reach it is deliberately left open, see
 [Three paths](#three-paths-to-one-wasm-module). The path choice is the **output of
@@ -46,9 +49,14 @@ Two structural facts make this more tractable than the `platform-expansion.md`
    DataExchange + RapidJSON are ON. No GL context and no TBB is real and it is
    what makes the port plausible. **The module list is not, and this paragraph
    used to claim it was "precisely the subset that ports to wasm".** Measured
-   2026-09-23 against the macOS install tree those flags produce: **49 archives
-   across six modules and 5,495 source files**, because OCCT's CMake pulls a
-   dependency in whether or not its module is switched off.
+   2026-09-23 against the macOS install tree those flags produce, and again by
+   #2174 against the wasm build tree itself: **49 archives across six modules and
+   5,488 source files**, because OCCT's CMake pulls a dependency in whether or not
+   its module is switched off. (5,488 is #2174's count from the object rules CMake
+   generated for this configure. The 5,495 that stood here was taken with a pattern
+   that could not match a source file name containing a dot and named only the `.cxx`
+   and `.c` extensions; the wasm configure also drops two Apple-only `TKService`
+   files the macOS one builds.)
 
    | Module | `BUILD_MODULE_*` | Toolkits built |
    |---|---|---|
@@ -62,8 +70,10 @@ Two structural facts make this more tractable than the `platform-expansion.md`
    `DataExchange`'s XCAF toolkits need `TKCAF`, `TKLCAF`, `TKCDF`, the
    `TKBin*`/`TKXml*`/`TKStd*` persistence set and `TKTObj`; those reach
    `TKService` and `TKV3d`. `TKV3d` alone is 203 source files. So the
-   platform-gap surface #2174 enumerates, and the code the module size pays for,
-   include 682 files from two modules the flags say are off.
+   platform-gap surface, and the code the module size pays for, include 682 files
+   from two modules the flags say are off. **Measured by #2174: those 682 need no
+   platform guard at all.** The one file the whole set does not compile is in
+   `TKDESTEP`, which is a module the flags do switch on.
 
 3. **Threading is a non-issue for us.** The bridge serialises all OCCT access
    through one `std::recursive_mutex`; single-threaded wasm satisfies that
@@ -123,10 +133,20 @@ per-function landing pads, which are the part that scales with OCCT, are not in 
 the host reports, rather than the uncatchable in-process failure of #345. The instance is still
 unusable afterwards, so this changes the diagnostics and not the duty to catch at the bridge.
 
-**Not established.** None of this has met OCCT. The probe's largest object is a few kilobytes,
-the libc++ seam rests on weak symbol resolution that a larger link could resolve the other way, and
-`operator new` and `std::bad_alloc` under the 4 GB ceiling were not probed. Those move to #2172,
-the first OCCT compile, and #2174, the full library.
+**Settled since, by #2174, which linked OCCT rather than a probe.** Two of the three things this
+section listed as unknown have answers, and one of them is not the answer the question assumed.
+
+- **The libc++ seam is not link-order dependent.** libc++ ABI-tags every header-inline symbol with
+  `_LIBCPP_ODR_SIGNATURE`, which encodes whether exceptions are on, so the aborting
+  `std::__throw_out_of_range` in WASI.sdk's prebuilt `libc++.a` is spelled `...B8nn210106...` and
+  the throwing one our own compile emits is `...B8ne210106...`. They cannot resolve to each other
+  at any link order. Measured, with the behavioural half to match: a `std::out_of_range` raised
+  inside a 140 MB OCCT archive is caught.
+- **`operator new` throws `std::bad_alloc`.** A 3.5 GB request under the wasm32 ceiling raises and
+  the catch fires, so an OCCT allocation failure is a C++ exception the bridge can handle rather
+  than a trap.
+- `-lsetjmp` and `-lwasi-emulated-getpid` have now been on a link line; see
+  [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
 
 ## What breaks in the Swift layer
 
@@ -267,18 +287,22 @@ C++ runtime together with a C++ target using wasi-sdk's exception-enabled one.
 That holds for one file. #2172 took it as far as compiling and archiving one
 OCCT toolkit, 119 of `TKernel`'s 127 source files; #2173 closed the eight platform
 gaps behind the other eight and took it to **127 of 127**, archived as a real
-`libTKernel.a` under `--require-complete`. Neither **linked any of it**.
+`libTKernel.a` under `--require-complete`. Neither linked any of it.
 
-So every statement in this document about what an OCCT wasm build does at runtime
-is an argument from the source and its callers, not an observation. In particular
-the libc++ seam rests on weak symbol resolution that a larger link could resolve
-the other way, `operator new` and `std::bad_alloc` are unprobed, and `-lsetjmp`
-and `-lwasi-emulated-getpid` have never been on a link line. Those are #2174's,
-which is why that issue smoke-links a module of its own before #2175 brings Swift
-and the bridge in. The measurement logs are
+**#2174 did, and OCCT runs.** A C++ `main` over an archive of every object the
+49-toolkit build produces constructs a `Handle`, builds a box, measures its volume,
+meshes it, makes OCCT raise a `Standard_Failure` from inside its own compiled code
+and catches it, under `wasmkit`. With no Swift and no bridge, deliberately, so that
+a failure would be a statement about the archive rather than about the manifest.
+That settles the libc++ seam, `operator new`, `-lsetjmp` and
+`-lwasi-emulated-getpid`; what remains open on the wasm side is the platform gaps
+outside `TKernel` that the same build found, and the Swift half, which is #2175's.
+
+The measurement logs are
 [`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md),
-[`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md) and
-[`Scripts/repro/2173/README.md`](../Scripts/repro/2173/README.md).
+[`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md),
+[`Scripts/repro/2173/README.md`](../Scripts/repro/2173/README.md) and
+[`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
 
 ## Plan
 

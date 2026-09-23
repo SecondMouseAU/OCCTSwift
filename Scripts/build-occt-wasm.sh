@@ -2,7 +2,7 @@
 #
 # Build OpenCASCADE for WebAssembly (WASI)
 #
-# Usage: ./build-occt-wasm.sh [--toolkit NAME] [--require-complete]
+# Usage: ./build-occt-wasm.sh [--toolkit NAME] [--require-complete] [--census-only] [--package-only]
 #
 #   --toolkit NAME   Build and archive ONE OCCT toolkit instead of everything, e.g.
 #                    `--toolkit TKernel`. The configure step is unchanged, so the narrow loop and
@@ -14,14 +14,30 @@
 #                    discovered one error at a time (#2172).
 #
 #   --require-complete  Fail unless EVERY source file of that toolkit compiled. Requires
-#                    --toolkit, because the full build has no `-k` and stops at the first error
-#                    already, and per #2098 a check that examines nothing must fail rather than
-#                    pass. Without it the count below is printed and not checked, and the exit
-#                    status is whatever the build tool returned: that was the right behaviour
-#                    while eight failures were the expected result of #2172, and the wrong one
-#                    from #2173 onwards, when a regression would hand a reader the same status a
-#                    complete build does. Turn it on wherever the build is expected to be
-#                    complete; Scripts/repro/2173/run.sh does.
+#                    --toolkit. The full build neither takes it nor needs it: as of #2174 it runs
+#                    the same census over EVERY toolkit unconditionally and installs and combines
+#                    nothing unless all of them are complete. Without this flag a --toolkit run
+#                    prints its count and does not check it, and the exit status is whatever the
+#                    build tool returned: that was the right behaviour while eight failures were
+#                    the expected result of #2172, and the wrong one from #2173 onwards, when a
+#                    regression would hand a reader the same status a complete build does. Turn it
+#                    on wherever ONE toolkit is expected to be complete; Scripts/repro/2173/run.sh
+#                    does.
+#
+#   --census-only    The per-toolkit completeness census over the build tree that is already
+#                    there, and nothing else: no download, no patching, no configure, no compile.
+#
+#   --package-only   The census, then install, combine and copy headers out of that same tree.
+#
+# Both exist because the full build is hours and each of those steps is seconds, so neither a
+# re-derived count nor a failed packaging step costs a rebuild of every source file. --census-only
+# is also how the census is PROVED, by hiding one object and watching the count drop; see
+# Scripts/repro/2174/run.sh census-negative.
+#
+# The full build also runs with `-k` as of #2174, for the reason the narrow loop does: 49 toolkits
+# and thousands of source files discovered one error at a time is not a gap list, it is one full
+# rebuild per gap. One pass reports every file that fails, per toolkit, and the census that follows
+# decides whether anything is installed.
 #
 # This script downloads OCCT source and builds it as static libraries
 # for wasm32-wasip1 using wasi-sdk.
@@ -34,7 +50,8 @@
 #   - rapidjson (via system package manager or RAPIDJSON_DIR env)
 #   - ~10GB free disk space, nearly all of it the OCCT build tree
 #
-# Build time: ~30-60 minutes depending on hardware
+# Build time: 69 minutes for the full 49-toolkit set on 10 cores, measured 2026-09-23 (#2174).
+#             One toolkit with --toolkit is seconds to a few minutes.
 #
 
 set -e
@@ -44,10 +61,20 @@ set -e
 # --------------------
 BUILD_TOOLKIT=""
 REQUIRE_COMPLETE=""
+CENSUS_ONLY=""
+PACKAGE_ONLY=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --require-complete)
             REQUIRE_COMPLETE="1"
+            shift
+            ;;
+        --census-only)
+            CENSUS_ONLY="1"
+            shift
+            ;;
+        --package-only)
+            PACKAGE_ONLY="1"
             shift
             ;;
         --toolkit)
@@ -60,11 +87,14 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -h|--help)
-            sed -n '2,38p' "$0"
+            # The header block, which ends at the blank line before `set -e`. Derived rather than
+            # hardcoded: the line number was 38 and the block has grown twice since, so `--help`
+            # printed a truncated usage both times.
+            sed -n '2,/^# Build time:/p' "$0"
             exit 0
             ;;
         *)
-            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME] [--require-complete]" >&2
+            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME] [--require-complete] [--census-only] [--package-only]" >&2
             exit 1
             ;;
     esac
@@ -72,9 +102,10 @@ done
 
 if [ -n "$REQUIRE_COMPLETE" ] && [ -z "$BUILD_TOOLKIT" ]; then
     echo "ERROR: --require-complete needs --toolkit." >&2
-    echo "       The full build runs without \`-k\` under \`set -e\`, so it already stops at the" >&2
-    echo "       first file that does not compile and there is no partial state for this flag to" >&2
-    echo "       reject. Accepting it here would be a check that examines nothing (#2098)." >&2
+    echo "       The full build asserts completeness for every toolkit unconditionally (#2174):" >&2
+    echo "       it builds with \`-k\`, counts every toolkit's objects against the rules CMake" >&2
+    echo "       generated, and installs and combines nothing unless all of them are complete." >&2
+    echo "       Accepting the flag here would be an option that changes no behaviour." >&2
     exit 1
 fi
 
@@ -94,6 +125,159 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LIBRARIES_DIR="$PROJECT_DIR/Libraries"
+
+# --------------------
+# Per-toolkit completeness, counted from the build tree (#2172, generalised in #2174)
+# --------------------
+# The denominator is every object CMake generated a rule for and the numerator is every object on
+# disk, so both come from the build tree rather than from a glob of the source directory that might
+# disagree with what this configure selected. One implementation, shared by the narrow loop, by the
+# full build's 49-toolkit census and by --census-only: two copies of a count are two counts, and
+# --census-only exists so that the census can be re-run, and PROVED, without a three-hour rebuild.
+toolkit_object_dirs() {  # every <name>.dir CMake generated, one per line, relative to the build dir
+    find . -type d -name '*.dir' -path '*/CMakeFiles/*' | sort
+}
+toolkit_expected_objs() {  # <objdir> -> every object path CMake has a rule for
+    local d="$1" tk
+    tk="$(basename "$d" .dir)"
+    # Match the OBJECT path and nothing about the source that produced it. #2172's pattern was
+    # `[A-Za-z0-9_/]+\.(cxx|c)\.obj`, and it was wrong twice over on the full module set, in
+    # opposite directions:
+    #
+    #   * the character class cannot match a source file name containing a dot, so OCCT's four
+    #     generated parsers were invisible: TKExpress counted 61 against a real 63 and TKDESTEP
+    #     1733 against a real 1735. --require-complete would have called either COMPLETE with one
+    #     of its parsers missing;
+    #   * the extension list named `cxx` and `c`, and this configure compiles nine `.cpp` files as
+    #     well, of which TKMesh's vendored BRepMesh/delabella.cpp is one. That toolkit counted 66
+    #     against a real 67, so it reported 67 of 66 and the object on disk had no rule to belong
+    #     to.
+    #
+    # TKernel, which is every toolkit #2172 and #2173 ever counted, has neither shape. Naming any
+    # part of a source file name here is a guess about someone else's build system, so this names
+    # none of it: every `.obj` CMake generated a rule for, whatever produced it.
+    grep -oE "CMakeFiles/${tk}\.dir/[^ :]+\.obj" "$d/build.make" 2>/dev/null \
+        | sed "s|CMakeFiles/${tk}\.dir/||" | sort -u
+}
+toolkit_actual_objs() {  # <objdir> -> every object on disk
+    (cd "$1" && find . -name '*.obj' | sed 's|^\./||' | sort -u)
+}
+toolkit_missing_objs() {  # <objdir> -> the rules that produced no object
+    comm -23 <(toolkit_expected_objs "$1") <(toolkit_actual_objs "$1")
+}
+toolkit_unruled_objs() {  # <objdir> -> the objects no rule accounts for
+    comm -13 <(toolkit_expected_objs "$1") <(toolkit_actual_objs "$1")
+}
+
+# Prints the table and returns 1 if any toolkit disagrees with its own rules, 2 if it examined
+# nothing. Run from the build directory.
+#
+# Per toolkit, and summed per toolkit rather than from the totals. The first version of this
+# subtracted one grand total from the other, and on the first full build that arithmetic reported
+# `TOTAL 5487 of 5487` and `0 source file(s) did not compile` while TKDESTEP was one object short
+# and TKMesh was one object over: the two cancelled. A count that can cancel is not a count of
+# anything, and that line is exactly the worthless green check this whole effort exists to remove.
+census_all_toolkits() {
+    local objdir tk exp act miss extra
+    CENSUS_TOOLKITS=0
+    CENSUS_EXPECTED=0
+    CENSUS_ACTUAL=0
+    CENSUS_MISSING=0
+    CENSUS_EXTRA=0
+    CENSUS_INCOMPLETE=()
+    CENSUS_UNRULED=()
+    echo "===================================================================="
+    echo "Per-toolkit completeness"
+    echo "===================================================================="
+    for objdir in $(toolkit_object_dirs); do
+        [ -f "$objdir/build.make" ] || continue
+        tk="$(basename "$objdir" .dir)"
+        exp=$(toolkit_expected_objs "$objdir" | wc -l | tr -d ' ')
+        [ "$exp" -eq 0 ] && continue
+        act=$(toolkit_actual_objs "$objdir" | wc -l | tr -d ' ')
+        miss=$(toolkit_missing_objs "$objdir" | wc -l | tr -d ' ')
+        extra=$(toolkit_unruled_objs "$objdir" | wc -l | tr -d ' ')
+        CENSUS_TOOLKITS=$((CENSUS_TOOLKITS + 1))
+        CENSUS_EXPECTED=$((CENSUS_EXPECTED + exp))
+        CENSUS_ACTUAL=$((CENSUS_ACTUAL + act))
+        CENSUS_MISSING=$((CENSUS_MISSING + miss))
+        CENSUS_EXTRA=$((CENSUS_EXTRA + extra))
+        if [ "$miss" -ne 0 ]; then
+            CENSUS_INCOMPLETE+=("$objdir")
+            printf '  %-16s %5s of %-5s  INCOMPLETE, %s did not compile\n' "$tk" "$act" "$exp" "$miss"
+        elif [ "$extra" -ne 0 ]; then
+            CENSUS_UNRULED+=("$objdir")
+            printf '  %-16s %5s of %-5s  %s object(s) with no rule\n' "$tk" "$act" "$exp" "$extra"
+        else
+            printf '  %-16s %5s of %-5s\n' "$tk" "$act" "$exp"
+        fi
+    done
+    echo "--------------------------------------------------------------------"
+    printf '  %-16s %5s of %-5s across %s toolkits, %s missing, %s unruled\n' \
+        "TOTAL" "$CENSUS_ACTUAL" "$CENSUS_EXPECTED" "$CENSUS_TOOLKITS" \
+        "$CENSUS_MISSING" "$CENSUS_EXTRA"
+
+    # Per #2098, a check that examined nothing fails rather than passes.
+    if [ "$CENSUS_TOOLKITS" -eq 0 ] || [ "$CENSUS_EXPECTED" -eq 0 ]; then
+        echo "" >&2
+        echo "ERROR: this build tree has no toolkit object rules at all, so the completeness check" >&2
+        echo "       examined nothing. A denominator of zero is not a complete build (#2098)." >&2
+        return 2
+    fi
+
+    if [ "$CENSUS_MISSING" -ne 0 ]; then
+        echo "" >&2
+        echo "ERROR: $CENSUS_MISSING source file(s) did not compile, in ${#CENSUS_INCOMPLETE[@]} toolkit(s)." >&2
+        echo "       Every one of them is in the build log, in a single pass. The list:" >&2
+        for objdir in "${CENSUS_INCOMPLETE[@]}"; do
+            tk="$(basename "$objdir" .dir)"
+            toolkit_missing_objs "$objdir" | sed "s|^|         $tk  |; s|\.obj$||" >&2
+        done
+        echo "" >&2
+        echo "       If one of these is a platform gap, it belongs in Scripts/patches-wasi/ with a" >&2
+        echo "       patch header saying what its WASI branch returns; see docs/WASI_GUARD_SITES.md" >&2
+        echo "       and okf/policies/wasi-patch-base.md." >&2
+        echo "" >&2
+        echo "       Re-run one toolkit at a time to iterate in seconds rather than in a full build:" >&2
+        echo "         Scripts/build-occt-wasm.sh --toolkit <NAME>" >&2
+        return 1
+    fi
+
+    # An object CMake has no rule for means the DENOMINATOR is wrong, so every other number above
+    # is unproven rather than merely incomplete. It fails for that reason and not because the
+    # object is unwelcome.
+    if [ "$CENSUS_EXTRA" -ne 0 ]; then
+        echo "" >&2
+        echo "ERROR: $CENSUS_EXTRA object(s) on disk match no rule in the build.make that should" >&2
+        echo "       have produced them, so this census's denominator does not describe this build" >&2
+        echo "       and none of the counts above can be trusted. The list:" >&2
+        for objdir in "${CENSUS_UNRULED[@]}"; do
+            tk="$(basename "$objdir" .dir)"
+            toolkit_unruled_objs "$objdir" | sed "s|^|         $tk  |" >&2
+        done
+        return 1
+    fi
+    return 0
+}
+
+# --census-only: the census over the tree that is already there, with no download, no patching, no
+# configure and no compile. It is how the census is re-derived after the fact, and how it is proved
+# (hide one object, watch the count drop and the file be named) without a three-hour rebuild.
+if [ -n "$CENSUS_ONLY" ]; then
+    if [ -n "$BUILD_TOOLKIT" ] || [ -n "$REQUIRE_COMPLETE" ]; then
+        echo "ERROR: --census-only takes neither --toolkit nor --require-complete. It reads the" >&2
+        echo "       whole build tree and asserts every toolkit, which is what both of those ask" >&2
+        echo "       for in a mode that builds." >&2
+        exit 1
+    fi
+    if [ ! -d "$LIBRARIES_DIR/occt-build-wasm" ]; then
+        echo "ERROR: no build tree at $LIBRARIES_DIR/occt-build-wasm to take a census of." >&2
+        exit 1
+    fi
+    cd "$LIBRARIES_DIR/occt-build-wasm"
+    census_all_toolkits
+    exit $?
+fi
 
 # Detect architecture and OS for wasi-sdk path
 ARCH=$(uname -m)
@@ -224,6 +408,25 @@ fi
 # does not have it. Create it rather than `cd` into nothing.
 mkdir -p "$LIBRARIES_DIR"
 cd "$LIBRARIES_DIR"
+
+# --package-only: install, combine and copy headers out of a build tree that is already complete,
+# with no download, no patching, no configure and no compile. It runs the SAME census first, so it
+# cannot package an incomplete kernel, and it exists because the compile is hours while this step is
+# seconds: a packaging failure must not cost a rebuild of every source file.
+if [ -n "$PACKAGE_ONLY" ]; then
+    if [ -n "$BUILD_TOOLKIT" ] || [ -n "$REQUIRE_COMPLETE" ] || [ -n "$CENSUS_ONLY" ]; then
+        echo "ERROR: --package-only takes no other mode flag." >&2
+        exit 1
+    fi
+    if [ ! -d occt-build-wasm ]; then
+        echo "ERROR: no build tree at $LIBRARIES_DIR/occt-build-wasm to package." >&2
+        exit 1
+    fi
+    cd occt-build-wasm
+    census_all_toolkits || exit 1
+    package_build
+    exit 0
+fi
 
 # --------------------
 # Download OCCT source
@@ -538,12 +741,9 @@ if [ -n "$BUILD_TOOLKIT" ]; then
         exit 1
     fi
 
-    # Counted, never estimated. The denominator is every object CMake has a rule for and the
-    # numerator is every object on disk, so both come from the build tree rather than from a
-    # glob of the source directory that might disagree with what this configure selected.
-    TOOLKIT_EXPECTED=$(grep -oE "CMakeFiles/${BUILD_TOOLKIT}\.dir/[A-Za-z0-9_/]+\.(cxx|c)\.obj" \
-        "$TOOLKIT_OBJ_DIR/build.make" | sort -u | wc -l | tr -d ' ')
-    TOOLKIT_ACTUAL=$(find "$TOOLKIT_OBJ_DIR" -name '*.obj' | wc -l | tr -d ' ')
+    # Counted, never estimated, by the shared helpers above.
+    TOOLKIT_EXPECTED=$(toolkit_expected_objs "$TOOLKIT_OBJ_DIR" | wc -l | tr -d ' ')
+    TOOLKIT_ACTUAL=$(toolkit_actual_objs "$TOOLKIT_OBJ_DIR" | wc -l | tr -d ' ')
 
     TOOLKIT_LIB="$(find . -name "lib${BUILD_TOOLKIT}.a" -print -quit)"
     if [ -z "$TOOLKIT_LIB" ]; then
@@ -618,88 +818,39 @@ if [ -n "$BUILD_TOOLKIT" ]; then
     exit 0
 fi
 
-# Build libraries (fail on compilation errors)
-cmake --build . --parallel "$JOBS"
-
-# Install headers and static libraries
-cmake --install .
-cd ..
-
 # --------------------
-# Create combined libraries
+# The full build, with -k, and a census of every toolkit (#2174)
 # --------------------
+# `-k` for the reason the narrow loop has it. This configure builds 49 toolkits across six modules
+# and 5,488 source files; stopping at the first file that does not compile turns the gap list into
+# one full rebuild per gap, and a full rebuild is 69 minutes on 10 cores, measured. The build is therefore ALLOWED to fail here, and the census
+# below is what decides whether anything is installed.
+echo ""
+echo ">>> Building every toolkit, with -k (keep going)."
+set +e
+cmake --build . --parallel "$JOBS" -- -k
+FULL_STATUS=$?
+set -e
 
 echo ""
-echo ">>> Creating combined static libraries..."
-
-# Find all .a files (portable, handles spaces in paths)
-static_libs=()
-while IFS= read -r -d '' lib; do
-    static_libs+=("$lib")
-done < <(find occt-install-wasm -name "*.a" -print0 2>/dev/null)
-
-if [ ${#static_libs[@]} -eq 0 ]; then
-    echo "ERROR: No static libraries found in occt-install-wasm" >&2
+set +e
+census_all_toolkits
+CENSUS_STATUS=$?
+set -e
+if [ "$CENSUS_STATUS" -ne 0 ]; then
+    echo "" >&2
+    echo "       Nothing has been installed and no combined archive has been written: an" >&2
+    echo "       incomplete kernel packaged as a complete one is the failure mode this whole" >&2
+    echo "       check exists for." >&2
     exit 1
 fi
 
-# llvm-ar from the swift.org toolchain, the one that compiled these objects. Not the host's `ar`:
-# there is no llvm-nm or llvm-ar on the default macOS PATH, and the host tools do not read wasm
-# objects, which has already produced one wrong conclusion in this initiative.
-AR_TOOL="$SWIFT_TOOLCHAIN_BIN/llvm-ar"
-
-# Build combined library incrementally to avoid ARG_MAX and overwriting issues
-rm -f libOCCT-wasm.a
-for lib in "${static_libs[@]}"; do
-    "$AR_TOOL" rcs libOCCT-wasm.a "$lib"
-done
-
-if [ ! -f libOCCT-wasm.a ] || [ ! -s libOCCT-wasm.a ]; then
-    echo "ERROR: Failed to create combined static library" >&2
+if [ "$FULL_STATUS" -ne 0 ]; then
+    echo "" >&2
+    echo "ERROR: every object is present, but the build tool exited $FULL_STATUS. Something other" >&2
+    echo "       than a compile failed, an archive step most likely; the log above is the record." >&2
     exit 1
 fi
+echo ">>> COMPLETE: every toolkit built every source file it has a rule for."
 
-# --------------------
-# Prepare headers
-# --------------------
-
-echo ""
-echo ">>> Preparing headers..."
-
-# Copy all headers (handles .h, .hxx, .inl) to a clean location
-rm -rf occt-headers-wasm
-mkdir -p occt-headers-wasm
-
-while IFS= read -r -d '' header; do
-    rel="${header#occt-install-wasm/}"
-    dest="occt-headers-wasm/${rel}"
-    mkdir -p "$(dirname "$dest")"
-    cp "$header" "$dest"
-done < <(find occt-install-wasm -type f \( -name "*.h" -o -name "*.hxx" -o -name "*.inl" \) -print0 2>/dev/null)
-
-# Verify headers were copied
-if [ -z "$(find occt-headers-wasm -type f \( -name "*.h" -o -name "*.hxx" -o -name "*.inl" \) 2>/dev/null | head -1)" ]; then
-    echo "ERROR: No headers found in occt-headers-wasm after copy" >&2
-    exit 1
-fi
-
-# --------------------
-# Summary
-# --------------------
-
-echo ""
-echo "========================================"
-echo "WASI build complete!"
-echo "========================================"
-echo ""
-echo "Static library created at:"
-echo "  $LIBRARIES_DIR/libOCCT-wasm.a"
-echo ""
-echo "Headers at:"
-echo "  $LIBRARIES_DIR/occt-headers-wasm/"
-echo ""
-echo "To use with SwiftPM for Wasm, add linker settings pointing to these artifacts."
-echo ""
-
-# Optionally clean up build directories to save space
-# rm -rf occt-build-wasm occt-install-wasm occt-src
+package_build
