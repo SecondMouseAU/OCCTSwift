@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **IntAna LineSphere Tests** | lineThroughSphere | Line-sphere intersection | ParamOnConic + 1 in OCCTIntAnaLineSphere |
+| **IntAna LineSphere Tests** | lineMissesSphere | Line-sphere intersection | count 1 reported for 0 points in OCCTIntAnaLineSphere |
 
 ---
 
