@@ -302,5 +302,188 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Evaluate grid on circle",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGrid",
+    "bridge_output": {
+      "type": "points",
+      "data": "(5cos u, 5sin u, 0) at u = k pi/4, k = 0..7 (within 1e-10)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "GeomGridEval_Curve::EvaluateGrid, identical to Geom_Curve::D0 at all 8 parameters"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "results written in reverse order",
+    "red": "BatchCurve3DTests.swift:23 abs(p.x - 5 * cos(u)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: checked only the first sample"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Evaluate grid D1 on circle",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGridD1",
+    "bridge_output": {
+      "type": "points",
+      "data": "u=0: (5,0,0), (0,5,0); u=pi/2: (0,5,0), (-5,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "u=0: p=(5,0,0) d1=(-0,5,0); u=pi/2: p=(3.1e-16,5,0) d1=(-5,3.1e-16,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "D1.Y negated",
+    "red": "BatchCurve3DTests.swift:40 simd_distance(results[0].tangent, SIMD3(0, 5, 0)) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: checked the first tangent's x and y only"
+  },
+  {
+    "test_name": "Batch Curve3D Evaluation::Grid matches individual evaluation",
+    "test_file": "Tests/OCCTCurveTests/BatchCurve3DTests.swift",
+    "bridge_function": "OCCTCurve3DEvaluateGrid",
+    "bridge_output": {
+      "type": "points",
+      "data": "13 points equal to point(at:)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "13 points, EvaluateGrid == D0 at every u = 0, 0.5, ..., 6"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "results written in reverse order",
+    "red": "BatchCurve3DTests.swift:58 simd_distance(g, p) < 1e-10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Cylinder converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "3 faces (2 Bezier), 17 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "ShapeUpgrade_ShapeConvertToBezier: 3 faces (type1 x1, type5 x2), 17 edges (all type5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:28 bezier.subShapeCount(ofType: .edge) == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 and edgeCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Sphere converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "1 face, 6 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "1 face (type3, sphere kept), 6 edges (type5 x4, type8 x2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:40 bezier.subShapeCount(ofType: .edge) == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Box converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "6 Bezier faces, 12 Bezier edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "6 faces all type5, 12 edges all type5"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:54 Self.faceTypes(bezier) == Array(repeating: 5, count: 6)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: 6 faces and 12 edges also describe the unconverted box"
+  },
+  {
+    "test_name": "Bezier Conversion Tests::Cone converts to Bezier",
+    "test_file": "Tests/OCCTCurveTests/BezierConversionTests.swift",
+    "bridge_function": "OCCTShapeConvertToBezier",
+    "bridge_output": {
+      "type": "shape",
+      "data": "3 faces (2 Bezier), 17 edges"
+    },
+    "kernel_output": {
+      "type": "shape",
+      "data": "3 faces (type2 x1, type5 x2), 17 edges (all type5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return the input shape unconverted",
+    "red": "BezierConversionTests.swift:68 bezier.subShapeCount(ofType: .edge) == 17",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: faceCount > 0 passed an unconverted shape"
+  },
+  {
+    "test_name": "BSpline Bezier Patch Grid::BSpline surface decomposes to Bezier patches",
+    "test_file": "Tests/OCCTCurveTests/BezierPatchGridTests.swift",
+    "bridge_function": "OCCTSurfaceBSplineToBezierPatches",
+    "bridge_output": {
+      "type": "grid",
+      "data": "1 x 1, patch(0.3,0.4) = (9, 12, 0.80424)"
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": "GeomConvert_BSplineSurfaceToBezierSurface: 1 x 1, 4x4 poles, patch(0.3,0.4) = surface(0.3,0.4) = (9, 12, 0.80423999999999995)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "NbUPatches reported one too many",
+    "red": "BezierPatchGridTests.swift:39 grid.uCount == 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-batch-bezier/transcript.txt",
+    "note": "Rewritten: `if let` and >= 1 bounds"
   }
 ]

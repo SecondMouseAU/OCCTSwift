@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Batch Curve3D Evaluation | Evaluate grid on circle | `OCCTCurve3DEvaluateGrid` | results written in reverse order | `BatchCurve3DTests.swift:23 abs(p.x - 5 * cos(u)) < 1e-10` | ✅ | MATCH | Rewritten: checked only the first sample |
+| Batch Curve3D Evaluation | Evaluate grid D1 on circle | `OCCTCurve3DEvaluateGridD1` | D1.Y negated | `BatchCurve3DTests.swift:40 simd_distance(results[0].tangent, SIMD3(0, 5, 0)) < 1e-10` | ✅ | MATCH | Rewritten: checked the first tangent's x and y only |
+| Batch Curve3D Evaluation | Grid matches individual evaluation | `OCCTCurve3DEvaluateGrid` | results written in reverse order | `BatchCurve3DTests.swift:58 simd_distance(g, p) < 1e-10` | ✅ | MATCH |  |
+| Bezier Conversion Tests | Cylinder converts to Bezier | `OCCTShapeConvertToBezier` | return the input shape unconverted | `BezierConversionTests.swift:28 bezier.subShapeCount(ofType: .edge) == 17` | ✅ | MATCH | Rewritten: faceCount > 0 and edgeCount > 0 passed an unconverted shape |
+| Bezier Conversion Tests | Sphere converts to Bezier | `OCCTShapeConvertToBezier` | return the input shape unconverted | `BezierConversionTests.swift:40 bezier.subShapeCount(ofType: .edge) == 6` | ✅ | MATCH | Rewritten: faceCount > 0 passed an unconverted shape |
+| Bezier Conversion Tests | Box converts to Bezier | `OCCTShapeConvertToBezier` | return the input shape unconverted | `BezierConversionTests.swift:54 Self.faceTypes(bezier) == Array(repeating: 5, count: 6)` | ✅ | MATCH | Rewritten: 6 faces and 12 edges also describe the unconverted box |
+| Bezier Conversion Tests | Cone converts to Bezier | `OCCTShapeConvertToBezier` | return the input shape unconverted | `BezierConversionTests.swift:68 bezier.subShapeCount(ofType: .edge) == 17` | ✅ | MATCH | Rewritten: faceCount > 0 passed an unconverted shape |
+| BSpline Bezier Patch Grid | BSpline surface decomposes to Bezier patches | `OCCTSurfaceBSplineToBezierPatches` | NbUPatches reported one too many | `BezierPatchGridTests.swift:39 grid.uCount == 1` | ✅ | MATCH | Rewritten: `if let` and >= 1 bounds |
