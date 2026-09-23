@@ -95,6 +95,112 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtPElS Point-Cone** | pointToCone | Point-cone extrema | Store SquareDistance(1) for every extremum |
+| **BRepExtrema ExtFF Tests** | Face-face distance between separated boxes | Face-face extrema | Return SquareDistance(1) without sqrt |
+| **Bnd_Sphere Tests** | createAndQuery | Bounding sphere construction | Exchange cx and cy in OCCTBndSphereCreate |
+| **Bnd_Sphere Tests** | distanceToPoint | Point distance | SquareDistance in place of Distance |
+| **Bnd_Sphere Tests** | isOutsidePoint | Point containment | IsOut(point) always true |
+| **Bnd_Sphere Tests** | isOutsideSphere | Sphere disjointness | IsOut(sphere) always true |
+| **Bnd_Sphere Tests** | addMerge | Sphere merge | Add() does nothing |
+| **Extrema_LocateExtCC Tests** | localExtremum | Local curve-curve extremum | Report sqrt(SquareDistance()) as the square distance |
+| **LProp3dCurve** | tangentOfCircle | Curve local tangent | OCCTCurve3DLocalTangent reverses the tangent (value pinned, #766) |
+| **LProp3dCurve** | normalOfCircle | Curve principal normal | OCCTCurve3DLocalNormal reverses the normal (value pinned, #766) |
+| **LProp3dCurve** | centreOfCurvature | Centre of curvature | OCCTCurve3DLocalCentreOfCurvature shifts x by 1 |
+| **Curvature getters report definedness (#595)** | A straight curve reports 0; a curve with no tangent reports nothing | Curve3D curvature definedness | Restore the #595 zero sentinel |
+| **BRepExtrema_ExtCF Tests** | Edge to sphere face distance | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
+| **BRepExtrema_ExtCF Tests** | Box edge to box face | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
+| **Bnd OBB Tests** | createAndQuery | OBB accessors | OCCTOBBGetHalfSizes writes YHSize into hx |
+| **Bnd OBB Tests** | pointInOut | Point containment | OCCTOBBIsOutPoint negated |
+| **Bnd OBB Tests** | obbOverlap | OBB-OBB separation | OCCTOBBIsOutOBB always false (disjoint case added, #766) |
+| **Bnd OBB Tests** | fromShape | OBB from Bnd_Box | OCCTOBBCreateFromShape enlarges the box by 1 (values pinned, #766) |
+| **Bnd OBB Tests** | enlarge | OBB enlarge | OCCTOBBEnlarge no-op |
+| **Canonical Recognition** | Canonical recognition callable on box | Canonical recognition of a solid | Recognise a solid's first face |
+| **Canonical Recognition** | Canonical recognition callable on cylinder | Canonical recognition of a solid | Recognise a solid's first face |
+| **Extrema_ExtSS Tests** | parallelPlanes | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS |
+| **Extrema_ExtSS Tests** | sphereDistance | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS; SquareDistance + 1 in OCCTExtremaExtSSPoint |
+| **IntAna LineSphere Tests** | lineThroughSphere | Line-sphere intersection | ParamOnConic + 1 in OCCTIntAnaLineSphere |
+| **IntAna LineSphere Tests** | lineMissesSphere | Line-sphere intersection | count 1 reported for 0 points in OCCTIntAnaLineSphere |
+| **GProp Torus Tests** | torusSurfaceArea | Torus surface area | Short integration range |
+| **GProp Torus Tests** | torusVolume | Torus volume | Short integration range |
+| **Plane Detection** | Planar wire finds plane | Plane detection | origin z + 1 in OCCTShapeFindPlane |
+| **Plane Detection** | Non-planar 3D wire returns nil | Plane detection | report a plane when FindPlane finds none |
+| **Plane Detection** | Face shape is planar | Plane detection | origin z + 1 in OCCTShapeFindPlane |
+| **IntAna ConeSphere Tests** | coneSphereIntersection | Cone-sphere intersection count | Wrong count |
+| **IntAna ConeSphere Tests** | coneSphereSamplePoints | Cone-sphere curve sampling | Off-by-one sample spacing |
+| **BRepExtrema_Poly** | Polyhedral distance between two shapes | Polyhedral distance | Distance - 0.5; report success unconditionally |
+| **BRepExtrema_Poly** | Polyhedral distance needs a mesh | Polyhedral distance | Report success unconditionally |
+| **Extrema extras v0.112** | locateOnCurve | Windowed point-curve locate | LowerDistance() + 1 in OCCTExtremaLocateOnCurve |
+| **Extrema extras v0.112** | projectPointOnCurve | Point-curve projection | Distance(i) * 2 in OCCTExtremaPointCurve |
+| **Extrema extras v0.112** | locateOnSurface | Local point-surface locate | u and v swapped in OCCTExtremaLocateOnSurface |
+| **Extrema extras v0.112** | projectPointOnSurface | Point-surface projection | count - 1 returned by OCCTExtremaPointSurface |
+| **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
+| **v0.114.0 - Mass Properties** | linearProperties | Linear mass properties | Offset centre of mass |
+| **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
+| **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
+| **v0.114.0 - Mass Properties** | radiusOfGyration | Radius of gyration | Shift axis |
+| **Geom_Hyperbola Properties** | hyperbolaRadii | Hyperbola radii | MajorRadius() + 1 in OCCTCurve3DHyperbolaMajorRadius |
+| **Geom_Hyperbola Properties** | hyperbolaSetRadii | Hyperbola radius setters | Drop SetMinorRadius in OCCTCurve3DHyperbolaSetMinorRadius (still returns true) |
+| **Geom_Hyperbola Properties** | hyperbolaEccentricity | Hyperbola eccentricity (rewritten: sign-only) | Return Focal()/MajorRadius() (2e) in OCCTCurve3DHyperbolaEccentricity |
+| **Geom_Hyperbola Properties** | hyperbolaFocal | Hyperbola focal distance (rewritten: sign-only) | Return 2 * MajorRadius() in OCCTCurve3DHyperbolaFocal |
+| **Geom_Hyperbola Properties** | hyperbolaFocus1 | Hyperbola focus (rewritten: sign-only) | Report the vertex (MajorRadius, 0, 0) in OCCTCurve3DHyperbolaFocus1 |
+| **Geom_Hyperbola Properties** | hyperbolaAsymptote1 | Hyperbola asymptote | Read Asymptote2() in OCCTCurve3DHyperbolaAsymptote1 |
+| **Integration: Assembly Interference** | shaftHousingClearanceAndInterference | Clearance and interference | Distance + 1; volume scaled by 1.01 |
+| **BRepLProp Face v0.111** | faceValue | Face local point | x written from p.Y() in OCCTFaceLPropValue |
+| **BRepLProp Face v0.111** | faceNormal | Face normal | x negated in OCCTFaceLPropNormal |
+| **BRepLProp Face v0.111** | faceCurvature | Principal curvatures | sign flipped in OCCTFaceLPropMaxCurvature / MinCurvature |
+| **BRepLProp Face v0.111** | faceMeanAndGaussianCurvature | Mean and Gaussian curvature | * 2 in OCCTFaceLPropMeanCurvature / GaussianCurvature |
+| **BRepLProp Face v0.111** | faceIsUmbilic | Umbilic definedness | curvature-defined guard inverted in OCCTFaceLPropIsUmbilic |
+| **BRepLProp Face v0.111** | faceTangentU | Face U tangent | x written from tan.Y() in OCCTFaceLPropTangentU |
+| **Face Surface Properties Tests** | UV bounds of box face | Face UV bounds | Swap u and v bounds in OCCTFaceGetUVBounds |
+| **Face Surface Properties Tests** | Evaluate point on box face at UV center | Surface evaluation | Evaluate D0(v, u) in OCCTFaceEvaluateAtUV |
+| **Face Surface Properties Tests** | Normal at UV on box face is axis-aligned | Face normal orientation | Drop the REVERSED flip in OCCTFaceGetNormalAtUV |
+| **Face Surface Properties Tests** | Gaussian curvature of plane face is zero | Gaussian curvature | Report curvature undefined (return false) |
+| **Face Surface Properties Tests** | Gaussian curvature of sphere is 1/r² | Gaussian curvature | Return MeanCurvature() as Gaussian |
+| **Face Surface Properties Tests** | Mean curvature of sphere is 1/r | Mean curvature sign | Negate MeanCurvature() |
+| **Face Surface Properties Tests** | Principal curvatures of cylinder | Principal curvatures | Exchange MinCurvature()/MaxCurvature() |
+| **Face Surface Properties Tests** | Surface type detection | Surface classification | Map GeomAbs_Cylinder to the cone ordinal |
+| **Face Surface Properties Tests** | Face area of box face | Face area | LinearProperties (perimeter) in place of SurfaceProperties |
+| **CanonicalRecognition Detailed Tests** | recognizePlane | Canonical surface recognition | Skip IsPlane |
+| **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeEdgeLine | Canonical curve recognition | Skip IsLine |
+| **Geom_Plane Properties** | planeCoefficients | Plane equation coefficients | Drop D |
+| **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planePln | Plane gp_Pln data | Drop location Z |
+| **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
+| **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
+| **Edge Curve Properties Tests** | Parameter bounds of line edge | Edge curve parameter range | Swap first/last |
+| **Edge Curve Properties Tests** | Curvature of circle edge is 1/r | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Curvature of line edge is zero | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Tangent direction of straight edge | Edge curve tangent | Reverse tangent |
+| **Edge Curve Properties Tests** | Normal of circle edge points toward center | Edge curve normal | Reverse normal |
+| **Edge Curve Properties Tests** | Center of curvature of circle matches circle center | Edge curve centre of curvature | Offset centre |
+| **Edge Curve Properties Tests** | Torsion of planar curve is zero | Edge curve torsion | Offset torsion |
+| **Edge Curve Properties Tests** | Curve type detection | Edge curve type | Misclassify lines |
+| **Edge Curve Properties Tests** | Point at parameter matches expected location | Edge curve evaluation | Offset point |
+| **Measurement Tests** | Volume of box | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of cylinder | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of sphere | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Surface area of box | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Surface area of sphere | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Center of mass of box at origin | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Center of mass of translated box | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Full shape properties | Mass properties | Ignore density in mass |
+| **Measurement Tests** | Distance between separated boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Distance between touching boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Min distance convenience method | Shape distance | Distance + 1 |
+| **Measurement Tests** | Intersects - overlapping shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - separated shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - touching shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Vertex count of box | Vertex enumeration | Count + 1 |
+| **Measurement Tests** | Get all vertices | Vertex enumeration | Write zero coordinates |
+| **Measurement Tests** | Get vertex at index | Vertex enumeration | Read index (i + 1) % 8 |
+| **Measurement Tests** | Vertex out of bounds | Vertex enumeration | Read index (i + 1) % 8 |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
@@ -102,6 +208,48 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Hatch Patterns** | Triangle boundary | Hatch generation | Line spacing doubled / segment end written as its start |
+| **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Hatch island trimming | Island trim skipped / segment end written as its start |
+| **BRepExtrema ExtPF Tests** | Point-face distance | Point-face extrema (rewritten: could not fail) | OCCTBRepExtremaExtPF reports solutionCount 0; separately, the squared distance as the distance |
+| **Make Volume** | Make volume from faces | Volume from faces | Return nullptr; return the first argument |
+| **Make Volume** | Two coincident faces enclose no volume | Volume from faces | Return nullptr |
+| **Geom_CylindricalSurface Properties** | cylinderRadius | Cylinder radius | Radius returns 0 |
+| **Geom_CylindricalSurface Properties** | cylinderSetRadius | Cylinder radius setter | SetRadius returns true without writing |
+| **Geom_CylindricalSurface Properties** | cylinderAxis | Cylinder axis | Axis returns the XAxis |
+| **Geom_CylindricalSurface Properties** | cylinderUIso | Cylinder U iso-curve | UIso returns nil / returns VIso(u) |
+| **Self-Intersection Tests** | Box has no self-intersection | Mesh self-intersection | overlapCount + 1 |
+| **Self-Intersection Tests** | Sphere has no self-intersection | Mesh self-intersection | overlapCount + 1 |
+| **Self-Intersection Tests** | Cylinder has no self-intersection | Mesh self-intersection | overlapCount + 1 |
+| **Self-Intersection Tests** | Custom tolerance and mesh deflection | Mesh self-intersection | overlapCount + 1 |
+| **Self-Intersection Tests** | Overlapping boxes in one compound report their overlaps | Mesh self-intersection, positive control | overlapCount hardcoded 0 |
+| **Extrema_ExtPS Tests** | pointSurfaceDistance | Point-surface extrema | IsDone reported false / point lookup always returns the last extremum |
+| **Extrema_ExtPS Tests** | pointOnSurfaceParams | Point-surface extrema | Point lookup always returns the last extremum (the far pole) |
+| **BRepExtrema ExtCC Tests** | Edge-edge distance between box edges | Edge-edge extrema | solutionCount forced to 0 / distance written squared |
+| **BRepExtrema ExtCC Tests** | Edge-edge distance between standalone edge shapes | Edge-edge extrema | solutionCount forced to 0 / distance written squared |
+| **IntAna LineTorus Tests** | lineThroughTorus | Line-torus intersection | Return n - 1, dropping the last point |
+| **BRepGProp Domain Tests** | faceEdgeCount | Face integration domain | count + 1 |
+| **Extrema_ExtPElC Point-Circle** | pointToCircle | Point-circle extrema | No extrema reported / foot point written as the query point |
+| **IntTools_EdgeFace Tests** | Edge crossing face produces intersection | Edge-face intersection | OCCTIntToolsEdgeFace without SetRange, the #1631 regression (rewritten, #766) |
+| **BRepCheck Analyzer Tests** | Box passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Sphere passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Cylinder passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Analyzer without geometry checks | Validity analysis | IsValid result replaced by false |
+| **Extrema_ExtElSS Plane-Plane** | parallelPlanesReportTheSquareDistance | Plane-plane extrema | SquareDistance(1) + 1 |
+| **Extrema_ExtElSS Plane-Plane** | crossingPlanesReportNoDistance | Plane-plane extrema | Crossing planes reported as distance 0 |
+| **GProp Weighted Tests** | weightedCentroid | Weighted point-set centroid | OCCTGPropPointSetWeightedCentroid drops the weight (AddPoint(p)) |
+| **GProp Weighted Tests** | barycentre | Point-set barycentre | OCCTGPropBarycentre skips the last point |
+| **Bnd Range Tests** | createAndQuery | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false |
+| **Bnd Range Tests** | contains | Bnd_Range membership | Contains returns true |
+| **Bnd Range Tests** | addValue | Bnd_Range add | Add is a no-op |
+| **Bnd Range Tests** | common | Bnd_Range intersection | Common is a no-op |
+| **Bnd Range Tests** | trimFromTo | Bnd_Range trim | TrimFrom is a no-op |
+| **Bnd Range Tests** | voidRange | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) |
+| **BRepGProp Sinert Tests** | face surface inertia | Face area/centroid | OCCTBRepGPropSinert shifts the centroid x by 1 (values pinned, #766) |
+| **BRepGProp Sinert Tests** | adaptive surface inertia on sphere | Adaptive face area | OCCTBRepGPropSinertAdaptive given the face domain (the #2204 fix) turns the known issue red |
+| **Issue943 bounds: void versus zero-size** | voidShapeHasNoBoundsSizeOrCenter | Void bounding box | OCCTShapeGetBounds returns true whatever occtComputeBoundingBox reports (the pre-#943 fabricated zeros) |
+| **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
+| **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
+| **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
 
 ---
 
@@ -209,6 +357,62 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| A straight curve reports 0; a curve with no tangent reports nothing | OCCTCurve3DGetCurvature | Curve3D curvature definedness | Return true (curvature 0) when IsTangentDefined() is false | ✅ | ✅ |  |
+| Canonical recognition callable on box | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
+| Canonical recognition callable on cylinder | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
+| torusSurfaceArea | OCCTGPropTorusSurface | Torus surface area | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.19 off, inside the old tolerance |
+| torusVolume | OCCTGPropTorusVolume | Torus volume | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.28 off, inside the old tolerance |
+| coneSphereIntersection | OCCTIntAnaConeSphere | Cone-sphere intersection count | Return iqq.NbPnt() in place of iqq.NbCurve() | ✅ | ✅ | Rewritten: asserted count >= 0, which the wrapper guarantees for any non-nil value |
+| coneSphereSamplePoints | OCCTIntAnaConeSpherePoints | Cone-sphere curve sampling | t = first + (last - first) * i / actual | ✅ | ✅ | Rewritten: body never ran (gated on count > 0 for a 0-curve fixture) and asserted pts.count >= 0 |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | OCCTShapePolyhedralDistance | Polyhedral distance | Distance - 0.5; report success unconditionally | ✅ | ✅ | rewritten: 8...12 band stayed green under the injection |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | OCCTShapePolyhedralDistance | Polyhedral distance | Report success unconditionally | ✅ | ✅ | new negative case |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | OCCTExtremaElCSLinSphere | Line-sphere extrema | Negate surface point z | ✅ | ✅ | rewritten: count > 0 stayed green under the injection |
+| linearProperties | OCCTShapeLinearProperties | Linear mass properties | Write com.X() + 1.0 to *cx | ✅ | ✅ | Rewritten: if-let removed, centre asserted, tolerance 1e-9 (y = -5.55e-17 on both sides) |
+| momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
+| principalAxes | OCCTShapePrincipalAxes | Principal axes of inertia | Read ThirdAxisOfInertia into axis1 | ✅ | ✅ | Rewritten: cube fixture has isotropic inertia, so any frame is principal; now 10x20x30 with unique axes |
+| radiusOfGyration | OCCTShapeRadiusOfGyration | Radius of gyration | Build the axis through (ax + 1, ay, az) | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to sqrt(50/3) |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | OCCTShapeDistance | Clearance and interference | Distance + 1; volume scaled by 1.01 | ✅ | ✅ | rewritten: distance >= 0 and vol > 0 stayed green under the injection; also reaches OCCTShapeSubtractEx, OCCTShapeIntersectEx, OCCTShapeGetVolume |
+| recognizePlane | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | if (false && recog.IsPlane(...)) | ✅ | ✅ | Rewritten: if-let wrappers removed, plane position asserted |
+| recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
+| recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
+| recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
+| planeCoefficients | OCCTSurfacePlaneCoefficients | Plane equation coefficients | Zero *D after Geom_Plane::Coefficients | ✅ | ✅ | Rewritten: fixture moved to z = 2 so D is nonzero; if-let wrapper removed |
+| planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planePln | OCCTSurfacePlanePln | Plane gp_Pln data | Write 0 to *pz | ✅ | ✅ | Rewritten: origin now asserted; if-let wrapper removed |
+| Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
+| Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
+| Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
+| Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Parameter bounds of line edge | OCCTEdgeGetParameterBounds | Edge curve parameter range | Write l to *first and f to *last | ✅ | ✅ |  |
+| Curvature of circle edge is 1/r | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Curvature of line edge is zero | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Tangent direction of straight edge | OCCTEdgeGetTangent3D | Edge curve tangent | Reverse the tangent direction | ✅ | ✅ | Direction assertion added; unit length alone passed the reversed tangent |
+| Normal of circle edge points toward center | OCCTEdgeGetNormal3D | Edge curve normal | Reverse the principal normal | ✅ | ✅ | Inward-direction assertion added; unit length alone passed the outward normal |
+| Center of curvature of circle matches circle center | OCCTEdgeGetCenterOfCurvature3D | Edge curve centre of curvature | Add 1.0 to the centre's X | ✅ | ✅ |  |
+| Torsion of planar curve is zero | OCCTEdgeGetTorsion | Edge curve torsion | Add 1.0 to the computed torsion | ✅ | ✅ |  |
+| Curve type detection | OCCTEdgeGetCurveType | Edge curve type | Map GeomAbs_Line to 8 (other) | ✅ | ✅ |  |
+| Point at parameter matches expected location | OCCTEdgeGetPointAtParam | Edge curve evaluation | Add 1.0 to the evaluated point's Z | ✅ | ✅ |  |
+| Measurement Tests: Volume of box | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of cylinder | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of sphere | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of box | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of sphere | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of box at origin | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of translated box | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Full shape properties | OCCTShapeGetProperties | Mass properties | Ignore density in mass | ✅ | ✅ | strengthened: centre y and z now asserted |
+| Measurement Tests: Distance between separated boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Distance between touching boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Min distance convenience method | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Intersects - overlapping shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - separated shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - touching shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Vertex count of box | OCCTShapeGetVertexCount | Vertex enumeration | Count + 1 | ✅ | ✅ |  |
+| Measurement Tests: Get all vertices | OCCTShapeGetVertices | Vertex enumeration | Write zero coordinates | ✅ | ✅ | rewritten: count-only version stayed green under the injection |
+| Measurement Tests: Get vertex at index | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Measurement Tests: Vertex out of bounds | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ |  |
 | Curvature of circle is 1/r | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
 | Curvature of line is zero | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
 | Tangent of X-axis segment is (1,0,0) | OCCTCurve3DGetTangent | Curve local tangent | Swap tangent X and Y | ✅ | ✅ |  |
@@ -216,6 +420,38 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Triangle boundary | OCCTHatchLines | Hatch generation | Line spacing doubled / segment end written as its start | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: count > 0 passed under both injections; now pins 9 segments and their endpoints |
+| An island polygon cuts a hole in the hatch fill | OCCTHatchLines | Hatch island trimming | Island trim skipped / segment end written as its start | ✅ | ✅ | Could already fail on a skipped island trim; did not catch zero-length segments, now pins the y = 10 spans and the total |
+| Make volume from faces | OCCTShapeMakeVolume | Volume from faces | Return nullptr; return the first argument | ✅ | ✅ | Rewritten: discarded the result, no assertion |
+| Two coincident faces enclose no volume | OCCTShapeMakeVolume | Volume from faces | Return nullptr | ✅ | ✅ | New: the original test's input, with its result asserted |
+| cylinderRadius | OCCTSurfaceCylinderRadius | Cylinder radius | Radius returns 0 | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTSurfaceCreateCylinder skipped every assertion under if-let |
+| cylinderSetRadius | OCCTSurfaceCylinderSetRadius | Cylinder radius setter | SetRadius returns true without writing | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTSurfaceCreateCylinder skipped every assertion under if-let |
+| cylinderAxis | OCCTSurfaceCylinderAxis | Cylinder axis | Axis returns the XAxis | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTSurfaceCreateCylinder skipped every assertion under if-let |
+| cylinderUIso | OCCTSurfaceCylinderUIso | Cylinder U iso-curve | UIso returns nil / returns VIso(u) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: read iso.domain and asserted nothing; now pins the ruling at u = 0 and u = pi/2 |
+| Box has no self-intersection | OCCTShapeSelfIntersection | Mesh self-intersection | overlapCount + 1 | ✅ | ✅ | Force-unwraps inside #expect replaced by #require |
+| Sphere has no self-intersection | OCCTShapeSelfIntersection | Mesh self-intersection | overlapCount + 1 | ✅ | ✅ | Rewritten: asserted only that the check ran |
+| Cylinder has no self-intersection | OCCTShapeSelfIntersection | Mesh self-intersection | overlapCount + 1 | ✅ | ✅ | Rewritten: asserted only that the check ran |
+| Custom tolerance and mesh deflection | OCCTShapeSelfIntersection | Mesh self-intersection | overlapCount + 1 | ✅ | ✅ | Rewritten: asserted only that the check ran |
+| Overlapping boxes in one compound report their overlaps | OCCTShapeSelfIntersection | Mesh self-intersection, positive control | overlapCount hardcoded 0 | ✅ | ✅ | New: the only test a check that never looks fails |
+| pointSurfaceDistance | OCCTExtremaExtPS | Point-surface extrema | IsDone reported false / point lookup always returns the last extremum | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTSurfaceCreateSphere skipped every assertion under if-let; count pinned to 2, tolerance 0.1 -> 1e-9; also reaches OCCTExtremaExtPSPoint |
+| pointOnSurfaceParams | OCCTExtremaExtPSPoint | Point-surface extrema | Point lookup always returns the last extremum (the far pole) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: hid behind if isDone && count >= 1 and accepted either pole (|p| == 5); now pins extremum 1 to the near pole |
+| Edge-edge distance between box edges | OCCTBRepExtremaExtCC | Edge-edge extrema | solutionCount forced to 0 / distance written squared | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: edge 0 of each box is parallel, so the result was always nil and no assertion ran |
+| Edge-edge distance between standalone edge shapes | OCCTBRepExtremaExtCCEdges | Edge-edge extrema | solutionCount forced to 0 / distance written squared | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: same parallel first-edge pair, same always-nil result |
+| lineThroughTorus | OCCTIntAnaLineTorus | Line-torus intersection | Return n - 1, dropping the last point | ✅ | ✅ | Rewritten: count >= 2 passed a result missing half its points |
+| faceEdgeCount | OCCTShapeFaceDomainEdgeCount | Face integration domain | count + 1 | ✅ | ✅ | Rewritten: count >= 3 under guard-return passed 3, 5 or any larger count |
+| pointToCircle | OCCTExtremaExtPElCCirc | Point-circle extrema | No extrema reported / foot point written as the query point | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: count > 0 passed with the foot point replaced by the query point; now pins both extrema |
+| Box passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | One injection turns all four tests red; a bridge that always answers true would pass all four (positive-only) |
+| Sphere passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Cylinder passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Analyzer without geometry checks | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | Does not detect a bridge that ignores geometryChecks: the box is valid either way |
+| parallelPlanesReportTheSquareDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | SquareDistance(1) + 1 | ✅ | ✅ | Issue #1878 names it parallelPlanes, renamed by #1632; second construction via OCCTExtremaExtPElSPlane |
+| crossingPlanesReportNoDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | Crossing planes reported as distance 0 | ✅ | ✅ | Issue #1879 names it intersectingPlanes, renamed by #1632 |
+| createAndQuery | OCCTRangeGetBounds | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the bounds assertions under if-let |
+| contains | OCCTRangeContains | Bnd_Range membership | Contains returns true | ✅ | ✅ |  |
+| addValue | OCCTRangeAddValue | Bnd_Range add | Add is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the only assertion under if-let; lower bound now asserted too |
+| common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
+| trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
+| voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
 
 ---
 
@@ -318,5 +554,54 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Triangle boundary | ✅ | ✅ | ✅ |
+| An island polygon cuts a hole in the hatch fill | ✅ | ✅ | ✅ |
+| cylinderRadius | ✅ | ✅ | ✅ |
+| cylinderSetRadius | ✅ | ✅ | ✅ |
+| cylinderAxis | ✅ | ✅ | ✅ |
+| cylinderUIso | ✅ | ✅ | ✅ |
+| pointSurfaceDistance | ✅ | ✅ | ✅ |
+| pointOnSurfaceParams | ✅ | ✅ | ✅ |
+| Edge-edge distance between box edges | ✅ | ✅ | ✅ |
+| Edge-edge distance between standalone edge shapes | ✅ | ✅ | ✅ |
+| pointToCircle | ✅ | ✅ | ✅ |
+| Box passes analyzer validation | ✅ | ✅ | ✅ |
+| Sphere passes analyzer validation | ✅ | ✅ | ✅ |
+| Cylinder passes analyzer validation | ✅ | ✅ | ✅ |
+| Analyzer without geometry checks | ✅ | ✅ | ✅ |
+| createAndQuery | ✅ | ✅ | ✅ |
+| contains | ✅ | ✅ | ✅ |
+| addValue | ✅ | ✅ | ✅ |
+| common | ✅ | ✅ | ✅ |
+| trimFromTo | ✅ | ✅ | ✅ |
+| voidRange | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | ✅ | ✅ | ✅ |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | ✅ | ✅ | ✅ |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
+| Shape distance to Wire | ✅ | ✅ | ✅ |
+| Shape intersects Wire | ✅ | ✅ | ✅ |
+| Shape distance to Edge | ✅ | ✅ | ✅ |
+| Shape distance to Face | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of cylinder | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of box at origin | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of translated box | ✅ | ✅ | ✅ |
+| Measurement Tests: Full shape properties | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between separated boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between touching boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Min distance convenience method | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - overlapping shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - separated shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - touching shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex count of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
+| Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 587 tests
