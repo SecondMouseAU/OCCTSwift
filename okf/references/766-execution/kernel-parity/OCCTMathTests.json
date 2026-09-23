@@ -182,5 +182,75 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::generalTransform",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {"type": "observed", "data": "min (-1e-7, -5.0000001, -5.0000001), max (10.0000001, 5.0000001, 5.0000001)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "min (-1e-7, -5.0000001, -5.0000001), max (10.0000001, 5.0000001, 5.0000001)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "the three GROUPED translation entries read as zero", "failing_expectation": "original: **green**; rewritten: :29 `abs(bb.min.x - 0.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::nonUniformScale",
+    "bridge_function": "OCCTShapeGTransformed",
+    "bridge_output": {"type": "observed", "data": "min (-10.0000002, -5.0000002, -2.5000002), max (10.0000002, 5.0000002, 2.5000002)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "min (-10.0000002, -5.0000002, -2.5000002), max (10.0000002, 5.0000002, 2.5000002)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_GTrsf (3,3) set from matrix12[5] (the Y scale) instead of matrix12[10]", "failing_expectation": "original: **green**; rewritten: :55 `abs(bb.min.z + 2.5) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::generalTransformGroupedLayoutTranslatesAsDocumented",
+    "bridge_function": "OCCTShapeTransformed",
+    "bridge_output": {"type": "observed", "data": "min (4.9999999, -1e-7, -1e-7), max (15.0000001, 10.0000001, 10.0000001)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "min (4.9999999, -1e-7, -1e-7), max (15.0000001, 10.0000001, 10.0000001)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "GROUPED translation entries read as zero", "failing_expectation": ":61 `abs(bb.min.x - 5.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::nonUniformScaleInterleavedLayoutScalesAsDocumented",
+    "bridge_function": "OCCTShapeGTransformed",
+    "bridge_output": {"type": "observed", "data": "min (-2e-7, -2e-7, -2e-7), max (20.0000002, 20.0000002, 15.0000002)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "min (-2e-7, -2e-7, -2e-7), max (20.0000002, 20.0000002, 15.0000002)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "gp_GTrsf (3,3) from the Y scale", "failing_expectation": ":94 `abs(bb.max.z - 15.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::groupedInterleavedConversionRoundTripsTheSameTransform",
+    "bridge_function": "OCCTShapeTransformed and OCCTShapeTransformFromMatrix",
+    "bridge_output": {"type": "observed", "data": "both paths min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "both paths min (4.9999999, 9.9999999, 14.9999999), max (15.0000001, 20.0000001, 25.0000001)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "GROUPED translation entries read as zero, so the grouped path disagrees with the interleaved one", "failing_expectation": ":125 `abs(a.min.x - b.min.x) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::deprecatedArrayOverloadsStillWork",
+    "bridge_function": "OCCTShapeTransformed, OCCTShapeGTransformed, OCCTShapeTransformFromMatrix",
+    "bridge_output": {"type": "observed", "data": "a min.x 4.9999999; b and c min (4.9999999, 9.9999999, 14.9999999)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "a min.x 4.9999999; b and c min (4.9999999, 9.9999999, 14.9999999)", "source": "Scripts/repro/766-math-transform-expansion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "GROUPED translation entries read as zero", "failing_expectation": ":154 `abs(bb.min.x - 5.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "v0.115.0 - Transform Expansion::typedInitializersReturnNilRatherThanTrapOnWrongCount",
+    "bridge_function": "none (pure Swift: validated12 in Sources/OCCTSwift/TransformFactory.swift)",
+    "bridge_output": {"type": "observed", "data": "N/A", "source": "N/A"},
+    "kernel_output": {"type": "probe", "data": "N/A", "source": "N/A: N/A: pure-Swift element-count validation, no kernel counterpart"},
+    "comparison": {"equal": null, "differences": []},
+    "status": "N/A",
+    "red": {"injection": "Swift injection: the count check in validated12 bypassed. RUN THIS TOKEN WITH A FILTER ON THIS ONE TEST ONLY: with it set, deprecatedArrayOverloadsStillWork hands a 3-element array to a bridge that reads 12", "failing_expectation": ":206 `Matrix12Grouped(elevenElements) == nil`"},
+    "green": true
   }
 ]
