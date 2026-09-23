@@ -221,3 +221,27 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `HistoryExtendedTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-history-extended/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| mergeHistories | `OCCTHistoryMerge` returns without merging | `:26 Expectation failed: history1.hasGenerated` | pass | `OCCTHistoryMerge` | PASS |
+| replaceGeneratedModified | `OCCTHistoryReplaceGenerated` returns without replacing | `:40 Expectation failed: generated.first?.isSame(as: b3) == true` | pass | `OCCTHistoryReplaceGenerated` | PASS |
+| getModifiedGeneratedShapes | `OCCTHistoryAddModified` returns without recording | `:58 Expectation failed: modified.count == 1` | pass | `OCCTHistoryGetModifiedShapes` | PASS |
+
+### `IntegrationBooleanChainStressTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-integration-boolean-chain-stress/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| twentySubtractions | `OCCTShapeSubtractEx` returns nullptr | `:33 Expectation failed: vol < prevVolume` | pass | `OCCTShapeSubtractEx` | PASS |

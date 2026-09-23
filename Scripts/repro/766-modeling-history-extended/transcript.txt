@@ -1,0 +1,6 @@
+mergeHistories: before merge h1 hasModified=1 hasGenerated=0
+mergeHistories: after merge hasModified=1 hasGenerated=1 generated(b1)=1 modified(b1)=1
+replaceGeneratedModified: hasGenerated=1 generated(b1)=1 firstIsB3=1
+replaceGeneratedModified: hasModified=1 modified(b1)=1 firstIsB3=1
+getModifiedGeneratedShapes: modified(b1)=1
+getModifiedGeneratedShapes: generated(b1)=1

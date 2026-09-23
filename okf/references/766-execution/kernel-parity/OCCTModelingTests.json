@@ -6,5 +6,119 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::mergeHistories",
+    "bridge_function": "OCCTHistoryMerge",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "hasModified": true,
+        "hasGenerated": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "beforeMerge": {
+          "HasModified": true,
+          "HasGenerated": false
+        },
+        "afterMerge": {
+          "HasModified": true,
+          "HasGenerated": true,
+          "Generated(b1)": 1,
+          "Modified(b1)": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::replaceGeneratedModified",
+    "bridge_function": "OCCTHistoryReplaceGenerated",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "hasGenerated": true,
+        "generated": 1,
+        "generatedIsB3": true,
+        "hasModified": true,
+        "modified": 1,
+        "modifiedIsB3": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "HasGenerated": true,
+        "Generated(b1)": 1,
+        "firstIsB3": true,
+        "HasModified": true,
+        "Modified(b1)": 1,
+        "modifiedFirstIsB3": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::getModifiedGeneratedShapes",
+    "bridge_function": "OCCTHistoryGetModifiedShapes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "modified": 1,
+        "generated": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Modified(b1)": 1,
+        "Generated(b1)": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Integration: Boolean Chain Stress::twentySubtractions",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "valid": "at 5, 10, 15, 20 and final",
+        "volumeStrictlyDecreasing": true,
+        "finalBelowOriginal": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": 1000000,
+        "after5": 997393.6049,
+        "after10": 994790.1094,
+        "after15": 992186.6139,
+        "after20": 989586.0182,
+        "allValid": true,
+        "cutFailures": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
