@@ -99,3 +99,39 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataXtdPatternStdTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGetSignature` | `OCCTDocumentPatternGetSignature` answers 2 | :18 Expectation failed: sig == .linear | passed | `OCCTDocumentPatternGetSignature` | PASS: 1 |
+| `hasPattern` | `OCCTDocumentHasPattern` returns false | :28 Expectation failed: doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: true after Set |
+| `noPattern` | `OCCTDocumentHasPattern` returns true | :34 Expectation failed: !doc.hasPattern(labelId: node.labelId) | passed | `OCCTDocumentHasPattern` | PASS: false on a fresh label |
+
+### `TDataXtdPlacementTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndHas` | `OCCTDocumentHasPlacement` returns false | :15 Expectation failed: doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: true |
+| `noPlacement` | `OCCTDocumentHasPlacement` returns true | :21 Expectation failed: !doc.hasPlacement(labelId: node.labelId) | passed | `OCCTDocumentHasPlacement` | PASS: false |
+
+### `TDataXtdPositionAttributeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetPosition` | `OCCTDocumentGetPositionAttr` answers (0, 0, 0) | :19 Expectation failed: abs(pos.x - 1.0) < 1e-10; :20 Expectation failed: abs(pos.y - 2.0) < 1e-10 | passed | `OCCTDocumentGetPositionAttr` | PASS: (1, 2, 3) |
+| `noPositionAttribute` | `OCCTDocumentHasPositionAttr` returns true | :29 Expectation failed: !label.hasPositionAttribute | passed | `OCCTDocumentHasPositionAttr` | PASS: none on a fresh label |
+
+### `TDataXtdPresentationTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndHas` | `OCCTDocumentHasPresentation` returns false | :16 Expectation failed: doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentHasPresentation` | PASS: true |
+| `colorAndTransparency` | `OCCTDocumentPresentationGetColor` answers 0 | :30 Expectation failed: color == 12 | passed | `OCCTDocumentPresentationGetColor` | PASS: 12, 0.5 |
+| `widthAndMode` | `OCCTDocumentPresentationGetWidth` answers 0 | :48 Expectation failed: abs(width - 2.0) < 1e-6 | passed | `OCCTDocumentPresentationGetWidth` | PASS: 2, 1 |
+| `displayState` | `OCCTDocumentPresentationIsDisplayed` returns false | :63 Expectation failed: doc.presentationIsDisplayed(labelId: node.labelId) | passed | `OCCTDocumentPresentationIsDisplayed` | PASS: true |
+| `unsetPresentation` | `OCCTDocumentUnsetPresentation` returns without unsetting | :74 Expectation failed: !doc.hasPresentation(labelId: node.labelId) | passed | `OCCTDocumentUnsetPresentation` | PASS: gone after Unset |
