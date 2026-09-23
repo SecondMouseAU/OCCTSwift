@@ -21,6 +21,11 @@ struct XCAFPrsStyleTests {
         style.isVisible = false
         style.surfaceColor = (1, 0, 0)
         #expect(!style.isVisible)
+        // `isVisible` is a stored property, so reading it back could not fail (#766). The flag has
+        // to reach the kernel style: a visible copy must compare unequal through XCAFPrs_Style.
+        var visible = style
+        visible.isVisible = true
+        #expect(!style.isEqual(to: visible))
     }
 
     @Test func equality() {
