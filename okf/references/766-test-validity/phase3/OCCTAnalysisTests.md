@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepLProp Edge v0.111** | edgeValue | Edge point evaluation | Evaluate at FirstParameter() instead of the parameter |
+| **BRepLProp Edge v0.111** | edgeTangent | Edge tangent | Negate the tangent's z |
+| **BRepLProp Edge v0.111** | edgeCurvature | Edge curvature | Return 1 / Curvature() (radius) |
+| **BRepLProp Edge v0.111** | edgeD1 | Edge first derivative | Return the normalized D1 |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
