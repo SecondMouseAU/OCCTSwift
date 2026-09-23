@@ -149,6 +149,7 @@
 | **BRepLProp Face v0.111** | faceMeanAndGaussianCurvature | Mean and Gaussian curvature | * 2 in OCCTFaceLPropMeanCurvature / GaussianCurvature |
 | **BRepLProp Face v0.111** | faceIsUmbilic | Umbilic definedness | curvature-defined guard inverted in OCCTFaceLPropIsUmbilic |
 | **BRepLProp Face v0.111** | faceTangentU | Face U tangent | x written from tan.Y() in OCCTFaceLPropTangentU |
+| **Integration: Assembly Interference** | shaftHousingClearanceAndInterference | Clearance and interference | Distance + 1; volume scaled by 1.01 |
 
 ---
 
@@ -304,6 +305,7 @@
 | recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
 | recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
 | recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | OCCTShapeDistance | Clearance and interference | Distance + 1; volume scaled by 1.01 | ✅ | ✅ | rewritten: distance >= 0 and vol > 0 stayed green under the injection; also reaches OCCTShapeSubtractEx, OCCTShapeIntersectEx, OCCTShapeGetVolume |
 
 ---
 
@@ -430,5 +432,6 @@ For each test, run ground-truth C++ comparison:
 | Shape distance to Face | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
 
-**Total**: 583 tests
+**Total**: 584 tests

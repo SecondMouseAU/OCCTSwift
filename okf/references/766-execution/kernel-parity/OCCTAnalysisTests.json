@@ -1796,5 +1796,30 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Integration: Assembly Interference::shaftHousingClearanceAndInterference",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "assembly",
+      "data": {
+        "hollow_volume": 7790.99270127,
+        "clearance": 0.05,
+        "interference_volume": 6283.18530718
+      }
+    },
+    "kernel_output": {
+      "type": "assembly",
+      "data": {
+        "hollow_volume": 7790.99270127,
+        "clearance": 0.05,
+        "interference_volume": 6283.18530718
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
