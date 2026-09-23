@@ -308,5 +308,194 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Curvature of circle is 1/r",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.2
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Curvature of line is zero",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "curvature": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Tangent of X-axis segment is (1,0,0)",
+    "bridge_function": "OCCTCurve3DGetTangent",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Normal of circle points inward",
+    "bridge_function": "OCCTCurve3DGetNormal",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "normal": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "normal": [
+          -1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Center of curvature of circle is at origin",
+    "bridge_function": "OCCTCurve3DGetCenterOfCurvature",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "centre": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "centre": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Torsion of planar circle is zero",
+    "bridge_function": "OCCTCurve3DGetTorsion",
+    "bridge_output": {
+      "type": "torsion",
+      "data": {
+        "torsion": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "torsion",
+      "data": {
+        "torsion": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Local Properties Tests::Bounding box of segment",
+    "bridge_function": "OCCTCurve3DGetBoundingBox",
+    "bridge_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0.99,
+          1.99,
+          2.99
+        ],
+        "max": [
+          10.01,
+          8.01,
+          6.01
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounding_box",
+      "data": {
+        "min": [
+          0.99,
+          1.99,
+          2.99
+        ],
+        "max": [
+          10.01,
+          8.01,
+          6.01
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

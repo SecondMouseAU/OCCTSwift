@@ -95,6 +95,13 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
+| **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
+| **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
+| **Curve3D Local Properties Tests** | Normal of circle points inward | Curve local normal | Negate the normal |
+| **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
+| **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
+| **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
 
 ---
 
@@ -202,6 +209,13 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Curvature of circle is 1/r | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
+| Curvature of line is zero | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
+| Tangent of X-axis segment is (1,0,0) | OCCTCurve3DGetTangent | Curve local tangent | Swap tangent X and Y | ✅ | ✅ |  |
+| Normal of circle points inward | OCCTCurve3DGetNormal | Curve local normal | Negate the normal | ✅ | ✅ | Rewritten: unit length alone passed an outward normal |
+| Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
+| Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
+| Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
 
 ---
 
