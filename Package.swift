@@ -121,14 +121,39 @@ let occtTarget: Target = isWASI
     // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
     // while the enumeration next to it did not.
     //
-    // ALL SEVENTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
+    // WHAT IS VERIFIED PRESENT IN THE PINNED ASSET, AND WHAT IS NOT. This paragraph opened "ALL
+    // SEVENTEEN ARE VERIFIED PRESENT" and described a seventeen-patch asset. It went stale at the
+    // v4.0.0-kernel.1 repin, which took the pinned set to twenty-nine, and #2190 is what caught
+    // it. The per-patch verdict is no longer kept here by hand. Run:
     //
-    //   - Eight (0010, 0011, 0012, 0014, 0015, 0016, 0021, 0024) touch a shipped .hxx. Every line
-    //     each patch adds to a header was matched, line for line, against the header inside the
-    //     built asset: 210 added lines, 0 missing.
-    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it was verified
-    //     directly in the binary: the message it throws appears exactly once in each of the three
-    //     slice archives (libOCCT-macos.a, libOCCT-ios.a, libOCCT-sim.a).
+    //     python3 Scripts/check-pinned-asset-patches.py --require-asset
+    //
+    // It derives from each patch's own text a header line, a string literal, a thread_local
+    // wrapper symbol or a name the patch introduces, then looks for it in all three slices. On
+    // this asset it answers 16 confirmed, 13 not derivable, 0 absent, in about seven seconds. It
+    // also looks for the RETIRED patches, which is what nothing did before #2190. THAT is the step
+    // to run at a repin, before trusting any sentence in this block.
+    //
+    // The parts of the old breakdown that survive, because they say what the script cannot:
+    //
+    //   - Fifteen patches touch a shipped .hxx, and the xcframework ships the patched header
+    //     verbatim, so every line they add is matchable line for line: 303 added lines, 0 missing.
+    //     That is the one rule decisive in both directions, and it covers just over half the set.
+    //   - One (0026) is .cxx-only but adds a distinctive string literal, so it is verified
+    //     directly in the binary: the message it throws appears in BRepOffsetAPI_ThruSections's
+    //     object file in each of the three slice archives (libOCCT-macos.a, libOCCT-ios.a,
+    //     libOCCT-sim.a).
+    //   - Thirteen reach the binary leaving nothing a symbol table or a byte search can see. A
+    //     changed comparison, a reordered argument or a guard clause adds no name. 0033 is the
+    //     sharpest case: it adds `std::recursive_mutex& StaticsMutex()` and that name is in NO
+    //     symbol table in this asset, because libc++'s recursive_mutex constructor is constexpr,
+    //     so the function-local static needs no guard variable and the accessor inlines away at
+    //     -O2. The patch IS in the binary (Interface_Static.cxx.o holds the undefined references
+    //     to recursive_mutex::lock() that vanilla V8_0_1 has no reason to hold). Absence of a name
+    //     is not absence of a patch, which is why those thirteen get a bucket, not a verdict.
+    // And the BEHAVIOURAL evidence, which answers a different question from the symbol evidence
+    // above: whether a test exercises the fix, not whether the code is in the binary.
+    //
     //   - One (0027) is .cxx-only and adds NO string literal, signalling through myStatus instead,
     //     so nothing in the binary can be grepped for it. It is verified behaviourally by
     //     StressBuilderLifecycleTests.mismatchedSectionEdgeCountWithoutCheckFailsCleanly, which is
@@ -152,10 +177,54 @@ let occtTarget: Target = isWASI
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the twenty-nine patches listed above.
-    // Byte-identical to the v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did
-    // NOT change when `url:` did; the release commit re-uploaded the same zip. Same shape v2.0.0
-    // used with its own kernel.3 asset. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
+    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the twenty-nine patches listed above,
+    // AND TWO MORE THAT ARE NOT IN Scripts/patches/ AT ALL. Read the next paragraph before
+    // treating the enumeration above as the asset's contents.
+    //
+    // ===================================================================================
+    // THE ASSET CARRIES THIRTY-ONE PATCHES. THE TREE CARRIES TWENTY-NINE. (#2190)
+    // ===================================================================================
+    //
+    // The two extras are retired patches that were deleted from Scripts/patches/ but never
+    // reverted out of the shared Libraries/occt-src tree the asset was built from:
+    //
+    //   0032-TopOpeBRepBuild-KPart-merge-globals-thread-local-1371.patch  retired 2026-09-02
+    //   0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393.patch      retired 2026-09-08
+    //
+    // build-occt.sh's patch loop ONLY APPLIES; it never reverts, and it refuses to reset a dirty
+    // occt-src on purpose, so that an investigation's probe is not destroyed silently. A retired
+    // patch's edits therefore survive in a working tree until somebody reverts them by hand. Nobody
+    // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the asset
+    // holds `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
+    // GLOBAL_*` in the three TopOpeBRepBuild objects, in all three slices.
+    //
+    // BOTH ARE INERT, which is why this is documented rather than rebuilt out. LocOpe_SplitDrafts
+    // has no caller anywhere: Shape.splitDrafts was removed in v4.0.0 and upstream deleted the
+    // class in OCCT#1442. thread_local versus static is identical single-threaded, and the twelve
+    // globals 0032 touches are unreachable from this bridge's call surface, measured by #1371's own
+    // probe. Nothing a consumer can call behaves differently.
+    //
+    // THE SOURCE TREE HAS SINCE BEEN CLEANED. Libraries/occt-src now holds exactly the twenty-nine
+    // carried patches and no strays. SO A REBUILD TODAY PRODUCES A TWENTY-NINE-PATCH ASSET WITH A
+    // DIFFERENT CHECKSUM FROM THE ONE PINNED BELOW. That is expected, not a corrupted download:
+    // if you rebuild and the checksum does not match, this paragraph is the reason, and the fix is
+    // to upload the new asset and bump BOTH url: and checksum:, never to hunt for a build
+    // difference that is not there.
+    //
+    // CLAUDE.md: "A divergence with a written reason is expected; one without is a finding." This
+    // is the written reason. Scripts/check-pinned-asset-patches.py carries the same two rows in
+    // its ACKNOWLEDGED table, keyed on the tag v4.0.0-kernel.1, so the acknowledgement expires
+    // automatically at the next repin and the finding comes back if the next asset repeats it.
+    //
+    // (A previous version of this paragraph said the asset was "byte-identical to the
+    // v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did NOT change when `url:`
+    // did". THAT WAS FALSE. The checksum changed at 64b2aec7, from 77df5a0a... to da14acb1...,
+    // which `git log -L266,266:Package.swift` shows in one command. It was a leftover from the
+    // previous pin and it is deleted rather than corrected, because nothing needs saying about a
+    // reuse that did not happen. The v2.0.0 release DID reuse its kernel.3 zip unchanged, and that
+    // is still recorded further down, where it is a true statement about a different release.)
+    //
+    // This is NOT the same file as the v2.0.0 asset it replaces: that one carried
     // fifteen, and 0026 (#905) and 0027 (#913) had landed in Scripts/patches/ since without ever
     // reaching a built kernel, so both were exercised by no CI job at all. That is the #585 shape,
     // and it is why the count check at the top of this comment is worth the ten seconds.
@@ -183,7 +252,11 @@ let occtTarget: Target = isWASI
     // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
     // Scripts/patches/ holds twenty-nine patches; the pinned asset holds the twenty-nine
     // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 29 against a list of
-    // 29, and those zero are the difference: there is none.
+    // 29, and those zero are the difference: there is none. The two RETIRED patches the asset also
+    // holds are a separate quantity and are not counted here, because this count is the carried
+    // set against the enumeration, which is what check-inventory-prose.py reads. Thirty-one
+    // patches are in the asset; twenty-nine of them are ours to carry. Collapsing those two
+    // numbers into one is how #2190 stayed invisible.
     //
     // That is new as of v4.0.0-kernel.1 and it is the point of the rebuild. Twelve patches
     // (0028-0031, 0033, 0034, 0036-0041) had been on disk and in NO CI job, because ci.yml's
@@ -199,7 +272,11 @@ let occtTarget: Target = isWASI
     //
     // KEEP THIS PARAGRAPH TRUE. If a patch is added and the asset is not rebuilt, the count above
     // stops matching and check-inventory-prose.py fails, which is what it is for (#1408). The fix
-    // is a rebuild or an honest divergence paragraph, never a hand-edited number.
+    // is a rebuild or a written divergence paragraph, never a hand-edited number. And a count that
+    // keeps matching is not the same as an asset that matches: check-inventory-prose.py compares
+    // this prose against the tree and reads no binary at all, which is exactly how the two extras
+    // above went unnoticed. Scripts/check-pinned-asset-patches.py is the half that reads the
+    // binary, and it belongs to the repin step, not to this paragraph.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
     // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its

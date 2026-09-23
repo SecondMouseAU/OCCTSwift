@@ -13,16 +13,30 @@ that stood until 2026-09-07 grew to 159 KB, 70% of it Known OCCT Bugs narrative 
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the `v3.0.0` release asset, which is that same `V8_0_1` plus the carried patches that existed when
-it was built. `Scripts/patches/` holds more than the asset does, and any patch the asset lacks is
-exercised by **no CI job**, because `build-and-test` resolves the asset rather than building from
-source. Before trusting "the fix is in the kernel", run
+the `v4.0.0-kernel.1` pre-release asset, which is that same `V8_0_1` plus the carried patches that
+existed when it was built. Any patch the asset lacks is exercised by **no CI job**, because
+`build-and-test` resolves the asset rather than building from source. Before trusting "the fix is
+in the kernel", run
 `ls Scripts/patches/*.patch | wc -l` against the count in `Package.swift`'s manifest comment, and
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
 divergence (twenty-nine on disk, twenty-nine pinned, as of 2026-09-22: none, since the
 v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
+
+**The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
+**thirty-one** patches: those twenty-nine, plus `0032` and the retired
+`0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, both deleted from `Scripts/patches/` but
+never reverted out of the `Libraries/occt-src` tree it was built from, since `build-occt.sh`
+applies patches idempotently and never reverts. Both are inert, and the divergence is written up in
+`Package.swift`'s pin block and in
+[`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
+consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
+now yields a different checksum from the pinned asset**, which is expected and not a corrupt
+download. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
+reads the binary rather than the prose: about seven seconds over all three slices, deliberately
+**not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
+the repin step in the Release Process below.
 
 ## Build & Test Commands
 
@@ -118,6 +132,33 @@ the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, 
 #2093 took that to zero. In CI both invocations take `--require-typecheck`, which fails the step
 rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
 a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
+
+### Pinned-Asset Patch Check
+
+```bash
+python3 Scripts/check-pinned-asset-patches.py --require-asset   # the check, at a repin (#2190)
+python3 Scripts/check-pinned-asset-patches.py --asset DIR       # ...against a locally built xcframework
+python3 Scripts/check-pinned-asset-patches.py --list            # the evidence derived per patch, no asset read
+python3 Scripts/check-pinned-asset-patches.py --self-test
+```
+
+**Outside `gate-scripts` too**, and for a harder reason than the snippet checker's: it reads a
+157 MB static archive per slice out of a 1.3 GB xcframework that CI never checks out. It is a
+**release-process step**, run at the moment `Package.swift`'s `url:`/`checksum:` move.
+
+Every other patch count in this repo compares text against text. This one compares the patch set
+against the built binary, which is the comparison nothing made until a thirty-one-patch asset
+shipped under a twenty-nine-patch label (#2190). It derives, from each patch's own diff, a shipped
+header line, a string literal, a `thread_local` wrapper symbol or a name the patch introduces, and
+looks for it in all three slices. Today: **16 confirmed, 13 not derivable, 0 absent**, plus two
+acknowledged retired patches. The thirteen are real: a patch that changes a comparison adds no name,
+and `0033` adds a name that libc++ optimises out of existence at `-O2`, so **absence of a symbol is
+never reported as absence of a patch**. A verdict the script cannot reach is printed as one it
+cannot reach. Per #2098, `--require-asset` makes a run that examined nothing fail rather than pass.
+
+A divergence with a written reason goes in its `ACKNOWLEDGED` table, keyed on the tag
+`Package.swift` pins, so it expires at the next repin instead of suppressing a finding about an
+asset nobody wrote it about.
 
 ### Compile a Ground Truth C++ Test
 
@@ -330,7 +371,11 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
    [`semver-at-release`](okf/policies/semver-at-release.md). No PR touches that file.
 4. **Pin the final kernel.** Re-point `Package.swift`'s `url:`/`checksum:` at the release asset,
    check the patch count per [`pinned-kernel-patch-check`](okf/policies/pinned-kernel-patch-check.md),
-   and retire the bridge-side mitigations listed under Known OCCT Bugs above.
+   then **check the asset itself, not the count**:
+   `python3 Scripts/check-pinned-asset-patches.py --require-asset`. The count compares prose
+   against the tree and is blind to what is baked into the binary, which is how a thirty-one-patch
+   asset shipped under a twenty-nine-patch label (#2190). Finally retire the bridge-side
+   mitigations listed under Known OCCT Bugs above.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,

@@ -316,6 +316,22 @@ for p in Scripts/patches/*.patch; do                 # absolute path: git -C res
 done
 ```
 
+**Compute that first line, do not eyeball it.** "Every path must be one a patch touches" over 77
+modified files is not something anyone reads accurately, and
+[#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190) is what that costs: four files
+belonging to two **retired** patches sat in this tree unnoticed and were compiled into the
+v4.0.0-kernel.1 asset, which therefore ships thirty-one patches under a twenty-nine-patch label.
+`build-occt.sh` applies patches idempotently and never reverts, so a retired patch's edits stay
+until somebody deletes them by hand.
+
+```bash
+comm -23 \
+  <(git -C Libraries/occt-src status --porcelain | awk '{print $NF}' | sort -u) \
+  <(grep -h '^+++ b/' Scripts/patches/*.patch | sed 's|^+++ b/||' | sort -u)
+```
+
+Every line it prints is a file no carried patch explains. It must print nothing.
+
 **2. Confirm the objects are genuinely newer than the patched sources.** Each slice's build dir is
 `rm -rf`'d and re-configured per run, so a normal run cannot go stale, but a *resumed* build can
 (`CMakeCache.txt` bakes in the configuring checkout's absolute path, and the script's `|| true`
@@ -345,6 +361,24 @@ whole release.** Reading `kernel-integration.yml` instead works for one PR, but 
 during v2.0.0 seven suites were red at once for this reason, `build-and-test` was excluded from the
 required checks because of it, and every reviewer had to merge on parity with the base branch rather
 than on green. Publish a kernel pre-release and bump the pin instead.
+
+**3b. Check the built asset against the patch set.** Step 1 checks the source tree before the
+build; this checks the binary after it, which is the only thing consumers ever see.
+
+```bash
+python3 Scripts/check-pinned-asset-patches.py --require-asset
+```
+
+It derives from each patch's own diff a shipped header line, a string literal, a `thread_local`
+wrapper symbol or a name the patch introduces, looks for each in all three slices, and reports
+confirmed / not derivable / absent. It also recovers every **retired** patch from git history and
+looks for those, which is the check nothing performed before #2190. About seven seconds. A patch it
+calls "not derivable" is not a finding: thirteen of the twenty-nine leave nothing a symbol table
+can see, and the script says so rather than guessing.
+
+If it reports an extra you intend to keep, that is a divergence and it needs a written reason: add
+a row to the script's `ACKNOWLEDGED` table, keyed on the tag you are pinning, and say the same
+thing beside the pin in `Package.swift`.
 
 **4. Package and pin.** The zip is the release asset; its checksum is what SwiftPM verifies.
 
@@ -393,7 +427,7 @@ Then bump `url:`/`checksum:` on the branch, exactly as the release commit will l
 
 Three things this needs:
 
-- **Verify provenance before publishing**, using steps 1 to 3 above. A local build directory is not
+- **Verify provenance before publishing**, using steps 1 to 3b above. A local build directory is not
   evidence on its own: `occt-src` must be at exactly the pinned tag, every carried patch must
   reverse-apply, and `git -C Libraries/occt-src status --porcelain` must list *only* files a patch
   touches, or an investigation probe ships inside a public binary.
