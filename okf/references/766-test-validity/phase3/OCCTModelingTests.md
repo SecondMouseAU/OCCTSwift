@@ -221,3 +221,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `FilletBuilderV121Tests.swift` (6 tests)
+
+Probe: `Scripts/repro/766-modeling-fillet-builder-v121/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| filletBuilderConstantRadius | `OCCTFilletBuilderGetRadius` returns twice `Radius(IC)` | `:27 Expectation failed: abs(builder.radius(contour: 1) - 2.0) < 1e-10` | pass | `OCCTFilletBuilderGetRadius` | PASS |
+| filletBuilderEvolvingRadius | `OCCTFilletBuilderIsConstant` inverts `IsConstant(IC)` | `:38 Expectation failed: !builder.isConstant(contour: 1)` | pass | `OCCTFilletBuilderIsConstant` | PASS |
+| filletBuilderMultipleEdges | `OCCTFilletBuilderNbContours` returns -1 | `:51 Expectation failed: builder.contourCount == 3` | pass | `OCCTFilletBuilderNbContours` | PASS |
+| filletBuilderDiagnostics | `OCCTFilletBuilderGetLength` returns half `Length(IC)` | `:62 Expectation failed: abs(builder.length(contour: 1) - 20.0) < 1e-9` | pass | `OCCTFilletBuilderGetLength` | PASS |
+| filletBuilderReset | `OCCTFilletBuilderReset` also removes every contour | `:77 Expectation failed: builder.contourCount == 1`, `:78 Expectation failed: builder.build()?.isValid == true` | pass | `OCCTFilletBuilderReset` | PASS |
+| filletBuilderRemoveEdge | `OCCTFilletBuilderRemoveEdge` returns false without removing | `:88 Expectation failed: builder.removeEdge(edge)`, `:89 Expectation failed: builder.contourCount == 0` | pass | `OCCTFilletBuilderRemoveEdge` | PASS |
