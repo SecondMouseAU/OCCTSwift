@@ -4501,5 +4501,175 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BezierSurface_Properties::nbPoles",
+    "bridge_function": "OCCTSurfaceBezierNbUPoles",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "NbUPoles": 3,
+        "NbVPoles": 3
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "NbUPoles": 3,
+        "NbVPoles": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bezier-surface/"
+  },
+  {
+    "test_name": "BezierSurface_Properties::degree",
+    "bridge_function": "OCCTSurfaceBezierUDegree",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "UDegree": 2,
+        "VDegree": 2
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "UDegree": 2,
+        "VDegree": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bezier-surface/"
+  },
+  {
+    "test_name": "BezierSurface_Properties::getPoleAndSet",
+    "bridge_function": "OCCTSurfaceBezierGetPole",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "Pole(1,1)": [
+          0,
+          0,
+          0
+        ],
+        "Pole(1,2)": [
+          0,
+          5,
+          1
+        ],
+        "Pole(1,1)_after_set": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "Pole(1,1)": [
+          0,
+          0,
+          0
+        ],
+        "Pole(1,2)": [
+          0,
+          5,
+          1
+        ],
+        "Pole(1,1)_after_set": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bezier-surface/"
+  },
+  {
+    "test_name": "BezierSurface_Properties::rationalFlags",
+    "bridge_function": "OCCTSurfaceBezierIsURational",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "IsURational": false,
+        "IsVRational": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "IsURational": false,
+        "IsVRational": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bezier-surface/"
+  },
+  {
+    "test_name": "BezierSurface_Properties::exchangeUV",
+    "bridge_function": "OCCTSurfaceBezierExchangeUV",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "Pole(1,2)_after": [
+          5,
+          0,
+          1
+        ],
+        "Pole(2,1)_after": [
+          0,
+          5,
+          1
+        ],
+        "degrees_after": [
+          2,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "Pole(1,2)_after": [
+          5,
+          0,
+          1
+        ],
+        "Pole(2,1)_after": [
+          0,
+          5,
+          1
+        ],
+        "degrees_after": [
+          2,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bezier-surface/"
   }
 ]

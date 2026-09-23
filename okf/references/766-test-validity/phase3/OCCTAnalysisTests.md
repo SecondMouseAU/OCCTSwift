@@ -235,6 +235,11 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **BezierSurface_Properties** | nbPoles | Bezier surface accessors | Pole count |
+| **BezierSurface_Properties** | degree | Bezier surface accessors | Degree |
+| **BezierSurface_Properties** | getPoleAndSet | Bezier surface accessors | Pole read/write |
+| **BezierSurface_Properties** | rationalFlags | Bezier surface accessors | Rational flags |
+| **BezierSurface_Properties** | exchangeUV | Bezier surface accessors | ExchangeUV |
 
 ---
 
@@ -424,6 +429,11 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| nbPoles | OCCTSurfaceBezierNbUPoles | Bezier surface accessors | return degree (BZ_NB) | ✅ | ✅ | Rewritten: `>= 2` passed the degree |
+| degree | OCCTSurfaceBezierUDegree | Bezier surface accessors | return pole count (BZ_DEG) | ✅ | ✅ | Rewritten: `>= 1` passed the pole count |
+| getPoleAndSet | OCCTSurfaceBezierGetPole | Bezier surface accessors | transpose indices (BZ_POLE); SetPole no-op (BZ_SETPOLE) | ✅ | ✅ | Rewritten: symmetric (1,1) read could not see a transpose |
+| rationalFlags | OCCTSurfaceBezierIsURational | Bezier surface accessors | negate (BZ_RAT) | ✅ | ✅ | Rewritten: fixture now required, not `if let` |
+| exchangeUV | OCCTSurfaceBezierExchangeUV | Bezier surface accessors | skip ExchangeUV (BZ_EXCH) | ✅ | ✅ | Rewritten: equal degrees could not show a missing exchange |
 
 ---
 
