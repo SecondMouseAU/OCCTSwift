@@ -222,3 +222,34 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: GeomConvertApproxSurfaceTests.swift and GeomEval{CircularHelicoid,CircularHelix,Ellipsoid,Hyperboloid,HypParaboloid,Paraboloid,SineWave}Tests.swift (26 tests), probe Scripts/repro/766-geomeval-approx/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| GeomConvert ApproxSurface Tests | approximate sphere as BSpline surface | `OCCTGeomConvertApproxSurface` | tolerance x 1000 (INJ_APPROXSURF_TOL) | GeomConvertApproxSurfaceTests.swift:20 abs(result.maxError - 0.00020644039516730319) < 1e-12 | ✅ | MATCH | Rewritten: sphere behind `if let`, surface discarded, only hasResult checked |
+| GeomEval, Circular Helicoid Surface | circularHelicoidD0 | `OCCTGeomEvalCircularHelicoidD0` | u and v swapped (INJ_HELICOID_SWAP) | GeomEvalCircularHelicoidTests.swift:13 abs(p.x - 1.0) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Circular Helicoid Surface | circularHelicoidSurfaceCreate | `OCCTGeomEvalCircularHelicoidCreate` | pitch doubled (INJ_HELICOID_PITCH) | GeomEvalCircularHelicoidTests.swift:23 simd_length(surf.point(atU: .pi / 2, v: 2) - SIMD3(0, 2, 1.25)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Circular Helix Curve | helixD0AtZero | `OCCTGeomEvalCircularHelixD0` | radius + 1 (INJ_HELIX_R) | GeomEvalCircularHelixTests.swift:14 abs(p.x - 5.0) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Circular Helix Curve | helixD0AtPi | `OCCTGeomEvalCircularHelixD0` | radius + 1 (INJ_HELIX_R) | GeomEvalCircularHelixTests.swift:21 abs(p.x - (-5.0)) < 1e-6 | ✅ | MATCH |  |
+| GeomEval, Circular Helix Curve | helixD1 | `OCCTGeomEvalCircularHelixD1` | D1 x and y swapped (INJ_HELIX_D1SWAP) | GeomEvalCircularHelixTests.swift:29 abs(r.d1.x) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Circular Helix Curve | helixD2 | `OCCTGeomEvalCircularHelixD2` | D2.x negated (INJ_HELIX_D2NEG) | GeomEvalCircularHelixTests.swift:37 abs(r.d2.x - (-5.0)) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Circular Helix Curve | helixCurveCreate | `OCCTGeomEvalCircularHelixCurveCreate` | pitch doubled (INJ_HELIX_CREATE_PITCH) | GeomEvalCircularHelixTests.swift:45 simd_length(curve.point(at: .pi) - SIMD3(-3, 0, 3)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Circular Helix Curve | helixCurveMinDistance | `OCCTExtremaPCMinDistance` | squared distance returned (INJ_EXTPC_SQ) | GeomEvalCircularHelixTests.swift:60 abs(d - 5) < 1e-9 | ✅ | MATCH | Rewritten: nested `if let`s and `d > 0` passed the squared distance 25 |
+| GeomEval, Ellipsoid Surface | ellipsoidD0AtZeroZero | `OCCTGeomEvalEllipsoidD0` | a and c swapped (INJ_ELL_SWAP) | GeomEvalEllipsoidTests.swift:12 abs(p.x - 3.0) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Ellipsoid Surface | ellipsoidD0AtPoles | `OCCTGeomEvalEllipsoidD0` | a and c swapped (INJ_ELL_SWAP) | GeomEvalEllipsoidTests.swift:22 abs(p.z - 5.0) < 1e-6 | ✅ | MATCH |  |
+| GeomEval, Ellipsoid Surface | ellipsoidSurfaceCreate | `OCCTGeomEvalEllipsoidCreate` | a and c swapped (INJ_ELL_SWAP) | GeomEvalEllipsoidTests.swift:31 simd_length(surf.point(atU: 0.3, v: 0.4) - expected) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Hyperboloid Surface | hyperboloidOneSheetD0 | `OCCTGeomEvalHyperboloidD0` | r1 and r2 swapped (INJ_HYP_R) | GeomEvalHyperboloidTests.swift:14 abs(p.x - 2.0) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Hyperboloid Surface | hyperboloidTwoSheets | `OCCTGeomEvalHyperboloidD0` | sheet mode ignored, always one sheet (INJ_HYP_SHEET) | GeomEvalHyperboloidTests.swift:24 simd_length(p - SIMD3(0, 0, 2)) < 1e-12 | ✅ | MATCH | Rewritten: `p.z != 0 || p.x != 0` passed the one-sheet point (2, 0, 0) |
+| GeomEval, Hyperboloid Surface | hyperboloidSurfaceCreate | `OCCTGeomEvalHyperboloidCreate` | r1 and r2 swapped (INJ_HYP_R) | GeomEvalHyperboloidTests.swift:33 simd_length(surf.point(atU: 0.5, v: 0.3) - expected) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Hyperboloid Surface | hyperboloidTwoSheetsCreate | `OCCTGeomEvalHyperboloidCreate` | sheet mode ignored (INJ_HYP_SHEET) | GeomEvalHyperboloidTests.swift:43 simd_length(surf.point(atU: 0.5, v: 0.3) - expected) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Hyperbolic Paraboloid Surface | hypParaboloidD0AtOrigin | `OCCTGeomEvalHypParaboloidD0` | placement moved to z = 1 (INJ_HYPPAR_AX) | GeomEvalHypParaboloidTests.swift:13 abs(p.z) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Hyperbolic Paraboloid Surface | hypParaboloidD0AwayFromOrigin | `OCCTGeomEvalHypParaboloidD0` | a and b swapped (INJ_HYPPAR_SWAP) | GeomEvalHypParaboloidTests.swift:20 abs(p.z - 1.0) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Hyperbolic Paraboloid Surface | hypParaboloidSurfaceCreate | `OCCTGeomEvalHypParaboloidCreate` | a and b swapped (INJ_HYPPAR_SWAP) | GeomEvalHypParaboloidTests.swift:28 simd_length(surf.point(atU: 1, v: 2) - SIMD3(1, 2, -0.19444444444444442)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, Paraboloid Surface | paraboloidD0 | `OCCTGeomEvalParaboloidD0` | focal doubled (INJ_PAR_FOCAL) | GeomEvalParaboloidTests.swift:14 abs(p.z - 0.125) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, Paraboloid Surface | paraboloidSurfaceCreate | `OCCTGeomEvalParaboloidCreate` | focal doubled (INJ_PAR_FOCAL) | GeomEvalParaboloidTests.swift:23 simd_length(surf.point(atU: 0.5, v: 2) - expected) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, 3D Sine Wave Curve | sineWaveD0AtZero | `OCCTGeomEvalSineWaveD0` | placement moved to y = 1 (INJ_SW_AX) | GeomEvalSineWaveTests.swift:13 abs(p.y) < 1e-10 | ✅ | MATCH |  |
+| GeomEval, 3D Sine Wave Curve | sineWaveD0AtPiOver2 | `OCCTGeomEvalSineWaveD0` | omega doubled (INJ_SW_OMEGA) | GeomEvalSineWaveTests.swift:22 abs(p.y - 2.0) < 1e-6 | ✅ | MATCH |  |
+| GeomEval, 3D Sine Wave Curve | sineWaveD1 | `OCCTGeomEvalSineWaveD1` | omega doubled (INJ_SW_OMEGA) | GeomEvalSineWaveTests.swift:29 abs(r.d1.y - 6.0) < 1e-6 | ✅ | MATCH |  |
+| GeomEval, 3D Sine Wave Curve | sineWaveCurveCreate | `OCCTGeomEvalSineWaveCurveCreate` | omega doubled (INJ_SW_OMEGA) | GeomEvalSineWaveTests.swift:37 simd_length(curve.point(at: 1) - SIMD3(1, 0.90929742682568171, 0)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only `!= nil`; now pins a point on the created geometry |
+| GeomEval, 3D Sine Wave Curve | sineWaveWithPhase | `OCCTGeomEvalSineWaveD0` | phase dropped (INJ_SW_PHASE) | GeomEvalSineWaveTests.swift:43 abs(p.y - 1.0) < 1e-6 | ✅ | MATCH |  |
