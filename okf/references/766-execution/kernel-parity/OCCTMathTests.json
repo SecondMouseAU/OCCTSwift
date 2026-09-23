@@ -182,5 +182,85 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D Transform::Translate BSpline curve",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (0,0,0) -> (10, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (0,0,0) -> (10, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "translation vector x and y swapped", "failing_expectation": ":20 `abs(p1.x - p0.x - 10) < 0.001`"},
+    "green": true
+  },
+  {
+    "test_name": "Curve3D Transform::Rotate curve",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (1.1e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (1.1e-16, 1, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "rotation angle negated", "failing_expectation": ":38 `abs(p.y - 1) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "Curve3D Transform::Scale curve",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (2, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (2, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "scale factor inverted", "failing_expectation": ":51 `abs(p.x - 2) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "Curve3D Transform::Mirror curve through point",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (-1, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (-1, 0, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "identity transform instead of the mirror", "failing_expectation": ":64 `abs(p.x + 1) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "Curve3D Transform::Mirror curve through axis",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (1, -1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (1, -1, 0)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point mirror through the axis origin instead of the axis mirror", "failing_expectation": "original: **green**; rewritten: :81 `abs(p.x - 1) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "Curve3D Transform::Mirror curve through plane",
+    "bridge_function": "OCCTCurve3DTransform",
+    "bridge_output": {"type": "observed", "data": "P(0) (1, 0, -5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "P(0) (1, 0, -5)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point mirror through the plane origin instead of the plane mirror", "failing_expectation": "original: **green**; rewritten: :99 `abs(p.x - 1) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface::Cylindrical surface from axis and radius",
+    "bridge_function": "OCCTSurfaceCylindricalFromAxis",
+    "bridge_output": {"type": "observed", "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "S(0,0) (3, 0, 0), S(pi/2,4) (0, 3, 4)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "radius doubled", "failing_expectation": "original: **green**; rewritten: :14 `simd_length(surf.point(atU: 0, v: 0) - SIMD3(3, 0, 0)) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeCylindricalSurface::Cylindrical surface from 3 points",
+    "bridge_function": "OCCTSurfaceCylindricalFromPoints",
+    "bridge_output": {"type": "observed", "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "radius 5, axis (0, 0, 1), S(0,5) (5, 0, 5)", "source": "Scripts/repro/766-math-curve-transform-cylinder/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point1 and point3 swapped", "failing_expectation": "original: **green**; rewritten: :26 `abs(surf.cylinderProperties.radius - 5) < 1e-9`"},
+    "green": true
   }
 ]
