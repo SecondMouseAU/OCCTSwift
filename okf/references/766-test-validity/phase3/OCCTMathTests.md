@@ -109,3 +109,15 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-polynomial-convert-laguerre (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Convert_CompPolynomialToPoles** | linearPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |
+| **Convert_CompPolynomialToPoles** | quadraticPolynomial | `OCCTConvertPolynomialToPoles` | each pole + 0.5 | red | green | PASS |
+| **Convert_CompPolynomialToPoles** | remappedInterval | `OCCTConvertPolynomialToPoles` | knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE) | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | quadraticRoots | `OCCTPolyLaguerreRoots` | each real root + 0.5 | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | cubicRoots | `OCCTPolyLaguerreRoots` | each real root + 0.5 | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | complexRoots | `OCCTPolyLaguerreComplexRoots (and OCCTPolyLaguerreRoots)` | real and imaginary parts swapped | red | green | PASS |
+| **PolynomialSolver Laguerre v0.111** | quinticRoots | `OCCTPolyQuinticRoots` | one root dropped (NbRoots - 1) | red | green | PASS |

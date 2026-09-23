@@ -182,5 +182,75 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::linearPolynomial",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {"type": "observed", "data": "degree 1, poles [1, 3], knots [0, 1]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "degree 1, poles [1, 3], knots [0, 1]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "each pole + 0.5", "failing_expectation": "original: **green**; rewritten: :23 `zip(r.poles, [1.0, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "green": true
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::quadraticPolynomial",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {"type": "observed", "data": "degree 2, poles [1, 1.5, 3], knots [0, 1]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "degree 2, poles [1, 1.5, 3], knots [0, 1]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "each pole + 0.5", "failing_expectation": "original: **green**; rewritten: :40 `zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "green": true
+  },
+  {
+    "test_name": "Convert_CompPolynomialToPoles::remappedInterval",
+    "bridge_function": "OCCTConvertPolynomialToPoles",
+    "bridge_output": {"type": "observed", "data": "degree 1, poles [0, 1], knots [-1, 1]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "degree 1, poles [0, 1], knots [-1, 1]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "knots reported on the polynomial interval instead of the true interval (also red under P4_CPTP_POLE)", "failing_expectation": "original: **green**; rewritten: :58 `zip(r.knots, [-1.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::quadraticRoots",
+    "bridge_function": "OCCTPolyLaguerreRoots",
+    "bridge_output": {"type": "observed", "data": "roots [2, 3]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "roots [2, 3]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "each real root + 0.5", "failing_expectation": ":14 `abs(roots[0] - 2.0) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::cubicRoots",
+    "bridge_function": "OCCTPolyLaguerreRoots",
+    "bridge_output": {"type": "observed", "data": "roots [1, 2, 3]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "roots [1, 2, 3]", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "each real root + 0.5", "failing_expectation": ":24 `abs(roots[0] - 1.0) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::complexRoots",
+    "bridge_function": "OCCTPolyLaguerreComplexRoots (and OCCTPolyLaguerreRoots)",
+    "bridge_output": {"type": "observed", "data": "0 real roots; complex (-5.0e-17, +1), (-5.0e-17, -1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "0 real roots; complex (-5.0e-17, +1), (-5.0e-17, -1)", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "real and imaginary parts swapped", "failing_expectation": ":39 `abs(complexRoots[0].real) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "PolynomialSolver Laguerre v0.111::quinticRoots",
+    "bridge_function": "OCCTPolyQuinticRoots",
+    "bridge_output": {"type": "observed", "data": "4 roots [1, 2, 3, 4] (0.99999999999999989, 1.9999999999999987, 3.000000000000012, 4.0000000000000249)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "4 roots [1, 2, 3, 4] (0.99999999999999989, 1.9999999999999987, 3.000000000000012, 4.0000000000000249)", "source": "Scripts/repro/766-math-polynomial-convert-laguerre/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "one root dropped (NbRoots - 1)", "failing_expectation": "original: **green**; rewritten: :49 `roots.count == 4`"},
+    "green": true
   }
 ]

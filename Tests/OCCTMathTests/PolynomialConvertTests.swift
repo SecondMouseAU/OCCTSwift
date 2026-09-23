@@ -15,9 +15,13 @@ struct PolynomialConvertTests {
             trueInterval: 0.0...1.0)
         #expect(result != nil)
         if let r = result {
-            #expect(r.poles.count > 0)
-            #expect(r.knots.count > 0)
+            // Probed (Scripts/repro/766-math-polynomial-convert-laguerre): 1 + 2x on [0, 1]
+            // has Bezier poles 1 and 3, the values at the two ends, and knots 0 and 1.
             #expect(r.degree == 1)
+            #expect(r.poles.count == 2)
+            #expect(r.knots.count == 2)
+            #expect(zip(r.poles, [1.0, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 })
+            #expect(zip(r.knots, [0.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 })
         }
     }
 
@@ -30,8 +34,10 @@ struct PolynomialConvertTests {
             trueInterval: 0.0...1.0)
         #expect(result != nil)
         if let r = result {
-            #expect(r.poles.count > 0)
+            // Probed: 1 + x + x^2 on [0, 1] has Bezier poles 1, 1.5, 3.
             #expect(r.degree == 2)
+            #expect(r.poles.count == 3)
+            #expect(zip(r.poles, [1.0, 1.5, 3.0]).allSatisfy { abs($0 - $1) < 1e-12 })
         }
     }
 
@@ -43,6 +49,14 @@ struct PolynomialConvertTests {
             polynomialInterval: 0.0...1.0,
             trueInterval: -1.0...1.0)
         #expect(result != nil)
+        // Probed: the poles keep the polynomial's end values, 0 and 1, and the knots move to
+        // the true interval, -1 and 1. Knots left on the polynomial interval would be 0 and 1.
+        if let r = result {
+            #expect(r.poles.count == 2)
+            #expect(r.knots.count == 2)
+            #expect(zip(r.poles, [0.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 })
+            #expect(zip(r.knots, [-1.0, 1.0]).allSatisfy { abs($0 - $1) < 1e-12 })
+        }
     }
 }
 

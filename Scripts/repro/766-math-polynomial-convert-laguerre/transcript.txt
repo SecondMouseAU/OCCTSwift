@@ -1,0 +1,7 @@
+linearPolynomial: done=1 degree=1 nbPoles=2 poles=[ 1 3 ] knots=[ 0 1 ]
+quadraticPolynomial: done=1 degree=2 nbPoles=3 poles=[ 1 1.5 3 ] knots=[ 0 1 ]
+remappedInterval: done=1 degree=1 nbPoles=2 poles=[ 0 1 ] knots=[ -1 1 ]
+quadraticRoots: done=1 nbRoots=2 roots=[ 2 3 ] nbComplex=0 complex=[ ]
+cubicRoots: done=1 nbRoots=3 roots=[ 1 2 3 ] nbComplex=0 complex=[ ]
+complexRoots: done=1 nbRoots=0 roots=[ ] nbComplex=2 complex=[ (-5.0099187237846263e-17, 0.99999999999999989) (-5.0099187237846263e-17, -0.99999999999999989) ]
+quinticRoots: done=1 nbRoots=4 roots=[ 0.99999999999999989 1.9999999999999987 3.000000000000012 4.0000000000000249 ]
