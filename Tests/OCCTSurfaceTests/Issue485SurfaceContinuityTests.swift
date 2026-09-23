@@ -83,6 +83,10 @@ struct Issue485SurfaceContinuityTests {
 
     @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals")
     func knotMultiplicityDrivesMeasuredClass() {
+        // #766: each fixture was behind `if let`, so a nil surface skipped its checks.
+        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 1) != nil)
+        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 2) != nil)
+        #expect(makeContinuityBSplineSurface(interiorMultiplicityU: 3) != nil)
         if let c2 = makeContinuityBSplineSurface(interiorMultiplicityU: 1) {
             #expect(c2.continuityClass == .c2)
             #expect(c2.continuity == 4)  // the old encoding said 2
@@ -99,6 +103,9 @@ struct Issue485SurfaceContinuityTests {
 
     @Test("Analytic surfaces report CN as ordinal 6, not 99")
     func analyticSurfacesReportCN() {
+        // #766: made unconditional, see knotMultiplicityDrivesMeasuredClass.
+        #expect(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) != nil)
+        #expect(Surface.sphere(center: .zero, radius: 5) != nil)
         if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)) {
             #expect(plane.continuityClass == .cN)
             #expect(plane.continuity == 6)
