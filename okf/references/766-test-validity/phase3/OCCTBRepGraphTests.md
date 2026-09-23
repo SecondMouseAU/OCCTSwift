@@ -90,3 +90,39 @@ For each test, run ground-truth C++ comparison:
 | deferredModeToggle | ✅ | ✅ | ✅ |
 
 **Total**: 18 tests
+---
+
+## Measured: Builder mutations (#1986)
+
+Measured on the pinned kernel: every row below was run red under the injection shown and
+green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
+
+### Test Inventory
+
+| Suite | Test | Defect Category | Injection Target |
+|-------|------|-----------------|------------------|
+| **BRepGraph Builder AppendShape** | appendFlattenedShape | Append shape | Shapes().Add dropped |
+| **BRepGraph Builder AppendShape** | appendFullShape | Append shape | Shapes().Add dropped |
+| **BRepGraph Builder ClearMesh** | clearFaceMesh | Mesh cache clear | Faces().Clear dropped |
+| **BRepGraph Builder ClearMesh** | clearEdgePolygon3D | Mesh cache clear | Edges().Clear dropped |
+| **BRepGraph Builder CommitMutation** | commitAfterAdd | Mutation commit | CommitMutation -> BeginDeferredInvalidation |
+| **BRepGraph Builder Deferred** | deferredModeToggle | Deferred mode | BeginDeferredInvalidation dropped |
+| **BRepGraph Builder Deferred** | deferredModeWithMutations | Deferred mode | Begin dropped + Commit -> Begin |
+| **BRepGraph Builder RemoveNode** | removeVertex | Node removal | RemoveNode dropped |
+| **BRepGraph Builder RemoveNode** | removeSubgraph | Node removal | RemoveSubgraph dropped |
+| **BRepGraph Builder RemoveRef** | removeShellRef | Ref removal | RemoveRef dropped, returns false |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| appendFlattenedShape | OCCTBRepGraphBuilderAppendFlattenedShape | Append shape | Shapes().Add dropped | ✅ :19 `faceCount == origFaces + 1` | ✅ | Original also red (`>`); count pinned |
+| appendFullShape | OCCTBRepGraphBuilderAppendFullShape | Append shape | Shapes().Add dropped | ✅ :29 `faceCount == origFaces + 3` | ✅ | Original also red (`>`); count pinned |
+| clearFaceMesh | OCCTBRepGraphBuilderClearFaceMesh | Mesh cache clear | Faces().Clear dropped | ✅ :30 `!cachedFaceMeshIsPresent(0)` | ✅ | Rewritten: asserted nothing ("should not crash"); cache now seeded then cleared |
+| clearEdgePolygon3D | OCCTBRepGraphBuilderClearEdgePolygon3D | Mesh cache clear | Edges().Clear dropped | ✅ :49, :50 | ✅ | Rewritten: asserted nothing; cache now seeded then cleared |
+| commitAfterAdd | OCCTBRepGraphBuilderCommitMutation | Mutation commit | CommitMutation -> BeginDeferredInvalidation | ✅ :20 `!isDeferredMode` | ✅ | Rewritten: `vertexCount > 0` held for the box alone |
+| deferredModeToggle | OCCTBRepGraphBuilderBeginDeferred | Deferred mode | BeginDeferredInvalidation dropped | ✅ :14 `isDeferredMode` | ✅ | Original also red; #require only |
+| deferredModeWithMutations | OCCTBRepGraphBuilderBeginDeferred | Deferred mode | Begin dropped + Commit -> Begin | ✅ :26 `isDeferredMode`, :31 | ✅ | Strengthened: original asserted only the final mode (red via the commit injection, blind to begin) |
+| removeVertex | OCCTBRepGraphBuilderRemoveNode | Node removal | RemoveNode dropped | ✅ :16, :17 | ✅ | Original also red; active count added |
+| removeSubgraph | OCCTBRepGraphBuilderRemoveSubgraph | Node removal | RemoveSubgraph dropped | ✅ :26, :27 | ✅ | Original also red; active count added |
+| removeShellRef | OCCTBRepGraphBuilderRemoveRef | Ref removal | RemoveRef dropped, returns false | ✅ :18 `removed`, :19 | ✅ | Rewritten: asserted `removed || !removed` |

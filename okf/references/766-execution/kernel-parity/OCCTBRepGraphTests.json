@@ -142,5 +142,265 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AppendShape::appendFlattenedShape",
+    "bridge_function": "OCCTBRepGraphBuilderAppendFlattenedShape",
+    "bridge_output": {
+      "type": "faces",
+      "data": {
+        "before": 6,
+        "after": 7
+      }
+    },
+    "kernel_output": {
+      "type": "faces",
+      "data": {
+        "before": 6,
+        "after": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder AppendShape::appendFullShape",
+    "bridge_function": "OCCTBRepGraphBuilderAppendFullShape",
+    "bridge_output": {
+      "type": "faces",
+      "data": {
+        "before": 6,
+        "after": 9
+      }
+    },
+    "kernel_output": {
+      "type": "faces",
+      "data": {
+        "before": 6,
+        "after": 9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ClearMesh::clearFaceMesh",
+    "bridge_function": "OCCTBRepGraphBuilderClearFaceMesh",
+    "bridge_output": {
+      "type": "mesh_state",
+      "data": {
+        "persistent_before": true,
+        "cache_seeded": true,
+        "cache_after": false,
+        "persistent_after": true
+      }
+    },
+    "kernel_output": {
+      "type": "mesh_state",
+      "data": {
+        "persistent_before": true,
+        "cache_seeded": true,
+        "cache_after": false,
+        "persistent_after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ClearMesh::clearEdgePolygon3D",
+    "bridge_function": "OCCTBRepGraphBuilderClearEdgePolygon3D",
+    "bridge_output": {
+      "type": "mesh_state",
+      "data": {
+        "effective_before": false,
+        "cache_seeded": true,
+        "cache_after": false,
+        "effective_after": false
+      }
+    },
+    "kernel_output": {
+      "type": "mesh_state",
+      "data": {
+        "effective_before": false,
+        "cache_seeded": true,
+        "cache_after": false,
+        "effective_after": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder CommitMutation::commitAfterAdd",
+    "bridge_function": "OCCTBRepGraphBuilderCommitMutation",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "vertex": 8,
+        "vertices": 9,
+        "active": 9,
+        "deferred": false
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "vertex": 8,
+        "vertices": 9,
+        "active": 9,
+        "deferred": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder Deferred::deferredModeToggle",
+    "bridge_function": "OCCTBRepGraphBuilderBeginDeferred",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "initial": false,
+        "afterBegin": true,
+        "afterEnd": false
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "initial": false,
+        "afterBegin": true,
+        "afterEnd": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder Deferred::deferredModeWithMutations",
+    "bridge_function": "OCCTBRepGraphBuilderBeginDeferred",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "duringDeferred": true,
+        "a": 8,
+        "b": 9,
+        "afterCommit": false,
+        "vertices": 10
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "duringDeferred": true,
+        "a": 8,
+        "b": 9,
+        "afterCommit": false,
+        "vertices": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder RemoveNode::removeVertex",
+    "bridge_function": "OCCTBRepGraphBuilderRemoveNode",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "index": 7,
+        "removedBefore": false,
+        "removedAfter": true,
+        "activeVertices": 7
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "index": 7,
+        "removedBefore": false,
+        "removedAfter": true,
+        "activeVertices": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder RemoveNode::removeSubgraph",
+    "bridge_function": "OCCTBRepGraphBuilderRemoveSubgraph",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "index": 5,
+        "removedAfter": true,
+        "activeFaces": 5
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "index": 5,
+        "removedAfter": true,
+        "activeFaces": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder RemoveRef::removeShellRef",
+    "bridge_function": "OCCTBRepGraphBuilderRemoveRef",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "shellRefs": 1,
+        "returned": true,
+        "removedAfter": true,
+        "secondRemove": false
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "shellRefs": 1,
+        "returned": true,
+        "removedAfter": true,
+        "secondRemove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
