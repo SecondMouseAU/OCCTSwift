@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepGProp Sinert Tests** | face surface inertia | Face area/centroid | OCCTBRepGPropSinert shifts the centroid x by 1 (values pinned, #766) |
+| **BRepGProp Sinert Tests** | adaptive surface inertia on sphere | Adaptive face area | OCCTBRepGPropSinertAdaptive given the face domain (the #2204 fix) turns the known issue red |
 
 ---
 
