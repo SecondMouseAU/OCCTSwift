@@ -99,3 +99,27 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `Issue1056GDTWriteAnswerTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `nonStorableToleranceRefusesTheCreate` | `occtDimensionApplyTolerance` (both copies reached) accepts without its readback check | :48 Expectation failed: index == nil; :48 Expectation failed: index == nil | passed | `OCCTDocumentCreateDimensionWithTolerance` | PASS: the kernel stores NaN; the readback `==` is false, which is what refuses |
+| `storableToleranceStillApplies` | `OCCTDocumentGetDimensionInfo` reads the upper tolerance as the lower | :70 Expectation failed: dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7) | passed | `OCCTDocumentGetDimensionInfo` | PASS: -0.3 / +0.7 |
+| `noToleranceStillCreatesASimpleDimension` | `OCCTDocumentGetDimensionInfo` reports a simple dimension as unset | :90 Expectation failed: doc.dimension(at: index)?.bounds == .simple | passed | `OCCTDocumentGetDimensionInfo` | PASS: one value, simple |
+| `standaloneSetterRefusesTheSamePair` | `occtDimensionApplyTolerance` (both copies reached) accepts without its readback check | :105 Expectation failed: doc.setDimensionTolerance(at: index, lower: .nan, upper: 0.5) == false; :106 Expectation failed: doc.dimension(at: index)?.bounds == .simple | passed | `OCCTDocumentSetDimensionTolerance` | PASS: NaN readback check fails |
+| `noneModifierStoresNoValue` | `OCCTDocumentSetGeomToleranceZoneModifier` stores the value whatever the modifier | :129 Expectation failed: tol.zoneModifierValue == nil | passed | `OCCTDocumentSetGeomToleranceZoneModifier` | PASS: the kernel keeps a value under None, so the bridge must write 0 itself |
+| `clearingAModifierClearsItsValue` | `OCCTDocumentSetGeomToleranceZoneModifier` stores the value whatever the modifier | :151 Expectation failed: tol.zoneModifierValue == nil | passed | `OCCTDocumentSetGeomToleranceZoneModifier` | PASS: same |
+| `realModifierStillStoresItsValue` | `OCCTDocumentSetGeomToleranceZoneModifier` stores 0 whatever the value | :172 Expectation failed: tol.zoneModifierValue == 15.0 | passed | `OCCTDocumentSetGeomToleranceZoneModifier` | PASS: Projected 15 |
+| `datumSiblingReportsNothingForAClearedModifier` | `OCCTDocumentGetDatumInfo` reports modifier 1 whatever is stored | :197 Expectation failed: doc.datum(at: index)?.modifierWithValue == nil | passed | `OCCTDocumentGetDatumInfo` | PASS: kernel keeps 15 under None; the bridge reports nothing |
+
+### `Issue1435DatumDocumentToolTableTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `datumIsUnderDocumentToolLabel` | `OCCTDocumentCreateDatum` writes through `XCAFDoc_DimTolTool::Set(Main())` (the #1435 regression) | :62 Expectation failed: dgts.childCount == 1; :69 Expectation failed: doc.datumCount == 1 | passed | `OCCTDocumentCreateDatum` | PASS: the datum lands under 0:1:4 |
+| `datumCountAgreesWithRealTable` | `OCCTDocumentCreateDatum` writes through `XCAFDoc_DimTolTool::Set(Main())` (the #1435 regression) | :89 Expectation failed: dgts.childCount == 3; :90 Expectation failed: doc.datumCount == 3 | passed | `OCCTDocumentGetDatumCount` | PASS: 3 = 3; a tool set on Main() never makes 0:1:4 |
