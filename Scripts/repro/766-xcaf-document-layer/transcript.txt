@@ -1,0 +1,5 @@
+layer labels=3
+  layer[0] GetLayer=true name="Shapes"
+  layer[1] GetLayer=true name="Colors"
+  layer[2] GetLayer=true name="VisMaterials"
+index 999 in range=false, index -1 in range=false

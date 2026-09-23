@@ -1,0 +1,6 @@
+box node[0]: depth=0 IsAssembly=false locIdentity=true matrix=[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]
+box leaf count=1
+assembly: component null=false asm IsAssembly=true
+assembly node[0]: depth=1 IsAssembly=false locIdentity=false matrix=[1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0]
+assembly leaf count=1
+old fallback formula sets 1.0 at: 0 5 6 11
