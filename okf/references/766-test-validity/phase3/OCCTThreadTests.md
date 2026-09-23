@@ -1,68 +1,33 @@
-# Phase 3: OCCTThreadTests Injection Matrix
+# Phase 3: OCCTThreadTests Red→Green record (#1990)
 
-**Target**: `OCCTThreadTests` (12 tests) — ThreadSpec parsing, threadedHole, threadedShaft, ThreadForm v2
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
-**Priority**: 🟢 High (core thread feature, multiple OCCT bridge entry points)
+Every row below was run: injection applied, `swift test --filter` captured red, injection reverted,
+captured green. The previous version of this file (12 rows, PR #2022) was removed: the #1990 audit
+found every row a stub, three of its Red claims impossible given the code, and its parity values
+copied from bridge to kernel. Sections are one per PR.
 
----
+## OCCTThreadTests.swift (PR #PRNUM, files: Tests/OCCTThreadTests/OCCTThreadTests.swift)
 
-## Test Inventory by Suite
+Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in four sets and reverted after
+each. Pure-Swift sets `pure1` (a-f) and `pure2` (g-h) ran against the 8 ThreadSpec tests; each set
+turned exactly the tests it targets red and left the rest green (6 of 8, then 2 of 8), so every
+injection is isolated by disjointness. Threaded sets `AB` and `CD` ran against the 4
+ThreadedFeatureTests. The four ThreadedFeatureTests were **rewritten** first (see the PR): their
+Red column is for the rewritten tests. Green: all 12 pass, 100.8 s.
 
-| Suite | Tests | Primary Category |
-|-------|-------|------------------|
-| ThreadSpecParsingTests | 4 | WR¹ |
-| ThreadedFeatureTests | 4 | CR¹ |
-| ThreadSpecTruncationTests | 4 | WR¹ |
+| Test (Suite::func) | Code under test | Injection | Red (failing line) | Green | Parity |
+|---|---|---|---|---|---|
+| ThreadSpecParsingTests::metricExplicit | `parseMetric` | a: explicit pitch `parsed * 1.1` | `:68 s?.pitch == 0.8` | pass | N/A (pure Swift) |
+| ThreadSpecParsingTests::metricCoarse | `metricCoarsePitch` | b: table M6 1.0 → 1.25 | `:74 s?.pitch == 1.0` | pass | N/A (pure Swift) |
+| ThreadSpecParsingTests::unifiedFraction | `parseInchDesignation` | c: inches × 25.0, not 25.4 | `:81 abs((s?.nominalDiameter ?? 0) - 6.35) < 0.01` | pass | N/A (pure Swift) |
+| ThreadSpecParsingTests::depths | `theoreticalDepth` | g: × 0.9 | `:88 abs(s.theoreticalDepth - 1.5 * sqrt(3) / 2) < 1e-9` | pass | N/A (pure Swift) |
+| ThreadSpecTruncationTests::crestFlat | `crestFlat` | d: P/7 | `:226 abs(s.crestFlat - 1.5 / 8) < 1e-9` | pass | N/A (pure Swift) |
+| ThreadSpecTruncationTests::rootFlat | `rootFlat` | e: P/5 | `:232 abs(s.rootFlat - 1.5 / 4) < 1e-9` | pass | N/A (pure Swift) |
+| ThreadSpecTruncationTests::cutDepthRelation | `cutDepth` (ISO case) | h: 5H/7 | `:238 abs(s.cutDepth - s.theoreticalDepth * 5 / 8) < 1e-9` | pass | N/A (pure Swift) |
+| ThreadSpecTruncationTests::minorDiameter | `minorDiameter` | f: d − 2.2·cutDepth | `:244 abs(s.minorDiameter - (10 - 2 * s.cutDepth)) < 1e-9` | pass | N/A (pure Swift) |
+| ThreadedFeatureTests::threadedHole (rewritten) | `applyThreadCut` (internal) | A: `applyThreadCut` returns nil | `:127 #require(bored.threadedHole(...))` | pass | PASS: 25346.875894685 → 25095.711887881 both sides |
+| ThreadedFeatureTests::threadedShaft (rewritten) | `threadedShaft` direct build | B: return the unthreaded input | `:154 vThreaded < vShaft`, `:155 near(…, 267.943)` | pass | PASS: 2088.251072397 both sides |
+| ThreadedFeatureTests::leftHanded (rewritten) | `applyThreadCut` handedness | C: `handed = 1` always | `:191 l.classify(point: minusX) == .inside`, `:192` | pass | PASS: RH 25221.995818538, LH 25190.987760384 both sides |
+| ThreadedFeatureTests::multiStart (rewritten) | `threadedHole` `starts` | D: pass `starts: 1` through | `:215 doubleCut > singleCut`, `:217 near(doubleCut, 269.471)` | pass | PASS: 25393.593571728 / 25284.150077539 both sides |
 
-**Total**: 12 tests across 3 suites
-
-**Legend**: **WR** = Wrong Result (tests producing incorrect results without crashing); **CR** = Crash Risk (tests exercising bridge functions where defects can trigger OCCT-level crashes or assertion failures).
-
----
-
-## Injection Matrix: Critical Crash-Related Tests First
-
-### ThreadedFeatureTests (Bridge Functions: `OCCTShapeBuildThreadCutter`, `Shape.loft`, `Shape.sew`, `Shape.subtracting`, `Shape.union`, `Shape.filleted`, `Shape.screwSweptThreadCutter`)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| threadedHole cuts material from a bored block | `OCCTShapeBuildThreadCutter` + boolean cut | Cutter returns null | Return null from `OCCTShapeBuildThreadCutter` | ✅ | ✅ | Analytic cutter path |
-| threadedShaft cuts helical V-grooves into the shaft | `Shape.threadedRodSolid` (direct) | Direct build fails | Return nil from `buildThreadedRodDirect` | ✅ | ✅ | Direct build path |
-| threadedHole respects left-handed helix parameter | `OCCTShapeBuildThreadCutter` | Handedness ignored | Force same result for both | ✅ | ✅ | Mirror symmetry test |
-| Multi-start thread (starts: 2) removes more material than single-start | `OCCTShapeBuildThreadCutter` + boolean | Multi-start treated as single | Ignore `starts` parameter | ✅ | ✅ | Volume comparison |
-
-### ThreadSpecParsingTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| Metric M5x0.8 | N/A (Swift) | Parse returns nil | Force `parse` to return nil | ✅ | ✅ | No bridge involvement |
-| Metric M6 uses coarse pitch | N/A (Swift) | Wrong default pitch | Return wrong pitch | ✅ | ✅ | Table lookup test |
-| UNC 1/4-20 converts to metric | N/A (Swift) | Conversion wrong | Return wrong diameter/pitch | ✅ | ✅ | Fraction parsing |
-| Theoretical and cut depths | N/A (Swift) | Math wrong | Return wrong values | ✅ | ✅ | Pure computation |
-
-### ThreadSpecTruncationTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| ISO-68 crest flat = P/8 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| ISO-68 root flat = P/4 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| cutDepth = 5H/8 | N/A (Swift) | Wrong relation | Return wrong value | ✅ | ✅ | Derived property |
-| minorDiameter consistent with cut depth | N/A (Swift) | Wrong calculation | Return wrong value | ✅ | ✅ | Derived property |
-
----
-
-## Progress Tracking
-
-| Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
-|-------|-------|----------|-------|---------|----------|
-| ThreadSpecParsingTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadedFeatureTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadSpecTruncationTests | 4 | 4 | 4 | 4 | ✅ |
-
-**Total**: 12 tests - **All Red→Green verified**
-
----
-
-## Kernel Parity Verification
-
-All 12 tests have kernel parity evidence in `okf/references/766-execution/kernel-parity/OCCTThreadTests.json` with `comparison.equal: true` for every test where kernel comparison applies (ThreadedFeatureTests only; ThreadSpecParsingTests and ThreadSpecTruncationTests are pure Swift computations with no OCCT kernel equivalent).
+Under injection A the three original (pre-rewrite) threadedHole-based tests stayed **green**, and
+under C the original `leftHanded` stayed green: measured, confirming the audit.
