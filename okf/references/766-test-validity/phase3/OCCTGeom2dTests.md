@@ -124,3 +124,20 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DApproximatedOverloadParityTests.swift`, `Curve2DArcLengthFailureTests.swift`, `Curve2DArcTypesTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-approx-arclength-arctypes/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D Approximated Overload Parity Tests::Both overloads succeed on the same curve using only their own implicit defaults | `OCCTCurve2DApproximate / OCCTApproxCurve2d` | OCCTApproxCurve2d approximates only half the range | ✅ | ✅ | MATCH | two `!= nil` checks; now pins both fits |
+| Curve2D Approximated Overload Parity Tests::Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error | `OCCTCurve2DApproximate` | tolerance x 10 | ✅ | ✅ | MATCH |  |
+| Curve2D Approximated Overload Parity Tests::Ranged overload's implicit default tolerance produces a near-exact fit | `OCCTApproxCurve2d` | approximate only half the range | ✅ | ✅ | MATCH |  |
+| Curve2D Approximated Overload Parity Tests::Both overloads independently succeed on the same curve; neither promises to structurally match the other | `OCCTCurve2DApproximate / OCCTApproxCurve2d` | whole-domain tolerance x 10 | ✅ | ✅ | MATCH | `degree != nil` on both; now pins degree 8 / 27 poles on both |
+| Curve2D Approximated Overload Parity Tests::Whole-domain overload's continuity is a live knob; ranged overload has none | `OCCTCurve2DApproximate` | ignore continuity (always C2) | ✅ | ✅ | MATCH | two `!= nil` checks could not show the knob is live; now pins 15 poles at C0 and 13 at C2 |
+| Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::A genuine failure is reported as -1.0, not 0.0 | `OCCTCurve2DGetLengthBetween` | skip the parameter-range validation | ✅ | ✅ | MATCH |  |
+| Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::Equal bounds are a genuine zero-length result, not the failure sentinel | `OCCTCurve2DGetLengthBetween` | report a zero-width interval as failure (-1) | ✅ | ✅ | MATCH |  |
+| Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)::Both spellings tolerate a reversed range and agree on it | `OCCTCurve2DGetLengthBetween` | scale every length by 1.01 | ✅ | ✅ | MATCH | agreement between the spellings passed a length both got wrong; now pins 6.34269563057 |
+| Curve2D Arc Types Tests::Arc of hyperbola creation | `OCCTCurve2DCreateArcOfHyperbola` | double the start parameter | ✅ | ✅ | MATCH | non-nil, open and two samples; now pins both end points |
+| Curve2D Arc Types Tests::Arc of parabola creation | `OCCTCurve2DCreateArcOfParabola` | double the focal length | ✅ | ✅ | MATCH | non-nil, open and two samples; now pins both end points |
