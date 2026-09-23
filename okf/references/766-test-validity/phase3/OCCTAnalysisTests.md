@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Canonical Recognition** | Canonical recognition callable on box | Canonical recognition of a solid | Recognise a solid's first face |
+| **Canonical Recognition** | Canonical recognition callable on cylinder | Canonical recognition of a solid | Recognise a solid's first face |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Canonical recognition callable on box | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
+| Canonical recognition callable on cylinder | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
 
 ---
 
