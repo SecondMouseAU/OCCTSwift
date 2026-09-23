@@ -94,5 +94,271 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D tangent interpolation entry points agree (#410)::Default tolerance: the two entry points produce the same curve",
+    "bridge_function": "OCCTCurve2DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "point(2)": [
+          1.84960461481,
+          2.06475180106
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": 5,
+        "point(2)": [
+          1.84960461481,
+          2.06475180106
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the start and end tangents",
+      "red": "Curve2DInterpolateTangentsParityTests.swift:36:9: Expectation failed: simd_distance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "agreement only; now pins the pole count and a point"
+    }
+  },
+  {
+    "test_name": "Curve2D tangent interpolation entry points agree (#410)::A non-default tolerance is now reachable through interpolate(points:...)",
+    "bridge_function": "OCCTCurve2DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "near-duplicate at 1e-4": null,
+        "near-duplicate at 1e-8": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "near-duplicate at 1e-4": null,
+        "near-duplicate at 1e-8": "non-nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "pin the tolerance to 1e-6",
+      "red": "Curve2DInterpolateTangentsParityTests.swift:57:9: Expectation failed: Curve2D.interpolate(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "tolerance-insensitive input; now adds a case the tolerance decides"
+    }
+  },
+  {
+    "test_name": "Curve2D tangent interpolation entry points agree (#410)::Both entry points reject a single point",
+    "bridge_function": "OCCTCurve2DInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "fabricate a second point for a one-point input",
+      "red": "Curve2DInterpolateTangentsParityTests.swift:70:9: Expectation failed: Curve2D.interpolate(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D IsLinear Tests::Linear BSpline is detected as linear",
+    "bridge_function": "OCCTCurve2DIsLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isLinear": true,
+        "deviation": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "isLinear": true,
+        "deviation": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the verdict",
+      "red": "Curve2DIsLinearTests.swift:19:9: Expectation failed: result.isLinear",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "two nested `if let`s; now required, with the deviation"
+    }
+  },
+  {
+    "test_name": "Curve2D IsLinear Tests::Non-linear curve is detected as non-linear",
+    "bridge_function": "OCCTCurve2DIsLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isLinear": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "isLinear": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the verdict",
+      "red": "Curve2DIsLinearTests.swift:28:9: Expectation failed: !result.isLinear",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "two nested `if let`s; now required"
+    }
+  },
+  {
+    "test_name": "Curve2D IsLinear Tests::Non-BSpline curve returns nil, not a false result",
+    "bridge_function": "OCCTCurve2DIsLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "circle": null,
+        "segment": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "circle": null,
+        "segment": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report (false, 0) for a non-BSpline (the #1542 defect)",
+      "red": "Curve2DIsLinearTests.swift:38:9: Expectation failed: circle.isLinear(tolerance: 1e-6) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "GC_MakeLine2d::Create 2D line through two points",
+    "bridge_function": "OCCTCurve2DMakeLineThroughPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(sqrt 200)": [
+          10,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          0
+        ],
+        "point(sqrt 200)": [
+          10,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the two points",
+      "red": "Curve2DLineTests.swift:15:9: Expectation failed: simd_distance(line.point(at: 0), SIMD2(0, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "`!= nil`; now pins the line"
+    }
+  },
+  {
+    "test_name": "GC_MakeLine2d::Create 2D line parallel to direction at distance",
+    "bridge_function": "OCCTCurve2DMakeLineParallel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          5
+        ],
+        "point(3)": [
+          3,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point(0)": [
+          0,
+          5
+        ],
+        "point(3)": [
+          3,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate the distance",
+      "red": "Curve2DLineTests.swift:24:9: Expectation failed: simd_distance(line.point(at: 0), SIMD2(0, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-tangents-islinear-line/",
+      "rewritten": "`!= nil`; now pins the offset side"
+    }
   }
 ]
