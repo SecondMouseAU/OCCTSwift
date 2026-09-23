@@ -142,5 +142,273 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ValidateMutation::validateCleanGraph",
+    "bridge_function": "OCCTBRepGraphBuilderValidateMutation",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Builder ValidateMutation::validateAfterAddVertex",
+    "bridge_function": "OCCTBRepGraphBuilderValidateMutation",
+    "bridge_output": {
+      "type": "bool",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromBox",
+    "bridge_function": "OCCTBRepGraphNbNodes",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "shells": 1,
+        "solids": 1,
+        "wires": 6,
+        "compounds": 0,
+        "coedges": 24,
+        "nodes": 58
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "shells": 1,
+        "solids": 1,
+        "wires": 6,
+        "compounds": 0,
+        "coedges": 24,
+        "nodes": 58
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildParallel",
+    "bridge_function": "OCCTBRepGraphCreate",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "nodes": 58
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "nodes": 58
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromSphere",
+    "bridge_function": "OCCTBRepGraphNbEdges",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "edges": 3,
+        "vertices": 2,
+        "nodes": 13
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 1,
+        "edges": 3,
+        "vertices": 2,
+        "nodes": 13
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Build::buildFromComplex",
+    "bridge_function": "OCCTBRepGraphValidate",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 8,
+        "edges": 15,
+        "compounds": 1,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 8,
+        "edges": 15,
+        "compounds": 1,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeEdge",
+    "bridge_function": "OCCTBRepGraphCoEdgeEdge",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeFace",
+    "bridge_function": "OCCTBRepGraphCoEdgeFace",
+    "bridge_output": {
+      "type": "int",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeSeamPairNilForBox",
+    "bridge_function": "OCCTBRepGraphCoEdgeSeamPair",
+    "bridge_output": {
+      "type": "seam_pairs",
+      "data": "none of 24"
+    },
+    "kernel_output": {
+      "type": "seam_pairs",
+      "data": "none of 24"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeSeamPairForSphere",
+    "bridge_function": "OCCTBRepGraphCoEdgeSeamPair",
+    "bridge_output": {
+      "type": "seam_pairs",
+      "data": [
+        null,
+        3,
+        null,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "seam_pairs",
+      "data": [
+        null,
+        3,
+        null,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeHasPCurve",
+    "bridge_function": "OCCTBRepGraphCoEdgeHasPCurve",
+    "bridge_output": {
+      "type": "count",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph CoEdge Queries::coedgeRange",
+    "bridge_function": "OCCTBRepGraphCoEdgeRange",
+    "bridge_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": [
+        0,
+        10
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
