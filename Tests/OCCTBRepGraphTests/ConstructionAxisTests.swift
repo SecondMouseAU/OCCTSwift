@@ -394,7 +394,6 @@ struct ConstructionAxisTests {
         #expect(cylConeFaceCount == 1)
 
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: node.index))
-        print("DIAG766 ellipse: \(graph.resolve(ConstructionAxis.alongEdge(edgeRef))) faces=\(graph.faces(of: node.index))")
         switch graph.resolve(ConstructionAxis.alongEdge(edgeRef)) {
         case .success(let ax):
             // Must not be the cylinder's centerline (direction parallel to Z AND origin on the
