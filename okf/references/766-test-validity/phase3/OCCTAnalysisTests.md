@@ -139,6 +139,10 @@
 | **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
 | **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
 | **Geom_Plane Properties** | planePln | Plane gp_Pln data | Drop location Z |
+| **CanonicalRecognition Detailed Tests** | recognizePlane | Canonical surface recognition | Skip IsPlane |
+| **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
+| **CanonicalRecognition Detailed Tests** | recognizeEdgeLine | Canonical curve recognition | Skip IsLine |
 
 ---
 
@@ -290,6 +294,10 @@
 | planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
 | planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
 | planePln | OCCTSurfacePlanePln | Plane gp_Pln data | Write 0 to *pz | ✅ | ✅ | Rewritten: origin now asserted; if-let wrapper removed |
+| recognizePlane | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | if (false && recog.IsPlane(...)) | ✅ | ✅ | Rewritten: if-let wrappers removed, plane position asserted |
+| recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
+| recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
+| recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
 
 ---
 
