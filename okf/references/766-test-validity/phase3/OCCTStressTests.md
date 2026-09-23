@@ -288,3 +288,22 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Shape Features, Shape Transforms
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Shape Features | `fillet` | `OCCTShapeFillet` | OCCTShapeFillet returns nil | RED exit 1: StressExhaustiveAPITests.swift:101 Expectation failed: standardBox().filleted(radius: 1.0) | ✔ | MATCH | yes |
+| Stress: Shape Features | `chamfer` | `OCCTShapeChamfer` | OCCTShapeChamfer returns nil | RED exit 1: StressExhaustiveAPITests.swift:107 Expectation failed: standardBox().chamfered(distance: 1.0) | ✔ | MATCH | yes |
+| Stress: Shape Features | `shell` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | RED exit 1: StressExhaustiveAPITests.swift:115 Expectation failed: r == nil | ✔ | MATCH | yes |
+| Stress: Shape Features | `drill` | `OCCTShapeDrillHole` | OCCTShapeDrillHole returns nil | RED exit 1: StressExhaustiveAPITests.swift:120 Expectation failed: standardBox().drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), ... | ✔ | MATCH | yes |
+| Stress: Shape Features | `offset` | `OCCTShapeOffset` | EARLY:OCCTShapeOffset | RED exit 1: StressExhaustiveAPITests.swift:129 Expectation failed: standardBox().offset(by: 1.0) | ✔ | MATCH | yes |
+| Stress: Shape Features | `linearPattern` | `OCCTShapeLinearPattern` | EARLY:OCCTShapeLinearPattern | RED exit 1: StressExhaustiveAPITests.swift:136 Expectation failed: standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, c... | ✔ | MATCH | yes |
+| Stress: Shape Features | `circularPattern` | `OCCTShapeCircularPattern` | EARLY:OCCTShapeCircularPattern | RED exit 1: StressExhaustiveAPITests.swift:145 Expectation failed: standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0... | ✔ | MATCH | yes |
+| Stress: Shape Features | `sectionWires` | `OCCTShapeSectionWiresAtZ` | EARLY:OCCTShapeSectionWiresAtZ | RED exit 1: StressExhaustiveAPITests.swift:154 Expectation failed: !wires.isEmpty | ✔ | MATCH | no |
+| Stress: Shape Transforms | `translate` | `OCCTShapeTranslate` | OCCTShapeTranslate moves by dx + 1 | RED exit 1: StressExhaustiveAPITests.swift:173 Expectation failed: abs(b.min.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Shape Transforms | `rotate` | `OCCTShapeRotate` | OCCTShapeRotate turns by angle + 0.1 | RED exit 1: StressExhaustiveAPITests.swift:183 Expectation failed: abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Shape Transforms | `scale` | `OCCTShapeScale` | OCCTShapeScale scales by factor × 1.1 | RED exit 1: StressExhaustiveAPITests.swift:189 Expectation failed: abs((r.volume ?? 0) - 8000) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Shape Transforms | `mirror` | `OCCTShapeMirror` | EARLY:OCCTShapeMirror | RED exit 1: StressExhaustiveAPITests.swift:193 Expectation failed: standardBox().mirrored(planeNormal: SIMD3(1, 0, 0)) | ✔ | MATCH | yes |
