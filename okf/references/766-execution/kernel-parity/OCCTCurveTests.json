@@ -302,5 +302,189 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "FairCurve Batten Tests::basicBatten",
+    "test_file": "Tests/OCCTCurveTests/FairCurveBattenTests.swift",
+    "bridge_function": "OCCTFairCurveBatten",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (0,0) -> (10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_Batten: code 0, degree 9, 10 poles, [0, 1], (0,0) -> (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten: `if let` let a failed batten pass"
+  },
+  {
+    "test_name": "FairCurve Batten Tests::battenWithSlope",
+    "test_file": "Tests/OCCTCurveTests/FairCurveBattenTests.swift",
+    "bridge_function": "OCCTFairCurveBatten",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (0,0) -> (10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_Batten: code 0, degree 9, 10 poles, [0, 1], (0,0) -> (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten"
+  },
+  {
+    "test_name": "FairCurve Batten Tests::battenWithAngles",
+    "test_file": "Tests/OCCTCurveTests/FairCurveBattenTests.swift",
+    "bridge_function": "OCCTFairCurveBatten",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (0,0) -> (10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_Batten: code 0, degree 9, 10 poles, [0, 1], (0,0) -> (10,0) (mid y -1.3e-16)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten"
+  },
+  {
+    "test_name": "FairCurve Batten Tests::battenConstraintOrders",
+    "test_file": "Tests/OCCTCurveTests/FairCurveBattenTests.swift",
+    "bridge_function": "OCCTFairCurveBatten",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (0,0) -> (10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_Batten: code 0, degree 9, 10 poles, [0, 1], (0,0) -> (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten"
+  },
+  {
+    "test_name": "FairCurve Batten Tests::battenCurveProperties",
+    "test_file": "Tests/OCCTCurveTests/FairCurveBattenTests.swift",
+    "bridge_function": "OCCTFairCurveBatten",
+    "bridge_output": {
+      "type": "value",
+      "data": "domain [0, 1], mid (5, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_Batten: code 0, degree 9, 10 poles, [0, 1], (0,0) -> (10,0), mid (5, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveBattenTests.swift:61 simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten: domain non-empty only"
+  },
+  {
+    "test_name": "FairCurve MinimalVariation Tests::basicMinimalVariation",
+    "test_file": "Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift",
+    "bridge_function": "OCCTFairCurveMinimalVariation",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (10,0), mid (5,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "FairCurve_MinimalVariation: code 0, (0,0) -> (10,0), mid (5,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveMinimalVariationTests.swift:22 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten"
+  },
+  {
+    "test_name": "FairCurve MinimalVariation Tests::withCurvatureConstraints",
+    "test_file": "Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift",
+    "bridge_function": "OCCTFairCurveMinimalVariation",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, mid (5, 0.298)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "code 0, mid (5, 0.29798933520658766)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "curvature1 not applied",
+    "red": "FairCurveMinimalVariationTests.swift:40 simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0.29798933520658766)) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten: asserted nothing ('should not crash')"
+  },
+  {
+    "test_name": "FairCurve MinimalVariation Tests::withPhysicalRatio",
+    "test_file": "Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift",
+    "bridge_function": "OCCTFairCurveMinimalVariation",
+    "bridge_output": {
+      "type": "value",
+      "data": "code ok, (10,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "code 0, (0,0) -> (10,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "second point moved 1 in y",
+    "red": "FairCurveMinimalVariationTests.swift:55 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-faircurve/transcript.txt",
+    "note": "Rewritten"
   }
 ]

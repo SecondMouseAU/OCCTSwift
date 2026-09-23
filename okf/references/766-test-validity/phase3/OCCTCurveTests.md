@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| FairCurve Batten Tests | basicBatten | `OCCTFairCurveBatten` | second point moved 1 in y | `FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten: `if let` let a failed batten pass |
+| FairCurve Batten Tests | battenWithSlope | `OCCTFairCurveBatten` | second point moved 1 in y | `FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten |
+| FairCurve Batten Tests | battenWithAngles | `OCCTFairCurveBatten` | second point moved 1 in y | `FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten |
+| FairCurve Batten Tests | battenConstraintOrders | `OCCTFairCurveBatten` | second point moved 1 in y | `FairCurveBattenTests.swift:23 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten |
+| FairCurve Batten Tests | battenCurveProperties | `OCCTFairCurveBatten` | second point moved 1 in y | `FairCurveBattenTests.swift:61 simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9` | ✅ | MATCH | Rewritten: domain non-empty only |
+| FairCurve MinimalVariation Tests | basicMinimalVariation | `OCCTFairCurveMinimalVariation` | second point moved 1 in y | `FairCurveMinimalVariationTests.swift:22 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten |
+| FairCurve MinimalVariation Tests | withCurvatureConstraints | `OCCTFairCurveMinimalVariation` | curvature1 not applied | `FairCurveMinimalVariationTests.swift:40 simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0.29798933520658766)) < 1e-6` | ✅ | MATCH | Rewritten: asserted nothing ('should not crash') |
+| FairCurve MinimalVariation Tests | withPhysicalRatio | `OCCTFairCurveMinimalVariation` | second point moved 1 in y | `FairCurveMinimalVariationTests.swift:55 simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9` | ✅ | MATCH | Rewritten |
