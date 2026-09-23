@@ -94,5 +94,650 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleBisectorRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaCirc2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty x3"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0/r2 NbSolutions": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:28:9: Expectation failed: GccAnaBisector.ofCircles(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleBisectorAcceptsValidRadii",
+    "bridge_function": "OCCTGccAnaCirc2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r3/r2 NbSolutions": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard refuses (valid radius refused)",
+      "red": "Issue553GccZeroRadiusTests.swift:49:9: Expectation failed: solutions.count == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::pointBisectorAnswersWhatZeroRadiusCannot",
+    "bridge_function": "OCCTGccAnaCircPnt2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "point bisector x": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0 NbSolutions": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:56:9: Expectation failed: GccAnaBisector.ofCircleAndPoint(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": "`if let` + `Issue.record`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circlePointBisectorAcceptsValidRadius",
+    "bridge_function": "OCCTGccAnaCircPnt2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard refuses (valid radius refused)",
+      "red": "Issue553GccZeroRadiusTests.swift:67:9: Expectation failed: GccAnaBisector.ofCircleAndPoint(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleLineBisectorRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaCircLin2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:76:9: Expectation failed: GccAnaBisector.ofCircleAndLine(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::tangentParallelLinesRejectZeroRadius",
+    "bridge_function": "OCCTGccAnaLin2dTanParCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r4": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r4": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:94:9: Expectation failed: Curve2DGcc.linesTangentParallel(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::tangentPerpendicularLinesRejectZeroRadius",
+    "bridge_function": "OCCTGccAnaLin2dTanPerCircLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r4": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r4": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:109:9: Expectation failed: Curve2DGcc.linesTangentPerpendicular(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::tangentLineThroughPointRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaLin2d2TanCircPnt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:126:9: Expectation failed: linesTangentToCircleThroughPoint(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleTangentToThreeCirclesRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaCirc2d3TanCircles",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0 NbSolutions": 8,
+        "r2 NbSolutions": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:142:9: Expectation failed: Shape.circleTangent3Circles(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleTangentToTwoCirclesAndPointRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaCirc2d2CirclesPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": "non-empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": "non-empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:158:9: Expectation failed: Shape.circleTangent2CirclesPoint(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleTangentToCircleAndTwoPointsRejectsZeroRadius",
+    "bridge_function": "OCCTGccAnaCirc2dCircle2Points",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r2": "non-empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "no solution (the zero-radius half cannot discriminate, as the file says)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard refuses (valid radius refused)",
+      "red": "Issue553GccZeroRadiusTests.swift:188:9: Expectation failed: !Shape.circleTangentCircle2Points(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::lineCircleIntersectionRejectsZeroRadius",
+    "bridge_function": "OCCTIntAna2dLinCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "1 point (0, 0), ParamOnSecond raises Standard_DomainError"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:200:9: Expectation failed: IntAna2d.intersectLineCircle(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleCircleIntersectionRejectsZeroRadius",
+    "bridge_function": "OCCTIntAna2dCircCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3/r3": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r3 at 0 vs r3 at 4": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:213:9: Expectation failed: IntAna2d.intersectCircles(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::lineCircleExtremaRejectZeroRadius",
+    "bridge_function": "OCCTExtremaExtElC2dLinCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:229:9: Expectation failed: Extrema2d.distanceBetweenLineAndCircle(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::pointCircleExtremaRejectZeroRadius",
+    "bridge_function": "OCCTExtremaExtPElC2dCirc",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "empty",
+        "r3": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0 NbExt": 0,
+        "r3 NbExt": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard refuses (valid radius refused)",
+      "red": "Issue553GccZeroRadiusTests.swift:256:9: Expectation failed: Extrema2d.distanceFromPointToCircle(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::requestedRadiusOfZeroIsRejected",
+    "bridge_function": "OCCTGccAnaCirc2d2TanRadLineLin / Circ2d2TanRadPntPnt / Circ2dTanOnRadLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty x3"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "empty x3"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:271:9: Expectation failed: circlesTangentToLines(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::requestedRadiusOfZeroIsRejectedOnCurves",
+    "bridge_function": "OCCTGeom2dGccCirc2dTanOnRad",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:287:9: Expectation failed: Curve2DGcc.circlesTangentOnCurveWithRadius(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": "`guard` + `Issue.record`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::requestedRadiusAcceptsValidValues",
+    "bridge_function": "OCCTGccAnaCirc2d2TanRadLineLin / Circ2d2TanRadPntPnt / Circ2dTanOnRadLin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "lines r2": 4,
+        "others": "non-empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "lines r2": 4,
+        "others": "non-empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard refuses (valid radius refused)",
+      "red": "Issue553GccZeroRadiusTests.swift:295:9: Expectation failed: circlesTangentToLines(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::circleEdgeRejectsZeroRadius",
+    "bridge_function": "OCCTMakeEdge2dFromCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r3": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r3": "non-nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:314:9: Expectation failed: Shape.edge2dFromCircle(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::gceCircleFactoriesRejectZeroRadius",
+    "bridge_function": "OCCTCurve2DMakeCircleCenterRadius / OCCTCurve2DMakeCircleAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r3": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "GC_MakeCircle2d r0 IsDone": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:326:9: Expectation failed: Curve2D.gceCircle(center: SIMD2(0, 0), radius: 0) == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::parallelCircleRejectsCollapsingOffset",
+    "bridge_function": "OCCTCurve2DMakeCircleParallel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "-5": "nil",
+        "-6": "nil",
+        "-2 radius": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "-5 radius": 0,
+        "-6 radius": 1,
+        "-2 radius": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "every occtValidCircleRadius guard passes (zero radius reaches OCCT)",
+      "red": "Issue553GccZeroRadiusTests.swift:343:9: Expectation failed: Curve2D.gceCircleParallel(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": "`if let` + `Issue.record`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Issue553 zero-radius circle solver arguments::negativeRadiusWasAlreadyRejected",
+    "bridge_function": "OCCTGccAnaCirc2dBisec",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty/nil x5"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "gp_Circ2d r-1": "throws: radius should be positive number"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "bisector wrapper passes abs(radius1)",
+      "red": "Issue553GccZeroRadiusTests.swift:369:9: Expectation failed: GccAnaBisector.ofCircles(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-arclength-zero-radius/",
+      "rewritten": ""
+    }
   }
 ]
