@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## ThreadFormsTests.swift (PR #PRNUM, files: Tests/OCCTThreadTests/ThreadFormsTests.swift)
+## ThreadFormsTests.swift (PR #2365, files: Tests/OCCTThreadTests/ThreadFormsTests.swift)
 
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in two runs and reverted after
 each. Run 1 (B, F1, F2, H) turned exactly its 4 target tests red and left the other 4 green. Run 2
