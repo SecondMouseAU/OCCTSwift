@@ -85,3 +85,22 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Display Drawer | Default values | `OCCTDrawerCreate` | ctor also calls `SetDiscretisation(31)` | `:19` `drawer.discretisation == 30` | ✔ | PASS |
+| Display Drawer | Deviation coefficient roundtrip | `OCCTDrawerSetDeviationCoefficient` | setter no-op | `:26` | ✔ | PASS |
+| Display Drawer | Deviation angle roundtrip | `OCCTDrawerSetDeviationAngle` | setter no-op | `:34` | ✔ | PASS |
+| Display Drawer | Maximal chordial deviation roundtrip | `OCCTDrawerSetMaximalChordialDeviation` | setter no-op | `:41` | ✔ | PASS |
+| Display Drawer | Deflection type toggle | `OCCTDrawerSetTypeOfDeflection` | setter no-op | `:48` `drawer.deflectionType == .absolute` | ✔ | PASS |
+| Display Drawer | Auto-triangulation toggle | `OCCTDrawerSetAutoTriangulation` | setter no-op | `:57` | ✔ | PASS |
+| Display Drawer | Iso on triangulation toggle | `OCCTDrawerSetIsoOnTriangulation` | setter no-op | `:64` | ✔ | PASS |
+| Display Drawer | Discretisation roundtrip | `OCCTDrawerSetDiscretisation` | setter no-op | `:71` | ✔ | PASS |
+| Display Drawer | Face boundary draw toggle | `OCCTDrawerSetFaceBoundaryDraw` | setter no-op | `:78` | ✔ | PASS |
+| Display Drawer | Wire draw toggle | `OCCTDrawerSetWireDraw` | setter no-op | `:85` | ✔ | PASS |

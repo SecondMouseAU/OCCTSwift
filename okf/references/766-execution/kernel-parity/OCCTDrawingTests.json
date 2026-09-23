@@ -222,5 +222,165 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Default values",
+    "bridge_function": "OCCTDrawerCreate",
+    "bridge_output": {
+      "autoTriangulation": true,
+      "wireDraw": true,
+      "faceBoundaryDraw": false,
+      "deflectionType": "relative",
+      "discretisation": 30
+    },
+    "kernel_output": {
+      "autoTriangulation": true,
+      "wireDraw": true,
+      "faceBoundaryDraw": false,
+      "deflectionType": "relative",
+      "discretisation": 30
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deviation coefficient roundtrip",
+    "bridge_function": "OCCTDrawerSetDeviationCoefficient",
+    "bridge_output": {
+      "value": 0.005
+    },
+    "kernel_output": {
+      "value": 0.005
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deviation angle roundtrip",
+    "bridge_function": "OCCTDrawerSetDeviationAngle",
+    "bridge_output": {
+      "value": 0.17453292519943295
+    },
+    "kernel_output": {
+      "value": 0.17453292519943295
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Maximal chordial deviation roundtrip",
+    "bridge_function": "OCCTDrawerSetMaximalChordialDeviation",
+    "bridge_output": {
+      "value": 0.05
+    },
+    "kernel_output": {
+      "value": 0.05
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Deflection type toggle",
+    "bridge_function": "OCCTDrawerSetTypeOfDeflection",
+    "bridge_output": {
+      "absolute": true,
+      "relative": true
+    },
+    "kernel_output": {
+      "absolute": true,
+      "relative": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Auto-triangulation toggle",
+    "bridge_function": "OCCTDrawerSetAutoTriangulation",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Iso on triangulation toggle",
+    "bridge_function": "OCCTDrawerSetIsoOnTriangulation",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Discretisation roundtrip",
+    "bridge_function": "OCCTDrawerSetDiscretisation",
+    "bridge_output": {
+      "value": 50
+    },
+    "kernel_output": {
+      "value": 50
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Face boundary draw toggle",
+    "bridge_function": "OCCTDrawerSetFaceBoundaryDraw",
+    "bridge_output": {
+      "value": true
+    },
+    "kernel_output": {
+      "value": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Display Drawer::Wire draw toggle",
+    "bridge_function": "OCCTDrawerSetWireDraw",
+    "bridge_output": {
+      "value": false
+    },
+    "kernel_output": {
+      "value": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
