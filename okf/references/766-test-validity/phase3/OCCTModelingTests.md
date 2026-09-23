@@ -221,3 +221,36 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `BiTgteBlendTests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-bitgte-blend/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| blendBoxEdge | `OCCTBiTgteBlend` returns nullptr | `:19 Expectation failed: result != nil` | pass | `OCCTBiTgteBlend` | PASS: rewritten; the kernel blend leaves the box unrounded |
+| blendMultipleEdges | `OCCTBiTgteBlend` returns nullptr | `:32 Expectation failed: result != nil` | pass | `OCCTBiTgteBlend` | PASS: rewritten; had no assertion |
+
+### `BooleanCheckTests.swift` (11 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-check/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| validBoxCheck | `OCCTShapeBooleanCheckSingle` returns false | `:15 Expectation failed: box.isValidForBoolean` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| twoBoxesValid | `OCCTShapeBooleanCheckPair` returns false | `:22 Expectation failed: box1.isValidForBoolean(with: box2)` | pass | `OCCTShapeBooleanCheckPair` | PASS |
+| cylinderValid | `OCCTShapeBooleanCheckSingle` returns false | `:28 Expectation failed: cyl.isValidForBoolean` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| singleShapeValid | `OCCTShapeBooleanCheckSingle` returns false | `:34 Expectation failed: b.isBooleanValid()` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| sphereValid | `OCCTShapeBooleanCheckSingle` returns false | `:41 Expectation failed: s.isBooleanValid()` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| pairShapesValidForFuse | `OCCTShapeBooleanCheckPair` returns false | `:52 Expectation failed: b.isBooleanValidWith(s, operation: 2)` | pass | `OCCTShapeBooleanCheckPair` | PASS: operation 2 is `BOPAlgo_CUT`, not fuse, despite the test's name |
+| pairShapesValidForCut | `OCCTShapeBooleanCheckPair` returns false | `:62 Expectation failed: b.isBooleanValidWith(s, operation: 3)` | pass | `OCCTShapeBooleanCheckPair` | PASS: operation 3 is `BOPAlgo_CUT21` |
+| solidVsFaceCutAndCut21Disagree | `OCCTShapeBooleanCheckPair` swaps `BOPAlgo_CUT` (2) and `BOPAlgo_CUT21` (3) in its `static_cast<BOPAlgo_Operation>` | `:84 Expectation failed: !box.isBooleanValidWith(face, operation: 2, testSmallEdges: false, testSelfInterference: false)`, `:90 Expectation failed: box.isBooleanValidWith(face, operation: 3, testSmallEdges: false, testSelfInterference: false)` | pass | `OCCTShapeBooleanCheckPair` | PASS |
+| singleShapeNoSelfInterference | `OCCTShapeBooleanCheckSingle` returns false | `:98 Expectation failed: b.isBooleanValid(testSmallEdges: false, testSelfInterference: true)` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| singleShapeParityWithBooleanValid | `Shape.isValidForBoolean` stops forwarding `isBooleanValid()` unchanged (negates it) | `:112 Expectation failed: box.isValidForBoolean == box.isBooleanValid()`, `:113 Expectation failed: sphere.isValidForBoolean == sphere.isBooleanValid()` | pass | `OCCTShapeBooleanCheckSingle` | PASS |
+| pairParityWithBooleanValidWith | `Shape.isValidForBoolean(with:)` stops forwarding `isBooleanValidWith(_:)` unchanged (negates it) | `:120 Expectation failed: box.isValidForBoolean(with: sphere) == box.isBooleanValidWith(sphere)` | pass | `OCCTShapeBooleanCheckPair` | PASS |

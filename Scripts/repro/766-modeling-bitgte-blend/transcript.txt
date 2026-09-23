@@ -1,0 +1,2 @@
+blendBoxEdge: done=1 type=3 faces=6 valid=1 volume=480000 boxVolume=480000
+blendMultipleEdges: done=1 type=3 faces=6 valid=1 volume=125000 boxVolume=125000

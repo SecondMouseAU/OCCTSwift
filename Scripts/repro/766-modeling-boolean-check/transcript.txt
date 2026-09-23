@@ -1,0 +1,11 @@
+validBoxCheck: 1
+twoBoxesValid (box10 + sphere5, op 5): 1
+cylinderValid: 1
+singleShapeValid: 1
+sphereValid: 1
+pairShapesValidForFuse (op 2): 1
+pairShapesValidForCut (op 3): 1
+solidVsFace: CUT(op 2)=0 CUT21(op 3)=1
+singleShapeNoSelfInterference: 1
+singleShapeParity: box 1/1 sphere 1/1
+pairParity: 1/1
