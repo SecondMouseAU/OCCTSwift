@@ -133,6 +133,8 @@
 | **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
 | **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
 | **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
+| **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
+| **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
 
 ---
 
@@ -278,6 +280,8 @@
 | Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
 | Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
 | Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
 
 ---
 
@@ -402,5 +406,7 @@ For each test, run ground-truth C++ comparison:
 | Shape intersects Wire | ✅ | ✅ | ✅ |
 | Shape distance to Edge | ✅ | ✅ | ✅ |
 | Shape distance to Face | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
 
-**Total**: 581 tests
+**Total**: 583 tests

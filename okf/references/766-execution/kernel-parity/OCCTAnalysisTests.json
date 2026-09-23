@@ -1284,5 +1284,93 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtCS Tests::curveSurfaceParallel",
+    "bridge_function": "OCCTExtremaExtCS",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "isDone": true,
+        "isParallel": true,
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "isDone": true,
+        "isParallel": true,
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtCS Tests::curveSurfaceDistance",
+    "bridge_function": "OCCTExtremaExtCSPoint",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 25.0,
+          "p1": [
+            10.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "squareDistance": 225.0,
+          "p2": [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 25.0,
+          "p1": [
+            10.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "squareDistance": 225.0,
+          "p2": [
+            -5.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
