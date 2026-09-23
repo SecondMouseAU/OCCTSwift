@@ -85,3 +85,21 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| #1193: addCuttingPlaneLine direction projection | projectDirectionToPlane matches OCCT's gp_Ax2 canonical basis | `projectDirectionToPlane (Swift) vs gp_Ax2` | `perpendicularBasis` returns `(up, right)` | `:43` to `:46` | ✔ | PASS |
+| #1193: addCuttingPlaneLine direction projection | addCuttingPlaneLine's traceStart/traceEnd/arrowDirection match a hand-derived projection | `Drawing.addCuttingPlaneLine (Swift) vs gp_Ax2` | `perpendicularBasis` returns `(up, right)` | `:87`, `:90`, `:93` | ✔ | PASS |
+| perpendicularBasis unification: Drawing projection (#881) | projectPointToPlane's basis matches OCCT's gp_Ax2 canonical basis | `projectPointToPlane (Swift) vs gp_Ax2` | `perpendicularBasis` returns `(up, right)` | `:26` to `:29` | ✔ | PASS |
+| perpendicularBasis unification: Drawing projection (#881) | projectAxisToPlane's basis matches OCCT's gp_Ax2 canonical basis | `projectAxisToPlane (Swift) vs gp_Ax2` | `perpendicularBasis` returns `(up, right)` | `:46`, `:47` | ✔ | PASS |
+| Drawing.ProjectionType is honoured (#999) | Orthographic projects the box at its true size | `OCCTDrawingCreate` | `OCCTDrawingCreate` projector types swapped (perspective gets the orthographic projector, orthographic a focus-1e4 one) | `:38`, `:39` | ✔ | PASS |
+| Drawing.ProjectionType is honoured (#999) | Perspective diverges from orthographic, and by the ratio the focal distance implies | `OCCTDrawingCreate` | `OCCTDrawingCreate` projector types swapped (perspective gets the orthographic projector, orthographic a focus-1e4 one) | `:58`, `:59`, `:60` | ✔ | PASS |
+| Drawing.ProjectionType is honoured (#999) | The focal distance sets the scale, and a longer one converges on orthographic | `OCCTDrawingCreate` | `OCCTDrawingCreate` projector types swapped (perspective gets the orthographic projector, orthographic a focus-1e4 one) | `:80`, `:82` per focus | ✔ | PASS |
+| Drawing.ProjectionType is honoured (#999) | A non-positive focal distance is refused rather than silently reinterpreted | `OCCTDrawingCreate` | `!(focus > 0)` check removed (0 and -100 are still refused by the reach guard; NaN is not) | `:100` (NaN) | ✔ | PASS |
+| Drawing.ProjectionType is honoured (#999) | projectFast stays orthographic, which is all HLRBRep_PolyAlgo can do | `OCCTDrawingCreatePoly` | `OCCTDrawingCreatePoly` view tilted by 0.1 in x | `:115` | ✔ | PASS |

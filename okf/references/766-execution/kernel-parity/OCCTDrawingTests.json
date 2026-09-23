@@ -222,5 +222,244 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "#1193: addCuttingPlaneLine direction projection::projectDirectionToPlane matches OCCT's gp_Ax2 canonical basis",
+    "bridge_function": "projectDirectionToPlane (Swift) vs gp_Ax2",
+    "bridge_output": {
+      "projectedRight": [
+        1,
+        0
+      ],
+      "projectedUp": [
+        0,
+        1
+      ],
+      "within": 1e-09
+    },
+    "kernel_output": {
+      "XDirection": [
+        3.56876177880591e-18,
+        0.9777876596251667,
+        -0.20959793101254467
+      ],
+      "YDirection": [
+        -0.9878687021467979,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#1193: addCuttingPlaneLine direction projection::addCuttingPlaneLine's traceStart/traceEnd/arrowDirection match a hand-derived projection",
+    "bridge_function": "Drawing.addCuttingPlaneLine (Swift) vs gp_Ax2",
+    "bridge_output": {
+      "traceStart": [
+        -30,
+        0
+      ],
+      "traceEnd": [
+        30,
+        0
+      ],
+      "arrow": [
+        0,
+        1
+      ],
+      "within": 1e-09
+    },
+    "kernel_output": {
+      "XDirection": [
+        3.56876177880591e-18,
+        0.9777876596251667,
+        -0.20959793101254467
+      ],
+      "YDirection": [
+        -0.9878687021467979,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "perpendicularBasis unification: Drawing projection (#881)::projectPointToPlane's basis matches OCCT's gp_Ax2 canonical basis",
+    "bridge_function": "projectPointToPlane (Swift) vs gp_Ax2",
+    "bridge_output": {
+      "projectedRight": [
+        1,
+        0
+      ],
+      "projectedUp": [
+        0,
+        1
+      ],
+      "within": 1e-09
+    },
+    "kernel_output": {
+      "XDirection": [
+        3.56876177880591e-18,
+        0.9777876596251667,
+        -0.20959793101254467
+      ],
+      "YDirection": [
+        -0.9878687021467979,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "perpendicularBasis unification: Drawing projection (#881)::projectAxisToPlane's basis matches OCCT's gp_Ax2 canonical basis",
+    "bridge_function": "projectAxisToPlane (Swift) vs gp_Ax2",
+    "bridge_output": {
+      "p1.y": 0,
+      "p2.y": 0,
+      "within": 1e-09
+    },
+    "kernel_output": {
+      "XDirection": [
+        3.56876177880591e-18,
+        0.9777876596251667,
+        -0.20959793101254467
+      ],
+      "YDirection": [
+        -0.9878687021467979,
+        0.03254876181607849,
+        0.1518420410263285
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is honoured (#999)::Orthographic projects the box at its true size",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "halfExtent": [
+        50,
+        25
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "halfExtent": [
+        50.0000001,
+        25.0000001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is honoured (#999)::Perspective diverges from orthographic, and by the ratio the focal distance implies",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "halfExtent": [
+        71.42857142857143,
+        35.714285714285715
+      ],
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "halfExtent": [
+        71.4285715286,
+        35.7142858143
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is honoured (#999)::The focal distance sets the scale, and a longer one converges on orthographic",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "halfExtentX": {
+        "20": 200,
+        "50": 71.4285714286,
+        "200": 54.0540540541,
+        "1000": 50.7614213198
+      },
+      "within": 1e-06
+    },
+    "kernel_output": {
+      "halfExtentX": {
+        "20": 200.0000001,
+        "50": 71.4285715286,
+        "200": 54.0540541541,
+        "1000": 50.7614214198
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is honoured (#999)::A non-positive focal distance is refused rather than silently reinterpreted",
+    "bridge_function": "OCCTDrawingCreate",
+    "bridge_output": {
+      "focus0": null,
+      "focusNeg100": null,
+      "focusNaN": null
+    },
+    "kernel_output": {
+      "guardFocusNotPositive": [
+        true,
+        true,
+        true
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Drawing.ProjectionType is honoured (#999)::projectFast stays orthographic, which is all HLRBRep_PolyAlgo can do",
+    "bridge_function": "OCCTDrawingCreatePoly",
+    "bridge_output": {
+      "halfExtent": [
+        50,
+        25
+      ],
+      "within": 0.001
+    },
+    "kernel_output": {
+      "halfExtent": [
+        50.0000001,
+        25.0000001
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
