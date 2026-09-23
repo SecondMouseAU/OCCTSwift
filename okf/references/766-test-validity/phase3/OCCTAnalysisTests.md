@@ -13,6 +13,7 @@
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
+| **Point Cloud Analysis** | Empty points returns nil | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -25,7 +26,7 @@
 | **ShapeAnalysis_Surface Tests** | ShapeAnalysis_Surface Tests | Surface analysis | Remove surface analysis |
 | **ShapeExtend Explorer** | ShapeExtend Explorer | Shape extension | Remove extension |
 | **v0.122.0, ShapeFix_Edge Extended** | v0.122.0, ShapeFix_Edge Extended | Edge fixing | Remove edge fix |
-| **Issue 772, analyze() self-intersection is opt-in** | Issue 772, analyze() self-intersection is opt-in | Self-intersection | Remove self-intersection |
+| **Issue #772, analyze() self-intersection is opt-in** | Issue 772, analyze() self-intersection is opt-in | Self-intersection | Remove self-intersection |
 | **Issue #443, solid(from:) and upgraded() cover every body** | Issue 443, solid(from:) and upgraded() cover every body | Solid creation | Remove solid creation |
 | **Issue #442, fixSolid/solidFromShellFixed cover every body** | Issue 442, fixSolid/solidFromShellFixed cover every body | Solid fixing | Remove solid fix |
 | **Issue 702, solid demotion is reported accurately** | Issue 702, solid demotion is reported accurately | Solid demotion | Remove demotion |
@@ -110,6 +111,7 @@
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
 | line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
 | curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
+| Empty points returns nil | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -202,6 +204,7 @@ For each test, run ground-truth C++ comparison:
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
 | line intersection with box | ✅ | ✅ | ✅ |
 | curve intersection with sphere | ✅ | ✅ | ✅ |
+| Empty points returns nil | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
