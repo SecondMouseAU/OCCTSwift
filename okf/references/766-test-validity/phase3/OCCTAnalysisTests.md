@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **v0.114.0 - Mass Properties** | linearProperties | Linear mass properties | Offset centre of mass |
+| **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
+| **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
+| **v0.114.0 - Mass Properties** | radiusOfGyration | Radius of gyration | Shift axis |
 
 ---
 
@@ -202,6 +206,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| linearProperties | OCCTShapeLinearProperties | Linear mass properties | Write com.X() + 1.0 to *cx | ✅ | ✅ | Rewritten: if-let removed, centre asserted, tolerance 1e-9 (y = -5.55e-17 on both sides) |
+| momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
+| principalAxes | OCCTShapePrincipalAxes | Principal axes of inertia | Read ThirdAxisOfInertia into axis1 | ✅ | ✅ | Rewritten: cube fixture has isotropic inertia, so any frame is principal; now 10x20x30 with unique axes |
+| radiusOfGyration | OCCTShapeRadiusOfGyration | Radius of gyration | Build the axis through (ax + 1, ay, az) | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to sqrt(50/3) |
 
 ---
 
