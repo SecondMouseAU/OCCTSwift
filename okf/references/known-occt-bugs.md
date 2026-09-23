@@ -83,6 +83,7 @@ redundant after that refactor and its coverage was widened rather than removed.
 |---|---|---|---|
 | #341 (part) | container overflow in `NCollection` on arm64 | never characterised, no race under TSan; three suites re-enabled | `Scripts/repro/341-meshcaf/` |
 | #367, #369 | `OSD_ThreadPool::DefaultPool()` corrupts concurrent `SetRunParallel(true)` callers | `BRepAlgoAPI_BuilderAlgo` is General Fuse (a split-parts compound), not `BRepAlgoAPI_Fuse` (a merged solid); the reproducer compared the two. The 237 July races were #1153/#1154. The pool is safe. Whether to re-enable `SetRunParallel(true)` in `OCCTShapeFuseMulti` is a separate, open decision | `Scripts/repro/342-boolean-ops/` |
+| #2188 | `OCC_CATCH_SIGNALS` is inert here, because `OCC_CONVERT_SIGNALS` is undefined | True of the bridge, false of OCCT. `adm/cmake/occt_defs_flags.cmake` adds `-DOCC_CONVERT_SIGNALS` for every non-Windows target, and the `flags.make` CMake generates for both the macOS and the wasm build carries it, so OCCT's own `OCC_CATCH_SIGNALS` sites register a handler and `Standard_ErrorHandler::Abort` longjmps to the nearest one. SwiftPM defines nothing for `Sources/OCCTBridge/src/*.mm`, so the same macro written there expands to nothing, and a signal with no OCCT site above it still ends the process. The bridge-side guidance is unchanged; what the wasm build takes from it is that `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are required, not precautionary | `Scripts/repro/2172/README.md` |
 
 ## Where this list used to live
 
