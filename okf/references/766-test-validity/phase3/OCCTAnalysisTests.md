@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Curvature getters report definedness (#595)** | A straight curve reports 0; a curve with no tangent reports nothing | Curve3D curvature definedness | Restore the #595 zero sentinel |
 | **BRepExtrema_ExtCF Tests** | Edge to sphere face distance | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
 | **BRepExtrema_ExtCF Tests** | Box edge to box face | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
 | **Bnd OBB Tests** | createAndQuery | OBB accessors | OCCTOBBGetHalfSizes writes YHSize into hx |
@@ -303,6 +304,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| A straight curve reports 0; a curve with no tangent reports nothing | OCCTCurve3DGetCurvature | Curve3D curvature definedness | Return true (curvature 0) when IsTangentDefined() is false | ✅ | ✅ |  |
 | Canonical recognition callable on box | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
 | Canonical recognition callable on cylinder | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
 | torusSurfaceArea | OCCTGPropTorusSurface | Torus surface area | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.19 off, inside the old tolerance |
