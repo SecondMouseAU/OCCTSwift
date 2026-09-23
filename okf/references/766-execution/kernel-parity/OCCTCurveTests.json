@@ -302,5 +302,227 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::measuredSetPerOrder",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity, OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "C0 {C0}, G1 {C0,G1}, C1 {C0,C1}, G2 {C0,G1,G2}, C2 {C0,C1,C2}"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: order C0 answers all five predicates true (IsC2 1 on a 90-degree corner), which is why the bridge's measured set exists"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall: every class reported measured",
+    "red": "Issue495AnalysisOrderTests.swift:47 a.measured == want",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::unmeasuredClassesReportNil",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "unmeasured nil; C1 false at .c1; G1 false at .g1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: C0: IsG1/IsC1/IsG2/IsC2 all 1 (unmeasured); C1: IsC1 0, IsG1 0; G1: IsG1 0, IsC1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall; flagall",
+    "red": "Issue495AnalysisOrderTests.swift:60 atC0.holds(.g1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt",
+    "note": "The kernel's raw predicates are the false positives the bridge withholds"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::defaultOrderDoesNotMeasureG1",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "G1 nil at .c2, true at .g1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Smooth junction: order C2 IsG1 1 without computing it; order G1 IsG1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "measall",
+    "red": "Issue495AnalysisOrderTests.swift:80 measured == [.c0, .c1, .c2]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::unmeasuredMetricsAreWithheld",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "-1 for every unmeasured metric; C0Value < 1e-6"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocalAnalysis_CurveContinuity on the sharp corner: C0Value 0 at every order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "metric0: withheld g1Angle reported as 0",
+    "red": "Issue495AnalysisOrderTests.swift:98 atC0.g1Angle == -1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::flagsStayInsideMeasured",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuityFlags",
+    "bridge_output": {
+      "type": "value",
+      "data": "inside measured at each order"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Smooth junction: the kernel's predicates answer 1 for unmeasured classes at every order"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "flagall: all five bits set",
+    "red": "Issue495AnalysisOrderTests.swift:120 flags & ~measured == 0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt",
+    "note": "A silent `continue` on a nil analysis now records an issue"
+  },
+  {
+    "test_name": "Issue #495: analysis order selects what is measured::orderReportsTheEffectiveRequest",
+    "test_file": "Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift",
+    "bridge_function": "OCCTLocalAnalysisCurveContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "c0/g1/c1 echoed; c3/cN saturate to c2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ContinuityStatus() echoes the constructed order (0..4); the C3/CN saturation is the bridge's"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "aecho; aord",
+    "red": "Issue495AnalysisOrderTests.swift:132 a.order == order",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::ordinaryProjection",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "5, 3, 8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: 5, 3, 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: parameter + 1e-3; npend",
+    "red": "Issue500Curve3DNearestParameterTests.swift:26 nearestParameter((5,2,0)) == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::pastTheEndAnswersWithTheEnd",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": "8, 3, 3"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: NbPoints 0 past either end; the end-point fallback is the bridge's (#615)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npend: end parameters answer nil; npoff",
+    "red": "Issue500Curve3DNearestParameterTests.swift:40 nearestParameter((100,0,0)) == 8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::circleCentreAnswersAtTheRadius",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "a point at radius 5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve at the circle centre: NbPoints 0; the tied answer is the bridge's (#615)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npend; ppdist: distance x 1.01",
+    "red": "Issue500Curve3DNearestParameterTests.swift:54 projectPoint(.zero).distance == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D nearest-parameter entry points agree (#500)::projectPointAndNearestParameterAgree",
+    "test_file": "Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": "8, distance 92"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_ProjectPointOnCurve on [3, 8]: (100,0,0) NbPoints 0; both bridge answers are the end at 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff; npend; ppdist",
+    "red": "Issue500Curve3DNearestParameterTests.swift:71 nearestParameter == projected.parameter",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-analysis-order-nearest/transcript.txt"
   }
 ]

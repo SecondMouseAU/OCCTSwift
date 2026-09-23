@@ -1,0 +1,18 @@
+sharp corner:
+  order 0: done 1 status 0 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 1 | C0Value 0
+  order 1: done 1 status 1 | IsC0 1 IsG1 0 IsC1 1 IsG2 0 IsC2 1 | C0Value 0
+  order 2: done 1 status 2 | IsC0 1 IsG1 1 IsC1 0 IsG2 1 IsC2 0 | C0Value 0
+  order 3: done 1 status 3 | IsC0 1 IsG1 0 IsC1 1 IsG2 0 IsC2 1 | C0Value 0
+  order 4: done 1 status 4 | IsC0 1 IsG1 1 IsC1 0 IsG2 1 IsC2 0 | C0Value 0
+smooth junction:
+  order 0: done 1 status 0 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 1 | C0Value 0
+  order 1: done 1 status 1 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 1 | C0Value 0
+  order 2: done 1 status 2 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 0 | C0Value 0
+  order 3: done 1 status 3 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 1 | C0Value 0
+  order 4: done 1 status 4 | IsC0 1 IsG1 1 IsC1 1 IsG2 1 IsC2 1 | C0Value 0
+segment [3,8] point (5,2,0): NbPoints 1 LowerDistanceParameter 5
+segment [3,8] point (3,4,0): NbPoints 1 LowerDistanceParameter 3
+segment [3,8] point (8,-1,0): NbPoints 1 LowerDistanceParameter 8
+segment [3,8] point (100,0,0): NbPoints 0
+segment [3,8] point (0,0,0): NbPoints 0
+circle r 5 centre: NbPoints 0

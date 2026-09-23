@@ -111,7 +111,10 @@ struct Issue495CurveAnalysisOrderTests {
     func flagsStayInsideMeasured() throws {
         let pair = try #require(smoothJunctionCurves())
         for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
-            guard let a = analyse(pair, order) else { continue }
+            guard let a = analyse(pair, order) else {
+                Issue.record("order \(order) did not analyse")  // #766: was a silent continue
+                continue
+            }
             var measuredMask = 0
             for c in a.measured { measuredMask |= c.analysisFlagBit }
             #expect(

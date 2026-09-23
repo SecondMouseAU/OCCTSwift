@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Issue #495: analysis order selects what is measured | measuredSetPerOrder | `OCCTLocalAnalysisCurveContinuity, OCCTLocalAnalysisCurveContinuityFlags` | measall: every class reported measured | `Issue495AnalysisOrderTests.swift:47 a.measured == want` | ✅ | MATCH |  |
+| Issue #495: analysis order selects what is measured | unmeasuredClassesReportNil | `OCCTLocalAnalysisCurveContinuityFlags` | measall; flagall | `Issue495AnalysisOrderTests.swift:60 atC0.holds(.g1) == nil` | ✅ | MATCH | The kernel's raw predicates are the false positives the bridge withholds |
+| Issue #495: analysis order selects what is measured | defaultOrderDoesNotMeasureG1 | `OCCTLocalAnalysisCurveContinuity` | measall | `Issue495AnalysisOrderTests.swift:80 measured == [.c0, .c1, .c2]` | ✅ | MATCH |  |
+| Issue #495: analysis order selects what is measured | unmeasuredMetricsAreWithheld | `OCCTLocalAnalysisCurveContinuity` | metric0: withheld g1Angle reported as 0 | `Issue495AnalysisOrderTests.swift:98 atC0.g1Angle == -1` | ✅ | MATCH |  |
+| Issue #495: analysis order selects what is measured | flagsStayInsideMeasured | `OCCTLocalAnalysisCurveContinuityFlags` | flagall: all five bits set | `Issue495AnalysisOrderTests.swift:120 flags & ~measured == 0` | ✅ | MATCH | A silent `continue` on a nil analysis now records an issue |
+| Issue #495: analysis order selects what is measured | orderReportsTheEffectiveRequest | `OCCTLocalAnalysisCurveContinuity` | aecho; aord | `Issue495AnalysisOrderTests.swift:132 a.order == order` | ✅ | MATCH |  |
+| Curve3D nearest-parameter entry points agree (#500) | ordinaryProjection | `OCCTCurve3DNearestParameter` | npoff: parameter + 1e-3; npend | `Issue500Curve3DNearestParameterTests.swift:26 nearestParameter((5,2,0)) == 5` | ✅ | MATCH |  |
+| Curve3D nearest-parameter entry points agree (#500) | pastTheEndAnswersWithTheEnd | `OCCTCurve3DNearestParameter` | npend: end parameters answer nil; npoff | `Issue500Curve3DNearestParameterTests.swift:40 nearestParameter((100,0,0)) == 8` | ✅ | MATCH |  |
+| Curve3D nearest-parameter entry points agree (#500) | circleCentreAnswersAtTheRadius | `OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint` | npend; ppdist: distance x 1.01 | `Issue500Curve3DNearestParameterTests.swift:54 projectPoint(.zero).distance == 5` | ✅ | MATCH |  |
+| Curve3D nearest-parameter entry points agree (#500) | projectPointAndNearestParameterAgree | `OCCTCurve3DNearestParameter, OCCTCurve3DProjectPoint` | npoff; npend; ppdist | `Issue500Curve3DNearestParameterTests.swift:71 nearestParameter == projected.parameter` | ✅ | MATCH |  |
