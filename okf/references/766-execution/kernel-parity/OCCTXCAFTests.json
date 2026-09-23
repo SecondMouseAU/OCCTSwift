@@ -126,5 +126,215 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Set and get integer",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 42
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::Change integer value",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": 99
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "TDataStd Integer Attribute::No integer on fresh label",
+    "bridge_function": "OCCTDocumentGetIntegerAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::setAndAdd",
+    "bridge_function": "OCCTIntPackedMapContains",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "c42": true,
+        "c100": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::extent",
+    "bridge_function": "OCCTIntPackedMapExtent",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::remove",
+    "bridge_function": "OCCTIntPackedMapRemove",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "contains": false,
+        "extent": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "contains_after_remove": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::clearAndEmpty",
+    "bridge_function": "OCCTIntPackedMapClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": true,
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "empty": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::getValues",
+    "bridge_function": "OCCTIntPackedMapGetValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "values": [
+          7,
+          42,
+          99
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent_after_3_adds": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
+  },
+  {
+    "test_name": "IntPackedMap Tests::changeValues",
+    "bridge_function": "OCCTIntPackedMapChangeValues",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "extent": 5,
+        "c30": true,
+        "c1": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdatastd/"
   }
 ]

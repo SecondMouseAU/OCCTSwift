@@ -99,3 +99,26 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDataStdIntegerTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetInteger` | `OCCTDocumentGetIntegerAttr` returns false | :17 Expectation failed: label.integer == 42 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 42 |
+| `changeInteger` | `OCCTDocumentGetIntegerAttr` returns false | :26 Expectation failed: label.integer == 99 | passed | `OCCTDocumentGetIntegerAttr` | PASS: 99 after the second Set |
+| `noInteger` | `OCCTDocumentGetIntegerAttr` answers 0 where there is none | :34 Expectation failed: label.integer == nil | passed | `OCCTDocumentGetIntegerAttr` | PASS: none on a fresh child |
+
+### `TDataStdIntPackedMapTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndAdd` | `OCCTIntPackedMapContains` returns false | :13 Expectation failed: doc.intPackedMapContains(tag: 100, value: 42); :14 Expectation failed: doc.intPackedMapContains(tag: 100, value: 100) | passed | `OCCTIntPackedMapContains` | PASS: both contained |
+| `extent` | `OCCTIntPackedMapExtent` returns 0 | :23 Expectation failed: doc.intPackedMapCount(tag: 101) == 3 | passed | `OCCTIntPackedMapExtent` | PASS: 3 |
+| `remove` | `OCCTIntPackedMapRemove` returns true without removing | :32 Expectation failed: !doc.intPackedMapContains(tag: 102, value: 10); :33 Expectation failed: doc.intPackedMapCount(tag: 102) == 1 | passed | `OCCTIntPackedMapRemove` | PASS: gone after Remove |
+| `clearAndEmpty` | `OCCTIntPackedMapClear` returns true without clearing | :42 Expectation failed: doc.intPackedMapIsEmpty(tag: 103); :43 Expectation failed: doc.intPackedMapCount(tag: 103) == 0 | passed | `OCCTIntPackedMapClear` | PASS: empty after Clear |
+| `getValues` | `OCCTIntPackedMapGetValues` returns no values | :53 Expectation failed: values.count == 3; :54 Expectation failed: values.contains(7) | passed | `OCCTIntPackedMapGetValues` | PASS: 3 values |
+| `changeValues` | `OCCTIntPackedMapChangeValues` returns true without changing | :64 Expectation failed: doc.intPackedMapCount(tag: 105) == 5; :65 Expectation failed: doc.intPackedMapContains(tag: 105, value: 30) | passed | `OCCTIntPackedMapChangeValues` | PASS: 5; 30 in, 1 out |
