@@ -235,6 +235,12 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Bnd BoundSortBox Tests (#1462)** | compareOverlapping | BoundSortBox query | Index base |
+| **Bnd BoundSortBox Tests (#1462)** | compareNonOverlapping | BoundSortBox query | Query honoured |
+| **Bnd BoundSortBox Tests (#1462)** | bridgeFunctionReturnsZeroBasedIndex | BoundSortBox query | Index base |
+| **Bnd BoundSortBox Tests (#1462)** | sizingQueryReturnsTrueCountWithNilBuffer | BoundSortBox count-then-fill | True count |
+| **Bnd BoundSortBox Tests (#1462)** | fillCallReturnsTrueCountNotWrittenCount | BoundSortBox count-then-fill | True count |
+| **Bnd BoundSortBox Tests (#1462)** | swiftWrapperNeverTruncates | BoundSortBox count-then-fill | True count |
 
 ---
 
@@ -424,6 +430,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| compareOverlapping | OCCTBoundSortBoxCompare | BoundSortBox query | skip -1 (BSB_ONEBASED); every box (BSB_ALL); written count (BSB_WRITTEN) | ✅ | ✅ |  |
+| compareNonOverlapping | OCCTBoundSortBoxCompare | BoundSortBox query | report every box (BSB_ALL) | ✅ | ✅ |  |
+| bridgeFunctionReturnsZeroBasedIndex | OCCTBoundSortBoxCompare | BoundSortBox query | skip -1 (BSB_ONEBASED) | ✅ | ✅ |  |
+| sizingQueryReturnsTrueCountWithNilBuffer | OCCTBoundSortBoxCompare | BoundSortBox count-then-fill | return number written (BSB_WRITTEN) | ✅ | ✅ |  |
+| fillCallReturnsTrueCountNotWrittenCount | OCCTBoundSortBoxCompare | BoundSortBox count-then-fill | return number written (BSB_WRITTEN) | ✅ | ✅ |  |
+| swiftWrapperNeverTruncates | OCCTBoundSortBoxCompare | BoundSortBox count-then-fill | return number written (BSB_WRITTEN); skip -1 (BSB_ONEBASED) | ✅ | ✅ |  |
 
 ---
 

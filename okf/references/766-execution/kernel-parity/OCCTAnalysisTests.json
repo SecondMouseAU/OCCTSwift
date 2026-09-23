@@ -4501,5 +4501,169 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::compareOverlapping",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "occt_1based": [
+          3,
+          1
+        ],
+        "bridge_0based": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "occt_1based": [
+          3,
+          1
+        ],
+        "bridge_0based": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::compareNonOverlapping",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::bridgeFunctionReturnsZeroBasedIndex",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "occt_1based": [
+          1
+        ],
+        "bridge_0based": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "occt_1based": [
+          1
+        ],
+        "bridge_0based": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::sizingQueryReturnsTrueCountWithNilBuffer",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 5
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::fillCallReturnsTrueCountNotWrittenCount",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 5
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
+  },
+  {
+    "test_name": "Bnd BoundSortBox Tests (#1462)::swiftWrapperNeverTruncates",
+    "bridge_function": "OCCTBoundSortBoxCompare",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "count": 1200,
+        "occt_index_range": [
+          1,
+          1200
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "count": 1200,
+        "occt_index_range": [
+          1,
+          1200
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-bnd-boundsortbox/"
   }
 ]
