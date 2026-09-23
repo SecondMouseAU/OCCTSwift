@@ -222,3 +222,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: BSplineSurfaceExtrasTests.swift, BSplineSurfaceFillTests.swift, BSplineSurfaceIsoTests.swift, BSplineSurfaceKnotSplitTests.swift (10 tests), probe Scripts/repro/766-bspline-extras-fill-iso/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| BSplineSurface_Extras | resolution | `OCCTSurfaceBSplineResolution` | u and v resolutions swapped (INJ_BS_RES_SWAP) | BSplineSurfaceExtrasTests.swift:23 abs(ur - 7.0494451571408934e-05) < 1e-15 | ✅ | MATCH | Rewritten: `> 0` passed swapped values |
+| BSplineSurface_Extras | getWeight | `OCCTSurfaceBSplineGetWeight` | returns the 0 fallback (INJ_BS_WEIGHT_ZERO) | BSplineSurfaceExtrasTests.swift:31 abs(w - 1.0) < 1e-10 | ✅ | MATCH | Caught as written |
+| BSplineSurface_Extras | setUPeriodic | `OCCTSurfaceBSplineSetUPeriodic` | periodic flag inverted (INJ_BS_PERIODIC_INVERT) | BSplineSurfaceExtrasTests.swift:42 !s.isUPeriodic | ✅ | MATCH | Rewritten: was `#expect(true)`, could not fail |
+| BSplineSurface_Extras | setVPeriodic | `OCCTSurfaceBSplineSetVPeriodic` | periodic flag inverted (INJ_BS_PERIODIC_INVERT) | BSplineSurfaceExtrasTests.swift:52 !s.isVPeriodic | ✅ | MATCH | Rewritten: was `#expect(true)`, could not fail |
+| BSpline Surface Fill | Fill from 2 boundary curves | `OCCTSurfaceFillBSpline2Curves` | style forced to Curved (INJ_BSFILL_STYLE) | BSplineSurfaceFillTests.swift:28 surface != nil | ✅ | MATCH | Rewritten: asserted only non-nil |
+| BSpline Surface Fill | Fill from 4 boundary curves (Coons) | `OCCTSurfaceFillBSpline4Curves` | fourth curve replaced by the first (INJ_BSFILL_ORDER) | process died inside "Fill from 4 boundary curves (Coons)": GeomFill_BSplineCurves faults (SIGSEGV) on a boundary that does not close, reproduced in the probe | ✅ | MATCH | Rewritten: asserted only non-nil. KERNEL FINDING: four curves that do not close SIGSEGV in GeomFill_BSplineCurves, uncatchable, reachable from Surface.bsplineFill(curves:). A first injection, swapping curves 2 and 3, stayed GREEN: the kernel reorders the curves itself |
+| BSpline Surface Fill | Stretch fill style | `OCCTSurfaceFillBSpline2Curves` | style forced to Curved (INJ_BSFILL_STYLE) | BSplineSurfaceFillTests.swift:85 surface != nil | ✅ | MATCH | Rewritten: inputs behind `if let`, only non-nil; now also pins that curved is refused |
+| BSplineSurface Iso Curves | UIso returns curve | `OCCTSurfaceBSplineUIso` | UIso/VIso swapped (INJ_BS_ISO_SWAP) | BSplineSurfaceIsoTests.swift:25 simd_length(iso.point(at: 0.3) - bs.point(atU: uMid, v: 0.3)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| BSplineSurface Iso Curves | VIso returns curve | `OCCTSurfaceBSplineVIso` | UIso/VIso swapped (INJ_BS_ISO_SWAP) | BSplineSurfaceIsoTests.swift:42 simd_length(iso.point(at: 1.0) - bs.point(atU: 1.0, v: vMid)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| BSplineSurface KnotSplitting Tests | knotSplitsU | `OCCTSurfaceKnotSplitting` | requested continuity + 1 (INJ_KS_CONT) | BSplineSurfaceKnotSplitTests.swift:20 c0.uSplitCount == 2 | ✅ | MATCH | Rewritten: `n >= 0` held for any Int |
