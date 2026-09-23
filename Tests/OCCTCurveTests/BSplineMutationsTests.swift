@@ -12,16 +12,17 @@ struct BSplineMutationsTests {
         let points = [
             SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0), SIMD3(3.0, 1.0, 0.0),
         ]
-        if let curve = Curve3D.fit(points: points) {
-            let seq = curve.bsplineKnotSequence()
-            #expect(seq.count > 0)
-            let weights = curve.bsplineWeights()
-            #expect(weights.count > 0)
-            // All weights should be 1.0 for non-rational
-            for w in weights {
-                #expect(abs(w - 1.0) < 1e-10)
-            }
+        guard let curve = Curve3D.fit(points: points) else {
+            Issue.record("fitted BSpline not built")
+            return
         }
+        // GeomAPI_PointsToBSpline gives one cubic span here: knots 0 and 1, multiplicity 4 each
+        // (Scripts/repro/766-curve-bspline-manip/transcript.txt). `count > 0` passed a short
+        // sequence (#766).
+        #expect(curve.bsplineKnotSequence() == [0, 0, 0, 0, 1, 1, 1, 1])
+        let weights = curve.bsplineWeights()
+        // All weights are 1.0 for a non-rational curve, one per pole.
+        #expect(weights == [1, 1, 1, 1])
     }
 
     @Test func periodicKnotSequenceLength() {
@@ -106,32 +107,43 @@ struct BSplineMutationsTests {
 
     @Test func curveMaxDegree() {
         let maxDeg = Curve3D.bsplineMaxDegree
-        #expect(maxDeg >= 10)  // OCCT supports at least degree 25
+        #expect(maxDeg == 25)  // Geom_BSplineCurve::MaxDegree() in the pinned kernel
     }
 
     @Test func curveLocateU() {
         let points = [
             SIMD3(0.0, 0.0, 0.0), SIMD3(1.0, 1.0, 0.0), SIMD3(2.0, 0.0, 0.0), SIMD3(3.0, 1.0, 0.0),
         ]
-        if let curve = Curve3D.fit(points: points) {
-            let span = curve.bsplineLocateU(0.5)
-            #expect(span >= 1)
+        guard let curve = Curve3D.fit(points: points) else {
+            Issue.record("fitted BSpline not built")
+            return
         }
+        let span = curve.bsplineLocateU(0.5)
+        // Not pinned: the kernel's span for u = 0.5 is I1 = 1, but the bridge passes one variable
+        // as both LocateU outputs and so returns I2 = 2 (#766 finding). Only the lower bound holds.
+        #expect(span >= 1)
     }
 
     @Test func surfaceUVKnots() {
         // Create a BSpline surface by converting a sphere
-        if let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5),
+        guard let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5),
             let bspline = sphere.toBSpline()
-        {
-            let uKnots = bspline.bsplineUKnots()
-            let vKnots = bspline.bsplineVKnots()
-            #expect(uKnots.count > 0)
-            #expect(vKnots.count > 0)
-            let (weights, rows, cols) = bspline.bsplineWeights()
-            #expect(weights.count == rows * cols)
-            #expect(rows > 0)
-            #expect(cols > 0)
+        else {
+            Issue.record("BSpline sphere not built")
+            return
         }
+        // GeomConvert::SurfaceToBSplineSurface on the r = 5 sphere: 4 U knots (thirds of 2 pi),
+        // 3 V knots (-pi/2, 0, pi/2), 6 x 5 poles, rational.
+        let uKnots = bspline.bsplineUKnots()
+        let vKnots = bspline.bsplineVKnots()
+        #expect(uKnots.count == 4)
+        #expect(abs((uKnots.last ?? 0) - 2 * Double.pi) < 1e-12)
+        #expect(vKnots.count == 3)
+        #expect(abs((vKnots.first ?? 0) + Double.pi / 2) < 1e-12)
+        let (weights, rows, cols) = bspline.bsplineWeights()
+        #expect(rows == 6)
+        #expect(cols == 5)
+        #expect(weights.count == rows * cols)
+        #expect(abs((weights.first ?? 0) - 1) < 1e-12)
     }
 }

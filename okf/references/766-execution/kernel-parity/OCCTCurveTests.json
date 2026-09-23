@@ -302,5 +302,253 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, BSpline Curve Completions::BSpline periodic normalization",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurveCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplinePeriodicNormalization",
+    "bridge_output": {
+      "type": "value",
+      "data": "3.8334777586295301"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "PeriodicNormalization(100) = 3.8334777586295301"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "period added after PeriodicNormalization",
+    "red": "BSplineCurveCompletionsTests.swift:29 abs(normalized - 3.8334777586295301) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Rewritten: any value inside the domain passed, and `if let` hid a nil"
+  },
+  {
+    "test_name": "v0.127.0, BSpline Curve Completions::BSpline periodic normalization returns nil for non-periodic",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurveCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplinePeriodicNormalization",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsPeriodic 0, so the bridge refuses"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsPeriodic() guard skipped",
+    "red": "BSplineCurveCompletionsTests.swift:43 curve.bsplinePeriodicNormalization(0.5) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt"
+  },
+  {
+    "test_name": "v0.127.0, BSpline Curve Completions::BSpline IsG1 returns true for smooth curve",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurveCompletionsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIsG1",
+    "bridge_output": {
+      "type": "value",
+      "data": "true"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "IsG1(first, last, 0.01) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IsG1() negated",
+    "red": "BSplineCurveCompletionsTests.swift:57 curve.bsplineIsG1(tFirst: domain.lowerBound, tLast: domain.upperBound)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt"
+  },
+  {
+    "test_name": "BSpline Knot Splitting::BSpline curve continuity breaks",
+    "test_file": "Tests/OCCTCurveTests/BSplineKnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0, 104.21434142900561]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "order 0: 2 splits, 0 and 104.21434142900561 (order 3: 8)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "continuity order + 3",
+    "red": "BSplineKnotSplittingTests.swift:37 c0Breaks.count == 2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Rewritten: count >= 2 passed every interior knot"
+  },
+  {
+    "test_name": "BSpline Knot Splitting::Non-BSpline returns nil",
+    "test_file": "Tests/OCCTCurveTests/BSplineKnotSplittingTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineKnotSplits",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_TrimmedCurve of a line does not DownCast to Geom_BSplineCurve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "return 0 splits instead of -1 for a non-BSpline",
+    "red": "BSplineKnotSplittingTests.swift:49 line.continuityBreaks() == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::curveKnotSequenceAndWeights",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetKnotSequence",
+    "bridge_output": {
+      "type": "value",
+      "data": "[0,0,0,0,1,1,1,1], weights [1,1,1,1]"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "knotSequence 0 0 0 0 1 1 1 1, weights 1 1 1 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one knot short (and, separately, weights doubled)",
+    "red": "BSplineMutationsTests.swift:22 curve.bsplineKnotSequence() == [0, 0, 0, 0, 1, 1, 1, 1]",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Rewritten: count > 0 passed a short sequence"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::periodicKnotSequenceLength",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetKnotSequence",
+    "bridge_output": {
+      "type": "value",
+      "data": "10 and 10"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "#1456 ground truth: 10 before and after SetPeriodic"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one knot short",
+    "red": "BSplineMutationsTests.swift:50 curve.bsplineKnotSequence().count == 10",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::knotSequenceOverflowGuard",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineGetKnotSequence",
+    "bridge_output": {
+      "type": "value",
+      "data": "1034"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "KnotSequence().Length() = NbPoles + Degree + 1 = 1034 for a clamped curve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "one knot short",
+    "red": "BSplineMutationsTests.swift:102 seq.count == realLength",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::curveMaxDegree",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": "25"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BSplineCurve::MaxDegree() = 25"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report 8",
+    "red": "BSplineMutationsTests.swift:110 maxDeg == 25",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Rewritten: >= 10"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::curveLocateU",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocateU",
+    "bridge_output": {
+      "type": "value",
+      "data": "2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "LocateU(0.5): I1 = 1, I2 = 2; the bridge returns I2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "span forced to 0",
+    "red": "BSplineMutationsTests.swift:124 span >= 1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Finding: the bridge passes one variable as both LocateU outputs, so it returns the upper index"
+  },
+  {
+    "test_name": "v0.113.0 - BSpline Mutations::surfaceUVKnots",
+    "test_file": "Tests/OCCTCurveTests/BSplineMutationsTests.swift",
+    "bridge_function": "OCCTSurfaceBSplineGetWeights",
+    "bridge_output": {
+      "type": "value",
+      "data": "4 U knots, 3 V knots, 6 x 5 weights"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "NbUKnots 4, NbVKnots 3, 6 x 5 poles, weight(1,1) = 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "cols + 1",
+    "red": "BSplineMutationsTests.swift:145 cols == 5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-misc/transcript.txt",
+    "note": "Rewritten: counts > 0, and weights.count == rows * cols holds by construction"
   }
 ]
