@@ -102,6 +102,13 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Geom_Ellipse Properties** | ellipseRadii | Ellipse radii | MajorRadius returns MinorRadius |
+| **Geom_Ellipse Properties** | ellipseSetRadii | Ellipse radius setters | SetMajorRadius returns true without writing |
+| **Geom_Ellipse Properties** | ellipseEccentricity | Ellipse eccentricity | Eccentricity returns minor/major (0.5) |
+| **Geom_Ellipse Properties** | ellipseFocal | Ellipse focal distance | Focal returns Parameter (2.5) |
+| **Geom_Ellipse Properties** | ellipseFoci | Ellipse foci | Focus1/Focus2 return without writing (both at origin) |
+| **Geom_Ellipse Properties** | ellipseParameter | Ellipse semi-latus rectum | Parameter returns Eccentricity |
+| **Geom_Ellipse Properties** | ellipseDirectrix1 | Ellipse directrix | Directrix1 returns Directrix2 |
 
 ---
 
@@ -216,6 +223,13 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| ellipseRadii | OCCTCurve3DEllipseMajorRadius | Ellipse radii | MajorRadius returns MinorRadius | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTCurve3DCreateEllipse skipped every assertion under if-let |
+| ellipseSetRadii | OCCTCurve3DEllipseSetMajorRadius | Ellipse radius setters | SetMajorRadius returns true without writing | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: a nil OCCTCurve3DCreateEllipse skipped every assertion under if-let |
+| ellipseEccentricity | OCCTCurve3DEllipseEccentricity | Ellipse eccentricity | Eccentricity returns minor/major (0.5) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: 0 < e < 1 accepted minor/major = 0.5; now pinned to sqrt(3)/2 |
+| ellipseFocal | OCCTCurve3DEllipseFocal | Ellipse focal distance | Focal returns Parameter (2.5) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: focal > 0 accepted Parameter(); now pinned to 2*sqrt(75) |
+| ellipseFoci | OCCTCurve3DEllipseFocus1 | Ellipse foci | Focus1/Focus2 return without writing (both at origin) | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: f1.x + f2.x == 0 accepted two foci at the origin; also reaches OCCTCurve3DEllipseFocus2 |
+| ellipseParameter | OCCTCurve3DEllipseParameter | Ellipse semi-latus rectum | Parameter returns Eccentricity | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: parameter > 0 accepted Eccentricity(); now pinned to 25/10 |
+| ellipseDirectrix1 | OCCTCurve3DEllipseDirectrix1 | Ellipse directrix | Directrix1 returns Directrix2 | ✅ | ✅ | Could already fail; tightened to the probed position instead of majorRadius/eccentricity read through the wrapper, and try #require replaces if-let |
 
 ---
 
@@ -318,5 +332,12 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| ellipseRadii | ✅ | ✅ | ✅ |
+| ellipseSetRadii | ✅ | ✅ | ✅ |
+| ellipseEccentricity | ✅ | ✅ | ✅ |
+| ellipseFocal | ✅ | ✅ | ✅ |
+| ellipseFoci | ✅ | ✅ | ✅ |
+| ellipseParameter | ✅ | ✅ | ✅ |
+| ellipseDirectrix1 | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
