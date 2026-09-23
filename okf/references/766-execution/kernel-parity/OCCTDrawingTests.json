@@ -222,5 +222,298 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Equation roundtrip",
+    "bridge_function": "OCCTClipPlaneCreate",
+    "bridge_output": {
+      "equation": [
+        0,
+        0,
+        1,
+        -5
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        0,
+        0,
+        1,
+        -5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Create from normal and distance",
+    "bridge_function": "OCCTClipPlaneCreate",
+    "bridge_output": {
+      "equation": [
+        1,
+        0,
+        0,
+        -3
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        1,
+        0,
+        0,
+        -3
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Set equation updates values",
+    "bridge_function": "OCCTClipPlaneSetEquation",
+    "bridge_output": {
+      "equation": [
+        0,
+        1,
+        0,
+        -2
+      ]
+    },
+    "kernel_output": {
+      "equation": [
+        0,
+        1,
+        0,
+        -2
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Reversed equation is negated",
+    "bridge_function": "OCCTClipPlaneGetReversedEquation",
+    "bridge_output": {
+      "reversed": [
+        -0.0,
+        -0.0,
+        -1,
+        5
+      ]
+    },
+    "kernel_output": {
+      "reversed": [
+        -0.0,
+        -0.0,
+        -1,
+        5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Enable and disable",
+    "bridge_function": "OCCTClipPlaneSetOn",
+    "bridge_output": {
+      "default": true,
+      "off": false,
+      "on": true
+    },
+    "kernel_output": {
+      "default": true,
+      "off": false,
+      "on": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Capping on/off",
+    "bridge_function": "OCCTClipPlaneSetCapping",
+    "bridge_output": {
+      "default": false,
+      "set": true
+    },
+    "kernel_output": {
+      "default": false,
+      "set": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Capping color",
+    "bridge_function": "OCCTClipPlaneSetCappingColor",
+    "bridge_output": {
+      "color": [
+        1.0,
+        0.0,
+        0.5
+      ]
+    },
+    "kernel_output": {
+      "color": [
+        1,
+        0,
+        0.5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Hatch style",
+    "bridge_function": "OCCTClipPlaneSetCappingHatch",
+    "bridge_output": {
+      "style": 5,
+      "hatchOn": true,
+      "hatchOff": false
+    },
+    "kernel_output": {
+      "style": 5,
+      "hatchOn": true,
+      "hatchOff": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe point: inside half-space",
+    "bridge_function": "OCCTClipPlaneProbePoint",
+    "bridge_output": {
+      "state": "in"
+    },
+    "kernel_output": {
+      "state": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe point: outside half-space",
+    "bridge_function": "OCCTClipPlaneProbePoint",
+    "bridge_output": {
+      "state": "out"
+    },
+    "kernel_output": {
+      "state": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: fully inside",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": "in"
+    },
+    "kernel_output": {
+      "state": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: partially clipped",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": "on"
+    },
+    "kernel_output": {
+      "state": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Probe bounding box: fully outside",
+    "bridge_function": "OCCTClipPlaneProbeBox",
+    "bridge_output": {
+      "state": "out"
+    },
+    "kernel_output": {
+      "state": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Chain two planes",
+    "bridge_function": "OCCTClipPlaneSetChainNext",
+    "bridge_output": {
+      "length": [
+        1,
+        2
+      ],
+      "in": "in",
+      "out": "out"
+    },
+    "kernel_output": {
+      "length": [
+        1,
+        2
+      ],
+      "in": 1,
+      "out": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Clip Plane::Clear chain",
+    "bridge_function": "OCCTClipPlaneSetChainNext",
+    "bridge_output": {
+      "lengthAfterClear": 1
+    },
+    "kernel_output": {
+      "lengthAfterClear": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

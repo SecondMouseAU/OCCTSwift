@@ -85,3 +85,27 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Clip Plane | Equation roundtrip | `OCCTClipPlaneCreate` | `OCCTClipPlaneCreate`: `d + 1` | `:19` `abs(eq.w - (-5)) < 1e-10` | ✔ | PASS |
+| Clip Plane | Create from normal and distance | `OCCTClipPlaneCreate` | `OCCTClipPlaneCreate`: `d + 1` | `:29` `abs(eq.w - (-3)) < 1e-10` | ✔ | PASS |
+| Clip Plane | Set equation updates values | `OCCTClipPlaneSetEquation` | `OCCTClipPlaneSetEquation` no-op | `:37` `abs(eq.y - 1) < 1e-10`, `:38` | ✔ | PASS |
+| Clip Plane | Reversed equation is negated | `OCCTClipPlaneGetReversedEquation` | `OCCTClipPlaneGetReversedEquation` reads `GetEquation()` | `:47` `abs(rev.z - (-1)) < 1e-10`, `:48` | ✔ | PASS |
+| Clip Plane | Enable and disable | `OCCTClipPlaneSetOn` | `OCCTClipPlaneSetOn` no-op | `:56` `plane.isOn == false` | ✔ | PASS |
+| Clip Plane | Capping on/off | `OCCTClipPlaneSetCapping` | `OCCTClipPlaneSetCapping` no-op | `:66` `plane.isCapping == true` | ✔ | PASS |
+| Clip Plane | Capping color | `OCCTClipPlaneSetCappingColor` | `OCCTClipPlaneSetCappingColor`: r and b swapped | `:74` `abs(color.x - 1.0) < 0.01`, `:76` | ✔ | PASS |
+| Clip Plane | Hatch style | `OCCTClipPlaneSetCappingHatch` | style + 1; separately `SetCappingHatchOn` no-op | `:83` `plane.hatchStyle == .diagonal45`; `:85` `plane.isHatchOn == true` | ✔ | PASS |
+| Clip Plane | Probe point: inside half-space | `OCCTClipPlaneProbePoint` | `OCCTClipPlaneProbePoint`: Out test inverted | `:95` `state == .in` | ✔ | PASS |
+| Clip Plane | Probe point: outside half-space | `OCCTClipPlaneProbePoint` | `OCCTClipPlaneProbePoint`: Out test inverted | `:103` `state == .out` | ✔ | PASS |
+| Clip Plane | Probe bounding box: fully inside | `OCCTClipPlaneProbeBox` | `OCCTClipPlaneProbeBox`: Out test inverted | `:111` `state == .in` | ✔ | PASS |
+| Clip Plane | Probe bounding box: partially clipped | `OCCTClipPlaneProbeBox` | `OCCTClipPlaneProbeBox`: Out test inverted | `:119` `state == .on` | ✔ | PASS |
+| Clip Plane | Probe bounding box: fully outside | `OCCTClipPlaneProbeBox` | `OCCTClipPlaneProbeBox`: Out test inverted (also `Create` d + 1) | `:126` `state == .out` | ✔ | PASS |
+| Clip Plane | Chain two planes | `OCCTClipPlaneSetChainNext` | `OCCTClipPlaneChainLength` + 1; `SetChainNext` no-op; probe inverted | `:134`/`:136` length; `:140` `stateIn == .in` | ✔ | PASS |
+| Clip Plane | Clear chain | `OCCTClipPlaneSetChainNext` | `OCCTClipPlaneChainLength` + 1; `SetChainNext` no-op | `:152` `plane1.chainLength == 2`, `:155` | ✔ | PASS |

@@ -1,0 +1,15 @@
+equationRoundtrip: (0, 0, 1, -5)
+createFromNormal: (1, 0, 0, -3)
+setEquation: (0, 1, 0, -2)
+reversedEquation: (-0, -0, -1, 5)
+enableDisable: default=1 off=0 on=1
+capping: default=0 set=1
+cappingColor: (1, 0, 0.5)
+hatchStyle: style=5 (Aspect_HS_DIAGONAL_45=5) on=1 off=0
+probePointInside: 1
+probePointOutside: 0
+probeBoxInside: 1
+probeBoxPartial: 2
+probeBoxOutside: 0
+chainPlanes: length 1 -> 2, (5,0,5)=1, (-5,0,5)=0
+clearChain: length after clear 1
