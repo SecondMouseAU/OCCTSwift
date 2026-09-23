@@ -235,6 +235,12 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **GProp Element Properties Tests** | lineSegmentLength | GProp_CelGProps line | Mass()/centre |
+| **GProp Element Properties Tests** | circularArcLength | GProp_CelGProps circle | Mass() |
+| **GProp Element Properties Tests** | pointSetCentroid | GProp_PGProps | Mass()/centre |
+| **GProp Element Properties Tests** | sphereSurfaceArea | GProp_SelGProps sphere | Mass() |
+| **GProp Element Properties Tests** | sphereVolume | GProp_VelGProps sphere | Mass() |
+| **GProp Weighted Tests** | weightedCentroidLengthMismatchIsRejected | Weighted centroid length contract | Swift length guard |
 
 ---
 
@@ -424,6 +430,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| lineSegmentLength | OCCTGPropLineSegment | GProp_CelGProps line | length + 1, centre x + 1 | ✅ | ✅ |  |
+| circularArcLength | OCCTGPropCircularArc | GProp_CelGProps circle | arc length * 2 | ✅ | ✅ |  |
+| pointSetCentroid | OCCTGPropPointSetCentroid | GProp_PGProps | mass + 1, centroid x + 1 | ✅ | ✅ |  |
+| sphereSurfaceArea | OCCTGPropSphereSurface | GProp_SelGProps sphere | area * 2 | ✅ | ✅ |  |
+| sphereVolume | OCCTGPropSphereVolume | GProp_VelGProps sphere | volume * 2 | ✅ | ✅ |  |
+| weightedCentroidLengthMismatchIsRejected | GeometryProperties.weightedCentroid (Swift guard; OCCTGPropPointSetWeightedCentroid not reached) | Weighted centroid length contract | accept extra weights / truncate to the shorter array | ✅ | ✅ |  |
 
 ---
 
