@@ -46,5 +46,603 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Post-Operation State::shapeReusedAfterBoolean",
+    "bridge_function": "OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box 1000, sphere 523.5987756, union 1000, cut 476.4012244"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box 1000, sphere 523.5987756, union 1000, cut 476.4012244",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressNullInvalidTests.swift:319 Expectation failed: abs((v1 ?? 0) - 1000.0) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Post-Operation State::shapeQueriesAfterExport",
+    "bridge_function": "OCCTExportBREPWithTriangles, OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box volume 1000 after BRepTools::Write"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box volume 1000 after BRepTools::Write",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressNullInvalidTests.swift:334 Expectation failed: abs(vol - 1000.0) < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Post-Operation State::multipleExportsOfSameShape",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTExportBREPWithTriangles, OCCTExportSTLWithMode",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: export success; STEP writer done for the box (see 766-stress-format-round-trip)",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTExportSTEPWithMode returns false",
+      "env": "OCCT766=|FAIL:OCCTExportSTEPWithMode|",
+      "red": "StressNullInvalidTests.swift:337 Caught error: .writeFailed(path: \"/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/occt-stress-5D2AF5F0-D973-43B1-8627-434C4EC492E0.step\", status: no OCCT status: the call failed before the data-exchange step ran)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Post-Operation State::meshRepeatedGeneration",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepMesh at 0.5/0.1/1.0: 24 nodes, 12 triangles each"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepMesh at 0.5/0.1/1.0: 24 nodes, 12 triangles each",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateMesh returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateMesh|",
+      "red": "StressNullInvalidTests.swift:361 Expectation failed: m?.vertexCount == 24",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Post-Operation State::volumeCalledManyTimes",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressNullInvalidTests.swift:370 Expectation failed: abs((v ?? 0) - 1000.0) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::booleanWireShapes",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fuse of two rectangle wires: done, valid, 8 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fuse of two rectangle wires: done, valid, 8 edges",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressNullInvalidTests.swift:388 Expectation failed: s1.union(s2)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::filletOnNonSolid",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeFillet on a wire throws \"no suitable edges\" -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeFillet on a wire throws \"no suitable edges\" -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|FILLETPASS|",
+      "red": "StressNullInvalidTests.swift:399 Expectation failed: shape.filleted(radius: 1.0) == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::volumeOnWireShape",
+    "bridge_function": "OCCTShapeGetVolume",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): wire volume mass 0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "wire volume mass 0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume accepts a zero mass as a measured volume",
+      "env": "OCCT766=|ZEROVOL|",
+      "red": "StressNullInvalidTests.swift:408 Expectation failed: shape.volume == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::meshOnWireShape",
+    "bridge_function": "OCCTShapeCreateMesh",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): no faces, so an empty mesh (0 vertices, 0 triangles), not nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "no faces, so an empty mesh (0 vertices, 0 triangles), not nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateMesh returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeCreateMesh|",
+      "red": "StressNullInvalidTests.swift:417 Expectation failed: shape.mesh(linearDeflection: 0.5)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::sectionOfSameShape",
+    "bridge_function": "OCCTSectionBuilderCreateFromShapes, OCCTSectionBuilderBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepAlgoAPI_Section(box, box): done, valid, 0 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepAlgoAPI_Section(box, box): done, valid, 0 edges",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSectionBuilderBuild returns nil",
+      "env": "OCCT766=|NULL:OCCTSectionBuilderBuild|",
+      "red": "StressNullInvalidTests.swift:427 Expectation failed: section.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::translateByZero",
+    "bridge_function": "OCCTShapeTranslate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeTranslate returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeTranslate|",
+      "red": "StressNullInvalidTests.swift:434 Expectation failed: box.translated(by: SIMD3(0, 0, 0))",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::rotateByZero",
+    "bridge_function": "OCCTShapeRotate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeRotate returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeRotate|",
+      "red": "StressNullInvalidTests.swift:441 Expectation failed: box.rotated(axis: SIMD3(0, 0, 1), angle: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::scaleByOne",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeScale|",
+      "red": "StressNullInvalidTests.swift:448 Expectation failed: box.scaled(by: 1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::scaleByZero",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Trsf::SetScale(0) does not throw; result invalid, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Trsf::SetScale(0) does not throw; result invalid, volume nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeScale|",
+      "red": "StressNullInvalidTests.swift:457 Expectation failed: box.scaled(by: 0.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Unusual Input Combinations::scaleByNegative",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "valid, volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeScale|",
+      "red": "StressNullInvalidTests.swift:465 Expectation failed: box.scaled(by: -1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: UnifySameDomainBuilder Null PCurve::unifySameDomainOnMeshSewnSolidWithMissingPCurve",
+    "bridge_function": "OCCTUnifySameDomainCreate, OCCTUnifySameDomainBuild, OCCTUnifySameDomainShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fixture 662 faces / 1072 edges -> 228 / 627"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fixture 662 faces / 1072 edges -> 228 / 627",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTUnifySameDomainShape returns nil",
+      "env": "OCCT766=|NULL:OCCTUnifySameDomainShape|",
+      "red": "StressNullInvalidTests.swift:492 Expectation failed: unifier.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SolidPrimitives Null Handle Guards (#1498)::makePeriodicOnNullifiedShapeDoesNotCrash",
+    "bridge_function": "occtShapePeriodicImpl (OCCTShapeMakePeriodic)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BOPAlgo_MakePeriodic on a null shape: child SIGSEGV"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BOPAlgo_MakePeriodic on a null shape: child SIGSEGV",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "occtShapePeriodicImpl: occtShapeIsPresent guard removed (pre-#1498)",
+      "env": "OCCT766=|SKIP:occtShapePeriodicImpl|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SolidPrimitives Null Handle Guards (#1498)::repeatedOnNullifiedShapeDoesNotCrash",
+    "bridge_function": "occtShapePeriodicImpl (OCCTShapeRepeat)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BOPAlgo_MakePeriodic + XRepeat on a null shape: child SIGSEGV"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BOPAlgo_MakePeriodic + XRepeat on a null shape: child SIGSEGV",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "occtShapePeriodicImpl: occtShapeIsPresent guard removed (pre-#1498)",
+      "env": "OCCT766=|SKIP:occtShapePeriodicImpl|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SolidPrimitives Null Handle Guards (#1498)::draftOnNullifiedShapeDoesNotCrash",
+    "bridge_function": "OCCTShapeMakeDraft",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepOffsetAPI_MakeDraft on a null shape: child SIGSEGV"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepOffsetAPI_MakeDraft on a null shape: child SIGSEGV",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeMakeDraft: occtShapeIsPresent guard removed (pre-#1498)",
+      "env": "OCCT766=|SKIP:OCCTShapeMakeDraft|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SolidPrimitives Null Handle Guards (#1498)::revolvedFullOnNullifiedShapeDoesNotCrash",
+    "bridge_function": "OCCTShapeCreateRevolutionFull",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepPrimAPI_MakeRevol on a null shape: child SIGSEGV"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepPrimAPI_MakeRevol on a null shape: child SIGSEGV",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateRevolutionFull: occtShapeIsPresent guard removed (pre-#1498)",
+      "env": "OCCT766=|SKIP:OCCTShapeCreateRevolutionFull|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SolidPrimitives Null Handle Guards (#1498)::revolvedPartialOnNullifiedShapeDoesNotCrash",
+    "bridge_function": "OCCTShapeCreateRevolutionPartial",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepPrimAPI_MakeRevol(angle) on a null shape: child SIGSEGV"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepPrimAPI_MakeRevol(angle) on a null shape: child SIGSEGV",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateRevolutionPartial: occtShapeIsPresent guard removed (pre-#1498)",
+      "env": "OCCT766=|SKIP:OCCTShapeCreateRevolutionPartial|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: evalAndUpdateTolerance Null PCurve::edgePairedWithUnrelatedCylindricalFaceDoesNotCrash",
+    "bridge_function": "OCCTBRepToolsEvalAndUpdateTol",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): lateral face: null pcurve -> edge tolerance 1e-7 (unguarded: child SIGSEGV); caps: EvalAndUpdateTol 15, 15"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "lateral face: null pcurve -> edge tolerance 1e-7 (unguarded: child SIGSEGV); caps: EvalAndUpdateTol 15, 15",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTBRepToolsEvalAndUpdateTol: c2d.IsNull() guard removed (the pre-fix state)",
+      "env": "OCCT766=|SKIP:OCCTBRepToolsEvalAndUpdateTol|",
+      "red": "CRASH exit 139: Segmentation fault: 11",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: evalAndUpdateTolerance Null PCurve::edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash",
+    "bridge_function": "OCCTBRepToolsEvalAndUpdateTol",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): no null pcurve on any planar face (8.0.1 projects one); EvalAndUpdateTol 3.5, 6.5, 6.5, 6.5, 6.5, 6.5"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "no null pcurve on any planar face (8.0.1 projects one); EvalAndUpdateTol 3.5, 6.5, 6.5, 6.5, 6.5, 6.5",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTBRepToolsEvalAndUpdateTol returns the edge tolerance without evaluating",
+      "env": "OCCT766=|SKIPEVAL:OCCTBRepToolsEvalAndUpdateTol|",
+      "red": "StressNullInvalidTests.swift:643 Expectation failed: tols == [3.5, 6.5, 6.5, 6.5, 6.5, 6.5]",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

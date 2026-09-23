@@ -1,0 +1,96 @@
+== Nil Propagation
+failedFilletFedToBoolean: fillet(999) IsDone=0
+failedBooleanChain box-sphere: valid=1 volume=476.4012244 faces=7
+failedBooleanChain fillet(0.5) IsDone=1
+failedBooleanChain filleted: valid=1 volume=993.7293492 faces=26
+drillAfterFailedShell: shell(-6) IsDone=0
+chamferAfterFailedFillet: fillet(0.5) IsDone=1
+chamferAfterFailedFillet filleted: valid=1 volume=993.7293492 faces=26
+chamferAfterFailedFillet chamfer: threw 16Standard_Failure: There are no suitable edges for chamfer or fillet
+unionWithSelf: valid=1 volume=1000 faces=6
+subtractSelf: valid=1 volume=nil/0 faces=0
+subtractSelf: IsDone=1
+intersectDisjoint: IsDone=1 null=0
+intersectDisjoint: valid=1 volume=nil/0 faces=0
+== Zero-Dimension Shapes
+zeroBox: threw 20Standard_DomainError: 
+zeroCylinder: valid=0 volume=nil/0 faces=1
+zeroSphere: valid=0 volume=nil/0 faces=1
+zeroCone: threw 20Standard_DomainError: cone with two identic radii
+zeroTorus: valid=0 volume=nil/0 faces=1
+zeroWidthBox: threw 20Standard_DomainError: 
+queriesOnZeroBox: valid=1 volume=1e-09 faces=6
+queriesOnZeroBox: area=6e-06 edges=12 vertices=8
+== Empty Containers
+emptyWireBuilder: IsDone=0
+thruSectionsNoSections: IsDone=0
+thruSectionsNoSections (unguarded Build with 0 wires): child returned normally
+sewingNothing: SewedShape null=1
+sectionBuilderEmpty: IsDone=0
+cellsBuilderEmpty: HasErrors=1
+cellsBuilderEmpty (unguarded Perform with 0 arguments): child returned normally
+emptyWireRectangle: 1e-15 < Precision::Confusion()=1e-07, the bridge refuses before OCCT
+== Invalid Parameters
+negativeBox: valid=1 volume=1000 faces=6
+negativeCylinder: threw 26Standard_ConstructionError: 
+negativeSphere: threw 26Standard_ConstructionError: 
+negativeFillet: IsDone=0
+negativeChamfer: IsDone=0
+negativeShell: shell(+1) IsDone=0
+zeroDrill: IsDone=1
+zeroDrill (unguarded, radius 0): child returned normally
+zeroDirectionVector (unguarded, gp_Dir(0,0,0)): child threw 26Standard_ConstructionError: gp_Dir() - input vector has zero norm
+outOfBoundsSubShapeIndex: edge count=12, index 999 out of range
+curveEvalOutsideDomain: domain=[0, 6.2831853071795862] point=(-4.1953576453822627, -2.7201055544468482, 0)
+surfaceEvalOutsideDomain: point=(1000000000000, 1000000000000, 0)
+wireFromZeroLengthLine: MakeEdge IsDone=0 Error=6
+wireFromZeroLengthLine (unguarded MakeEdge on coincident points): child returned normally
+booleanIdenticalPosition: valid=1 volume=1000 faces=6
+mirrorAxisZeroDirection (gp_Dir(0,0,0)): child threw 26Standard_ConstructionError: gp_Dir() - input vector has zero norm
+mirror2dAxisZeroDirection (gp_Dir2d(0,0)): child threw 26Standard_ConstructionError: gp_Dir2d() - input vector has zero norm
+mirrorPlaneZeroNormal (gp_Dir(0,0,0)): child threw 26Standard_ConstructionError: gp_Dir() - input vector has zero norm
+geomDirectionZeroVector: no exception, coords=(nan, nan, nan)
+geomDirectionZeroVector (Geom_Direction(0,0,0)): child returned normally
+== Post-Operation State
+shapeReusedAfterBoolean union: valid=1 volume=1000 faces=6
+shapeReusedAfterBoolean cut: valid=1 volume=476.4012244 faces=7
+shapeReusedAfterBoolean: sphere volume=523.5987756
+shapeQueriesAfterExport box: valid=1 volume=1000 faces=6
+meshRepeatedGeneration: deflection=0.5 nodes=24 triangles=12
+meshRepeatedGeneration: deflection=0.1 nodes=24 triangles=12
+meshRepeatedGeneration: deflection=1 nodes=24 triangles=12
+== Unusual Input Combinations
+booleanWireShapes: fuse IsDone=1 edges=8
+booleanWireShapes: valid=1
+filletOnNonSolid: threw 16Standard_Failure: There are no suitable edges for chamfer or fillet
+volumeOnWireShape: has=0 volume=0
+meshOnWireShape: faces=0 (no triangulation to extract)
+sectionOfSameShape: IsDone=1 edges=0 valid=1
+translateByZero: valid=1 volume=1000 faces=6
+rotateByZero: valid=1 volume=1000 faces=6
+scaleByOne: valid=1 volume=1000 faces=6
+scaleByZero: valid=0 volume=nil/0 faces=6
+scaleByNegative: valid=1 volume=1000 faces=6
+== UnifySameDomainBuilder Null PCurve
+unify fixture: faces=662 edges=1072
+unifySameDomainOnMeshSewnSolidWithMissingPCurve: result faces=228 edges=627
+== SolidPrimitives Null Handle Guards
+makePeriodic on a null shape (unguarded): child killed by signal 11 (Segmentation fault: 11)
+repeated on a null shape (unguarded): child killed by signal 11 (Segmentation fault: 11)
+draft on a null shape (unguarded): child killed by signal 11 (Segmentation fault: 11)
+revolved full on a null shape (unguarded): child killed by signal 11 (Segmentation fault: 11)
+revolved partial on a null shape (unguarded): child killed by signal 11 (Segmentation fault: 11)
+== evalAndUpdateTolerance Null PCurve
+box edge[0] tolerance=9.9999999999999995e-08
+edgePairedWithUnrelatedCylindricalFaceDoesNotCrash face[0] 23Geom_CylindricalSurface: c2d null=1 -> edge tolerance 9.9999999999999995e-08
+edgePairedWithUnrelatedCylindricalFaceDoesNotCrash face[1] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 15
+edgePairedWithUnrelatedCylindricalFaceDoesNotCrash face[2] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 15
+fresh box edge[0] tolerance=9.9999999999999995e-08
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[0] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 3.5
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[1] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 6.5
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[2] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 6.5
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[3] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 6.5
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[4] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 6.5
+edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash face[5] 10Geom_Plane: c2d null=0 -> EvalAndUpdateTol 6.5
+unguarded: c2d null=1
+cylinder lateral face, null pcurve passed on (unguarded): child killed by signal 11 (Segmentation fault: 11)

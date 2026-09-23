@@ -288,3 +288,33 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressNullInvalidTests: Post-Operation State, Unusual Input, UnifySameDomain, SolidPrimitives guards, evalAndUpdateTolerance
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-null-invalid/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Post-Operation State | `shapeReusedAfterBoolean` | `OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressNullInvalidTests.swift:319 Expectation failed: abs((v1 ?? 0) - 1000.0) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Post-Operation State | `shapeQueriesAfterExport` | `OCCTExportBREPWithTriangles, OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressNullInvalidTests.swift:334 Expectation failed: abs(vol - 1000.0) < 0.01 | ✔ | MATCH | no |
+| Stress: Post-Operation State | `multipleExportsOfSameShape` | `OCCTExportSTEPWithMode, OCCTExportBREPWithTriangles, OCCTExportSTLWithMode` | OCCTExportSTEPWithMode returns false | StressNullInvalidTests.swift:337 Caught error: .writeFailed(path: "/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/occt-stress-5D2AF5F0-... | ✔ | N/A | no |
+| Stress: Post-Operation State | `meshRepeatedGeneration` | `OCCTShapeCreateMesh` | OCCTShapeCreateMesh returns nil | StressNullInvalidTests.swift:361 Expectation failed: m?.vertexCount == 24 | ✔ | MATCH | yes |
+| Stress: Post-Operation State | `volumeCalledManyTimes` | `OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | StressNullInvalidTests.swift:370 Expectation failed: abs((v ?? 0) - 1000.0) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `booleanWireShapes` | `OCCTShapeUnionEx` | runBooleanEx returns nil after a successful build | StressNullInvalidTests.swift:388 Expectation failed: s1.union(s2) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `filletOnNonSolid` | `OCCTShapeFillet` | OCCTShapeFillet returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:399 Expectation failed: shape.filleted(radius: 1.0) == nil | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `volumeOnWireShape` | `OCCTShapeGetVolume` | OCCTShapeGetVolume accepts a zero mass as a measured volume | StressNullInvalidTests.swift:408 Expectation failed: shape.volume == nil | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `meshOnWireShape` | `OCCTShapeCreateMesh` | OCCTShapeCreateMesh returns nil | StressNullInvalidTests.swift:417 Expectation failed: shape.mesh(linearDeflection: 0.5) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `sectionOfSameShape` | `OCCTSectionBuilderCreateFromShapes, OCCTSectionBuilderBuild` | OCCTSectionBuilderBuild returns nil | StressNullInvalidTests.swift:427 Expectation failed: section.build() | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `translateByZero` | `OCCTShapeTranslate` | OCCTShapeTranslate returns nil | StressNullInvalidTests.swift:434 Expectation failed: box.translated(by: SIMD3(0, 0, 0)) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `rotateByZero` | `OCCTShapeRotate` | OCCTShapeRotate returns nil | StressNullInvalidTests.swift:441 Expectation failed: box.rotated(axis: SIMD3(0, 0, 1), angle: 0) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `scaleByOne` | `OCCTShapeScale` | OCCTShapeScale returns nil | StressNullInvalidTests.swift:448 Expectation failed: box.scaled(by: 1.0) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `scaleByZero` | `OCCTShapeScale` | OCCTShapeScale returns nil | StressNullInvalidTests.swift:457 Expectation failed: box.scaled(by: 0.0) | ✔ | MATCH | yes |
+| Stress: Unusual Input Combinations | `scaleByNegative` | `OCCTShapeScale` | OCCTShapeScale returns nil | StressNullInvalidTests.swift:465 Expectation failed: box.scaled(by: -1.0) | ✔ | MATCH | yes |
+| Stress: UnifySameDomainBuilder Null PCurve | `unifySameDomainOnMeshSewnSolidWithMissingPCurve` | `OCCTUnifySameDomainCreate, OCCTUnifySameDomainBuild, OCCTUnifySameDomainShape` | OCCTUnifySameDomainShape returns nil | StressNullInvalidTests.swift:492 Expectation failed: unifier.shape | ✔ | MATCH | yes |
+| Stress: SolidPrimitives Null Handle Guards (#1498) | `makePeriodicOnNullifiedShapeDoesNotCrash` | `occtShapePeriodicImpl (OCCTShapeMakePeriodic)` | occtShapePeriodicImpl: occtShapeIsPresent guard removed (pre-#1498) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: SolidPrimitives Null Handle Guards (#1498) | `repeatedOnNullifiedShapeDoesNotCrash` | `occtShapePeriodicImpl (OCCTShapeRepeat)` | occtShapePeriodicImpl: occtShapeIsPresent guard removed (pre-#1498) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: SolidPrimitives Null Handle Guards (#1498) | `draftOnNullifiedShapeDoesNotCrash` | `OCCTShapeMakeDraft` | OCCTShapeMakeDraft: occtShapeIsPresent guard removed (pre-#1498) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: SolidPrimitives Null Handle Guards (#1498) | `revolvedFullOnNullifiedShapeDoesNotCrash` | `OCCTShapeCreateRevolutionFull` | OCCTShapeCreateRevolutionFull: occtShapeIsPresent guard removed (pre-#1498) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: SolidPrimitives Null Handle Guards (#1498) | `revolvedPartialOnNullifiedShapeDoesNotCrash` | `OCCTShapeCreateRevolutionPartial` | OCCTShapeCreateRevolutionPartial: occtShapeIsPresent guard removed (pre-#1498) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | no |
+| Stress: evalAndUpdateTolerance Null PCurve | `edgePairedWithUnrelatedCylindricalFaceDoesNotCrash` | `OCCTBRepToolsEvalAndUpdateTol` | OCCTBRepToolsEvalAndUpdateTol: c2d.IsNull() guard removed (the pre-fix state) | CRASH exit 139: Segmentation fault: 11 | ✔ | MATCH | yes |
+| Stress: evalAndUpdateTolerance Null PCurve | `edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash` | `OCCTBRepToolsEvalAndUpdateTol` | OCCTBRepToolsEvalAndUpdateTol returns the edge tolerance without evaluating | StressNullInvalidTests.swift:643 Expectation failed: tols == [3.5, 6.5, 6.5, 6.5, 6.5, 6.5] | ✔ | MATCH | yes |
