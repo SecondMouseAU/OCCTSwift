@@ -94,5 +94,351 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Poly_Polygon2D::create and query",
+    "bridge_function": "OCCTPolyPolygon2DNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "NbNodes": 4,
+        "node(1)": [
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "NbNodes": 4,
+        "node(1)": [
+          10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "0-based index passed through (off by one)",
+      "red": "Polygon2DTests.swift:15:9: Expectation failed: abs(node.x - 10.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "two `if let`s; now `#require`"
+    }
+  },
+  {
+    "test_name": "Poly_Polygon2D::deflection",
+    "bridge_function": "OCCTPolyPolygon2DSetDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "deflection": 0.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "deflection": 0.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Deflection() setter skipped",
+      "red": "Polygon2DTests.swift:24:9: Expectation failed: abs(poly.deflection - 0.5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Poly_Polygon2D::all nodes",
+    "bridge_function": "OCCTPolyPolygon2DNode",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nodes": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            5,
+            6
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "nodes": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            5,
+            6
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "0-based index passed through (off by one)",
+      "red": "Polygon2DTests.swift:33:13: Expectation failed: nodes.count == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`, and `#expect(count)` before `nodes[2]` crashed the run; now `#require`"
+    }
+  },
+  {
+    "test_name": "Matrix2D::identity",
+    "bridge_function": "OCCTMat2dIdentity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "(1,2) + 1e-3",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "determinant only; now every entry"
+    }
+  },
+  {
+    "test_name": "Matrix2D::rotation",
+    "bridge_function": "OCCTMat2dRotation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          0,
+          -1,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          0,
+          -1,
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle negated",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "determinant only (1 for every rotation); now every entry"
+    }
+  },
+  {
+    "test_name": "Matrix2D::scale",
+    "bridge_function": "OCCTMat2dScale",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          3,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          3,
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor negated",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "determinant only (9 for +-3); now every entry"
+    }
+  },
+  {
+    "test_name": "Matrix2D::multiplyAndInvert",
+    "bridge_function": "OCCTMat2dMultiply",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns A instead of A*B",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "one entry; now every entry"
+    }
+  },
+  {
+    "test_name": "Matrix2D::transpose",
+    "bridge_function": "OCCTMat2dTranspose",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          5,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "m": [
+          1,
+          0,
+          5,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns the input",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "one entry; now every entry"
+    }
+  },
+  {
+    "test_name": "Matrix2D::invert",
+    "bridge_function": "OCCTMat2dInvert",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "inverse": [
+          0.5,
+          0.866025403784439,
+          -0.866025403784439,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "inverse": [
+          0.5,
+          0.866025403784439,
+          -0.866025403784439,
+          0.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns the input",
+      "red": "Matrix2DTests.swift:16:13: Expectation failed: abs(a - b) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`, one entry of the product; now `#require`, the inverse and the product pinned"
+    }
   }
 ]
