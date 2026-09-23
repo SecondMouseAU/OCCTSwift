@@ -142,5 +142,208 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::tallGridMatchesDirectEvaluation",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ],
+        "slot5": [
+          2.333333333,
+          8.0,
+          1.090534979
+        ],
+        "slot29": [
+          21,
+          8,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ],
+        "slot5": [
+          2.333333333,
+          8.0,
+          1.090534979
+        ],
+        "slot29": [
+          21,
+          8,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::wideGridMatchesDirectEvaluation",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot12": [
+          10.5,
+          1.777777778,
+          4.680555556
+        ],
+        "slot21": [
+          21.0,
+          0.888888889,
+          1.222222222
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot12": [
+          10.5,
+          1.777777778,
+          4.680555556
+        ],
+        "slot21": [
+          21.0,
+          0.888888889,
+          1.222222222
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::transposedReadIsMateriallyDifferent",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "result",
+      "data": "drift > 1"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "slot12_vs_slot21_distance_gt_1": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::accessorAgreesWithDocumentedIndex",
+    "bridge_function": "none (pure Swift: surfaceGridIndex / FaceGridSample.at)",
+    "bridge_output": {
+      "type": "result",
+      "data": "at(u:v:) == flat[u * vSamples + v]"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift index arithmetic"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::normalsMatchDirectEvaluationPerSlot",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "normal",
+      "data": {
+        "slot7": [
+          -0.375652,
+          0.056151,
+          0.925058
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "normal",
+      "data": {
+        "slot7": [
+          -0.375652,
+          0.056151,
+          0.925058
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::handRolledIndexArithmetic",
+    "bridge_function": "none (pure Swift: surfaceGridIndex)",
+    "bridge_output": {
+      "type": "result",
+      "data": "bijection"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "pure index arithmetic"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue 617: FaceGridSample U-major layout::squareAndSingleGridsStillWork",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "slot0": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

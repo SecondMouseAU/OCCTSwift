@@ -28,6 +28,13 @@
 | **alongEdge on T-branch** | alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord | Edge traversal | Remove alongEdge |
 | **v0.142 ConstructionAxis resolution** | v0.142 ConstructionAxis resolution | Graph axis | Remove axis resolution |
 | **deferredModeToggle()** | deferredModeToggle() | Graph mutation | Remove deferred toggle |
+| **Issue 617: FaceGridSample U-major layout** | tallGridMatchesDirectEvaluation | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | wideGridMatchesDirectEvaluation | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | transposedReadIsMateriallyDifferent | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | accessorAgreesWithDocumentedIndex | Face grid layout | grid index reverses v |
+| **Issue 617: FaceGridSample U-major layout** | normalsMatchDirectEvaluationPerSlot | Face grid layout | grid steps zeroed |
+| **Issue 617: FaceGridSample U-major layout** | handRolledIndexArithmetic | Face grid layout | grid index drops v |
+| **Issue 617: FaceGridSample U-major layout** | squareAndSingleGridsStillWork | Face grid layout | grid steps zeroed |
 
 ---
 
@@ -53,6 +60,13 @@
 | alongEdge T-branch | OCCTBRepGraphAlongEdge | Edge traversal | Remove alongEdge | ✅ | ✅ |  |
 | v0.142 ConstructionAxis | OCCTBRepGraphConstructionAxis | Graph axis | Remove axis resolution | ✅ | ✅ |  |
 | deferredModeToggle | OCCTBRepGraphDeferredModeToggle | Graph mutation | Remove deferred toggle | ✅ | ✅ |  |
+| tallGridMatchesDirectEvaluation | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ | Test compares every slot to Surface.point at 1e-9; probe slots listed |
+| wideGridMatchesDirectEvaluation | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
+| transposedReadIsMateriallyDifferent | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
+| accessorAgreesWithDocumentedIndex | none (pure Swift: surfaceGridIndex / FaceGridSample.at) | Face grid layout | surfaceGridIndex = u * vCount + (vCount - 1 - v) | ✅ | ✅ |  |
+| normalsMatchDirectEvaluationPerSlot | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ | Test compares every normal to the d1 cross product up to sign |
+| handRolledIndexArithmetic | none (pure Swift: surfaceGridIndex) | Face grid layout | surfaceGridIndex = u * vCount | ✅ | ✅ |  |
+| squareAndSingleGridsStillWork | OCCTBRepGraphSampleFaceUVGrid | Face grid layout | uStep = vStep = 0 | ✅ | ✅ |  |
 
 ---
 
