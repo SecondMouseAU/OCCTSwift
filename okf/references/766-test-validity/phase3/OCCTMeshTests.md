@@ -19,7 +19,7 @@ with `swift test --filter`, and the set was reverted (`git diff Sources/` empty)
 run. Kernel values come from the probe under `Scripts/repro/<dir>/`, whose output is committed
 beside it as `transcript.txt`.
 
-**Covered so far**: 40 of 97 tests.
+**Covered so far**: 58 of 97 tests.
 
 ## Findings filed from this execution
 
@@ -104,9 +104,9 @@ Probe: `Scripts/repro/766-mesh-issue613/`.
 | Mesh face indices address faces(), and winding survives a shared wall (#613) | merged mesh nodes keep both sides of a shared wall, oppositely wound | `OCCTPolyMergeNodes` | R4: reversed flag passed to AddTriangulation forced false | :316 `minusX > 0`, :317 `plusX == minusX` | ✔ | MATCH |
 | Mesh face indices address faces(), and winding survives a shared wall (#613) | merged mesh nodes on a plain box are entirely outward | `OCCTPolyMergeNodes` | R4: reversed flag passed to AddTriangulation forced false | :341 `outward == 12`, :342 `inward == 0` | ✔ | MATCH |
 
-## `OCCTMeshTests.swift` (16 tests)
+## `OCCTMeshTests.swift` (34 tests)
 
-Probe: `Scripts/repro/766-mesh-core-1/`.
+Probe: `Scripts/repro/766-mesh-core-1/`, `Scripts/repro/766-mesh-core-2/`.
 
 | Suite | Test | Bridge function | Injection | Red (failing line) | Green | Parity |
 |-------|------|-----------------|-----------|--------------------|-------|--------|
@@ -126,8 +126,34 @@ Probe: `Scripts/repro/766-mesh-core-1/`.
 | Mesh Tests | Mesh boolean union | `OCCTMeshUnion` | C2: occtMeshBoolean returns nullptr | :285 `unionMesh != nil` | ✔ | MATCH bridge vs kernel pipeline; both wrong against the solid Boolean (1500), filed as #2301, asserted under withKnownIssue |
 | Mesh Tests | Mesh boolean subtraction | `OCCTMeshSubtract` | C2: occtMeshBoolean returns nullptr | :305 `diffMesh != nil` | ✔ | MATCH bridge vs kernel pipeline; nothing is removed against the solid Boolean (858.63), filed as #2301, asserted under withKnownIssue |
 | Mesh Tests | Mesh boolean intersection | `OCCTMeshIntersect` | C2: occtMeshBoolean returns nullptr | :323 `intersectMesh != nil` | ✔ | MATCH bridge vs kernel pipeline; result is EMPTY against the solid Boolean (959.23), filed as #2301, asserted under withKnownIssue |
+| Presentation Mesh Tests | Box shaded mesh has 12 triangles **(rewritten)** | `OCCTShapeGetShadedMesh` | D1: computed vertex normals never accumulated (left zero) | :354 `len > 0.5` (every vertex) | ✔ | MATCH |
+| Presentation Mesh Tests | Cylinder shaded mesh has triangles **(rewritten)** | `OCCTShapeGetShadedMesh` | D1b: the shape's first face skipped in both passes | :363 `mesh.triangleCount == 100`, :364 | ✔ | MATCH |
+| Presentation Mesh Tests | Box edge mesh has 12 segments **(rewritten)** | `OCCTShapeGetEdgeMesh` | D1: every edge emitted twice (the per-face explorer duplicate the edge map exists to prevent) | :372 `edges.segmentCount == 12`, :373 | ✔ | MATCH |
+| Presentation Mesh Tests | Sphere edge mesh produces valid segments **(rewritten)** | `OCCTShapeGetEdgeMesh` | D1: every edge emitted twice | :382 `edges.segmentCount == 3`, :383 | ✔ | MATCH |
+| Drawer Mesh Extraction | Shaded mesh with default drawer produces valid mesh | `OCCTShapeGetShadedMeshWithDrawer` | D4: the drawer entry points return false | :398 `mesh != nil` | ✔ | MATCH |
+| Drawer Mesh Extraction | Edge mesh with default drawer produces valid segments | `OCCTShapeGetEdgeMeshWithDrawer` | D4: the drawer entry points return false | :412 `mesh != nil` | ✔ | MATCH |
+| Drawer Mesh Extraction | Finer deviation produces more triangles for curved shape | `OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetDeviationCoefficient` | D2b: DisplayDrawer.deviationCoefficient's setter drops the value | :435 `fine.triangleCount > coarse.triangleCount` | ✔ | MATCH |
+| Drawer Mesh Extraction | Absolute deflection type works **(rewritten)** | `OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetTypeOfDeflection` | D2b: DisplayDrawer.deflectionType's setter drops the value | :451 `mesh.triangleCount == 648` | ✔ | MATCH |
+| Drawer Mesh Extraction | Relative deflection scales with shape size, matching OCCT's own reference caller (#1418) | `OCCTShapeGetShadedMeshWithDrawer (occtDrawerGetEffectiveDeflection)` | D2b: the raw DeviationCoefficient used as an absolute deflection (the pre-#1418 bug) | :480 `ratio < 10` | ✔ | MATCH |
+| Issue1224 Presentation Mesh Overload Parity | shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically | `OCCTShapeGetShadedMesh, OCCTShapeGetShadedMeshWithDrawer` | D2: shadedMesh(drawer:) negates the normals after the shared deinterleave (a fix applied to one overload only) | :517 `a.normals == b.normals` | ✔ | MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart |
+| Issue1224 Presentation Mesh Overload Parity | edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically | `OCCTShapeGetEdgeMesh, OCCTShapeGetEdgeMeshWithDrawer` | D2: edgeMesh(drawer:) reverses the vertex order after the shared deinterleave | :535 `a.vertices == b.vertices` | ✔ | MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart |
+| MeshCoordinateSystem Enum | Raw values | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: case yUp = 2 | :549 `MeshCoordinateSystem.yUp.rawValue == 1` | ✔ | MATCH |
+| MeshCoordinateSystem Enum | Aliases | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: gltf aliased to .zUp | :555 `MeshCoordinateSystem.gltf == .yUp` | ✔ | MATCH |
+| MeshCoordinateSystem Enum | Init from raw value | `none (Swift enum mirroring RWMesh_CoordinateSystem)` | D1: case yUp = 2 | :562 `MeshCoordinateSystem(rawValue: 1) == .yUp` | ✔ | MATCH |
+| BRepMesh Deflection | Compute absolute deflection **(rewritten)** | `OCCTComputeAbsoluteDeflection` | D1: relative deflection ignored (0.1 passed) | :578 `abs(absDef - 0.150000001) < 1e-9` | ✔ | MATCH |
+| BRepMesh Deflection | Deflection consistency check **(rewritten)** | `OCCTDeflectionIsConsistent` | D1: always returns true | :588 `!Shape.deflectionIsConsistent(current: 0.3, required: 0.2)` | ✔ | MATCH |
+| BRepBuilderAPI MakeShapeOnMesh | Build shape from mesh **(rewritten)** | `OCCTShapeFromMesh` | D1: builder result dropped (null on success) | :611 `#require(Shape.fromMesh(...))` | ✔ | MATCH |
+| BRepBuilderAPI MakeShapeOnMesh | Mesh with minimal geometry | `OCCTShapeFromMesh` | D1: builder result dropped (null on success) | :627 `shape != nil` | ✔ | MATCH |
 
 Rewritten because the original could not fail for the defect its title names:
 
 - **Mesh from shape**: read vertexCount and triangleCount and asserted nothing; now pins 24 / 12 and the enclosed volume 150.
 - **Mesh data access**: its two length checks are true by construction (all arrays are sized from vertexCount / triangleCount); now checks every index addresses a vertex and every vertex lies on the sphere.
+- **Box shaded mesh has 12 triangles**: force-unwrapped inside #expect (a nil result crashed the process instead of failing); now #require.
+- **Cylinder shaded mesh has triangles**: force-unwrapped inside #expect (a nil result crashed the process instead of failing) and asserted only `> 0`; now pins 100 / 106.
+- **Box edge mesh has 12 segments**: force-unwrapped inside #expect (a nil result crashed the process instead of failing); now #require, and pins 24 vertices.
+- **Sphere edge mesh produces valid segments**: force-unwrapped inside #expect (a nil result crashed the process instead of failing) and asserted only `> 0`; now pins 3 / 18.
+- **Absolute deflection type works**: meshed a box, which gives 12 triangles at any deflection; now a sphere, where absolute 0.5 (648) and the relative default (1244) differ.
+- **Compute absolute deflection**: was `if let absDef { #expect(absDef > 0) }`, which a nil result skipped; now pins the kernel value.
+- **Deflection consistency check**: asserted only true cases, so an always-true answer passed; adds 0.3 against 0.2, which the kernel calls inconsistent.
+- **Build shape from mesh**: was `if let shape`, so a nil result passed; now #require, and pins 4 faces and 6 edges.

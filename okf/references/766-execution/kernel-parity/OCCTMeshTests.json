@@ -1168,5 +1168,495 @@
     "red": ":323 `intersectMesh != nil`",
     "injection": "C2: occtMeshBoolean returns nullptr",
     "probe": "Scripts/repro/766-mesh-core-1/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Box shaded mesh has 12 triangles",
+    "bridge_function": "OCCTShapeGetShadedMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "vertices": 24,
+        "distinct_normals": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12,
+        "vertices": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":354 `len > 0.5` (every vertex)",
+    "injection": "D1: computed vertex normals never accumulated (left zero)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Cylinder shaded mesh has triangles",
+    "bridge_function": "OCCTShapeGetShadedMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 100,
+        "vertices": 106
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 100,
+        "vertices": 106
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":363 `mesh.triangleCount == 100`, :364",
+    "injection": "D1b: the shape's first face skipped in both passes",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Box edge mesh has 12 segments",
+    "bridge_function": "OCCTShapeGetEdgeMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12,
+        "vertices": 24
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12,
+        "vertices": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":372 `edges.segmentCount == 12`, :373",
+    "injection": "D1: every edge emitted twice (the per-face explorer duplicate the edge map exists to prevent)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Presentation Mesh Tests::Sphere edge mesh produces valid segments",
+    "bridge_function": "OCCTShapeGetEdgeMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 3,
+        "vertices": 18
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "distinct_edges": 3,
+        "segments": 3,
+        "vertices": 18
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":382 `edges.segmentCount == 3`, :383",
+    "injection": "D1: every edge emitted twice",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Shaded mesh with default drawer produces valid mesh",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "effective_deflection": 0.040000000800000005,
+        "triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":398 `mesh != nil`",
+    "injection": "D4: the drawer entry points return false",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Edge mesh with default drawer produces valid segments",
+    "bridge_function": "OCCTShapeGetEdgeMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":412 `mesh != nil`",
+    "injection": "D4: the drawer entry points return false",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Finer deviation produces more triangles for curved shape",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetDeviationCoefficient",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "coarse": 648,
+        "fine": 1244
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "coarse_deflection": 8.00000008,
+        "coarse": 648,
+        "fine_deflection": 0.0800000008,
+        "fine": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":435 `fine.triangleCount > coarse.triangleCount`",
+    "injection": "D2b: DisplayDrawer.deviationCoefficient's setter drops the value",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Absolute deflection type works",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer, OCCTDrawerSetTypeOfDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 648
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 648,
+        "relative_default_would_give": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":451 `mesh.triangleCount == 648`",
+    "injection": "D2b: DisplayDrawer.deflectionType's setter drops the value",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Drawer Mesh Extraction::Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)",
+    "bridge_function": "OCCTShapeGetShadedMeshWithDrawer (occtDrawerGetEffectiveDeflection)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "small": 1244,
+        "large": 1244
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "small_deflection": 0.0080000008,
+        "small": 1244,
+        "large_deflection": 0.4000000008,
+        "large": 1244
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":480 `ratio < 10`",
+    "injection": "D2b: the raw DeviationCoefficient used as an absolute deflection (the pre-#1418 bug)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Issue1224 Presentation Mesh Overload Parity::shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically",
+    "bridge_function": "OCCTShapeGetShadedMesh, OCCTShapeGetShadedMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "triangles": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "deflection_triangles": 12,
+        "drawer_triangles": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart"
+    },
+    "status": "PASS",
+    "red": ":517 `a.normals == b.normals`",
+    "injection": "D2: shadedMesh(drawer:) negates the normals after the shared deinterleave (a fix applied to one overload only)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "Issue1224 Presentation Mesh Overload Parity::edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically",
+    "bridge_function": "OCCTShapeGetEdgeMesh, OCCTShapeGetEdgeMeshWithDrawer",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "segments": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH on counts; the equality under test is between two Swift overloads, which has no kernel counterpart"
+    },
+    "status": "PASS",
+    "red": ":535 `a.vertices == b.vertices`",
+    "injection": "D2: edgeMesh(drawer:) reverses the vertex order after the shared deinterleave",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Raw values",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "undefined": -1,
+        "zUp": 0,
+        "yUp": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "RWMesh_CoordinateSystem_Undefined": -1,
+        "Zup": 0,
+        "Yup": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":549 `MeshCoordinateSystem.yUp.rawValue == 1`",
+    "injection": "D1: case yUp = 2",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Aliases",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "blender": "zUp",
+        "gltf": "yUp"
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "RWMesh_CoordinateSystem_Blender": 0,
+        "glTF": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":555 `MeshCoordinateSystem.gltf == .yUp`",
+    "injection": "D1: gltf aliased to .zUp",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "MeshCoordinateSystem Enum::Init from raw value",
+    "bridge_function": "none (Swift enum mirroring RWMesh_CoordinateSystem)",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "-1": "undefined",
+        "0": "zUp",
+        "1": "yUp",
+        "99": null
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "Undefined": -1,
+        "Zup": 0,
+        "Yup": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":562 `MeshCoordinateSystem(rawValue: 1) == .yUp`",
+    "injection": "D1: case yUp = 2",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepMesh Deflection::Compute absolute deflection",
+    "bridge_function": "OCCTComputeAbsoluteDeflection",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "absoluteDeflection": 0.150000001
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "ComputeAbsoluteDeflection": 0.150000001
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":578 `abs(absDef - 0.150000001) < 1e-9`",
+    "injection": "D1: relative deflection ignored (0.1 passed)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepMesh Deflection::Deflection consistency check",
+    "bridge_function": "OCCTDeflectionIsConsistent",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "0.1/0.2": true,
+        "0.2/0.2": true,
+        "0.3/0.2": false
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "0.1/0.2": true,
+        "0.2/0.2": true,
+        "0.3/0.2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":588 `!Shape.deflectionIsConsistent(current: 0.3, required: 0.2)`",
+    "injection": "D1: always returns true",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepBuilderAPI MakeShapeOnMesh::Build shape from mesh",
+    "bridge_function": "OCCTShapeFromMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "faces": 4,
+        "edges": 6,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "faces": 4,
+        "edges": 6,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":611 `#require(Shape.fromMesh(...))`",
+    "injection": "D1: builder result dropped (null on success)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
+  },
+  {
+    "test_name": "BRepBuilderAPI MakeShapeOnMesh::Mesh with minimal geometry",
+    "bridge_function": "OCCTShapeFromMesh",
+    "bridge_output": {
+      "type": "measured",
+      "data": {
+        "faces": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measured",
+      "data": {
+        "faces": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [],
+      "note": "MATCH"
+    },
+    "status": "PASS",
+    "red": ":627 `shape != nil`",
+    "injection": "D1: builder result dropped (null on success)",
+    "probe": "Scripts/repro/766-mesh-core-2/"
   }
 ]
