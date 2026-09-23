@@ -602,7 +602,7 @@ extension Document {
     /// Number of datum labels in this document, which can exceed `datums.count`.
     ///
     /// This counts labels; `datums` counts the ones `datum(at:)` can read. A datum OCCT cannot
-    /// read without crashing (#1030) is counted here and omitted there, so iterate `datums` rather
+    /// read is counted here and omitted there, so iterate `datums` rather
     /// than indexing `0..<datumCount` and force-unwrapping.
     public var datumCount: Int {
         Int(OCCTDocumentGetDatumCount(handle))
@@ -761,9 +761,12 @@ extension Document {
     /// ```
     ///
     /// - Parameter index: Zero-based index into the document's datum sequence.
-    /// - Returns: The datum, or `nil` if the index is out of range, or for a datum carrying an
-    ///   annotation point with no annotation plane, which OCCT cannot read without crashing
-    ///   (#1030); see `docs/reference/Annotation.md`.
+    /// - Returns: The datum, or `nil` if the index is out of range.
+    ///
+    ///   A datum carrying an annotation point with no annotation plane used to be refused here,
+    ///   because `XCAFDoc_Datum::GetObject` read the point's X out of the plane's array and
+    ///   dereferenced a null handle (#1022). Carried patch `0029` fixes that in the kernel and is
+    ///   pinned as of `v4.0.0-kernel.1`, so the datum is read like any other (#1030).
     public func datum(at index: Int) -> Datum? {
         let info = OCCTDocumentGetDatumInfo(handle, Int32(index))
         guard info.isValid else { return nil }
@@ -827,7 +830,7 @@ extension Document {
     /// for datum in doc.datums { print("Datum:", datum.name) }
     /// ```
     ///
-    /// - Returns: Every datum `datum(at:)` succeeds on, so one OCCT cannot read (#1030) is
+    /// - Returns: Every datum `datum(at:)` succeeds on, so one whose attribute is missing is
     ///   omitted rather than crashing the enumeration.
     public var datums: [Datum] {
         (0..<datumCount).compactMap { datum(at: $0) }

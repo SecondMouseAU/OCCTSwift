@@ -162,6 +162,7 @@ static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -254,6 +255,7 @@ OCCTKDTreeRef OCCTKDTreeBuild(const double* coords, int32_t count)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -282,6 +284,7 @@ int32_t OCCTKDTreeNearestPoint(OCCTKDTreeRef tree,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -319,6 +322,7 @@ int32_t OCCTKDTreeKNearest(OCCTKDTreeRef tree,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -347,6 +351,7 @@ int32_t OCCTKDTreeRangeSearch(OCCTKDTreeRef tree,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -378,6 +383,7 @@ int32_t OCCTKDTreeBoxSearch(OCCTKDTreeRef tree,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }

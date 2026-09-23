@@ -310,6 +310,7 @@ static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -344,6 +345,7 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -632,6 +634,7 @@ void OCCTSurfaceGetPoint(OCCTSurfaceRef s, double u, double v, double* x, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -668,6 +671,7 @@ void OCCTSurfaceD1(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -722,6 +726,7 @@ void OCCTSurfaceD2(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -742,6 +747,7 @@ bool OCCTSurfaceGetNormal(OCCTSurfaceRef s, double u, double v, double* nx, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -781,6 +787,7 @@ OCCTSurfaceRef OCCTSurfaceCreateCylinder(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -806,6 +813,7 @@ OCCTSurfaceRef OCCTSurfaceCreateCone(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -823,6 +831,7 @@ OCCTSurfaceRef OCCTSurfaceCreateSphere(double cx, double cy, double cz, double r
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -848,6 +857,7 @@ OCCTSurfaceRef OCCTSurfaceCreateTorus(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -865,6 +875,7 @@ OCCTSurfaceRef OCCTSurfaceCreateExtrusion(OCCTCurve3DRef profile, double dx, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -889,6 +900,7 @@ OCCTSurfaceRef OCCTSurfaceCreateRevolution(OCCTCurve3DRef meridian,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -938,6 +950,7 @@ OCCTSurfaceRef OCCTSurfaceCreateBezier(const double* poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1019,6 +1032,7 @@ OCCTSurfaceRef OCCTSurfaceCreateBSpline(const double*  poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1035,6 +1049,7 @@ OCCTSurfaceRef OCCTSurfaceTrim(OCCTSurfaceRef s, double u1, double u2, double v1
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1050,6 +1065,7 @@ OCCTSurfaceRef OCCTSurfaceOffset(OCCTSurfaceRef s, double distance)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1069,6 +1085,7 @@ OCCTSurfaceRef OCCTSurfaceTranslate(OCCTSurfaceRef s, double dx, double dy, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1095,6 +1112,7 @@ OCCTSurfaceRef OCCTSurfaceRotate(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1114,6 +1132,7 @@ OCCTSurfaceRef OCCTSurfaceScale(OCCTSurfaceRef s, double cx, double cy, double c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1139,6 +1158,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1158,6 +1178,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef s, double px, double py, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1183,6 +1204,7 @@ OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1200,6 +1222,7 @@ OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1226,6 +1249,7 @@ OCCTCurve3DRef OCCTSurfaceUIso(OCCTSurfaceRef s, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1243,6 +1267,7 @@ OCCTCurve3DRef OCCTSurfaceVIso(OCCTSurfaceRef s, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1318,6 +1343,7 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1375,6 +1401,7 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s, int32_t uCount, int32_t vCount, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1434,6 +1461,7 @@ bool OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef s,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1518,6 +1546,7 @@ int32_t OCCTSurfaceGetPoles(OCCTSurfaceRef s, double* outXYZ)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1594,6 +1623,7 @@ bool OCCTShapeCheckCurveOnSurface(OCCTShapeRef shape, double* outMaxDist, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1625,6 +1655,7 @@ bool OCCTGeomFillConstrainedInfo(OCCTShapeRef face, OCCTConstrainedFillingInfo* 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1654,6 +1685,7 @@ OCCTSurfaceRef OCCTSurfaceConicalFromAxis(double axisX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1681,6 +1713,7 @@ OCCTSurfaceRef OCCTSurfaceConicalFromPointsRadii(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1708,6 +1741,7 @@ OCCTSurfaceRef OCCTSurfaceCylindricalFromAxis(double axisX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1738,6 +1772,7 @@ OCCTSurfaceRef OCCTSurfaceCylindricalFromPoints(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1766,6 +1801,7 @@ OCCTSurfaceRef OCCTSurfacePlaneFromPoints(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1791,6 +1827,7 @@ OCCTSurfaceRef OCCTSurfacePlaneFromPointNormal(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1818,6 +1855,7 @@ OCCTSurfaceRef OCCTSurfaceTrimmedCone(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1846,6 +1884,7 @@ OCCTSurfaceRef OCCTSurfaceTrimmedCylinder(double axisX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1881,6 +1920,7 @@ OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef sur
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -1906,6 +1946,7 @@ OCCTGeomIntSSRef _Nullable OCCTGeomIntSSCreate(OCCTShapeRef face1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1939,6 +1980,7 @@ OCCTShapeRef _Nullable OCCTGeomIntSSLine(OCCTGeomIntSSRef ref, int index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1969,6 +2011,7 @@ void OCCTGeomIntSSPoint(OCCTGeomIntSSRef ref, int index, double* x, double* y, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2013,6 +2056,7 @@ OCCTShapeRef _Nullable OCCTAdaptor3dIsoCurveEdge(OCCTShapeRef faceShape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2057,6 +2101,7 @@ OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2072,6 +2117,7 @@ bool OCCTGeomFillProfilerPerform(OCCTGeomFillProfilerRef _Nonnull ref, double to
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2085,6 +2131,7 @@ int OCCTGeomFillProfilerDegree(OCCTGeomFillProfilerRef _Nonnull ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2098,6 +2145,7 @@ int OCCTGeomFillProfilerNbPoles(OCCTGeomFillProfilerRef _Nonnull ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2111,6 +2159,7 @@ int OCCTGeomFillProfilerNbKnots(OCCTGeomFillProfilerRef _Nonnull ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2124,6 +2173,7 @@ bool OCCTGeomFillProfilerIsPeriodic(OCCTGeomFillProfilerRef _Nonnull ref)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2153,6 +2203,7 @@ bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2180,6 +2231,7 @@ bool OCCTGeomFillProfilerKnotsAndMults(OCCTGeomFillProfilerRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2216,6 +2268,7 @@ bool OCCTGeomFillLocationDraftD0(OCCTLocationDraftRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2229,6 +2282,7 @@ void OCCTGeomFillLocationDraftSetAngle(OCCTLocationDraftRef _Nonnull ref, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2247,6 +2301,7 @@ void OCCTGeomFillLocationDraftDirection(OCCTLocationDraftRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2288,6 +2343,7 @@ bool OCCTGeomFillGuideTrihedronACD0(OCCTGuideTrihedronACRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2330,6 +2386,7 @@ bool OCCTGeomFillGuideTrihedronPlanD0(OCCTGuideTrihedronPlanRef _Nonnull ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2358,6 +2415,7 @@ OCCTSurfaceRef _Nullable OCCTGceMakePlnFromEquation(double a, double b, double c
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2397,6 +2455,7 @@ OCCTSurfaceRef OCCTSurfaceCreateRectangularTrimmed(OCCTSurfaceRef basisSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2417,6 +2476,7 @@ OCCTSurfaceRef OCCTSurfaceCreateTrimmedInU(OCCTSurfaceRef basisSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2437,6 +2497,7 @@ OCCTSurfaceRef OCCTSurfaceCreateTrimmedInV(OCCTSurfaceRef basisSurface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2462,6 +2523,7 @@ void OCCTElSLibValueOnPlane(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2488,6 +2550,7 @@ void OCCTElSLibValueOnCylinder(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2517,6 +2580,7 @@ void OCCTElSLibValueOnCone(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2543,6 +2607,7 @@ void OCCTElSLibValueOnSphere(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2572,6 +2637,7 @@ void OCCTElSLibValueOnTorus(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2600,6 +2666,7 @@ void OCCTElSLibParametersOnSphere(double  ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2639,6 +2706,7 @@ void OCCTElSLibD1OnSphere(double  u,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2658,6 +2726,7 @@ OCCTSurfaceRef OCCTConvertSphereToBSplineSurface(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2682,6 +2751,7 @@ OCCTSurfaceRef OCCTConvertCylinderToBSplineSurface(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2707,6 +2777,7 @@ OCCTSurfaceRef OCCTConvertConeToBSplineSurface(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2728,6 +2799,7 @@ OCCTSurfaceRef OCCTConvertTorusToBSplineSurface(double ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2755,6 +2827,7 @@ void OCCTSurfaceSetOffsetValue(OCCTSurfaceRef surface, double offset)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -2790,6 +2863,7 @@ bool OCCTBRepGPropFaceIntegrationOrders(OCCTShapeRef face, int32_t* uOrder, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2818,6 +2892,7 @@ int32_t OCCTBRepGPropFaceUKnots(OCCTShapeRef face, double* buffer, int32_t maxCo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2846,6 +2921,7 @@ int32_t OCCTBRepGPropFaceVKnots(OCCTShapeRef face, double* buffer, int32_t maxCo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2871,6 +2947,7 @@ bool OCCTBRepGPropFaceSurfaceIntegration(OCCTShapeRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2920,6 +2997,7 @@ bool OCCTBRepGPropFaceBoundaryIntegration(OCCTShapeRef face,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -2943,6 +3021,7 @@ OCCTSurfaceRef OCCTGCMakeConicalSurface(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2965,6 +3044,7 @@ OCCTSurfaceRef OCCTGCMakeConicalSurface2Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2994,6 +3074,7 @@ OCCTSurfaceRef OCCTGCMakeConicalSurface4Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3016,6 +3097,7 @@ OCCTSurfaceRef OCCTGCMakeCylindricalSurface(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3039,6 +3121,7 @@ OCCTSurfaceRef OCCTGCMakeCylindricalSurface3Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3062,6 +3145,7 @@ OCCTSurfaceRef OCCTGCMakeCylindricalSurfaceFromCircle(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3086,6 +3170,7 @@ OCCTSurfaceRef OCCTGCMakeCylindricalSurfaceParallel(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3108,6 +3193,7 @@ OCCTSurfaceRef OCCTGCMakeCylindricalSurfaceAxis(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3130,6 +3216,7 @@ OCCTSurfaceRef OCCTGCMakeTrimmedCone2Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3159,6 +3246,7 @@ OCCTSurfaceRef OCCTGCMakeTrimmedCone4Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3183,6 +3271,7 @@ OCCTSurfaceRef OCCTGCMakeTrimmedCylinderCircle(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3206,6 +3295,7 @@ OCCTSurfaceRef OCCTGCMakeTrimmedCylinderAxis(double px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3229,6 +3319,7 @@ OCCTSurfaceRef OCCTGCMakeTrimmedCylinder3Pts(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3243,6 +3334,7 @@ int32_t OCCTSurfaceGetContinuity(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3262,6 +3354,7 @@ void OCCTSurfaceGetNBounds(OCCTSurfaceRef surface, int32_t* uSpans, int32_t* vSp
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3387,6 +3480,7 @@ bool OCCTSurfaceBSplineSetPole(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3408,6 +3502,7 @@ bool OCCTSurfaceBSplineSetWeight(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3426,6 +3521,7 @@ bool OCCTSurfaceBSplineInsertUKnot(OCCTSurfaceRef surface, double u, int32_t mul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3444,6 +3540,7 @@ bool OCCTSurfaceBSplineInsertVKnot(OCCTSurfaceRef surface, double v, int32_t mul
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3462,6 +3559,7 @@ bool OCCTSurfaceBSplineSegment(OCCTSurfaceRef surface, double u1, double u2, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3480,6 +3578,7 @@ bool OCCTSurfaceBSplineIncreaseDegree(OCCTSurfaceRef surface, int32_t uDeg, int3
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3498,6 +3597,7 @@ bool OCCTSurfaceBSplineExchangeUV(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3523,6 +3623,7 @@ void OCCTSurfacePlaneCoefficients(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3542,6 +3643,7 @@ OCCTCurve3DRef OCCTSurfacePlaneUIso(OCCTSurfaceRef surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3562,6 +3664,7 @@ OCCTCurve3DRef OCCTSurfacePlaneVIso(OCCTSurfaceRef surface, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3599,6 +3702,7 @@ void OCCTSurfacePlanePln(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3615,6 +3719,7 @@ double OCCTSurfaceSphereRadius(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3633,6 +3738,7 @@ bool OCCTSurfaceSphereSetRadius(OCCTSurfaceRef surface, double radius)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3650,6 +3756,7 @@ double OCCTSurfaceSphereArea(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3667,6 +3774,7 @@ double OCCTSurfaceSphereVolume(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3690,6 +3798,7 @@ void OCCTSurfaceSphereCenter(OCCTSurfaceRef surface, double* x, double* y, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3709,6 +3818,7 @@ OCCTCurve3DRef OCCTSurfaceSphereUIso(OCCTSurfaceRef surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3729,6 +3839,7 @@ OCCTCurve3DRef OCCTSurfaceSphereVIso(OCCTSurfaceRef surface, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -3759,6 +3870,7 @@ void OCCTSurfaceSphereSphere(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3775,6 +3887,7 @@ double OCCTSurfaceTorusMajorRadius(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3792,6 +3905,7 @@ double OCCTSurfaceTorusMinorRadius(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3810,6 +3924,7 @@ bool OCCTSurfaceTorusSetMajorRadius(OCCTSurfaceRef surface, double r)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3828,6 +3943,7 @@ bool OCCTSurfaceTorusSetMinorRadius(OCCTSurfaceRef surface, double r)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -3845,6 +3961,7 @@ double OCCTSurfaceTorusArea(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3862,6 +3979,7 @@ double OCCTSurfaceTorusVolume(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3899,6 +4017,7 @@ void OCCTSurfaceTorusAxis(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3936,6 +4055,7 @@ void OCCTSurfaceRevolutionAxis(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3959,6 +4079,7 @@ void OCCTSurfaceRevolutionLocation(OCCTSurfaceRef surface, double* x, double* y,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -3975,6 +4096,7 @@ double OCCTSurfaceCylinderRadius(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -3993,6 +4115,7 @@ bool OCCTSurfaceCylinderSetRadius(OCCTSurfaceRef surface, double r)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4028,6 +4151,7 @@ void OCCTSurfaceCylinderAxis(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4047,6 +4171,7 @@ OCCTCurve3DRef OCCTSurfaceCylinderUIso(OCCTSurfaceRef surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4064,6 +4189,7 @@ double OCCTSurfaceConeSemiAngle(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4081,6 +4207,7 @@ double OCCTSurfaceConeRefRadius(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4104,6 +4231,7 @@ void OCCTSurfaceConeApex(OCCTSurfaceRef surface, double* x, double* y, double* z
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4138,6 +4266,7 @@ void OCCTSurfaceConeAxis(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4160,6 +4289,7 @@ void OCCTSurfaceSweptDirection(OCCTSurfaceRef surface, double* dx, double* dy, d
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4179,6 +4309,7 @@ OCCTCurve3DRef OCCTSurfaceSweptBasisCurve(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4201,6 +4332,7 @@ void OCCTSurfaceBounds(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4223,6 +4355,7 @@ OCCTSurfaceRef OCCTSurfaceCopy(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4243,6 +4376,7 @@ void OCCTSurfaceEvalD0(OCCTSurfaceRef surface, double u, double v, double* x, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4285,6 +4419,7 @@ void OCCTSurfaceEvalD1(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4354,6 +4489,7 @@ void OCCTSurfaceEvalD2(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4369,6 +4505,7 @@ OCCTProjOnSurfRef OCCTProjOnSurfCreate(OCCTSurfaceRef surface, double px, double
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4388,6 +4525,7 @@ int32_t OCCTProjOnSurfNbPoints(OCCTProjOnSurfRef proj)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4408,6 +4546,7 @@ void OCCTProjOnSurfPoint(OCCTProjOnSurfRef proj, int32_t index, double* x, doubl
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -4425,6 +4564,7 @@ void OCCTProjOnSurfParameters(OCCTProjOnSurfRef proj, int32_t index, double* u, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *u = *v = 0;
   }
 }
@@ -4439,6 +4579,7 @@ double OCCTProjOnSurfDistance(OCCTProjOnSurfRef proj, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4453,6 +4594,7 @@ double OCCTProjOnSurfLowerDistance(OCCTProjOnSurfRef proj)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4470,6 +4612,7 @@ void OCCTProjOnSurfLowerParams(OCCTProjOnSurfRef proj, double* u, double* v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *u = *v = 0;
   }
 }
@@ -4486,6 +4629,7 @@ OCCTIntCSRef OCCTIntCSCreate(OCCTCurve3DRef curve, OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4505,6 +4649,7 @@ int32_t OCCTIntCSNbPoints(OCCTIntCSRef intcs)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4533,6 +4678,7 @@ void OCCTIntCSPoint(OCCTIntCSRef intcs,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = *w = *u = *v = 0;
   }
 }
@@ -4547,6 +4693,7 @@ int32_t OCCTIntCSNbSegments(OCCTIntCSRef intcs)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4565,6 +4712,7 @@ bool OCCTSurfaceBSplineSetUKnot(OCCTSurfaceRef surface, int32_t index, double kn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4583,6 +4731,7 @@ bool OCCTSurfaceBSplineSetVKnot(OCCTSurfaceRef surface, int32_t index, double kn
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4603,6 +4752,7 @@ void OCCTSurfaceBSplineGetUKnots(OCCTSurfaceRef surface, double* knots)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4622,6 +4772,7 @@ void OCCTSurfaceBSplineGetVKnots(OCCTSurfaceRef surface, double* knots)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -4655,6 +4806,7 @@ void OCCTSurfaceBSplineGetWeights(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *rows = *cols = 0;
   }
 }
@@ -4672,6 +4824,7 @@ bool OCCTSurfaceBSplineRemoveUKnot(OCCTSurfaceRef surface, int32_t index, int32_
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4699,6 +4852,7 @@ void OCCTSurfaceDN(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -4713,6 +4867,7 @@ const char* OCCTSurfaceTypeName(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -4799,6 +4954,7 @@ void OCCTSurfaceLocalCurvatures(OCCTSurfaceRef _Nonnull surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDefined    = false;
     *gaussian     = 0;
     *mean         = 0;
@@ -4856,6 +5012,7 @@ void OCCTSurfaceLocalCurvatureDirections(OCCTSurfaceRef _Nonnull surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *isDefined = false;
     *maxDx     = 0;
     *maxDy     = 0;
@@ -4878,6 +5035,7 @@ int32_t OCCTSurfaceBezierNbUPoles(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4894,6 +5052,7 @@ int32_t OCCTSurfaceBezierNbVPoles(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -4910,6 +5069,7 @@ int32_t OCCTSurfaceBezierUDegree(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4926,6 +5086,7 @@ int32_t OCCTSurfaceBezierVDegree(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -4953,6 +5114,7 @@ void OCCTSurfaceBezierGetPole(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *x = *y = *z = 0;
   }
 }
@@ -4975,6 +5137,7 @@ bool OCCTSurfaceBezierSetPole(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -4995,6 +5158,7 @@ bool OCCTSurfaceBezierSetWeight(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5012,6 +5176,7 @@ bool OCCTSurfaceBezierSegment(OCCTSurfaceRef surface, double u1, double u2, doub
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5028,6 +5193,7 @@ bool OCCTSurfaceBezierIsURational(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5044,6 +5210,7 @@ bool OCCTSurfaceBezierIsVRational(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5061,6 +5228,7 @@ bool OCCTSurfaceBezierExchangeUV(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5083,6 +5251,7 @@ void OCCTSurfaceBSplineResolution(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *uResolution = *vResolution = 0;
   }
 }
@@ -5103,6 +5272,7 @@ bool OCCTSurfaceBSplineSetUPeriodic(OCCTSurfaceRef surface, bool periodic)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5123,6 +5293,7 @@ bool OCCTSurfaceBSplineSetVPeriodic(OCCTSurfaceRef surface, bool periodic)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5139,6 +5310,7 @@ double OCCTSurfaceBSplineGetWeight(OCCTSurfaceRef surface, int32_t uIndex, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -5154,6 +5326,7 @@ bool OCCTSurfaceIsCNu(OCCTSurfaceRef _Nonnull surface, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5169,6 +5342,7 @@ bool OCCTSurfaceIsCNv(OCCTSurfaceRef _Nonnull surface, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5190,6 +5364,7 @@ OCCTSurfaceRef _Nullable OCCTSurfaceUReversed(OCCTSurfaceRef _Nonnull surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -5211,6 +5386,7 @@ OCCTSurfaceRef _Nullable OCCTSurfaceVReversed(OCCTSurfaceRef _Nonnull surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -5226,6 +5402,7 @@ double OCCTSurfaceUReversedParameter(OCCTSurfaceRef _Nonnull surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return u;
   }
 }
@@ -5241,6 +5418,7 @@ double OCCTSurfaceVReversedParameter(OCCTSurfaceRef _Nonnull surface, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return v;
   }
 }
@@ -5262,6 +5440,7 @@ bool OCCTSurfaceBSplineRemoveVKnot(OCCTSurfaceRef _Nonnull surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5291,6 +5470,7 @@ void OCCTSurfaceBezierResolution(OCCTSurfaceRef _Nonnull surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     *uResolution = 0;
     *vResolution = 0;
   }
@@ -5320,6 +5500,7 @@ bool OCCTSurfaceBSplineSetUNotPeriodic(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5338,6 +5519,7 @@ bool OCCTSurfaceBSplineSetVNotPeriodic(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5356,6 +5538,7 @@ bool OCCTSurfaceBSplineSetUOrigin(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5374,6 +5557,7 @@ bool OCCTSurfaceBSplineSetVOrigin(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5392,6 +5576,7 @@ bool OCCTSurfaceBSplineIncreaseUMultiplicity(OCCTSurfaceRef surface, int32_t ind
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5410,6 +5595,7 @@ bool OCCTSurfaceBSplineIncreaseVMultiplicity(OCCTSurfaceRef surface, int32_t ind
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5439,6 +5625,7 @@ bool OCCTSurfaceBSplineInsertUKnots(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5468,6 +5655,7 @@ bool OCCTSurfaceBSplineInsertVKnots(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5506,6 +5694,7 @@ bool OCCTSurfaceBSplineMovePoint(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5535,6 +5724,7 @@ bool OCCTSurfaceBSplineSetPoleCol(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5564,6 +5754,7 @@ bool OCCTSurfaceBSplineSetPoleRow(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -5580,6 +5771,7 @@ double OCCTSurfaceUPeriod(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -5596,6 +5788,7 @@ double OCCTSurfaceVPeriod(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -5626,6 +5819,7 @@ void OCCTSurfaceBSplineLocalD0(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5668,6 +5862,7 @@ void OCCTSurfaceBSplineLocalD1(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5728,6 +5923,7 @@ void OCCTSurfaceBSplineLocalD2(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5827,6 +6023,7 @@ void OCCTSurfaceBSplineLocalD3(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5857,6 +6054,7 @@ void OCCTSurfaceBSplineLocalDN(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5885,6 +6083,7 @@ void OCCTSurfaceBSplineLocalValue(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5906,6 +6105,7 @@ OCCTCurve3DRef OCCTSurfaceBSplineUIso(OCCTSurfaceRef surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -5928,6 +6128,7 @@ OCCTCurve3DRef OCCTSurfaceBSplineVIso(OCCTSurfaceRef surface, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -5952,6 +6153,7 @@ void OCCTSurfaceBSplineLocateU(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5975,6 +6177,7 @@ void OCCTSurfaceBSplineLocateV(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -5991,6 +6194,7 @@ double OCCTSurfaceBSplineUKnot(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -6008,6 +6212,7 @@ double OCCTSurfaceBSplineVKnot(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -6025,6 +6230,7 @@ int32_t OCCTSurfaceBSplineUMultiplicity(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6042,6 +6248,7 @@ int32_t OCCTSurfaceBSplineVMultiplicity(OCCTSurfaceRef surface, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6059,6 +6266,7 @@ int32_t OCCTSurfaceBSplineUKnotDistribution(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6076,6 +6284,7 @@ int32_t OCCTSurfaceBSplineVKnotDistribution(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6104,6 +6313,7 @@ void OCCTSurfaceBSplineGetPoles(OCCTSurfaceRef surface, double* poles)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6124,6 +6334,7 @@ void OCCTSurfaceBSplineBounds(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6140,6 +6351,7 @@ bool OCCTSurfaceBSplineIsUClosed(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6157,6 +6369,7 @@ bool OCCTSurfaceBSplineIsVClosed(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6179,6 +6392,7 @@ OCCTCurve3DRef OCCTSurfaceBezierUIso(OCCTSurfaceRef surface, double u)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -6201,6 +6415,7 @@ OCCTCurve3DRef OCCTSurfaceBezierVIso(OCCTSurfaceRef surface, double v)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -6218,6 +6433,7 @@ bool OCCTSurfaceBezierIsUClosed(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6235,6 +6451,7 @@ bool OCCTSurfaceBezierIsVClosed(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6252,6 +6469,7 @@ bool OCCTSurfaceBezierIsUPeriodic(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6269,6 +6487,7 @@ bool OCCTSurfaceBezierIsVPeriodic(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6286,6 +6505,7 @@ int32_t OCCTSurfaceBezierContinuity(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6303,6 +6523,7 @@ bool OCCTSurfaceBezierIsCNu(OCCTSurfaceRef surface, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6320,6 +6541,7 @@ bool OCCTSurfaceBezierIsCNv(OCCTSurfaceRef surface, int32_t n)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6348,6 +6570,7 @@ void OCCTSurfaceBezierGetPoles(OCCTSurfaceRef surface, double* poles)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6375,6 +6598,7 @@ bool OCCTSurfaceBezierGetWeights(OCCTSurfaceRef surface, double* weights)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6392,6 +6616,7 @@ void OCCTSurfaceBezierBounds(OCCTSurfaceRef surface, double* u1, double* u2, dou
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6412,6 +6637,7 @@ void OCCTSurfaceBSplineGetUMultiplicities(OCCTSurfaceRef surface, int32_t* mults
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6432,6 +6658,7 @@ void OCCTSurfaceBSplineGetVMultiplicities(OCCTSurfaceRef surface, int32_t* mults
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -6449,6 +6676,7 @@ bool OCCTSurfaceBSplineUReverse(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6467,6 +6695,7 @@ bool OCCTSurfaceBSplineVReverse(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6485,6 +6714,7 @@ bool OCCTSurfaceBSplinePeriodicNormalization(OCCTSurfaceRef surface, double* u, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6514,6 +6744,7 @@ bool OCCTSurfaceBezierInsertPoleColAfter(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6543,6 +6774,7 @@ bool OCCTSurfaceBezierInsertPoleRowAfter(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6561,6 +6793,7 @@ bool OCCTSurfaceBezierRemovePoleCol(OCCTSurfaceRef surface, int32_t colIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6579,6 +6812,7 @@ bool OCCTSurfaceBezierRemovePoleRow(OCCTSurfaceRef surface, int32_t rowIndex)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6597,6 +6831,7 @@ bool OCCTSurfaceBezierIncreaseDegree(OCCTSurfaceRef surface, int32_t uDeg, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6615,6 +6850,7 @@ bool OCCTSurfaceBezierUReverse(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6633,6 +6869,7 @@ bool OCCTSurfaceBezierVReverse(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6662,6 +6899,7 @@ bool OCCTSurfaceBezierSetPoleColWeights(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6691,6 +6929,7 @@ bool OCCTSurfaceBezierSetPoleRowWeights(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6717,6 +6956,7 @@ bool OCCTSurfaceTransform(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6741,6 +6981,7 @@ bool OCCTSurfaceBSplineSetWeightCol(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6765,6 +7006,7 @@ bool OCCTSurfaceBSplineSetWeightRow(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6786,6 +7028,7 @@ bool OCCTSurfaceBSplineIncrementUMultiplicity(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6807,6 +7050,7 @@ bool OCCTSurfaceBSplineIncrementVMultiplicity(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6824,6 +7068,7 @@ int32_t OCCTSurfaceBSplineFirstUKnotIndex(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6841,6 +7086,7 @@ int32_t OCCTSurfaceBSplineLastUKnotIndex(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6858,6 +7104,7 @@ int32_t OCCTSurfaceBSplineFirstVKnotIndex(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6875,6 +7122,7 @@ int32_t OCCTSurfaceBSplineLastVKnotIndex(OCCTSurfaceRef surface)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -6899,6 +7147,7 @@ bool OCCTSurfaceBSplineCheckAndSegment(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6928,6 +7177,7 @@ bool OCCTSurfaceBezierInsertPoleColBefore(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6957,6 +7207,7 @@ bool OCCTSurfaceBezierInsertPoleRowBefore(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -6983,6 +7234,7 @@ bool OCCTSurfaceBezierSetPoleCol(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -7009,6 +7261,7 @@ bool OCCTSurfaceBezierSetPoleRow(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -7033,6 +7286,7 @@ bool OCCTSurfaceBezierSetWeightCol(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -7057,6 +7311,7 @@ bool OCCTSurfaceBezierSetWeightRow(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }

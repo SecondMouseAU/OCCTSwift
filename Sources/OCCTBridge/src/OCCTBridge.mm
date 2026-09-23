@@ -48,6 +48,255 @@ void occtEnsureSignals()
   std::call_once(once, [] { OSD::SetSignal(Standard_False); });
 }
 
+// MARK: - Caught-exception diagnostics (#1161)
+//
+// #1161 measured 3,652 `catch (...)` blocks in Sources/OCCTBridge/src and zero that catch
+// Standard_Failure, so every OCCT failure reached Swift as nil with its type and message
+// discarded. This is the channel that carries them across. It answers #1161's design question,
+// asked in that issue's own triage, with a side channel: no signature changes, no
+// `Result<T, OCCTError>` break across the public surface, no kernel rebuild.
+//
+// The mechanism is a bare `throw;` inside occtRecordCaughtException, which rethrows whatever the
+// caller's `catch (...)` already holds and catches it again by type. That is what makes the
+// per-site cost one line: an existing catch block does not have to be restructured into a typed
+// catch ladder to get full diagnostics out of it. Verified against the pinned kernel in
+// Scripts/repro/1161/probe.mm, which also shows ExceptionType() reporting the real OCCT subclass
+// (Standard_ConstructionError, StdFail_NotDone) and a nested inner catch still rethrowing
+// correctly to its outer one.
+//
+// NOT SIGNALS. OCC_CONVERT_SIGNALS is undefined in this build, so OCC_CATCH_SIGNALS expands to
+// nothing and an OS signal raised inside OCCT never becomes a C++ exception. Nothing in this
+// section can see a SIGSEGV/SIGBUS/SIGFPE, and the crashes that motivated #1161 (#345, #348,
+// #484, #636, #913, #1022) are all that shape. See occtEnsureSignals above.
+#include <Standard_Failure.hxx>
+#include <Message.hxx>
+#include <Message_Gravity.hxx>
+#include <Message_Messenger.hxx>
+
+#include <atomic>
+#include <cstdlib>
+#include <cstring>
+#include <exception>
+#include <string>
+#include <vector>
+
+namespace
+{
+
+// One caught exception, classified.
+struct OCCTCaughtException
+{
+  std::string        context;
+  std::string        exceptionType;
+  std::string        message;
+  std::string        stackTrace;
+  OCCTDiagnosticKind kind = OCCTDiagnosticKindUnknown;
+};
+
+// Bound on the capture buffer. A capture switched on and never read is a slow leak otherwise;
+// past the cap, records are counted and dropped rather than stored.
+const size_t THE_DIAGNOSTIC_RECORD_LIMIT = 256;
+
+struct OCCTDiagnosticsState
+{
+  std::vector<OCCTCaughtException> records;
+  int32_t                          dropped = 0;
+  bool                             capture = false;
+};
+
+// Thread-local, not shared: an OCCT exception is caught on the thread that made the bridge call,
+// so its record belongs to that thread and no lock is needed. Also why a capture must not be
+// opened around anything that can hop threads (an `await`); the Swift wrapper's capture scope
+// takes a non-async closure so it cannot.
+OCCTDiagnosticsState& occtDiagnosticsState()
+{
+  static thread_local OCCTDiagnosticsState aState;
+  return aState;
+}
+
+// Enables logging when OCCTSWIFT_BRIDGE_DIAGNOSTICS is set to anything but empty or "0".
+bool occtDiagnosticsLoggingFromEnvironment()
+{
+  const char* aValue = std::getenv("OCCTSWIFT_BRIDGE_DIAGNOSTICS");
+  return aValue != nullptr && aValue[0] != '\0' && std::strcmp(aValue, "0") != 0;
+}
+
+// Process-wide, unlike the capture buffer: a developer switching logging on wants every thread's
+// exceptions, not only the thread that flipped the switch.
+std::atomic<bool>& occtDiagnosticsLogging()
+{
+  static std::atomic<bool> aFlag(occtDiagnosticsLoggingFromEnvironment());
+  return aFlag;
+}
+
+// The record at `index`, or nullptr when there is no such record on this thread.
+const OCCTCaughtException* occtDiagnosticRecordAt(int32_t theIndex)
+{
+  const OCCTDiagnosticsState& aState = occtDiagnosticsState();
+  if (theIndex < 0 || static_cast<size_t>(theIndex) >= aState.records.size())
+    return nullptr;
+  return &aState.records[static_cast<size_t>(theIndex)];
+}
+
+// Send one record to OCCT's own default messenger, so a bridge diagnostic lands in the same
+// stream as the kernel's own messages and obeys whatever printers the host attached.
+void occtDiagnosticsLog(const OCCTCaughtException& theRecord)
+{
+  try
+  {
+    std::string aLine = "OCCTBridge: ";
+    aLine += theRecord.context.empty() ? "<unknown function>" : theRecord.context;
+    aLine += " caught ";
+    aLine += theRecord.exceptionType.empty() ? "an exception" : theRecord.exceptionType;
+    if (!theRecord.message.empty())
+    {
+      aLine += ": ";
+      aLine += theRecord.message;
+    }
+    Message::DefaultMessenger()->Send(aLine.c_str(), Message_Alarm);
+  }
+  catch (...)
+  {
+    // A diagnostic that throws must not become the failure being diagnosed. Deliberately silent,
+    // and deliberately not calling occtRecordCaughtException: this IS that function's tail.
+  }
+}
+
+} // namespace
+
+void occtRecordCaughtException(const char* theContext)
+{
+  OCCTDiagnosticsState& aState = occtDiagnosticsState();
+  const bool            toLog  = occtDiagnosticsLogging().load(std::memory_order_relaxed);
+  if (!aState.capture && !toLog)
+    return;
+
+  // Backstop for a call placed outside a catch block: a bare `throw;` with no exception in flight
+  // calls std::terminate, and killing the process to report a diagnostic is not a trade worth
+  // making. Never a licence to call this from anywhere but a catch block.
+  if (!std::current_exception())
+    return;
+
+  OCCTCaughtException aRecord;
+  aRecord.context = theContext != nullptr ? theContext : "";
+  try
+  {
+    throw;
+  }
+  catch (const Standard_Failure& anEx)
+  {
+    // Standard_Failure derives from std::exception in OCCT 8.0.1, so this clause has to come
+    // first or every OCCT failure is classified as a plain std::exception and loses its type.
+    aRecord.kind          = OCCTDiagnosticKindOCCTFailure;
+    aRecord.exceptionType = anEx.ExceptionType() != nullptr ? anEx.ExceptionType() : "";
+    aRecord.message       = anEx.what() != nullptr ? anEx.what() : "";
+    aRecord.stackTrace    = anEx.GetStackString() != nullptr ? anEx.GetStackString() : "";
+  }
+  catch (const std::exception& anEx)
+  {
+    aRecord.kind    = OCCTDiagnosticKindStdException;
+    aRecord.message = anEx.what() != nullptr ? anEx.what() : "";
+  }
+  catch (...)
+  {
+    // Deliberately NOT calling occtRecordCaughtException here (#1161/#2077), and this is the one
+    // site in the bridge where recording would not merely be wrong but fatal: this IS that
+    // function's own classification ladder, so a call here would `throw;` the same exception,
+    // reach this clause again and recurse until the stack ran out. #2077's sweep script inserted
+    // one and it was reverted; the comment is what stops the next run reinserting it.
+    aRecord.kind = OCCTDiagnosticKindUnknown;
+  }
+
+  if (toLog)
+    occtDiagnosticsLog(aRecord);
+
+  if (!aState.capture)
+    return;
+  if (aState.records.size() >= THE_DIAGNOSTIC_RECORD_LIMIT)
+  {
+    ++aState.dropped;
+    return;
+  }
+  aState.records.push_back(aRecord);
+}
+
+void OCCTDiagnosticsSetCaptureEnabled(bool enabled)
+{
+  occtDiagnosticsState().capture = enabled;
+}
+
+bool OCCTDiagnosticsCaptureEnabled(void)
+{
+  return occtDiagnosticsState().capture;
+}
+
+void OCCTDiagnosticsSetLoggingEnabled(bool enabled)
+{
+  occtDiagnosticsLogging().store(enabled, std::memory_order_relaxed);
+}
+
+bool OCCTDiagnosticsLoggingEnabled(void)
+{
+  return occtDiagnosticsLogging().load(std::memory_order_relaxed);
+}
+
+void OCCTDiagnosticsClear(void)
+{
+  OCCTDiagnosticsState& aState = occtDiagnosticsState();
+  aState.records.clear();
+  aState.dropped = 0;
+}
+
+int32_t OCCTDiagnosticsRecordCount(void)
+{
+  return static_cast<int32_t>(occtDiagnosticsState().records.size());
+}
+
+int32_t OCCTDiagnosticsDroppedCount(void)
+{
+  return occtDiagnosticsState().dropped;
+}
+
+OCCTDiagnosticKind OCCTDiagnosticsRecordKind(int32_t index)
+{
+  const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);
+  return aRecord != nullptr ? aRecord->kind : OCCTDiagnosticKindUnknown;
+}
+
+const char* OCCTDiagnosticsRecordContext(int32_t index)
+{
+  const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);
+  return aRecord != nullptr ? aRecord->context.c_str() : nullptr;
+}
+
+const char* OCCTDiagnosticsRecordExceptionType(int32_t index)
+{
+  const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);
+  return aRecord != nullptr ? aRecord->exceptionType.c_str() : nullptr;
+}
+
+const char* OCCTDiagnosticsRecordMessage(int32_t index)
+{
+  const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);
+  return aRecord != nullptr ? aRecord->message.c_str() : nullptr;
+}
+
+const char* OCCTDiagnosticsRecordStackTrace(int32_t index)
+{
+  const OCCTCaughtException* aRecord = occtDiagnosticRecordAt(index);
+  return aRecord != nullptr ? aRecord->stackTrace.c_str() : nullptr;
+}
+
+void OCCTDiagnosticsSetStackTraceDepth(int32_t depth)
+{
+  Standard_Failure::SetDefaultStackTraceLength(depth < 0 ? 0 : static_cast<int>(depth));
+}
+
+int32_t OCCTDiagnosticsStackTraceDepth(void)
+{
+  return static_cast<int32_t>(Standard_Failure::DefaultStackTraceLength());
+}
+
 // Suppress OCCT 8.0.0 header deprecation warnings (typedef aliases still work).
 // Full migration to NCollection types is tracked for a future release.
 #pragma clang diagnostic push
@@ -482,12 +731,15 @@ bool occtHasSelfIntersectingWire(const TopoDS_Shape& s)
       {
         // Couldn't face/check this one wire; fall through to whatever the other wires (or the
         // original analyzer walk above) already found rather than treating this as fatal.
+        // Deliberately NOT calling occtRecordCaughtException here (#1161): this one recovers, and
+        // the guard goes on to return a real verdict.
         continue;
       }
     }
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     // A BRepCheck that itself throws on the input is a strong "do not proceed" signal.
     return true;
   }

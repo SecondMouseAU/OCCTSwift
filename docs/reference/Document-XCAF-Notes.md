@@ -1863,7 +1863,7 @@ Number of geometric tolerance annotation objects in the document.
 public var dimTolToolToleranceCount: Int { get }
 ```
 
-- **Returns:** the tolerance count, or `0` when any datum attached to a tolerance carries an annotation point with no annotation plane, which the bridge refuses rather than crash OCCT (#1030); `0` is then indistinguishable from a document with no tolerances. See the note under [`datum(at:)`](Annotation.md).
+- **Returns:** the tolerance count. This used to answer `0` whenever any datum attached to a tolerance carried an annotation point with no annotation plane, which the bridge refused rather than crash OCCT; carried patch `0029` fixes the kernel read and is pinned as of `v4.0.0-kernel.1`, so the count is now the real one (#1030). See the note under [`datum(at:)`](Annotation.md).
 - **OCCT:** `XCAFDimTolObjects_Tool` tolerance list size
 - **Example:**
   ```swift
@@ -1979,7 +1979,7 @@ public func createDocument() -> Document?
 - **Example:**
   ```swift
   if let app = TObjApplication.shared, let doc = app.createDocument() {
-      print(doc.isValid)
+      print(doc.shapeCount)   // 0, a fresh document
   }
   ```
 

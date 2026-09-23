@@ -7,10 +7,11 @@ release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/
 until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
 for what that takes.
 
-**Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, and
-`0032` retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin — see its
-[Retired patches](#retired-patches) entry), so the carried sequence now reads 0010–0012, 0014–0031,
-0033. The gaps are the retirements, not missing files:
+**Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
+retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
+2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0041.
+The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
@@ -1421,6 +1422,254 @@ Not yet filed upstream (override-link validated, not yet in a rebuilt xcframewor
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch
+
+**`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`.** `bound[0]` and
+`bound[2]` are the U-direction sides, per the constructor's own corner-point derivation, and the
+class's derivative functions already know it: `D1U` calls `bound[0]->D1(U, ...)` and
+`bound[2]->D1(U, ...)`, and `DUV` does the same. Only the plain `Value()` used `V` for those two.
+
+The effect is not a small error. For any boundary set whose V-direction sides are straight,
+`Value(U, V)` is **completely independent of `U`**, and the whole surface collapses onto the
+diagonal `U == V` locus. Every sample with `U == V` is coincidentally right, which is what let it
+survive.
+
+**The fix is two lines, and OCCTSwift#1515 said it could not be.** That issue reported that a naive
+swap "produces a third, different, still-wrong set of values ... because the correction-term
+coefficients (`a0..a3`, and the four corner blends) would need re-deriving consistently too", and
+concluded the defect needed a real re-derivation. That is wrong, and both the algebra and a
+measurement say so.
+
+Differentiating a `Value()` with `bound[0]`/`bound[2]` at `U` gives `D1U` **exactly**, every corner
+coefficient included: `d/dU [a0*bound0(U)] = a0*bound0'(U)` matches `D1U`'s `bound[0]->D1(U)`
+scaled by `a0`; `d/dU [a1(U)*bound1(V)] = a1'(U)*bound1(V)` matches its `bound[1]->Value(V)` scaled
+by the derivative `a1`; and each of the four corner terms matches under `a3 = 1 - a1`, `a3' = -a1'`.
+Since `D1U` is already correct in the shipped kernel, the `Value()` it is the derivative of is the
+one this patch writes.
+
+Confirmed numerically on a planar square
+(`Scripts/repro/1515-coons-value-u-parameter/occt_1515_coons_probe.mm`), re-implementing `Value()`
+with the kernel's own coefficients and only the two sampling parameters changed:
+
+```
+   u     v  |      kernel Value()     |   one-line-fixed Value()
+ 0.00  0.50 | (  0.500,  0.500)       | (  0.000,  0.500)
+ 0.50  0.00 | (  0.000,  0.000)       | (  0.500,  0.000)
+ 1.00  0.50 | (  0.500,  0.500)       | (  1.000,  0.500)
+ 0.25  0.75 | (  0.750,  0.750)       | (  0.250,  0.750)
+```
+
+The fixed column is the exact bilinear surface. No coefficient was touched.
+
+**Blast radius.** `GeomFill_ConstrainedFilling` builds a `GeomFill_CoonsAlgPatch` but never calls
+`Value()`; it evaluates through `Eval()` and fits an approximated B-spline, so its output was never
+affected. The one consumer that calls `Value()` directly is OCCTSwift's own
+`OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
+grid.
+
+**Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
+the seven OCCTSwift thread-safety PRs still open on Release 8.1.
+
+
+## 0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061.patch
+
+**Fixes a cross-thread data race on the STEP read actor's non-manifold flag**
+([#2061](https://github.com/SecondMouseAU/OCCTSwift/issues/2061)).
+`STEPControl_ActorRead.cxx:208` held `NM_DETECTED` as an anonymous-namespace global: reset at
+`:993`, set at `:1028`/`:1041` while transferring one shape representation, and read at
+`:742`/`:805` to decide whether a `COMPOUND` component is flattened into its parent or kept nested.
+Per-operation state in a process global.
+
+Upstream's own comment above the declaration already records the intended direction:
+
+> The better way is to pass this information via binder or via TopoDS_Shape itself, however,
+> this is very specific info to do so...
+
+**The fix is a private member**, `myIsNMDetected`, with a default member initialiser. Every read and
+write is already inside a `STEPControl_ActorRead` member function, so **no signature changes**. It
+works because `STEPControl_Controller::ActorRead()` never assigns `myAdaptorRead` (only
+`myAdaptorWrite`, `:345`), so it builds a fresh actor per call which `XSControl_TransferReader`
+caches per session. Had the read actor been shared the way IGES's is, a member would have fixed
+nothing.
+
+**Measured**, override-linked against `Libraries/occt-install-tsan`, six threads x ten iterations:
+
+| | `NM_DETECTED` race reported | Total races |
+|---|---|---|
+| unpatched | **5 of 5 runs** | 40 across 5 runs |
+| patched | **0 of 5 runs** | 10 across 5 runs |
+
+**What this does NOT show.** The wrong-shape outcome follows from the code and the flag
+demonstrably leaks across threads, but it did not occur in ~10,000 reads across three
+configurations: the reset at `:993` reliably wins the race to the same thread's read. This is a
+confirmed race on a flag that gates shape construction, not a demonstrated wrong answer, and the
+distinction is kept deliberately. Full method, including two fixture traps and why a setter-skewed
+thread pool measured worse, in
+[`Scripts/repro/2061-nm-detected/`](../repro/2061-nm-detected/README.md).
+
+Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0038-Interface_CheckTool-errh-per-instance-1403.patch
+
+**Fixes a shared error-handling sentinel in `Interface_CheckTool`**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)). `errh`
+(`Interface_CheckTool.cxx:39`) decided whether `FillCheck` wraps each module `CheckCase` call in its
+own `try`. The six bulk list builders clear it because they wrap the whole loop; `Check(num)` sets it
+because it does not.
+
+**It is not only a race.** The bulk builders clear the flag and never restore it, so any bulk list
+operation leaves error handling off **process-wide**. A later direct `FillCheck` call, on any
+instance, then runs unguarded and a `Standard_Failure` that should have been caught and reported as
+a check fail escapes instead. `FillCheck` is public, so that sequence is reachable single-threaded.
+
+Relocated to a private member; all eight sites are already inside `Interface_CheckTool` member
+functions, so **no signature changes**. Same shape as `0036`.
+
+**Measured**: `errh` reported as a racing global **7 times before, 0 after**, across the five
+registered DE scenarios.
+
+**Filed as [OCCT#1555](https://github.com/Open-Cascade-SAS/OCCT/pull/1555)** with a test that
+provably fails without the fix, which is what `0039` could not manage and why the two were treated
+differently.
+
+`Interface_CheckTool_Test.ErrorHandlingSentinelIsPerInstance` has one tool run `CompleteCheckList`
+and then asserts a second, untouched tool still guards its own `FillCheck`. Verified by
+override-linking the unpatched `Interface_CheckTool.cxx` against an otherwise identical build:
+
+```
+Actual: it throws Standard_Failure with description "deliberate failure from ThrowingModule".
+another tool's bulk list operation disabled this tool's error handling
+[  FAILED  ] Interface_CheckTool_Test.ErrorHandlingSentinelIsPerInstance
+```
+
+1 failed before, 2 passed after. A second case, `FillCheckCatchesARaisingModule`, pins that the
+guard is real rather than absent, so the first is not vacuous.
+
+The machinery this needed (a raising `Interface_GeneralModule`, a protocol selecting it, a concrete
+model) is why it was held at first. `Interface_CheckTool(model, protocol)` builds its own `GTool`
+per instance, which is what made it tractable without leaning on global registration for the tool
+itself.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0039-Interface_FileReaderData-per-instance-param-cache-1403.patch
+
+**Gives `Interface_FileReaderData` its own parameter cache**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)). `Param()`/`ChangeParam()`
+memoised the last resolved record and its base offset in three file-scope statics
+(`thefic`/`thenm0`/`thenp0`), guarded by a global counter so only the most recently constructed
+instance could use the memo. The declaration says why:
+
+> Optimization : Fields not possible, because Param is const. Too bad
+> So, we assume that we read one file at a time (reasonable assumption)
+
+`mutable` removes that blocker, so the fields the comment wanted are available.
+
+**Two things follow, and the second was not expected.** Concurrent readers stop sharing the memo.
+And the optimisation starts working at all: constructing any second `Interface_FileReaderData` made
+`thefic != thenum0` permanently true for the first, so every earlier instance fell back to the
+uncached path for the rest of its life.
+
+The guarded slow path computed `theparams->Param(thenumpar(num - 1) + nump)` and the fast path
+computed `theparams->Param(thenp0 + nump)` where `thenp0` was that same `thenumpar(num - 1)`, so the
+branch only ever chose between a cached and an uncached way of producing one value. Dropping it
+loses nothing; that equivalence was checked before deleting it, which is the check `0035` taught.
+
+**`InitParams()` now clears the memo**, which the original did not need to do. It is the only writer
+of `thenumpar` after construction and the memo caches an offset read out of it, so the memo must not
+outlive a write. The old code got that by accident, because constructing the next instance disabled
+the memo anyway.
+
+`thenum0` was private and referenced only here. The base subobject changes size, so both subclasses
+were compile-checked: `StepData_StepReaderData` and `IGESData_IGESReaderData`.
+
+**Measured**: `thenm0` **3 before, 0 after**; `thefic` **1 before, 0 after**.
+
+**HELD FROM UPSTREAM, decided 2026-09-21. Not to be filed as-is.**
+
+No test can demonstrate this change. The guarded and unguarded paths always computed the same value,
+which is why the branch could be deleted at all, so **no deterministic single-threaded test
+distinguishes before from after**. A draft test that appeared to, asserting the memo does not outlive
+`InitParams`, was found to pass without the fix: `Interface_ParamSet::Append` appends to the end
+(`thenbpar++`), so a stale base offset still resolves to the right slot, and calling `InitParams` for
+an earlier record corrupts the record table regardless, so the sequence is not meaningful use.
+
+Offering upstream a PR whose tests cannot fail invites a review question with no good answer, and
+`okf/policies/prove-the-test-fails.md` is the rule being respected rather than worked around. Carried
+locally instead, where the measured race removal and the restored optimisation are the whole benefit.
+
+**Also correcting this entry's own earlier claim**: the `InitParams()` memo invalidation is
+**defensive, not a fix for a reachable bug**. `InitParams` is the only writer of `thenumpar` after
+construction and callers run it *after* a record's parameters rather than before
+(`StepFile_Read.cxx:153`), so a finalised record's base offset never moves and the memo cannot go
+stale in documented use. The two lines make the dependency explicit and cost nothing; they close no
+hole.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0040-controller-one-time-init-thread-safe-1403.patch
+
+**Fixes three unguarded one-time-init flags** in the STEP and IGES controllers
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)):
+
+| Site | Before |
+|---|---|
+| `STEPControl_Controller::Init()` | unguarded `static bool inic` |
+| `IGESControl_Controller::Init()` | unguarded `static bool inic` |
+| `IGESControl_Controller` constructor | unguarded `static bool init` |
+
+Two threads can both read the flag as false and both run the one-time work, which for the two
+`Init()` functions means constructing and `AutoRecord()`ing a second controller under the same name.
+
+**#1403's re-scope called this "matching STEP's existing mutex" and that was wrong.** Only
+`STEPControl_Controller`'s *constructor* has a mutex; both `Init()` functions are unguarded, STEP's
+included. Three sites, not one asymmetry.
+
+All three become function-local static initialisation, which C++11 guarantees runs exactly once even
+when several threads arrive together, so the check-then-act disappears rather than being locked
+around. No mutex is added and STEP's existing constructor mutex is left alone.
+
+**Re-entry checked first**, because a lambda that re-enters its own static initialisation deadlocks,
+which is how the first attempt at `0031` self-deadlocked: `XSAlgo::Init`, `IGESToBRep::Init`,
+`IGESSolid::Init` and `IGESAppli::Init` do not call back into either controller's `Init`, and every
+caller of those is an entry point.
+
+Carries a GTest (`XSControl_ControllerInit_Test`). It is a smoke guard rather than a demonstration:
+the previous check-then-act usually also produced a working registration, because a second
+`Record()` of the same controller kind returns early. The race is what TSan measures.
+
+Not yet filed upstream.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0041-DE-registry-maps-synchronised-1403.patch
+
+**Synchronises two process-wide name-keyed registries**
+([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)):
+
+- `listad`, `XSControl_Controller.cxx:59`, controllers by format name. `Record` does `IsBound`, then
+  `ChangeFind`, then `Bind`, so two threads recording controllers can rehash under each other.
+- `atemp`, `Interface_InterfaceModel.cxx:44`, template models by name. `Template()` calls
+  `HasTemplate()` and then `ChangeFind`, a check-then-act across two lookups.
+
+**A lock is the right tool here, unlike the rest of this series.** These are registries: one per
+process is the design, so the state is shared deliberately rather than wrongly made global, which is
+the distinction `docs/thread-safety.md` draws.
+
+**Recursive is required, not preferred**, for `atemp`: `Template()` calls `HasTemplate()` before
+reading the map, so a plain mutex self-deadlocks on the same thread.
+
+**`astats` is deliberately excluded**, and it is the third registry of this shape. Every access
+reaches it through `Interface_Static`, whose seventeen entry points `0033` already mutexes, and it
+stopped being reported once `0033` was in the build. A second lock on the same data through a
+different path invites lock-order inversion for no gain.
+
+Not yet filed upstream.
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
@@ -1431,6 +1680,87 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
+
+**RETIRED 2026-09-20, one day after it landed. The `.patch` file is deleted.** It reintroduced
+[#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280), a silent shape-corruption bug, and
+turned `kernel-integration.yml` red on `main`.
+
+**What it did.** Removed `InitializeMissingParameters()` from `STEPControl_Writer::Transfer`, a
+byte-identical backport of the one part of upstream
+[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259) the pinned `V8_0_1` lacked.
+
+**Why it was wrong, and the reasoning that got it wrong.** Its own writeup argued the call was
+"nearly inert", because both of its guards read through the same process-shared actor that
+`STEPControl_Controller`'s constructor has already populated, so in the default path both branches
+are false. **The premise is true and the conclusion does not follow.** `InitializeMissingParameters`
+is not only an initialiser, it is a *repair*:
+
+```cpp
+if (!GetShapeProcessFlags().second)
+{
+  ShapeProcess::OperationsFlags aFlags;
+  aFlags.set(ShapeProcess::Operation::SplitCommonVertex);
+  aFlags.set(ShapeProcess::Operation::DirectFaces);
+  SetShapeProcessFlags(aFlags);
+}
+```
+
+`DirectFaces` is exactly the operation whose absence causes #280. Constructing a
+`STEPCAFControl_Reader`, which any XDE STEP read does, leaves the shared actor's `OperationsFlags`
+empty, so the guard is **not** false on that path: the call fires and repairs the poisoned actor
+before every write. Removing it removes the repair. The "default path" the argument reasoned about
+was the only path it looked at.
+
+**How it presented.** `kernel-integration.yml` runs the suite against a kernel built from this
+directory, so it is the only job that ever sees an unpinned patch.
+`STEPWriterCAFCorruptionTests`, #280's own regression guard, failed there: `CONICAL_SURFACE`
+absent from the written file, the frustum down from 3 faces to 2, and its volume out by 63% while
+still reporting `isValid == true`. CI bisects it cleanly: three green runs on `0034`'s branch and
+on `main` after it merged, then failure on `0035`'s branch and on `main` after that merged.
+
+**The lesson, which is about backporting rather than about this line.** Upstream dropped this call
+as part of a coordinated change; whatever makes the drop safe upstream is in the quarter of #1259
+our pin does not have. A byte-identical hunk is not a safe backport when three quarters of its
+change is already present and the remaining quarter is what it depended on. Take the whole change
+or none of it.
+
+**Not to be re-backported** before a repin onto a kernel carrying #1259 in full, at which point it
+arrives on its own. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
+
+## 0036-IFSelect_WorkSession-per-instance-error-guard-1403.patch
+
+**`errhand` is a recursion sentinel, and sharing it loses a thread's exception handling.** Every one
+of the nine guarded blocks in `IFSelect_WorkSession` has this shape:
+
+```cpp
+if (errhand) { errhand = false; try { ... EvalSelection(sel); } catch (...) {} errhand = theerrhand; return iter; }
+// the real work, reached only through that recursive call
+```
+
+The flag exists so the function wraps itself in a `try` exactly once. With two threads, A clears it
+and recurses into the guarded path while **B sees it already false and takes the unguarded path**,
+losing its exception handling entirely. That is a lost-protection bug rather than a torn flag, and
+it was the busiest racing site in the whole data-exchange path.
+
+The global was a pure mirror of the per-instance `theerrhand`, written only as
+`theerrhand = errhand = ...`, so it is deleted and a per-instance
+`mutable bool myInErrorHandler` takes the sentinel role. **No lock.** #363 is the precedent: it moved
+`theAutoNaming` onto `XCAFDoc_ShapeTool` after upstream rejected the mutex framing, and
+`docs/thread-safety.md` states the rule as relocating ownership rather than locking the wrong owner.
+
+Measured by override-link against the TSan kernel
+(`Scripts/repro/1403-workession-errhand/`): `IFSelect_WorkSession.cxx:86` goes from **6 race access
+sites to 0**, `step_read` 4 races to 3, `iges_read` 15 to 11. The remaining
+`IFSelect_WorkSession` strings in the patched logs are caller frames, which every DE operation has.
+
+**Live in current upstream master**, not just the pin: `static bool errhand;` is still at
+`IFSelect_WorkSession.cxx:78` with 36 references.
+
+`bufstr`, the other global on that line, is deliberately untouched. It is returned as
+`ToCString()`, so concurrent callers get pointers into one shared buffer; that is an API-shape
+defect needing a signature decision, not a field move.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 

@@ -16,7 +16,7 @@ import OCCTBridge
 /// as flat entity vectors with integer cross-references.
 ///
 /// ```swift
-/// let box = Shape.box(width: 10, height: 10, depth: 10)
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
 /// let graph = BRepGraph(shape: box)!
 /// print(graph.stats)  // faces: 6, edges: 12, vertices: 8
 ///
@@ -912,7 +912,9 @@ public final class BRepGraph: @unchecked Sendable {
     /// // Identify the top face and pin it BEFORE the cut.
     /// let faces = base.faces()
     /// let centroids = base.measure().faceCentroids
-    /// let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset
+    /// let topIndex = centroids.enumerated().max {
+    ///     ($0.element?.z ?? -.infinity) < ($1.element?.z ?? -.infinity)
+    /// }!.offset
     /// let topFace = Shape.fromFace(faces[topIndex])!
     /// let topNode = graph.findNode(for: topFace)!
     /// let pinned = BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index)

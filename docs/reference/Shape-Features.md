@@ -33,7 +33,7 @@ public static func face(from wire: Wire, planar: Bool = true) -> Shape?
   ```swift
   let rect = Wire.rectangle(width: 10, height: 5)!
   let face = Shape.face(from: rect)!
-  let box = face.extruded(direction: [0, 0, 1], length: 3)
+  let box = face.extruded(by: [0, 0, 3])
   ```
 
 ---
@@ -54,10 +54,10 @@ public static func face(outer: Wire, holes: [Wire]) -> Shape?
 - **Example:**
   ```swift
   let outer = Wire.rectangle(width: 20, height: 20)!
-  let hole1 = Wire.circle(radius: 3)!.translated(x: -5, y: 0, z: 0)
-  let hole2 = Wire.circle(radius: 3)!.translated(x: 5, y: 0, z: 0)
+  let hole1 = Wire.circle(origin: SIMD3(-5, 0, 0), radius: 3)!
+  let hole2 = Wire.circle(origin: SIMD3(5, 0, 0), radius: 3)!
   if let face = Shape.face(outer: outer, holes: [hole1, hole2]) {
-      let extruded = face.extruded(direction: [0, 0, 1], length: 5)
+      let extruded = face.extruded(by: [0, 0, 5])
   }
   ```
 
@@ -166,8 +166,8 @@ When `fuse` is `true`, material is added (boss); when `false`, material is remov
 - **OCCT:** `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse` or `BRepAlgoAPI_Cut`.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 50, height: 50, depth: 10)
-  let profile = Wire.circle(radius: 5)!.translated(x: 25, y: 25, z: 10)
+  let box = Shape.box(width: 50, height: 50, depth: 10)!
+  let profile = Wire.circle(origin: SIMD3(25, 25, 10), radius: 5)!
   let withBoss = box.withPrism(profile: profile, direction: SIMD3(0, 0, 1), height: 5, fuse: true)
   ```
 
@@ -234,7 +234,7 @@ The cutting cylinder **starts at `position`** and runs `depth` along `direction`
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (oriented via `gp_Ax2(position, direction)`) + `BRepAlgoAPI_Cut` (internal cylinder cutter).
 - **Example:**
   ```swift
-  let plate = Shape.box(width: 50, height: 50, depth: 10)
+  let plate = Shape.box(width: 50, height: 50, depth: 10)!
   if let drilled = plate.drilled(at: SIMD3(25, 25, 10), direction: SIMD3(0, 0, -1),
                                    radius: 5, depth: 0) {
       // through-hole down the Z axis, centred at (25, 25)
@@ -265,9 +265,9 @@ public func split(by tool: Shape) -> [Shape]?
   operation with a different result (#367).
 - **Example:**
   ```swift
-  let box = Shape.box(width: 20, height: 20, depth: 20)
+  let box = Shape.box(width: 20, height: 20, depth: 20)!
   let plane = Shape.face(from: Wire.rectangle(width: 40, height: 40)!)!
-                   .translated(by: SIMD3(0, 0, 10))
+                   .translated(by: SIMD3(0, 0, 10))!
   if let halves = box.split(by: plane) {
       // halves.count == 2
   }
@@ -290,7 +290,7 @@ public func split(atPlane point: SIMD3<Double>, normal: SIMD3<Double>) -> [Shape
   splitter `split(by:)` uses, not `BRepAlgoAPI_BuilderAlgo`.
 - **Example:**
   ```swift
-  let cube = Shape.box(width: 20, height: 20, depth: 20)
+  let cube = Shape.box(width: 20, height: 20, depth: 20)!
   let halves = cube.split(atPlane: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
   ```
 
@@ -373,7 +373,7 @@ Returns a compound containing `count` copies of the shape, spaced `spacing` apar
 - **OCCT:** `BRepBuilderAPI_Transform` applied iteratively, collected into a `TopoDS_Compound`.
 - **Example:**
   ```swift
-  let hole = Shape.cylinder(radius: 3, height: 10)
+  let hole = Shape.cylinder(radius: 3, height: 10)!
   let row = hole.linearPattern(direction: SIMD3(20, 0, 0), spacing: 20, count: 5)
   ```
 
@@ -495,7 +495,7 @@ public var shapeType: ShapeType { get }
 - **OCCT:** `TopoDS_Shape::ShapeType` (via `OCCTShapeGetType`).
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
   print(box.shapeType)  // .solid
   ```
 
@@ -1129,8 +1129,8 @@ public func distance(to other: Shape, deflection: Double = 1e-6) -> DistanceResu
 - **OCCT:** `BRepExtrema_DistShapeShape`.
 - **Example:**
   ```swift
-  let box1 = Shape.box(width: 5, height: 5, depth: 5)
-  let box2 = Shape.box(width: 5, height: 5, depth: 5).translated(by: SIMD3(10, 0, 0))
+  let box1 = Shape.box(width: 5, height: 5, depth: 5)!
+  let box2 = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(10, 0, 0))!
   if let d = box1.distance(to: box2) { print(d.distance) }  // 5.0
   ```
 
@@ -1313,7 +1313,7 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
   one.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
   let edges = box.subShapes(ofType: .edge).compactMap { Edge($0) }
   if let rounded = box.filleted(edges: Array(edges.prefix(4)), radius: 1.0) { }
   ```
@@ -1719,7 +1719,7 @@ Connects corresponding points on the two boundary wires with straight lines. Ret
 - **Example:**
   ```swift
   let bottom = Wire.circle(radius: 10)!
-  let top = Wire.circle(radius: 5)!.translated(by: SIMD3(0, 0, 20))
+  let top = Wire.circle(origin: SIMD3(0, 0, 20), radius: 5)!
   let cone = Shape.ruled(profile1: bottom, profile2: top)
   ```
 
@@ -1742,7 +1742,7 @@ public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
   the solid was shelled with fewer openings than asked for.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 20, height: 20, depth: 20)
+  let box = Shape.box(width: 20, height: 20, depth: 20)!
   let tops = box.subShapes(ofType: .face).compactMap { Face($0) }.filter { $0.normal?.z ?? 0 > 0.9 }
   let openBox = box.shelled(thickness: 2.0, openFaces: tops)
   ```
@@ -2289,7 +2289,7 @@ its own underlying surface.
   let w4 = Wire.line(from: SIMD3(0,10,3), to: SIMD3(0,0,0))!
   // free-standing wires: nothing to be tangent to, so fill positionally
   let face = Shape.fill(boundaries: [w1, w2, w3, w4],
-                         parameters: FillingParameters(continuity: .c0))
+                         parameters: FillingParameters(continuity: .g0))
   ```
 
 ### `Shape.fill(boundaries:supportedBy:parameters:)`
@@ -2318,12 +2318,12 @@ constrained positionally.
                           radius: 10, angle1: -.pi/2, angle2: 50 * .pi/180)!
   let rim = bowl.edges()
       .filter { $0.isClosed3D }
-      .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
+      .max(by: { ($0.bounds?.max.z ?? 0) < ($1.bounds?.max.z ?? 0) })!
 
   let cap = Shape.fill(boundaries: [Wire.wireFromEdges([rim])!],
                         supportedBy: bowl,
                         parameters: FillingParameters(continuity: .g1))
-  // cap leaves the rim along the sphere; the .c0 fill of the same rim is a flat disc
+  // cap leaves the rim along the sphere; the .g0 fill of the same rim is a flat disc
   ```
 
 ### `Shape.fill(constraints:parameters:)`

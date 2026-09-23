@@ -684,8 +684,8 @@ Most interior edges have exactly two adjacent faces (manifold solid). Boundary e
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   if let edge = box.edge(at: 0),
-     let (f1, f2) = edge.adjacentFaces(in: box) {
-      print("face1, face2:", f1, f2 as Any)
+     let faces = edge.adjacentFaces(in: box) {
+      print("adjacent faces:", faces.count)
   }
   ```
 
@@ -711,8 +711,8 @@ The dihedral angle is measured between the face normals evaluated at a point alo
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   for edge in box.edges() {
-      if let (f1, f2) = edge.adjacentFaces(in: box), let f2 {
-          if let angle = edge.dihedralAngle(between: f1, and: f2) {
+      if let faces = edge.adjacentFaces(in: box), faces.count >= 2 {
+          if let angle = edge.dihedralAngle(between: faces[0], and: faces[1]) {
               // angle ≈ π/2 for all edges of a box
               print(angle)
           }

@@ -15,9 +15,6 @@ name: CI
 
 on:
   pull_request:
-    branches:
-      - main
-      - 'refactor/**'
   push:
     branches:
       - main
@@ -38,14 +35,14 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all fifteen are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all eighteen are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other fourteen. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other seventeen. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
@@ -182,6 +179,31 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-throwing-calls.py
 
+      # #2058, from the #2056 incident: carried patch 0035 deleted STEPControl_Writer::Transfer's
+      # InitializeMissingParameters() call, which is the whole of what protects consumers from #280
+      # now that the bridge workaround is gone, and #280's regression test reported it 1h5m later in
+      # kernel-integration.yml. This reads the patch diffs against the symbols test comments name,
+      # so it needs no Libraries/occt-src and belongs here rather than an hour into the kernel job.
+      - name: check-patch-deletes-guarded-symbol.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-patch-deletes-guarded-symbol.py --self-test
+
+      - name: check-patch-deletes-guarded-symbol.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-patch-deletes-guarded-symbol.py
+
+      # #2077. #1161's caught-exception diagnostics channel shipped with 1 of the 74 bridge .mm
+      # files instrumented and was swept across the rest; this is what stops the sweep decaying.
+      # A new bridge function written with a bare `catch (...) { return nullptr; }` returns a nil
+      # that explains nothing, and nothing else in CI would notice.
+      - name: check-bridge-diagnostics.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-diagnostics.py --self-test
+
+      - name: check-bridge-diagnostics.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-diagnostics.py
+
       # A hand-resolved conflict can leave a marker behind, and this repo sets
       # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
       # written for the default two-way style does not think to strip. Five of them reached
@@ -250,6 +272,14 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-comment-staleness.py --self-test
 
+      # #1679's census, same shape again: a bare run lists docs/API_REFERENCE.md category-row
+      # entries that resolve to no declaration in Sources/, for a human to adjudicate, and exits 0
+      # either way. A gate is not possible here: the rows mix real symbols with umbrella names,
+      # abbreviations and category labels, and no mechanical rule separates them.
+      - name: census-api-reference-rows.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-api-reference-rows.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
@@ -276,6 +306,18 @@ jobs:
 
       - name: swift build
         run: swift build
+
+      # #1683. This one cannot live in gate-scripts: that job is pure Python with no OCCT and no
+      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just built.
+      # It is a CENSUS, so it exits 0 whatever it finds; the bare run still earns its place here
+      # because its output IS the number, and a minute against a build already paid for is the
+      # cheapest place to print it. Promotion to a gate is `--strict` plus a rename to `check-`,
+      # once the backlog it reports reaches zero. See okf/policies/static-gates.md.
+      - name: check-doc-snippets --self-test
+        run: python3 Scripts/check-doc-snippets.py --self-test --require-typecheck
+
+      - name: check-doc-snippets (every fenced Swift snippet type-checks)
+        run: python3 Scripts/check-doc-snippets.py --require-typecheck
 
       - name: swift test
         run: swift test

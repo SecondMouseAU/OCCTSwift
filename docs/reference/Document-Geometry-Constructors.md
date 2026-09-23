@@ -172,8 +172,8 @@ public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) ->
 - **OCCT:** `GeomConvert_CompCurveToBSplineCurve`
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0,0,0), to: SIMD3(1,0,0)),
-     let arc  = Curve3D.arc(center: SIMD3(1,0,0), radius: 1, startAngle: 0, endAngle: .pi/2),
+  if let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(1,0,0)),
+     let arc  = Curve3D.arcOfCircle(start: SIMD3(1, 0, 0), interior: SIMD3(2, 1, 0), end: SIMD3(3, 0, 0)),
      let joined = Curve3D.concatenate([line, arc]) {
       // single BSpline spanning both segments
   }
@@ -668,6 +668,9 @@ public func setFrenet(_ frenet: Bool = true)
 - **OCCT:** `BRepFill_PipeShell::Set(Standard_Boolean)`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setFrenet(true)
   ```
 
@@ -684,6 +687,9 @@ public func setDiscrete()
 - **OCCT:** `BRepFill_PipeShell::SetDiscrete`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setDiscrete()
   ```
 
@@ -701,6 +707,9 @@ public func setFixed(binormal: SIMD3<Double>)
 - **OCCT:** `BRepFill_PipeShell::Set(gp_Dir)`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setFixed(binormal: SIMD3(0, 0, 1))
   ```
 
@@ -770,6 +779,9 @@ public func setTolerance(tol3d: Double, boundTol: Double, tolAngular: Double)
 - **OCCT:** `BRepFill_PipeShell::SetTolerance`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setTolerance(tol3d: 1e-4, boundTol: 1e-4, tolAngular: 1e-3)
   ```
 
@@ -787,6 +799,9 @@ public func setTransition(_ mode: PipeShellTransition)
 - **OCCT:** `BRepFill_PipeShell::SetTransition`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setTransition(.round)
   ```
 
@@ -805,7 +820,13 @@ public func build() -> Bool
 - **OCCT:** `BRepFill_PipeShell::Build`
 - **Example:**
   ```swift
-  guard pipe.build() else { /* handle failure */ }
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  guard pipe.build() else { return }  // handle the failure
   ```
 
 ---
@@ -822,6 +843,13 @@ public var shape: Shape? { get }
 - **OCCT:** `BRepFill_PipeShell::Shape`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   if let result = pipe.shape {
       // use result
   }
@@ -842,6 +870,12 @@ public func makeSolid() -> Bool
 - **OCCT:** `BRepFill_PipeShell::MakeSolid`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
   pipe.build()
   pipe.makeSolid()
   ```
@@ -860,6 +894,13 @@ public var error: Double { get }
 - **OCCT:** `BRepFill_PipeShell::ErrorOnSurface`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   print("error:", pipe.error)
   ```
 
@@ -877,7 +918,13 @@ public var isReady: Bool { get }
 - **OCCT:** `BRepFill_PipeShell::IsReady`
 - **Example:**
   ```swift
-  guard pipe.isReady else { /* add profile first */ }
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  guard pipe.isReady else { return }  // not enough profiles yet
   ```
 
 ---
@@ -2352,6 +2399,9 @@ public func setMaxDegree(_ maxDeg: Int)
 - **OCCT:** `BRepFill_PipeShell::SetMaxDegree`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setMaxDegree(7)
   ```
 
@@ -2369,6 +2419,9 @@ public func setMaxSegments(_ maxSeg: Int)
 - **OCCT:** `BRepFill_PipeShell::SetMaxSegments`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setMaxSegments(100)
   ```
 
@@ -2386,6 +2439,9 @@ public func setForceApproxC1(_ force: Bool)
 - **OCCT:** `BRepFill_PipeShell::SetForceApproxC1`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setForceApproxC1(true)
   ```
 
@@ -2406,6 +2462,9 @@ History is **disabled by default** to avoid a segfault in `BRepFill_PipeShell::B
 - **Note:** Enabling history on closed spine/profile geometries can trigger an OCCT segfault, use with caution.
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
   pipe.setBuildHistory(false) // safe default
   ```
 
@@ -2422,6 +2481,13 @@ public var errorOnSurface: Double { get }
 - **OCCT:** `BRepFill_PipeShell::ErrorOnSurface`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   print("surface error:", pipe.errorOnSurface)
   ```
 
@@ -2439,6 +2505,13 @@ public var firstShape: Shape? { get }
 - **OCCT:** `BRepFill_PipeShell::FirstShape`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   if let cap = pipe.firstShape { /* use start cap */ }
   ```
 
@@ -2456,5 +2529,12 @@ public var lastShape: Shape? { get }
 - **OCCT:** `BRepFill_PipeShell::LastShape`
 - **Example:**
   ```swift
+  guard let spineLine = Wire.line(from: .zero, to: SIMD3(0, 0, 50)),
+        let spineWire = Shape.fromWire(spineLine),
+        let profileCircle = Wire.circle(radius: 5),
+        let profile = Shape.fromWire(profileCircle),
+        let pipe = PipeShellBuilder(spine: spineWire) else { return }
+  pipe.add(profile: profile)
+  pipe.build()
   if let cap = pipe.lastShape { /* use end cap */ }
   ```

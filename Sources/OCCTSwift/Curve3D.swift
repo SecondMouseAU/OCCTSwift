@@ -709,7 +709,7 @@ public final class Curve3D: @unchecked Sendable {
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// if let k = circle.curvature(at: 0) { print(k) }   // 0.2, i.e. 1/5
     ///
-    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     /// line.curvature(at: 3)   // 0, straight, and that is the answer, not a failure
     /// ```
     public func curvature(at u: Double) -> Double? {
@@ -748,7 +748,7 @@ public final class Curve3D: @unchecked Sendable {
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
     /// circle.torsion(at: 1)   // 0, planar, and that is the answer
     ///
-    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     /// line.torsion(at: 5)     // nil, no osculating plane at all
     /// ```
     public func torsion(at u: Double) -> Double? {
@@ -1001,7 +1001,7 @@ extension Curve3D {
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
     /// if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
-    ///     print(analytical.curveKind)   // .circle
+    ///     print(analytical.curveType)   // 1 (Circle)
     /// }
     /// ```
     ///
@@ -2768,7 +2768,9 @@ extension Curve3D {
     /// ([#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)).
     ///
     /// ```swift
-    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+    /// if let arc = Curve3D.arcOfCircle(
+    ///     start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0))
+    /// {
     ///     let results = arc.extrema(from: SIMD3(3, 4, 0))
     ///     if let nearest = results.min(by: { $0.distance < $1.distance }) {
     ///         print(nearest.point, nearest.distance)
@@ -2850,7 +2852,8 @@ extension Curve3D {
     /// `nil` means the solver reported nothing at all, which on a curve it could build is rare.
     ///
     /// ```swift
-    /// if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+    /// if let arc = Curve3D.arcOfCircle(
+    ///        start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
     ///    let d = arc.minimumDistance(from: SIMD3(0, 10, 0)) {
     ///     print(d)  // about 5.0
     /// }
@@ -3172,7 +3175,7 @@ extension Curve3D {
     /// if let r = bspline.toAnalytical(tolerance: 1e-4,
     ///                                 first: domain.lowerBound,
     ///                                 last: domain.upperBound) {
-    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
+    ///     print(r.curve.curveType, r.gap)   // 1 (Circle), ~1e-15
     /// }
     /// ```
     ///
@@ -3551,7 +3554,7 @@ extension Curve3D {
     /// Measured global continuity of the 3D curve.
     ///
     /// ```swift
-    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))
+    /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))
     /// print(line?.continuityClass)                  // .cN
     /// print(line?.continuityClass.satisfies(.c3))   // true
     /// ```

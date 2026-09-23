@@ -1,0 +1,72 @@
+diff --git a/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx b/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
+index 46eb0348..35a84fcc 100644
+--- a/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
++++ b/src/DataExchange/TKDEIGES/IGESControl/IGESControl_Controller.cxx
+@@ -73,13 +73,14 @@ IGESControl_Controller::IGESControl_Controller(const bool mod)
+                            (const char*)(mod ? "fnes" : "iges")),
+       themode(mod)
+ {
+-  static bool init = false;
+-  if (!init)
+-  {
++  // Function-local static initialisation is thread-safe, so the one-time work runs exactly once
++  // even when several threads construct a controller together.
++  static const bool init = []() {
+     IGESSolid::Init();
+     IGESAppli::Init();
+-    init = true;
+-  }
++    return true;
++  }();
++  (void)init;
+   AddSessionItem(new IGESSelect_RemoveCurves(true), "iges-remove-pcurves");
+   AddSessionItem(new IGESSelect_RemoveCurves(false), "iges-remove-curves-3d");
+   AddSessionItem(new IGESSelect_SetLabel(0, true), "iges-clear-label");
+@@ -358,15 +359,15 @@ IFSelect_ReturnStatus IGESControl_Controller::TransferWriteShape(
+ 
+ bool IGESControl_Controller::Init()
+ {
+-  static bool inic = false;
+-  if (!inic)
+-  {
++  // Thread-safe by the same mechanism as the constructor above: the check-then-act two threads
++  // could both pass is gone rather than locked around.
++  static const bool inic = []() {
+     occ::handle<IGESControl_Controller> ADIGES = new IGESControl_Controller(false);
+     ADIGES->AutoRecord();
+     XSAlgo::Init();
+     IGESToBRep::Init();
+     IGESToBRep::SetAlgoContainer(new IGESControl_AlgoContainer());
+-    inic = true;
+-  }
+-  return true;
++    return true;
++  }();
++  return inic;
+ }
+diff --git a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
+index 14803e7c..b49e6b72 100644
+--- a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
++++ b/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Controller.cxx
+@@ -488,15 +488,15 @@ IFSelect_ReturnStatus STEPControl_Controller::TransferWriteShape(
+ 
+ bool STEPControl_Controller::Init()
+ {
+-  static bool inic = false;
+-  if (!inic)
+-  {
++  // Function-local static initialisation is thread-safe, so the one-time work runs exactly once
++  // without the check-then-act two threads could both pass.
++  static const bool inic = []() {
+     occ::handle<STEPControl_Controller> STEPCTL = new STEPControl_Controller;
+     STEPCTL->AutoRecord(); // avec les noms donnes a la construction
+     XSAlgo::Init();
+-    inic = true;
+-  }
+-  return true;
++    return true;
++  }();
++  return inic;
+ }
+ 
+ //=================================================================================================

@@ -231,6 +231,7 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -263,6 +264,10 @@ struct OCCTMedialAxis
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: a
+        // boundary curve this point cannot be projected onto is skipped and the minimum over the
+        // others still stands, so recording it would report a failure for a call that did not
+        // fail.
         continue;
       }
     }
@@ -582,6 +587,7 @@ int32_t OCCTIntAna2dLinLin(double             l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -619,6 +625,7 @@ int32_t OCCTIntAna2dLinCirc(double             lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -655,6 +662,7 @@ int32_t OCCTIntAna2dCircCirc(double             c1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -722,6 +730,7 @@ int32_t OCCTExtremaExtElC2dLinLin(double               l1px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -764,6 +773,7 @@ int32_t OCCTExtremaExtElC2dLinCirc(double               lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -803,6 +813,7 @@ int32_t OCCTExtremaExtPElC2dCirc(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -845,6 +856,7 @@ int32_t OCCTExtremaExtPElC2dLin(double               px,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -885,6 +897,7 @@ int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef       c1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -913,6 +926,7 @@ int32_t OCCTIntfInterferencePolygon2d(const double*    poly1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -938,6 +952,7 @@ int32_t OCCTIntfSelfInterferencePolygon2d(const double*    poly,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -958,6 +973,7 @@ bool OCCTConic2dFromCircle(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return occtConic2dFailed(coeffs);
   }
 }
@@ -971,6 +987,7 @@ bool OCCTConic2dFromLine(double px, double py, double dx, double dy, double* coe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return occtConic2dFailed(coeffs);
   }
 }
@@ -992,6 +1009,7 @@ bool OCCTConic2dFromEllipse(double  cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return occtConic2dFailed(coeffs);
   }
 }
@@ -1034,6 +1052,7 @@ int32_t OCCTConic2dLineCircleIntersect(double  lpx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }

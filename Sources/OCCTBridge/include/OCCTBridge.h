@@ -14,7 +14,9 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
-#import <Foundation/Foundation.h>
+#if !defined(__wasi__)
+  #import <Foundation/Foundation.h>
+#endif
 
 // MARK: - Continuity vocabularies
 //
@@ -698,6 +700,13 @@ typedef enum
 // RWPly_CafWriter                     → OCCTDocumentWritePLY, OCCTExportPLY,
 // OCCTExportPLYWithOptions StlAPI_Reader/Writer                → OCCTImportSTL, OCCTExportSTL
 //
+// --- Standard (exceptions) ---
+// Standard_Failure                    → OCCTDiagnosticsSetStackTraceDepth,
+//                                       OCCTDiagnosticsStackTraceDepth (#1161. The class is also
+//                                       read by occtRecordCaughtException in OCCTBridge.mm, whose
+//                                       ExceptionType/what/GetStackString results the
+//                                       OCCTDiagnosticsRecord* accessors hand back)
+//
 // --- TDF/OCAF ---
 // TDF_Label                           → OCCTDocumentLabel*
 // TDF_Reference                       → OCCTDocumentLabelSetReference,
@@ -818,6 +827,122 @@ extern "C"
   // MARK: - Thread Safety Lock
   void OCCTSerialLockAcquire(void);
   void OCCTSerialLockRelease(void);
+
+  // MARK: - Caught-exception diagnostics (#1161)
+  //
+  // Every bridge function wraps its OCCT calls in `try { } catch (...) { return <refusal>; }`, so
+  // a failure arrives in Swift as nil or a refusal value with the Standard_Failure's own type and
+  // message already thrown away. These functions are the channel that carries them across instead,
+  // without changing any signature: the answer to #1161's design question is a side channel, not
+  // `Result<T, OCCTError>` (which would break every fallible entry point) and not a kernel rebuild
+  // with OCC_CONVERT_SIGNALS.
+  //
+  // An instrumented catch block calls occtRecordCaughtException (internal, declared in
+  // OCCTBridge_Internal.h), which classifies the in-flight exception with a bare `throw;` and
+  // records what it finds. Recording costs one thread-local read and one relaxed atomic load when
+  // neither capture nor logging is on, which is the default.
+  //
+  // COVERAGE IS COMPLETE at function level, and Scripts/check-bridge-diagnostics.py is the gate
+  // that keeps it that way: #2077 swept every function-level catch block in all 74 bridge .mm
+  // files. The two exemptions are this channel's own internals (occtRecordCaughtException's
+  // classification ladder, which would recurse, and occtDiagnosticsLog's tail), both on the gate's
+  // exemption list with a written reason. Re-derive rather than quoting:
+  //
+  //     python3 Scripts/check-bridge-diagnostics.py
+  //
+  // An empty capture therefore means the failure raised nothing to classify (IsDone() == false, a
+  // null result handle, a rejected argument), not that the site was never instrumented. A deeper
+  // catch block nested in a loop may also be deliberately silent, which it says in place.
+  //
+  // WHAT THIS CANNOT REPORT: an OS signal. OCC_CATCH_SIGNALS is inert in this build, because
+  // OCC_CONVERT_SIGNALS is undefined, so a SIGSEGV/SIGBUS/SIGFPE raised inside OCCT never becomes
+  // a C++ exception, never reaches a catch clause, and never appears here. The six cited crashes
+  // that motivated #1161 (#345, #348, #484, #636, #913, #1022) are all that shape and stay
+  // invisible to this channel. See occtEnsureSignals in OCCTBridge_Internal.h and
+  // okf/references/known-occt-bugs.md.
+
+  /// How a caught exception was classified.
+  typedef enum
+  {
+    /// A Standard_Failure (or any OCCT subclass of it): both a type name and a message are known.
+    OCCTDiagnosticKindOCCTFailure = 0,
+    /// A std::exception that is not a Standard_Failure: a message is known, the type name is not.
+    OCCTDiagnosticKindStdException = 1,
+    /// Something else was thrown, so neither a type name nor a message is available.
+    OCCTDiagnosticKindUnknown = 2
+  } OCCTDiagnosticKind;
+
+  /// Turn the capture buffer on or off for the CALLING THREAD.
+  ///
+  /// An OCCT exception is caught on the thread that made the bridge call, so the buffer is
+  /// thread-local and needs no lock. Off by default: a buffer nobody reads would only grow.
+  void OCCTDiagnosticsSetCaptureEnabled(bool enabled);
+
+  /// Whether the calling thread is capturing.
+  bool OCCTDiagnosticsCaptureEnabled(void);
+
+  /// Turn diagnostic logging on or off, process-wide and for every thread.
+  ///
+  /// Records go to OCCT's own default messenger (`Message::DefaultMessenger()`) at
+  /// Message_Alarm gravity, so they land wherever the host already routes OCCT's messages
+  /// (stdout, with OCCT's default printer). Independent of capture: either, both or neither.
+  /// Initialised from the environment variable OCCTSWIFT_BRIDGE_DIAGNOSTICS, which enables
+  /// logging when set to anything but empty or "0", so a process can be made to explain itself
+  /// without a code change.
+  void OCCTDiagnosticsSetLoggingEnabled(bool enabled);
+
+  /// Whether diagnostic logging is on.
+  bool OCCTDiagnosticsLoggingEnabled(void);
+
+  /// Discard the calling thread's captured records and its dropped-record count.
+  void OCCTDiagnosticsClear(void);
+
+  /// How many records the calling thread is holding.
+  int32_t OCCTDiagnosticsRecordCount(void);
+
+  /// How many records the calling thread discarded because its buffer was full.
+  ///
+  /// The buffer holds a bounded number of records so that a capture left switched on cannot grow
+  /// without bound; anything past the cap is counted here and not stored.
+  int32_t OCCTDiagnosticsDroppedCount(void);
+
+  /// How the record at `index` was classified, or OCCTDiagnosticKindUnknown for an out-of-range
+  /// index.
+  OCCTDiagnosticKind OCCTDiagnosticsRecordKind(int32_t index);
+
+  /// The bridge function that caught the record at `index`, or NULL for an out-of-range index.
+  ///
+  /// Every string returned by the four accessors below points INTO the calling thread's own
+  /// record buffer. It stays valid until that thread adds another record or clears the buffer,
+  /// so copy it before doing either. NULL for an out-of-range index; a valid index with nothing
+  /// to report gives the empty string, not NULL.
+  const char* OCCTDiagnosticsRecordContext(int32_t index);
+
+  /// `Standard_Failure::ExceptionType()` for the record at `index`: the OCCT exception's own
+  /// class name, e.g. "Standard_ConstructionError" or "StdFail_NotDone". Empty for the other two
+  /// kinds, which carry no type name.
+  const char* OCCTDiagnosticsRecordExceptionType(int32_t index);
+
+  /// `what()` for the record at `index`: the message OCCT raised with, e.g.
+  /// "gp_Dir() - input vector has zero norm". Empty for OCCTDiagnosticKindUnknown.
+  const char* OCCTDiagnosticsRecordMessage(int32_t index);
+
+  /// `Standard_Failure::GetStackString()` for the record at `index`.
+  ///
+  /// Empty unless a stack-trace depth is in force, see OCCTDiagnosticsSetStackTraceDepth, and
+  /// always empty for the two non-Standard_Failure kinds.
+  const char* OCCTDiagnosticsRecordStackTrace(int32_t index);
+
+  /// Ask OCCT to capture `depth` frames into every Standard_Failure it constructs from now on.
+  ///
+  /// This is `Standard_Failure::SetDefaultStackTraceLength`, which is process-wide and affects
+  /// every OCCT exception, not only the ones this channel records. 0, OCCT's own default, means
+  /// no stack trace. Capturing frames costs time on the throwing path, so leave it at 0 unless
+  /// a trace is actually being read.
+  void OCCTDiagnosticsSetStackTraceDepth(int32_t depth);
+
+  /// The stack-trace depth in force, `Standard_Failure::DefaultStackTraceLength()`.
+  int32_t OCCTDiagnosticsStackTraceDepth(void);
 
   // MARK: - Opaque Handle Types
 

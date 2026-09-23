@@ -20,7 +20,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The four censuses today and what each is for:
+The five censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is ~13 s because sub-kind 4 walks a taint fixpoint per bridge function; the
@@ -43,13 +43,74 @@ The four censuses today and what each is for:
 - `census-comment-staleness.py` (#872): comments naming a symbol, flag or patch that no longer
   resolves. Its patch-citation channel scans `CLAUDE.md` and the two `okf/references/` pages that
   cite `Scripts/patches/NNNN-*` files.
+- `census-api-reference-rows.py` (#1679): `docs/API_REFERENCE.md` category-row entries that resolve
+  to no declaration in `Sources/`. A removed API leaves its name in a row with every gate green:
+  `count-operations.py` treats those rows as illustrative and re-derives the headline totals
+  instead, and `check-docs-existence.py` reads `docs/reference/` pages rather than
+  `API_REFERENCE`'s tables. #1666's removal was caught by hand; #1634's `revolutionToElementary`
+  was still listed until this census found it. It reports rather than gates because the rows mix
+  real symbols with umbrella names (`booleanCheck` covers two bridge functions and is itself
+  declared nowhere), abbreviations (`thruSectionsCreate` for `OCCTShapeThruSectionsCreate`) and
+  category labels (`boss`), and no mechanical rule separates those from a stale entry: 79 of 2,588
+  identifier-shaped entries resolve to nothing, and most of them are correct documentation.
+
+One gate reads `Scripts/patches/` rather than `Sources/`: `check-patch-deletes-guarded-symbol.py`
+(#2058), which fails when a carried patch deletes a line naming an OCCT symbol a `Tests/` comment
+says its invariant depends on. It scans the patch diffs, not `Libraries/occt-src`, which is what
+keeps it in this job instead of an hour into `kernel-integration.yml` where #2056 was found.
 
 `check-changelog-transcription.py` is a third kind, a **report**: it audits the branch's merge
 history for merges that landed with no CHANGELOG entry, and is not yet a gate.
 
+## The one gate outside `gate-scripts`
+
+`check-doc-snippets.py` (#1683) type-checks every fenced ```swift``` block in `docs/` and in `///`
+doc comments. `docs-current.md` asks for a runnable snippet on every documented API and nothing had
+ever *compiled* one: `check-docs-defaults.py` reads the declaration a reference page restates, and
+`check-docs-existence.py` reads its headings and prose, but the example fences went unread, which is
+how a factory that never existed reached 18 call sites (#1675).
+
+**It is not in `gate-scripts`, because it cannot be.** That job's whole property is pure Python over
+the repo's own text, no OCCT and no build; this one needs `OCCTSwift` built to compile a snippet
+against. It runs in `ci.yml`'s `swift build + test (macOS)` job instead, after the build it reuses,
+and it is outside every count on this page and in `CLAUDE.md`, all of which are derived from the
+`gate-scripts` job body alone.
+
+**It was a census first, and the promotion is what the measuring was for.** It landed at 211
+failures, which is the state [required-status-checks](required-status-checks.md) warns about: a
+required check red for every PR is worse than no check. So it reported a *number* rather than a
+verdict, and the number is what told anyone whether promotion was close. It reached zero when #2092
+reclassified 24 unparseable reference pages that were eliding content the reader supplies, and #2093
+fixed the remaining 187 page by page. Then, and only then, `--strict` became the default and the
+script was renamed `check-`.
+
+That sequence is the rule worth carrying, not the outcome: **measure the rate, fix the backlog,
+then gate.** #1407 is the same precedent. A detector promoted before its backlog is zero teaches
+people to ignore a red check, which costs more than the check was ever worth.
+
+There was never a false-positive argument against gating it. Nothing here has a measured
+false-positive class to discount the way `census-doc-occt-attribution.py` has its 41%: the compiler
+adjudicates. It was volume, and volume is fixable.
+
+Two of its design choices are worth carrying to any detector that shells out to a compiler:
+
+- **It compiles rather than parsing.** #1675 holds two attempts at a regex that matched argument
+  labels against declarations, and a record of how each reported a real API as missing. A Swift
+  signature parser good enough to avoid that is a fraction of a compiler, and a compiler is already
+  in the build.
+- **Every `swiftc` invocation carries a canary**, a file holding a defect the compiler cannot miss,
+  and a canary that comes back clean aborts the run. This was not precautionary. The first version
+  ran without `-continue-building-after-errors`, the driver stopped scheduling frontend jobs after
+  the first batch that failed, and four of eight self-test fixtures reported clean while never being
+  compiled at all. A green run and a blind run were indistinguishable, which is this page's own
+  opening argument, met in practice. It fired a second time within the hour, on a `-target` whose
+  architecture was derived from the built module but whose deployment version was dropped: `swiftc`
+  rejected the target before reading a file, produced no per-file diagnostic, and the canary turned
+  what would have been "3,096 snippets clean" into an abort.
+
 ## Every detector proves it is not blind
 
-Nine of the ten gates, all four censuses and the merge-history audit take `--self-test`, a
+Eleven of the twelve gates, all five censuses and the merge-history audit take `--self-test`, a
 fixture battery proving the *detector* catches each failure mode. Run it whenever you change one of
 these scripts. Three gate scripts were confidently wrong while reporting all clear (#618,
 #624/#630, #626), and a detector reporting "all clear" because it is blind looks exactly like one
@@ -61,9 +122,47 @@ running the report, so writing `count-operations.py --self-test` to match its si
 instead of passing forever. `check-bridge-index`, `check-null-handle-guards`, `derive-gdt-enums`
 and `derive-bridge-header-split` exit 2 if run from anywhere but the repo root (#625).
 
+## A self-test is not enough: validate the view, not just the verdict
+
+`--self-test` proves the detector catches the failure modes **you thought of**. It cannot prove the
+detector looked at the real input at all. Those are different claims, and the second is the one that
+keeps failing.
+
+Three detectors were caught in one day, **all three with a passing `--self-test`**:
+
+| Detector | Reported | Actually saw |
+|---|---|---|
+| `derive-bridge-header-split.py` | `misfiled: 0` | 2 of `OCCTBridge.h`'s 16 declarations (#2080) |
+| `check-doc-snippets.py` in CI | step green | 24 of 3,105 snippets; 3,081 skipped (#2098) |
+| `check-doc-snippets.py`'s canary | 51/51 locally | the stubbed path never ran in CI (#2097) |
+
+Each self-test passed because no fixture contained the trigger: a `/*` inside a line comment, an
+absent build directory, a skip that only fires where the author's machine has a build. Adding a
+fixture per trigger is chasing; the triggers are unbounded.
+
+**So a detector must also assert, on the real run, that its own view is plausible, and fail rather
+than report clean when it is not.** The assertion is cheap and specific to what the script reads:
+
+- Parsing headers? Assert every header yields at least one declaration. A header declaring nothing
+  would not be in the split.
+- Compiling? Carry a **canary** that must fail, and abort when it passes. `check-doc-snippets.py`
+  does this, and it caught a second bug within the hour of being added.
+- Depending on a build, a clone, a checkout? Assert it is there and **fail in CI** even where
+  skipping is right locally, because a contributor without a build still wants partial results while
+  a green CI step that examined nothing is a false green.
+- Reading a population you can size independently? Compare the two and fail on a large divergence.
+
+The distinction worth holding: **a wrong answer is a bug, an answer about a population that was
+never examined is a lie.** The first gets found. The second is invisible precisely when it matters,
+because it looks identical to success.
+
+This is not new; it is the sixth instance. #618, #624/#630 and #626 are the same shape three years
+of tooling earlier.
+
+
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs twenty of `gate-scripts`' twenty-one invocations, flag for
+`Scripts/git-hooks/pre-commit` runs twenty-nine of `gate-scripts`' thirty invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

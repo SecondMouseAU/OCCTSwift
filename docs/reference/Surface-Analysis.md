@@ -35,7 +35,7 @@ The Gaussian curvature is the product of the two principal curvatures (`kMin × 
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `meanCurvature(atU:v:)` together from a single evaluation. All three share one `GeomLProp_SLProps` construction, so they agree exactly, including on whether curvature is defined at all (#405).
 - **Example:**
   ```swift
-  if let sphere = Surface.sphere(radius: 5) {
+  if let sphere = Surface.sphere(center: .zero, radius: 5) {
       let k = sphere.gaussianCurvature(atU: 0, v: 0)  // ≈ 0.04 (1/R²)
       let flat = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
       flat.gaussianCurvature(atU: 3, v: 4)             // 0, flat, and that is the answer
@@ -61,7 +61,7 @@ The mean curvature is the arithmetic mean of the two principal curvatures: `(kMi
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `gaussianCurvature(atU:v:)` together from a single evaluation, sharing one `GeomLProp_SLProps` construction (#405).
 - **Example:**
   ```swift
-  if let cyl = Surface.cylinder(radius: 10, height: 50) {
+  if let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10) {
       let h = cyl.meanCurvature(atU: 0, v: 0.5)  // ≈ 0.05 (1/(2R))
   }
   ```
@@ -118,7 +118,7 @@ Uses `GeomLProp_SLProps` to extract both principal curvature values and the orth
 - **OCCT:** `GeomLProp_SLProps::CurvatureDirections` + `MinCurvature` + `MaxCurvature`.
 - **Example:**
   ```swift
-  if let srf = Surface.sphere(radius: 5),
+  if let srf = Surface.sphere(center: .zero, radius: 5),
      let pc  = srf.principalCurvatures(atU: 0, v: 0) {
       print(pc.kMin, pc.kMax)  // both ≈ 0.2 (1/R) for a sphere
   }
@@ -230,7 +230,7 @@ A singularity is a parameter value at which the surface normal vanishes (e.g., t
 - **OCCT:** `ShapeAnalysis_Surface` singularity methods.
 - **Example:**
   ```swift
-  if let sphere = Surface.sphere(radius: 5) {
+  if let sphere = Surface.sphere(center: .zero, radius: 5) {
       let n = sphere.singularityCount()  // 2, north and south poles
   }
   ```
@@ -250,7 +250,7 @@ public func isDegenerated(at point: SIMD3<Double>, tolerance: Double = 1e-6) -> 
 - **OCCT:** `ShapeAnalysis_Surface` degeneration check.
 - **Example:**
   ```swift
-  if let sphere = Surface.sphere(radius: 5) {
+  if let sphere = Surface.sphere(center: .zero, radius: 5) {
       let atPole = sphere.isDegenerated(at: SIMD3(0, 0, 5))
   }
   ```
@@ -272,7 +272,7 @@ Convenience wrapper over `singularityCount(tolerance:)`.
 - **OCCT:** Delegates to `ShapeAnalysis_Surface` via `singularityCount`.
 - **Example:**
   ```swift
-  if let cone = Surface.cone(radius: 5, height: 10, halfAngle: .pi / 6) {
+  if let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5, semiAngle: .pi / 6) {
       print(cone.hasSingularities())  // true, apex is singular
   }
   ```
@@ -406,7 +406,7 @@ Suitable for a one-off query when no hint is available. For sequential queries a
 - **OCCT:** `ShapeAnalysis_Surface::ValueOfUV`.
 - **Example:**
   ```swift
-  if let srf = Surface.sphere(radius: 5) {
+  if let srf = Surface.sphere(center: .zero, radius: 5) {
       let proj = srf.valueOfUV(point: SIMD3(0, 0, 5))
       print(proj.uv, proj.gap)
   }
@@ -433,7 +433,7 @@ More efficient than `valueOfUV(point:precision:)` when projecting a sequence of 
 - **OCCT:** `ShapeAnalysis_Surface::NextValueOfUV`.
 - **Example:**
   ```swift
-  if let srf = Surface.sphere(radius: 5) {
+  if let srf = Surface.sphere(center: .zero, radius: 5) {
       var prev = srf.valueOfUV(point: SIMD3(5, 0, 0)).uv
       for pt in samplePoints {
           let p = srf.nextValueOfUV(previousUV: prev, point: pt)
@@ -594,8 +594,8 @@ Uses `GeomProjLib::Curve2d` for analytic (normal) projection. The resulting `Cur
 - **OCCT:** `GeomProjLib::Curve2d`.
 - **Example:**
   ```swift
-  if let srf  = Surface.cylinder(radius: 10, height: 50),
-     let line = Curve3D.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 0, 50)),
+  if let srf  = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10),
+     let line = Curve3D.segment(from: SIMD3(10, 0, 0), to: SIMD3(10, 0, 50)),
      let uv   = srf.projectCurve(line) {
       // uv is the isoline in cylinder UV space
   }
@@ -618,7 +618,7 @@ Uses `ProjLib_CompProjectedCurve`, which handles cases where the curve projectio
 - **OCCT:** `ProjLib_CompProjectedCurve`.
 - **Example:**
   ```swift
-  if let srf    = Surface.sphere(radius: 10),
+  if let srf    = Surface.sphere(center: .zero, radius: 10),
      let spiral = Curve3D.circularHelix(radius: 10, pitch: 2) {
       let segs = srf.projectCurveSegments(spiral)
       // segs may contain multiple UV segments when the helix crosses the seam
@@ -642,8 +642,8 @@ Uses `GeomProjLib::Project` for normal projection. The result is a 3D curve, unl
 - **OCCT:** `GeomProjLib::Project`.
 - **Example:**
   ```swift
-  if let srf  = Surface.sphere(radius: 10),
-     let line = Curve3D.line(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)),
+  if let srf  = Surface.sphere(center: .zero, radius: 10),
+     let line = Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)),
      let onSrf = srf.projectCurve3D(line) {
       // onSrf is the meridian arc on the sphere
   }
@@ -666,7 +666,7 @@ Uses `GeomAPI_ProjectPointOnSurf` to find the nearest surface point. Returns `ni
 - **OCCT:** `GeomAPI_ProjectPointOnSurf`.
 - **Example:**
   ```swift
-  if let srf  = Surface.sphere(radius: 5),
+  if let srf  = Surface.sphere(center: .zero, radius: 5),
      let proj = srf.projectPoint(SIMD3(3, 4, 0)) {
       print(proj.u, proj.v, proj.distance)  // distance ≈ 0 (point is on the sphere)
   }
@@ -695,7 +695,7 @@ Returns an empty array when the surfaces do not intersect. This is the earlier (
 - **Example:**
   ```swift
   if let plane  = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-     let sphere = Surface.sphere(radius: 5) {
+     let sphere = Surface.sphere(center: .zero, radius: 5) {
       let curves = plane.intersections(with: sphere)
       // curves contains the great circle where the plane cuts the sphere
   }
@@ -744,8 +744,8 @@ Uses `GeomAPI_IntSS` with a fixed internal cap of 64 curves. This is the v0.35.0
 - **OCCT:** `GeomAPI_IntSS`.
 - **Example:**
   ```swift
-  if let cyl1 = Surface.cylinder(radius: 5, height: 20),
-     let cyl2 = Surface.cylinder(radius: 5, height: 20) {
+  if let cyl1 = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5),
+     let cyl2 = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) {
       let curves = cyl1.intersectionCurves(with: cyl2)
   }
   ```
@@ -798,8 +798,8 @@ Returns all intersection points (tangent and transverse) up to an internal cap o
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
-     let srf  = Surface.sphere(radius: 5) {
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+     let srf  = Surface.sphere(center: .zero, radius: 5) {
       let hits = line.intersections(with: srf)
       // hits.count == 2 for a line passing through a sphere
       for h in hits {
@@ -834,7 +834,7 @@ sampling a parameter grid.
 - **OCCT:** `GeomGridEval_Surface::EvaluateGrid` via `OCCTSurfaceEvaluateGrid`.
 - **Example:**
   ```swift
-  if let srf = Surface.sphere(radius: 5) {
+  if let srf = Surface.sphere(center: .zero, radius: 5) {
       let us = stride(from: 0.0, through: Double.pi * 2, by: 0.1).map { $0 }
       let vs = stride(from: -.pi / 2, through: .pi / 2, by: 0.1).map { $0 }
       let grid = srf.evaluateGrid(uParameters: us, vParameters: vs)
@@ -867,7 +867,7 @@ disagreed with `evaluateGrid` about exactly that.
 - **OCCT:** `GeomGridEval_Surface::EvaluateGridD1` via `OCCTSurfaceEvaluateGridD1`.
 - **Example:**
   ```swift
-  if let srf = Surface.sphere(radius: 5) {
+  if let srf = Surface.sphere(center: .zero, radius: 5) {
       let grid = srf.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
       let sample = grid.at(u: 1, v: 0)
       let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))

@@ -132,7 +132,7 @@ public static func ellipse(
 `Conic2D` (their only way to report a degenerate input was an all-zero struct describing no conic),
 were deprecated in favour of the factories above and removed at v2.0.0 (#784):
 
-```swift
+```swift no-typecheck: the "before" half names a factory removed at v2.0.0, on purpose
 // before (removed)
 let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
                             majorRadius: 5, minorRadius: 3)
@@ -517,7 +517,7 @@ public var shapeTypeString: String { get }
   called here. (#808)
 - **Example:**
   ```swift
-  let box = Shape.box(dx: 1, dy: 1, dz: 1)!
+  let box = Shape.box(width: 1, height: 1, depth: 1)!
   print(box.shapeTypeString)  // "solid"
   ```
 
@@ -961,7 +961,7 @@ public static func findAllRoots(
 - **Example:**
   ```swift
   // Find all roots of sin(x) in [0, 4π]
-  let roots = MathSolver.findAllRoots(in: 0...4*.pi, samples: 40) { x in
+  let roots = MathSolver.findAllRoots(in: 0...(4 * .pi), samples: 40) { x in
       (sin(x), cos(x))
   }
   ```

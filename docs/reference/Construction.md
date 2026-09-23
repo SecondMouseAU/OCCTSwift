@@ -1021,7 +1021,7 @@ Construction entities live alongside the document's shapes but are not part of t
 - **Lifetime:** the context is tied to the `Document` instance and is released with it. A newly created `Document` always starts with an empty context, and its entities are never visible to any other document. (Before v1.9.1 this did not hold, see [#277](https://github.com/SecondMouseAU/OCCTSwift/issues/277).)
 - **Example:**
   ```swift
-  let doc = Document()
+  let doc = Document.create()!
   let ctx = doc.constructionContext
   let xyId = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)), name: "XY")
   ```
@@ -1151,10 +1151,13 @@ public enum MaterializationFailure: Sendable {
     case planeShapeFailed(PlaneID)
     case axisShapeFailed(AxisID)
     case pointShapeFailed(PointID)
+    case planeAddFailed(PlaneID)
+    case axisAddFailed(AxisID)
+    case pointAddFailed(PointID)
 }
 ```
 
-`*ResolveFailed` cases indicate that the recipe could not be evaluated against the graph; `*ShapeFailed` cases indicate that the recipe resolved but the representative shape could not be constructed (e.g. degenerate wire).
+`*ResolveFailed` cases indicate that the recipe could not be evaluated against the graph; `*ShapeFailed` cases indicate that the recipe resolved but the representative shape could not be constructed (e.g. degenerate wire). `*AddFailed` cases are distinct from those: the shape was built, and `Document.addConstructionShape` then refused to add it, returning a negative label ID.
 
 ---
 

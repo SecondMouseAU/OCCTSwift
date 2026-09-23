@@ -34,7 +34,7 @@ The curvature is the reciprocal of the radius of the osculating circle at `u`. Z
 - **OCCT:** `GeomLProp_CLProps::Curvature`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let k = arc.curvature(at: 0)  // ≈ 0.2 (1/R)
   }
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
@@ -57,7 +57,7 @@ public func tangentDirection(at u: Double) -> SIMD3<Double>?
 - **OCCT:** `GeomLProp_CLProps::Tangent`.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(1, 0, 0)),
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(1, 0, 0)),
      let t = c.tangentDirection(at: 0) {
       // t ≈ SIMD3(1, 0, 0)
   }
@@ -80,7 +80,7 @@ The principal normal points toward the center of curvature.
 - **OCCT:** `GeomLProp_CLProps::Normal`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let n = arc.normal(at: 0) {
       // n points inward toward center
   }
@@ -101,7 +101,7 @@ public func centerOfCurvature(at u: Double) -> SIMD3<Double>?
 - **OCCT:** `GeomLProp_CLProps::CentreOfCurvature`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let c = arc.centerOfCurvature(at: 0) {
       // c ≈ SIMD3(0, 0, 0), center of the arc
   }
@@ -352,7 +352,7 @@ Significantly faster than calling `point(at:)` in a loop for large parameter arr
 - **OCCT:** `GeomGridEval_Curve::EvaluateGrid` via `OCCTCurve3DEvaluateGrid`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let params = stride(from: arc.domain.lowerBound,
                           through: arc.domain.upperBound,
                           by: 0.1).map { $0 }
@@ -403,7 +403,7 @@ Uses `ShapeAnalysis_Curve::IsPlanar` to test whether the curve lies in a plane w
 - **OCCT:** `ShapeAnalysis_Curve::IsPlanar`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let n = arc.planeNormal() {
       // n ≈ SIMD3(0, 0, 1) for an arc in the XY plane
   }
@@ -483,8 +483,8 @@ public func minDistance(to other: Curve3D) -> Double?
 - **OCCT:** `GeomAPI_ExtremaCurveCurve::LowerDistance`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)),
-     let c2 = Curve3D.line(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)),
+  if let c1 = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)),
+     let c2 = Curve3D.segment(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)),
      let d  = c1.minDistance(to: c2) {
       print(d)  // ≈ 5.0
   }
@@ -511,8 +511,8 @@ Returns up to `maxCount` results. For simple queries where only the minimum dist
 - **OCCT:** `GeomAPI_ExtremaCurveCurve`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
-     let c2 = Curve3D.arc(center: SIMD3(10, 0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+  if let c1 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(13, 0, 0), interior: SIMD3(10, 3, 0), end: SIMD3(7, 0, 0)) {
       let results = c1.extrema(with: c2)
       if let closest = results.min(by: { $0.distance < $1.distance }) {
           print(closest.distance)
@@ -539,8 +539,8 @@ Returns an empty array when the curve does not pierce the surface. Both transver
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
-     let srf  = Surface.sphere(radius: 5) {
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+     let srf  = Surface.sphere(center: .zero, radius: 5) {
       let hits = line.intersections(with: srf)
       // hits.count == 2 for a line passing through the center of the sphere
   }
@@ -561,8 +561,8 @@ public func minDistance(to surface: Surface) -> Double?
 - **OCCT:** `GeomAPI_ExtremaCurveSurface::LowerDistance`.
 - **Example:**
   ```swift
-  if let c   = Curve3D.line(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
-     let srf = Surface.sphere(radius: 5),
+  if let c   = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
+     let srf = Surface.sphere(center: .zero, radius: 5),
      let d   = c.minDistance(to: srf) {
       print(d)  // ≈ 5.0 (line is 10 units from center, sphere radius 5)
   }
@@ -636,7 +636,7 @@ Uses `GCPnts_QuasiUniformDeflection`. Tighter curves produce more points; straig
 - **OCCT:** `GCPnts_QuasiUniformDeflection`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let pts = arc.quasiUniformDeflectionPoints(deflection: 0.01)
       // pts is a polyline approximation with ≤0.01 chord error
   }
@@ -685,7 +685,7 @@ The answer is always inside the curve's own `domain`, and always the true neares
 - **OCCT:** `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve`, minimised together with the domain's ends, no one of the three is correct alone (#539).
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)) {
       let proj = c.projectPoint(SIMD3(5, 3, 0))
       print(proj.point)     // ≈ SIMD3(5, 0, 0)
       print(proj.distance)  // ≈ 3.0
@@ -721,7 +721,7 @@ Convenience wrapper over `projectPoint(_:precision:)` when only the scalar dista
 - **OCCT:** Delegates to `projectPoint(_:precision:)`, and inherits its #539 fix.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
+  if let c = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)) {
       let d = c.distance(to: SIMD3(5, 3, 0))  // ≈ 3.0
   }
   ```
@@ -770,7 +770,7 @@ Uses `ShapeAnalysis_Curve::ValidateRange`. Useful before trimming or sampling a 
 - **OCCT:** `ShapeAnalysis_Curve::ValidateRange`.
 - **Example:**
   ```swift
-  if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let c = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let vr = c.validateRange(first: -0.001, last: 3.15)
       // vr.wasAdjusted == true; vr.first clamped to domain start
   }
@@ -886,8 +886,8 @@ When `range1` or `range2` is `nil`, the curve's full `domain` is used. Check `is
 - **OCCT:** `Extrema_ExtCC`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
-     let c2 = Curve3D.arc(center: SIMD3(20, 0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+  if let c1 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(23, 0, 0), interior: SIMD3(20, 3, 0), end: SIMD3(17, 0, 0)) {
       let ex = c1.extremaCC(other: c2)
       if ex.isDone && !ex.isParallel {
           for i in 1...ex.count {
@@ -1016,8 +1016,8 @@ public func extremaCS(
 - **OCCT:** `Extrema_ExtCS`.
 - **Example:**
   ```swift
-  if let c = Curve3D.line(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
-     let s = Surface.sphere(radius: 5) {
+  if let c = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)),
+     let s = Surface.sphere(center: .zero, radius: 5) {
       let ex = c.extremaCS(surface: s)
       if ex.isDone {
           let pair = c.extremaCSPoint(surface: s, index: 1)
@@ -1101,8 +1101,8 @@ Uses `ProjLib_ProjectOnSurface` / `ProjLib_ComputeApprox` to produce a B-spline 
 - **OCCT:** `OCCTProjLibProjectOnSurface` → `ProjLib_ProjectOnSurface`.
 - **Example:**
   ```swift
-  if let line = Curve3D.line(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
-     let sph  = Surface.sphere(radius: 10),
+  if let line = Curve3D.segment(from: SIMD3(0, 0, -10), to: SIMD3(0, 0, 10)),
+     let sph  = Surface.sphere(center: .zero, radius: 10),
      let onSph = line.projectOnSurface(sph) {
       // onSph is a B-spline arc along the sphere meridian
   }
@@ -1299,8 +1299,8 @@ The format is OCCT's internal text stream format, suitable for persistence or in
 - **OCCT:** `GeomTools_CurveSet::Write`.
 - **Example:**
   ```swift
-  if let c1 = Curve3D.line(from: .zero, to: SIMD3(1, 0, 0)),
-     let c2 = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let c1 = Curve3D.segment(from: .zero, to: SIMD3(1, 0, 0)),
+     let c2 = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let data = Curve3D.serializeCurves([c1, c2]) {
       // store or transmit `data`
   }
@@ -1391,7 +1391,7 @@ over the whole domain, the two ends included, see the note at the top of this se
 - **OCCT:** `ExtremaPC_Curve(const occ::handle<Geom_Curve>&)` then `PerformWithEndpoints`.
 - **Example:**
   ```swift
-  if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
+  if let arc = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)) {
       let results = arc.extrema(from: SIMD3(3, 4, 0))
       if let nearest = results.min(by: { $0.distance < $1.distance }) {
           print(nearest.point, nearest.distance)
@@ -1452,7 +1452,7 @@ all, which on a curve it could build is rare.
 - **OCCT:** `ExtremaPC_Curve::PerformWithEndpoints` via `OCCTExtremaPCMinDistance`.
 - **Example:**
   ```swift
-  if let c = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi),
+  if let c = Curve3D.arcOfCircle(start: SIMD3(5, 0, 0), interior: SIMD3(0, 5, 0), end: SIMD3(-5, 0, 0)),
      let d = c.minimumDistance(from: SIMD3(0, 10, 0)) {
       print(d)  // about 5.0
   }

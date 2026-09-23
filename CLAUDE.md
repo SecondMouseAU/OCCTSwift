@@ -21,8 +21,8 @@ source. Before trusting "the fix is in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (twenty-two on disk, seventeen pinned, as of 2026-09-07) and what each unpinned patch
-leaves exposed. A divergence with a written reason is expected; one without is a finding.
+divergence (twenty-nine on disk, twenty-nine pinned, as of 2026-09-22: none, since the
+v4.0.0-kernel.1 repin) and what each unpinned patch leaves exposed. A divergence with a written reason is expected; one without is a finding.
 
 ## Build & Test Commands
 
@@ -48,7 +48,7 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Ten gates, four censuses and one merge-history audit, all pure Python over the repo's own text.
+Twelve gates, five censuses and one merge-history audit, all pure Python over the repo's own text.
 No OCCT, no build, no network, ~3s for the lot (a bare `census-unmeasured-values.py` run is ~13s).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
@@ -61,17 +61,20 @@ job a `name:` key, never require a check that has not yet reported, `main` takes
 ```bash
 python3 Scripts/check-bridge-index.py            # OCCTBridge.h's class → symbol index: stale / misfiled entries
 python3 Scripts/check-null-handle-guards.py      # every bridge fn guards the Handle, not just the pointer
-python3 Scripts/check-docs-defaults.py           # every default docs/reference/ restates matches its declaration
+python3 Scripts/check-docs-defaults.py           # every default AND enum case list docs/reference/ restates matches its declaration (#2145)
 python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
 python3 Scripts/check-throwing-calls.py          # every throwing OCCT construction/evaluator is caught, guarded or unreachable (#1407)
+python3 Scripts/check-patch-deletes-guarded-symbol.py  # no carried patch deletes a line whose symbol a test comment guards (#2058)
+python3 Scripts/check-bridge-diagnostics.py      # every function-level bridge catch (...) records what it caught (#2077)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)
 python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments naming a symbol/flag/patch that no longer resolves (#872)
+python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
 python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
 ```
@@ -83,6 +86,36 @@ on the option. Four scripts exit 2 if run from anywhere but the repo root (#625)
 **Optional pre-commit hook**: `ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit` in
 the main checkout, or `git config core.hooksPath Scripts/git-hooks` in a linked worktree (its
 `.git` is a file, so the symlink fails). CI is the authority; the hook is the preview.
+
+### Doc Snippet Type-Check
+
+```bash
+python3 Scripts/check-doc-snippets.py              # GATE: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
+python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
+python3 Scripts/check-doc-snippets.py --self-test
+```
+
+**Outside `gate-scripts`**, because it compiles the snippets against the built `OCCTSwift` module
+and that job is pure Python with no OCCT and no build. It runs in `ci.yml`'s
+`swift build + test (macOS)` job, after the build it reuses, in about a minute, and it does not
+count toward the gate/census totals above, which are derived from `gate-scripts` alone.
+
+It hands every snippet to `swiftc` rather than matching argument labels with a regex: #1675 holds
+two attempts at the regex and a record of how each reported a real API as missing, and a checker
+that does that is worse than no checker. Of 8,200 fences, 5,092 are signature restatements a
+bodiless `func` makes uncompilable anywhere, 3,105 are snippets, and of those **1,661 compile and
+1,444 are fragments opening mid-flow with a receiver the prose introduced**. A snippet that is
+deliberately not compilable carries its exemption on the page, in the fence info string:
+
+    ```swift no-typecheck: a listing of case spellings, not statements
+
+The reason after the colon is required, and it is for a snippet that is uncompilable for a reason
+the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, `[...]` and
+`= // prose` are recognised as fragments (#2092), so they need no marker and should not carry one.
+**It gates**: it was a census while a 211-snippet backlog stood, and was promoted once #2092 and
+#2093 took that to zero. In CI both invocations take `--require-typecheck`, which fails the step
+rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
+a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
 
 ### Compile a Ground Truth C++ Test
 
@@ -199,9 +232,12 @@ one domain never recompiles the rest. Each is `Tests/OCCT<Domain>Tests/`, declar
   [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) for why this is a
   policy here rather than a preference, including the two occasions a `--self-test` passed 6/6
   while one of its cases proved nothing.
-- **Gate: `Scripts/check-test-validity.py`** — CI gate that verifies every `@Test` has a linked
-  injection record in `okf/references/766-test-validity/`. Runs a sample of injections on CI.
-  Add to CI: `python3 Scripts/check-test-validity.py --strict`
+- **`Scripts/check-test-validity.py`** reports which `@Test` have a recorded Red/Green injection
+  and a bridge-kernel parity row under `okf/references/766-test-validity/` and
+  `okf/references/766-execution/`. It runs in `766-execution.yml`, on PRs targeting this branch
+  only, sampled and non-strict; it is **not** one of the twelve gates in `ci.yml`'s `gate-scripts`
+  and does not count toward that total. `--strict` fails below 100 percent coverage and is what
+  this epic is working toward, not what CI enforces today.
 - **A `@Test(arguments:)` element pairing a reference-counted member with a builtin vector of 32
   bytes or more cannot be written at all** (#1057). `(String, SIMD3<Double>)` corrupts the Swift
   task allocator whatever the test body does: it crashes with an empty body, with a single case,
@@ -241,11 +277,12 @@ the reproducer). What a bridge author needs without opening it:
   merged solid; comparing the two is #367's mistake, not a kernel bug.
 - `GeomPlate_MakeApprox::ApproxError()` and `MakeFilling::G0Error()` are not gates for "accepted
   an approximation unread"; both were tried and both broke correct results (#597).
-- **Retire when the kernel is repinned**: the bridge-side arc-length subdivision
-  (`occtAdaptorArcLength`, #603, redundant against patch `0021`), the datum lookup guard in
-  `occtDocumentDatumObjectAt` (#1030, blocks a readable datum once `0029` is in), and the
-  `Scripts/tsan.supp` lines for `TopoDS_TShape::myState` (`0030`). None of their tests can signal
-  that they have outlived their fix.
+- **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
+  carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
+  datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`
+  (`0030`), and the bridge-side arc-length subdivision (`occtAdaptorArcLength`, #603, redundant
+  against `0021`). None of their tests could signal that they had outlived their fix, which is why
+  this list existed; each now has a regression test that fails if the mitigation comes back.
 - `OCCTShapeFuseMulti` runs with `SetRunParallel(false)`; re-enabling it is very likely safe (#369)
   and is a separate, open decision.
 

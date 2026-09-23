@@ -24,6 +24,14 @@ import Testing
 // validity -- ground-truthed directly against the pinned kernel before writing the fix. The
 // bridge fix for all three functions therefore also switches OSD_Disk's construction to the
 // const char* overload, which assigns myDiskName from the path string directly.
+// #2055: UnicodeUtils.setFormat mutates Resource_Unicode's PROCESS-GLOBAL format, and three suites
+// in this target set it. Swift Testing runs them in parallel, so one suite's .sjis clobbered
+// another's .ansi between its own set and its own conversion: measured 2 failures in 5 runs of
+// just two of these suites together, and it is what turned CI red on an unrelated PR.
+//
+// `.serialized` does NOT fix this. It orders tests WITHIN one suite; two separately-serialized
+// suites still run concurrently with each other, and the state here is shared across suites.
+// OCCTSerial.withLock is process-wide, which is the scope the state actually has.
 @Suite("OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)")
 struct Issue1442DiskUnicodeOSDUtilitiesTests {
 
@@ -76,34 +84,38 @@ struct Issue1442DiskUnicodeOSDUtilitiesTests {
 
     @Test("A code unit in [0x80,0x7FF] is UTF-8 encoded as 2 bytes, not dropped")
     func twoByteRangeCodeUnitIsUTF8Encoded() throws {
-        UnicodeUtils.setFormat(.ansi)
-        // ANSI format is a Latin-1-style pass-through (Resource_Unicode.cxx:
-        // `TCollection_ExtendedString(theFromStr, /*isMultiByte*/ false)`, confirmed against
-        // Standard_ExtCharacter.hxx's ToExtCharacter): each raw byte becomes the identical
-        // char16_t code unit. 0xE9 -> U+00E9 (e-acute), UTF-8 0xC3 0xA9.
-        let raw: [CChar] = [0x41, CChar(bitPattern: 0xE9), 0x42, 0]  // "A" + U+00E9 + "B"
-        let ptr = OCCTUnicodeConvertToUnicode(raw)
-        #expect(ptr != nil)
-        if let ptr {
-            defer { free(ptr) }
-            let result = String(cString: ptr)
-            #expect(result == "A\u{00E9}B")
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.ansi)
+            // ANSI format is a Latin-1-style pass-through (Resource_Unicode.cxx:
+            // `TCollection_ExtendedString(theFromStr, /*isMultiByte*/ false)`, confirmed against
+            // Standard_ExtCharacter.hxx's ToExtCharacter): each raw byte becomes the identical
+            // char16_t code unit. 0xE9 -> U+00E9 (e-acute), UTF-8 0xC3 0xA9.
+            let raw: [CChar] = [0x41, CChar(bitPattern: 0xE9), 0x42, 0]  // "A" + U+00E9 + "B"
+            let ptr = OCCTUnicodeConvertToUnicode(raw)
+            #expect(ptr != nil)
+            if let ptr {
+                defer { free(ptr) }
+                let result = String(cString: ptr)
+                #expect(result == "A\u{00E9}B")
+            }
         }
     }
 
     @Test("A code unit in [0x800,0xFFFF] is UTF-8 encoded as 3 bytes, not dropped")
     func threeByteRangeCodeUnitIsUTF8Encoded() throws {
-        UnicodeUtils.setFormat(.sjis)
-        // SJIS bytes 0x82 0xA0 decode (Resource_Unicode::ConvertSJISToUnicode's lookup table)
-        // to U+3042 (hiragana "A"), ground-truthed directly against the pinned OCCT kernel.
-        // UTF-8 for U+3042 is 0xE3 0x81 0x82.
-        let raw: [CChar] = [CChar(bitPattern: 0x82), CChar(bitPattern: 0xA0), 0]
-        let ptr = OCCTUnicodeConvertToUnicode(raw)
-        #expect(ptr != nil)
-        if let ptr {
-            defer { free(ptr) }
-            let result = String(cString: ptr)
-            #expect(result == "\u{3042}")
+        OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.sjis)
+            // SJIS bytes 0x82 0xA0 decode (Resource_Unicode::ConvertSJISToUnicode's lookup table)
+            // to U+3042 (hiragana "A"), ground-truthed directly against the pinned OCCT kernel.
+            // UTF-8 for U+3042 is 0xE3 0x81 0x82.
+            let raw: [CChar] = [CChar(bitPattern: 0x82), CChar(bitPattern: 0xA0), 0]
+            let ptr = OCCTUnicodeConvertToUnicode(raw)
+            #expect(ptr != nil)
+            if let ptr {
+                defer { free(ptr) }
+                let result = String(cString: ptr)
+                #expect(result == "\u{3042}")
+            }
         }
     }
 

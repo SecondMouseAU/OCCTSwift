@@ -102,10 +102,10 @@ extension Shape {
     ///
     /// ```swift
     /// // Fill a 4-sided boundary with a smooth surface
-    /// let wire1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
-    /// let wire2 = Wire.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 5))
-    /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))
-    /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))
+    /// let wire1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    /// let wire2 = Wire.line(from: SIMD3(10, 0, 0), to: SIMD3(10, 10, 5))!
+    /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))!
+    /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))!
     ///
     /// // Free-standing wires have no surface to be tangent to, so fill positionally.
     /// let patch = Shape.fill(
@@ -155,7 +155,7 @@ extension Shape {
     /// // the open rim is the topmost closed edge
     /// let rim = bowl.edges()
     ///     .filter { $0.isClosed3D }
-    ///     .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
+    ///     .max(by: { ($0.bounds?.max.z ?? -.infinity) < ($1.bounds?.max.z ?? -.infinity) })!
     ///
     /// let cap = Shape.fill(
     ///     boundaries: [Wire.wireFromEdges([rim])!],
@@ -1028,6 +1028,20 @@ extension Shape {
     /// - Returns: The evaluated grid, or nil if the patch is degenerate or the grid cannot be
     ///   served: the bound is on the **product**, which must not exceed
     ///   ``Sampling/maximumSampleCount`` (#558).
+    ///
+    /// Every off-diagonal sample used to be wrong (#1515). `GeomFill_CoonsAlgPatch::Value(U, V)`
+    /// sampled all four boundaries at `V`, where `bound[0]` and `bound[2]` are the U-direction
+    /// sides, so for any boundary set whose V-direction sides are straight the result was
+    /// independent of `U` entirely and the surface collapsed onto the `u == v` diagonal. Samples
+    /// with `u == v` were coincidentally correct, which is why it read as a valid surface.
+    ///
+    /// Carried patch `0034` fixes it, and the pinned asset carries it from `v4.0.0-kernel.1`
+    /// onward. `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift` asserts the
+    /// bilinear surface over a flat square, which is the assertion the unpatched asset made
+    /// impossible. Measurement and probe in `Scripts/repro/1515-coons-value-u-parameter/`.
+    ///
+    /// This is the only consumer that calls `Value()` directly; `GeomFill_ConstrainedFilling`
+    /// evaluates through `Eval()` and was never affected.
     public static func coonsAlgPatch(
         edge1: Shape, edge2: Shape, edge3: Shape, edge4: Shape,
         evalU: Int = 10, evalV: Int = 10

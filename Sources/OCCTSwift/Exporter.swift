@@ -3,6 +3,18 @@ import OCCTBridge
 
 /// Export shapes to various file formats.
 ///
+/// ## Thread safety
+///
+/// `writeSTEP` and `writeIGES` are **already serialized inside the bridge** against
+/// each other and against `Shape.load(from:)` / `Document.loadSTEP`, because OCCT
+/// routes every data-exchange operation through process-global state. Calling them
+/// concurrently is safe and gains nothing: they take a process-wide lock for the
+/// whole call. Wrapping them in `OCCTSerial.withLock` is harmless but redundant.
+///
+/// The mesh and BREP writers carry no such lock, so the usual advice applies to
+/// them: give each thread its own `Shape.deepCopy()`. See `OCCTSerialQueue.swift`
+/// and docs/thread-safety.md.
+///
 /// ## Supported Formats
 ///
 /// - **STL**: Standard Tessellation Language - for 3D printing
@@ -11,7 +23,7 @@ import OCCTBridge
 /// ## STL Export
 ///
 /// ```swift
-/// let shape = Shape.box(width: 10, height: 5, depth: 3)
+/// let shape = Shape.box(width: 10, height: 5, depth: 3)!
 /// try Exporter.writeSTL(
 ///     shape: shape,
 ///     to: URL(fileURLWithPath: "box.stl"),
@@ -466,7 +478,7 @@ public enum Exporter {
     /// - Throws: `ExportError` if export fails
     ///
     /// ```swift
-    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
     /// try Exporter.writeBREP(shape: box, to: URL(fileURLWithPath: "/tmp/box.brep"))
     ///
     /// // Persist an in-progress reconstruction that has not been healed yet.
@@ -823,7 +835,7 @@ extension Shape {
     ///     (default: false). See ``Exporter/writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)``.
     ///
     /// ```swift
-    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
     /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
     /// ```
     /// - Throws: `Exporter.ExportError` if export fails

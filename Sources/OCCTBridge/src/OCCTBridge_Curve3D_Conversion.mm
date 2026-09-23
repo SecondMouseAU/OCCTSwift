@@ -265,6 +265,7 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -354,6 +355,7 @@ static bool occtCPntsUniformDeflectionImpl(OCCTShapeRef shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -441,6 +443,7 @@ static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -494,6 +497,7 @@ static int32_t occtExtremaPCCurveImpl(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -549,6 +553,11 @@ struct OCCTBSplineApproxInterp
     }
     catch (...)
     {
+      // Recorded even though this is not the outermost catch (#1161/#2077). This one neither
+      // rethrows nor recovers: it converts the exception into `done = false`, which every caller
+      // reports as a refused fit, and no function-level catch ever sees it. __func__ would read
+      // just "run" here, so the context is spelled out.
+      occtRecordCaughtException("OCCTBSplineApproxInterp::run");
       done = false;
       result.Nullify();
       maxErr = -1.0;
@@ -674,6 +683,7 @@ OCCTCurve3DRef OCCTCurve3DCreateSegment(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -697,6 +707,7 @@ OCCTCurve3DRef OCCTCurve3DCreateArcOfCircle(double p1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -724,6 +735,7 @@ OCCTCurve3DRef OCCTCurve3DInterpolate(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -759,6 +771,7 @@ OCCTCurve3DRef OCCTCurve3DInterpolateWithTangents(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -786,6 +799,7 @@ OCCTCurve3DRef OCCTCurve3DFitPoints(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -815,6 +829,7 @@ int32_t OCCTCurve3DBSplineToBeziers(OCCTCurve3DRef c, OCCTCurve3DRef* out, int32
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -853,6 +868,7 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -884,6 +900,7 @@ bool OCCTCurve3DIsPlanar(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -913,6 +930,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipse(double centerX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -948,6 +966,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipsePoints(double centerX,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -988,6 +1007,7 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1030,6 +1050,7 @@ OCCTCurveProjectResult OCCTCurve3DProjectPoint(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1057,6 +1078,7 @@ OCCTCurveValidateRangeResult OCCTCurve3DValidateRange(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return result;
   }
 }
@@ -1088,6 +1110,7 @@ int32_t OCCTCurve3DGetSamplePoints3D(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1123,6 +1146,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfHyperbola(double majorRadius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1156,6 +1180,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfParabola(double focalDistance,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1199,6 +1224,7 @@ bool OCCTCurve3DSplitAt(OCCTCurve3DRef  curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1226,6 +1252,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipse(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1253,6 +1280,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipseThreePoints(double s1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1280,6 +1308,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeHyperbola(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1307,6 +1336,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeHyperbolaThreePoints(double s1x,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1330,6 +1360,7 @@ OCCTCurve3DRef _Nullable OCCTShapeConstructConvertToBSpline3D(OCCTCurve3DRef _No
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1351,6 +1382,7 @@ bool OCCTShapeConstructAdjustCurve3D(OCCTCurve3DRef _Nonnull curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1391,6 +1423,7 @@ int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1415,6 +1448,7 @@ bool OCCTGeomConvertIsLinear(const double* _Nonnull points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1474,6 +1508,7 @@ bool OCCTConvertCompBezierToBSpline(const double*            poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1530,6 +1565,7 @@ bool OCCTConvertCompBezier2dToBSpline2d(const double*              poles,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1544,6 +1580,7 @@ bool OCCTCurve3DIsClosedWithPreci(OCCTCurve3DRef curve, double preci)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1558,6 +1595,7 @@ bool OCCTCurve3DIsPeriodicSA(OCCTCurve3DRef curve)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1582,6 +1620,7 @@ OCCTCurve3DRef OCCTGCMakeCircle(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1607,6 +1646,7 @@ OCCTCurve3DRef OCCTGCMakeCircle3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1630,6 +1670,7 @@ OCCTCurve3DRef OCCTGCMakeCircleCenterNormal(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1655,6 +1696,7 @@ OCCTCurve3DRef OCCTGCMakeCircleParallel(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1682,6 +1724,7 @@ OCCTCurve3DRef OCCTGCMakeEllipse(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1707,6 +1750,7 @@ OCCTCurve3DRef OCCTGCMakeEllipse3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1737,6 +1781,7 @@ OCCTCurve3DRef OCCTGCMakeEllipseFromElips(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1764,6 +1809,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola(double cx,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1808,6 +1854,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola3Points(double x1,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1853,6 +1900,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1929,6 +1977,7 @@ bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1956,6 +2005,7 @@ int32_t OCCTExtremaPointCurve(OCCTCurve3DRef curve,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1989,6 +2039,7 @@ int32_t OCCTExtremaPointSurface(OCCTSurfaceRef surface,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -2025,6 +2076,7 @@ OCCTCurve3DRef OCCTInterpolateWithAllTangents(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2057,6 +2109,7 @@ OCCTCurve3DRef OCCTInterpolateWithParameters(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2102,6 +2155,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParams(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2139,6 +2193,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParameters(const double* points,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -2172,6 +2227,7 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

@@ -207,16 +207,11 @@
 
 // Generic GD&T label lookup helper. Consolidates the three near-identical helpers for
 // dimensions, geometric tolerances, and datums (#1065).
-template <typename AttrType,
-          typename ObjType,
-          typename ToolGetter,
-          typename LabelsGetter,
-          typename ReadableCheck>
+template <typename AttrType, typename ObjType, typename ToolGetter, typename LabelsGetter>
 static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef   doc,
                                         int32_t           index,
                                         ToolGetter&&      getTool,
                                         LabelsGetter&&    getLabels,
-                                        ReadableCheck&&   isReadable,
                                         Handle(AttrType)& outAttr,
                                         Handle(ObjType)&  outObj)
 {
@@ -233,17 +228,8 @@ static bool occtDocumentGdtObjectAtImpl(OCCTDocumentRef   doc,
   if (!label.FindAttribute(AttrType::GetID(), outAttr))
     return false;
 
-  if (!isReadable(label))
-    return false;
-
   outObj = outAttr->GetObject();
   return !outObj.IsNull();
-}
-
-// Always-true readability check for types that do not need it.
-static bool occtDocumentGdtAlwaysReadable(const TDF_Label&)
-{
-  return true;
 }
 
 // Resolve a dimension index to its attribute and its object. Every per-dimension accessor and
@@ -259,7 +245,6 @@ static bool occtDocumentDimensionObjectAt(OCCTDocumentRef                       
     dimensionIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDimensionLabels(l); },
-    occtDocumentGdtAlwaysReadable,
     outAttr,
     outObj);
 }
@@ -275,110 +260,8 @@ static bool occtDocumentGeomToleranceObjectAt(OCCTDocumentRef                doc
     toleranceIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetGeomToleranceLabels(l); },
-    occtDocumentGdtAlwaysReadable,
     outAttr,
     outObj);
-}
-
-// #1030: XCAFDoc_Datum::GetObject builds the datum point's X out of the annotation plane's array
-// rather than the point's own, so a datum carrying a point with no plane location dereferences a
-// null handle. That is an OS signal, which no caller's catch can absorb (#1022). Patch 0029 fixes
-// it in the kernel and is in no built kernel, so every bridge path that reaches GetObject asks this
-// first. ChildLab_PlaneLoc and ChildLab_Pnt are a file-local anonymous enum in XCAFDoc_Datum.cxx,
-// invisible from the header, hence the literal tags. The condition is the array attribute and never
-// the child label: SetObject opens every child from ChildLab_Begin to ChildLab_End and only forgets
-// their attributes, so all nineteen exist on any datum it wrote and a child-existence test would
-// refuse every datum.
-static bool occtDatumLabelIsReadable(const TDF_Label& datumLabel)
-{
-  if (datumLabel.IsNull())
-    return false;
-
-  const int                  datumChildPlaneLoc = 14;
-  const int                  datumChildPnt      = 17;
-  const TDF_Label            pntLabel           = datumLabel.FindChild(datumChildPnt, false);
-  Handle(TDataStd_RealArray) pnt;
-  if (pntLabel.IsNull() || !pntLabel.FindAttribute(TDataStd_RealArray::GetID(), pnt)
-      || pnt->Length() != 3)
-    return true;
-
-  // Only ChildLab_PlaneLoc, matching the kernel's own && chain, which assigns aLoc from this
-  // attribute before it goes on to test ChildLab_PlaneN and ChildLab_PlaneRef. The index test is
-  // the rest of the same read: the kernel spells it aLoc->Value(aPnt->Lower()), so the plane array
-  // existing is not enough, it has to hold that one index. Nothing OCCT writes uses a lower bound
-  // other than 1, but the arrays are caller data and this is the read being guarded.
-  const TDF_Label            planeLocLabel = datumLabel.FindChild(datumChildPlaneLoc, false);
-  Handle(TDataStd_RealArray) planeLoc;
-  if (planeLocLabel.IsNull() || !planeLocLabel.FindAttribute(TDataStd_RealArray::GetID(), planeLoc))
-    return false;
-  return pnt->Lower() >= planeLoc->Lower() && pnt->Lower() <= planeLoc->Upper();
-}
-
-// The same refusal for the OTHER GD&T table. occtDocumentDatumObjectAt reads the tool this bridge
-// attaches to Main() itself, while XCAFDimTolObjects_Tool and XCAFDoc_Editor::RescaleGeometry both
-// go through XCAFDoc_DocumentTool::DimTolTool, which is the table every importer writes, and both
-// call GetObject on every datum they find with nothing between them and the crash. CheckDimTolTool
-// rather than DimTolTool, so asking the question never creates the table (#1030).
-//
-// Each caller gets the set ITS OWN walk reaches, not the union. Refusing on a datum the caller
-// would never have touched is a wrong answer where there was no crash, and both of these report
-// failure as an ordinary value (0, false) that a caller cannot tell from a real one.
-static bool occtDocumentToolDimTolTool(const TDF_Label& access, Handle(XCAFDoc_DimTolTool)& outTool)
-{
-  if (access.IsNull() || !XCAFDoc_DocumentTool::CheckDimTolTool(access))
-    return false;
-  outTool = XCAFDoc_DocumentTool::DimTolTool(access);
-  return !outTool.IsNull();
-}
-
-// A label carrying no XCAFDoc_Datum attribute is skipped by both kernel walks before they reach
-// GetObject (XCAFDimTolObjects_Tool.cxx:83, XCAFDoc_Editor.cxx:1014), so it is skipped here too:
-// refusing on one would be the same over-refusal the tolerance scoping above exists to avoid.
-static bool occtDatumSequenceIsReadable(const TDF_LabelSequence& datums)
-{
-  for (int i = 1; i <= datums.Length(); ++i)
-  {
-    Handle(XCAFDoc_Datum) datum;
-    if (!datums.Value(i).FindAttribute(XCAFDoc_Datum::GetID(), datum))
-      continue;
-    if (!occtDatumLabelIsReadable(datums.Value(i)))
-      return false;
-  }
-  return true;
-}
-
-// XCAFDoc_Editor::RescaleGeometry walks GetDatumLabels, so every datum in the table is reached.
-static bool occtDocumentToolDatumsAreReadable(const TDF_Label& access)
-{
-  Handle(XCAFDoc_DimTolTool) dimTolTool;
-  if (!occtDocumentToolDimTolTool(access, dimTolTool))
-    return true;
-  TDF_LabelSequence datums;
-  dimTolTool->GetDatumLabels(datums);
-  return occtDatumSequenceIsReadable(datums);
-}
-
-// XCAFDimTolObjects_Tool::GetGeomTolerances reaches a datum only through the tolerance it is
-// attached to, so this mirrors that walk rather than the whole table: a stray unreadable datum
-// linked to no tolerance is never read there, and refusing on it would report zero tolerances for
-// a document that has them.
-static bool occtDocumentToolToleranceDatumsAreReadable(const TDF_Label& access)
-{
-  Handle(XCAFDoc_DimTolTool) dimTolTool;
-  if (!occtDocumentToolDimTolTool(access, dimTolTool))
-    return true;
-  for (TDF_ChildIterator it(dimTolTool->Label()); it.More(); it.Next())
-  {
-    Handle(XCAFDoc_GeomTolerance) tolerance;
-    if (!it.Value().FindAttribute(XCAFDoc_GeomTolerance::GetID(), tolerance))
-      continue;
-    TDF_LabelSequence datums;
-    if (!dimTolTool->GetDatumOfTolerLabels(tolerance->Label(), datums))
-      continue;
-    if (!occtDatumSequenceIsReadable(datums))
-      return false;
-  }
-  return true;
 }
 
 // The datum counterpart of occtDocumentDimensionObjectAt, for the same reason (#1004).
@@ -392,7 +275,6 @@ static bool occtDocumentDatumObjectAt(OCCTDocumentRef                        doc
     datumIndex,
     [](OCCTDocumentRef d) { return XCAFDoc_DocumentTool::DimTolTool(d->doc->Main()); },
     [](Handle(XCAFDoc_DimTolTool) t, TDF_LabelSequence& l) { t->GetDatumLabels(l); },
-    occtDatumLabelIsReadable,
     outAttr,
     outObj);
 }
@@ -491,6 +373,7 @@ static int32_t occtDocumentCreateDimensionImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -537,6 +420,7 @@ static int32_t occtDocumentNamingTraceImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -704,6 +588,7 @@ static int32_t occtDocumentFormatsImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -749,6 +634,7 @@ bool OCCTDocumentIsSubShape(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -766,6 +652,7 @@ bool OCCTDocumentEditorExpand(OCCTDocumentRef doc, int64_t labelId, bool recursi
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -782,15 +669,11 @@ bool OCCTDocumentEditorRescaleGeometry(OCCTDocumentRef doc,
     TDF_Label label = doc->getLabel(labelId);
     if (label.IsNull())
       return false;
-    // RescaleGeometry walks the document tool's datum labels and calls GetObject on each. That
-    // loop runs AFTER every shape is scaled and the assemblies updated, so one unreadable datum
-    // used to take the process down with the document already half rewritten (#1030).
-    if (!occtDocumentToolDatumsAreReadable(label))
-      return false;
     return XCAFDoc_Editor::RescaleGeometry(label, scaleFactor, forceIfNotRoot);
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -813,6 +696,7 @@ bool OCCTDocumentSetLocation(OCCTDocumentRef ref, int64_t labelId, double tx, do
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -843,6 +727,7 @@ bool OCCTDocumentGetLocationTranslation(OCCTDocumentRef ref,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -862,6 +747,7 @@ bool OCCTDocumentHasLocation(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -881,6 +767,7 @@ bool OCCTDocumentSetShapeMapTool(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -903,6 +790,7 @@ bool OCCTDocumentShapeMapToolSetShape(OCCTDocumentRef ref, int64_t labelId, OCCT
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -924,6 +812,7 @@ bool OCCTDocumentShapeMapToolIsSubShape(OCCTDocumentRef ref, int64_t labelId, OC
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -945,6 +834,7 @@ int32_t OCCTDocumentShapeMapToolExtent(OCCTDocumentRef ref, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -959,6 +849,7 @@ bool OCCTAssemblyItemIdIsValid(const char* str)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -973,6 +864,7 @@ int32_t OCCTAssemblyItemIdPathCount(const char* str)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -989,6 +881,7 @@ bool OCCTAssemblyItemIdIsEqual(const char* str1, const char* str2)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1041,6 +934,7 @@ int32_t OCCTDocumentAssemblyItemCount(OCCTDocumentRef doc, int32_t maxDepth, boo
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1061,6 +955,7 @@ bool OCCTDocumentSetAssemblyItemRef(OCCTDocumentRef doc, int64_t labelId, const 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1080,6 +975,7 @@ const char* OCCTDocumentGetAssemblyItemRef(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1099,6 +995,7 @@ bool OCCTDocumentAssemblyItemRefSetSubshape(OCCTDocumentRef doc, int64_t labelId
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1119,6 +1016,7 @@ int32_t OCCTDocumentAssemblyItemRefGetSubshape(OCCTDocumentRef doc, int64_t labe
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -1137,6 +1035,7 @@ bool OCCTDocumentAssemblyItemRefHasExtra(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1156,6 +1055,7 @@ bool OCCTDocumentAssemblyItemRefClearExtra(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1174,6 +1074,7 @@ bool OCCTDocumentAssemblyItemRefIsOrphan(OCCTDocumentRef doc, int64_t labelId)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -1196,6 +1097,7 @@ int32_t OCCTDocumentExplorerCount(OCCTDocumentRef docRef)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1232,6 +1134,7 @@ OCCTShapeRef OCCTDocumentExplorerShape(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1258,6 +1161,7 @@ char* OCCTDocumentExplorerPathId(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -1284,6 +1188,7 @@ int32_t OCCTDocumentExplorerDepth(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -1318,6 +1223,7 @@ bool OCCTDocumentExplorerIsAssembly(OCCTDocumentRef docRef, int32_t index)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -1370,5 +1276,6 @@ void OCCTDocumentExplorerLocation(OCCTDocumentRef docRef, int32_t index, double*
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }

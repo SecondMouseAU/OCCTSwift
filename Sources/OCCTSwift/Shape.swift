@@ -1859,7 +1859,7 @@ public final class Shape: @unchecked Sendable {
     /// ```swift
     /// let rect = Wire.rectangle(width: 10, height: 5)!
     /// let face = Shape.face(from: rect)!
-    /// let box = face.extruded(direction: [0, 0, 1], length: 3)
+    /// let box = face.extruded(by: [0, 0, 3])
     /// ```
     public static func face(from wire: Wire, planar: Bool = true) -> Shape? {
         guard let handle = OCCTShapeCreateFaceFromWire(wire.handle, planar) else {
@@ -1890,8 +1890,8 @@ public final class Shape: @unchecked Sendable {
     ///
     /// ```swift
     /// let outer = Wire.rectangle(width: 20, height: 20)!
-    /// let hole1 = Wire.circle(radius: 3)!.translated(x: -5, y: 0, z: 0)
-    /// let hole2 = Wire.circle(radius: 3)!.translated(x: 5, y: 0, z: 0)
+    /// let hole1 = Wire.circle(origin: SIMD3(-5, 0, 0), radius: 3)!
+    /// let hole2 = Wire.circle(origin: SIMD3(5, 0, 0), radius: 3)!
     /// let face = Shape.face(outer: outer, holes: [hole1, hole2])!
     /// ```
     public static func face(outer: Wire, holes: [Wire]) -> Shape? {
@@ -2024,7 +2024,7 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let box = Shape.box(width: 50, height: 50, depth: 10)
+    /// let box = Shape.box(width: 50, height: 50, depth: 10)!
     /// let bossProfile = Wire.circle(radius: 5)!.offset3D(distance: 25, direction: SIMD3(0, 0, 1))!
     /// let withBoss = box.withPrism(profile: bossProfile, direction: SIMD3(0, 0, 1), height: 5, fuse: true)
     /// ```
@@ -2107,7 +2107,7 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let plate = Shape.box(width: 50, height: 50, depth: 10)
+    /// let plate = Shape.box(width: 50, height: 50, depth: 10)!
     /// // Through-hole down the Z axis:
     /// let drilled = plate.drilled(at: SIMD3(25, 25, 10), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
     ///
@@ -2138,9 +2138,9 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let box = Shape.box(width: 20, height: 20, depth: 20)
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
     /// let cuttingPlane = Shape.face(from: Wire.rectangle(width: 40, height: 40)!)!
-    /// let halves = box.split(by: cuttingPlane.translated(by: SIMD3(0, 0, 10)))
+    /// let halves = box.split(by: cuttingPlane.translated(by: SIMD3(0, 0, 10))!)
     /// ```
     public func split(by tool: Shape) -> [Shape]? {
         var count: Int32 = 0
@@ -2174,7 +2174,7 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let cube = Shape.box(width: 20, height: 20, depth: 20)
+    /// let cube = Shape.box(width: 20, height: 20, depth: 20)!
     /// // Split horizontally at Z=10
     /// let halves = cube.split(atPlane: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
     /// ```
@@ -2280,7 +2280,7 @@ public final class Shape: @unchecked Sendable {
     /// ## Example
     ///
     /// ```swift
-    /// let hole = Shape.cylinder(radius: 3, height: 10)
+    /// let hole = Shape.cylinder(radius: 3, height: 10)!
     /// let rowOfHoles = hole.linearPattern(direction: SIMD3(20, 0, 0), spacing: 20, count: 5)
     /// ```
     public func linearPattern(direction: SIMD3<Double>, spacing: Double, count: Int) -> Shape? {

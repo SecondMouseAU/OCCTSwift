@@ -1432,6 +1432,27 @@ extension Shape {
     /// Generate a point cloud from this shape by density (points per unit area).
     ///
     /// The shape must be meshed first.
+    ///
+    /// Pass `0.0` (or any value below `Precision::Confusion()`) to ask for auto-density, where the
+    /// density is derived from the shape's own smallest usable face area.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// _ = box.mesh(linearDeflection: 0.1)
+    /// if let cloud = box.pointCloudByDensity(0.0) {
+    ///     print(cloud.points.count)
+    /// }
+    /// ```
+    ///
+    /// - Parameter density: Points per unit area, or `0.0` for auto-density.
+    /// - Returns: The cloud, or `nil` if the shape has no usable face area to derive a density
+    ///   from, or if generation produced no points.
+    ///
+    /// - Note: Auto-density is resolved on the bridge side rather than in the kernel (#1452).
+    ///   `BRepLib_PointCloudShape::NbPointsByDensity` validates its auto-computed density and then
+    ///   divides by the caller's original argument instead, so passing `0.0` straight through
+    ///   divides by zero and asks for `INT_MAX` points per face, which does not return. The bridge
+    ///   runs the same computation and hands the kernel an explicit positive density.
     public func pointCloudByDensity(_ density: Double) -> PointCloudResult? {
         var outPoints: UnsafeMutablePointer<Double>?
         var outNormals: UnsafeMutablePointer<Double>?
@@ -3400,7 +3421,10 @@ extension Shape {
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let faces = box.faces(), edges = box.edges()
-    /// Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
+    /// Shape.continuityClassOfFaces(
+    ///     edge: Shape.fromEdge(edges[0])!,
+    ///     face1: Shape.fromFace(faces[0])!,
+    ///     face2: Shape.fromFace(faces[1])!)  // .c0
     /// ```
     ///
     /// - Returns: The measured class, or nil if the arguments are not an edge and two faces that

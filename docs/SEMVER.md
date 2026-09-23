@@ -47,7 +47,227 @@ A major bump is reserved for two events, either of which alone is sufficient:
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
-immediately below.
+below. v4.0.0 is a third Rule 2 major, on fifteen breaks across 196 merged pull requests,
+and is in pre-release as `v4.0.0-beta.3`.
+
+#### v4.0.0
+
+**A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
+`V8_0_1`, rebuilt as `v4.0.0-kernel.1` to carry all twenty-nine patches where the v3.0.0 asset
+carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own. What
+forces the major is Rule 2, carried by **fifteen** breaking changes across 196 merged pull requests.
+
+Many of the fifteen share one shape, and it is worth naming because it explains the release:
+**a function that could not fail, and did, gains the ability to say so.**
+`SAWireAnalysis.checkOuterBound` returns `Bool?` where it returned `Bool`, because a refused check
+and a clean verdict were the same answer. `BoundSortBox.compare` returned indices that were off by
+one against its own documented contract. `featFuse` and `featCut` silently returned the wrong shape
+for every call ever made, and `dividedByNumber` always returned `nil`. None of these had a correct
+behaviour to preserve, which is why several have no migration beyond reading the new answer.
+
+**Two of the fifteen were not declared by the PR that made them**, and were re-derived from the
+diff while assembling this section, which is the failure mode
+[`semver-at-release.md`](../okf/policies/semver-at-release.md) names and accepts. They are marked
+below. One of them, `PaperSize`, had also gone undetected in the documentation for months; the gate
+that now catches that class is #2145.
+
+**And one declared MAJOR is not in this list, because the change never landed.** #1138's body says
+"Consumers calling any of the 14 `SAWireAnalysis` check functions must now handle the optional
+return". Its merged diff is nine lines of comment in `OCCTBridge_Healing.mm` plus a census document,
+it touches no header and no Swift file, and `checkOrder` and its thirteen siblings return plain
+`Bool` today exactly as they did before. Only `checkOuterBound` returns `Bool?`, from #1096.
+
+Checking the claim against the diff is the reviewer's job under that policy and it did not happen
+here, so the release assembly is where it surfaced. Every other MAJOR in this section was then
+verified against the current source rather than taken from its PR body: fourteen of fifteen held,
+and this was the one that did not. Documenting it would have told consumers to change working
+code.
+
+Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
+#1551), the data-exchange thread-safety series (#1403), and the gate work. Read the entries in
+[`CHANGELOG.md`](CHANGELOG.md) marked "Internal only" as exactly that.
+
+##### Every break, and what a caller does
+
+| Break | Kind | Detail |
+|---|---|---|
+| `SAWireAnalysis.checkOuterBound(wire:face:)` returns `Bool?` | compile error | [#1096](#v400-a-refused-check-is-no-longer-a-clean-verdict-1096) |
+| `Edge.adjacentFaces(in:)` returns `[Face]?`, was `(Face, Face?)?` | compile error | [#1116](#v400-edgeadjacentfacesin-returns-every-adjacent-face-1116) **undeclared** |
+| `PaperSize` cases renamed `.A0`...`.A4` to `.a0`...`.a4` | compile error | [#1103](#v400-papersize-cases-are-lowercased-1103) **undeclared** |
+| `WireOrder.Status` drops `.closed`/`.open`/`.gaps`, adds four | compile error | [#1607](#v400-wireorderstatus-reports-what-the-kernel-actually-returns-1607) |
+| `AssemblyGraph.NodeType` case names and raw values change | compile error, and wrong data if raw values were stored | [#1604](#v400-two-enums-raw-values-now-match-the-occt-enum-they-mirror-1604-1605) |
+| `ViewObject.ProjectionType` raw values change meaning | wrong data if raw values were stored | [#1605](#v400-two-enums-raw-values-now-match-the-occt-enum-they-mirror-1604-1605) |
+| `Surface.extremaSSPoint(other:index:)` returns a new type | compile error | [#1530](#v400-extremasspoint-stops-discarding-the-v-parameter-1530) |
+| `bsplineMovePointAndTangent(...poleRange:)` retyped on `Curve2D` and `Curve3D` | compile error | [#1561](#v400-bsplinemovepointandtangents-polerange-was-mislabelled-1561) |
+| `Shape.fixSmallCurves(tolerance:)` and `.fixSmallBezierCurves(tolerance:)` removed | compile error | [#1526](#v400-two-no-op-entry-points-are-removed-1526) |
+| `EdgeCurve` and `WireCurve` lose `@unchecked Sendable` | compile error across a concurrency boundary | [#1406](#v400-edgecurve-and-wirecurve-lose-unchecked-sendable-1406) |
+| `OCCTDatumInfo.name` removed from the C header | compile error, C consumers only | [#1084](#v400-the-datum-names-length-is-answerable-1084) |
+| GD&T tables move to the `0:1:4` document label | data written by an older version is unreadable | [#1112](#v400-gdt-tables-move-to-the-document-tool-label-1112) |
+| `Shape.featFuse(with:)` and `.featCut(with:)` return real geometry | different result, no signature change | [#1467](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+| `BoundSortBox.compare(...)` returns 0-based indices | different result, no signature change | [#1471](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+| `Shape.dividedByNumber(_:)` divides, where it always returned `nil` | different result, no signature change | [#1526](#v400-four-functions-stop-returning-a-wrong-answer-1467-1471-1526) |
+
+##### v4.0.0: a refused check is no longer a clean verdict (#1096)
+
+`SAWireAnalysis.checkOuterBound(wire:face:)` returned `Bool`, and returned `false` both when the
+wire was clean and when the check could not be evaluated at all. Those are different answers and a
+caller could not tell them apart. It now returns `Bool?`, where `nil` means refused.
+
+The other fourteen `SAWireAnalysis` checks still return plain `Bool` and are unaffected, despite
+what #1138's body claims. See the note above.
+
+**Migration.** `if check(...)` no longer compiles. Decide what the call should do for `nil`, which
+is new information rather than a renamed old answer:
+
+```swift
+// before
+if SAWireAnalysis.checkOuterBound(wire: w, face: f) { … }
+
+// after, handling refusal explicitly
+switch SAWireAnalysis.checkOuterBound(wire: w, face: f) {
+case true?:  // a problem was found
+case false?: // no problem
+case nil:    // the check could not be evaluated
+}
+
+// after, reproducing the old conflation deliberately rather than by accident
+if SAWireAnalysis.checkOuterBound(wire: w, face: f) ?? false { … }
+```
+
+##### v4.0.0: `Edge.adjacentFaces(in:)` returns every adjacent face (#1116)
+
+**Undeclared by its PR and re-derived from the diff.** The return type changes from
+`(Face, Face?)?` to `[Face]?`. The tuple could express at most two faces, and an edge in a
+non-manifold shape has more.
+
+**Migration.** Destructuring stops compiling; index or iterate instead.
+
+```swift
+// before
+if let (a, b) = edge.adjacentFaces(in: shape) { … }
+
+// after
+if let faces = edge.adjacentFaces(in: shape) {
+    let a = faces.first
+    let b = faces.count > 1 ? faces[1] : nil
+}
+```
+
+##### v4.0.0: `PaperSize` cases are lowercased (#1103)
+
+**Undeclared by its PR and re-derived from the diff.** `PaperSize.A0` through `.A4` are renamed
+`.a0` through `.a4`, matching Swift's lower-camel convention for enum cases.
+
+This one is worth reading as a process finding as well as a break. The rename landed inside a merge
+PR with no `## SemVer impact` statement, and `docs/reference/Drawing.md` went on restating the old
+spelling for months, which seeded seven wrong examples. Nothing caught either half until #2145 added
+a gate comparing a restated enum's case list against its declaration.
+
+**Migration.** Lowercase the case name. The raw values are unchanged, so persisted data is not
+affected.
+
+##### v4.0.0: `WireOrder.Status` reports what the kernel actually returns (#1607)
+
+`.closed`, `.open` and `.gaps` are removed; `.unchanged`, `.reordered`, `.reversed` and `.shifted`
+are added. The old cases were a misreading of `ShapeAnalysis_WireOrder`'s status codes, so an
+exhaustive `switch` was switching on meanings the kernel never had.
+
+**Migration.** An exhaustive `switch` over `WireOrder.Status` stops compiling. There is no mapping
+from the old cases, because they did not correspond to real states.
+
+##### v4.0.0: two enums' raw values now match the OCCT enum they mirror (#1604, #1605)
+
+`AssemblyGraph.NodeType` changes both case names and raw values. `ViewObject.ProjectionType`
+changes raw values only. Both previously disagreed with the OCCT enum they mirror.
+
+**This is the one break in this release that can corrupt data rather than fail a build.** A raw
+value persisted by an earlier version, or exchanged with another tool, means something different
+now. A caller that only passes the enum around is unaffected.
+
+**Migration.** Re-read any stored raw values through the current API rather than trusting the
+number. For `NodeType`, update case names at the call site.
+
+##### v4.0.0: `extremaSSPoint` stops discarding the V parameter (#1530)
+
+`Surface.extremaSSPoint(other:index:)` returned `Curve3D.ExtremaPointPair`, which carries one
+parameter per point. A point on a surface needs two, so the V parameter was being dropped. It now
+returns `Surface.ExtremaSurfacePointPair`.
+
+**Migration.** `.param1` becomes `.u1`, `.param2` becomes `.u2`, and `.v1` and `.v2` are now
+available. An explicit type annotation of `Curve3D.ExtremaPointPair` must change.
+
+##### v4.0.0: `bsplineMovePointAndTangent`'s `poleRange` was mislabelled (#1561)
+
+On both `Curve2D` and `Curve3D`, `poleRange:` is replaced by `startingCondition: Int,
+endingCondition: Int`. The two values were never a pole range: they are OCCT's independent
+condition codes, and the label was wrong rather than merely unclear.
+
+**Migration.** Same two values, same positions, corrected labels:
+
+```swift
+// before
+curve.bsplineMovePointAndTangent(…, poleRange: a...b)
+
+// after
+curve.bsplineMovePointAndTangent(…, startingCondition: a, endingCondition: b)
+```
+
+##### v4.0.0: two no-op entry points are removed (#1526)
+
+`Shape.fixSmallCurves(tolerance:)` and `Shape.fixSmallBezierCurves(tolerance:)` are removed. Both
+were confirmed no-ops, so there is no correct behaviour to lose.
+
+**Migration.** Use `Shape.fixSmallEdges(tolerance:dropSmall:limitAngle:)`.
+
+##### v4.0.0: `EdgeCurve` and `WireCurve` lose `@unchecked Sendable` (#1406)
+
+The claim was audited against what the types actually hold and did not survive. Removing it is
+source-breaking for any consumer capturing either type across a concurrency boundary: a `Task {}`,
+an `async` call, or storage in another `Sendable` type.
+
+**Migration.** There is none beyond the pattern that was already correct: construct one instance per
+thread or task, or serialise access with `OCCTSerial.withLock { }`. Code that compiled before was
+relying on an unchecked claim, not a checked guarantee.
+
+##### v4.0.0: the datum name's length is answerable (#1084)
+
+C consumers only; no public Swift signature moves. The `name` field is removed from
+`OCCTDatumInfo`, because a fixed buffer cannot report that it truncated.
+
+**Migration.** `OCCTDocumentGetDatumName(doc, index, buffer, sizeof(buffer))` returns the length of
+the whole identifier, so `>= sizeof(buffer)` means the copy is a prefix and is also the size to
+allocate for a second call. `NULL` with `0` asks for the length alone.
+
+Two behaviours change for a Swift consumer, both a wrong answer becoming a correct one. `Datum.name`
+returns identifiers longer than 63 characters whole, so code that adapted to the truncation sees
+longer strings. `createDimension(...)` returns `nil` for a tolerance pair the document will not
+store, where it used to return an index, so a caller that force-unwrapped it now traps instead of
+proceeding with a dimension whose tolerance was silently dropped.
+
+##### v4.0.0: GD&T tables move to the document tool label (#1112)
+
+Datums, dimensions and tolerances move from the `0:1` label to `0:1:4`. **Datums in an OCAF document
+written by an earlier version of this package become unreadable by the new write path.** The read
+path searches both labels, so existing documents stay readable, but anything written now is on the
+new label only.
+
+**Migration.** Re-save affected documents with this version to move their datums onto the new label.
+
+##### v4.0.0: four functions stop returning a wrong answer (#1467, #1471, #1526)
+
+No signature changes, so nothing stops compiling. Each returns a different value than it did:
+
+- `Shape.featFuse(with:)` and `.featCut(with:)` never called `BRepFeat_Builder::Perform()`, so every
+  call in the library's history silently returned an empty result or the unchanged input. They now
+  return the real union and difference.
+- `BoundSortBox.compare(...)` returned OCCT's native 1-based indices against a documented 0-based
+  contract, which was off by one everywhere and out of bounds for the highest-indexed box. It could
+  also truncate silently past 1000 hits. **A caller working around the off-by-one must remove the
+  workaround.**
+- `Shape.dividedByNumber(_:)` always returned `nil` and now divides.
+
+These are listed as breaks because a caller's output changes, not because their code stops
+compiling. There was no correct behaviour to depend on in any of the four.
 
 #### v3.0.0
 

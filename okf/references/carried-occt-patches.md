@@ -52,6 +52,13 @@ without silently closing it, see
 | `0030-TopoDS_TShape-myState-atomic-1154` | `TopoDS_TShape::myState` mutated by non-atomic read-modify-write on a TShape shared between a boolean result and its inputs, a lost-update race in ordinary concurrent use ([#1154](https://github.com/SecondMouseAU/OCCTSwift/issues/1154)) | not yet filed | bundled OCCT includes the fix; also trim the `Scripts/tsan.supp` lines that suppress it |
 | `0031-bspline-adaptor-cache-thread-safety-1153` | `BSplCLib_Cache`/`BSplSLib_Cache` unsynchronised span cache, plus `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s check-then-act on the cache handle; a first attempt (PR #1322) self-deadlocked and was rejected ([#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)) | not yet filed; if [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076) ever merges, retarget at its renamed classes rather than dropping | bundled OCCT includes the fix |
 | `0033-Interface_Static-thread-safety-mutex-1157` | `Interface_Static`'s shared STEP/IGES parameter table mutated concurrently; a recursive mutex over all seventeen entry points. Partial by design: no accessor lock stops two operations setting the same parameter from cross-talking, so the bridge's `igesMutex()` stays ([#1157](https://github.com/SecondMouseAU/OCCTSwift/issues/1157)) | not yet filed | bundled OCCT includes the fix |
+| `0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515` | `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]`/`bound[2]` are the U-direction sides. For any boundary set with straight V-direction sides the surface is independent of `U` and collapses onto the `U == V` diagonal; only `U == V` samples were right. Two lines, coefficients untouched, and `D1U` is exactly its derivative ([#1515](https://github.com/SecondMouseAU/OCCTSwift/issues/1515)) | not yet filed | bundled OCCT includes the fix |
+| `0036-IFSelect_WorkSession-per-instance-error-guard-1403` | `IFSelect_WorkSession`'s file-scope `errhand` is a recursion sentinel, not a value: one thread clearing it makes another take the **unguarded** path and lose its exception handling. Relocated to a per-instance `myInErrorHandler`, no lock, the #363 pattern. 6 race access sites to 0, measured ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
+| `0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061` | `STEPControl_ActorRead`'s `NM_DETECTED` is an anonymous-namespace global holding per-operation state: it gates whether a `COMPOUND` component is flattened into its parent or kept nested, so concurrent STEP reads share it. Relocated to a per-instance `myIsNMDetected`, no lock, no signature change, the #363 pattern. 5-of-5 runs report the race unpatched, 0-of-5 patched. The wrong-shape outcome follows by inspection but was NOT reproduced ([#2061](https://github.com/SecondMouseAU/OCCTSwift/issues/2061)) | to file | bundled OCCT includes the fix |
+| `0038-Interface_CheckTool-errh-per-instance-1403` | `Interface_CheckTool`'s file-scope `errh` decides whether `FillCheck` guards each module `CheckCase` call. The six bulk list builders clear it and never restore it, so any bulk list operation leaves error handling off process-wide and a later direct `FillCheck` runs unguarded, losing a `Standard_Failure` that should have been reported as a check fail. Reachable single-threaded, not only a race. Relocated to a private member, no signature change. 7 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **[OCCT#1555](https://github.com/Open-Cascade-SAS/OCCT/pull/1555)** (our fix PR) | bundled OCCT includes the fix |
+| `0039-Interface_FileReaderData-per-instance-param-cache-1403` | `Param()`/`ChangeParam()` memoised the last record and its base offset in file-scope statics, gated by a global counter so only the newest instance could use the memo. `mutable` answers the declaration's own blocker ("Fields not possible, because Param is const") and also makes the optimisation apply at all, since any second construction disabled it for every earlier instance. `InitParams()` now invalidates the memo, which the original never needed to. 4 race reports to 0 ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **held from upstream, not filed**: no test can demonstrate it, see the patch README | bundled OCCT includes the fix |
+| `0040-controller-one-time-init-thread-safe-1403` | Three unguarded check-then-act one-time-init flags: both `STEPControl_Controller::Init()` and `IGESControl_Controller::Init()`, plus the IGES constructor. Only STEP's *constructor* had a mutex, so this was three sites rather than the one asymmetry #1403's re-scope claimed. All become function-local statics, removing the check-then-act instead of locking it. Guarding the outermost init also serialises the whole chain beneath it, which is why six further one-time-init globals stopped being reported ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
+| `0041-DE-registry-maps-synchronised-1403` | `listad` (`XSControl_Controller.cxx:59`) and `atemp` (`Interface_InterfaceModel.cxx:44`), two process-wide name-keyed registries mutated without synchronisation. A lock is correct here rather than relocation, because one registry per process is the design. Recursive is required: `Template()` calls `HasTemplate()` before reading the map. `astats` excluded, already covered by `0033` ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | to file | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -69,21 +76,59 @@ See `Scripts/patches/README.md`'s retired `0032` entry, and
 [Upstream OCCT patch process](../policies/upstream-occt-patch-process.md) for the "check upstream's
 recent activity first" step this prompted.
 
+**Retired 2026-09-20, one day after it landed: `0035`** (`STEPControl_Writer` per-transfer init,
+#1403). It reintroduced [#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280): the call it
+removed is not only an initialiser but the *repair* that re-sets `DirectFaces` on a shared actor an
+XDE STEP read has left with empty `OperationsFlags`, which is #280's exact mechanism. Its writeup
+argued the call was inert because both guards are false "in the default path"; that path was the
+only one considered. `STEPWriterCAFCorruptionTests` caught it in `kernel-integration.yml`, the one
+job that builds an unpinned patch. The general lesson is in `Scripts/patches/README.md`'s retired
+`0035` entry: a byte-identical hunk is not a safe backport when the rest of its upstream change is
+what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
+
 ## Pinned against carried
 
-`Scripts/patches/` holds twenty-two patches; the v3.0.0 release asset `Package.swift` pins holds
-seventeen. The five it lacks, and why each matters, per
-[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+`Scripts/patches/` holds twenty-nine patches; the v4.0.0-kernel.1 asset `Package.swift` pins holds
+twenty-nine. The zero it lacks, and why each matters, per
+[Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): **there are none.**
 
-| Patch | Exposure today |
+That is new as of 2026-09-22 and it is what the rebuild was for. Twelve patches (`0028`-`0031`,
+`0033`, `0034`, `0036`-`0041`) had been on disk and in no CI job, because `build-and-test` resolves
+the pinned asset rather than building from source. Four of the twelve were live consumer exposure
+rather than bookkeeping, and all four now ship:
+
+| Patch | What shipping it closed |
 |---|---|
-| `0028` (#1018) | Nothing observable here: `OCCTGeomPlateErrors`, its only bridge reader, was deleted by #999. The upstream GTests are its only coverage anywhere. |
-| `0029` (#1022) | Uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. Bridge guard #1030 refuses that shape until a repin, then must be retired. |
-| `0030` (#1154) | Live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result; invisible to `swift test`, suppressed in `Scripts/tsan.supp` until a repin. |
-| `0031` (#1153) | Same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression exists, so nothing to retire. |
-| `0033` (#1157) | Memory-safety hole in `Interface_Static`, reachable by every STEP/IGES read or write, masked in practice by the bridge's `igesMutex()`. A repin buys defence in depth for callers outside that mutex. |
+| `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is retired**, in all six files that carried it, since it was refusing a shape the kernel can read. |
+| `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
+| `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. |
+| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift`. |
 
-`kernel-integration.yml` built each of these once, on the PR that added it. No later job has.
+The other eight (`0028`, `0033`, `0036`-`0041`) were either unreachable from the bridge (`0028`'s
+only reader was deleted by #999) or masked by the bridge's own `igesMutex()`, which serialises the
+whole data-exchange surface. Shipping them buys defence in depth for any caller outside that mutex,
+and is what makes narrowing the mutex thinkable later. `0036`-`0041` are the #1403 series: named
+racing globals **16 to 0**, TSan reports **178 to 37**.
+
+**The three bridge-side mitigations `CLAUDE.md` listed as "retire when the kernel is repinned" are
+retired**, each with a regression test that fails if it comes back:
+
+- the `Scripts/tsan.supp` suppressions for `TopoDS_TShape::myState` (`0030`), removed in the repin
+  itself because `check-inventory-prose.py` fails the moment a cited patch becomes pinned (#1409);
+- the datum lookup guard in `occtDocumentDatumObjectAt` (#1030), which was refusing a datum `0029`
+  makes readable. It was duplicated across six bridge files, and retiring it also removed the
+  `ReadableCheck` template parameter, since every remaining predicate was already always-true;
+- the bridge-side arc-length subdivision in `occtArcConvergedLength` (#603), redundant against
+  `0021`. Retired on measurement: the loop was instrumented to report any convergence past `n=2`
+  or any exhaustion and the full suite run, **6,384 tests and zero reports**.
+
+`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` kept its name and fixtures and flipped
+its assertions, which is the only way a guard's retirement can be regression tested: a test that
+merely stops existing proves nothing.
+
+`kernel-integration.yml` builds these, and nothing else does: it is the only job that compiles an
+unpinned patch, and `build-and-test` resolves the pinned asset instead. It runs on the PR that adds
+a patch and on `main` afterwards, which is how `0035` was caught one day after it merged.
 
 This table stopped at `0021` for six patches, and `0028` is what caught it. It is one of **five**
 in-repo statements of the same set, and they do not all answer the same question, which is why

@@ -291,6 +291,7 @@ static OCCTShapeRef occtImportSTLImpl(const char* path, double sewingTolerance, 
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -343,6 +344,7 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -394,6 +396,7 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -462,6 +465,7 @@ const char* osdPathComponent(const char* path, OSDPathComponent which)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -518,6 +522,7 @@ double OCCTUnitsAnyToAny(double value, const char* fromUnit, const char* toUnit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -530,6 +535,7 @@ double OCCTUnitsAnyToSI(double value, const char* unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -542,6 +548,7 @@ double OCCTUnitsAnyFromSI(double value, const char* unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -554,6 +561,7 @@ double OCCTUnitsAnyToLS(double value, const char* unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -566,6 +574,7 @@ double OCCTUnitsAnyFromLS(double value, const char* unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -578,6 +587,7 @@ void OCCTUnitsSetLocalSystem(int system)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -589,6 +599,7 @@ int OCCTUnitsGetLocalSystem()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -605,6 +616,7 @@ OCCTMessengerRef OCCTMessengerCreate()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -620,6 +632,7 @@ void OCCTMessengerRelease(OCCTMessengerRef messenger)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -632,6 +645,7 @@ int OCCTMessengerPrinterCount(OCCTMessengerRef messenger)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -646,6 +660,7 @@ void OCCTMessengerSend(OCCTMessengerRef messenger, const char* message, int grav
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -660,6 +675,7 @@ bool OCCTMessengerAddFilePrinter(OCCTMessengerRef messenger, const char* filePat
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -675,6 +691,7 @@ void OCCTMessengerRemoveAllPrinters(OCCTMessengerRef messenger)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -690,6 +707,7 @@ OCCTReportRef OCCTReportCreate()
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -705,6 +723,7 @@ void OCCTReportRelease(OCCTReportRef report)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -717,6 +736,7 @@ void OCCTReportSetLimit(OCCTReportRef report, int limit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -729,6 +749,7 @@ int OCCTReportGetLimit(OCCTReportRef report)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -742,6 +763,7 @@ void OCCTReportClear(OCCTReportRef report)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -754,6 +776,7 @@ void OCCTReportClearByGravity(OCCTReportRef report, int gravity)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }
 
@@ -771,6 +794,7 @@ const char* OCCTReportDump(OCCTReportRef report)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -789,6 +813,7 @@ const char* OCCTReportDumpByGravity(OCCTReportRef report, int gravity)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -804,6 +829,7 @@ char* OCCTMessageMsgGet(const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }
@@ -816,6 +842,7 @@ bool OCCTMessageMsgFileLoad(const char* fileName)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -841,6 +868,7 @@ bool OCCTMessageMsgFileLoadDefault(void)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -853,6 +881,7 @@ bool OCCTMessageMsgHasMsg(const char* key)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -866,6 +895,7 @@ double OCCTUnitsGetLengthFactor(int32_t unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -879,6 +909,7 @@ double OCCTUnitsGetLengthUnitScale(int32_t fromUnit, int32_t toUnit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0.0;
   }
 }
@@ -891,6 +922,7 @@ const char* _Nullable OCCTUnitsDumpLengthUnit(int32_t unit)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return nullptr;
   }
 }

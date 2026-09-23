@@ -22,21 +22,63 @@ import Foundation
 // on every build. Do NOT commit that churn: the committed Package.resolved must be the URL-pinned one
 // produced with NO local sibling present (i.e. on CI / a fresh clone). See docs/guides/sharing-the-xcframework.md.
 let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
-let useLocalBinary: Bool = {
+
+// Detect WASI platform - check multiple indicators for reliability
+// 1. Explicit flag (most reliable): OCCTSWIFT_WASI=1
+// 2. SWIFT_SDK env var (set by swift build --swift-sdk): contains "wasm" or "wasi"
+// 3. SWIFT_PLATFORM env var: may contain "wasi" in some SwiftPM versions
+// Note: Target triple inspection is not available in Package.swift context;
+// SwiftPM does not expose the target triple to the manifest.
+let isExplicitWASI = ProcessInfo.processInfo.environment["OCCTSWIFT_WASI"] == "1"
+let swiftSDK = ProcessInfo.processInfo.environment["SWIFT_SDK"]
+let swiftPlatform = ProcessInfo.processInfo.environment["SWIFT_PLATFORM"]
+let isWASI = isExplicitWASI ||
+    (swiftSDK != nil && (swiftSDK!.contains("wasm") || swiftSDK!.contains("wasi"))) ||
+    (swiftPlatform != nil && swiftPlatform!.contains("wasi"))
+
+// For WASI, we use a locally built static library (libOCCT-wasm.a), not an xcframework.
+// For native platforms, we prefer the local xcframework if present, otherwise download the remote one.
+let useLocalXCFramework: Bool = {
+    if isWASI { return false } // WASI never uses xcframework
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
     if ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1" { return true }
     return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-let occtTarget: Target = useLocalBinary
-    ? .binaryTarget(
+// OCCT V8.0.1 plus the twenty-nine carried patches are documented in Scripts/patches/README.md
+// (patch list, verification status, and CI coverage gaps for maintainers).
+let occtTarget: Target = isWASI
+    // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
+    // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
+    // The `path: "Libraries"` sets the base for headerSearchPath("occt-headers-wasm") -> Libraries/occt-headers-wasm/
+    // dummy.c is required by SwiftPM (targets must have at least one source file)
+    ? .target(
         name: "OCCT",
-        path: "Libraries/OCCT.xcframework"
+        path: "Libraries",
+        sources: ["dummy.c"], // Required by SwiftPM; file can be empty
+        cxxSettings: [
+            .headerSearchPath("occt-headers-wasm"),
+            .define("__wasi__"),
+            .define("OCCT_NO_DEPRECATED"),
+            .define("_WASI_EMULATED_PROCESS_CLOCKS"),
+            .define("_WASI_EMULATED_GETPID"),
+        ],
+        linkerSettings: [
+            .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
+            // Build directory is .build/<config>/OCCT.build/, so ../../Libraries reaches package root
+            .unsafeFlags(["-L", "../../Libraries"])
+        ]
     )
-    // OCCT V8_0_1 + the seventeen carried patches listed below.
+    : useLocalXCFramework
+        // Local xcframework for native development
+        ? .binaryTarget(
+            name: "OCCT",
+            path: "Libraries/OCCT.xcframework"
+        )
+    // OCCT V8_0_1 + the twenty-nine carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The seventeen that
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The twenty-nine that
     // survive, all present in Scripts/patches/, are:
     //
     //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -57,6 +99,23 @@ let occtTarget: Target = useLocalBinary
     //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
     //   0026  BRepOffsetAPI_ThruSections refuses an uncappable non-planar extremity        #905
     //   0027  ThruSections CreateSmoothed section-edge-count guard                         #913
+    //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
+    //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
+    //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
+    //   0031  BSplCLib_Cache/BSplSLib_Cache mutable evaluation state, unsynchronized     #1153
+    //         (watch OCCT#1076: would rename these to BSplCLib_CacheGrid/BSplSLib_CacheGrid
+    //         and keep the identical race, so retarget this patch if it merges, don't drop it)
+    //   0033  Interface_Static's shared STEP/IGES parameter table, recursive mutex       #1157
+    //         (a partial fix, deliberately: closes the memory-safety hole, does not make two
+    //         concurrent operations setting DIFFERENT values for the SAME named parameter
+    //         produce correct output; see the patch's own doc comment)
+    //   0034  GeomFill_CoonsAlgPatch::Value samples bound[0]/bound[2] at V, not U        #1515
+    //   0036  IFSelect_WorkSession's errhand recursion sentinel is per-instance          #1403
+    //   0037  STEPControl_ActorRead's NM_DETECTED non-manifold flag is per-instance      #2061
+    //   0038  Interface_CheckTool's errh error-handling sentinel is per-instance         #1403
+    //   0039  Interface_FileReaderData's Param() memo cache is per-instance              #1403
+    //   0040  STEP/IGES controller one-time-init flags are thread-safe                   #1403
+    //   0041  XSControl_Controller's listad and Interface_InterfaceModel's atemp locked  #1403
     //
     // This list said "fifteen" above a list of eleven until the release check ran, which is the
     // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -93,7 +152,7 @@ let occtTarget: Target = useLocalBinary
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v3.0.0 RELEASE asset: upstream V8_0_1 plus the seventeen patches listed above.
+    // Pinned to the v4.0.0-kernel.1 pre-release asset: upstream V8_0_1 plus the twenty-nine patches listed above.
     // Byte-identical to the v3.0.0-kernel.1 pre-release asset, which is why `checksum:` below did
     // NOT change when `url:` did; the release commit re-uploaded the same zip. Same shape v2.0.0
     // used with its own kernel.3 asset. This is NOT the same file as the v2.0.0 asset it replaces: that one carried
@@ -114,56 +173,33 @@ let occtTarget: Target = useLocalBinary
     // retired 0032 entry and CLAUDE.md's "Carrying OCCT source patches" section for the process
     // change this prompted: check upstream's own recent activity before opening a new investigation
     // in the caching/mutable-state space, not after landing a patch that turns out to duplicate
-    // work already days old. Scripts/patches/ holds TWENTY-TWO patches; the pinned asset holds the
-    // seventeen enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 22 against a list of
-    // 17, and those five are the difference:
+    // work already days old. IT WENT STALE A THIRD TIME, at 0035, and this correction is a
+    // RETRACTION rather than a bookkeeping fix: 0035 (a backport of upstream #1259's last line)
+    // landed 2026-09-19 and was RETIRED 2026-09-20 because it reintroduced #280, silently dropping
+    // a face from every STEP write that follows an XDE read. The entry removed from the list below
+    // called it "nearly inert, because the constructor pre-populates what it would write". That was
+    // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
+    // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
+    // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
+    // Scripts/patches/ holds twenty-nine patches; the pinned asset holds the twenty-nine
+    // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 29 against a list of
+    // 29, and those zero are the difference: there is none.
     //
-    //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
-    //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
-    //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
-    //   0031  BSplCLib_Cache/BSplSLib_Cache mutable evaluation state, unsynchronized      #1153
-    //         (watch OCCT#1076, open/stale since April 2026: would rename these classes to
-    //         BSplCLib_CacheGrid/BSplSLib_CacheGrid but keeps the identical race, so retarget
-    //         this patch if it ever merges, don't drop it)
-    //   0033  Interface_Static's shared STEP/IGES parameter table, recursive mutex        #1157
-    //         (a partial fix, deliberately: closes the memory-safety hole, does not make
-    //         two concurrent operations setting DIFFERENT values for the SAME named
-    //         parameter produce correct output; see the patch's own doc comment)
+    // That is new as of v4.0.0-kernel.1 and it is the point of the rebuild. Twelve patches
+    // (0028-0031, 0033, 0034, 0036-0041) had been on disk and in NO CI job, because ci.yml's
+    // build-and-test resolves this asset rather than building from source. A patch the asset
+    // lacked reached no consumer and was exercised by nothing except the kernel-integration.yml
+    // run of the PR that added it, which proves a patch applies, compiles and regresses nothing,
+    // and cannot prove the fix works.
     //
-    // What that difference means is narrower than "untested", and the narrowing is worth having.
-    // ci.yml's build-and-test resolves this asset, so it never sees any of the five. But
-    // kernel-integration.yml triggers on `Scripts/patches/**`, builds V8_0_1 plus every carried
-    // patch from source, and runs the full swift test against that binary, so the PR that ADDS a
-    // patch does get it built and the suite run against it. What that proves is that the patch
-    // applies, compiles, and regresses nothing; it cannot prove any of the five fixes works,
-    // because none has a Swift-reachable assertion (0030, 0031 and 0033 are all data races, not
-    // wrong answers, so even a Swift-level assertion wouldn't reliably catch any of the three races
-    // without TSan instrumentation the shipped xcframework doesn't carry). And it does not run on
-    // any later PR that leaves Scripts/patches/ alone, which is nearly all of them. Do not read
-    // this as "check kernel-integration.yml instead of ci.yml": that advice is what #585
-    // discredited.
+    // Three of the twelve were live consumer exposure rather than bookkeeping: 0029 an uncatchable
+    // SIGSEGV through Document.datums, 0030 and 0031 data races silent without TSan for anyone
+    // sharing a TShape or a curve adaptor across threads. 0034 was a wrong single-threaded answer
+    // reachable from Shape.coonsAlgPatch. All four now ship.
     //
-    // They differ in what a rebuild would buy. 0028 fixes nothing observable in this repo:
-    // OCCTGeomPlateErrors, the one bridge reader of those three accessors, was deleted by #999 (PR #1015),
-    // and BRepFill_Filling's own forwarding of them is unreachable on the affected branch, so only
-    // the upstream GTests cover it either way. 0029 is an uncatchable SIGSEGV
-    // on OCCTDocumentGetDatumInfo, reachable through Document.datums for any OCAF document whose
-    // datum carries a point without an annotation plane, so until a rebuilt asset ships it nothing
-    // protects a consumer. 0030 is a data race, not a crash or a wrong single-threaded answer: any
-    // consumer sharing a TShape across threads (the common case after a boolean operation) is
-    // exposed today, silently, and neither the released kernel nor Scripts/tsan.supp's suppression
-    // (kept until a rebuild ships) makes it visible without deliberately running under TSan. 0031
-    // is the same shape as 0030 (a data race, silent without TSan): any consumer sharing one
-    // GeomAdaptor_Curve/GeomAdaptor_Surface (or the BSplCLib_Cache/BSplSLib_Cache either directly
-    // wraps) across threads is exposed today; unlike 0030, main's Scripts/tsan.supp never carried
-    // suppression lines for it at all (the never-merged PR #1322 branch that first attempted this
-    // fix added some, but that branch's history was discarded rather than inherited, per its own
-    // review), so there is nothing to retire once a rebuild ships. 0033 is a real, live
-    // memory-safety hole in every OCCTSwift STEP/IGES consumer today, currently masked entirely by
-    // the bridge's own igesMutex() (which already serializes the whole configure-then-run window
-    // this patch's accessor-level lock cannot), so a rebuild buys defense-in-depth for anyone
-    // reaching Interface_Static outside that mutex, not a new capability inside it. See
-    // Scripts/patches/README.md's 0028, 0029, 0030, 0031 and 0033 entries.
+    // KEEP THIS PARAGRAPH TRUE. If a patch is added and the asset is not rebuilt, the count above
+    // stops matching and check-inventory-prose.py fails, which is what it is for (#1408). The fix
+    // is a rebuild or an honest divergence paragraph, never a hand-edited number.
     //
     // The v3.0.0 RELEASE commit re-points this pair again, at the release asset. Until then every
     // commit pins v3.0.0-kernel.1, so do NOT delete that pre-release afterwards: deleting it takes its
@@ -223,11 +259,12 @@ let occtTarget: Target = useLocalBinary
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
-    : .binaryTarget(
-        name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v3.0.0/OCCT.xcframework.zip",
-        checksum: "77df5a0ae860b0f947353ff6eabf0ab25eb810ef0ce135b56bc60ff1e3e52ef2"
-    )
+        // Remote binary xcframework for native platforms
+        : .binaryTarget(
+            name: "OCCT",
+            url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.1/OCCT.xcframework.zip",
+            checksum: "da14acb1c0d58eb319381845472285123caa018c06593bbee90e7c484185f4fc"
+        )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
 // it from source on every consumer of OCCTSwift (#339 measured 51.6s wall / 186.5s CPU per rebuild in
@@ -276,42 +313,67 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
         url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.17.0/OCCTBridge.xcframework.zip",
         checksum: "d9eab319f0dfad49b83d1776f1c0a74310c0ddb12a7ed391fe0a0b260778091b"
     )
-    : .target(
-        name: "OCCTBridge",
-        dependencies: ["OCCT"],
-        path: "Sources/OCCTBridge",
-        sources: ["src"],
-        publicHeadersPath: "include",
-        cxxSettings: [
-            // Platform-specific header search paths for XCFramework
-            .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
-            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
-            .define("OCCT_AVAILABLE", to: "1"),
-            // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
-            // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
-            // and explicit NCollection_* templates. This bridge still uses the legacy names, so
-            // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files,
-            // drowning out real warnings downstream (issue #281).
-            //
-            // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
-            // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
-            // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
-            // is rejected by SwiftPM for any package consumed as a dependency, which would break
-            // every downstream consumer.
-            //
-            // This buys quiet, not absolution: the legacy spellings are still deprecated and
-            // will eventually be removed upstream. Migrating the call sites is tracked in #281.
-            .define("OCCT_NO_DEPRECATED")
-        ],
-        linkerSettings: [
-            .linkedLibrary("c++")
-        ]
-    )
+    : isWASI
+        // WASI: Build from source with WASI-specific settings
+        ? .target(
+            name: "OCCTBridge",
+            dependencies: ["OCCT"],
+            path: "Sources/OCCTBridge",
+            sources: ["src"],
+            publicHeadersPath: "include",
+            cxxSettings: [
+                // Use WASI-built OCCT headers
+                .headerSearchPath("../../Libraries/occt-headers-wasm"),
+                .define("OCCT_AVAILABLE", to: "1"),
+                .define("OCCT_NO_DEPRECATED"),
+                .define("__wasi__"),
+                // WASI doesn't have full POSIX; guard Foundation imports in headers
+                .define("_WASI_EMULATED_PROCESS_CLOCKS"),
+                .define("_WASI_EMULATED_GETPID"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++"),
+                .linkedLibrary("OCCT-wasm"),
+                .unsafeFlags(["-L", "../../Libraries"])
+            ]
+        )
+        // Native platforms: source build with XCFramework header search paths
+        : .target(
+            name: "OCCTBridge",
+            dependencies: ["OCCT"],
+            path: "Sources/OCCTBridge",
+            sources: ["src"],
+            publicHeadersPath: "include",
+            cxxSettings: [
+                // Platform-specific header search paths for XCFramework
+                .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
+                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
+                .define("OCCT_AVAILABLE", to: "1"),
+                // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
+                // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
+                // and explicit NCollection_* templates. This bridge still uses the legacy names, so
+                // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files,
+                // drowning out real warnings downstream (issue #281).
+                //
+                // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
+                // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
+                // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
+                // is rejected by SwiftPM for any package consumed as a dependency, which would break
+                // every downstream consumer.
+                //
+                // This buys quiet, not absolution: the legacy spellings are still deprecated and
+                // will eventually be removed upstream. Migrating the call sites is tracked in #281.
+                .define("OCCT_NO_DEPRECATED")
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++")
+            ]
+        )
 
 let package = Package(
     name: "OCCTSwift",

@@ -3047,7 +3047,7 @@ bool OCCTSurfaceBezierSetWeightRow(OCCTSurfaceRef _Nonnull surface,
 // --- GeomEval Surfaces ---
 
 /// Evaluate ellipsoid surface D0 at (u,v). Returns point.
-void OCCTGeomEvalEllipsoidD0(double a,
+bool OCCTGeomEvalEllipsoidD0(double a,
                              double b,
                              double c,
                              double u,
@@ -3060,7 +3060,7 @@ void OCCTGeomEvalEllipsoidD0(double a,
 OCCTSurfaceRef _Nullable OCCTGeomEvalEllipsoidCreate(double a, double b, double c);
 
 /// Evaluate hyperboloid D0 at (u,v). mode: 0=one-sheet, 1=two-sheets.
-void OCCTGeomEvalHyperboloidD0(double  r1,
+bool OCCTGeomEvalHyperboloidD0(double  r1,
                                double  r2,
                                int32_t mode,
                                double  u,
@@ -3073,7 +3073,7 @@ void OCCTGeomEvalHyperboloidD0(double  r1,
 OCCTSurfaceRef _Nullable OCCTGeomEvalHyperboloidCreate(double r1, double r2, int32_t mode);
 
 /// Evaluate paraboloid D0 at (u,v).
-void OCCTGeomEvalParaboloidD0(double focal,
+bool OCCTGeomEvalParaboloidD0(double focal,
                               double u,
                               double v,
                               double* _Nonnull px,
@@ -3084,7 +3084,7 @@ void OCCTGeomEvalParaboloidD0(double focal,
 OCCTSurfaceRef _Nullable OCCTGeomEvalParaboloidCreate(double focal);
 
 /// Evaluate circular helicoid D0 at (u,v).
-void OCCTGeomEvalCircularHelicoidD0(double pitch,
+bool OCCTGeomEvalCircularHelicoidD0(double pitch,
                                     double u,
                                     double v,
                                     double* _Nonnull px,
@@ -3095,7 +3095,7 @@ void OCCTGeomEvalCircularHelicoidD0(double pitch,
 OCCTSurfaceRef _Nullable OCCTGeomEvalCircularHelicoidCreate(double pitch);
 
 /// Evaluate hyperbolic paraboloid D0 at (u,v).
-void OCCTGeomEvalHypParaboloidD0(double a,
+bool OCCTGeomEvalHypParaboloidD0(double a,
                                  double b,
                                  double u,
                                  double v,

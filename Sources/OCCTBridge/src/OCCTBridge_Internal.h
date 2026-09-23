@@ -374,6 +374,18 @@ std::mutex& ocafStoreMutex();
 // OCCTFontMgrInitDatabase() can reassign both at any time from any thread.
 // Bridge-only (no OCCT source involved).
 std::mutex& fontListMutex();
+// #1404: TObj_Application::GetInstance() is a process-wide singleton whose lazy-init is
+// thread-safe (a C++11 function-local static) but whose own two fields are not. myIsVerbose is a
+// plain unguarded bool behind SetVerbose/IsVerbose, and CreateNewDocument() writes myIsError =
+// false at its top, calls NewDocument(), then reads myIsError back as its return value, so two
+// concurrent createDocument() calls can each clear the other's in-flight error signal. Distinct
+// from #341/#344/#349/#353/#371/#374: all of those fixed XCAFApp_Application / CDF_Application /
+// CDM_Application / Resource_Manager / Storage_Schema state, which NewDocument()'s downstream
+// machinery does now cover in the pinned kernel (patches 0012/0014/0015/0016). TObj_Application's
+// own two fields sit one layer above that and no kernel fix touches them. Bridge-side lock rather
+// than a carried patch: the class has no lock of its own, the API is niche, and upstream has no
+// PR in this area (checked against Open-Cascade-SAS/OCCT before filing).
+std::mutex& tobjApplicationMutex();
 
 // === OCCT signal handling ===
 //
@@ -389,6 +401,35 @@ std::mutex& fontListMutex();
 // the signal handler, which does not unwind. Treat an OS signal inside OCCT as fatal and guard
 // the input instead.
 void occtEnsureSignals();
+
+// === #1161: caught-exception diagnostics ===
+//
+// Call from INSIDE a `catch (...)` block, as its first statement:
+//
+//   catch (...)
+//   {
+//     occtRecordCaughtException(__func__);
+//     return nullptr;
+//   }
+//
+// It classifies the exception that is already in flight with a bare `throw;` and records the
+// Standard_Failure's type name, message and (if a depth is set) stack trace, so the caller can
+// read back WHY a call refused instead of only that it did. Control flow is untouched: the
+// exception stays caught, the catch block still returns whatever it returned before. Definition
+// lives in OCCTBridge.mm, public accessors in OCCTBridge.h under "Caught-exception diagnostics".
+//
+// Two rules, both load-bearing:
+//
+//   * Only from inside a catch block. A bare `throw;` with no exception in flight calls
+//     std::terminate. There is a std::current_exception() guard here so a misplaced call returns
+//     instead of killing the process, but the guard is a backstop, not a licence.
+//   * Only from a catch block that FAILS the call. A `catch (...) { continue; }` inside a loop is
+//     ordinary control flow, not a diagnostic: recording it would report an error for a call that
+//     went on to succeed.
+//
+// Costs one thread-local read and one relaxed atomic load when neither capture nor logging is on,
+// which is the default.
+void occtRecordCaughtException(const char* theContext);
 
 // === #263: self-intersecting-wire guard ===
 //
@@ -1215,30 +1256,20 @@ inline bool occtValidParameterRange(double u1, double u2)
 // [0, pi/2] -- because the error is set by how much |C'| varies across ONE integration interval,
 // not by the curve's type.
 //
-// So the fix is to keep subdividing until it stops mattering: measure each GeomAbs_CN interval,
-// then the same interval halved, quartered, ... until two successive levels agree relatively.
+// The fix WAS to keep subdividing until it stopped mattering: measure each GeomAbs_CN interval,
+// then the same interval halved, quartered, and so on until two successive levels agreed to 1e-9
+// relative. That loop is retired as of the v4.0.0-kernel.1 repin (#603, #1690), because carried
+// patch 0021 fixes the same errors in the kernel: it replaces CPnts' math_GaussSingleIntegration
+// with an adaptive rule, so one span is already accurate.
 //
-// The subdivision has to happen INSIDE each interval, not across the whole range, and that is the
-// one part of this that is not obvious. Splitting the whole range in two puts the split point at
-// the domain midpoint, which on a uniformly-knotted curve is exactly a knot GCPnts already splits
-// at -- the level-2 sum then equals the level-1 sum bit for bit and a "have two levels agreed?"
-// test reports convergence on an answer that has not moved at all. Measured on the 5-point
-// interpolated BSpline: levels 1 and 2 both give 110.963893077, and the truth is 110.970568312.
+// The paragraphs above are kept because they describe the DEFECT, which is what a reader needs to
+// understand why 0021 exists and why this file once carried a loop. The costs the loop used to
+// add (an 8 x 3 ellipse 0.11 us -> 3.5 us, a 40-span BSpline 17 us -> 95 us, a 200-span one
+// 89 us -> 452 us, roughly 5x) are now not paid at all.
 //
-// Cost, per measurement, on the pinned kernel: an 8 x 3 ellipse goes 0.11 us -> 3.5 us, a 40-span
-// BSpline 17 us -> 95 us, a 200-span one 89 us -> 452 us, and a line or circle stays on its closed
-// form (0.02 us) because there is no error to remove and it converges on the first split. Roughly
-// 5x, with a floor of three quadratures per interval where there used to be one.
-
-/// The relative agreement two successive subdivision levels must reach for a piece to be measured.
-/// 1e-9 is ~1 nm on a 1 m curve, six orders tighter than any of the errors above and reachable in
-/// a handful of levels; the errors this removes are 1e-2.
-constexpr double kOCCTArcLengthTolerance = 1e-9;
-
-/// Ceiling on how finely one GeomAbs_CN interval may be split. Only the pathological reach it:
-/// a 1 x 0.001 ellipse (whose speed is a near-square wave) stops here at 1.2e-11, still nine
-/// orders better than the 1.9e-2 it measured before.
-constexpr int kOCCTArcLengthMaxPieces = 512;
+// Retired on measurement, not on reasoning. The loop was instrumented to report any convergence
+// past n=2 or any exhaustion, and the full suite run: 6,384 tests, zero reports. It always
+// agreed on its first comparison, on every curve the tree covers.
 
 /// One quadrature over [lo, hi]. A curve with a single GeomAbs_CN interval goes through GCPnts so
 /// the length-parametrized closed forms (line, circle, 2-pole Bezier/BSpline) are kept exactly; a
@@ -1252,9 +1283,26 @@ inline double occtArcQuadrature(const TheAdaptor& adaptor, double lo, double hi,
                     : CPnts_AbscissaPoint::Length(adaptor, lo, hi);
 }
 
-/// The converged length of ONE GeomAbs_CN interval's [lo, hi]. `pieces` reports the subdivision it
-/// settled on, which occtAdaptorParameterAtLength re-walks so the measurement and its inverse are
-/// built out of the same quadratures rather than merely aiming at the same number.
+/// The length of ONE GeomAbs_CN interval's [lo, hi]. `pieces` reports the subdivision the inverse
+/// should re-walk, so the measurement and its inverse are built out of the same quadratures rather
+/// than merely aiming at the same number.
+///
+/// RETIRED at the v4.0.0-kernel.1 repin (#603, #1690): this ran an adaptive subdivision loop,
+/// doubling `n` until two successive sums agreed to 1e-9 relative. It was a mitigation
+/// for a kernel defect the pinned kernel no longer has. Carried patch `0021` replaces
+/// `math_GaussSingleIntegration` in CPnts with an adaptive rule, so a single span is already
+/// accurate and the loop's test passed on its first comparison every time.
+///
+/// Measured rather than argued, twice. `Scripts/repro/1690-arc-quadrature-redundancy/` put the
+/// single span within 1.6e-14 relative of an independent Simpson ground truth on an ellipse,
+/// against a tolerance of 1e-9. Then the loop was instrumented to report any convergence past
+/// n=2 or any exhaustion, and the FULL suite was run: **6,384 tests, zero reports**, across the
+/// ellipse, parabola, hyperbola, whipping Bezier and multi-span interpolated BSpline that
+/// `Issue603SingleSpanQuadratureTests` covers, plus every other curve the tree touches.
+///
+/// `pieces` is now always 1, so `occtAdaptorParameterAtLength` hands its whole interval to
+/// GCPnts_AbscissaPoint instead of a half. That is the only behaviour this retirement changes, and
+/// the arc-length and parameter-at-length suites pass either way.
 template <class TheAdaptor>
 inline double occtArcConvergedLength(const TheAdaptor& adaptor,
                                      double            lo,
@@ -1262,23 +1310,8 @@ inline double occtArcConvergedLength(const TheAdaptor& adaptor,
                                      bool              singleSpan,
                                      int&              pieces)
 {
-  double previous = occtArcQuadrature(adaptor, lo, hi, singleSpan);
-  pieces          = 1;
-  for (int n = 2; n <= kOCCTArcLengthMaxPieces; n *= 2)
-  {
-    const double h     = (hi - lo) / n;
-    double       total = 0.0;
-    for (int i = 0; i < n; ++i)
-    {
-      total +=
-        occtArcQuadrature(adaptor, lo + i * h, (i + 1 == n) ? hi : lo + (i + 1) * h, singleSpan);
-    }
-    pieces = n;
-    if (std::abs(total - previous) <= kOCCTArcLengthTolerance * std::abs(total))
-      return total;
-    previous = total;
-  }
-  return previous;
+  pieces = 1;
+  return occtArcQuadrature(adaptor, lo, hi, singleSpan);
 }
 
 /// Fill `bounds` (sized 1..count+1) with the adaptor's GeomAbs_CN interval boundaries, or with its

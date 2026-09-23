@@ -302,6 +302,85 @@ under "Retired patches" with a note on whether the merged form matched what we c
 hunks; review can change a patch between submission and merge). The kernel pin catches up at the next
 `Scripts/build-occt.sh` rebuild, see `docs/guides/building-occt.md`.
 
+## Hold rebasing until after OCCT 8.0.2 absorbs (decided 2026-09-21)
+
+**Do not rebase the open upstream PR branches. Revisit once 8.0.2 has shipped and `master` has
+absorbed `IR`.** Ten branches are affected; eight are filed as OCCT#1547 through #1554.
+
+### What the measurement showed
+
+| Branch | Last commit | State |
+|---|---|---|
+| `upstream/master` | 2026-08-24 | Untouched for four weeks |
+| `upstream/IR` | 2026-09-05 | 15 commits ahead of master |
+
+**`master` is frozen and our branches are already `behind=0` against it, so a rebase today is a
+no-op.** There is no pre-release churn on either branch to race.
+
+`IR` is OCCT's integration branch: merged PRs land there and `master` absorbs them in batches, which
+is why `master` looks static while PRs merge. So the drift that matters is against `IR`, not
+`master`, and it is small and precisely located. `IR` changes 536 files; **three** of ours overlap,
+and all three are test *registration* rather than a fix:
+
+- `TKBool/GTests/FILES.cmake` (OCCT#1547)
+- `TKDESTEP/GTests/FILES.cmake` (OCCT#1552)
+- `TKMath/GTests/BSplCLib_Cache_Test.cxx` (OCCT#1554)
+
+Seven of ten overlap nothing. **No fix file conflicts at all.**
+
+### OCCT#1554 checked in detail, since it shares a test file with `IR`
+
+A dry-run `git merge-tree upstream/IR fix/bsplclib-cache-thread-safety` gives **exactly one
+conflict**, and it is benign:
+
+```
+CONFLICT (content): src/FoundationClasses/TKMath/GTests/BSplCLib_Cache_Test.cxx
+```
+
+- **No source conflict.** Ours touches `BSplCLib_Cache`, `BSplSLib_Cache` and both `GeomAdaptor`
+  pairs; `IR` touches `BSplCLib.cxx`, `BSplCLib_2.cxx`, `BSplCLib_CacheParams.hxx` and
+  `BSplCLib_CurveComputation.pxx`. Disjoint.
+- **The test conflict is a tail collision, not a replacement.** `IR` appends
+  `NearRepeatedKnotUsesActualSpan` after the same seven tests we append
+  `ConcurrentEvaluationAcrossSpans` after. No name collision, nothing deleted, both survive.
+- **Not superseded.** `IR`'s `BSplCLib_CacheParams::IsCacheValid` change drops the next-knot epsilon
+  check, which is span-selection correctness. Ours adds synchronisation around the rebuild. Their
+  change makes rebuilds rarer, not safe, so it does not remove the race. This check exists because
+  patch `0032` was once carried for a defect upstream had already fixed better.
+
+Resolution when it is time: keep both tests.
+
+### When revisiting
+
+1. Confirm `master` has absorbed `IR` (`git rev-list --count upstream/master..upstream/IR` is 0).
+2. For each branch, `git merge-tree --write-tree upstream/master <branch>` to enumerate real
+   conflicts before touching anything.
+3. For every file the patch touches, diff it against `master` first, per the lesson below.
+4. Rebase, re-run the per-file check, force-push with `--force-with-lease`.
+
+### Why waiting is the right call
+
+Rebasing onto a settled tree once, after `master` absorbs `IR` in one batch, is cheaper and safer
+than rebasing repeatedly against a target we are guessing at. Three `FILES.cmake`-class conflicts
+are trivial to resolve then, and a maintainer rebasing at merge time handles them anyway.
+
+### What rebasing would NOT have fixed, which is the part worth remembering
+
+OCCT#1548 and #1549 both failed CI on 2026-09-21, and **neither failure was staleness against
+`master`**. Both patches were authored against the **pinned `V8_0_1`** and forward-ported to
+`master`, which has diverged from `V8_0_1` by far more than `master` has moved recently:
+
+- #1549: `IFSelect_WorkSession.cxx:2656` had been refactored to hoist the flag into a local, so it
+  did not match the shape of the other eight sites and a textual replacement missed it.
+- #1548: `TopoDS_TShape_Test.cxx` exists on `master` but not in `V8_0_1`, so the branch **replaced**
+  it, deleting 295 lines of upstream tests and double-registering it in `FILES.cmake`. The CMake
+  error was the lesser half of that.
+
+So the lesson is not "rebase more often". It is: **when forward-porting a pinned-source patch onto
+`master`, diff every file you touch against `master` first**, because `master` may have refactored a
+site or gained a file that the patch then silently replaces. That check is per-file and cheap; a
+rebase does not perform it.
+
 ## Related
 
 - [Upstream OCCT PRs: style and submission workflow](upstream-occt-style.md)

@@ -162,6 +162,7 @@ static OCCTPolynomialRoots occtSolvePolynomial(Args... args)
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return result;
 }
@@ -271,6 +272,7 @@ OCCTIntrvBounds OCCTIntrvIntervalsValue(OCCTIntrvIntervalsRef _Nonnull intervals
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return b;
 }
@@ -330,6 +332,7 @@ OCCTIntConicQuadResult OCCTIntAnaLineQuad(double lox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -370,6 +373,7 @@ OCCTIntConicQuadResult OCCTIntAnaLineSphere(double lox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -413,11 +417,16 @@ OCCTQuadQuadGeoResult OCCTIntAnaPlanePlane(double p1ox,
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). This one recovers: one
+        // solution that cannot be read leaves its slot at the zero the result was initialised to
+        // and the remaining solutions are still filled in, so the call goes on to return an
+        // answer rather than refusing.
       }
     }
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -474,11 +483,15 @@ OCCTQuadQuadGeoResult OCCTIntAnaPlaneSphere(double pox,
       }
       catch (...)
       {
+        // Deliberately NOT calling occtRecordCaughtException here (#1161). Same shape as the
+        // per-solution skip above: one unreadable circle or point leaves its slot zeroed and the
+        // rest of the solutions are still reported.
       }
     }
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
   return r;
 }
@@ -520,6 +533,7 @@ bool OCCTIntAna3Planes(double  p1ox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -559,6 +573,7 @@ int32_t OCCTIntAnaLineTorus(double  lox,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -584,6 +599,7 @@ int32_t OCCTIntAnaCylinderSphere(double cylRadius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -605,6 +621,7 @@ bool OCCTIntAnaCylinderSphereIdentical(double cylRadius,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return false;
   }
 }
@@ -631,6 +648,7 @@ int32_t OCCTIntAnaConeSphere(double semiAngle,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return -1;
   }
 }
@@ -674,6 +692,7 @@ int32_t OCCTIntAnaConeSpherePoints(double  semiAngle,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return 0;
   }
 }
@@ -700,6 +719,7 @@ bool OCCTIntAnaConeSphereIsOpen(double  semiAngle,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
     return true;
   }
 }
@@ -730,5 +750,6 @@ void OCCTIntAnaConeSphereGetDomain(double  semiAngle,
   }
   catch (...)
   {
+    occtRecordCaughtException(__func__);
   }
 }

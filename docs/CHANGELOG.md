@@ -21,6 +21,402 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Documentation: the STEP/IGES bridge surface is already serialized (#342)
+
+`OCCTSerialQueue` and `Exporter` now state that `writeSTEP`, `writeIGES`, `Shape.load(from:)` and `Document.loadSTEP` are serialized inside the bridge, so they neither need `OCCTSerial.withLock` nor gain concurrency from it. `OCCTSerialQueue` previously said the opposite, which is the file a caller reads before deciding. The mesh and BREP writers carry no such lock and the deep-copy advice still applies to them.
+
+### The pinned kernel carries all twenty-nine patches (#1408)
+
+`Package.swift` pins `v4.0.0-kernel.1`, which is OCCT `V8_0_1` plus every carried patch. Twelve had been on disk and in no CI job, because `build-and-test` resolves the pinned asset rather than building from source, so they reached no consumer: an uncatchable SIGSEGV through `Document.datums` (`0029`), data races on `TopoDS_TShape::myState` and the B-spline caches (`0030`, `0031`), a wrong surface from `Shape.coonsAlgPatch` (`0034`), and the #1403 data-exchange series (`0036`-`0041`), which took named racing globals from 16 to 0. `Scripts/tsan.supp` loses the `TopoDS_TShape::myState` suppressions, which were hiding a race the kernel now fixes.
+
+### Restated enum case lists are checked against their declaration (#2145)
+
+`check-docs-defaults.py` now compares the case list a `docs/reference/` page restates against the enum it documents, resolving same-named enums by the page's heading chain. Previously nothing checked a restatement at all: the doc-snippet census skips all 5,092 of them because a bodiless declaration compiles in no context, which is how `Drawing.md` came to declare `case A0, A1, A2, A3, A4` against a source reading `case a0, a1, a2, a3, a4` and seed seven wrong examples. `Construction.md` was missing three `MaterializationFailure` cases and now lists all nine.
+
+### Documentation snippets are now gated, not censused (#1683)
+
+`census-doc-snippets.py` is renamed `check-doc-snippets.py` and a non-compiling snippet fails the build. It reported rather than gated while a 211-snippet backlog stood, since a required check red for every PR is worse than no check; #2092 reclassified 24 reference pages that were eliding content the reader supplies, #2093 fixed the remaining 187, and the gate was promoted at zero. 3,105 snippets: 1,661 compile and 1,444 are fragments that open mid-flow and are not failures.
+
+### A gate on the bridge's caught-exception diagnostics (#2077)
+
+`Scripts/check-bridge-diagnostics.py` fails when a function-level `catch (...)` block in `Sources/OCCTBridge/src/*.mm` does not call `occtRecordCaughtException(__func__);` as its first statement, unless the site is on an exemption list carrying a written reason. It runs in `ci.yml`'s `gate-scripts` job and in the optional pre-commit hook, the twelfth gate in that job, and it is what stops a newly written bridge function returning a `nil` that explains nothing.
+
+Two sites are exempt, both the diagnostics channel's own internals, where a record would feed itself: `occtRecordCaughtException`'s classification ladder, where a call `throw;`s the same exception back into its own clause and recurses until the stack runs out, and `occtDiagnosticsLog`, its tail.
+
+With the gate in place, the coverage caveat that shipped with #1161 is gone from `docs/reference/Diagnostics.md`, `OCCTBridge.h` and `OCCTDiagnostics`' doc comment. An empty capture now means the failure raised nothing to classify (`IsDone() == false`, a null result handle, a rejected argument), not that the site was never instrumented. `Diagnostics.md` gains a section on deeper catch blocks: 21 of the bridge's 54 record, and 33 say in place why they do not.
+
+### Caught-exception diagnostics reach the whole bridge (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused call from any bridge file. This PR finishes the sweep #1161 started: 1,470 function-level `catch (...)` blocks across the remaining 30 files, which is OCAF documents, the BRep graph, visualisation and AIS, meshing, the spatial and math solvers, ProjLib/NLPlate, HLR, eight more Modeling files and `OCCTBridge.mm` itself. Coverage reaches 3,597 of the bridge's 3,599 function-level catch blocks.
+
+The two that do not record are the channel's own internals, and both would feed themselves: `occtRecordCaughtException`'s classification ladder would `throw;` the same exception into its own clause and recurse until the stack ran out, and `occtDiagnosticsLog` is that function's tail, where a diagnostic that throws must not become the failure being diagnosed. Both carry the reason in place.
+
+Twelve deeper blocks stay uninstrumented, all recover-and-continue and all with the reason in place: `occtSampleWirePoints` in the eight remaining Modeling files, two per-solution skips in the `IntAna` intersection results, `OCCTShapeGetEdgeMesh`'s per-edge skip, and `occtHasSelfIntersectingWire`'s per-wire skip.
+
+### Caught-exception diagnostics reach surfaces, curves and 2D geometry (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused surface, 3D curve or 2D curve operation. 1,045 function-level `catch (...)` blocks across the seven `OCCTBridge_Surface_*.mm`, six `OCCTBridge_Curve3D_*.mm` and seven `OCCTBridge_Geom2d_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them. This is the largest of the sweep's domains and takes bridge coverage past half.
+
+Six deeper blocks are instrumented too, all of them `OCCTBSplineApproxInterp::run()`'s catch, once per Curve3D translation unit. It neither rethrows nor recovers: it turns the exception into `done = false`, which every caller reports as a refused fit, and no enclosing handler ever runs. It records under the explicit context `OCCTBSplineApproxInterp::run`, because `__func__` inside that member function reads only `run`.
+
+Ten deeper blocks stay uninstrumented with the reason in place, all recover-and-continue: the boundary-curve distance loop's per-curve skip in each `Geom2d` file, the two medial-axis fallbacks to node-position interpolation, and `occtSignedGeom2dCurvesArea`'s per-sample skip.
+
+### Caught-exception diagnostics reach topology and measurement (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused topology query, adjacency walk, bounding box, extrema search or mass/length/area measurement. 333 function-level `catch (...)` blocks across the five `OCCTBridge_Topology_*.mm` files and `OCCTBridge_Properties.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
+
+Fifteen deeper blocks are instrumented too, all of them `occtFindSurface`'s three inner `catch (...)` clauses, once per Topology translation unit. Those neither rethrow nor recover: each turns the exception into the refusal the caller sees (`found == false`, `toleranceReached == -1.0`, `existed == false`) without the outer handler ever running, so recording there is the only place the reason exists. A note at each site says so.
+
+Three deeper blocks stay uninstrumented with the reason in place, all recover-and-continue: `OCCTBRepExtremaExtCCEdges`' perpendicular-foot count, `OCCTShapeOuterShells`' per-solid skip, and the axis-collection walk's per-face skip.
+
+### Caught-exception diagnostics reach data exchange (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused STEP, IGES, BREP, mesh or OSD operation. 192 function-level `catch (...)` blocks across the seven `OCCTBridge_IO_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them.
+
+This sits alongside `OCCTReturnStatus` (#1644) rather than replacing it: the return status is what the translator concluded and is always present, while a diagnostic record appears only when the kernel actually raised. A failed read with a status and no record raised no exception.
+
+The three `GeomTools_*Set` counting loops in `OCCTBridge_IO_NativeFormats.mm` keep their inner `catch (...)` uninstrumented, with the reason in place: those sets are 1-based with no count accessor, so the catch is how the loop finds the end of the collection on a well-formed file, not a failure.
+
+### Caught-exception diagnostics reach shape healing (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused heal, fix, upgrade, sewing, blend or filling. 266 function-level `catch (...)` blocks across the seven `OCCTBridge_Healing_*.mm` files hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so a `nil` from `ShapeFix`-backed API can now name the OCCT exception the kernel raised rather than only that something refused.
+
+`OCCTShapeAnalyze`'s per-shell orientation scan keeps its inner `catch (...)` uninstrumented, with the reason in place: it skips one unusable shell and the analysis goes on to return a full result, so recording it would report a failure for a call that did not fail.
+
+### Caught-exception diagnostics reach sweep, fillet and chamfer (#2077)
+
+`OCCTDiagnostics` now reports the OCCT exception behind a refused draft, sweep, loft, fillet or chamfer. 189 function-level `catch (...)` blocks in `OCCTBridge_Modeling_Sweep.mm`, `OCCTBridge_Modeling_Fillet.mm` and `OCCTBridge_Modeling_Chamfer.mm` hand the `Standard_Failure`'s type name and message to the channel #1161 added instead of discarding them, so `Shape.draft(wire:direction:angle:length:)` returning `nil` on a zero direction now says `Standard_ConstructionError: gp_Dir() - input vector has zero norm` rather than nothing at all.
+
+Coverage is still partial while #2077's sweep runs, and a capture that comes back empty still means "no instrumented site reported" rather than "nothing was caught". Derive it from the source:
+
+```bash
+grep -rc occtRecordCaughtException Sources/OCCTBridge/src
+```
+
+Each file's one deeper `catch (...)`, the shared `occtSampleWirePoints` block, is deliberately left out with the reason in place: it recovers, so recording it would report a failure for a call that went on to succeed.
+
+### Guide and architecture snippets now compile (#2093)
+
+Eleven fenced examples in `docs/architecture/overview.md`, `docs/guides/occt-concepts.md`, and the `///` comments of `BRepGraph.swift`, `Exporter.swift`, `FeatureRecognition.swift`, `Mesh.swift` and `Selection.swift`, all of them using a failable factory's result without unwrapping it. The guide snippets are the longest in the docs and the optionals come in layers: `occt-concepts.md`'s rail example needed six, ending at `Shape`'s `-` operator, which returns `Shape?` and so cannot chain as `a - b - c`. Also corrected: `ShapeMeasurements.faceCentroids` is `[SIMD3<Double>?]` and `Edge.bounds` is `(min:max:)?`, which three comparison closures had been reading through as if they were not.
+
+### Drawing, vector-export and sheet-metal snippets now compile (#2093)
+
+Fourteen fenced examples on `Drawing.md`, `Export-Vector.md`, `SheetMetal.md` and in `Drawing.swift` doc comments. Seven said `PaperSize.A3` or `.A4`, whose real cases are `.a3` and `.a4`: that is a rename that reached `Sources/` before the #1103 merge and never reached the page, and it survived because the signature restatement at `Drawing.md:886` still declared the uppercase form, in the one fence population the snippet census skips by design. Also corrected: `writePDF`/`writeSVG` written with a trailing closure, which their `sheet:body:to:deflection:` order makes impossible; `DrawingScale.oneToTwo`, which is `.reduction(2)`; `DXFWriter.dxfString()`, which is `write(to:)`; and `DrawingDimension.Linear(value:)`, where `value` is a computed property rather than an init parameter.
+
+### Document reference snippets now compile (#2093)
+
+Thirty-eight fenced examples across the eleven `Document-*` reference pages and `Construction.md`. Nineteen were `PipeShellBuilder` examples whose only statement was `pipe.<member>(...)`: `pipe` is declared nowhere in those fences and also names a libc function, so every one resolved to `(UnsafeMutablePointer<Int32>?) -> Int32` and failed. Each now constructs its receiver. Also corrected: `Shape.edgeFromLine(from:to:)`, which is `edgeFromLine(origin:direction:p1:p2:)`; `Wire.asShape()`, which is `Shape.fromWire(_:)`; `Document()`, whose initializer is internal, so the factory is `Document.create()`; `Document.isValid`, which does not exist; `TrigRoots.solve(B:)`, whose `sin(x)` coefficient is `b:`; and `Curve3D.line`/`Surface.plane` scalar-component spellings that have never existed.
+
+### Curve3D and Curve2D reference snippets now compile (#2093)
+
+Thirty-seven fenced examples across `Curve2D-Analytic-Types.md`, `Curve2D-Constraint-Solvers.md`, `Curve3D-Analysis.md`, `Curve3D-Analytic-Types.md`, `CurveAdaptors.md`, `Geometry2D.md` and `Shape-Recognition.md`, and in `Curve2D.swift`, `Curve3D.swift` and `Continuity.swift` doc comments, named members and labels that have never existed. `Curve3D.line(origin:direction:)` is `line(through:direction:)`; `parabola(vertex:...)` is `parabola(center:...)`; `curveKind` is `curveType`, an `Int` where `1` is Circle, so the examples no longer claim to print `.circle`; `Curve2D.parameterRange` is `domain`, which is not optional, so the force-unwraps go too. `Curve2D.ellipse`, `hyperbola` and `parabola` all take a placement the examples omitted, and `Curve2D.bspline(points:)` had been resolving to the instance accessor of the same name.
+
+### Surface reference snippets now compile (#2093)
+
+Forty-four fenced examples on `Surface.md`, `Surface-Analysis.md`, `Surface-Analytic-Types.md` and `Surface-Advanced.md`, and in `Surface.swift` and `Shape+Surface.swift` doc comments, called `Surface` factories with argument lists that have never existed. An analytic surface is unbounded, so `Surface.cylinder(radius: 10, height: 50)` was never a call: the placement is `cylinder(origin:axis:radius:)`. Also corrected: `sphere(center:radius:)`, `cone(origin:axis:radius:semiAngle:)`, `torus(origin:axis:majorRadius:minorRadius:)`, `plane(origin:normal:)`, and `extrusion(profile:direction:)`, whose profile is a `Curve3D` rather than a `Wire`. `Surface.md`'s `continuityClass` example now uses a real B-spline patch and reports a measured `.cN` instead of a guessed `.c2`.
+
+### A misnamed carried patch is reported, not a crash (#2148)
+
+`check-inventory-prose.py` read the leading `NNNN` off every `.patch` in `Scripts/patches/`, so one file that was not `NNNN`-named raised `ValueError: invalid literal for int() with base 10: 'wasi'` and took all twenty-one of the gate's claims down with it. The odd file is now reported, with the directory a patch for another build target belongs in.
+
+### The doc-snippet census stops passing on a population it never examined (#2098, #2092)
+
+`census-doc-snippets.py` type-checked **24 of 3,105** snippets in CI while the step passed. The built
+module's path was guessed from a list of layouts SwiftPM no longer uses, and the guess missed on the
+one machine that matters. Two things were wrong: the module sits under `Modules/` in CI, and it is a
+plain file there rather than the directory bundle a local build produces. The path is now searched
+for rather than guessed, and `--require-typecheck` fails the step instead of reporting on a
+population it never examined. CI's self-test went from 27 cases to 56, so every compile case,
+including the canary cases that exist to catch a silent compiler, now runs where it counts.
+
+Separately, reference pages elide content the reader is expected to supply (`= ...`, `{ ... }`,
+`[...]`, `= // prose`), which does not parse and is not a documentation defect. Those 24 snippets
+were reported as failures; they are fragments. Reclassifying them left exactly one real finding the
+rule refused to excuse, a `Package.swift` manifest fragment fenced as `swift`, now exempt with a
+written reason. `unparseable` is zero.
+
+### Shape, Edge, Face and Wire reference snippets now compile (#2093)
+
+Forty-one fenced examples across `Shape-Features.md`, `Shape-Completions.md`, `Shape-Builders-1.md`, `Annotation.md`, `Edge.md`, `Face.md` and `Wire.md`, and in `Shape.swift`, `Shape+Topology.swift`, `MedialAxis.swift`, `Edge.swift`, `Wire.swift` and `WireOrder.swift` doc comments. `Shape.box(dx:dy:dz:)` is `box(width:height:depth:)`. `Wire.asShape`, `Face.shape` and `Edge.shape` never existed: the conversions are `Shape.fromWire(_:)`, `fromFace(_:)` and `fromEdge(_:)`. `Wire` has no `translated(by:)` at all, so the profile examples now place the circle at construction with `Wire.circle(origin:normal:radius:)`. `Shape.makeFace` and `Shape.makePolygon` are `Shape.face(from:)` with `Wire.polygon3D(_:closed:)`; `Edge.line(from:to:)` is `Wire.line(from:to:)!.edges()[0]`; `SurfaceContinuity` has no `.c0`; `Edge.adjacentFaces(in:)` returns an array, not a pair; and the `≈` operator one example used is defined nowhere in the package.
+
+### The bridge header split gate validated its own view, not just its verdict (#2080)
+
+`Scripts/derive-bridge-header-split.py` stripped C comments in two passes, block comments first, so
+any `//` comment containing the text `/*` opened a block comment that was never closed. In
+`OCCTBridge.h` a comment mentioning `Sources/OCCTBridge/src/*.mm` ran to the file's own
+`#endif /* OCCTBridge_h */`, hiding 14 of its 16 declarations, and the gate printed `misfiled: 0`
+throughout. Its `--self-test` passed as well, because no fixture carried the trigger, and comments
+naming a glob are ordinary here.
+
+Both halves are fixed. Comments are now stripped in one pass, so the opener that actually opened
+first is the one in effect, and string and character literals are skipped intact because either can
+hide an opener. Separately the script now refuses to report at all when a header the split owns
+yields no declaration, which is the observable form of a swallowed file and would have caught this
+without anyone guessing the trigger.
+
+The general rule is written up in `okf/policies/static-gates.md`: a detector must assert on the real
+run that its own view is plausible, because a self-test only proves it catches the failure modes its
+author thought of. Three detectors were caught in one day with passing self-tests, and #618,
+#624/#630 and #626 are the same shape years earlier.
+
+### Every fenced Swift snippet in the docs is now type-checked (#1683)
+
+`Scripts/census-doc-snippets.py` hands every fenced ```swift``` block in `docs/` and in every `///`
+doc comment to `swiftc`, which is the first thing to read inside those fences at all.
+`docs-current.md` has always asked for a runnable snippet on every documented API and nothing checked
+that any of them compiled, which is how `Curve3D.arc(center:radius:startAngle:endAngle:)`, a factory
+that has never existed, reached 18 call sites (#1675). It compiles rather than matching argument
+labels with a regex: #1675 holds two attempts at the regex, and each reported a real API as missing.
+
+Of 8,181 fences, 5,082 are signature restatements that a bodiless `func` makes uncompilable in any
+context, and 3,096 are snippets. Of those, 1,470 compile, 1,415 open mid-flow on a name the
+surrounding prose introduced, and **211 do not compile**. A census rather than a gate for that reason
+alone: `--strict` exits 1, and promotion is that flag becoming the default plus a rename, once the
+backlog is zero. It runs in `swift build + test (macOS)` rather than `gate-scripts`, which is pure
+Python with no build.
+
+Corrected here: the 17-site `Curve3D.line(from:to:)` cluster, which is `segment(from:to:)`, across
+`Curve3D-Analysis.md`, `Surface.md`, `Surface-Analysis.md` and
+`Document-Geometry-Constructors.md`. A snippet that is deliberately not compilable now carries its
+exemption on the page, as `no-typecheck: <reason>` in the fence info string, with the reason required.
+
+### Carried patches `0040` and `0041`: the data-exchange globals reach zero (#1403)
+
+**`0040`, three unguarded one-time-init flags.** Both `STEPControl_Controller::Init()` and
+`IGESControl_Controller::Init()`, plus the IGES constructor, used a check-then-act `static bool` that
+two threads could both pass, running the one-time setup twice and recording a second controller under
+the same name. #1403's own re-scope described this as "matching STEP's existing mutex"; that was
+wrong, since only STEP's *constructor* had one. All three become function-local static
+initialisation, which removes the check-then-act rather than locking around it.
+
+**`0041`, two shared registries.** `listad` (controllers by format name) and `atemp` (template models
+by name) are process-wide `NCollection_DataMap`s mutated without synchronisation. Unlike the rest of
+this series these are legitimately one-per-process, so a recursive mutex is the right tool rather
+than relocating ownership. Recursive is required, not preferred: `Interface_InterfaceModel::Template`
+calls `HasTemplate` before reading the map.
+
+**Measured by rebuilding the ThreadSanitizer kernel and re-running the five registered
+data-exchange scenarios. Every named racing global is now gone:**
+
+| | Reports | Named globals |
+|---|---|---|
+| Before `0036` | 178 | 16 |
+| After `0036`-`0039` | 96 | 7 |
+| After `0040`-`0041` | **37** | **0** |
+
+`0040` reaches further than its three sites: guarding the outermost init serialises the whole chain
+beneath it, so `IGESData::Init`'s `proto`/`stmod`/`speci`, `XSAlgo::Init`'s flag,
+`IGESToBRep::theContainer` and `Interface_Static`'s `THE_Interface_Static_deja` all stopped being
+reported without being touched.
+
+The remaining 37 are all heap objects owned by the two controllers and shared with every work
+session, which is the ownership change #1403 is named for and which needs an API decision rather than
+a lock. None of these patches is in the pinned asset, so nothing changes for consumers until a
+rebuild.
+
+### Carried patches `0038` and `0039`: two more data-exchange globals become per-instance (#1403)
+
+**`0038`, `Interface_CheckTool`'s `errh` sentinel.** It decided whether `FillCheck` wraps each module
+`CheckCase` call in its own `try`. The six bulk list builders clear it because they wrap the whole
+loop, and they never restore it, so any bulk list operation left error handling off **process-wide**.
+A later direct `FillCheck` call then ran unguarded and a `Standard_Failure` that should have been
+caught and reported as a check fail escaped instead. `FillCheck` is public, so that sequence is
+reachable without threads at all.
+
+**`0039`, `Interface_FileReaderData`'s parameter memo.** `Param()`/`ChangeParam()` cached the last
+resolved record in file-scope statics, gated by a global counter so only the most recently
+constructed instance could use the cache. `mutable` answers the declaration's own stated blocker,
+"Fields not possible, because Param is const", and the fix also makes the optimisation work at all:
+constructing any second reader disabled the memo for every earlier one, permanently. `InitParams()`
+now invalidates the memo, which the original never needed to because the next construction disabled
+it anyway.
+
+Both follow #363's relocate-to-the-owner precedent, with no locks and no signature changes. Measured
+by rebuilding the ThreadSanitizer kernel and re-running the five registered data-exchange scenarios:
+`errh` 7 reports to 0, `thenm0` 3 to 0, `thefic` 1 to 0. Across `0036`, `0037`, `0038` and `0039`
+together the five targeted globals all reach zero and total reports fall from 178 to 96
+(`Scripts/repro/1157-interface-static-thread-safety/gate-baseline-1403/`).
+
+Neither is in the pinned asset, so nothing changes for consumers until a rebuild. Both defects are
+live in current OCCT master, and both are held from upstream pending a GTest rather than filed
+without one.
+
+### Carried patch `0037`: the STEP read actor's non-manifold flag is per instance (#2061)
+
+`STEPControl_ActorRead` held its non-manifold marker, `NM_DETECTED`, as a process-global. It is
+reset at the start of a shape-representation transfer, set when a non-manifold item is recognised,
+and read to decide whether an assembly component's `COMPOUND` is flattened into its parent or kept
+nested. Concurrent STEP reads therefore shared a flag that gates shape construction.
+
+Relocated to a per-instance `myIsNMDetected`, with no lock and no signature change, following
+#363's relocate-to-the-owner precedent. Measured by override-link against a ThreadSanitizer build:
+the race is reported in 5 of 5 unpatched runs and 0 of 5 patched
+(`Scripts/repro/2061-nm-detected/`).
+
+The wrong-shape outcome follows from the code and the flag demonstrably leaks between threads, but
+it did not occur in roughly ten thousand reads across three configurations, so this is recorded as
+a confirmed race rather than a demonstrated wrong answer. In practice the bridge's `igesMutex()`
+serialises the whole data-exchange surface, so no consumer can reach it today.
+
+Not in the pinned asset, so nothing changes for consumers until a rebuild. The defect is live in
+current OCCT master too, so the patch is bound upstream.
+
+### Carried patch `0036`: `IFSelect_WorkSession`'s error-handling sentinel is per instance (#1403)
+
+`IFSelect_WorkSession` used a file-scope `errhand` flag as a recursion sentinel so its nine
+error-handled operations would wrap themselves in a `try` exactly once. Shared across threads, one
+thread clearing the sentinel made another take the unguarded path, so an exception that should have
+been caught and reported escaped instead. It was the busiest racing site in the data-exchange path.
+
+The global was only ever a mirror of the per-instance `theerrhand`, so it is removed in favour of a
+per-instance sentinel, with no lock, following #363's relocate-to-the-owner precedent. Measured by
+override-link against a ThreadSanitizer build: six race access sites become zero
+(`Scripts/repro/1403-workession-errhand/`).
+
+Not in the pinned asset, so nothing changes for consumers until a rebuild. The defect is live in
+current OCCT master too, so the patch is bound upstream.
+
+### Carried patch `0035` was added and retired without ever reaching a consumer (#1403, #280, #2056)
+
+`0035` backported the one line of [OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259)
+the pinned kernel lacks, removing `InitializeMissingParameters()` from
+`STEPControl_Writer::Transfer`. It was retired the next day because it reintroduced
+[#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280): that call is not only an initialiser
+but the repair that re-sets `DirectFaces` on a shared actor an XDE STEP read has left with empty
+`OperationsFlags`. Without it, every STEP write following a `Document.loadSTEP` silently drops
+faces on indirect surfaces: a frustum came back with 2 faces instead of 3, missing 63% of its
+volume, still reporting `isValid == true`.
+
+**No consumer was ever affected.** `0035` was never in the pinned asset, so only
+`kernel-integration.yml`, which builds the kernel from `Scripts/patches/`, ever ran it, and that is
+the job whose #280 regression guard caught it.
+
+`check-inventory-prose.py` grew three claims and one structural check in the same work, after
+adding `0034` left three prose statements stale that the gate reported clean, and it now tolerates
+a capitalised or line-wrapped "the carried sequence now reads" phrase, which the retirement edit
+itself tripped over.
+
+### Carried patch `0034`: `GeomFill_CoonsAlgPatch::Value` samples the U boundaries at U (#1515)
+
+`GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]` and
+`bound[2]` are the U-direction sides. For any boundary set whose V-direction sides are straight the
+result is independent of `U` and the surface collapses onto the `u == v` diagonal, with only
+`u == v` samples coincidentally correct.
+
+The fix is two lines with every coefficient untouched, which #1515 had concluded was impossible:
+`D1U` in the shipped kernel is exactly the derivative of the corrected `Value()`, and a numeric
+probe confirms the corrected form is the exact bilinear surface
+(`Scripts/repro/1515-coons-value-u-parameter/`).
+
+`Shape.coonsAlgPatch` is the only consumer that calls `Value()` directly; `GeomFill_ConstrainedFilling`
+evaluates through `Eval()` and was never affected. **The patch is not in the pinned asset**, so
+`coonsAlgPatch` is still wrong off-diagonal until a repin; its doc comment now says so.
+
+### `API_REFERENCE`'s category rows are censused against the Swift surface (#1679)
+
+A removed public API could leave its name in an `API_REFERENCE.md` category row with every gate
+green, because `count-operations.py` treats those rows as illustrative and re-derives the headline
+totals, while `check-docs-existence.py` reads `docs/reference/` pages rather than these tables.
+`Scripts/census-api-reference-rows.py` reports row entries that resolve to no declaration in
+`Sources/`.
+
+It found one on merge: `revolutionToElementary`, removed by #1634, was still listed in the
+Healing/Analysis row. That row is corrected.
+
+A census rather than a gate, measured: 79 of 2,588 identifier-shaped entries resolve to nothing,
+and most are correct documentation, because the rows mix real symbols with umbrella names
+(`booleanCheck` covers two bridge functions and is declared nowhere), abbreviations
+(`thruSectionsCreate` for `OCCTShapeThruSectionsCreate`) and category labels (`boss`).
+
+### The ten 3D `GeomEval` evaluators return optionals (#1669)
+
+`GeomEval`'s ten curve and surface evaluators returned the zero vector when the call was refused,
+which is indistinguishable from a real answer at the origin, a point these curves and surfaces
+legitimately pass through. Each was a `void` bridge function writing out-parameters inside a `try`,
+so a caught throw left the caller's buffer untouched. This is the defect #1646 fixed for the ten
+`Geom2dEval` functions, which scoped itself to 2D and left these deliberately.
+
+All ten now return `nil` on a refusal: `circularHelixD0`/`D1`/`D2`, `sineWaveD0`/`D1`,
+`ellipsoidD0`, `hyperboloidD0`, `paraboloidD0`, `circularHelicoidD0`, `hyperbolicParaboloidD0`.
+
+The success flag is read off the outputs rather than off the throw, because a throw is only one of
+three routes to a non-answer: a non-finite argument walks past OCCT's validation, since every check
+is written `<= 0` and every comparison against NaN is false, and finite arguments can still
+evaluate to a non-finite point. `EvalD0`/`D1`/`D2` never raise for any parameter, so a finite result
+is the whole of what "succeeded" can mean. Derivative forms answer with every component or none.
+
+Migration: unwrap the result. A caller that previously read the zero vector on failure was reading
+a value that was never a measurement. The ten `docs/reference/` entries are corrected too; each
+previously documented the defect as the contract.
+
+### `pointCloudByDensity(0.0)` returns a cloud instead of hanging (#1452)
+
+Auto-density is requested by passing `0.0`, and it did not return.
+`BRepLib_PointCloudShape::NbPointsByDensity` validates its auto-computed density and then divides
+each face's area by the caller's original argument instead, so `0.0` divides by zero, and
+`(int)std::ceil(+Infinity)` saturates to `INT_MAX`. Every face asked for roughly 2.1 billion points.
+Reachable on an ordinary box.
+
+The bridge now resolves auto-density itself before calling down, using the same `computeDensity()`
+the kernel would have used, so the kernel receives an explicit positive density and its divide is
+correct. Auto-density keeps working; refusing `0.0` would have closed the hang by removing the
+feature.
+
+`Shape.pointCloudByDensity(_:)` gains documentation for what `0.0` means, which it never had, plus
+a runnable snippet. Measurements and probe in `Scripts/repro/1452-pointcloud-auto-density/`. No
+kernel patch is carried; the workaround is marked for retirement when the kernel is repinned.
+
+### Eighteen doc snippets called a `Curve3D.arc` factory that does not exist (#1675)
+
+`Curve3D.arc(center:radius:startAngle:endAngle:)` appeared in 18 places across `docs/reference/` and
+two `///` comments. No such factory exists; `Curve3D` offers `arcOfCircle(start:interior:end:)` and
+`arc(through:_:_:)`, both three-point. Every one of those snippets failed to compile, which matters
+because `docs-current.md` asks for runnable snippets so context7 indexes real code, and eighteen
+copies of one wrong spelling read as authoritative.
+
+All 18 are translated to `arcOfCircle`, and the canonical translation is now pinned by a test that
+confirms it produces the curve the surrounding prose describes: curvature `0.2`, centre of curvature
+at the origin, endpoints at `(±5,0,0)`. `Document-Geometry-Constructors.md`'s concatenation example
+also gains a correction it always needed, since its arc started a unit away from the line it was
+concatenated onto and would not have joined even with a working factory.
+
+### `TObjApplication`'s shared singleton is serialized (#1404)
+
+`TObj_Application::GetInstance()` returns one process-wide object, and two of its own fields were
+mutated with no synchronization: `myIsVerbose`, behind `isVerbose`'s getter and setter, and
+`myIsError`, which `CreateNewDocument` writes before calling `NewDocument` and reads back as its
+return value. Two concurrent `createDocument()` calls could each clear the other's in-flight error
+signal, so a failed creation could be reported as a success.
+
+Both are measured, not inferred: ThreadSanitizer reports a write-write race at
+`TObj_Application.hxx:77` and a race at `TObj_Application.cxx:172` against the pinned kernel
+(`Scripts/repro/1404-tobjapplication/`). In 800 operations the corruption never surfaced as a wrong
+answer, which is why it needed a sanitizer to find.
+
+`OCCTTObjApplicationSetVerbose`, `OCCTTObjApplicationIsVerbose` and
+`OCCTTObjApplicationCreateDocument` now share `tobjApplicationMutex()`, held across the whole
+`CreateNewDocument` call rather than around the field writes. `TObjApplication` remains
+`@unchecked Sendable`, and that claim is now sound rather than aspirational: its doc comment used to
+tell callers to serialize the members themselves with `OCCTSerial.withLock { }`, which is no longer
+necessary.
+
+This is distinct from the kernel races fixed by #341/#344/#349/#353/#371/#374, none of which touched
+this class. No kernel patch was needed and none is carried.
+
+### `Scripts/tsan-stress.sh`'s swift mode can fail (found during #1404)
+
+`do_swift` ran `swift test --sanitize=thread` with no `TSAN_OPTIONS`, so ThreadSanitizer printed a
+detected race and the process still exited 0, because every suite in that mode's filter is
+deliberately an exerciser asserting "did not deadlock, did not crash". Measured on a tree with
+#1404's lock removed: a run reporting a data race in `TObj_Application::SetVerbose` exited 0 and the
+gate called it a pass. `do_run`, the C++ half, has always set
+`halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE`; the swift half never had it, for as long as
+the mode has existed, under a gate CLAUDE.md marks required for concurrency-touching changes.
+
+Both halves now fail the same way under the same suppression file. Verified against #1404's
+known-racy tree in both directions, and the full default filter (509 tests across 123 suites) is
+clean, so no suppression was added. Tooling only, no shipped behaviour change.
+
 ### Removed fourteen `BRepGraph` entry points with no kernel path (#1652)
 
 Eight `BRepGraph` setters silently discarded their arguments on the pinned kernel and six matching
