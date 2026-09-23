@@ -109,3 +109,17 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-gp-dir-vec-extras (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **gp_Dir Extras v0.120.0** | isOpposite | `OCCTDirIsOpposite` | IsOpposite result negated | red | green | PASS |
+| **gp_Dir Extras v0.120.0** | isNotOpposite | `OCCTDirIsOpposite` | IsOpposite result negated | red | green | PASS |
+| **gp_Dir Extras v0.120.0** | isNormal | `OCCTDirIsNormal` | IsParallel instead of IsNormal | red | green | PASS |
+| **gp_Dir Extras v0.120.0** | isNotNormal | `OCCTDirIsNormal` | IsParallel instead of IsNormal | red | green | PASS |
+| **gp_Dir Extras v0.120.0** | isNormalDiagonal | `OCCTDirIsNormal` | IsParallel instead of IsNormal | red | green | PASS |
+| **gp_Vec Extras v0.120.0** | crossMagnitude | `OCCTVecCrossMagnitude` | Dot instead of CrossMagnitude | red | green | PASS |
+| **gp_Vec Extras v0.120.0** | crossMagnitudeParallel | `OCCTVecCrossMagnitude` | Dot instead of CrossMagnitude (2) | red | green | PASS |
+| **gp_Vec Extras v0.120.0** | crossSquareMagnitude | `OCCTVecCrossSquareMagnitude` | Dot instead of CrossSquareMagnitude | red | green | PASS |
+| **gp_Vec Extras v0.120.0** | crossMagnitudeScaled | `OCCTVecCrossMagnitude` | Dot instead of CrossMagnitude | red | green | PASS |
