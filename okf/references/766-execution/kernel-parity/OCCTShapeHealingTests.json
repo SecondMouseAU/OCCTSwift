@@ -2,9 +2,378 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "#837: fixed() mode-flag wiring::fixtureHasBadOrientation",
+    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_output": {
+      "type": "check_status",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "check_status",
+      "data": {
+        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
+        "FixFreeFaceMode=0": "32 (defect left)",
+        "FixFreeFaceMode=1": "0 (NoError)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#837: fixed() mode-flag wiring::fixFaceFalseLeavesDefectInPlace",
+    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_output": {
+      "type": "check_status",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "check_status",
+      "data": {
+        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
+        "FixFreeFaceMode=0": "32 (defect left)",
+        "FixFreeFaceMode=1": "0 (NoError)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#837: fixed() mode-flag wiring::fixFaceTrueCorrectsDefect",
+    "bridge_function": "OCCTShapeFixDetailed (FixFreeFaceMode) / OCCTCheckFaceWireOrientation",
+    "bridge_output": {
+      "type": "check_status",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "check_status",
+      "data": {
+        "fixture OrientationOfWires": "BRepCheck_BadOrientationOfSubshape (32)",
+        "FixFreeFaceMode=0": "32 (defect left)",
+        "FixFreeFaceMode=1": "0 (NoError)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #839: droppingSmallEdges / fixSmallEdges default tolerance alignment::defaultsAgreeOnBorderlineEdge",
+    "bridge_function": "OCCTShapeDropSmallEdges / OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_counts",
+      "data": {
+        "3e-7 edge": {
+          "fixture": 6,
+          "tol 1e-7": 6,
+          "tol 1e-6": 5,
+          "tol 0.5": 5
+        },
+        "0.1 edge": {
+          "fixture": 6,
+          "tol 1e-7": 6,
+          "tol 1e-6": 6,
+          "tol 0.5": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #839: droppingSmallEdges / fixSmallEdges default tolerance alignment::bothAgreeAtASharedExplicitTolerance",
+    "bridge_function": "OCCTShapeDropSmallEdges / OCCTShapeFixSmallEdges",
+    "bridge_output": {
+      "type": "edge_counts",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_counts",
+      "data": {
+        "3e-7 edge": {
+          "fixture": 6,
+          "tol 1e-7": 6,
+          "tol 1e-6": 5,
+          "tol 0.5": 5
+        },
+        "0.1 edge": {
+          "fixture": 6,
+          "tol 1e-7": 6,
+          "tol 1e-6": 6,
+          "tol 0.5": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#849 - ShapeFixStatus real OCCT ordinals::rawValuesMatchTheRealOCCTEnum",
+    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_output": {
+      "type": "enum_ordinals",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "enum_ordinals",
+      "data": {
+        "ShapeExtend_Status": {
+          "OK": 0,
+          "DONE1": 1,
+          "DONE8": 8,
+          "DONE": 9,
+          "FAIL1": 10,
+          "FAIL8": 17,
+          "FAIL": 18
+        },
+        "ShapeFix_Shape(box)": {
+          "OK": false,
+          "DONE": true,
+          "FAIL": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#849 - ShapeFixStatus real OCCT ordinals::faceFixerStatusIsTheSharedType",
+    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_output": {
+      "type": "enum_ordinals",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "enum_ordinals",
+      "data": {
+        "ShapeExtend_Status": {
+          "OK": 0,
+          "DONE1": 1,
+          "DONE8": 8,
+          "DONE": 9,
+          "FAIL1": 10,
+          "FAIL8": 17,
+          "FAIL": 18
+        },
+        "ShapeFix_Shape(box)": {
+          "OK": false,
+          "DONE": true,
+          "FAIL": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#849 - ShapeFixStatus real OCCT ordinals::legacyAndTypeSafeOverloadsAgree",
+    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_output": {
+      "type": "enum_ordinals",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "enum_ordinals",
+      "data": {
+        "ShapeExtend_Status": {
+          "OK": 0,
+          "DONE1": 1,
+          "DONE8": 8,
+          "DONE": 9,
+          "FAIL1": 10,
+          "FAIL8": 17,
+          "FAIL": 18
+        },
+        "ShapeFix_Shape(box)": {
+          "OK": false,
+          "DONE": true,
+          "FAIL": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "#849 - ShapeFixStatus real OCCT ordinals::legacyOverloadStaysNarrow",
+    "bridge_function": "ShapeFixStatus / OCCTShapeFixerStatusFlag",
+    "bridge_output": {
+      "type": "enum_ordinals",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "enum_ordinals",
+      "data": {
+        "ShapeExtend_Status": {
+          "OK": 0,
+          "DONE1": 1,
+          "DONE8": 8,
+          "DONE": 9,
+          "FAIL1": 10,
+          "FAIL8": 17,
+          "FAIL": 18
+        },
+        "ShapeFix_Shape(box)": {
+          "OK": false,
+          "DONE": true,
+          "FAIL": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::nullShapeReturnsUnknownSentinel",
+    "bridge_function": "OCCTShapeExtendShapeType",
+    "bridge_output": {
+      "type": "shape_type",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_type",
+      "data": {
+        "box": "TopAbs_SOLID (2)",
+        "vertex": "TopAbs_VERTEX (7)",
+        "null shape": "bridge sentinel -1, not 7"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::sentinelDecodesToUnknownNotVertex",
+    "bridge_function": "OCCTShapeExtendShapeType",
+    "bridge_output": {
+      "type": "shape_type",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_type",
+      "data": {
+        "box": "TopAbs_SOLID (2)",
+        "vertex": "TopAbs_VERTEX (7)",
+        "null shape": "bridge sentinel -1, not 7"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #870: OCCTShapeExtendShapeType failure fallback::ordinaryShapeUnaffected",
+    "bridge_function": "OCCTShapeExtendShapeType",
+    "bridge_output": {
+      "type": "shape_type",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_type",
+      "data": {
+        "box": "TopAbs_SOLID (2)",
+        "vertex": "TopAbs_VERTEX (7)",
+        "null shape": "bridge sentinel -1, not 7"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound performs the check it is named for (#999)::verdictVariesWithTheWire",
+    "bridge_function": "OCCTSAWireCheckOuterBound",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "panel CheckOuterBound per wire": [
+          false,
+          true
+        ],
+        "single-wire face": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "SAWireAnalysis.checkOuterBound performs the check it is named for (#999)::plainFaceReportsNoProblem",
+    "bridge_function": "OCCTSAWireCheckOuterBound",
+    "bridge_output": {
+      "type": "bools",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "panel CheckOuterBound per wire": [
+          false,
+          true
+        ],
+        "single-wire face": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
