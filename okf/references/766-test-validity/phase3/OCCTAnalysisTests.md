@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Hatch Patterns** | Triangle boundary | Hatch generation | Line spacing doubled / segment end written as its start |
+| **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Hatch island trimming | Island trim skipped / segment end written as its start |
 
 ---
 
@@ -216,6 +218,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Triangle boundary | OCCTHatchLines | Hatch generation | Line spacing doubled / segment end written as its start | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: count > 0 passed under both injections; now pins 9 segments and their endpoints |
+| An island polygon cuts a hole in the hatch fill | OCCTHatchLines | Hatch island trimming | Island trim skipped / segment end written as its start | ✅ | ✅ | Could already fail on a skipped island trim; did not catch zero-length segments, now pins the y = 10 spans and the total |
 
 ---
 
@@ -318,5 +322,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Triangle boundary | ✅ | ✅ | ✅ |
+| An island polygon cuts a hole in the hatch fill | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
