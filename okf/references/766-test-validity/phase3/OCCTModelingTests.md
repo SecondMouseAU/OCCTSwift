@@ -221,3 +221,38 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `BooleanExpansionTests.swift` (4 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-expansion/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| sectionWithTolerance | `OCCTBooleanSectionWithTolerance` returns its failure value (nullptr / false / -1) | `:14 Expectation failed: sec != nil` | pass | `OCCTBooleanSectionWithTolerance` | PASS: the two boxes touch only at the corner (5,5,5), so the section is a single vertex |
+| splitMulti | `OCCTBooleanSplitMulti` returns its failure value (nullptr / false / -1) | `:23 Expectation failed: split != nil` | pass | `OCCTBooleanSplitMulti` | PASS |
+| cutWithHistory | `OCCTBooleanCutWithHistory` returns its failure value (nullptr / false / -1) | `:32 Expectation failed: result != nil` | pass | `OCCTBooleanCutWithHistory` | PASS |
+| defeature | `OCCTShapeDefeature` returns its failure value (nullptr / false / -1) | `:62 Issue recorded` | pass | `OCCTShapeDefeature` | PASS: rewritten: every assertion sat inside if-let of the result |
+
+### `BooleanHistoryTests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-history/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseWithHistory | `OCCTShapeFuseWithHistory` skips collecting Modified() for every face | `:17 Expectation failed: r.modifiedFaces.count > 0` | pass | `OCCTShapeFuseWithHistory` | PASS |
+| fuseNonOverlappingHistory | `OCCTShapeFuseWithHistory` reports an unmodified input face as modified (itself) | `:29 Expectation failed: r.modifiedFaces.count == 0` | pass | `OCCTShapeFuseWithHistory` | PASS |
+
+### `BooleanRegistryTests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-registry/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| unionNamedRevolves | `OCCTBooleanUnionWithHistory` returns nullptr | `:24 Expectation failed: result.fulfilled.contains("u")` | pass | `OCCTBooleanUnionWithHistory` | PASS |
+| missingLeftRef | `FeatureReconstructor.applyBoolean` reports a missing left id as `.occtFailure` instead of `.unresolvedRef` | `:35 Issue recorded` | pass | `FeatureReconstructor.applyBoolean` | N/A: a registry lookup in Swift that fails before any OCCT call; there is no kernel counterpart |
