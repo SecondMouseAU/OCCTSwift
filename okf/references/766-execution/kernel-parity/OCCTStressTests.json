@@ -46,5 +46,577 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Boolean Chains::fiftySubtractions",
+    "bridge_function": "OCCTShapeSubtractEx, OCCTShapeTranslate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume after 50 cuts 995373.8819"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume after 50 cuts 995373.8819",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressChainDepthTests.swift:28 Expectation failed: vol < origVol",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Boolean Chains::hundredSubtractions",
+    "bridge_function": "OCCTShapeSubtractEx, OCCTShapeTranslate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume after 100 cuts 7996665.368"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume after 100 cuts 7996665.368",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressChainDepthTests.swift:50 Expectation failed: vol < origVol",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Boolean Chains::fiftyUnions",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fused volume 6359.375"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fused volume 6359.375",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressChainDepthTests.swift:69 Expectation failed: abs((shape.volume ?? 0) - 6359.375) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Boolean Chains::fiftyIntersections",
+    "bridge_function": "OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): final common 430368.875 (75.5³)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "final common 430368.875 (75.5³)",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressChainDepthTests.swift:85 Expectation failed: abs((shape.volume ?? 0) - 75.5 * 75.5 * 75.5) < 1e-4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Boolean Chains::mixedBooleans",
+    "bridge_function": "OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeIntersectEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): chain ends empty: 0 faces, volume nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "chain ends empty: 0 faces, volume nil",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns its first argument unchanged (a no-op boolean)",
+      "env": "OCCT766=|BOOLPASS|",
+      "red": "StressChainDepthTests.swift:104 Expectation failed: shape.volume == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Chains::filletDrillChamferChain",
+    "bridge_function": "OCCTShapeFillet, OCCTShapeDrillHole, OCCTShapeChamfer, OCCTShapeShell",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fillet, 4 drills, chamfer done; shell not done; final volume 30905.43876"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fillet, 4 drills, chamfer done; shell not done; final volume 30905.43876",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeSubtract (the cut behind drilled) returns nil",
+      "env": "OCCT766=|CUTNULL|",
+      "red": "StressChainDepthTests.swift:140 Expectation failed: abs((shape.volume ?? 0) - 30905.43876) < 1e-3",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Chains::tenSuccessiveFillets",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): first fillet done (999935.7869), second not done"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "first fillet done (999935.7869), second not done",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns nil",
+      "env": "OCCT766=|FILLETNULL|",
+      "red": "StressChainDepthTests.swift:158 Expectation failed: succeeded == 1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Chains::tenDrillsGrid",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 10 drills, volume 98743.36294 (1e5 - 400π)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "10 drills, volume 98743.36294 (1e5 - 400π)",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeSubtract (the cut behind drilled) returns nil",
+      "env": "OCCT766=|CUTNULL|",
+      "red": "StressChainDepthTests.swift:178 Expectation failed: abs((shape.volume ?? 0) - (1e5 - 400 * .pi)) < 1e-3",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Feature Chains::deepFeatureChain",
+    "bridge_function": "OCCTShapeFillet, OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 20 steps succeed, volume 74045.18424"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "20 steps succeed, volume 74045.18424",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns nil",
+      "env": "OCCT766=|FILLETNULL|",
+      "red": "StressChainDepthTests.swift:201 Expectation failed: stepCount == 20",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Transform Chains::thousandTranslations",
+    "bridge_function": "OCCTShapeTranslate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): bounds x in [-4.0000001, 6.0000001]"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "bounds x in [-4.0000001, 6.0000001]",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeTranslate moves by dx + 1",
+      "env": "OCCT766=|WRONG:OCCTShapeTranslate|",
+      "red": "StressChainDepthTests.swift:223 Expectation failed: abs(b.max.x - 6) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Transform Chains::thousandRotations",
+    "bridge_function": "OCCTShapeRotate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1000, max (5.0000001, 5.0000001, 5.0000001)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1000, max (5.0000001, 5.0000001, 5.0000001)",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeRotate turns by angle + 0.1",
+      "env": "OCCT766=|WRONG:OCCTShapeRotate|",
+      "red": "StressChainDepthTests.swift:241 Expectation failed: abs(b.max.x - 5) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Transform Chains::hundredScales",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1000",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale scales by factor × 1.1",
+      "env": "OCCT766=|WRONG:OCCTShapeScale|",
+      "red": "StressChainDepthTests.swift:256 Expectation failed: abs(vol - 1000.0) / 1000.0 < 0.1",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Transform Chains::mixedTransforms",
+    "bridge_function": "OCCTShapeTranslate, OCCTShapeRotate, OCCTShapeScale",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): volume 1104.01168603 (1000·1.001^99)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "volume 1104.01168603 (1000·1.001^99)",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeScale scales by factor × 1.1",
+      "env": "OCCT766=|WRONG:OCCTShapeScale|",
+      "red": "StressChainDepthTests.swift:271 Expectation failed: abs((shape.volume ?? 0) - 1104.01168603) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire Construction Chains::hundredEdgeWire",
+    "bridge_function": "OCCTWireBuilderAddEdge, OCCTWireBuilderWire, OCCTWireBuilderIsDone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeWire after 100 Adds: IsDone=1, 12 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeWire after 100 Adds: IsDone=1, 12 edges",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireBuilderAddEdge ignores its edge",
+      "env": "OCCT766=|SKIP:OCCTWireBuilderAddEdge|",
+      "red": "RED exit 1: StressChainDepthTests.swift:290 Expectation failed: builder.isDone",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire Construction Chains::largePolygonWire",
+    "bridge_function": "OCCTWireCreateFastPolygon, OCCTWireGetLength",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): length 62.8215181563 (2000·sin(π/100))"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "length 62.8215181563 (2000·sin(π/100))",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireGetLength × 1.5",
+      "env": "OCCT766=|LENSCALE|",
+      "red": "StressChainDepthTests.swift:304 Expectation failed: abs((w.length ?? 0) - 2000 * sin(.pi / 100)) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire Construction Chains::manyPointInterpolation",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every sample finite"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every sample finite",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressChainDepthTests.swift:321 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document Assembly Chains::hundredShapesInDocument",
+    "bridge_function": "OCCTDocumentCreate, OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: label bookkeeping, 100 by construction",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentGetShapeCount - 1",
+      "env": "OCCT766=|OFFBYONE:OCCTDocumentGetShapeCount|",
+      "red": "StressChainDepthTests.swift:341 Expectation failed: doc.shapeCount == 100",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document Assembly Chains::deepAssemblyTree",
+    "bridge_function": "OCCTDocumentCreate, OCCTDocumentGetShapeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: label bookkeeping, 6 by construction",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentGetShapeCount - 1",
+      "env": "OCCT766=|OFFBYONE:OCCTDocumentGetShapeCount|",
+      "red": "StressChainDepthTests.swift:355 Expectation failed: doc.shapeCount == 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Document Assembly Chains::manyColorAssignments",
+    "bridge_function": "OCCTDocumentColorToolAddColor, OCCTDocumentColorToolGetColorCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: XCAFDoc_ColorTool label count, 50 by construction",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "OCCTDocumentColorToolGetColorCount - 1",
+      "env": "OCCT766=|OFFBYONE:OCCTDocumentColorToolGetColorCount|",
+      "red": "RED exit 1: StressChainDepthTests.swift:365 Expectation failed: doc.colorToolColorCount == 50",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve Evaluation Depth::tenThousandPointEval",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every sample finite"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every sample finite",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve3DGetPoint|",
+      "red": "StressChainDepthTests.swift:380 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve Evaluation Depth::surfaceGridEval10x10",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every sample finite"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every sample finite",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTSurfaceGetPoint|",
+      "red": "StressChainDepthTests.swift:392 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve Evaluation Depth::curve2DThousandPoints",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every sample finite"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every sample finite",
+      "source": "Scripts/repro/766-stress-chain-depth/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve2DGetPoint: x coordinate set to NaN",
+      "env": "OCCT766=|NAN:OCCTCurve2DGetPoint|",
+      "red": "StressChainDepthTests.swift:403 Expectation failed: pt.x.isFinite",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

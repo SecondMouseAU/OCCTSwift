@@ -288,3 +288,32 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressChainDepthTests (all six suites)
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-chain-depth/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Boolean Chains | `fiftySubtractions` | `OCCTShapeSubtractEx, OCCTShapeTranslate` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressChainDepthTests.swift:28 Expectation failed: vol < origVol | ✔ | MATCH | yes |
+| Stress: Boolean Chains | `hundredSubtractions` | `OCCTShapeSubtractEx, OCCTShapeTranslate` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressChainDepthTests.swift:50 Expectation failed: vol < origVol | ✔ | MATCH | yes |
+| Stress: Boolean Chains | `fiftyUnions` | `OCCTShapeUnionEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressChainDepthTests.swift:69 Expectation failed: abs((shape.volume ?? 0) - 6359.375) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Boolean Chains | `fiftyIntersections` | `OCCTShapeIntersectEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressChainDepthTests.swift:85 Expectation failed: abs((shape.volume ?? 0) - 75.5 * 75.5 * 75.5) < 1e-4 | ✔ | MATCH | yes |
+| Stress: Boolean Chains | `mixedBooleans` | `OCCTShapeUnionEx, OCCTShapeSubtractEx, OCCTShapeIntersectEx` | runBooleanEx returns its first argument unchanged (a no-op boolean) | StressChainDepthTests.swift:104 Expectation failed: shape.volume == nil | ✔ | MATCH | yes |
+| Stress: Feature Chains | `filletDrillChamferChain` | `OCCTShapeFillet, OCCTShapeDrillHole, OCCTShapeChamfer, OCCTShapeShell` | OCCTShapeSubtract (the cut behind drilled) returns nil | StressChainDepthTests.swift:140 Expectation failed: abs((shape.volume ?? 0) - 30905.43876) < 1e-3 | ✔ | MATCH | yes |
+| Stress: Feature Chains | `tenSuccessiveFillets` | `OCCTShapeFillet` | OCCTShapeFillet returns nil | StressChainDepthTests.swift:158 Expectation failed: succeeded == 1 | ✔ | MATCH | yes |
+| Stress: Feature Chains | `tenDrillsGrid` | `OCCTShapeDrillHole` | OCCTShapeSubtract (the cut behind drilled) returns nil | StressChainDepthTests.swift:178 Expectation failed: abs((shape.volume ?? 0) - (1e5 - 400 * .pi)) < 1e-3 | ✔ | MATCH | yes |
+| Stress: Feature Chains | `deepFeatureChain` | `OCCTShapeFillet, OCCTShapeDrillHole` | OCCTShapeFillet returns nil | StressChainDepthTests.swift:201 Expectation failed: stepCount == 20 | ✔ | MATCH | yes |
+| Stress: Transform Chains | `thousandTranslations` | `OCCTShapeTranslate` | OCCTShapeTranslate moves by dx + 1 | StressChainDepthTests.swift:223 Expectation failed: abs(b.max.x - 6) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Transform Chains | `thousandRotations` | `OCCTShapeRotate` | OCCTShapeRotate turns by angle + 0.1 | StressChainDepthTests.swift:241 Expectation failed: abs(b.max.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Transform Chains | `hundredScales` | `OCCTShapeScale` | OCCTShapeScale scales by factor × 1.1 | StressChainDepthTests.swift:256 Expectation failed: abs(vol - 1000.0) / 1000.0 < 0.1 | ✔ | MATCH | no |
+| Stress: Transform Chains | `mixedTransforms` | `OCCTShapeTranslate, OCCTShapeRotate, OCCTShapeScale` | OCCTShapeScale scales by factor × 1.1 | StressChainDepthTests.swift:271 Expectation failed: abs((shape.volume ?? 0) - 1104.01168603) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Wire Construction Chains | `hundredEdgeWire` | `OCCTWireBuilderAddEdge, OCCTWireBuilderWire, OCCTWireBuilderIsDone` | OCCTWireBuilderAddEdge ignores its edge | RED exit 1: StressChainDepthTests.swift:290 Expectation failed: builder.isDone | ✔ | MATCH | yes |
+| Stress: Wire Construction Chains | `largePolygonWire` | `OCCTWireCreateFastPolygon, OCCTWireGetLength` | OCCTWireGetLength × 1.5 | StressChainDepthTests.swift:304 Expectation failed: abs((w.length ?? 0) - 2000 * sin(.pi / 100)) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Wire Construction Chains | `manyPointInterpolation` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressChainDepthTests.swift:321 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Document Assembly Chains | `hundredShapesInDocument` | `OCCTDocumentCreate, OCCTDocumentGetShapeCount` | OCCTDocumentGetShapeCount - 1 | StressChainDepthTests.swift:341 Expectation failed: doc.shapeCount == 100 | ✔ | N/A | yes |
+| Stress: Document Assembly Chains | `deepAssemblyTree` | `OCCTDocumentCreate, OCCTDocumentGetShapeCount` | OCCTDocumentGetShapeCount - 1 | StressChainDepthTests.swift:355 Expectation failed: doc.shapeCount == 6 | ✔ | N/A | yes |
+| Stress: Document Assembly Chains | `manyColorAssignments` | `OCCTDocumentColorToolAddColor, OCCTDocumentColorToolGetColorCount` | OCCTDocumentColorToolGetColorCount - 1 | RED exit 1: StressChainDepthTests.swift:365 Expectation failed: doc.colorToolColorCount == 50 | ✔ | N/A | yes |
+| Stress: Curve Evaluation Depth | `tenThousandPointEval` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint: x coordinate set to NaN | StressChainDepthTests.swift:380 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve Evaluation Depth | `surfaceGridEval10x10` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint: x coordinate set to NaN | StressChainDepthTests.swift:392 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
+| Stress: Curve Evaluation Depth | `curve2DThousandPoints` | `OCCTCurve2DGetPoint` | OCCTCurve2DGetPoint: x coordinate set to NaN | StressChainDepthTests.swift:403 Expectation failed: pt.x.isFinite | ✔ | MATCH | no |
