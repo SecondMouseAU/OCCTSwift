@@ -22,15 +22,17 @@ struct Curve3DArcAliasParityTests {
 
     @Test("arc(through:_:_:) produces a valid arc")
     func arcThroughThreePoints() {
-        let arc = Curve3D.arc(through: Self.start, Self.interior, Self.end)
-        #expect(arc != nil)
-        if let arc {
-            #expect(!arc.isClosed)
-            let s = arc.startPoint
-            #expect(abs(s.x - Self.start.x) < 0.01)
-            #expect(abs(s.y - Self.start.y) < 0.01)
-            #expect(abs(s.z - Self.start.z) < 0.01)
+        guard let arc = Curve3D.arc(through: Self.start, Self.interior, Self.end) else {
+            Issue.record("arc(through:_:_:) returned nil")
+            return
         }
+        // GC_MakeArcOfCircle: the upper half of the r = 5 circle over [0, pi], start (5,0,0),
+        // midpoint (0,5,0), end (-5,0,0) (Scripts/repro/766-curve-arc-bezier-bspline/transcript.txt).
+        // The earlier version checked only the start point to 0.01 inside `if let` (#766).
+        #expect(!arc.isClosed)
+        #expect(simd_distance(arc.startPoint, Self.start) < 1e-12)
+        #expect(simd_distance(arc.endPoint, Self.end) < 1e-12)
+        #expect(simd_distance(arc.point(at: Double.pi / 2), Self.interior) < 1e-12)
     }
 
     @Test("arc(through:_:_:) and arcOfCircle(start:interior:end:) produce identical geometry")
