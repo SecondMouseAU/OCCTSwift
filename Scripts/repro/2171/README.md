@@ -107,9 +107,12 @@ flags in the same translation unit.
 
 This settles the unverified half of #2047: the claim that `OSD_ThreadPool.cxx`'s setjmp needs
 `-fwasm-exceptions` is wrong in its particulars. It needs `-mllvm -wasm-enable-sjlj`, which is a
-different flag, and `-lsetjmp`, which is a different library. Note that OCCT's other setjmp user,
-the `OCC_CATCH_SIGNALS` macro in `Standard_ErrorHandler.hxx`, expands to nothing in this build,
-because `OCC_CONVERT_SIGNALS` is not defined; see `CLAUDE.md`.
+different flag, and `-lsetjmp`, which is a different library. OCCT's other setjmp user, the
+`OCC_CATCH_SIGNALS` macro in `Standard_ErrorHandler.hxx`, expands to a real `setjmp` inside OCCT.
+This section used to say it expands to nothing, which is true of the bridge's own compile and
+false of OCCT's, since OCCT's CMake adds `-DOCC_CONVERT_SIGNALS` on every non-Windows target
+(#2188). #2172 measured the consequence: six TKernel objects reference `__wasm_setjmp`, so both
+flags are required rather than precautionary. See `Scripts/repro/2172/README.md`.
 
 ## An uncaught exception
 
@@ -120,11 +123,10 @@ abort. The exception leaves through `_start` and the runtime reports it:
     Error: wasm exception (payload: [WasmTypes.Value.i32(1293504)])
     exit status: 1
 
-This is a better position than the native build is in. Natively, `OCC_CATCH_SIGNALS` is inert and
-an exception reaching the Swift boundary is uncatchable in-process (#345). On wasm it is a first
-class value the host sees, which a JavaScript embedder can catch at the call. The instance's state
-afterwards is still undefined, so it is a diagnostic improvement and not a licence to stop catching
-at the bridge.
+This is a better position than the native build is in. Natively, an exception reaching the Swift
+boundary is uncatchable in-process (#345). On wasm it is a first class value the host sees, which a
+JavaScript embedder can catch at the call. The instance's state afterwards is still undefined, so
+it is a diagnostic improvement and not a licence to stop catching at the bridge.
 
 ## What it costs in module size
 

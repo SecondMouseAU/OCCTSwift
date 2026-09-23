@@ -255,10 +255,14 @@ the reproducer). What a bridge author needs without opening it:
 
 - `BRepExtrema_ExtCC` crashes on parallel edges: `if (result.isParallel) { return result; }`
   before reading points. `Extrema_ExtCC::Points` itself over-reads on the same input (patch `0024`).
-- `OCC_CATCH_SIGNALS` is inert in this build (no `OCC_CONVERT_SIGNALS`). An OS signal raised
-  inside OCCT is uncatchable in-process, and so is a C++ exception that reaches the Swift boundary
-  (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction` construction from caller doubles
-  sits inside a `try`.
+- `OCC_CATCH_SIGNALS` is live inside OCCT and inert in bridge code. OCCT's own translation units
+  are compiled with `OCC_CONVERT_SIGNALS`, which its CMake adds on every non-Windows target, so
+  OCCT's own sites register a handler and convert a signal into a `Standard_Failure`. SwiftPM
+  defines nothing for `Sources/OCCTBridge/src/*.mm`, so an `OCC_CATCH_SIGNALS` written in the
+  bridge expands to nothing and registers no handler. An OS signal raised in an OCCT frame with
+  none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
+  reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
+  construction from caller doubles sits inside a `try`.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
