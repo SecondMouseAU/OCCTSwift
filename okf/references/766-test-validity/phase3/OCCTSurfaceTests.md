@@ -222,3 +222,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: Issue562SurfaceKnotSplitDuplicateTests.swift, Issue571PlateApproxTests.swift (10 tests), probe Scripts/repro/766-issue562-571-619-623/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Surface knot-splitting duplicates (#562) | Split indices resolve through the knot table to exactly the split parameters | `OCCTSurfaceKnotSplitting` | knot index written in place of the knot value (INJ_KS_PARAM_INDEX) | Issue562SurfaceKnotSplitDuplicateTests.swift:28 result.uSplitIndices.map { surface.bsplineUKnot(index: $0) } == result.uSplitParams | ✅ | MATCH |  |
+| Surface knot-splitting duplicates (#562) | Indices are 1-based and bracket the surface's own knot table | `OCCTSurfaceKnotSplitting` | split indices written 0-based (INJ_562_IDX_MINUS1) | Issue562SurfaceKnotSplitDuplicateTests.swift:47 result.uSplitIndices.first == 1 | ✅ | MATCH |  |
+| Surface knot-splitting duplicates (#562) | U and V answer their own continuity independently | `OCCTSurfaceKnotSplitting` | U and V continuity swapped (INJ_KS_CONT_SWAP) | Issue562SurfaceKnotSplitDuplicateTests.swift:65 uOnly.uSplitCount == both.uSplitCount | ✅ | MATCH |  |
+| Surface knot-splitting duplicates (#562) | A non-BSpline surface reports no splits at all | `OCCTSurfaceKnotSplitting` | result counts not zero-initialised (INJ_KS_UNINIT) | Issue562SurfaceKnotSplitDuplicateTests.swift:81 result.uSplitCount == 0 | ✅ | N/A |  |
+| Issue 571, plate approximation honours its tolerance | A plate surface lands within the tolerance it was given | `OCCTSurfacePlateThrough` | dmax = tolerance x 10, the pre-#571 value (INJ_571_DMAX10) | Issue571PlateApproxTests.swift:57 deviation <= tolerance | ✅ | MATCH |  |
+| Issue 571, plate approximation honours its tolerance | The approximation is allowed to use more than one Bezier patch | `OCCTSurfacePlateThrough` | dmax = tolerance x 10 (INJ_571_DMAX10) | Issue571PlateApproxTests.swift:70 surface.uPoleCount > 9 | ✅ | MATCH |  |
+| Issue 571, plate approximation honours its tolerance | Asking for a tighter tolerance actually produces a tighter fit | `OCCTSurfacePlateThrough` | tolerance ignored, fixed 0.1 passed to the approximator (INJ_571_THROUGH_FIXEDTOL) | Issue571PlateApproxTests.swift:88 tightDeviation < looseDeviation | ✅ | MATCH |  |
+| Issue 571, plate approximation honours its tolerance | maxSegments below the algorithm's floor still honours the tolerance | `OCCTGeomPlateSurface` | maxSegments 1 not clamped to 2, the pre-#571 Nbmax (INJ_571_NBMAX_RAW) | Issue571PlateApproxTests.swift:109 abs(oneArea - manyArea) < 1e-6 | ✅ | MATCH |  |
+| Issue 571, plate approximation honours its tolerance | Both plate-through-points entry points agree on the same input | `OCCTShapePlatePoints` | OCCTShapePlatePoints alone passes tolerance x 100 (INJ_571_PLATEPOINTS_TOL100) | Issue571PlateApproxTests.swift:129 abs(throughArea - namedArea) < 1e-6 | ✅ | MATCH | Also reaches OCCTGeomPlateSurface |
+| Issue 571, plate approximation honours its tolerance | Curve-constrained plates honour their tolerance too | `OCCTShapePlateCurves` | OCCTShapePlateCurves passes tolerance x 100 (INJ_571_POINTS_TOL100, named before the site was identified); also red under INJ_571_DMAX10 | Issue571PlateApproxTests.swift:160 worst <= 0.01 | ✅ | MATCH |  |
