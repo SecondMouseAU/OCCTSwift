@@ -6,5 +6,167 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Offset by Join::offsetArc",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "> 1000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1698.43657
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetInward",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "< 1000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 512
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetIntersection",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1728
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Offset by Join::offsetCylinder",
+    "bridge_function": "OCCTShapeOffsetByJoin",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1341.5898
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetWire",
+    "bridge_function": "OCCTOffsetWireOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "wireLength": 52.56637061
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetWireIntersection",
+    "bridge_function": "OCCTOffsetWireOnPlane",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "wireLength": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Offset Wire/Face::offsetFace",
+    "bridge_function": "OCCTBRepOffsetOffsetFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "null": 0,
+        "area": 400,
+        "centreZ": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
