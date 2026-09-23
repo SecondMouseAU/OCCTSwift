@@ -199,14 +199,57 @@ with `Illegal opcode: [6]`, so C++ compiled with `-fwasm-exceptions` also needs
 `WASM_CXX_EH_FLAGS`, because dropping the second one produces a module that builds
 cleanly and then cannot run.
 
+### Which sysroot compiles OCCT, and why it is not wasi-sdk's
+
+Settled by #2172. **OCCT is compiled against the Swift SDK's `WASI.sdk`, with the
+swift.org toolchain's clang.** wasi-sdk supplies the `eh` runtime described above
+and compiles nothing.
+
+Both sysroots can compile for `wasm32-wasip1`, and they disagree about two things:
+
+| | Swift SDK `WASI.sdk` | wasi-sdk 34.0 `wasm32-wasip1` |
+|---|---|---|
+| `_LIBCPP_HAS_THREADS` | 0 | 1, in both `eh` and `noeh` |
+| libc++ `_LIBCPP_VERSION` | 210106, LLVM 21 | LLVM 23.1.0 |
+
+The threads row is why the build force-includes the shim from #2170. The version
+row is the stronger argument and is the one that decides it: two libc++ major
+releases apart means two implementations under one set of mangled names in one
+module, and the Swift half of that module links `WASI.sdk`'s copy whatever OCCT
+was built against. The bridge's flat C ABI keeps C++ types out of Swift's way and
+does nothing about which definition the linker picks.
+
+The mechanism is [`Scripts/cmake/wasi-swift-sdk.cmake`](../Scripts/cmake/wasi-swift-sdk.cmake),
+a toolchain file this repo owns. Before #2172 the build script reached for a
+`swift-wasi-sdk.cmake` that exists in neither install and fell through to
+wasi-sdk's own `wasi-sdk-p1.cmake`, so wasi-sdk's compiler and default sysroot
+were what always ran.
+
+### The exception flags reach OCCT's own compile
+
+`Scripts/build-occt-wasm.sh` puts `WASM_CXX_EH_FLAGS` and `-mllvm -wasm-enable-sjlj`
+into `CMAKE_CXX_FLAGS` for the whole OCCT build, and asserts before CMake starts
+that they produce a catch handler. #2171 measured that a translation unit missing
+them still lets an exception propagate, while its stack cleanup never runs and a
+`try`/`catch` inside it never fires, with no diagnostic. OCCT catches
+`Standard_Failure` internally to set `IsDone() == false`, so that is the
+difference between a kernel that reports failures and one that quietly stops.
+
+`setjmp` is a separate mechanism needing a separate flag and `-lsetjmp` at link.
+It is not hypothetical: OCCT's CMake defines `OCC_CONVERT_SIGNALS` on every
+non-Windows target, so `OCC_CATCH_SIGNALS` expands to a real `setjmp` inside OCCT,
+and 6 of the 119 `TKernel` objects that compile carry a lowered pair.
+
 ### What this does not settle
 
 The verification package links Swift built against the Swift SDK's no-exceptions
 C++ runtime together with a C++ target using wasi-sdk's exception-enabled one.
-That holds for one file. Whether it holds across a kernel the size of OCCT is the
-exception spike (#2171), and building OCCT itself is #2174. The measurement log,
-including the failure output of each negative case, is
-[`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md).
+That holds for one file. #2172 took it as far as compiling and archiving one
+OCCT toolkit, 119 of `TKernel`'s 127 source files, and **linked none of it**.
+Whether the libc++ seam holds across an archive of OCCT's size, and what supplies
+`operator new`, is #2174. The measurement logs are
+[`Scripts/repro/2169/README.md`](../Scripts/repro/2169/README.md) and
+[`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md).
 
 ## Plan
 
