@@ -222,3 +222,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: ConvertElementarySurfacesTests.swift, CurveOnSurfaceCheckTests.swift, EvolvedSurfaceTests.swift, ExtendedRevolutionTests.swift (10 tests), probe Scripts/repro/766-convert-check-evolved-revol/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Convert Elementary Surfaces Tests | cylinderPatch | `OCCTConvertCylinderToBSplineSurface` | radius + 1 (INJ_CONV_WRONG) | ConvertElementarySurfacesTests.swift:25 simd_length(pointAt30x60(s) - SIMD3(2.9055429055745949, 4.0691301802553754, 6)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| Convert Elementary Surfaces Tests | conePatch | `OCCTConvertConeToBSplineSurface` | reference radius + 1 (INJ_CONV_WRONG) | ConvertElementarySurfacesTests.swift:36 simd_length(pointAt30x60(s) - SIMD3(4.6488686489193523, ...)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| Convert Elementary Surfaces Tests | fullTorus | `OCCTConvertTorusToBSplineSurface` | major radius + 1 (INJ_CONV_WRONG) | ConvertElementarySurfacesTests.swift:47 simd_length(pointAt30x60(s) - SIMD3(-5.3865777080062784, ...)) < 1e-12 | ✅ | MATCH | Rewritten: asserted only non-nil |
+| Curve-on-Surface Check Tests | Box has consistent edge curves | `OCCTShapeCheckCurveOnSurface` | +1e-3 on the reported deviation (INJ_COS_OFFSET); also: every pair skipped (INJ_COS_SKIP) turns the result nil | CurveOnSurfaceCheckTests.swift:21 check.maxDistance < 1e-5 | ✅ | MATCH | Caught as written; pinned to the kernel value too |
+| Curve-on-Surface Check Tests | Sphere has consistent edge curves | `OCCTShapeCheckCurveOnSurface` | +1e-3 on the reported deviation (INJ_COS_OFFSET); also: every pair skipped (INJ_COS_SKIP) turns the result nil | CurveOnSurfaceCheckTests.swift:32 check.maxDistance < 1e-4 | ✅ | MATCH | Caught as written; pinned to the kernel value too |
+| Curve-on-Surface Check Tests | Cylinder has consistent edge curves | `OCCTShapeCheckCurveOnSurface` | +1e-3 on the reported deviation (INJ_COS_OFFSET); also: every pair skipped (INJ_COS_SKIP) turns the result nil | CurveOnSurfaceCheckTests.swift:43 check.maxDistance < 1e-4 | ✅ | MATCH | Caught as written; pinned to the kernel value too |
+| Curve-on-Surface Check Tests | Fused shapes have consistent curves | `OCCTShapeCheckCurveOnSurface` | +1e-3 on the reported deviation (INJ_COS_OFFSET); also: every pair skipped (INJ_COS_SKIP) turns the result nil | CurveOnSurfaceCheckTests.swift:59 abs(check.maxDistance - 9.5267920493270872e-08) < 1e-12 | ✅ | MATCH | `< 0.1` passed a 1e-3 offset; pinned. Swift union matches the plain kernel Fuse here |
+| Evolved Surface Tests | Simple evolved shape | `OCCTShapeCreateEvolved` | spine and profile swapped (INJ_EVOLVED_SWAP) | EvolvedSurfaceTests.swift:22 evolved == nil | ✅ | MATCH | Rewritten: never asserted anything (the kernel always refuses this input, so `if let` skipped the body); refusal pinned, a buildable case added |
+| Extended Revolution | revolveFaceFull | `OCCTShapeCreateRevolutionFull` | full turn made pi (INJ_REVOL_ANGLE) | ExtendedRevolutionTests.swift:31 abs((revolved.volume ?? 0) - 628.31853071795877) < 1e-6 | ✅ | MATCH | Rewritten: its XY profile, perpendicular to the axis, made a degenerate invalid solid that `!= nil` accepted |
+| Extended Revolution | revolveFacePartial | `OCCTShapeCreateRevolutionPartial` | angle halved (INJ_REVOL_ANGLE) | ExtendedRevolutionTests.swift:42 abs((half.volume ?? 0) - 314.15926535897944) < 1e-6 | ✅ | MATCH | Rewritten: same degenerate XY profile |
