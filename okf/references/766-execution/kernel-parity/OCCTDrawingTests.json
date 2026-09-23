@@ -222,5 +222,327 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Add operations on a fresh box graph do not crash",
+    "bridge_function": "OCCTBRepGraphEdgeAddInternalVertex",
+    "bridge_output": {
+      "edgeInternalVertex": 1,
+      "faceVertex": 2,
+      "shellAdd": null,
+      "solidAdd": null,
+      "compoundAdd": null,
+      "compSolidAdd": null
+    },
+    "kernel_output": {
+      "edgeInternalVertexUid": 1,
+      "faceVertexUid": 2,
+      "compoundAppendValid": false,
+      "compSolidAppendValid": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Remove operations on invalid ref ids return false without crashing",
+    "bridge_function": "OCCTBRepGraphEdgeRemoveVertex",
+    "bridge_output": {
+      "all": false
+    },
+    "kernel_output": {
+      "edgeRemoveVertex": false,
+      "edgeReplaceVertexValid": false,
+      "wireRemoveCoEdge": false,
+      "removeAttachment": false,
+      "faceRemoveWire": false,
+      "shellRemoveFace": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.161 EditorView Add/Remove + Ref setters::Edge / face / coedge ref setters operate on existing entities",
+    "bridge_function": "OCCTBRepGraphSetCoEdgeEdgeDefId",
+    "bridge_output": {
+      "coedge0Edge": 5,
+      "coedge0Face": 3
+    },
+    "kernel_output": {
+      "before": [
+        0,
+        0
+      ],
+      "afterSetChildEdgeId5SetFaceId3": [
+        5,
+        3
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Create empty product and link to topology",
+    "bridge_function": "OCCTBRepGraphCreateEmptyProduct",
+    "bridge_output": {
+      "parent": 0,
+      "child": 1,
+      "occurrence": 1,
+      "occurrenceRef": 1
+    },
+    "kernel_output": {
+      "parent": 0,
+      "child": 1,
+      "occurrence": 1,
+      "occurrenceRef": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Remove ops on bogus ids return false",
+    "bridge_function": "OCCTBRepGraphProductRemoveOccurrence",
+    "bridge_output": {
+      "removeOccurrence": false
+    },
+    "kernel_output": {
+      "removeOccurrence": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Occurrence ref local location round-trip",
+    "bridge_function": "OCCTBRepGraphGetOccurrenceRefLocalLocation",
+    "bridge_output": {
+      "translation": [
+        5.0,
+        6.0,
+        7.0
+      ]
+    },
+    "kernel_output": {
+      "translation": [
+        5,
+        6,
+        7
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Child ref local location round-trip",
+    "bridge_function": "OCCTBRepGraphSetChildRefLocalLocation",
+    "bridge_output": {
+      "first": [
+        1,
+        2,
+        3
+      ],
+      "second": [
+        -4,
+        -5,
+        -6
+      ]
+    },
+    "kernel_output": {
+      "first": [
+        1,
+        2,
+        3
+      ],
+      "second": [
+        -4,
+        -5,
+        -6
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.163 EditorView ProductOps assembly building::Occurrence ref local location setter overwrites the placement linkProducts wrote",
+    "bridge_function": "OCCTBRepGraphSetOccurrenceRefLocalLocation",
+    "bridge_output": {
+      "translation": [
+        11,
+        12,
+        13
+      ]
+    },
+    "kernel_output": {
+      "afterLink": [
+        5,
+        6,
+        7
+      ],
+      "afterSet": [
+        11,
+        12,
+        13
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Vertex point and tolerance set then read back",
+    "bridge_function": "OCCTBRepGraphSetVertexPoint",
+    "bridge_output": {
+      "point": [
+        1.5,
+        2.5,
+        3.5
+      ],
+      "tolerance": 0.0001
+    },
+    "kernel_output": {
+      "point": [
+        1.5,
+        2.5,
+        3.5
+      ],
+      "tolerance": 0.0001
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Edge tolerance, range, and flags set then read back",
+    "bridge_function": "OCCTBRepGraphSetEdgeTolerance",
+    "bridge_output": {
+      "tolerance": 0.001,
+      "range": [
+        0.25,
+        7.5
+      ],
+      "closed": false
+    },
+    "kernel_output": {
+      "tolerance": 0.001,
+      "range": [
+        0.25,
+        7.5
+      ],
+      "closed": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::Face tolerance set then read back",
+    "bridge_function": "OCCTBRepGraphSetFaceTolerance",
+    "bridge_output": {
+      "tolerance": 0.005
+    },
+    "kernel_output": {
+      "tolerance": 0.005
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.159 EditorView field setters::CoEdge/Wire/Shell setters do not crash on valid ids",
+    "bridge_function": "OCCTBRepGraphWireIsClosed",
+    "bridge_output": {
+      "wire0Closed": true,
+      "shell0Closed": true
+    },
+    "kernel_output": {
+      "wire0Closed": true,
+      "shell0Closed": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh inspection on a fresh graph",
+    "bridge_function": "OCCTBRepGraphCachedFaceMeshIsPresent",
+    "bridge_output": {
+      "present": false,
+      "count": 0,
+      "active": -1,
+      "repId": null
+    },
+    "kernel_output": {
+      "faceCacheHas": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached face mesh state after appendCachedTriangulation",
+    "bridge_function": "OCCTBRepGraphMeshAppendCachedTriangulation",
+    "bridge_output": {
+      "present": true,
+      "count": 1,
+      "active": 0,
+      "repId": 0
+    },
+    "kernel_output": {
+      "faceCacheHasAfterSetCachedTriangulation": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.164 RepOps non-guard setters & cache entry inspection::Cached edge / coedge mesh accessors return absent on fresh graph",
+    "bridge_function": "OCCTBRepGraphCachedEdgeMeshIsPresent",
+    "bridge_output": {
+      "edge": false,
+      "coedge": false,
+      "onTriCount": 0
+    },
+    "kernel_output": {
+      "edgeCacheHas": false,
+      "coedgeCacheHas": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
