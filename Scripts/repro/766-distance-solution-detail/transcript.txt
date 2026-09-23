@@ -1,0 +1,8 @@
+detailBetweenBoxes: done=1 value=12.5 nbSolution=4
+  [0] support1=2 support2=0 p1=(5, -2.5, 2.5) p2=(17.5, -2.5, 2.5) uv1=(7.5, -2.5)
+  [1] support1=2 support2=0 p1=(5, -2.5, -2.5) p2=(17.5, -2.5, -2.5) uv1=(2.5, -2.5)
+  [2] support1=2 support2=0 p1=(5, 2.5, 2.5) p2=(17.5, 2.5, 2.5) uv1=(7.5, -7.5)
+  [3] support1=2 support2=0 p1=(5, 2.5, -2.5) p2=(17.5, 2.5, -2.5) uv1=(2.5, -7.5)
+detailSupportTypes: done=1 value=12 nbSolution=2
+  [0] support1=0 support2=2 p1=(5, 5, 5) p2=(17, 5, 5) uv2=(3.1415926535897931, 0)
+  [1] support1=2 support2=2 p1=(5, 5, 5) p2=(17, 5, 5) uv1=(9.9999994943750607, -9.9999997694046154) uv2=(3.141592676403353, -4.7103062538952911e-08)

@@ -102,6 +102,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Distance Solution Detail** | detailBetweenBoxes | Distance solution support types | Report every support as a vertex |
+| **Distance Solution Detail** | detailSupportTypes | Distance solution support types | Report every support as a vertex |
 
 ---
 
@@ -216,6 +218,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| detailBetweenBoxes | OCCTShapeDistanceSolutionDetail | Distance solution support types | Report every support as a vertex | ✅ | ✅ | Rewritten: rawValue >= 0 holds for every case; solution count via OCCTShapeAllDistanceSolutions |
+| detailSupportTypes | OCCTShapeDistanceSolutionDetail | Distance solution support types | Report every support as a vertex | ✅ | ✅ | Rewritten: asserted only detail != nil |
 
 ---
 

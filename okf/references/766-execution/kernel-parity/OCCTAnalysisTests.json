@@ -497,5 +497,71 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Distance Solution Detail::detailBetweenBoxes",
+    "bridge_function": "OCCTShapeDistanceSolutionDetail",
+    "bridge_output": {
+      "type": "distance_solution_detail",
+      "data": {
+        "solutionCount": 4,
+        "distance": 12.5,
+        "supportType1": "inFace",
+        "supportType2": "vertex",
+        "paramFaceUV1": [
+          7.5,
+          -2.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance_solution_detail",
+      "data": {
+        "solutionCount": 4,
+        "distance": 12.5,
+        "supportType1": "BRepExtrema_IsInFace",
+        "supportType2": "BRepExtrema_IsVertex",
+        "paramFaceUV1": [
+          7.5,
+          -2.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Distance Solution Detail::detailSupportTypes",
+    "bridge_function": "OCCTShapeDistanceSolutionDetail",
+    "bridge_output": {
+      "type": "distance_solution_detail",
+      "data": {
+        "supportType1": "vertex",
+        "supportType2": "inFace",
+        "paramFaceUV2": [
+          3.141592653589793,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "distance_solution_detail",
+      "data": {
+        "supportType1": "BRepExtrema_IsVertex",
+        "supportType2": "BRepExtrema_IsInFace",
+        "paramFaceUV2": [
+          3.141592653589793,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
