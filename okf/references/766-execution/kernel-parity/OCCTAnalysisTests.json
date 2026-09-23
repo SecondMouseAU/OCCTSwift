@@ -4501,5 +4501,339 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Build KD-tree",
+    "bridge_function": "OCCTKDTreeBuild",
+    "bridge_output": {
+      "type": "build",
+      "data": {
+        "built": true,
+        "points": 7
+      }
+    },
+    "kernel_output": {
+      "type": "build",
+      "data": {
+        "built": true,
+        "points": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Empty points returns nil",
+    "bridge_function": "OCCTKDTreeBuild",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "tree": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "N/A",
+      "data": {
+        "reason": "The nil is the Swift guard (and the bridge's own count guard) refusing before any kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Nearest point - exact match",
+    "bridge_function": "OCCTKDTreeNearestPoint",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "index": 0,
+        "distance": 0
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "index": 0,
+        "distance": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Nearest point - closest to query",
+    "bridge_function": "OCCTKDTreeNearestPoint",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "index": 1,
+        "distance": 0.17320508075688773
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "index": 1,
+        "distance": 0.17320508075688773
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::K-nearest returns correct count",
+    "bridge_function": "OCCTKDTreeKNearest",
+    "bridge_output": {
+      "type": "knn",
+      "data": {
+        "results": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "knn",
+      "data": {
+        "results": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            3,
+            1
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::K-nearest includes self when exact",
+    "bridge_function": "OCCTKDTreeKNearest",
+    "bridge_output": {
+      "type": "knn",
+      "data": {
+        "results": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "knn",
+      "data": {
+        "results": [
+          [
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::K larger than point count returns all",
+    "bridge_function": "OCCTKDTreeKNearest",
+    "bridge_output": {
+      "type": "knn",
+      "data": {
+        "count": 7
+      }
+    },
+    "kernel_output": {
+      "type": "knn",
+      "data": {
+        "count": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Range search - finds nearby points",
+    "bridge_function": "OCCTKDTreeRangeSearch",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0,
+          3,
+          2,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Range search - small radius finds only nearest",
+    "bridge_function": "OCCTKDTreeRangeSearch",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Box search - finds points in AABB",
+    "bridge_function": "OCCTKDTreeBoxSearch",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0,
+          3,
+          2,
+          1,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "indices": [
+          0,
+          3,
+          2,
+          1,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Box search - entire space",
+    "bridge_function": "OCCTKDTreeBoxSearch",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "count": 7
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "count": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
+  },
+  {
+    "test_name": "KD-Tree Spatial Queries::Large point set performance",
+    "bridge_function": "OCCTKDTreeNearestPoint",
+    "bridge_output": {
+      "type": "nearest",
+      "data": {
+        "index": 444,
+        "distance": 0.6928203230275516
+      }
+    },
+    "kernel_output": {
+      "type": "nearest",
+      "data": {
+        "index": 444,
+        "distance": 0.6928203230275516
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-kdtree/"
   }
 ]

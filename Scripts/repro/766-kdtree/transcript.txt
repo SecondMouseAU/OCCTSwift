@@ -1,0 +1,12 @@
+KDTree nearest to (0,0,0): index=0 distance=0
+KDTree nearest to (0.9,0.1,0.1): index=1 distance=0.17320508075688773
+KDTree 3-nearest to origin: found=3: (0, 0) (2, 1) (3, 1)
+KDTree 1-nearest to origin: found=1: (0, 0)
+KDTree 7-nearest to origin: found=7: (0, 0) (2, 1) (3, 1) (1, 1) (4, 3) (5, 75) (6, 300)
+KDTree 100-nearest to origin: found=7
+KDTree range r=1.1: count=4: 0 3 2 1
+KDTree range r=0.1: count=1: 0
+KDTree box (-0.5..1.5): count=5: 0 3 2 1 4
+KDTree box (-100..100): count=7
+KDTree 1000-point grid, nearest to (4.4,4.4,4.4): index=444 point=(4, 4, 4) distance=0.69282032302755159
+KDTree 1000-point grid, nearest to (4.5,4.5,4.5): index=555 distance=0.8660254037844386 (an 8-way tie)
