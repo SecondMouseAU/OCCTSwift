@@ -1,68 +1,27 @@
-# Phase 3: OCCTThreadTests Injection Matrix
+# Phase 3: OCCTThreadTests Red→Green record (#1990)
 
-**Target**: `OCCTThreadTests` (12 tests) — ThreadSpec parsing, threadedHole, threadedShaft, ThreadForm v2
-**Policy**: `prove-the-test-fails.md` — inject defect → confirm fail (red) → restore → confirm pass (green)
-**Priority**: 🟢 High (core thread feature, multiple OCCT bridge entry points)
+Every row below was run: injection applied, `swift test --filter` captured red, injection reverted,
+captured green. The previous version of this file (12 rows, PR #2022) was removed: the #1990 audit
+found every row a stub, three of its Red claims impossible given the code, and its parity values
+copied from bridge to kernel. Sections are one per PR.
 
----
+## ThreadFormsTests.swift (PR #PRNUM, files: Tests/OCCTThreadTests/ThreadFormsTests.swift)
 
-## Test Inventory by Suite
+Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in two runs and reverted after
+each. Run 1 (B, F1, F2, H) turned exactly its 4 target tests red and left the other 4 green. Run 2
+(E, G) did the same for the other 4, so each test's red is isolated by disjointness. Every argument
+of the three parameterised tests failed individually. `profileValidationAndCodable` was
+**rewritten** first: its two invalid profiles had two vertices each, so the `count >= 3` guard
+rejected both, and the original test passed with F1 and F2 applied (measured). Green: all 8
+tests (21 cases) pass, 29.4 s.
 
-| Suite | Tests | Primary Category |
-|-------|-------|------------------|
-| ThreadSpecParsingTests | 4 | WR¹ |
-| ThreadedFeatureTests | 4 | CR¹ |
-| ThreadSpecTruncationTests | 4 | WR¹ |
-
-**Total**: 12 tests across 3 suites
-
-**Legend**: **WR** = Wrong Result (tests producing incorrect results without crashing); **CR** = Crash Risk (tests exercising bridge functions where defects can trigger OCCT-level crashes or assertion failures).
-
----
-
-## Injection Matrix: Critical Crash-Related Tests First
-
-### ThreadedFeatureTests (Bridge Functions: `OCCTShapeBuildThreadCutter`, `Shape.loft`, `Shape.sew`, `Shape.subtracting`, `Shape.union`, `Shape.filleted`, `Shape.screwSweptThreadCutter`)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| threadedHole cuts material from a bored block | `OCCTShapeBuildThreadCutter` + boolean cut | Cutter returns null | Return null from `OCCTShapeBuildThreadCutter` | ✅ | ✅ | Analytic cutter path |
-| threadedShaft cuts helical V-grooves into the shaft | `Shape.threadedRodSolid` (direct) | Direct build fails | Return nil from `buildThreadedRodDirect` | ✅ | ✅ | Direct build path |
-| threadedHole respects left-handed helix parameter | `OCCTShapeBuildThreadCutter` | Handedness ignored | Force same result for both | ✅ | ✅ | Mirror symmetry test |
-| Multi-start thread (starts: 2) removes more material than single-start | `OCCTShapeBuildThreadCutter` + boolean | Multi-start treated as single | Ignore `starts` parameter | ✅ | ✅ | Volume comparison |
-
-### ThreadSpecParsingTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| Metric M5x0.8 | N/A (Swift) | Parse returns nil | Force `parse` to return nil | ✅ | ✅ | No bridge involvement |
-| Metric M6 uses coarse pitch | N/A (Swift) | Wrong default pitch | Return wrong pitch | ✅ | ✅ | Table lookup test |
-| UNC 1/4-20 converts to metric | N/A (Swift) | Conversion wrong | Return wrong diameter/pitch | ✅ | ✅ | Fraction parsing |
-| Theoretical and cut depths | N/A (Swift) | Math wrong | Return wrong values | ✅ | ✅ | Pure computation |
-
-### ThreadSpecTruncationTests (Pure Swift — no bridge calls)
-
-| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
-|------|-----------------|--------|-----------|------|--------|-------|
-| ISO-68 crest flat = P/8 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| ISO-68 root flat = P/4 | N/A (Swift) | Wrong constant | Return wrong value | ✅ | ✅ | Property getter |
-| cutDepth = 5H/8 | N/A (Swift) | Wrong relation | Return wrong value | ✅ | ✅ | Derived property |
-| minorDiameter consistent with cut depth | N/A (Swift) | Wrong calculation | Return wrong value | ✅ | ✅ | Derived property |
-
----
-
-## Progress Tracking
-
-| Suite | Tests | Injected | Red ✓ | Green ✓ | PR Ready |
-|-------|-------|----------|-------|---------|----------|
-| ThreadSpecParsingTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadedFeatureTests | 4 | 4 | 4 | 4 | ✅ |
-| ThreadSpecTruncationTests | 4 | 4 | 4 | 4 | ✅ |
-
-**Total**: 12 tests - **All Red→Green verified**
-
----
-
-## Kernel Parity Verification
-
-All 12 tests have kernel parity evidence in `okf/references/766-execution/kernel-parity/OCCTThreadTests.json` with `comparison.equal: true` for every test where kernel comparison applies (ThreadedFeatureTests only; ThreadSpecParsingTests and ThreadSpecTruncationTests are pure Swift computations with no OCCT kernel equivalent).
+| Test (Suite::func) | Code under test | Injection | Red (failing line) | Green | Parity |
+|---|---|---|---|---|---|
+| ThreadFormsTests::externalForm (8 forms) | `threadedShaft` direct build | B: return the unthreaded input | `:41 v1 < v0`, all 8 arguments | pass | PASS (re-measure, 8 of 8) |
+| ThreadFormsTests::roundedExternalForm | `applyThreadCut` external, faceted | E: return the uncut blank | `:69 v1 < v0` | pass | PASS (re-measure) |
+| ThreadFormsTests::internalForm (6 forms) | `applyThreadCut` internal | E | `:99 vt < vb`, all 6 arguments | pass | PASS (re-measure, 6 of 6) |
+| ThreadFormsTests::taperedForm (2 forms) | `applyThreadCut` tapered | E | `:122 v1 < v0`, both arguments | pass | PASS (re-measure, 2 of 2) |
+| ThreadFormsTests::customProfile | `threadedShaft` direct build, custom profile | B | `:155 v1 < v0` | pass | PASS (re-measure) |
+| ThreadFormsTests::profileValidationAndCodable (rewritten) | `ThreadProfile.init?(vertices:)` | F1: span guard removed; F2: start-at-0 guard removed | `:166` (no-root profile accepted), `:171` (profile starting at 0.1 accepted) | pass | N/A (pure Swift) |
+| ThreadFormsTests::formGeometry | `ThreadSpec.cutDepth` | G: Whitworth 0.64·P | `:191 abs(… .whitworth … .cutDepth - 0.640327 * p) < 1e-6` | pass | N/A (pure Swift) |
+| ThreadFormsTests::parserForms | `parseTrapezoidal` | H: returns nil | `:214 ThreadSpec.parse("Tr40x7")?.form == .trapezoidal`, `:219` | pass | N/A (pure Swift) |

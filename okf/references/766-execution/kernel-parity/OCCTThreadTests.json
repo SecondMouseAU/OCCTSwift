@@ -1,94 +1,33 @@
 [
   {
-    "test_name": "threadedHole cuts material from a bored block",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each piecewise-linear form builds a valid, smooth external thread",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
     "bridge_output": {
-      "type": "shape",
+      "type": "shape_volumes_mm3",
       "data": {
-        "volume_ratio": 0.85,
-        "valid": true
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
       }
     },
     "kernel_output": {
-      "type": "shape",
+      "type": "shape_volumes_mm3",
       "data": {
-        "volume_ratio": 0.85,
-        "valid": true
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "threadedShaft cuts helical V-grooves into the shaft",
-    "bridge_function": "Shape.threadedRodSolid (direct build)",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "threadedHole respects left-handed helix parameter",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "Multi-start thread (starts: 2) removes more material than single-start",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
+        "shank_r6_h24": 2714.336052702,
+        "iso68": 2331.528851886,
+        "unified": 2331.528851886,
+        "whitworth": 2315.923353696,
+        "bspParallel": 2315.923353696,
+        "acme": 2400.878691005,
+        "trapezoidal": 2400.790171471,
+        "square": 2403.315552846,
+        "buttress": 2228.712459156
       }
     },
     "comparison": {
@@ -96,158 +35,160 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "PLACEHOLDER VALUES - need actual measurement from macOS test run"
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. All eight valid with 9 faces. Finding: with the shank meshed before threading every form shifts by +5.4636 mm^3 and gains 2 faces (bounds inflated by the mesh deflection)."
   },
   {
-    "test_name": "Metric M5x0.8",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::rounded forms (knuckle) build a valid external thread via the faceted cut path",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape_volumes_mm3",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 5.0,
-        "pitch": 0.8
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h24": 2714.336052702,
+        "knuckle": 2364.205392678
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
   },
   {
-    "test_name": "Metric M6 uses coarse pitch",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::each form builds a valid internal thread (cut path)",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced (screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume + OCCTShapeIsValid",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape_volumes_mm3",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 6.0,
-        "pitch": 1.0
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "shape_volumes_mm3",
+      "data": {
+        "annulus_iso68": 6022.735014273,
+        "iso68": 5746.14675921,
+        "annulus_whitworth": 6118.705255017,
+        "whitworth": 5836.786997335,
+        "annulus_acme": 5981.592412435,
+        "acme": 5746.594286947,
+        "annulus_square": 5981.592412435,
+        "square": 5741.827370224,
+        "annulus_buttress": 6324.120556444,
+        "buttress": 5983.07015736,
+        "annulus_knuckle": 6031.355240068,
+        "knuckle": 5788.752239222
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs. iso68 also builds OCCTShapeBuildThreadCutter's analytic candidate first; isSoundCut rejects it here."
   },
   {
-    "test_name": "UNC 1/4-20 converts to metric",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::tapered pipe threads (NPT, BSPT) build a valid thread",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced ruled=true (faceted screw-loft cutter) + OCCTShapeSubtractEx + OCCTShapeGetVolume",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape_volumes_mm3",
       "data": {
-        "form": "unified",
-        "nominalDiameter": 6.35,
-        "pitch": 1.27
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r8_h24": 4825.486315914,
+        "nptTapered": 4264.80994505,
+        "bsptTapered": 4239.639847674
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
   },
   {
-    "test_name": "Theoretical and cut depths",
-    "bridge_function": "ThreadSpec properties (Swift only)",
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::a custom cross-section threads a cylinder",
+    "bridge_function": "none (Swift direct build: OCCTShapeCreateLoftAdvanced ruled=false + OCCTShapeSew) + OCCTShapeGetVolume + OCCTShapeIsValid",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape_volumes_mm3",
       "data": {
-        "theoreticalDepth": 1.299,
-        "cutDepth": 0.8119,
-        "minorDiameter": 8.376
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
+      "type": "shape_volumes_mm3",
+      "data": {
+        "shank_r6_h20": 2261.946710585,
+        "custom": 1952.030286331
+      }
     },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel re-measure (BRepGProp OnlyClosed=true, BRepCheck_Analyzer) of the BREP the Swift call exported, stock rebuilt in pure OCCT; no single OCCT algorithm to call with the same inputs."
   },
   {
-    "test_name": "ISO-68 crest flat = P/8",
-    "bridge_function": "ThreadSpec.crestFlat (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.1875
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::ThreadProfile validation + JSON round-trip",
+    "bridge_function": "none (pure Swift: ThreadProfile.init?(vertices:), synthesized Codable)",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
   },
   {
-    "test_name": "ISO-68 root flat = P/4",
-    "bridge_function": "ThreadSpec.rootFlat (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.375
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::form geometry: cutDepth + segment shape",
+    "bridge_function": "none (pure Swift: ThreadSpec.cutDepth / minorDiameter, ThreadProfile segments)",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
   },
   {
-    "test_name": "cutDepth = 5H/8",
-    "bridge_function": "ThreadSpec.cutDepth (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.8119
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
+    "test_name": "Thread forms, Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom::parser recognises the new designations",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse)",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
-  },
-  {
-    "test_name": "minorDiameter consistent with cut depth",
-    "bridge_function": "ThreadSpec.minorDiameter (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 8.376
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "Pure Swift in Sources/OCCTSwift/ThreadFeatures.swift; no OCCT call, so no kernel counterpart."
   }
 ]
