@@ -85,3 +85,26 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| v0.149 Drawing.addAutoDimensions | Box front view produces two linear dimensions | `OCCTShapeGetBounds (Shape.bounds) + perpendicularBasis` | `addAutoDimensions`: `width > 1e-9` to `width > 1e9` | `:23` `linearCount == 2` | ✔ | PASS |
+| v0.149 Drawing.addAutoDimensions | Cylinder top view produces diameter + linear extents | `OCCTDrawingCreate + testCircleVisibility` | edge-on test inverted; width threshold 1e9 | `:41` `diaCount >= 1` (now `== 2`), `:42` `linearCount == 2` | ✔ | PASS |
+| v0.149 Drawing.addAutoDimensions | Cylinder side view skips edge-on circles | `OCCTDrawingCreate + testCircleVisibility` | `testCircleVisibility`: `dotAxis < 0.1` to `> 0.1` | `:57` `diaCount == 0` | ✔ | PASS |
+| v0.149 Drawing.addAutoDimensions | minRadius filters small circles | `OCCTDrawingCreate + testCircleVisibility` | `testCircleVisibility`: `radius >= minRadius` to `>= 0` | `:75` `diaCount == 0` | ✔ | PASS |
+| v0.150 DrawingAnnotation.balloon | Balloon with leader emits circle + text + leader line | `emitBalloon (Swift, DrawingDispatch.swift)` | `emitBalloon`: drop `addCircle`; separately drop the leader | `:32` circles, `:34` lines | ✔ | N/A (pure Swift: DXF entity counts, the HLR baseline cancels) |
+| v0.150 DrawingAnnotation.balloon | Balloon without leader emits circle + text only | `emitBalloon (Swift, DrawingDispatch.swift)` | `emitBalloon`: drop `addCircle` | `:63` circles | ✔ | N/A (pure Swift: DXF entity counts, the HLR baseline cancels) |
+| v0.150 DrawingAnnotation.balloon | Drawing.addBalloon adds a .balloon annotation | `Drawing.addBalloon (Swift)` | `addBalloon`: skip `appendAnnotation` | `:80` `balloonCount == 1` | ✔ | N/A (pure Swift annotation store) |
+| v0.150 DrawingAnnotation.balloon | Balloon transforms translate centre, scale radius, and translate leader | `DrawingAnnotation.transformed (Swift)` | `transformed` balloon arm: drop `radius *= scale` | `:94` `b.radius == 10` | ✔ | N/A (pure Swift 2D transform) |
+| Camera Tests | Default state valid | `OCCTCameraGetEye` | `OCCTCameraGetEye` writes zeros | `:22` `eyeLen > 0` | ✔ | PASS |
+| Camera Tests | Projection matrix non-identity | `OCCTCameraGetProjectionMatrix` | `OCCTCameraGetProjectionMatrix` writes identity | `:36` `!isIdentity` | ✔ | PASS |
+| Camera Tests | View matrix changes with eye/center | `OCCTCameraGetViewMatrix` | `OCCTCameraSetEye` no-op | `:57` `abs(diff) > 1e-6 || abs(diff2) > 1e-6` | ✔ | PASS |
+| Camera Tests | Project/Unproject roundtrip | `OCCTCameraProject / OCCTCameraUnproject` | `OCCTCameraUnproject`: `X() + 1` | `:74` `abs(recovered.x - original.x) < 0.1` | ✔ | PASS |
+| Camera Tests | Orthographic mode produces different matrices | `OCCTCameraSetProjectionType` | `OCCTCameraSetProjectionType` ignores orthographic | `:98` `d > 1e-6` | ✔ | PASS |
+| Camera Tests | Fit bounding box adjusts camera | `OCCTCameraFitBBox` | `OCCTCameraFitBBox`: skip `FitMinMax`. GREEN as written (centred box already at the origin), rewritten | rewritten: `:122` centre, `:124`, `:125` projected mid, `:135` widest corner | ✔ | PASS |
