@@ -126,5 +126,197 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Document Modified Labels::Set and check modified",
+    "bridge_function": "OCCTDocumentIsLabelModified",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "modified": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "contains": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Modified Labels::Clear modified",
+    "bridge_function": "OCCTDocumentClearModified",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "before": true,
+        "after_clear": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "before": true,
+        "after_purge": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Tests::Create empty document",
+    "bridge_function": "OCCTDocumentGetRootCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "root_nodes": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "free_shapes": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Tests::Document.lengthUnit reads back the unit a round-tripped STEP document carries",
+    "bridge_function": "OCCTDocumentGetLengthUnit",
+    "bridge_output": {
+      "type": "unit",
+      "data": {
+        "present": true,
+        "scale_positive": true,
+        "name_non_empty": true
+      }
+    },
+    "kernel_output": {
+      "type": "unit",
+      "data": {
+        "present": true,
+        "scale": 0.001,
+        "name": "mm"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Tests::Document.lengthUnit is nil for a document with no length unit attribute",
+    "bridge_function": "OCCTDocumentGetLengthUnit",
+    "bridge_output": {
+      "type": "unit",
+      "data": {
+        "present": false
+      }
+    },
+    "kernel_output": {
+      "type": "unit",
+      "data": {
+        "present": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document/"
+  },
+  {
+    "test_name": "Document Transactions::Open and commit transaction",
+    "bridge_function": "OCCTDocumentHasOpenTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "commit": true,
+        "after_commit": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "commit": true,
+        "after_commit": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Transactions::Open and abort transaction",
+    "bridge_function": "OCCTDocumentAbortTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "after_abort_open": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "after_abort_open": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
+  },
+  {
+    "test_name": "Document Transactions::Has open transaction",
+    "bridge_function": "OCCTDocumentCommitTransaction",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "after_commit": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "initial": false,
+        "after_open": true,
+        "after_commit": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-document-transactions/"
   }
 ]

@@ -99,3 +99,30 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `DocumentModifiedTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndCheckModified` | `OCCTDocumentSetModified` returns without marking | :22 Expectation failed: doc.isModified(label) | passed | `OCCTDocumentIsLabelModified` | PASS: true = true |
+| `clearModified` | `OCCTDocumentClearModified` returns without purging | :39 Expectation failed: !doc.isModified(label) | passed | `OCCTDocumentClearModified` | PASS: true, then false after `PurgeModified` |
+
+### `DocumentTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createEmptyDocument` | `OCCTDocumentGetRootCount` returns 1 and `OCCTDocumentGetRootLabelId` returns 0 | :14 Expectation failed: doc.rootNodes.isEmpty | passed | `OCCTDocumentGetRootCount` | PASS: 0 = 0 |
+| `lengthUnitReadsBackFromSTEP` | `OCCTDocumentGetLengthUnit` returns false | :39 Expectation failed: doc.lengthUnit | passed | `OCCTDocumentGetLengthUnit` | PASS: kernel 0.001 "mm" |
+| `lengthUnitNilOnFreshDocument` | `OCCTDocumentGetLengthUnit` reports a 1.0 "m" unit | :50 Expectation failed: doc.lengthUnit == nil | passed | `OCCTDocumentGetLengthUnit` | PASS: absent = absent |
+
+### `DocumentTransactionTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `openCommit` | `OCCTDocumentHasOpenTransaction` returns false | :18 Expectation failed: doc.hasOpenTransaction | passed | `OCCTDocumentHasOpenTransaction` | PASS: false, true, commit true, false |
+| `openAbort` | `OCCTDocumentAbortTransaction` returns without aborting | :40 Expectation failed: !doc.hasOpenTransaction | passed | `OCCTDocumentAbortTransaction` | PASS: false = false |
+| `hasOpenTransaction` | `OCCTDocumentCommitTransaction` returns true without committing | :53 Expectation failed: !doc.hasOpenTransaction | passed | `OCCTDocumentCommitTransaction` | PASS: false, true, false |
