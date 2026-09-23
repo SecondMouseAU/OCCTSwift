@@ -1,74 +1,290 @@
 [
   {
-    "test_name": "Issue 622: result buffer capacities clamp rather than trap",
-    "bridge_function": "OCCTShapeProject",
-    "bridge_output": {"type": "int", "data": 5},
-    "kernel_output": {"type": "int", "data": 5},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.raycast clamps maxHits instead of allocating ~880 GB and trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTShapeRaycast",
+    "bridge_output": {
+      "type": "count",
+      "data": 2
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 2,
+        "via": "IntCurvesFace_ShapeIntersector::NbPnt, ray (0,0,20) -Z through the centred box"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.allDistanceSolutions clamps maxSolutions",
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve3D extrema/intersection/split capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTCurve3DExtrema / OCCTCurve3DIntersectSurface / OCCTCurve3DSplitAtContinuity",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "extrema": 1,
+        "intersections": 1,
+        "splitAtContinuity": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "GeomAPI_ExtremaCurveCurve.NbExtrema": 1,
+        "GeomAPI_IntCS.NbPoints": 1,
+        "BSpline NbKnots (one piece)": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Curve2D.splitAtContinuity clamps maxSegments rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTCurve2DSplitAtContinuity",
+    "bridge_output": {
+      "type": "count",
+      "data": 1
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "Geom2d BSpline NbKnots (one piece)": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Surface.intersections clamps maxCurves rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTSurfaceIntersect",
+    "bridge_output": {
+      "type": "count",
+      "data": 1
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 1,
+        "via": "GeomAPI_IntSS::NbLines, planes z=0 and y=0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::point projection capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTExtremaPointCurve / OCCTExtremaPointSurface",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "curve": 1,
+        "surface": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "GeomAPI_ProjectPointOnCurve.NbPoints": 1,
+        "GeomAPI_ProjectPointOnSurf.NbPoints": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.allDistanceSolutions clamps maxSolutions rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTShapeAllDistanceSolutions",
-    "bridge_output": {"type": "int", "data": 10},
-    "kernel_output": {"type": "int", "data": 10},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "count",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 3,
+        "via": "BRepExtrema_DistShapeShape::NbSolution, box and inscribed sphere, distance 0"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Shape.selfIntersectionPairs clamps maxPairs",
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::Shape.selfIntersectionPairs clamps maxPairs rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTShapeSelfIntersectionPairs",
-    "bridge_output": {"type": "int", "data": 3},
-    "kernel_output": {"type": "int", "data": 3},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "value": 0,
+        "via": "BRepExtrema_SelfIntersection overlap entries on the box"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: KDTree search capacities clamp rather than trap",
-    "bridge_function": "OCCTKDTreeSearch",
-    "bridge_output": {"type": "int", "data": 100},
-    "kernel_output": {"type": "int", "data": 100},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::KDTree search capacities clamp rather than trap",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTKDTreeKNearest / OCCTKDTreeRangeSearch / OCCTKDTreeBoxSearch",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "kNearest": 3,
+        "range": 3,
+        "box": 3
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "NCollection_KDTree.KNearestPoints": 3,
+        "RangeSearch": 3,
+        "BoxSearch": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: Selector.pick overloads clamp maxResults",
-    "bridge_function": "OCCTSelectorPick",
-    "bridge_output": {"type": "int", "data": 20},
-    "kernel_output": {"type": "int", "data": 20},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::all three Selector.pick overloads clamp maxResults rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTSelectorPick / OCCTSelectorPickRect / OCCTSelectorPickPoly",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "headless selector with a default Camera resolves no hit; the test asserts only that an absurd capacity returns, and a hit count is not what it compares"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::HatchPattern.generate clamps maxSegments rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "count",
+      "data": 10
+    },
+    "kernel_output": {
+      "type": "n/a",
+      "data": "OCCTHatchLines wraps Hatch_Hatcher in bridge-side line generation and clipping; no single kernel call returns the segment count"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::UnicodeUtils.convertFromUnicode clamps its output buffer rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTUnicodeConvertFromUnicode",
+    "bridge_output": {
+      "type": "string",
+      "data": "hello"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": {
+        "Resource_Unicode::ConvertUnicodeToFormat": "hello",
+        "ok": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: HatchPattern.generate clamps maxSegments",
-    "bridge_function": "OCCTHatchPatternGenerate",
-    "bridge_output": {"type": "int", "data": 50},
-    "kernel_output": {"type": "int", "data": 50},
-    "comparison": {"equal": true, "differences": []},
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::directory and file listing clamp maxCount rather than trapping",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
+    "bridge_function": "OCCTFileList / OCCTDirectoryList",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "files": 7
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "OSD_FileIterator": 7,
+        "OSD_DirectoryIterator": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "Directories are compared only against the same call's own baseline in the test; the kernel iterator reports 2 entries in a directory holding only files, which reads as '.' and '..'."
+      ]
+    },
     "status": "PASS"
   },
   {
-    "test_name": "Issue 622: UnicodeUtils.convertFromUnicode clamps buffer",
-    "bridge_function": "OCCTUnicodeConvert",
-    "bridge_output": {"type": "string", "data": "test"},
-    "kernel_output": {"type": "string", "data": "test"},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: directory and file listing clamp maxCount",
-    "bridge_function": "OCCTDirectoryListing",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
-    "status": "PASS"
-  },
-  {
-    "test_name": "Issue 622: LogSample.sample fills its buffer exactly",
+    "test_name": "Issue #622: result-buffer capacities bound the count a caller can supply::LogSample.sample fills its buffer exactly, so its count is a request, not a capacity",
+    "test_file": "Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift",
     "bridge_function": "OCCTLogSample",
-    "bridge_output": {"type": "int", "data": 1000},
-    "kernel_output": {"type": "int", "data": 1000},
-    "comparison": {"equal": true, "differences": []},
+    "bridge_output": {
+      "type": "samples",
+      "data": {
+        "count": 16,
+        "first": 1.0,
+        "last": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "samples",
+      "data": {
+        "GeomLib_LogSample.NbPoints": 16,
+        "first": 1,
+        "last": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
     "status": "PASS"
   }
 ]
