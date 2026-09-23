@@ -94,5 +94,534 @@
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialCount",
+    "bridge_function": "OCCTMaterialNumberOfMaterials",
+    "bridge_output": {
+      "type": "int",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialName",
+    "bridge_function": "OCCTMaterialName",
+    "bridge_output": {
+      "type": "string",
+      "data": "Brass"
+    },
+    "kernel_output": {
+      "type": "string",
+      "data": "Brass"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialNameOutOfRange",
+    "bridge_function": "OCCTMaterialName",
+    "bridge_output": {
+      "type": "nil",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": "index 999 > NumberOfMaterials 24"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialByName",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "brass",
+      "data": {
+        "isPhysic": true,
+        "shininess": 0.649999976,
+        "transparency": 0
+      }
+    },
+    "kernel_output": {
+      "type": "brass",
+      "data": {
+        "isPhysic": true,
+        "shininess": 0.649999976,
+        "transparency": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialByNameInvalid",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "nil",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "ok",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialByIndex",
+    "bridge_function": "OCCTMaterialFromIndex",
+    "bridge_output": {
+      "type": "index1",
+      "data": {
+        "equals": "Brass",
+        "shininess": 0.649999976,
+        "pbrRoughness": 0.212132037
+      }
+    },
+    "kernel_output": {
+      "type": "enum0",
+      "data": {
+        "name": "Brass",
+        "shininess": 0.649999976,
+        "pbrNormalizedRoughness": 0.212132037
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialByIndexOutOfRange",
+    "bridge_function": "OCCTMaterialFromIndex",
+    "bridge_output": {
+      "type": "nil",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": "index 999 > NumberOfMaterials 24"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialColors",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "gold",
+      "data": {
+        "diffuse.r": 0.525642991,
+        "specular.r": 1,
+        "ambient.r": 0.0732389987
+      }
+    },
+    "kernel_output": {
+      "type": "gold",
+      "data": {
+        "diffuse.r": 0.525642991,
+        "specular.r": 1,
+        "ambient.r": 0.0732389987
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialPBR",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "copper",
+      "data": {
+        "pbrMetallic": 1,
+        "pbrRoughness": 0.212132037,
+        "pbrIOR": 1.5
+      }
+    },
+    "kernel_output": {
+      "type": "copper",
+      "data": {
+        "pbrMetallic": 1,
+        "pbrNormalizedRoughness": 0.212132037,
+        "pbrIOR": 1.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::minRoughness",
+    "bridge_function": "OCCTMaterialMinRoughness",
+    "bridge_output": {
+      "type": "float",
+      "data": "in (0, 0.1)"
+    },
+    "kernel_output": {
+      "type": "float",
+      "data": 0.00999999978
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialRoughnessIsAuthoredValueNotRemap",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "water",
+      "data": {
+        "pbrRoughness": 0
+      }
+    },
+    "kernel_output": {
+      "type": "water",
+      "data": {
+        "pbrNormalizedRoughness": 0,
+        "pbrRoughness(remapped)": 0.00999999978
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::predefinedMaterialRoughnessMatchesNormalizedNotRemappedMetallic",
+    "bridge_function": "OCCTMaterialFromName",
+    "bridge_output": {
+      "type": "brass",
+      "data": {
+        "pbrRoughness": 0.212132037
+      }
+    },
+    "kernel_output": {
+      "type": "brass",
+      "data": {
+        "pbrNormalizedRoughness": 0.212132037,
+        "pbrRoughness(remapped)": 0.220010713
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::roughnessFromSpecular",
+    "bridge_function": "OCCTMaterialRoughnessFromSpecular",
+    "bridge_output": {
+      "type": "float",
+      "data": 0.2
+    },
+    "kernel_output": {
+      "type": "float",
+      "data": 0.200000003
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::metallicFromSpecular",
+    "bridge_function": "OCCTMaterialMetallicFromSpecular",
+    "bridge_output": {
+      "type": "float",
+      "data": 1
+    },
+    "kernel_output": {
+      "type": "float",
+      "data": 1
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Material OCCT Operations Tests::allPredefinedMaterialsAccessible",
+    "bridge_function": "OCCTMaterialFromIndex",
+    "bridge_output": {
+      "type": "accessed",
+      "data": 24
+    },
+    "kernel_output": {
+      "type": "NumberOfMaterials",
+      "data": 24
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::epoch",
+    "bridge_function": "OCCTDateValues",
+    "bridge_output": {
+      "type": "date",
+      "data": "1979-01-01"
+    },
+    "kernel_output": {
+      "type": "date",
+      "data": "1979-01-01 00:00:00"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::createDate",
+    "bridge_function": "OCCTDateCreate",
+    "bridge_output": {
+      "type": "date",
+      "data": "2000-06-15 14:30"
+    },
+    "kernel_output": {
+      "type": "date",
+      "data": "2000-06-15 14:30:00"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::addPeriod",
+    "bridge_function": "OCCTDateAddPeriod",
+    "bridge_output": {
+      "type": "day",
+      "data": 2
+    },
+    "kernel_output": {
+      "type": "date",
+      "data": "2000-01-02 00:00:00"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::subtractPeriod",
+    "bridge_function": "OCCTDateSubtractPeriod",
+    "bridge_output": {
+      "type": "hour",
+      "data": 6
+    },
+    "kernel_output": {
+      "type": "date",
+      "data": "2000-01-15 06:00:00"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::difference",
+    "bridge_function": "OCCTDateDifference",
+    "bridge_output": {
+      "type": "seconds",
+      "data": 86400
+    },
+    "kernel_output": {
+      "type": "seconds",
+      "data": 86400
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::equality",
+    "bridge_function": "OCCTDateCompare",
+    "bridge_output": {
+      "type": "equal",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "IsEqual",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::comparison",
+    "bridge_function": "OCCTDateCompare",
+    "bridge_output": {
+      "type": "ordering",
+      "data": {
+        "d1<d2": true,
+        "d2>d1": true
+      }
+    },
+    "kernel_output": {
+      "type": "ordering",
+      "data": {
+        "IsEarlier": true,
+        "IsLater": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::operatorPlus",
+    "bridge_function": "OCCTDateAddPeriod",
+    "bridge_output": {
+      "type": "day",
+      "data": 2
+    },
+    "kernel_output": {
+      "type": "date",
+      "data": "2000-01-02 00:00:00"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::isValid",
+    "bridge_function": "OCCTDateIsValid",
+    "bridge_output": {
+      "type": "valid",
+      "data": [
+        true,
+        false,
+        false
+      ]
+    },
+    "kernel_output": {
+      "type": "valid",
+      "data": [
+        true,
+        false,
+        false
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::isLeap",
+    "bridge_function": "OCCTDateIsLeap",
+    "bridge_output": {
+      "type": "leap",
+      "data": [
+        true,
+        false,
+        true
+      ]
+    },
+    "kernel_output": {
+      "type": "leap",
+      "data": [
+        true,
+        false,
+        true
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::millisecondMicrosecond",
+    "bridge_function": "OCCTDateValues",
+    "bridge_output": {
+      "type": "ms_us",
+      "data": [
+        123,
+        456
+      ]
+    },
+    "kernel_output": {
+      "type": "ms_us",
+      "data": [
+        123,
+        456
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTDate Tests::invalidDate",
+    "bridge_function": "OCCTDateCreate",
+    "bridge_output": {
+      "type": "nil",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "IsValid(0,0,1900)",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
