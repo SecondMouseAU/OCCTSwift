@@ -109,3 +109,13 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-issue1443-ax3-empty-catch (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Issue #1443: gp_Ax3 bridge functions' empty catch** | OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched | `OCCTAx3Create` | catch returns right after recording the exception: the pre-#1443 empty catch | red | green | PASS |
+| **Issue #1443: gp_Ax3 bridge functions' empty catch** | OCCTAx3CreateFromNormal: zero-length normal overwrites sentinel outputs, not left untouched | `OCCTAx3CreateFromNormal` | pre-#1443 empty catch | red | green | PASS |
+| **Issue #1443: gp_Ax3 bridge functions' empty catch** | OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved | `OCCTAx3MirrorPoint` | pre-#1443 empty catch | red | green | PASS |
+| **Issue #1443: gp_Ax3 bridge functions' empty catch** | OCCTAx3Rotate: zero-length rotation axis overwrites sentinel outputs with the input point unmoved | `OCCTAx3Rotate` | pre-#1443 empty catch | red | green | PASS |
+| **Issue #1443: gp_Ax3 bridge functions' empty catch** | OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved | `OCCTAx3Translate` | pre-#1443 empty catch | red | green | PASS |
