@@ -497,5 +497,58 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Circle::pointToCircle",
+    "bridge_function": "OCCTExtremaExtPElCCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "square_distance": 25.0,
+          "point": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "square_distance": 225.0,
+          "point": [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "square_distance": 25.0,
+          "point": [
+            5.0,
+            0.0,
+            0.0
+          ]
+        },
+        "far": {
+          "square_distance": 225.0,
+          "point": [
+            -5.0,
+            6.123233995736766e-16,
+            0.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
