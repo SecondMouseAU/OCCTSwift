@@ -74,5 +74,158 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::Coincident points detected as point",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 5.0,
+        "y": 5.0,
+        "z": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 5.0,
+        "y": 5.0,
+        "z": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::Collinear points detected as linear",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "linear",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "direction": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "linear",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "direction": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::Coplanar points detected as planar",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "planar",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "normal": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "planar",
+      "data": {
+        "origin": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "normal": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::Single point detected as point",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "x": 3.0,
+        "y": 4.0,
+        "z": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "x": 3.0,
+        "y": 4.0,
+        "z": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Measurements::cylinderTopBottomCentroidsAreOnAxis",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "cap_centroids",
+      "data": {
+        "cap_count": 2,
+        "max_abs_x": 0.0,
+        "max_abs_y": 0.0
+      }
+    },
+    "kernel_output": {
+      "type": "cap_centroids",
+      "data": {
+        "cap_count": 2,
+        "max_abs_x": 0.0,
+        "max_abs_y": 0.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

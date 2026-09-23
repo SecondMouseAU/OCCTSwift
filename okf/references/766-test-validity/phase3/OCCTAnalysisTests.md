@@ -11,6 +11,10 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+| **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
+| **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
+| **Point Cloud Analysis** | Collinear points detected as linear | Point cloud classification | Remove point cloud classification |
+| **Point Cloud Analysis** | Coincident points detected as point | Point cloud classification | Remove point cloud classification |
 <<<<<<< HEAD
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
@@ -48,6 +52,7 @@
 | **Shape Measurements** | Box face perimeters | Shape measurements box faces | Remove box face perimeters |
 | **Shape Measurements** | Cylinder totals are finite | Shape measurements cylinder | Remove cylinder totals |
 | **Shape Measurements** | Box face centroids | Shape measurements box faces | Remove box face centroids |
+| **Shape Measurements** | Cylinder top/bottom centroids | Shape measurements cylinder | Remove cylinder centroids |
 | **Sewing_Extras** | Sewing_Extras | Sewing extras | Remove sewing extras |
 | **#837: fixed() mode-flag wiring** | #837: fixed() mode-flag wiring | Mode flags | Remove mode flags |
 | **ShapeUpgrade_SplitSurface** | ShapeUpgrade_SplitSurface | Surface splitting | Remove surface split |
@@ -111,6 +116,10 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
+| Coplanar points detected as planar | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
+| Collinear points detected as linear | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
+| Coincident points detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
 | curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
 | Empty points returns nil | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
@@ -147,6 +156,7 @@
 | Shape Measurements: boxFacePerimeters | OCCTShapeMeasurementsBoxFacePerimeters | Shape measurements box faces | Remove box face perimeters | ✅ | ✅ |  |
 | Shape Measurements: cylinderTotalsAreFinite | OCCTShapeMeasurementsCylinderTotalsAreFinite | Shape measurements cylinder | Remove cylinder totals | ✅ | ✅ |  |
 | Shape Measurements: boxFaceCentroids | OCCTShapeMeasurementsBoxFaceCentroids | Shape measurements box faces | Remove box face centroids | ✅ | ✅ |  |
+| Shape Measurements: cylinderTopBottomCentroidsAreOnAxis | OCCTBRepGPropSinert | Shape measurements cylinder caps | Remove surface centroid | ✅ | ✅ |  |
 | Sewing_Extras | OCCTSewingExtras | Sewing extras | Remove sewing extras | ✅ | ✅ |  |
 | #837 fixed() mode-flag wiring | OCCTShapeFixDetailed | Mode flags | Remove FixFree*Mode | ✅ | ✅ |  |
 | ShapeUpgrade_SplitSurface | OCCTShapeUpgradeSplitSurface | Surface splitting | Remove surface split | ✅ | ✅ |  |
@@ -205,6 +215,10 @@ For each test, run ground-truth C++ comparison:
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| Single point detected as point | ✅ | ✅ | ✅ |
+| Coplanar points detected as planar | ✅ | ✅ | ✅ |
+| Collinear points detected as linear | ✅ | ✅ | ✅ |
+| Coincident points detected as point | ✅ | ✅ | ✅ |
 | line intersection with box | ✅ | ✅ | ✅ |
 | curve intersection with sphere | ✅ | ✅ | ✅ |
 | Empty points returns nil | ✅ | ✅ | ✅ |
@@ -241,6 +255,7 @@ For each test, run ground-truth C++ comparison:
 | Shape Measurements: boxFacePerimeters | ✅ | ✅ | ✅ |
 | Shape Measurements: cylinderTotalsAreFinite | ✅ | ✅ | ✅ |
 | Shape Measurements: boxFaceCentroids | ✅ | ✅ | ✅ |
+| Shape Measurements: cylinderTopBottomCentroidsAreOnAxis | ✅ | ✅ | ✅ |
 | Sewing_Extras | ✅ | ✅ | ✅ |
 | #837 fixed() mode-flag wiring | ✅ | ✅ | ✅ |
 | ShapeUpgrade_SplitSurface | ✅ | ✅ | ✅ |
@@ -282,4 +297,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 551 tests
+**Total**: 556 tests
