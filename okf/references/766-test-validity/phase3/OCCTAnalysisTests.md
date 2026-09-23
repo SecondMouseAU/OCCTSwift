@@ -272,6 +272,5 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-| Glue Tests | ✅ | ✅ | ✅ |
 
 **Total**: 551 tests
