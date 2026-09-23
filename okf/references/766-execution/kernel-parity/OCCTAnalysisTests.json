@@ -4501,5 +4501,189 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaFocal",
+    "bridge_function": "OCCTCurve3DParabolaFocal",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "focal": 3
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "focal": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaSetFocal",
+    "bridge_function": "OCCTCurve3DParabolaSetFocal",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "focal_after_set": 5
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "focal_after_set": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaFocus",
+    "bridge_function": "OCCTCurve3DParabolaFocus",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "observed": {
+          "focus_x": 3
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "value": {
+          "focus": [
+            3,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaEccentricity",
+    "bridge_function": "OCCTCurve3DParabolaEccentricity",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "eccentricity": 1
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "eccentricity": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaParameter",
+    "bridge_function": "OCCTCurve3DParabolaParameter",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "parameter": 6
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "parameter": 6
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
+  },
+  {
+    "test_name": "Geom_Parabola Properties::parabolaDirectrix",
+    "bridge_function": "OCCTCurve3DParabolaDirectrix",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "observed": {
+          "position": [
+            -3,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ]
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "value": {
+          "position": [
+            -3,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-parabola-3d/"
   }
 ]
