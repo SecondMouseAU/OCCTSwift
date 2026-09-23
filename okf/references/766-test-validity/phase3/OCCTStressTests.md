@@ -288,3 +288,25 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Wire, Edge and Face API
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Wire API | `rectangle` | `OCCTWireCreateRectangle` | EARLY:OCCTWireCreateRectangle | RED exit 1: StressExhaustiveAPITests.swift:267 Expectation failed: Wire.rectangle(width: 10, height: 5) != nil | ✔ | MATCH | no |
+| Stress: Wire API | `circle` | `OCCTWireCreateCircleEx` | EARLY:OCCTWireCreateCircleEx | RED exit 1: StressExhaustiveAPITests.swift:271 Expectation failed: w != nil | ✔ | MATCH | no |
+| Stress: Wire API | `polygon` | `OCCTWireCreatePolygon` | EARLY:OCCTWireCreatePolygon | RED exit 1: StressExhaustiveAPITests.swift:276 Expectation failed: w != nil | ✔ | MATCH | no |
+| Stress: Wire API | `polygon3D` | `OCCTWireCreateFastPolygon` | EARLY:OCCTWireCreateFastPolygon | RED exit 1: StressExhaustiveAPITests.swift:281 Expectation failed: w != nil | ✔ | MATCH | no |
+| Stress: Wire API | `line` | `OCCTWireCreateLine` | EARLY:OCCTWireCreateLine | RED exit 1: StressExhaustiveAPITests.swift:286 Expectation failed: w != nil | ✔ | MATCH | no |
+| Stress: Wire API | `wireLength` | `OCCTWireGetLength` | OCCTWireGetLength × 1.5 | RED exit 1: StressExhaustiveAPITests.swift:292 Expectation failed: abs((w.length ?? 0) - 40) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Wire API | `wireEdges` | `OCCTShapeGetTotalEdgeCount` | EARLY:OCCTShapeGetTotalEdgeCount | RED exit 1: StressExhaustiveAPITests.swift:298 Expectation failed: !edges.isEmpty | ✔ | MATCH | yes |
+| Stress: Wire API | `wireOffset` | `OCCTWireOffset` | EARLY:OCCTWireOffset | RED exit 1: StressExhaustiveAPITests.swift:305 Expectation failed: w.offset(by: -1.0) | ✔ | MATCH | yes |
+| Stress: Edge API | `edgeFromShape` | `OCCTEdgeGetCurveType, OCCTEdgeGetLength` | EARLY:OCCTEdgeGetLength | RED exit 1: StressExhaustiveAPITests.swift:323 Expectation failed: abs(edge.length - 10) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Edge API | `edgeFromWire` | `OCCTShapeGetTotalEdgeCount` | EARLY:OCCTShapeGetTotalEdgeCount | RED exit 1: StressExhaustiveAPITests.swift:329 Expectation failed: !edges.isEmpty | ✔ | MATCH | yes |
+| Stress: Face API | `faceNormal` | `OCCTFaceGetNormal` | EARLY:OCCTFaceGetNormal | RED exit 1: StressExhaustiveAPITests.swift:344 Expectation failed: face.normal | ✔ | MATCH | yes |
+| Stress: Face API | `faceArea` | `OCCTFaceGetArea` | EARLY:OCCTFaceGetArea | RED exit 1: StressExhaustiveAPITests.swift:357 Expectation failed: area > 0 | ✔ | MATCH | yes |
+| Stress: Face API | `faceBounds` | `OCCTFaceGetBounds` | EARLY:OCCTFaceGetBounds | RED exit 1: StressExhaustiveAPITests.swift:369 Expectation failed: face.bounds | ✔ | MATCH | yes |
+| Stress: Face API | `faceSurfaceType` | `OCCTFaceGetSurfaceType` | EARLY:OCCTFaceGetSurfaceType | RED exit 1: StressExhaustiveAPITests.swift:384 Expectation failed: face.surfaceType == .plane | ✔ | MATCH | yes |
+| Stress: Face API | `faceClassification` | `OCCTFaceGetNormal` | EARLY:OCCTFaceGetNormal | RED exit 1: StressExhaustiveAPITests.swift:399 Expectation failed: up + down + vert == 6 | ✔ | MATCH | yes |

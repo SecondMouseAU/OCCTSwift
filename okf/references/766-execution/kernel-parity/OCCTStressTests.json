@@ -46,5 +46,395 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Wire API::rectangle",
+    "bridge_function": "OCCTWireCreateRectangle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): length 30"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "length 30",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireCreateRectangle",
+      "env": "OCCT766=|EARLY:OCCTWireCreateRectangle|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:267 Expectation failed: Wire.rectangle(width: 10, height: 5) != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::circle",
+    "bridge_function": "OCCTWireCreateCircleEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): length 31.41592654"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "length 31.41592654",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireCreateCircleEx",
+      "env": "OCCT766=|EARLY:OCCTWireCreateCircleEx|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:271 Expectation failed: w != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::polygon",
+    "bridge_function": "OCCTWireCreatePolygon",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): closed square, length 40"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "closed square, length 40",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireCreatePolygon",
+      "env": "OCCT766=|EARLY:OCCTWireCreatePolygon|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:276 Expectation failed: w != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::polygon3D",
+    "bridge_function": "OCCTWireCreateFastPolygon",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): closed square, length 40"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "closed square, length 40",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireCreateFastPolygon",
+      "env": "OCCT766=|EARLY:OCCTWireCreateFastPolygon|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:281 Expectation failed: w != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::line",
+    "bridge_function": "OCCTWireCreateLine",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): length 10"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "length 10",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireCreateLine",
+      "env": "OCCT766=|EARLY:OCCTWireCreateLine|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:286 Expectation failed: w != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::wireLength",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): length 40"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "length 40",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireGetLength × 1.5",
+      "env": "OCCT766=|LENSCALE|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:292 Expectation failed: abs((w.length ?? 0) - 40) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::wireEdges",
+    "bridge_function": "OCCTShapeGetTotalEdgeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 4 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "4 edges",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeGetTotalEdgeCount",
+      "env": "OCCT766=|EARLY:OCCTShapeGetTotalEdgeCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:298 Expectation failed: !edges.isEmpty",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Wire API::wireOffset",
+    "bridge_function": "OCCTWireOffset",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): BRepOffsetAPI_MakeOffset(-1): length 32"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "BRepOffsetAPI_MakeOffset(-1): length 32",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireOffset",
+      "env": "OCCT766=|EARLY:OCCTWireOffset|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:305 Expectation failed: w.offset(by: -1.0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Edge API::edgeFromShape",
+    "bridge_function": "OCCTEdgeGetCurveType, OCCTEdgeGetLength",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): first edge: line, length 10"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "first edge: line, length 10",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTEdgeGetLength",
+      "env": "OCCT766=|EARLY:OCCTEdgeGetLength|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:323 Expectation failed: abs(edge.length - 10) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Edge API::edgeFromWire",
+    "bridge_function": "OCCTShapeGetTotalEdgeCount",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 4 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "4 edges",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTShapeGetTotalEdgeCount",
+      "env": "OCCT766=|EARLY:OCCTShapeGetTotalEdgeCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:329 Expectation failed: !edges.isEmpty",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Face API::faceNormal",
+    "bridge_function": "OCCTFaceGetNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): six axis normals, e.g. (-1,0,0), (0,0,1)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "six axis normals, e.g. (-1,0,0), (0,0,1)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceGetNormal",
+      "env": "OCCT766=|EARLY:OCCTFaceGetNormal|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:344 Expectation failed: face.normal",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Face API::faceArea",
+    "bridge_function": "OCCTFaceGetArea",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): each face area 100"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "each face area 100",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceGetArea",
+      "env": "OCCT766=|EARLY:OCCTFaceGetArea|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:357 Expectation failed: area > 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Face API::faceBounds",
+    "bridge_function": "OCCTFaceGetBounds",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): each face 10 × 10, flat in one axis"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "each face 10 × 10, flat in one axis",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceGetBounds",
+      "env": "OCCT766=|EARLY:OCCTFaceGetBounds|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:369 Expectation failed: face.bounds",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Face API::faceSurfaceType",
+    "bridge_function": "OCCTFaceGetSurfaceType",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Plane for all six"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Plane for all six",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceGetSurfaceType",
+      "env": "OCCT766=|EARLY:OCCTFaceGetSurfaceType|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:384 Expectation failed: face.surfaceType == .plane",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Face API::faceClassification",
+    "bridge_function": "OCCTFaceGetNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 1 up, 1 down, 4 vertical"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "1 up, 1 down, 4 vertical",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTFaceGetNormal",
+      "env": "OCCT766=|EARLY:OCCTFaceGetNormal|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:399 Expectation failed: up + down + vert == 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
