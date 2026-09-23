@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
+| **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
 
 ---
 
@@ -304,5 +308,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 561 tests
