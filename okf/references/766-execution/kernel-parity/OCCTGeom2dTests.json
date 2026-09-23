@@ -94,5 +94,311 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::FirstUKnotIndex and LastUKnotIndex",
+    "bridge_function": "OCCTCurve2DBSplineFirstUKnotIndex / OCCTCurve2DBSplineLastUKnotIndex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first": 1,
+        "last": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "first": 1,
+        "last": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "both indices + 1",
+      "red": "Curve2DBSplineKnotQueryTests.swift:22:9: Expectation failed: c.bsplineFirstUKnotIndex == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`fk > 0`, `lk >= fk`, nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::Knot value by index",
+    "bridge_function": "OCCTCurve2DBSplineKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "knot(1)": 0,
+        "knot(2)": 2.8284271247461903
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "knot(1)": 0,
+        "knot(2)": 2.8284271247461903
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "knot + 1",
+      "red": "Curve2DBSplineKnotQueryTests.swift:29:9: Expectation failed: abs(c.bsplineKnot(index: 1)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`k.isFinite`, nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::KnotDistribution",
+    "bridge_function": "OCCTCurve2DBSplineKnotDistribution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distribution": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distribution": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report 0 (NonUniform)",
+      "red": "Curve2DBSplineKnotQueryTests.swift:37:9: Expectation failed: c.bsplineKnotDistribution == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`d >= 0 && d <= 3` accepts every value; now `== 3` (PiecewiseBezier)"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::Multiplicity by index",
+    "bridge_function": "OCCTCurve2DBSplineMultiplicity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mult(1)": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mult(1)": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "multiplicity + 1",
+      "red": "Curve2DBSplineKnotQueryTests.swift:43:9: Expectation failed: c.bsplineMultiplicity(index: 1) == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`m > 0`, nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::GetMultiplicities bulk",
+    "bridge_function": "OCCTCurve2DBSplineGetMultiplicities",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          3,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mults": [
+          3,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "each multiplicity + 1",
+      "red": "Curve2DBSplineKnotQueryTests.swift:49:9: Expectation failed: c.bsplineMultiplicities == [3, 3]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`count > 0` and `first > 0`, nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::StartPoint and EndPoint",
+    "bridge_function": "OCCTCurve2DBSplineStartPoint / OCCTCurve2DBSplineEndPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap StartPoint and EndPoint",
+      "red": "Curve2DBSplineKnotQueryTests.swift:57:9: Expectation failed: abs(sp.x - 0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::GetPoles bulk",
+    "bridge_function": "OCCTCurve2DBSplineGetPoles",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poles": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "shift each x by 1",
+      "red": "Curve2DBSplineKnotQueryTests.swift:70:9: Expectation failed: zip(poles, expected).allSatisfy { simd_distance($0, $1) < 1e-9 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "compared the count with itself, nested in `if let c`; now pins the poles"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::IsClosed and IsPeriodic",
+    "bridge_function": "OCCTCurve2DBSplineIsClosed / OCCTCurve2DBSplineIsPeriodic",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "closed": false,
+        "periodic": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": false,
+        "periodic": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate both",
+      "red": "Curve2DBSplineKnotQueryTests.swift:76:9: Expectation failed: !c.bsplineIsClosed",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D BSpline Knot Queries::Continuity and IsCN",
+    "bridge_function": "OCCTCurve2DBSplineContinuity / OCCTCurve2DBSplineIsCN",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "continuity": 6,
+        "IsCN(0..4)": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "continuity": 6,
+        "IsCN(0..4)": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report continuity 2 (C1)",
+      "red": "Curve2DBSplineKnotQueryTests.swift:84:9: Expectation failed: c.bsplineContinuity == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-knot-query/",
+      "rewritten": "`cont >= 0`, nested in `if let c`"
+    }
   }
 ]

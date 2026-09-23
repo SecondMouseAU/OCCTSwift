@@ -124,3 +124,19 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DBSplineKnotQueryTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-bspline-knot-query/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D BSpline Knot Queries::FirstUKnotIndex and LastUKnotIndex | `OCCTCurve2DBSplineFirstUKnotIndex / OCCTCurve2DBSplineLastUKnotIndex` | both indices + 1 | ✅ | ✅ | MATCH | `fk > 0`, `lk >= fk`, nested in `if let c` |
+| Curve2D BSpline Knot Queries::Knot value by index | `OCCTCurve2DBSplineKnot` | knot + 1 | ✅ | ✅ | MATCH | `k.isFinite`, nested in `if let c` |
+| Curve2D BSpline Knot Queries::KnotDistribution | `OCCTCurve2DBSplineKnotDistribution` | report 0 (NonUniform) | ✅ | ✅ | MATCH | `d >= 0 && d <= 3` accepts every value; now `== 3` (PiecewiseBezier) |
+| Curve2D BSpline Knot Queries::Multiplicity by index | `OCCTCurve2DBSplineMultiplicity` | multiplicity + 1 | ✅ | ✅ | MATCH | `m > 0`, nested in `if let c` |
+| Curve2D BSpline Knot Queries::GetMultiplicities bulk | `OCCTCurve2DBSplineGetMultiplicities` | each multiplicity + 1 | ✅ | ✅ | MATCH | `count > 0` and `first > 0`, nested in `if let c` |
+| Curve2D BSpline Knot Queries::StartPoint and EndPoint | `OCCTCurve2DBSplineStartPoint / OCCTCurve2DBSplineEndPoint` | swap StartPoint and EndPoint | ✅ | ✅ | MATCH | nested in `if let c` |
+| Curve2D BSpline Knot Queries::GetPoles bulk | `OCCTCurve2DBSplineGetPoles` | shift each x by 1 | ✅ | ✅ | MATCH | compared the count with itself, nested in `if let c`; now pins the poles |
+| Curve2D BSpline Knot Queries::IsClosed and IsPeriodic | `OCCTCurve2DBSplineIsClosed / OCCTCurve2DBSplineIsPeriodic` | negate both | ✅ | ✅ | MATCH | nested in `if let c` |
+| Curve2D BSpline Knot Queries::Continuity and IsCN | `OCCTCurve2DBSplineContinuity / OCCTCurve2DBSplineIsCN` | report continuity 2 (C1) | ✅ | ✅ | MATCH | `cont >= 0`, nested in `if let c` |
