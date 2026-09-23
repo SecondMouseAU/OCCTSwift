@@ -124,3 +124,22 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Point2DCreationTests.swift`, `Point2DDistanceTests.swift`, `Point2DTransformTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-point-matrix-polygon/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Point2D Creation::createPoint | `OCCTPoint2DCreate` | x + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Creation::createFromSIMD | `OCCTPoint2DCreate` | x + 1e-3 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Creation::setCoords | `OCCTPoint2DSetCoords` | SetCoord skipped | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Point2D Distance::distanceBetweenPoints | `OCCTPoint2DDistance` | distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Distance::squareDistance | `OCCTPoint2DSquareDistance` | square distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Distance::distanceToCurve | `OCCTPoint2DDistanceToCurve` | distance + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` |
+| Point2D Transforms::translate | `OCCTPoint2DTranslated` | dx + 1e-3 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::rotate | `OCCTPoint2DRotated` | angle negated | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::scale | `OCCTPoint2DScaled` | factor + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::mirrorPoint | `OCCTPoint2DMirroredPoint` | mirror point x + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::mirrorAxis | `OCCTPoint2DMirroredAxis` | axis origin y + 1 | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |
+| Point2D Transforms::transformedByTransform2D | `OCCTPoint2DTransformed` | identity applied instead of the transform | ✅ | ✅ | MATCH | `guard ... else { return }`; now `#require` and `if let` |

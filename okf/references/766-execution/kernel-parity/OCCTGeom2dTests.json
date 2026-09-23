@@ -94,5 +94,395 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Point2D Creation::createPoint",
+    "bridge_function": "OCCTPoint2DCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Point2DCreationTests.swift:13:9: Expectation failed: abs(p.x - 3.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Creation::createFromSIMD",
+    "bridge_function": "OCCTPoint2DCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          2.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1.5,
+          2.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Point2DCreationTests.swift:19:9: Expectation failed: abs(p.position.x - 1.5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Creation::setCoords",
+    "bridge_function": "OCCTPoint2DSetCoords",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          5,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          5,
+          7
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "SetCoord skipped",
+      "red": "Point2DCreationTests.swift:26:9: Expectation failed: abs(p.x - 5.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Distance::distanceBetweenPoints",
+    "bridge_function": "OCCTPoint2DDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance + 1e-3",
+      "red": "Point2DDistanceTests.swift:12:9: Expectation failed: abs(p1.distance(to: p2) - 5.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Distance::squareDistance",
+    "bridge_function": "OCCTPoint2DSquareDistance",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d2": 25
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d2": 25
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "square distance + 1e-3",
+      "red": "Point2DDistanceTests.swift:18:9: Expectation failed: abs(p1.squareDistance(to: p2) - 25.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Distance::distanceToCurve",
+    "bridge_function": "OCCTPoint2DDistanceToCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "d": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "d": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance + 1e-3",
+      "red": "Point2DDistanceTests.swift:25:9: Expectation failed: abs(dist - 2.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::translate",
+    "bridge_function": "OCCTPoint2DTranslated",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          4,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          4,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "dx + 1e-3",
+      "red": "Point2DTransformTests.swift:12:9: Expectation failed: abs(t.x - 4.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::rotate",
+    "bridge_function": "OCCTPoint2DRotated",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "angle negated",
+      "red": "Point2DTransformTests.swift:20:9: Expectation failed: abs(r.y - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::scale",
+    "bridge_function": "OCCTPoint2DScaled",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          4,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          4,
+          6
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "factor + 1",
+      "red": "Point2DTransformTests.swift:26:9: Expectation failed: abs(s.x - 4.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::mirrorPoint",
+    "bridge_function": "OCCTPoint2DMirroredPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          -1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "mirror point x + 1",
+      "red": "Point2DTransformTests.swift:33:9: Expectation failed: abs(m.x + 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::mirrorAxis",
+    "bridge_function": "OCCTPoint2DMirroredAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "axis origin y + 1",
+      "red": "Point2DTransformTests.swift:42:9: Expectation failed: abs(m.y + 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
+  },
+  {
+    "test_name": "Point2D Transforms::transformedByTransform2D",
+    "bridge_function": "OCCTPoint2DTransformed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          6,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          6,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "identity applied instead of the transform",
+      "red": "Point2DTransformTests.swift:49:9: Expectation failed: abs(result.x - 6.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-point-matrix-polygon/",
+      "rewritten": "`guard ... else { return }`; now `#require` and `if let`"
+    }
   }
 ]
