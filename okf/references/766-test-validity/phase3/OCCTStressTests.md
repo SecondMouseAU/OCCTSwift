@@ -288,3 +288,28 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Shape Factories, Shape Booleans
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Shape Factories | `box` | `OCCTShapeCreateBox` | OCCTShapeCreateBox returns nil | RED exit 1: StressExhaustiveAPITests.swift:19 Expectation failed: Shape.box(width: 10, height: 20, depth: 30) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `boxWithOrigin` | `OCCTShapeCreateBoxAt` | OCCTShapeCreateBoxAt returns nil | RED exit 1: StressExhaustiveAPITests.swift:21 Expectation failed: Shape.box(origin: SIMD3<Double>(1, 2, 3), width: 10, height: 20, depth:... | ✔ | MATCH | no |
+| Stress: Shape Factories | `cylinder` | `OCCTShapeCreateCylinder` | OCCTShapeCreateCylinder returns nil | RED exit 1: StressExhaustiveAPITests.swift:23 Expectation failed: Shape.cylinder(radius: 5, height: 10) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `cylinderAtPosition` | `OCCTShapeCreateCylinderAt` | EARLY:OCCTShapeCreateCylinderAt | RED exit 1: StressExhaustiveAPITests.swift:25 Expectation failed: Shape.cylinder(at: SIMD2(0, 0), bottomZ: 0, radius: 5, height: 10) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `sphere` | `OCCTShapeCreateSphere` | OCCTShapeCreateSphere returns nil | RED exit 1: StressExhaustiveAPITests.swift:27 Expectation failed: Shape.sphere(radius: 5) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `cone` | `OCCTShapeCreateCone` | OCCTShapeCreateCone returns nil | RED exit 1: StressExhaustiveAPITests.swift:28 Expectation failed: Shape.cone(bottomRadius: 5, topRadius: 2, height: 10) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `torus` | `OCCTShapeCreateTorus` | OCCTShapeCreateTorus returns nil | RED exit 1: StressExhaustiveAPITests.swift:29 Expectation failed: Shape.torus(majorRadius: 10, minorRadius: 3) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `wedge` | `OCCTShapeCreateWedge` | EARLY:OCCTShapeCreateWedge | RED exit 1: StressExhaustiveAPITests.swift:30 Expectation failed: Shape.wedge(dx: 10, dy: 10, dz: 10, ltx: 5) != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `fromWire` | `OCCTShapeFromWire` | EARLY:OCCTShapeFromWire | RED exit 1: StressExhaustiveAPITests.swift:35 Expectation failed: shape != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `face` | `OCCTShapeCreateFaceFromWire` | EARLY:OCCTShapeCreateFaceFromWire | RED exit 1: StressExhaustiveAPITests.swift:41 Expectation failed: face != nil | ✔ | MATCH | no |
+| Stress: Shape Factories | `extrude` | `OCCTShapeCreateExtrusion` | EARLY:OCCTShapeCreateExtrusion | RED exit 1: StressExhaustiveAPITests.swift:46 Expectation failed: Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: 10) | ✔ | MATCH | yes |
+| Stress: Shape Factories | `revolve` | `OCCTShapeCreateRevolution` | EARLY:OCCTShapeCreateRevolution | RED exit 1: StressExhaustiveAPITests.swift:55 Expectation failed: Shape.revolve(profile: wire, axisOrigin: .zero, axisDirection: SIMD3(0,... | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `union` | `OCCTShapeUnionEx` | runBooleanEx returns nil after a successful build | RED exit 1: StressExhaustiveAPITests.swift:72 Expectation failed: standardBox().union(standardSphere()) | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `subtract` | `OCCTShapeSubtractEx` | runBooleanEx returns nil after a successful build | RED exit 1: StressExhaustiveAPITests.swift:78 Expectation failed: standardBox().subtracting(standardSphere()) | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `intersect` | `OCCTShapeIntersectEx` | runBooleanEx returns nil after a successful build | RED exit 1: StressExhaustiveAPITests.swift:84 Expectation failed: standardBox().intersection(standardSphere()) | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `section` | `OCCTShapeSection` | EARLY:OCCTShapeSection | RED exit 1: StressExhaustiveAPITests.swift:91 Expectation failed: standardBox().section(standardSphere()) | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `split` | `OCCTShapeSplit` | EARLY:OCCTShapeSplit | RED exit 1: StressExhaustiveAPITests.swift:98 Expectation failed: standardBox().split(by: standardSphere()) | ✔ | MATCH | yes |
+| Stress: Shape Booleans | `splitAtPlane` | `OCCTShapeSplitByPlane` | EARLY:OCCTShapeSplitByPlane | RED exit 1: StressExhaustiveAPITests.swift:109 Expectation failed: standardBox().split(atPlane: .zero, normal: SIMD3(0, 0, 1)) | ✔ | MATCH | yes |
