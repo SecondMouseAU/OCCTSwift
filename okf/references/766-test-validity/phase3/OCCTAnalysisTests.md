@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_LocateExtCC Tests** | localExtremum | Local curve-curve extremum | Report sqrt(SquareDistance()) as the square distance |
 | **LProp3dCurve** | tangentOfCircle | Curve local tangent | OCCTCurve3DLocalTangent reverses the tangent (value pinned, #766) |
 | **LProp3dCurve** | normalOfCircle | Curve principal normal | OCCTCurve3DLocalNormal reverses the normal (value pinned, #766) |
 | **LProp3dCurve** | centreOfCurvature | Centre of curvature | OCCTCurve3DLocalCentreOfCurvature shifts x by 1 |
