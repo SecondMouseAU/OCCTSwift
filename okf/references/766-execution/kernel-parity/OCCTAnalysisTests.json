@@ -497,5 +497,86 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Distance-Angle Chamfer::Distance-angle chamfer on box edge",
+    "bridge_function": "OCCTShapeChamferDistAngle",
+    "bridge_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 45.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 994.9999999999998
+      }
+    },
+    "kernel_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 45.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 994.9999999999998
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Distance-Angle Chamfer::Distance-angle chamfer at 30 degrees",
+    "bridge_function": "OCCTShapeChamferDistAngle",
+    "bridge_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 30.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 997.1132486540516
+      }
+    },
+    "kernel_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 30.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 997.1132486540516
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Distance-Angle Chamfer::Distance-angle chamfer at 60 degrees",
+    "bridge_function": "OCCTShapeChamferDistAngle",
+    "bridge_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 60.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 991.3397459621555
+      }
+    },
+    "kernel_output": {
+      "type": "chamfered_solid",
+      "data": {
+        "angle_degrees": 60.0,
+        "valid": true,
+        "faces": 7,
+        "volume": 991.3397459621555
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
