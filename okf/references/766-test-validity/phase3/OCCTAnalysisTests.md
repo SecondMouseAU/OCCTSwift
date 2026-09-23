@@ -102,6 +102,7 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepGProp Domain Tests** | faceEdgeCount | Face integration domain | count + 1 |
 
 ---
 
@@ -216,6 +217,7 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| faceEdgeCount | OCCTShapeFaceDomainEdgeCount | Face integration domain | count + 1 | ✅ | ✅ | Rewritten: count >= 3 under guard-return passed 3, 5 or any larger count |
 
 ---
 

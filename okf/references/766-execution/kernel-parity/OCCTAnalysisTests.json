@@ -497,5 +497,26 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGProp Domain Tests::faceEdgeCount",
+    "bridge_function": "OCCTShapeFaceDomainEdgeCount",
+    "bridge_output": {
+      "type": "edge_count",
+      "data": {
+        "count": 4
+      }
+    },
+    "kernel_output": {
+      "type": "edge_count",
+      "data": {
+        "count": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
