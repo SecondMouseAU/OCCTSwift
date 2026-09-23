@@ -109,3 +109,13 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-newton-nonuniformscale (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **math_NewtonMinimum Tests** | minimizeQuadratic | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **math_NewtonMinimum Tests** | minimizeRosenbrock | `OCCTMathNewtonMinimum` | location + 0.05 in every coordinate | red | green | PASS |
+| **NewtonRoot** | findRoot | `OCCTMathNewtonFunctionRoot` | Root() + 0.5 | red | green | PASS |
+| **Non-Uniform Scale** | Scale box non-uniformly | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
+| **Non-Uniform Scale** | Non-uniform scale preserves volume ratio | `OCCTShapeNonUniformScale` | drop sz (scale z by 1) | red | green | PASS |
