@@ -221,3 +221,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `Issue598PipeShellFrenetModeTests.swift` (7 tests)
+
+Probe: `Scripts/repro/766-modeling-issue598-pipe-shell-frenet-mode/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| frenetMatchesTrueFrenet | `occtPipeShellSetMode` inverts the `IsFrenet` boolean (#598's own defect: `.frenet` builds corrected Frenet and vice versa) | `:67 Expectation failed: vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6)`, `:70 Expectation failed: !vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6)`, `:73 Expectation failed: vEnum.isApproximatelyEqual(to: 177.347557, tolerance: 1e-5)` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| correctedFrenetMatchesTrueCorrectedFrenet | `occtPipeShellSetMode` inverts the `IsFrenet` boolean (#598's own defect: `.frenet` builds corrected Frenet and vice versa) | `:92 Expectation failed: vEnum.isApproximatelyEqual(to: vCorrected, tolerance: 1e-6)`, `:96 Expectation failed: !vEnum.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6)`, `:99 Expectation failed: vEnum.isApproximatelyEqual(to: 180.286724, tolerance: 1e-5)` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| multiSectionSpellingAlsoFixed | `occtPipeShellSetMode` inverts the `IsFrenet` boolean (#598's own defect: `.frenet` builds corrected Frenet and vice versa) | `:114 Expectation failed: vMulti.isApproximatelyEqual(to: vFrenet, tolerance: 1e-6)` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| theTwoModesAgreeOnASpineWithNoTorsion | `occtPipeShellSetMode` treats `.frenet` as an unhandled mode and refuses it | `:132 Issue recorded` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| frenetSelfIntersectsAtCurvatureInflection | `occtPipeShellSetMode` inverts the `IsFrenet` boolean (#598's own defect: `.frenet` builds corrected Frenet and vice versa) | `:198 Expectation failed: frenet.isSelfIntersecting(hardTimeout: 30) == true`, `:201 Expectation failed: corrected.isSelfIntersecting(hardTimeout: 30) == false` | pass | `OCCTShapeSelfIntersectsBounded` | PASS |
+| cookbookSpringRecipeVolumeInvariant | `occtPipeShellSetMode` maps `.correctedFrenet` onto `SetDiscreteMode()` | `:264 Expectation failed: vCorrected.isApproximatelyEqual(to: vTrueCorrected, tolerance: 1e-6)` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |
+| misplacedProfileReproducesIssue721Divergence | `occtPipeShellSetMode` inverts the `IsFrenet` boolean (#598's own defect: `.frenet` builds corrected Frenet and vice versa) | `:327 Expectation failed: vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3)`, `:333 Expectation failed: !vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 2e-3)` | pass | `OCCTShapeCreatePipeShellMultiSection` | PASS |

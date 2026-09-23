@@ -6,5 +6,172 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::frenetMatchesTrueFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "enumFrenet": "within 1e-5 of 177.347557, equal to oracle Frenet"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "enumFrenet": 177.347557257,
+        "oracleFrenet": 177.347557257,
+        "oracleCorrected": 180.286724369
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::correctedFrenetMatchesTrueCorrectedFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "enumCorrected": "within 1e-5 of 180.286724, equal to oracle corrected"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "enumCorrected": 180.286724369,
+        "oracleCorrected": 180.286724369
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::multiSectionSpellingAlsoFixed",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": "multi-section .frenet equals oracle Frenet within 1e-6 relative"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "oracleFrenet": 177.347557257
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::theTwoModesAgreeOnASpineWithNoTorsion",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": "frenet equals corrected within 1e-6 relative"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "frenet": 251.327412287,
+        "corrected": 251.327412287
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::frenetSelfIntersectsAtCurvatureInflection",
+    "bridge_function": "OCCTShapeSelfIntersectsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "minCurvature": "< 1e-9",
+        "frenetSelfIntersects": true,
+        "correctedSelfIntersects": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "minCurvature": 0.0,
+        "frenetSelfIntersects": true,
+        "correctedSelfIntersects": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::cookbookSpringRecipeVolumeInvariant",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": "enum equals oracle (1e-6), both within 1e-3 of textbook, agree within 1e-4"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "enumFrenet": 2225.15200246,
+        "enumCorrected": 2225.151709262,
+        "oracleFrenet": 2225.15200246,
+        "oracleCorrected": 2225.151709262,
+        "textbook": 2225.156440008,
+        "startPoint": [
+          -10,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PipeSweepMode Frenet/correctedFrenet were swapped (#598)::misplacedProfileReproducesIssue721Divergence",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": "frenet/textbook within 1e-3; corrected/textbook within 5e-3 of 1.005, 1.075, 1.276, 0.801"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "frenetRatios": [
+          0.999998,
+          0.999998,
+          0.999993,
+          0.99999
+        ],
+        "correctedRatios": [
+          1.005137,
+          1.074731,
+          1.275773,
+          0.800971
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
