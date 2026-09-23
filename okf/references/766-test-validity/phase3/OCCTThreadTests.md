@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread::Issue181-189 (PR #TBD, files: Issue181RobustnessTests.swift, Issue185HelicalSweepTests.swift, Issue187ScrewThreadTests.swift, Issue189ThreadGuardTests.swift)
+## Thread::Issue181-189 (PR #2363, files: Issue181RobustnessTests.swift, Issue185HelicalSweepTests.swift, Issue187ScrewThreadTests.swift, Issue189ThreadGuardTests.swift)
 
 Injections are the named entries of the PR body's injection table; every one was applied with `Sources/` otherwise clean and reverted with `git checkout -- Sources` before the green run.
 
