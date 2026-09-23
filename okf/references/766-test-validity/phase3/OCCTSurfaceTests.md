@@ -222,3 +222,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: JoinBezierPatchesTests.swift, LocalAnalysisSurfaceContinuityTests.swift, LocalRevolutionTests.swift, LocOpePipeTests.swift, LocOpeRevolutionFormTests.swift (11 tests), probe Scripts/repro/766-join-local-loft/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| GeomConvert_CompBezierSurfacesToBSplineSurface | Join two Bezier patches into BSpline | `OCCTSurfaceJoinBezierPatches` | patch order reversed (INJ_JOIN_REVERSE) | JoinBezierPatchesTests.swift:29 simd_length(joined.point(atU: 1.5, v: 0.5) - SIMD3(7.5, 5, 0)) < 1e-12 | ✅ | MATCH | Rewritten: `joined.handle != nil` is true of any Surface |
+| GeomConvert_CompBezierSurfacesToBSplineSurface | Rejects a rational patch instead of silently dropping its weights (#725) | `OCCTSurfaceJoinBezierPatches` | rational-patch guard skipped (INJ_JOIN_NORATCHECK) | JoinBezierPatchesTests.swift:64 Surface.joinBezierPatches([patch], rows: 1, cols: 1) == nil | ✅ | N/A | Caught as written; a wrapper refusal with no kernel counterpart |
+| LocalAnalysis SurfaceContinuity Tests | identicalPlanes | `OCCTLocalAnalysisSurfaceContinuity` | C0Value + 1 (INJ_LA_C0) | LocalAnalysisSurfaceContinuityTests.swift:25 (analysis?.c0Value ?? .infinity) < 1e-6 | ✅ | MATCH | Caught as written; `guard ... else { return }` now records an issue |
+| LocalAnalysis SurfaceContinuity Tests | planeVsCylinder | `OCCTLocalAnalysisSurfaceContinuity` | C0Value + 1 (INJ_LA_C0) | LocalAnalysisSurfaceContinuityTests.swift:43 analysis?.c0Value == 5 | ✅ | MATCH | C0Value pinned; `isC0 == false` alone passed any value |
+| LocalAnalysis SurfaceContinuity Tests | surfaceContinuityFlags | `OCCTLocalAnalysisSurfaceContinuityFlags` | none new: the `flags > 0` check is unchanged | not driven red in this PR | ✅ | N/A | NOT PROVEN RED: only the vacuous guard was fixed; the flags value was not pinned |
+| Local Revolution Tests | Revolve face around Z axis | `OCCTLocOpeRevol` | angle halved (INJ_LOCREV_ANGLE) | LocalRevolutionTests.swift:31 abs((result.volume ?? 0) - volume) < 1e-6 | ✅ | MATCH | Rewritten. The old input (the centred 0.1-thick box, a solid) gave an EMPTY compound, which `!= nil` accepted |
+| Local Revolution Tests | Revolve face produces solid-like shape | `OCCTLocOpeRevol` | angle halved (INJ_LOCREV_ANGLE) | LocalRevolutionTests.swift:31 abs((result.volume ?? 0) - volume) < 1e-6 | ✅ | MATCH | Rewritten: `faceCount > 0` on a box input |
+| Local Revolution Tests | Revolve with angular offset | `OCCTLocOpeRevolWithOffset` | offset ignored (INJ_LOCREV_OFFSET) | LocalRevolutionTests.swift:71 box.min.y > 6.3 && box.min.x < -7.7 | ✅ | MATCH | Rewritten. The old input (the centred 0.1-thick box, a solid) gave an EMPTY compound, which `!= nil` accepted |
+| Local Revolution Tests | Full revolution | `OCCTLocOpeRevol` | angle halved (INJ_LOCREV_ANGLE) | LocalRevolutionTests.swift:30 result.faceCount == faces | ✅ | MATCH | Rewritten: the box input returned the box itself |
+| LocOpe Pipe Tests | Pipe sweep along wire spine | `OCCTLocOpePipe` | returns the profile unchanged (INJ_LOCPIPE_INPUT) | LocOpePipeTests.swift:27 abs((result.volume ?? 0) - 40) < 1e-9 | ✅ | MATCH | Rewritten: its XY profile contained the spine, giving an invalid zero-volume solid that `!= nil` accepted |
+| LocOpe RevolutionForm Tests | Revolution form creates swept shape | `OCCTLocOpeRevolutionForm` | angle halved (INJ_LOCREV_ANGLE) | LocOpeRevolutionFormTests.swift:29 abs((result.volume ?? 0) - 157.07963267948972) < 1e-6 | ✅ | MATCH | Rewritten. The old input (the centred 0.1-thick box, a solid) gave an EMPTY compound, which `!= nil` accepted |
