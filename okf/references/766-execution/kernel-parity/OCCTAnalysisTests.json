@@ -40,5 +40,22 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Point Cloud Analysis::Empty points returns nil",
+    "bridge_function": "OCCTAnalyzePointCloud",
+    "bridge_output": {
+      "type": "null",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "null",
+      "data": {}
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
