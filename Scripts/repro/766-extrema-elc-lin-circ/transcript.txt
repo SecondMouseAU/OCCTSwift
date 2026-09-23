@@ -1,0 +1,8 @@
+lineCircleDistance IsDone=1 IsParallel=0 NbExt=4
+  [1] SquareDistance=125 onLine=(3.0616169978683831e-16, 0, 10) onCircle=(3.0616169978683831e-16, 5, 0)
+  [2] SquareDistance=125 onLine=(-9.1848509936051479e-16, 0, 10) onCircle=(-9.1848509936051479e-16, -5, 0)
+  [3] SquareDistance=100 onLine=(5, 0, 10) onCircle=(5, 0, 0)
+  [4] SquareDistance=100 onLine=(-5, 0, 10) onCircle=(-5, 6.1232339957367663e-16, 0)
+lineCircleCoplanar IsDone=1 IsParallel=0 NbExt=2
+  [1] SquareDistance=25 onLine=(10, 0, 0) onCircle=(5, 0, 0)
+  [2] SquareDistance=225 onLine=(10, 6.1232339957367663e-16, 0) onCircle=(-5, 6.1232339957367663e-16, 0)

@@ -497,5 +497,120 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Circle::lineCircleDistance",
+    "bridge_function": "OCCTExtremaElCLinCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 4,
+        "square_distances_sorted": [
+          100,
+          100,
+          125,
+          125
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_parallel": false,
+        "nb_ext": 4,
+        "square_distances": [
+          125,
+          125,
+          100,
+          100
+        ],
+        "points_on_circle": [
+          [
+            0,
+            5,
+            0
+          ],
+          [
+            0,
+            -5,
+            0
+          ],
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElC Line-Circle::lineCircleCoplanar",
+    "bridge_function": "OCCTExtremaElCLinCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "nearest": {
+          "square_distance": 25,
+          "on_line": [
+            10,
+            0,
+            0
+          ],
+          "on_circle": [
+            5,
+            0,
+            0
+          ]
+        },
+        "farthest": {
+          "square_distance": 225,
+          "on_circle": [
+            -5,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "is_parallel": false,
+        "nb_ext": 2,
+        "square_distances": [
+          25,
+          225
+        ],
+        "on_circle": [
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
