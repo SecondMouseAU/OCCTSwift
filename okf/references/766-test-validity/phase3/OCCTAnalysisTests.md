@@ -143,6 +143,12 @@
 | **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
 | **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
 | **CanonicalRecognition Detailed Tests** | recognizeEdgeLine | Canonical curve recognition | Skip IsLine |
+| **BRepLProp Face v0.111** | faceValue | Face local point | x written from p.Y() in OCCTFaceLPropValue |
+| **BRepLProp Face v0.111** | faceNormal | Face normal | x negated in OCCTFaceLPropNormal |
+| **BRepLProp Face v0.111** | faceCurvature | Principal curvatures | sign flipped in OCCTFaceLPropMaxCurvature / MinCurvature |
+| **BRepLProp Face v0.111** | faceMeanAndGaussianCurvature | Mean and Gaussian curvature | * 2 in OCCTFaceLPropMeanCurvature / GaussianCurvature |
+| **BRepLProp Face v0.111** | faceIsUmbilic | Umbilic definedness | curvature-defined guard inverted in OCCTFaceLPropIsUmbilic |
+| **BRepLProp Face v0.111** | faceTangentU | Face U tangent | x written from tan.Y() in OCCTFaceLPropTangentU |
 
 ---
 
