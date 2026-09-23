@@ -6,5 +6,304 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Loft Ruled Mode::Ruled loft produces flat surfaces",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 583.3333333333334,
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "volume": 583.3333333333334,
+        "faces": 6
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt loft 10@0 -> 5@10 ruled"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Loft Ruled Mode::Smooth loft differs from ruled",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "ruled": [
+          583.3333333333335,
+          10
+        ],
+        "smooth": [
+          466.66666666666686,
+          6
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "ruled": [
+          583.3333333333335,
+          10
+        ],
+        "smooth": [
+          466.66666666666686,
+          6
+        ]
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt loft 10@0 -> 5@5 -> 10@10"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Loft Ruled Mode::Shell loft (non-solid)",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": "shell",
+        "faces": 4,
+        "area": 309.23292192132453
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": "shell",
+        "faces": 4,
+        "area": 309.23292192132453
+      },
+      "source": "Scripts/repro/766-join-local-loft/transcript.txt loft shell"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G0 deformation of flat plane",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-deformation/transcript.txt nlPlateG0FlatPlane"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G0 with multiple constraints",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(-5,-5)": [
+          -7.633,
+          -6.689,
+          -3.336
+        ],
+        "S(5,5)": [
+          3.467,
+          3.089,
+          3.649
+        ],
+        "S(0,0)": [
+          -2.423,
+          -2.025,
+          4.197
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0,0)": [
+          0,
+          0,
+          5
+        ],
+        "solver meets every target": true
+      },
+      "source": "Scripts/repro/766-nlplate-deformation/transcript.txt nlPlateG0MultipleConstraints (solver displacement at each uv)"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge-fitted surface misses the targets by up to 4.5 while NLPlate_NLPlate meets them"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G0 deformation produces evaluable surface",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          0,
+          0,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-deformation/transcript.txt nlPlateG0Evaluable"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G0 with empty constraints returns nil",
+    "bridge_function": "OCCTSurfaceNLPlateG0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "refused before the solve; three layers (Swift guard, bridge guard, working-domain helper)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G1 deformation with position + tangent constraints",
+    "bridge_function": "OCCTSurfaceNLPlateG1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          -0.367,
+          -0.367,
+          5.734
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver S(0,0)": [
+          0,
+          0,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-deformation/transcript.txt nlPlateG1Deformation"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "bridge surface is 0.85 from the target the solver meets"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G1 with multiple position + tangent constraints",
+    "bridge_function": "OCCTSurfaceNLPlateG1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "solver IsDone": true,
+        "S(-2,0)": [
+          -4,
+          0,
+          1
+        ],
+        "S(2,0)": [
+          4,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-nlplate-deformation/transcript.txt nlPlateG1MultipleConstraints"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "kernel solve succeeds, bridge returns nil"
+      ]
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "NLPlate Deformation Tests::NLPlate G1 with empty constraints returns nil",
+    "bridge_function": "OCCTSurfaceNLPlateG1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "refused before the solve; three layers (Swift guard, bridge guard, working-domain helper)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]

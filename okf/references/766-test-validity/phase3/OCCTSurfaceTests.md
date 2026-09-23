@@ -222,3 +222,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: LoftRuledTests.swift, NLPlateDeformationTests.swift (10 tests), probes Scripts/repro/766-join-local-loft/ and 766-nlplate-deformation/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Loft Ruled Mode | Ruled loft produces flat surfaces | `OCCTShapeCreateLoftAdvanced` | last section dropped (INJ_LOFT_DROP_LAST) | LoftRuledTests.swift:30 r.isValid | ✅ | MATCH | Rewritten: both sections were at z = 0, a zero-volume loft that `!= nil` and `isValid` accepted |
+| Loft Ruled Mode | Smooth loft differs from ruled | `OCCTShapeCreateLoftAdvanced` | ruled flag inverted (INJ_LOFT_RULED_INVERT) | LoftRuledTests.swift:49 abs((ruled.volume ?? 0) - 583.33333333333348) < 1e-6 | ✅ | MATCH | Rewritten: asserted only non-nil; a third section added because with two OCCT lofts smooth as ruled |
+| Loft Ruled Mode | Shell loft (non-solid) | `OCCTShapeCreateLoftAdvanced` | solid flag inverted (INJ_LOFT_SOLID_INVERT) | LoftRuledTests.swift:66 shell.shapeType == .shell | ✅ | MATCH | Rewritten: asserted only non-nil |
+| NLPlate Deformation Tests | NLPlate G0 deformation of flat plane | `OCCTSurfaceNLPlateG0` | target z + 1 (INJ_NLP_TARGET_OFF) | NLPlateDeformationTests.swift:45 near(d, SIMD2(0, 0), SIMD3(0, 0, 5), 0.1) | ✅ | MATCH | Rewritten: `pt.z.isFinite` passed a surface that ignored the target |
+| NLPlate Deformation Tests | NLPlate G0 with multiple constraints | `OCCTSurfaceNLPlateG0` | fit result dropped, nil (INJ_NLP_FAIL) | NLPlateDeformationTests.swift:66 deformed != nil | ✅ | MISMATCH | MISMATCH, pinned with withKnownIssue. Rewritten: asserted only non-nil |
+| NLPlate Deformation Tests | NLPlate G0 deformation produces evaluable surface | `OCCTSurfaceNLPlateG0` | target z + 1 (INJ_NLP_TARGET_OFF) | NLPlateDeformationTests.swift:90 near(d, SIMD2(0, 0), SIMD3(0, 0, 3), 0.1) | ✅ | MATCH | Rewritten: `uMax > uMin` passed any surface |
+| NLPlate Deformation Tests | NLPlate G0 with empty constraints returns nil | `OCCTSurfaceNLPlateG0` | Swift and bridge empty-list guards removed (INJ_NLP_NOGUARD): stays GREEN | not red: with both guards removed the bridge still returns nil for an empty list | ✅ | N/A | NOT PROVEN RED, see injection |
+| NLPlate Deformation Tests | NLPlate G1 deformation with position + tangent constraints | `OCCTSurfaceNLPlateG1` | fit result dropped, nil (INJ_NLP_FAIL) | NLPlateDeformationTests.swift:122 deformed != nil | ✅ | MISMATCH | MISMATCH, pinned with withKnownIssue |
+| NLPlate Deformation Tests | NLPlate G1 with multiple position + tangent constraints | `OCCTSurfaceNLPlateG1` | none can turn it red today: its one expectation is a known issue | not red: `deformed != nil` is wrapped in withKnownIssue, so it goes red only when the bridge starts returning a surface | ✅ | MISMATCH | MISMATCH. Was "verify no crash": it asserted nothing when nil, which it always is |
+| NLPlate Deformation Tests | NLPlate G1 with empty constraints returns nil | `OCCTSurfaceNLPlateG1` | Swift and bridge empty-list guards removed (INJ_NLP_NOGUARD): stays GREEN | not red: with both guards removed the bridge still returns nil for an empty list | ✅ | N/A | NOT PROVEN RED, see injection |
