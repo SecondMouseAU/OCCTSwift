@@ -6,5 +6,318 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Loft polar-method SIGSEGV regression (#176)::mismatchedPolarProfilesDoNotCrash",
+    "bridge_function": "OCCTShapeCreateLoft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "profiles": 8,
+        "loft": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "profilesBuilt": 8,
+        "buildReturned": true,
+        "isDone": 0,
+        "isDoneWithoutCompatibility": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Loft Vertex Endpoints::coneFromCircle",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true,
+        "volume": "> 0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "type": "SOLID",
+        "valid": 1,
+        "volume": 261.7993878,
+        "analytic": 261.7993878
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Loft Vertex Endpoints::bicone",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "type": "SOLID",
+        "valid": 1,
+        "volume": 4188.790205,
+        "analytic": 4188.790205
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Loft Vertex Endpoints::smoothCone",
+    "bridge_function": "OCCTShapeCreateLoftAdvanced",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "type": "SOLID",
+        "valid": 1,
+        "volume": 261.7993878
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Make Connected::connectBoxes",
+    "bridge_function": "OCCTShapeMakeConnected",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": 0,
+        "type": "COMPOUND",
+        "solids": 2,
+        "faces": 11,
+        "valid": 1,
+        "volume": 2000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::torusCreation",
+    "bridge_function": "OCCTShapeCreateTorus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "within 1% of 1776.528792"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid": 1,
+        "volume": 1776.528792,
+        "analytic": 1776.528792
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::chamferBox",
+    "bridge_function": "OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "faces": "> 6"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "faces": 26,
+        "volume": 945.3333333
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::offsetSolid",
+    "bridge_function": "OCCTShapeOffset",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "volume": "> 1000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": 1,
+        "valid": 1,
+        "volume": 1200
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::scaleShape",
+    "bridge_function": "OCCTShapeScale",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "size": "(20, 20, 20) within 0.01"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid": 1,
+        "size": [
+          20,
+          20,
+          20
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::mirrorShape",
+    "bridge_function": "OCCTShapeMirror",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "centre.x": "< 0"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "valid": 1,
+        "centre": [
+          -10,
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::sliceAtZ",
+    "bridge_function": "OCCTShapeSliceAtZ",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "edges": 4,
+        "centre.z": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "z5": {
+          "done": 1,
+          "edges": 4,
+          "valid": 1,
+          "centreZ": 5
+        },
+        "z6": {
+          "done": 1,
+          "edges": 0,
+          "valid": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape, Torus, Chamfer, Offset, Scale, Mirror::sectionWiresAtZ",
+    "bridge_function": "OCCTShapeSectionWiresAtZ",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "wires": "non-empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "z5": {
+          "wires": 1,
+          "edges": 4,
+          "closed": 1
+        },
+        "z6": "no edges, nullptr"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

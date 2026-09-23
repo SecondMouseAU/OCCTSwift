@@ -221,3 +221,49 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `LoftPolarMethodCrashTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-loft-polar-method-crash/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| mismatchedPolarProfilesDoNotCrash | `OCCTShapeCreateLoft` hands back an empty compound instead of nullptr when `Build()` leaves `IsDone()` false | `:83 Expectation failed: Shape.loft(profiles: profiles, solid: true) == nil` | pass | `OCCTShapeCreateLoft` | PASS: rewritten: `#expect(true)` after discarding the result; now pins the kernel refusal (nil) |
+
+### `LoftVertexEndpointTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-loft-vertex-endpoint/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| coneFromCircle | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:14 Expectation failed: cone != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
+| bicone | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:28 Expectation failed: bicone != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
+| smoothCone | `OCCTShapeCreateLoftAdvanced` returns nullptr | `:37 Expectation failed: shape != nil` | pass | `OCCTShapeCreateLoftAdvanced` | PASS |
+
+### `MakeConnectedTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-make-connected/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| connectBoxes | `OCCTShapeMakeConnected` returns nullptr | `:14 Expectation failed: connected != nil` | pass | `OCCTShapeMakeConnected` | PASS |
+
+### `MissingShapeOpsTests.swift` (7 tests)
+
+Probe: `Scripts/repro/766-modeling-missing-shape-ops/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| torusCreation | `OCCTShapeCreateTorus` builds the torus with minorRadius * 1.1 | `:18 Expectation failed: abs(vol - expected) / expected < 0.01` | pass | `OCCTShapeCreateTorus` | PASS |
+| chamferBox | `OCCTShapeChamfer` returns the input shape unchamfered | `:28 Expectation failed: chamfered!.faces().count > 6` | pass | `OCCTShapeChamfer` | PASS |
+| offsetSolid | `OCCTShapeOffset` offsets by -distance | `:40 Expectation failed: offsetVol > originalVol` | pass | `OCCTShapeOffset` | PASS: kernel volume 1200, not the 1728 a 12 mm cube would have; the test only asks for > 1000 |
+| scaleShape | `OCCTShapeScale` scales by factor * 0.75 | `:50 Expectation failed: abs(scaledSize.x - 20) < 0.01`, `:51 Expectation failed: abs(scaledSize.y - 20) < 0.01`, `:52 Expectation failed: abs(scaledSize.z - 20) < 0.01` | pass | `OCCTShapeScale` | PASS |
+| mirrorShape | `OCCTShapeMirror` never calls `SetMirror` (identity transform) | `:63 Expectation failed: mirroredCenter.x < 0` | pass | `OCCTShapeMirror` | PASS |
+| sliceAtZ | `OCCTShapeSliceAtZ` / `OCCTShapeSectionWiresAtZ` cut at z + 1 | `:78 Expectation failed: slice.subShapes(ofType: .edge).count == 4`, `:79 Expectation failed: slice.center.map { abs($0.z - 5) < 1e-6 } ?? false` | pass | `OCCTShapeSliceAtZ` | PASS: rewritten: an empty section (z off the shape) is also non-nil and valid |
+| sectionWiresAtZ | `OCCTShapeSliceAtZ` / `OCCTShapeSectionWiresAtZ` cut at z + 1 | `:86 Expectation failed: !wires.isEmpty` | pass | `OCCTShapeSectionWiresAtZ` | PASS |

@@ -1,0 +1,5 @@
+coneFromCircle (ruled, r=5, apex z=10): done=1 type=2 valid=1 volume=261.7993878
+  analytic cone volume pi*25*10/3 = 261.7993878
+bicone (ruled, r=10, apexes z=-20,+20): done=1 type=2 valid=1 volume=4188.790205
+  analytic bicone volume 2*pi*100*20/3 = 4188.790205
+smoothCone (not ruled, r=5, apex z=10): done=1 type=2 valid=1 volume=261.7993878

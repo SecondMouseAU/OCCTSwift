@@ -66,9 +66,17 @@ struct MissingShapeOpsTests {
     @Test("SliceAtZ produces valid cross-section")
     func sliceAtZ() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let slice = box.sliceAtZ(5)
-        #expect(slice != nil)
-        #expect(slice!.isValid)
+        // #766: this asserted only `slice != nil` and `slice!.isValid`, which an EMPTY section
+        // also satisfies: probed (Scripts/repro/766-modeling-missing-shape-ops),
+        // BRepAlgoAPI_Section at z = 6, off this centred box, is done, valid, and has no edges.
+        // Pinned to the kernel's section at z = 5 (the top face's plane): 4 edges, all at z = 5.
+        guard let slice = box.sliceAtZ(5) else {
+            Issue.record("sliceAtZ(5) returned nil")
+            return
+        }
+        #expect(slice.isValid)
+        #expect(slice.subShapes(ofType: .edge).count == 4)
+        #expect(slice.center.map { abs($0.z - 5) < 1e-6 } ?? false)
     }
 
     @Test("SectionWiresAtZ extracts wires")
