@@ -1,0 +1,5 @@
+recognizePlane: box subShapes(.face)[0]: plane gap=0 origin=(-5, -5, -5) dir=(1, 0, -0)
+recognizeCylinder: cylinder r=5 h=20, cylindrical face: cylinder gap=0 radius=5 dir=(0, 0, 1)
+recognizeSphere: sphere r=5, spherical face: sphere gap=0 radius=5 centre=(0, 0, 0)
+recognizeEdgeLine: first line at edge 0, origin=(-5, -5, -5) dir=(0, 0, 1)
+recognizeEdgeLine: 12 of 12 box edges recognised as lines
