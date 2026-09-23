@@ -302,5 +302,409 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetNotPeriodic on non-periodic curve",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetNotPeriodic",
+    "bridge_output": {
+      "type": "curve",
+      "data": "not periodic, knots 0x4 1x4, end (10,0,0)"
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": "periodic=0, knotSeq 0 0 0 0 1 1 1 1, end (10,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetPeriodic called instead",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:34 !curve.isPeriodic",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::IncreaseMultiplicity",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncreaseMultiplicity",
+    "bridge_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.5,
+        0.5,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncreaseMultiplicity skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:46 Self.near(curve.bsplineKnotSequence(), [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::IncrementMultiplicity",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineIncrementMultiplicity",
+    "bridge_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.3,
+        0.3,
+        0.7,
+        0.7,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0.3,
+        0.3,
+        0.7,
+        0.7,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "IncrementMultiplicity skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:56 Self.near(curve.bsplineKnotSequence(), [0, 0, 0, 0, 0.3, 0.3, 0.7, 0.7, 1, 1, 1, 1])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::Reverse parameterization",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineReverse",
+    "bridge_output": {
+      "type": "points",
+      "data": "start (10,0,0), end (0,0,0)"
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": "start (10,0,0), end (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Reverse skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:66 simd_distance(curve.startPoint, SIMD3(10, 0, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetKnots batch",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetKnots",
+    "bridge_output": {
+      "type": "knots",
+      "data": "domain [0, 2], knots 0x4 2x4"
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": "domain [0, 2], knotSeq 0 0 0 0 2 2 2 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetKnots skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:75 curve.domain == 0...2",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: checked only the returned Bool"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetKnot single index",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetKnot",
+    "bridge_output": {
+      "type": "knots",
+      "data": "domain [-1, 3]"
+    },
+    "kernel_output": {
+      "type": "knots",
+      "data": "domain [-1, 3], knotSeq -1 -1 -1 -1 3 3 3 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "SetKnot skipped",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:87 Self.near(seq, [-1, -1, -1, -1, 3, 3, 3, 3])",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::SetOrigin fails on non-periodic",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineSetOrigin",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "exception",
+      "data": "SetOrigin(1) threw Geom_BSplineCurve::SetOrigin"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "report success without calling SetOrigin on a non-periodic curve",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:95 !curve.bsplineSetOrigin(index: 1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::MovePointAndTangent",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "bool",
+      "data": "false, curve unchanged, C(0.5)=(5,3.75,0)"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": "errorStatus 2, C(0.5)=(5, 3.75, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "errorStatus test inverted",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:110 !r",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve 3D Completions v121::MovePointAndTangent with unordered independent conditions",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift",
+    "bridge_function": "OCCTCurve3DBSplineMovePointAndTangent",
+    "bridge_output": {
+      "type": "bool",
+      "data": "true, C(0.5) = target within 1e-9"
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": "errorStatus 0, C(0.5)=(5.0000000000000009, 10.000000000000002, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "errorStatus test inverted",
+    "red": "BSplineCurve3DCompletionsV121Tests.swift:126 r",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD0 matches LocalValue",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD0",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        0.07210645169493488,
+        0.9569546020668996,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        0.07210645169493488,
+        0.9569546020668996,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD0 y + 0.5 (and separately LocalValue x + 0.5)",
+    "red": "BSplineCurve3DLocalDTests.swift:39 Self.near(val, d0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Strengthened: pinned to the kernel point, not only to each other"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD1 returns point + tangent",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD1",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD1 V1.x + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:50 Self.near(result.d1, Self.d1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: asserted only |d1| > 0.01"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD2 returns curvature information",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD2",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.395452364913007,
+        -1.353239504689607,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.395452364913007,
+        -1.353239504689607,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD2 V2.y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:60 Self.near(result.d2, Self.d2)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: never checked d2"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalD3 returns all derivatives",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalD3",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        -0.11258335931896467,
+        0.43387673435137636,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        -0.11258335931896467,
+        0.43387673435137636,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalD3 V3.y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:71 Self.near(result.d3, Self.d3)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt",
+    "note": "Rewritten: never checked d2 or d3"
+  },
+  {
+    "test_name": "BSplineCurve3D LocalD v129::LocalDN matches D1 for n=1",
+    "test_file": "Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift",
+    "bridge_function": "OCCTCurve3DBSplineLocalDN",
+    "bridge_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "vector",
+      "data": [
+        0.2477669679230789,
+        1.5575211306967534,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "LocalDN y + 0.5",
+    "red": "BSplineCurve3DLocalDTests.swift:80 Self.near(dn1, d1result.d1)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-bspline-v121-locald/transcript.txt"
   }
 ]
