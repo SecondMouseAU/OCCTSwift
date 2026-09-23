@@ -197,3 +197,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Non-finite arc-length bounds report failure on every curve type (#548) | nanUpperBoundIsNotZero | `OCCTCurve3DGetLengthBetween` | novalid: skip occtValidParameterRange; zerolen; arcdrift | `Issue548NonFiniteLengthBoundTests.swift:68 length(from: f, to: .nan) == nil` | ✅ | MATCH | Silent return now records an issue |
+| Non-finite arc-length bounds report failure on every curve type (#548) | nanLowerBoundIsNotTheWholeLength | `OCCTCurve3DGetLengthBetween` | novalid; arcdrift | `Issue548NonFiniteLengthBoundTests.swift:88 length(from: .nan, to: l) == nil` | ✅ | MATCH | Silent return now records an issue |
+| Non-finite arc-length bounds report failure on every curve type (#548) | bothBoundsNaNIsNil | `OCCTCurve3DGetLengthBetween` | novalid; arcdrift | `Issue548NonFiniteLengthBoundTests.swift:100 length(from: .nan, to: .nan) == nil` | ✅ | MATCH | Silent return now records an issue |
+| Non-finite arc-length bounds report failure on every curve type (#548) | nonFiniteBoundsAreNilOnEveryCurveType | `OCCTCurve3DGetLengthBetween` | novalid; noclamp; arcdrift | `Issue548NonFiniteLengthBoundTests.swift:120 length(from: f, to: bad) == nil` | ✅ | MATCH |  |
+| Non-finite arc-length bounds report failure on every curve type (#548) | finiteRangesAreUnaffected | `OCCTCurve3DGetLengthBetween` | noclamp: out-of-domain range x 2 | `Issue548NonFiniteLengthBoundTests.swift:144 overshoot == whole` | ✅ | MATCH | Silent return and a silent `if let half` now record an issue |
+| Non-finite arc-length bounds report failure on every curve type (#548) | curve2DLengthRejectsNonFiniteBounds | `OCCTCurve2DGetLengthBetween` | novalid | `Issue548NonFiniteLengthBoundTests.swift:173 length(from: f, to: bad) == nil` | ✅ | MATCH |  |
+| Non-finite arc-length bounds report failure on every curve type (#548) | curve2DArcLengthRejectsNonFiniteBounds | `OCCTCurve2DGetLengthBetween` | novalid | `Issue548NonFiniteLengthBoundTests.swift:198 arcLength(from: f, to: bad) == -1` | ✅ | MATCH |  |
+| Non-finite arc-length bounds report failure on every curve type (#548) | edgeArcLengthRejectsNonFiniteBounds | `OCCTEdgeArcLengthBetween` | novalid | `Issue548NonFiniteLengthBoundTests.swift:226 upper == -1.0` | ✅ | MATCH |  |
+| Non-finite arc-length bounds report failure on every curve type (#548) | edgeFailureIsDistinguishableFromZero | `OCCTEdgeArcLengthBetween` | novalid | `Issue548NonFiniteLengthBoundTests.swift:250 edgeArcLength(from: mid, to: .nan) == -1` | ✅ | MATCH | Silent return now records an issue |

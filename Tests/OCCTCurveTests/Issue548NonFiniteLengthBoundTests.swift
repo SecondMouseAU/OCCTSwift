@@ -58,7 +58,10 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("A NaN upper bound is nil, not the 0 that means a zero-width interval")
     func nanUpperBoundIsNotZero() {
-        guard let c = wideRangeMultiSpanCurve() else { return }
+        guard let c = wideRangeMultiSpanCurve() else {
+            Issue.record("could not build the multi-span curve")  // #766: was a silent return
+            return
+        }
         let d = c.domain
 
         // Was 0.0: std::min(u1, nan) == std::max(u1, nan) == u1 collapsed the interval to [u1, u1].
@@ -74,7 +77,10 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("A NaN lower bound is nil, not the curve's whole length")
     func nanLowerBoundIsNotTheWholeLength() {
-        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else { return }
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else {
+            Issue.record("could not build or measure the multi-span curve")  // #766: was silent
+            return
+        }
         let d = c.domain
 
         // Was the whole length: both reduced bounds became NaN, every per-span skip test went
@@ -87,7 +93,10 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("Two NaN bounds are nil, not the whole length")
     func bothBoundsNaNIsNil() {
-        guard let c = wideRangeMultiSpanCurve() else { return }
+        guard let c = wideRangeMultiSpanCurve() else {
+            Issue.record("could not build the multi-span curve")  // #766: was a silent return
+            return
+        }
         #expect(c.length(from: .nan, to: .nan) == nil)
         #expect(c.arcLength(from: .nan, to: .nan) == -1.0)
     }
@@ -118,7 +127,10 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("Finite ranges still measure exactly as before")
     func finiteRangesAreUnaffected() {
-        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else { return }
+        guard let c = wideRangeMultiSpanCurve(), let whole = c.length else {
+            Issue.record("could not build or measure the multi-span curve")  // #766: was silent
+            return
+        }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -134,6 +146,8 @@ struct Issue548NonFiniteLengthBoundTests {
 
         if let half = c.length(from: d.lowerBound, to: d.lowerBound + span / 2) {
             #expect(half > 0 && half < whole)
+        } else {
+            Issue.record("half-range length was nil")
         }
     }
 
@@ -223,7 +237,10 @@ struct Issue548NonFiniteLengthBoundTests {
 
     @Test("The edge sentinel is distinguishable from a genuine zero-width interval")
     func edgeFailureIsDistinguishableFromZero() {
-        guard let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)) else { return }
+        guard let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)) else {
+            Issue.record("could not build the straight edge")  // #766: was a silent return
+            return
+        }
         let d = edge.edgeAdaptorDomain
         let mid = (d.lowerBound + d.upperBound) / 2
 

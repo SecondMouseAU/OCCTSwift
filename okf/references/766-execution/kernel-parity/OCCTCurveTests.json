@@ -302,5 +302,208 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::nanUpperBoundIsNotZero",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil / -1; mid..mid 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: multi-span (f, nan) = 0, the collapse the guard prevents"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid: skip occtValidParameterRange; zerolen; arcdrift",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:68 length(from: f, to: .nan) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt",
+    "note": "Silent return now records an issue"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::nanLowerBoundIsNotTheWholeLength",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil / -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: multi-span (nan, l) = 528.75, the whole length"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid; arcdrift",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:88 length(from: .nan, to: l) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt",
+    "note": "Silent return now records an issue"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::bothBoundsNaNIsNil",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil / -1"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: multi-span (nan, nan) = 528.75"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid; arcdrift",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:100 length(from: .nan, to: .nan) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt",
+    "note": "Silent return now records an issue"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::nonFiniteBoundsAreNilOnEveryCurveType",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for nan and +-inf on all three"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: segment and circle nan / inf; multi-span 0 or 528.75"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid; noclamp; arcdrift",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:120 length(from: f, to: bad) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::finiteRangesAreUnaffected",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "reversed equal, overshoot == whole, outside 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: whole 528.749723"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain range x 2",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:144 overshoot == whole",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt",
+    "note": "Silent return and a silent `if let half` now record an issue"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::curve2DLengthRejectsNonFiniteBounds",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil on all three 2D fixtures"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: 2D multi-span (f, nan) 0, (nan, l) 457.26"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:173 length(from: f, to: bad) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::curve2DArcLengthRejectsNonFiniteBounds",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTCurve2DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "-1 on all three"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "unguarded GCPnts_AbscissaPoint::Length: 2D (f, +inf) 457.26 on the multi-span"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:198 arcLength(from: f, to: bad) == -1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::edgeArcLengthRejectsNonFiniteBounds",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "-1, never NaN"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "BRepAdaptor_Curve straight edge: (f, nan) nan, (f, +inf) inf"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:226 upper == -1.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt"
+  },
+  {
+    "test_name": "Non-finite arc-length bounds report failure on every curve type (#548)::edgeFailureIsDistinguishableFromZero",
+    "test_file": "Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift",
+    "bridge_function": "OCCTEdgeArcLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "0 for mid..mid, -1 for NaN"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "straight edge (f, nan) nan"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "novalid",
+    "red": "Issue548NonFiniteLengthBoundTests.swift:250 edgeArcLength(from: mid, to: .nan) == -1",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nonfinite-length/transcript.txt",
+    "note": "Silent return now records an issue"
   }
 ]
