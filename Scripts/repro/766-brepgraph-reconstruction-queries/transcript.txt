@@ -1,0 +1,17 @@
+build ok=1
+reconstructFace: null=0 type=4 area=100.000000
+reconstructSolid: null=0 type=2 volume=1000.000000
+findNode: hasNode=1 kind=0 index=0
+hasNodeFalseForUnrelated: hasNode(sphere)=0
+build ok=1
+occurrence: kernel Shape(occ) bbox=(0.000000,1.000000,2.000000)-(10.000000,11.000000,12.000000)
+occurrence: ref local translation=(5.000000,6.000000,7.000000)
+occurrence: Shape(occ) moved by ref location bbox=(5.000000,7.000000,9.000000)-(15.000000,17.000000,19.000000)
+shells=1
+shellCompoundCount(0)=0
+shellIsClosed(0)=1
+shellSolids(0)[0]=0
+shellSolidCount(0)=1
+solids=1
+solidCompoundCount(0)=0
+solidCompSolidCount(0)=0
