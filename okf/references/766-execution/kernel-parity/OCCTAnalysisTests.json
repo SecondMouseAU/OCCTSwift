@@ -4501,5 +4501,310 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_ConicalSurface Properties::coneSemiAngle",
+    "bridge_function": "OCCTSurfaceConeSemiAngle",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "semiAngle": 0.3
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "semiAngle": 0.3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "Geom_ConicalSurface Properties::coneRefRadius",
+    "bridge_function": "OCCTSurfaceConeRefRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "refRadius": 5
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "refRadius": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "Geom_ConicalSurface Properties::coneApex",
+    "bridge_function": "OCCTSurfaceConeApex",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "observed": {
+          "apex": [
+            1,
+            2,
+            -13.16364071882914
+          ]
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "value": {
+          "apex": [
+            1,
+            2,
+            -13.16364071882914
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "Geom_ConicalSurface Properties::coneAxis",
+    "bridge_function": "OCCTSurfaceConeAxis",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "observed": {
+          "position": [
+            1,
+            2,
+            3
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "value": {
+          "position": [
+            1,
+            2,
+            3
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "GeomInt IntSS::Plane-cylinder intersection",
+    "bridge_function": "OCCTGeomIntSSCreate / OCCTGeomIntSSLineCount / OCCTGeomIntSSLine",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "observed": {
+          "lines_over_18_face_pairs": 10,
+          "circles_r10_at_z_pm0.5": 2
+        },
+        "asserted_within": "exact counts; circle radius and z within 1e-9"
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "value": {
+          "lines_over_18_face_pairs": 10,
+          "circles_r10_at_z_pm0.5": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "GeomLProp CLProps::Curve properties on circle edge",
+    "bridge_function": "OCCTGeomLPropCLProps",
+    "bridge_output": {
+      "type": "local props",
+      "data": {
+        "observed": {
+          "circle_edges": 2,
+          "curvature": 0.1,
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "centre": "(0, 0, z) for z in {0, 5}"
+        },
+        "asserted_within": 1e-12
+      }
+    },
+    "kernel_output": {
+      "type": "local props",
+      "data": {
+        "value": {
+          "circle_edges": 2,
+          "curvature": 0.1,
+          "tangent": [
+            0,
+            1,
+            0
+          ],
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "centre": "(0, 0, z) for z in {0, 5}"
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "GeomLProp CLProps::Tangent defined on line edge",
+    "bridge_function": "OCCTGeomLPropCLProps",
+    "bridge_output": {
+      "type": "local props",
+      "data": {
+        "observed": {
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "curvature": 0
+        },
+        "asserted_within": "tangent 1e-12, curvature < 0.001"
+      }
+    },
+    "kernel_output": {
+      "type": "local props",
+      "data": {
+        "value": {
+          "tangent": [
+            0,
+            0,
+            1
+          ],
+          "curvature": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "GeomLProp SLProps::Surface properties on sphere face",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "maxCurvature": -0.1
+        },
+        "asserted_within": 1e-12
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "maxCurvature": -0.09999999999999999
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
+  },
+  {
+    "test_name": "GeomLProp SLProps::Normal on plane face",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "maxCurvature": 0
+        },
+        "asserted_within": 0.001
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "maxCurvature": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-cone-intss-lprops/"
   }
 ]

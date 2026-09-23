@@ -235,6 +235,15 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Geom_ConicalSurface Properties** | coneSemiAngle | Geom_ConicalSurface | SemiAngle() |
+| **Geom_ConicalSurface Properties** | coneRefRadius | Geom_ConicalSurface | RefRadius() |
+| **Geom_ConicalSurface Properties** | coneApex | Geom_ConicalSurface | Apex() |
+| **Geom_ConicalSurface Properties** | coneAxis | Geom_ConicalSurface | Cone().Axis() |
+| **GeomInt IntSS** | Plane-cylinder intersection | GeomInt_IntSS | NbLines() |
+| **GeomLProp CLProps** | Curve properties on circle edge | GeomLProp_CLProps | Curvature/Tangent/Normal/CentreOfCurvature |
+| **GeomLProp CLProps** | Tangent defined on line edge | GeomLProp_CLProps | Tangent/Curvature |
+| **GeomLProp SLProps** | Surface properties on sphere face | BRepLProp_SLProps | MaxCurvature() |
+| **GeomLProp SLProps** | Normal on plane face | BRepLProp_SLProps | MaxCurvature() |
 
 ---
 
@@ -424,6 +433,15 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| coneSemiAngle | OCCTSurfaceConeSemiAngle | Geom_ConicalSurface | SemiAngle() + 0.1 | ✅ | ✅ | Fixture now #require'd |
+| coneRefRadius | OCCTSurfaceConeRefRadius | Geom_ConicalSurface | RefRadius() + 1 | ✅ | ✅ | Fixture now #require'd |
+| coneApex | OCCTSurfaceConeApex | Geom_ConicalSurface | apex z + 1 | ✅ | ✅ | Fixture now #require'd |
+| coneAxis | OCCTSurfaceConeAxis | Geom_ConicalSurface | swap axis dx/dz | ✅ | ✅ | Fixture now #require'd |
+| Plane-cylinder intersection | OCCTGeomIntSSCreate / OCCTGeomIntSSLineCount / OCCTGeomIntSSLine | GeomInt_IntSS | NbLines() reports 0 | ✅ | ✅ | Rewritten: stopped at the first pair and asserted nothing when no curve came back |
+| Curve properties on circle edge | OCCTGeomLPropCLProps | GeomLProp_CLProps | curvature + 0.5; curvature 0; negated normal; negated tangent | ✅ | ✅ | Rewritten: curvature 0 skipped every assertion, reversed normal passed |
+| Tangent defined on line edge | OCCTGeomLPropCLProps | GeomLProp_CLProps | curvature + 0.5; negated tangent | ✅ | ✅ | Tangent now pinned |
+| Surface properties on sphere face | OCCTFaceLPropMaxCurvature | BRepLProp_SLProps | MaxCurvature() + 0.5; negated | ✅ | ✅ | Sign now pinned (abs() passed a negated curvature) |
+| Normal on plane face | OCCTFaceLPropMaxCurvature | BRepLProp_SLProps | MaxCurvature() + 0.5 | ✅ | ✅ | Fixture now #require'd |
 
 ---
 
