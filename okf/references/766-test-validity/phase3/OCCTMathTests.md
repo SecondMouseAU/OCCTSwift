@@ -109,3 +109,18 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-polyrc4-bfgs-brent (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **MathPolyRc4** | linear | `OCCTMathPolyLinear` | constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap) | red | green | PASS |
+| **MathPolyRc4** | linearDegenerate | `OCCTMathPolyLinear` | drop the IsDone() check (InfiniteSolutions returns 0 roots as success) | red | green | PASS |
+| **MathPolyRc4** | quadratic | `OCCTMathPolyQuadratic` | constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap) | red | green | PASS |
+| **MathPolyRc4** | quadraticNoRealRoots | `OCCTMathPolyQuadratic` | report failure (-1) for every quadratic | red | green | PASS |
+| **MathPolyRc4** | cubic | `OCCTMathPolyCubic` | constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap) | red | green | PASS |
+| **MathPolyRc4** | quartic | `OCCTMathPolyQuartic` | constant coefficient passed to MathPoly::* off by +0.01 (small enough to keep the root count, so no index trap) | red | green | PASS |
+| **MathSolver BFGS v0.110** | minimizeQuadratic | `OCCTMathBFGS` | location + 0.05 in every coordinate | red | green | PASS |
+| **MathSolver BFGS v0.110** | minimizeRosenbrock | `OCCTMathBFGS` | location + 0.05 in every coordinate | red | green | PASS |
+| **MathSolver BrentMinimum v0.110** | minimizeQuadratic | `OCCTMathBrentMinimum` | Location() + 0.05 | red | green | PASS |
+| **MathSolver BrentMinimum v0.110** | minimizeSine | `OCCTMathBrentMinimum` | Location() + 0.05 | red | green | PASS |
