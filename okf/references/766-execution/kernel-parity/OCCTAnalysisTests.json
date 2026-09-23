@@ -308,5 +308,387 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::shapeBoundingBox",
+    "bridge_function": "OCCTShapeBoundingBox",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -5.0000001,
+          -10.0000001,
+          -15.0000001
+        ],
+        "max": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -5.0000001,
+          -10.0000001,
+          -15.0000001
+        ],
+        "max": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::shapeBoundingBoxOptimal",
+    "bridge_function": "OCCTShapeBoundingBoxOptimal",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -5.0,
+          -10.0,
+          -15.0
+        ],
+        "max": [
+          5.0,
+          10.0,
+          15.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -5.0,
+          -10.0,
+          -15.0
+        ],
+        "max": [
+          5.0,
+          10.0,
+          15.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::shapeBoundingBoxOptimalWithTolerance",
+    "bridge_function": "OCCTShapeBoundingBoxOptimal",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "use_shape_tolerance": true,
+        "is_void": false,
+        "min": [
+          -5.0000001,
+          -10.0000001,
+          -15.0000001
+        ],
+        "max": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "use_shape_tolerance": true,
+        "is_void": false,
+        "min": [
+          -5.0000001,
+          -10.0000001,
+          -15.0000001
+        ],
+        "max": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::orientedBoundingBoxDetailed",
+    "bridge_function": "OCCTShapeOrientedBoundingBoxDetailed",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.0000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::orientedBoundingBoxDetailedOptimal",
+    "bridge_function": "OCCTShapeOrientedBoundingBoxDetailed",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "optimal": true,
+        "center": [
+          3.1302349591409014e-17,
+          -1.1127863561900768e-17,
+          -1.49213974509621e-16
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "optimal": true,
+        "center": [
+          3.1302349591409014e-17,
+          -1.1127863561900768e-17,
+          -1.49213974509621e-16
+        ],
+        "half_sizes": [
+          5.0000001,
+          5.0000001,
+          5.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::orientedBoundingBoxDetailedMatchesPacked",
+    "bridge_function": "OCCTShapeOrientedBoundingBoxDetailed",
+    "bridge_output": {
+      "type": "bnd_obb",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.000000100000001,
+          10.0000001,
+          15.0000001
+        ],
+        "packed_OCCTShapeOrientedBoundingBox_half_sizes": [
+          5.000000100000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_obb",
+      "data": {
+        "center": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "half_sizes": [
+          5.000000100000001,
+          10.0000001,
+          15.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::boundingBoxSphere",
+    "bridge_function": "OCCTShapeBoundingBox",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -10.0000001,
+          -10.0000001,
+          -10.0000001
+        ],
+        "max": [
+          10.0000001,
+          10.0000001,
+          10.0000001
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": false,
+        "min": [
+          -10.0000001,
+          -10.0000001,
+          -10.0000001
+        ],
+        "max": [
+          10.0000001,
+          10.0000001,
+          10.0000001
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::voidShapeReportsNoBoxFromAnyAccessor",
+    "bridge_function": "OCCTShapeBoundingBox",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": true,
+        "boundingBox": null,
+        "bounds_OCCTShapeGetBounds": null,
+        "size": null,
+        "center": null
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "is_void": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepBndLib::pointVertexAtOriginBoundingBoxIsNotNil",
+    "bridge_function": "OCCTShapeBoundingBoxOptimal",
+    "bridge_output": {
+      "type": "bnd_box",
+      "data": {
+        "optimal": {
+          "min": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "ordinary_OCCTShapeBoundingBox": {
+          "min": [
+            -1e-07,
+            -1e-07,
+            -1e-07
+          ],
+          "max": [
+            1e-07,
+            1e-07,
+            1e-07
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "bnd_box",
+      "data": {
+        "optimal": {
+          "min": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "max": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "ordinary_OCCTShapeBoundingBox": {
+          "min": [
+            -1e-07,
+            -1e-07,
+            -1e-07
+          ],
+          "max": [
+            1e-07,
+            1e-07,
+            1e-07
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
