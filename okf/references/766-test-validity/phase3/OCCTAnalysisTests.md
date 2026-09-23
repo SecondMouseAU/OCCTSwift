@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Integration: Assembly Interference** | shaftHousingClearanceAndInterference | Clearance and interference | Distance + 1; volume scaled by 1.01 |
 
 ---
 
@@ -202,6 +203,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | OCCTShapeDistance | Clearance and interference | Distance + 1; volume scaled by 1.01 | ✅ | ✅ | rewritten: distance >= 0 and vol > 0 stayed green under the injection; also reaches OCCTShapeSubtractEx, OCCTShapeIntersectEx, OCCTShapeGetVolume |
 
 ---
 
@@ -304,5 +306,6 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 560 tests
