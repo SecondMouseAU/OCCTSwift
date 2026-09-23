@@ -497,5 +497,145 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Generate horizontal hatches in rectangle",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 5,
+        "total_length": 50.0
+      }
+    },
+    "kernel_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 5,
+        "total_length": 50.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Diagonal hatches",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 9,
+        "total_length": 67.27922061357854
+      }
+    },
+    "kernel_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 9,
+        "total_length": 67.27922061357854
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Empty boundary returns nothing",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "hatch",
+      "data": {
+        "empty_boundary_segments": 0,
+        "empty_boundary_with_island_segments": 0
+      }
+    },
+    "kernel_output": {
+      "type": "hatch",
+      "data": {
+        "empty_boundary_segments_unguarded": 0,
+        "empty_boundary_with_island_segments_unguarded": 3
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::Triangle boundary",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 9,
+        "total_length": 45.0
+      }
+    },
+    "kernel_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 9,
+        "total_length": 45.0
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Hatch Patterns::An island polygon cuts a hole in the hatch fill",
+    "bridge_function": "OCCTHatchLines",
+    "bridge_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 13,
+        "total_length": 182.0,
+        "y10": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "hatch",
+      "data": {
+        "segments": 13,
+        "total_length": 182.0,
+        "y10": [
+          [
+            0.0,
+            7.0
+          ],
+          [
+            13.0,
+            20.0
+          ]
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-hatch/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

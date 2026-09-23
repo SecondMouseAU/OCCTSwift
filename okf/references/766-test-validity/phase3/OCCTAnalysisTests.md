@@ -102,6 +102,11 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Hatch Patterns** | Generate horizontal hatches in rectangle | Hatch_Hatcher fill | return 0 segments after the input guards |
+| **Hatch Patterns** | Diagonal hatches | Hatch_Hatcher fill | return 0 segments after the input guards |
+| **Hatch Patterns** | Empty boundary returns nothing | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines |
+| **Hatch Patterns** | Triangle boundary | Hatch_Hatcher fill | return 0 segments after the input guards |
+| **Hatch Patterns** | An island polygon cuts a hole in the hatch fill | Island trim (#1172) | skip trimPolygon for islands |
 
 ---
 
@@ -216,6 +221,11 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Generate horizontal hatches in rectangle | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:19 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch/`. |
+| Diagonal hatches | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:32 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch/`. |
+| Empty boundary returns nothing | OCCTHatchLines | Degenerate boundary rejection | drop the boundary.count >= 3 guard in HatchPattern.generate AND the boundaryCount < 3 guard in OCCTHatchLines | ✅ | ✅ | Red: HatchTests.swift:58 `islandOnly.isEmpty` (the original assertion at :50 stays green under the same injection). Parity MATCH, `Scripts/repro/766-hatch/`. Rewritten: could not fail. The kernel itself returns nothing for an empty boundary, so the original assertion passed with every guard removed. Island case added. |
+| Triangle boundary | OCCTHatchLines | Hatch_Hatcher fill | return 0 segments after the input guards | ✅ | ✅ | Red: HatchTests.swift:72 `segments.count > 0`. Parity MATCH, `Scripts/repro/766-hatch/`. |
+| An island polygon cuts a hole in the hatch fill | OCCTHatchLines | Island trim (#1172) | skip trimPolygon for islands | ✅ | ✅ | Red: HatchTests.swift:99 `atY10.count == 2` and :105 `hi <= 7.0 + 1e-6 \|\| lo >= 13.0 - 1e-6`. Parity MATCH, `Scripts/repro/766-hatch/`. |
 
 ---
 
@@ -318,5 +328,10 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Generate horizontal hatches in rectangle | ✅ | ✅ | ✅ |
+| Diagonal hatches | ✅ | ✅ | ✅ |
+| Empty boundary returns nothing | ✅ | ✅ | ✅ |
+| Triangle boundary | ✅ | ✅ | ✅ |
+| An island polygon cuts a hole in the hatch fill | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
