@@ -90,3 +90,45 @@ For each test, run ground-truth C++ comparison:
 | deferredModeToggle | ✅ | ✅ | ✅ |
 
 **Total**: 18 tests
+---
+
+## Measured: Node Status, Occurrences, Poly Counts, Products, Refs, Root Nodes and SameDomain (#1986)
+
+Measured on the pinned kernel: every row below was run red under the injection shown and
+green once it was reverted. Probes and transcripts are under `Scripts/repro/766-brepgraph-*/`.
+
+### Test Inventory
+
+| Suite | Test | Defect Category | Injection Target |
+|-------|------|-----------------|------------------|
+| **BRepGraph Node Status** | noRemovedNodes | Removal status | IsRemoved always false |
+| **BRepGraph Occurrences** | occurrenceCountForPrimitive | Occurrence count | always 0 |
+| **BRepGraph Poly Counts** | polyCounts | Poly count | triangulations always 0; polygons3D + 1 |
+| **BRepGraph Products** | productCountForPrimitive | Product queries | NbProducts always 0 |
+| **BRepGraph Products** | productQueriesOnSphere | Product queries | NbProducts always 0; NbComponents - 1 |
+| **BRepGraph Products** | rootProductIndices | Root products | root product index + 1 (separate run) |
+| **BRepGraph Ref Counts** | refCountsForBox | Ref counts | face/wire refs + 1, vertex refs - 8 |
+| **BRepGraph Ref Counts** | refCountsConsistency | Ref counts | face/wire refs + 1 |
+| **BRepGraph Ref Entry Queries** | refChildNode | Ref child | child index + 1 |
+| **BRepGraph Ref Entry Queries** | refNotRemoved | Ref removal status | RefIsRemoved always false |
+| **BRepGraph Ref Entry Queries** | refOrientation | Ref orientation | always FORWARD |
+| **BRepGraph Root Nodes** | hasRoots | Root nodes | root count + 1 |
+| **BRepGraph SameDomain** | boxNoSameDomain | Same-domain derivation | never same-domain |
+
+### Injection Matrix
+
+| Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
+|------|-----------------|--------|-----------|------|--------|-------|
+| noRemovedNodes | OCCTBRepGraphIsRemoved | Removal status | IsRemoved always false | ✅ `isRemoved(.face, 5)` after removeNode | ✅ | Rewritten: a fresh box passes a constant false |
+| occurrenceCountForPrimitive | OCCTBRepGraphNbOccurrences | Occurrence count | always 0 | ✅ `occurrenceCount == 1` | ✅ | Rewritten: `== 0` passed a counter stuck at 0 |
+| polyCounts | OCCTBRepGraphNbTriangulations | Poly count | triangulations always 0; polygons3D + 1 | ✅ `polygon3DCount == 0`, `mg.triangulationCount == 6` | ✅ | Rewritten: both expectations were `>= 0` |
+| productCountForPrimitive | OCCTBRepGraphNbProducts | Product queries | NbProducts always 0 | ✅ `productCount == 1` | ✅ | Rewritten: `productCount >= 0`, and the `if productCount > 0` block never ran |
+| productQueriesOnSphere | OCCTBRepGraphProductNbComponents | Product queries | NbProducts always 0; NbComponents - 1 | ✅ `productCount == 1`, `productComponentCount(0) == 1` | ✅ | Rewritten: block never ran; its `componentCount == 0` for a part was wrong, the kernel reports 1 |
+| rootProductIndices | OCCTBRepGraphRootProductIndices | Root products | root product index + 1 (separate run) | ✅ :54 `indices == [0]` | ✅ | Rewritten: no products, so the loop never ran |
+| refCountsForBox | OCCTBRepGraphNbVertexRefs | Ref counts | face/wire refs + 1, vertex refs - 8 | ✅ face, wire and vertex count lines | ✅ | Rewritten: lower bounds; the vertex bound sat 8 below the real 24 |
+| refCountsConsistency | OCCTBRepGraphNbFaceRefs | Ref counts | face/wire refs + 1 | ✅ `faceRefCount == faceCount` | ✅ | Rewritten: `>=` passed an overcount |
+| refChildNode | OCCTBRepGraphRefChildNodeIndex | Ref child | child index + 1 | ✅ `refChildNodeIndex(.face, refIndex: 0) == 0` | ✅ | Rewritten: `idx >= 0` stayed green |
+| refNotRemoved | OCCTBRepGraphRefIsRemoved | Ref removal status | RefIsRemoved always false | ✅ `isRefRemoved(.face, 0)` after removeRef | ✅ | Rewritten: a fresh box passes a constant false |
+| refOrientation | OCCTBRepGraphRefOrientation | Ref orientation | always FORWARD | ✅ orientation list | ✅ | Rewritten: `0...3` accepted any orientation |
+| hasRoots | OCCTBRepGraphRootNodes | Root nodes | root count + 1 | ✅ `roots.count == 1` | ✅ | Rewritten: `count > 0` passed a duplicate root |
+| boxNoSameDomain | OCCTBRepGraphFaceSameDomainIndices | Same-domain derivation | never same-domain | ✅ `fg.sameDomainFaces(of: 1) == [5]` | ✅ | Rewritten: a box alone passes an always-empty answer; fused coplanar boxes added. Kernel side is the probe re-deriving the bridge rule from Tool::Face::Surface |

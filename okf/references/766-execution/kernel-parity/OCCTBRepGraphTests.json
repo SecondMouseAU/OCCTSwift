@@ -142,5 +142,371 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Node Status::noRemovedNodes",
+    "bridge_function": "OCCTBRepGraphIsRemoved",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "fresh": "no face removed",
+        "face5AfterRemove": true
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "fresh": "no face removed",
+        "face5AfterRemove": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Occurrences::occurrenceCountForPrimitive",
+    "bridge_function": "OCCTBRepGraphNbOccurrences",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "before": 0,
+        "afterLink": 1
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "before": 0,
+        "afterLink": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Poly Counts::polyCounts",
+    "bridge_function": "OCCTBRepGraphNbTriangulations",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "unmeshed": [
+          0,
+          0
+        ],
+        "meshed": {
+          "triangulations": 6,
+          "polygons3d": 0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "unmeshed": [
+          0,
+          0
+        ],
+        "meshed": {
+          "triangulations": 6,
+          "polygons3d": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Products::productCountForPrimitive",
+    "bridge_function": "OCCTBRepGraphNbProducts",
+    "bridge_output": {
+      "type": "product",
+      "data": {
+        "before": 0,
+        "after": 1,
+        "isPart": true,
+        "isAssembly": false,
+        "shapeRoot": [
+          "solid",
+          0
+        ],
+        "roots": 1
+      }
+    },
+    "kernel_output": {
+      "type": "product",
+      "data": {
+        "before": 0,
+        "after": 1,
+        "isPart": true,
+        "isAssembly": false,
+        "shapeRoot": [
+          0,
+          0
+        ],
+        "roots": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Products::productQueriesOnSphere",
+    "bridge_function": "OCCTBRepGraphProductNbComponents",
+    "bridge_output": {
+      "type": "product",
+      "data": {
+        "before": 0,
+        "after": 1,
+        "isPart": true,
+        "components": 1
+      }
+    },
+    "kernel_output": {
+      "type": "product",
+      "data": {
+        "before": 0,
+        "after": 1,
+        "isPart": true,
+        "components": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Products::rootProductIndices",
+    "bridge_function": "OCCTBRepGraphRootProductIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "before": [],
+        "afterLink": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "before": [],
+        "afterLink": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Ref Counts::refCountsForBox",
+    "bridge_function": "OCCTBRepGraphNbVertexRefs",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "shell": 1,
+        "face": 6,
+        "wire": 6,
+        "coedge": 24,
+        "vertex": 24,
+        "solid": 0,
+        "child": 0,
+        "occurrence": 0
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "shell": 1,
+        "face": 6,
+        "wire": 6,
+        "coedge": 24,
+        "vertex": 24,
+        "solid": 0,
+        "child": 0,
+        "occurrence": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Ref Counts::refCountsConsistency",
+    "bridge_function": "OCCTBRepGraphNbFaceRefs",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faceRefs": 6,
+        "faces": 6,
+        "wireRefs": 6,
+        "wires": 6
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faceRefs": 6,
+        "faces": 6,
+        "wireRefs": 6,
+        "wires": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Ref Entry Queries::refChildNode",
+    "bridge_function": "OCCTBRepGraphRefChildNodeIndex",
+    "bridge_output": {
+      "type": "node",
+      "data": [
+        "face",
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": [
+        2,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Ref Entry Queries::refNotRemoved",
+    "bridge_function": "OCCTBRepGraphRefIsRemoved",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "face0": false,
+        "shell0": false,
+        "face0AfterRemove": true
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "face0": false,
+        "shell0": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Ref Entry Queries::refOrientation",
+    "bridge_function": "OCCTBRepGraphRefOrientation",
+    "bridge_output": {
+      "type": "orientations",
+      "data": [
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "orientations",
+      "data": [
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Root Nodes::hasRoots",
+    "bridge_function": "OCCTBRepGraphRootNodes",
+    "bridge_output": {
+      "type": "roots",
+      "data": [
+        [
+          "product",
+          0
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "roots",
+      "data": {
+        "count": 1,
+        "index": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph SameDomain::boxNoSameDomain",
+    "bridge_function": "OCCTBRepGraphFaceSameDomainIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": {
+        "box0": [],
+        "fused1": [
+          5
+        ],
+        "fused0": []
+      }
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": {
+        "box0": [],
+        "fused1": [
+          5
+        ],
+        "fused0": []
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
