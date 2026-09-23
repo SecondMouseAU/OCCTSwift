@@ -327,3 +327,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: DivideByNumber, EncodeRegularity, FastSewing (11 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-divide-encode-fastsew/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `divideBox` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM: leave MaxArea() at its default (the pre-#1491 defect) | DivideByNumberTests.swift:24 `result?.faces().count == 24` | pass | PASS |
+| `divideOnePart` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM1: bypass the Swift parts>1 guard and return the input when Perform() is false | DivideByNumberTests.swift:34 `result == nil` | pass | PASS: kernel Perform false at (1,1); Swift guard refuses first |
+| `divideCylinder` | DivideByNumberTests.swift | `OCCTShapeDivideByNumber` | DIVNUM: leave MaxArea() at its default | DivideByNumberTests.swift:45 `result?.faces().count == 6` | pass | PASS |
+| `encodeRegularityBox` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCODE: copy the shape and skip BRepLib::EncodeRegularity | EncodeRegularityTests.swift:36 `sharedEdgeCodes(r) == [c0 x 12]` | pass | PASS |
+| `encodeRegularityFilleted` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCNULL: return nullptr (ENCODE alone leaves it green: the fillet already encoded every edge) | EncodeRegularityTests.swift:45 `#require(box.encodingRegularity(toleranceDegrees: 1.0))` | pass | PASS |
+| `fixtureStartsUnencoded` | EncodeRegularityTests.swift | `OCCTMakeShell` | SHELLENC: OCCTMakeShell encodes regularity on the shell it builds | EncodeRegularityTests.swift:152 `!Shape.hasContinuity(edge:face1:face2:)` | pass | PASS |
+| `defaultToleranceMarksNearTangentEdgeRegular` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCODE: skip BRepLib::EncodeRegularity | EncodeRegularityTests.swift:170 `Shape.hasContinuity(edge:face1:face2:)` | pass | PASS |
+| `oldBuggyDefaultStillDoesNotMarkRegular` | EncodeRegularityTests.swift | `OCCTShapeEncodeRegularity` | ENCUNITS: pass the degree value to BRepLib as radians | EncodeRegularityTests.swift:190 `continuity == ContinuityClass.c0.rawValue` | pass | PASS |
+| `fastSewValid` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWNULL: return nullptr | FastSewingTests.swift:21 `sewn != nil` | pass | PASS |
+| `fastSewTolerance` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWNULL: return nullptr | FastSewingTests.swift:42 `#require(sphere.fastSewn(tolerance: 0.01))` | pass | PASS |
+| `fastSewBoxReturnsNil` | FastSewingTests.swift | `OCCTShapeFastSewn` | FASTSEWPASS: hand back the input when GetResult() is null (the #1475 shape) | FastSewingTests.swift:61 `sewn == nil` | pass | PASS |
