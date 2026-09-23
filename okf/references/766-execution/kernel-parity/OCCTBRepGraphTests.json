@@ -142,5 +142,240 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::atVertex",
+    "bridge_function": "OCCTShapeVertexPoint",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        -5
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        -5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::midpointOfEdge",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        0
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -5,
+        0
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::parallelIntersectionFails",
+    "bridge_function": "none (pure Swift: intersectionOfAxisAndPlane)",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "pure Swift arithmetic on absolute entities"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::intersectionCorrect",
+    "bridge_function": "none (pure Swift: intersectionOfAxisAndPlane)",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        3,
+        4,
+        10
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "reason": "pure Swift arithmetic on absolute entities"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::centroidOfFaceCylinderSurfaceInertia",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        0,
+        0,
+        5
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        0,
+        0,
+        5
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::centroidOfFaceZeroAreaDegenerate",
+    "bridge_function": "OCCTBRepGPropSinert",
+    "bridge_output": {
+      "type": "result",
+      "data": "degenerate"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift refusal when BRepGProp_Sinert reports no centre (zero area)"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.142 ConstructionPoint resolution::atEdgeParameterMatchesFraction",
+    "bridge_function": "OCCTEdgeGetPointAtParam",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "edge0_t0.25": [
+          -5,
+          -5,
+          -2.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "edge0_t0.25": [
+          -5,
+          -5,
+          -2.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 .containedIn now resolves::faceInSolid",
+    "bridge_function": "OCCTBRepGraphChildIndices",
+    "bridge_output": {
+      "type": "node",
+      "data": {
+        "kind": "face",
+        "index": 0
+      }
+    },
+    "kernel_output": {
+      "type": "node",
+      "data": {
+        "kind": "face",
+        "index": 0,
+        "children": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 .containedIn now resolves::faceInSolidOOB",
+    "bridge_function": "OCCTBRepGraphChildIndices",
+    "bridge_output": {
+      "type": "result",
+      "data": "occurrenceOutOfRange"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "faces_of_solid_0": 6,
+        "requested": 999
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.142 .containedIn now resolves::ancestorMissing",
+    "bridge_function": "OCCTBRepGraphHistoryNbRecords",
+    "bridge_output": {
+      "type": "result",
+      "data": "ancestorMissing"
+    },
+    "kernel_output": {
+      "type": "result",
+      "data": {
+        "reason": "Swift error mapping"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
