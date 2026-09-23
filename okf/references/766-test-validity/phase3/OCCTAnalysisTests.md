@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Canonical Recognition** | Canonical recognition callable on box | Canonical recognition of a solid | Recognise a solid's first face |
+| **Canonical Recognition** | Canonical recognition callable on cylinder | Canonical recognition of a solid | Recognise a solid's first face |
 | **Extrema_ExtSS Tests** | parallelPlanes | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS |
 | **Extrema_ExtSS Tests** | sphereDistance | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS; SquareDistance + 1 in OCCTExtremaExtSSPoint |
 | **IntAna LineSphere Tests** | lineThroughSphere | Line-sphere intersection | ParamOnConic + 1 in OCCTIntAnaLineSphere |
@@ -294,6 +296,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Canonical recognition callable on box | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
+| Canonical recognition callable on cylinder | OCCTShapeRecognizeCanonical | Canonical recognition of a solid | Feed the solid's first TopExp_Explorer face to ShapeAnalysis_CanonicalRecognition | ✅ | ✅ |  |
 | torusSurfaceArea | OCCTGPropTorusSurface | Torus surface area | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.19 off, inside the old tolerance |
 | torusVolume | OCCTGPropTorusVolume | Torus volume | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.28 off, inside the old tolerance |
 | coneSphereIntersection | OCCTIntAnaConeSphere | Cone-sphere intersection count | Return iqq.NbPnt() in place of iqq.NbCurve() | ✅ | ✅ | Rewritten: asserted count >= 0, which the wrapper guarantees for any non-nil value |

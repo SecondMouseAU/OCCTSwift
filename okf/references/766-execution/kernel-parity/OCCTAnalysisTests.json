@@ -2957,5 +2957,61 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Canonical Recognition::Canonical recognition callable on box",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null,
+        "IsPlane": false,
+        "IsCylinder": false,
+        "IsCone": false,
+        "IsSphere": false,
+        "IsLine": false,
+        "IsCircle": false,
+        "IsEllipse": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Canonical Recognition::Canonical recognition callable on cylinder",
+    "bridge_function": "OCCTShapeRecognizeCanonical",
+    "bridge_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "canonical_form",
+      "data": {
+        "result": null,
+        "IsPlane": false,
+        "IsCylinder": false,
+        "IsCone": false,
+        "IsSphere": false,
+        "IsLine": false,
+        "IsCircle": false,
+        "IsEllipse": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
