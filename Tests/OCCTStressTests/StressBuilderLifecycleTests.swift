@@ -1,6 +1,12 @@
 // StressBuilderLifecycleTests.swift
 // Category 6: Builder lifecycle patterns for all 11 builders + 3 fixers.
 // Tests: build empty, normal cycle, reset, destroy without build, invalid input, double build.
+//
+// Epic #766: most results here sat behind `if let` or were read into `_`, so a nil result or a
+// wrong value passed. They now assert what the wrapped OCCT builder gives for the same input,
+// measured by Scripts/repro/766-stress-builder-lifecycle/probe.mm (transcript.txt beside it). The
+// destroy-without-X tests can only fail by crashing when the builder is released, which is their
+// point; they are left as written.
 
 import Foundation
 import OCCTSwift
@@ -170,28 +176,26 @@ struct StressPipeShellBuilderLifecycleTests {
         return Shape.fromWire(wire)
     }
 
-    @Test func buildEmpty() {
-        guard let spine = makeSpine(),
-            let builder = PipeShellBuilder(spine: spine)
-        else { return }
-        // Build without profile
+    // Without a profile BRepOffsetAPI_MakePipeShell::Build throws; the bridge reports false.
+    @Test func buildEmpty() throws {
+        let spine = try #require(makeSpine())
+        let builder = try #require(PipeShellBuilder(spine: spine))
         let ok = builder.build()
-        // Expected to fail but not crash
-        _ = ok
+        #expect(!ok)
     }
 
-    @Test func normalCycle() {
-        guard let spine = makeSpine(), let profile = makeProfile(),
-            let builder = PipeShellBuilder(spine: spine)
-        else { return }
+    // A radius-2 circle swept round a radius-10 circle: one toroidal face of area 4·π²·10·2.
+    @Test func normalCycle() throws {
+        let spine = try #require(makeSpine())
+        let profile = try #require(makeProfile())
+        let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
-        builder.build()
-        let status = builder.status
-        _ = status
-        if let shape = builder.shape {
-            #expect(shape.isValid)
-        }
+        #expect(builder.build())
+        let shape = try #require(builder.shape)
+        #expect(shape.isValid)
+        #expect(shape.subShapeCount(ofType: .face) == 1)
+        #expect(abs((shape.surfaceArea ?? 0) - 789.5683521) < 1e-6)
     }
 
     @Test func destroyWithoutBuild() {
@@ -210,6 +214,8 @@ struct StressPipeShellBuilderLifecycleTests {
         builder.add(profile: profile)
         let sections = builder.simulate(numberOfSections: 5)
         #expect(sections.count >= 0)  // May produce sections or empty
+        // `>= 0` held for any array; Simulate(5) gives five sections.
+        #expect(sections.count == 5)
         for sect in sections {
             #expect(sect.isValid)
         }
@@ -221,8 +227,9 @@ struct StressPipeShellBuilderLifecycleTests {
         else { return }
         builder.setFrenet(true)
         builder.add(profile: profile)
-        builder.build()
-        builder.build()  // Second build, should not crash
+        #expect(builder.build())
+        #expect(builder.build())  // Second build, should not crash, and still succeeds
+        #expect(builder.shape != nil)
     }
 }
 
@@ -231,32 +238,35 @@ struct StressPipeShellBuilderLifecycleTests {
 @Suite("Stress: SewingBuilder Lifecycle")
 struct StressSewingBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
-        guard let sewing = SewingBuilder(tolerance: 1e-6) else { return }
+    @Test func buildEmpty() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-6))
         sewing.perform()
-        _ = sewing.result
+        // Nothing added, nothing sewn: nil (the result was read into `_` before).
+        #expect(sewing.result == nil)
     }
 
-    @Test func normalCycle() {
-        guard let sewing = SewingBuilder(tolerance: 1e-6) else { return }
+    // Sewing a closed box gives back its closed shell, enclosing 1000.
+    @Test func normalCycle() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-6))
         let box = standardBox()
         sewing.add(box)
         sewing.perform()
-        if let result = sewing.result {
-            #expect(result.isValid)
-        }
+        let result = try #require(sewing.result)
+        #expect(result.isValid)
+        #expect(result.shapeType == .shell)
+        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func twoShapes() {
-        guard let sewing = SewingBuilder(tolerance: 1e-3) else { return }
+    @Test func twoShapes() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-3))
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
         sewing.add(b1)
         sewing.add(b2)
         sewing.perform()
-        if let result = sewing.result {
-            #expect(result.isValid)
-        }
+        let result = try #require(sewing.result)
+        #expect(result.isValid)
+        #expect(result.subShapeCount(ofType: .face) == 12)
     }
 
     @Test func destroyWithoutPerform() {
@@ -264,12 +274,14 @@ struct StressSewingBuilderLifecycleTests {
         sewing.add(standardBox())
     }
 
-    @Test func extendedQueries() {
-        guard let sewing = SewingBuilder(tolerance: 1e-3) else { return }
+    @Test func extendedQueries() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-3))
         sewing.add(standardBox())
         sewing.setNonManifoldMode(false)
         sewing.perform()
-        _ = sewing.nbDeletedFaces
+        // No face is deleted sewing a clean box (the count was read into `_` before).
+        #expect(sewing.nbDeletedFaces == 0)
+        #expect(sewing.result != nil)
     }
 }
 
@@ -280,21 +292,22 @@ struct StressWireBuilderLifecycleTests {
 
     @Test func buildEmpty() {
         let builder = WireBuilder()
-        _ = builder.wire
-        _ = builder.isDone
+        #expect(builder.wire == nil)
+        #expect(!builder.isDone)
     }
 
-    @Test func normalCycle() {
+    // The first four edges of the box in explorer order form one connected wire.
+    @Test func normalCycle() throws {
         let builder = WireBuilder()
         let box = standardBox()
         let edges = box.subShapes(ofType: .edge)
         for edge in edges.prefix(4) {
             builder.addEdge(edge)
         }
-        if let wire = builder.wire {
-            #expect(wire.isValid)
-        }
-        _ = builder.isDone
+        let wire = try #require(builder.wire)
+        #expect(wire.isValid)
+        #expect(builder.isDone)
+        #expect(wire.subShapeCount(ofType: .edge) == 4)
     }
 
     @Test func destroyWithoutGettingWire() {
@@ -312,7 +325,9 @@ struct StressWireBuilderLifecycleTests {
         if let wire = wires.first {
             builder.addWire(wire)
         }
-        _ = builder.wire
+        // One of the box's four-edge face wires, taken whole.
+        #expect(builder.isDone)
+        #expect(builder.wire?.subShapeCount(ofType: .edge) == 4)
     }
 }
 
@@ -333,6 +348,8 @@ struct StressHatchBuilderLifecycleTests {
         hatcher.addYLine(0)
         hatcher.addYLine(5)
         #expect(hatcher.nbLines >= 0)
+        // `>= 0` held for any count; four lines were added.
+        #expect(hatcher.nbLines == 4)
     }
 
     @Test func destroyWithoutQuery() {

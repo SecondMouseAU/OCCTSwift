@@ -288,3 +288,27 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBuilderLifecycleTests: PipeShell, Sewing, WireBuilder, HatchBuilder
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-builder-lifecycle/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: PipeShellBuilder Lifecycle | `buildEmpty` | `OCCTPipeShellBuild` | TRUE:OCCTPipeShellBuild | RED exit 1: StressBuilderLifecycleTests.swift:184 Expectation failed: !ok | ✔ | MATCH | yes |
+| Stress: PipeShellBuilder Lifecycle | `normalCycle` | `OCCTPipeShellAdd, OCCTPipeShellBuild, OCCTPipeShellShape` | EARLY:OCCTPipeShellShape | RED exit 1: StressBuilderLifecycleTests.swift:195 Expectation failed: builder.shape | ✔ | MATCH | yes |
+| Stress: PipeShellBuilder Lifecycle | `destroyWithoutBuild` | `OCCTPipeShellRelease` | CRASH:OCCTPipeShellRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: PipeShellBuilder Lifecycle | `simulateBeforeBuild` | `OCCTPipeShellSimulate` | EARLY:OCCTPipeShellSimulate | RED exit 1: StressBuilderLifecycleTests.swift:218 Expectation failed: sections.count == 5 | ✔ | MATCH | yes |
+| Stress: PipeShellBuilder Lifecycle | `doubleBuild` | `OCCTPipeShellBuild` | EARLY:OCCTPipeShellBuild | RED exit 1: StressBuilderLifecycleTests.swift:230 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: SewingBuilder Lifecycle | `buildEmpty` | `OCCTSewingResult` | OCCTSewingResult returns a null sewn shape as non-nil | RED exit 1: StressBuilderLifecycleTests.swift:245 Expectation failed: sewing.result == nil | ✔ | MATCH | yes |
+| Stress: SewingBuilder Lifecycle | `normalCycle` | `OCCTSewingAdd, OCCTSewingPerform, OCCTSewingResult` | OCCTShapeGetVolume reports Mass() × 1.5 | RED exit 1: StressBuilderLifecycleTests.swift:257 Expectation failed: abs((result.volume ?? 0) - 1000) < 1e-6 | ✔ | MATCH | yes |
+| Stress: SewingBuilder Lifecycle | `twoShapes` | `OCCTSewingResult` | OCCTShapeGetSubShapeCount + 1 | RED exit 1: StressBuilderLifecycleTests.swift:269 Expectation failed: result.subShapeCount(ofType: .face) == 12 | ✔ | MATCH | yes |
+| Stress: SewingBuilder Lifecycle | `destroyWithoutPerform` | `OCCTSewingRelease` | CRASH:OCCTSewingRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: SewingBuilder Lifecycle | `extendedQueries` | `OCCTSewingNbDeletedFaces, OCCTSewingRelease` | CRASH:OCCTSewingRelease | CRASH exit 134: Abort trap: 6 | ✔ | MATCH | yes |
+| Stress: WireBuilder Lifecycle | `buildEmpty` | `OCCTWireBuilderWire, OCCTWireBuilderIsDone` | OCCTWireBuilderIsDone always true | RED exit 1: StressBuilderLifecycleTests.swift:296 Expectation failed: !builder.isDone | ✔ | MATCH | yes |
+| Stress: WireBuilder Lifecycle | `normalCycle` | `OCCTWireBuilderAddEdge, OCCTWireBuilderWire` | OCCTWireBuilderAddEdge ignores its edge | RED exit 1: StressBuilderLifecycleTests.swift:307 Expectation failed: builder.wire | ✔ | MATCH | yes |
+| Stress: WireBuilder Lifecycle | `destroyWithoutGettingWire` | `OCCTWireBuilderRelease` | CRASH:OCCTWireBuilderRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: WireBuilder Lifecycle | `addWireShape` | `OCCTWireBuilderAddWire` | EARLY:OCCTWireBuilderAddWire | RED exit 1: StressBuilderLifecycleTests.swift:329 Expectation failed: builder.isDone | ✔ | MATCH | yes |
+| Stress: HatchBuilder Lifecycle | `buildEmpty` | `OCCTHatcherNbLines, OCCTHatcherRelease` | CRASH:OCCTHatcherRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: HatchBuilder Lifecycle | `normalCycle` | `OCCTHatcherAddXLine, OCCTHatcherNbLines` | EARLY:OCCTHatcherNbLines | RED exit 1: StressBuilderLifecycleTests.swift:352 Expectation failed: hatcher.nbLines == 4 | ✔ | N/A | yes |
+| Stress: HatchBuilder Lifecycle | `destroyWithoutQuery` | `OCCTHatcherRelease` | CRASH:OCCTHatcherRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |

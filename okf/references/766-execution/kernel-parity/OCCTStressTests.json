@@ -46,5 +46,447 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: PipeShellBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTPipeShellBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakePipeShell with no profile: Build throws -> false"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakePipeShell with no profile: Build throws -> false",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "TRUE:OCCTPipeShellBuild",
+      "env": "OCCT766=|TRUE:OCCTPipeShellBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:184 Expectation failed: !ok",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: PipeShellBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTPipeShellAdd, OCCTPipeShellBuild, OCCTPipeShellShape",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Frenet sweep: 1 face, area 789.5683521, valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Frenet sweep: 1 face, area 789.5683521, valid",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTPipeShellShape",
+      "env": "OCCT766=|EARLY:OCCTPipeShellShape|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:195 Expectation failed: builder.shape",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: PipeShellBuilder Lifecycle::destroyWithoutBuild",
+    "bridge_function": "OCCTPipeShellRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTPipeShellRelease",
+      "env": "OCCT766=|CRASH:OCCTPipeShellRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: PipeShellBuilder Lifecycle::simulateBeforeBuild",
+    "bridge_function": "OCCTPipeShellSimulate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Simulate(5): 5 sections"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Simulate(5): 5 sections",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTPipeShellSimulate",
+      "env": "OCCT766=|EARLY:OCCTPipeShellSimulate|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:218 Expectation failed: sections.count == 5",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: PipeShellBuilder Lifecycle::doubleBuild",
+    "bridge_function": "OCCTPipeShellBuild",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): both Builds done"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "both Builds done",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTPipeShellBuild",
+      "env": "OCCT766=|EARLY:OCCTPipeShellBuild|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:230 Expectation failed: builder.build()",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SewingBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTSewingResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): nothing added: SewedShape null -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "nothing added: SewedShape null -> nil",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSewingResult returns a null sewn shape as non-nil",
+      "env": "OCCT766=|FAKE:OCCTSewingResult|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:245 Expectation failed: sewing.result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SewingBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTSewingAdd, OCCTSewingPerform, OCCTSewingResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): closed shell, valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "closed shell, valid, volume 1000",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:257 Expectation failed: abs((result.volume ?? 0) - 1000) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SewingBuilder Lifecycle::twoShapes",
+    "bridge_function": "OCCTSewingResult",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 12 faces, valid"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "12 faces, valid",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetSubShapeCount + 1",
+      "env": "OCCT766=|OFFBYONE:OCCTShapeGetSubShapeCount|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:269 Expectation failed: result.subShapeCount(ofType: .face) == 12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SewingBuilder Lifecycle::destroyWithoutPerform",
+    "bridge_function": "OCCTSewingRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTSewingRelease",
+      "env": "OCCT766=|CRASH:OCCTSewingRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: SewingBuilder Lifecycle::extendedQueries",
+    "bridge_function": "OCCTSewingNbDeletedFaces, OCCTSewingRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): NbDeletedFaces 0 (no count-changing injection was built; Red is the release crash only)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "NbDeletedFaces 0 (no count-changing injection was built; Red is the release crash only)",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "CRASH:OCCTSewingRelease",
+      "env": "OCCT766=|CRASH:OCCTSewingRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTWireBuilderWire, OCCTWireBuilderIsDone",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): empty MakeWire: IsDone=0"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "empty MakeWire: IsDone=0",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireBuilderIsDone always true",
+      "env": "OCCT766=|TRUE:OCCTWireBuilderIsDone|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:296 Expectation failed: !builder.isDone",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTWireBuilderAddEdge, OCCTWireBuilderWire",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): first 4 explored edges: done, 4 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "first 4 explored edges: done, 4 edges",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTWireBuilderAddEdge ignores its edge",
+      "env": "OCCT766=|SKIP:OCCTWireBuilderAddEdge|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:307 Expectation failed: builder.wire",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireBuilder Lifecycle::destroyWithoutGettingWire",
+    "bridge_function": "OCCTWireBuilderRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTWireBuilderRelease",
+      "env": "OCCT766=|CRASH:OCCTWireBuilderRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: WireBuilder Lifecycle::addWireShape",
+    "bridge_function": "OCCTWireBuilderAddWire",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): face wire added whole: done, 4 edges"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "face wire added whole: done, 4 edges",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTWireBuilderAddWire",
+      "env": "OCCT766=|EARLY:OCCTWireBuilderAddWire|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:329 Expectation failed: builder.isDone",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: HatchBuilder Lifecycle::buildEmpty",
+    "bridge_function": "OCCTHatcherNbLines, OCCTHatcherRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: Geom2dHatch line count 0 by construction; Red is the release crash only",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTHatcherRelease",
+      "env": "OCCT766=|CRASH:OCCTHatcherRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: HatchBuilder Lifecycle::normalCycle",
+    "bridge_function": "OCCTHatcherAddXLine, OCCTHatcherNbLines",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: 4 lines added, 4 by construction",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "EARLY:OCCTHatcherNbLines",
+      "env": "OCCT766=|EARLY:OCCTHatcherNbLines|",
+      "red": "RED exit 1: StressBuilderLifecycleTests.swift:352 Expectation failed: hatcher.nbLines == 4",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: HatchBuilder Lifecycle::destroyWithoutQuery",
+    "bridge_function": "OCCTHatcherRelease",
+    "bridge_output": {
+      "type": "observed",
+      "data": "N/A"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "N/A: deallocation without a prior call; no kernel value, the test exists to catch a crash in Release",
+      "source": "Scripts/repro/766-stress-builder-lifecycle/transcript.txt"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "red_green": {
+      "injection": "CRASH:OCCTHatcherRelease",
+      "env": "OCCT766=|CRASH:OCCTHatcherRelease|",
+      "red": "CRASH exit 134: Abort trap: 6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
