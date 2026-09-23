@@ -327,3 +327,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: FreeBoundsPropertiesTests, FreeBoundsSimplifiedTests (11 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-freebounds-props/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `freeBoundsOnFaces` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsCounts` | FBCOUNTS: closed and open counts swapped | FreeBoundsPropertiesTests.swift:17 `analysis.closedCount == 2` | pass | PASS |
+| `closedBoundInfo` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsInfo` | FBINDEX: 0-based index handed to OCCT's 1-based accessor | FreeBoundsPropertiesTests.swift:26 `#require(closedFreeBoundInfo(index: 0))` | pass | PASS |
+| `freeBoundWire` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsWire` | FBINDEX | FreeBoundsPropertiesTests.swift:36 `#require(closedFreeBoundWire(index: 0))` | pass | PASS |
+| `freeBoundIndexOutOfRange` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsInfo` | FBINDEX (also red under FBCOUNTS at :62 and a Swift index+1 shift at :65) | FreeBoundsPropertiesTests.swift:69 `closedFreeBoundInfo(index: bad) == nil` | pass | PASS |
+| `openFreeBoundsAbsent` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsCounts` | FBCOUNTS | FreeBoundsPropertiesTests.swift:80 `openCount == 0` | pass | PASS |
+| `loneFaceHasNoFreeBounds` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsCreate` | FBWRAP: wrap a lone face in a compound before Init | FreeBoundsPropertiesTests.swift:94 `analysis.totalCount == 0` | pass | PASS |
+| `shapeAndPropertiesAgree` | FreeBoundsPropertiesTests.swift | `OCCTFreeBoundsPropsInfo` | Swift closedFreeBoundInfo reading index+1 (the #504 index-base drift); also red under FBINDEX | FreeBoundsPropertiesTests.swift:110 `#require(compound.closedFreeBoundInfo(index: i))` | pass | PASS |
+| `closedCountOnBox` | FreeBoundsSimplifiedTests.swift | `OCCTShapeFreeBoundsClosedCount` | FBCOUNTSRC: count wires in the input shape instead of the result compound | FreeBoundsSimplifiedTests.swift:17 `freeBoundsClosedCount == 0` | pass | PASS |
+| `closedWiresOnBox` | FreeBoundsSimplifiedTests.swift | `OCCTShapeFreeBoundsClosed` | FBSIMPLENULL: report an empty compound as nil | FreeBoundsSimplifiedTests.swift:23 `#require(box.freeBoundsClosedWires(...))` | pass | PASS |
+| `openWiresOnBox` | FreeBoundsSimplifiedTests.swift | `OCCTShapeFreeBoundsOpen` | FBSIMPLENULL | FreeBoundsSimplifiedTests.swift:29 `#require(box.freeBoundsOpenWires(...))` | pass | PASS |
+| `freeBoundsOnOpenShell` | FreeBoundsSimplifiedTests.swift | `OCCTShapeFreeBoundsClosedCount` | FBNOSEW: the non-sewing ShapeAnalysis_FreeBounds constructor | FreeBoundsSimplifiedTests.swift:39 `freeBoundsClosedCount == 0` | pass | PASS |

@@ -2,9 +2,273 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundsOnFaces",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 2,
+        "closed": 2,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 2,
+        "closed": 2,
+        "open": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::closedBoundInfo",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bound_info",
+      "data": {
+        "area": 100.0,
+        "perimeter": 40.0,
+        "notches": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bound_info",
+      "data": {
+        "area": 100.0,
+        "perimeter": 40.0,
+        "ratio": 0.0,
+        "width": 0.0,
+        "notches": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundWire",
+    "bridge_function": "OCCTFreeBoundsPropsWire",
+    "bridge_output": {
+      "type": "wire",
+      "data": {
+        "edges": 4,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "wire",
+      "data": {
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::freeBoundIndexOutOfRange",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 2,
+        "index1": "present",
+        "index2": null,
+        "index7": null,
+        "index-1": null
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "closed": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::openFreeBoundsAbsent",
+    "bridge_function": "OCCTFreeBoundsPropsCounts",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "open": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::loneFaceHasNoFreeBounds",
+    "bridge_function": "OCCTFreeBoundsPropsCreate",
+    "bridge_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 0,
+        "closed": 0,
+        "open": 0
+      }
+    },
+    "kernel_output": {
+      "type": "free_bounds",
+      "data": {
+        "total": 0,
+        "closed": 0,
+        "open": 0,
+        "wrappedInCompound": {
+          "closed": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis FreeBoundsProperties Tests::shapeAndPropertiesAgree",
+    "bridge_function": "OCCTFreeBoundsPropsInfo",
+    "bridge_output": {
+      "type": "free_bound_info",
+      "data": {
+        "closed": 2,
+        "equalFields": true
+      }
+    },
+    "kernel_output": {
+      "type": "free_bound_info",
+      "data": {
+        "closed": 2,
+        "area": 100.0,
+        "perimeter": 40.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::closedCountOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::closedWiresOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsClosed",
+    "bridge_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::openWiresOnBox",
+    "bridge_function": "OCCTShapeFreeBoundsOpen",
+    "bridge_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "kernel_output": {
+      "type": "compound",
+      "data": {
+        "null": false,
+        "wires": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_FreeBounds Simplified Tests::freeBoundsOnOpenShell",
+    "bridge_function": "OCCTShapeFreeBoundsClosedCount",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "sewing": 0,
+        "nonSewing": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
