@@ -55,7 +55,10 @@ struct Issue600OutOfDomainRangeTests {
     func segmentDoesNotExtendPastItsTrim() {
         guard let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
             let whole = seg.length
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
         let d = seg.domain
         let span = d.upperBound - d.lowerBound
 
@@ -77,7 +80,10 @@ struct Issue600OutOfDomainRangeTests {
             let bez = Curve3D.bezier(poles: [
                 SIMD3(0, 0, 0), SIMD3(30, 60, 0), SIMD3(70, -40, 20), SIMD3(100, 0, 0),
             ]), let whole = bez.length
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
         let d = bez.domain
         let span = d.upperBound - d.lowerBound
 
@@ -92,7 +98,10 @@ struct Issue600OutOfDomainRangeTests {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
             let arc = circle.trimmed(from: 0, to: .pi),
             let whole = arc.length
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
 
         // The adaptor reports IsPeriodic() == true here, a Geom_TrimmedCurve inherits its basis
         // curve's periodicity, so periodicity alone cannot be the test. Its domain covers half a
@@ -119,24 +128,35 @@ struct Issue600OutOfDomainRangeTests {
     func circleStillWinds() {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
             let whole = circle.length
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
 
         // Confining would have been a regression here: the curve is periodic, and the range says
         // "go round twice".
         #expect(abs(whole - 10 * Double.pi) < 1e-6)
         if let two = circle.length(from: 0, to: 4 * .pi) {
             #expect(abs(two - 2 * whole) < 1e-6)
+        } else {
+            Issue.record("two was nil")  // #766: was a silent skip
         }
         if let three = circle.length(from: -2 * .pi, to: 4 * .pi) {
             #expect(abs(three - 3 * whole) < 1e-6)
+        } else {
+            Issue.record("three was nil")  // #766: was a silent skip
         }
         // A range wholly outside the domain is still on the curve, one turn further round.
         if let shifted = circle.length(from: 4 * .pi, to: 6 * .pi) {
             #expect(abs(shifted - whole) < 1e-6)
+        } else {
+            Issue.record("shifted was nil")  // #766: was a silent skip
         }
         // Half a turn, wherever it starts.
         if let half = circle.length(from: 6 * .pi, to: 7 * .pi) {
             #expect(abs(half - whole / 2) < 1e-6)
+        } else {
+            Issue.record("half was nil")  // #766: was a silent skip
         }
     }
 
@@ -147,7 +167,10 @@ struct Issue600OutOfDomainRangeTests {
                 center: .zero, normal: SIMD3(0, 0, 1),
                 majorRadius: 8, minorRadius: 3),
             let whole = ellipse.length
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
 
         // Compared against the curve's own whole-domain measurement rather than an independent
         // reference: GCPnts integrates a single-span conic with one quadrature over the whole
@@ -155,9 +178,13 @@ struct Issue600OutOfDomainRangeTests {
         // an accuracy question of its own and not what this test is about.
         if let two = ellipse.length(from: 0, to: 4 * .pi) {
             #expect(abs(two - 2 * whole) < 1e-6 * whole)
+        } else {
+            Issue.record("two was nil")  // #766: was a silent skip
         }
         if let one = ellipse.length(from: 2 * .pi, to: 4 * .pi) {
             #expect(abs(one - whole) < 1e-6 * whole)
+        } else {
+            Issue.record("one was nil")  // #766: was a silent skip
         }
     }
 
@@ -185,10 +212,14 @@ struct Issue600OutOfDomainRangeTests {
         // A range wholly past the end is one more turn, not nothing.
         if let past = c.length(from: d.upperBound, to: d.upperBound + period) {
             #expect(abs(past - whole) < 1e-6 * whole)
+        } else {
+            Issue.record("past was nil")  // #766: was a silent skip
         }
         // And a partial range crossing the seam measures once, not twice.
         if let seam = c.length(from: d.upperBound - period / 4, to: d.upperBound + period / 4) {
             #expect(abs(seam - whole / 2) < 0.05 * whole)
+        } else {
+            Issue.record("seam was nil")  // #766: was a silent skip
         }
     }
 
@@ -211,10 +242,14 @@ struct Issue600OutOfDomainRangeTests {
             #expect(seg2.length(from: 20, to: 30) == 0)  // was 10
             #expect(seg2.arcLength(from: 0, to: 20) == whole)  // was 20, via the other spelling
             #expect(seg2.arcLength(from: 20, to: 30) == 0)
+        } else {
+            Issue.record("whole was nil")  // #766: was a silent skip
         }
         if let whole = circle2.length, let two = circle2.length(from: 0, to: 4 * .pi) {
             #expect(abs(two - 2 * whole) < 1e-6)  // still winds
             #expect(abs(circle2.arcLength(from: 0, to: 4 * .pi) - 2 * whole) < 1e-6)
+        } else {
+            Issue.record("whole was nil")  // #766: was a silent skip
         }
         if let whole = spline2.length {
             let d = spline2.domain
@@ -224,6 +259,8 @@ struct Issue600OutOfDomainRangeTests {
             #expect(
                 abs(spline2.arcLength(from: d.lowerBound, to: d.upperBound + span) - whole)
                     < 1e-6 * whole)
+        } else {
+            Issue.record("whole was nil")  // #766: was a silent skip
         }
     }
 
@@ -272,7 +309,10 @@ struct Issue600OutOfDomainRangeTests {
         guard let c = wideRangeMultiSpanCurve(), let whole = c.length,
             let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
             let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
-        else { return }
+        else {
+            Issue.record("fixture did not build or measure")  // #766: was a silent return
+            return
+        }
         let d = c.domain
         let span = d.upperBound - d.lowerBound
 
@@ -280,6 +320,8 @@ struct Issue600OutOfDomainRangeTests {
         if let half = c.length(from: d.lowerBound, to: d.lowerBound + span / 2) {
             let traced = polylineLength(c, from: d.lowerBound, to: d.lowerBound + span / 2)
             #expect(abs(half - traced) < 0.01 * traced)
+        } else {
+            Issue.record("half was nil")  // #766: was a silent skip
         }
         // Order tolerance and the zero-width interval, both from #506/#408.
         let lo = d.lowerBound + 0.1 * span
@@ -289,6 +331,8 @@ struct Issue600OutOfDomainRangeTests {
         #expect(seg.length(from: 2, to: 7) == 5)
         if let quarter = circle.length(from: 0, to: .pi / 2), let whole = circle.length {
             #expect(abs(quarter - whole / 4) < 1e-6)
+        } else {
+            Issue.record("quarter was nil")  // #766: was a silent skip
         }
         // And the #548 guard is still in front of all of it.
         #expect(c.length(from: d.lowerBound, to: .nan) == nil)

@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| An out-of-domain range measures the curve, not its extrapolation (#600) | A Bezier is not evaluated past its poles | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:91 bez.length(from: d.lowerBound, to: d.upperBound + span) == w` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | An arc stops at its trim, even though its basis circle is periodic | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:110 arc.length(from: 0, to: 2 * .pi) == whole` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | A multi-span BSpline keeps the behaviour #477 and #506 pinned | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:120 c.length(from: d.lowerBound - span, to: d.upperBound + span)` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | A segment measures its own length past the end, not the line's extension | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:67 seg.length(from: d.lowerBound, to: d.upperBound + span) == w` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | An ellipse winds too, in whole multiples of its own measured length | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:180 abs(two - 2 * whole) < 1e-6 * whole  (+1 more)` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | A circle still winds: two periods measure two circumferences | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:140 abs(two - 2 * whole) < 1e-6  (+3 more)` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | A periodic BSpline no longer stops silently at one period | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | noclamp: out-of-domain Curve3D range x 2 | `Issue600OutOfDomainRangeTests.swift:204 abs(two - 2 * whole) < 1e-6 * whole  (+3 more)` | ✅ | MATCH |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | Curve2D answers an out-of-domain range the way Curve3D does | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | c2noclamp: out-of-domain Curve2D range x 2 | `Issue600OutOfDomainRangeTests.swift:241 seg2.length(from: 0, to: 20) == whole  (+5 more)` | ✅ | N/A |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | An edge answers the same as the curve it was built from | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | edext: out-of-domain edge range x 2 | `Issue600OutOfDomainRangeTests.swift:281 abs(  (+2 more)` | ✅ | N/A |  |
+| An out-of-domain range measures the curve, not its extrapolation (#600) | In-domain measurements are untouched | `OCCTCurve3DGetLengthBetween / OCCTCurve2DGetLengthBetween / OCCTEdgeArcLengthBetween` | novalid: occtValidParameterRange bypassed | `Issue600OutOfDomainRangeTests.swift:338 c.length(from: d.lowerBound, to: .nan) == nil` | ✅ | MATCH |  |
