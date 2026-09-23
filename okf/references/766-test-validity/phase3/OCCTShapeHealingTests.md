@@ -327,3 +327,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue1505 bare-wire guard, Issue1507 sewing null guards, Issue1634 revolution direction (11 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-1505-1507-1634/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `bareWireRefusesExtrusion` | Issue1505BareWireSelfIntersectionGuardTests.swift | `OCCTShapeCreateExtrusionShape (guard occtHasSelfIntersectingWire)` | BAREWIRE: skip the synthesized-face check for face-less input (the pre-#1505 gap) | Issue1505BareWireSelfIntersectionGuardTests.swift:47 `extruded == nil` | pass | PASS: kernel flags it only with a face context, which the guard synthesizes |
+| `bareWireRefusesHeal` | Issue1505BareWireSelfIntersectionGuardTests.swift | `OCCTShapeHeal (guard occtHasSelfIntersectingWire)` | BAREWIRE | Issue1505BareWireSelfIntersectionGuardTests.swift:58 `healed == nil` | pass | PASS |
+| `bareWireRefusesHealWithHistory` | Issue1505BareWireSelfIntersectionGuardTests.swift | `OCCTShapeHealWithHistory (guard occtHasSelfIntersectingWire)` | BAREWIRE | Issue1505BareWireSelfIntersectionGuardTests.swift:69 `healedWithHistory == nil` | pass | PASS |
+| `cleanBareWireStillWorks` | Issue1505BareWireSelfIntersectionGuardTests.swift | `occtHasSelfIntersectingWire` | SIALWAYS: the guard reports every shape self-intersecting | Issue1505BareWireSelfIntersectionGuardTests.swift:80 `extruded != nil` | pass | PASS |
+| `faceInputStillRefuses` | Issue1505BareWireSelfIntersectionGuardTests.swift | `occtHasSelfIntersectingWire` | SIFACE: skip the face-context walk | Issue1505BareWireSelfIntersectionGuardTests.swift:94 `extruded == nil` | pass | PASS |
+| `nbMultipleEdgesNullRawPointerReturnsZero` | Issue1507SewingNullGuardTests.swift | `OCCTSewingNbMultipleEdges` | NULLSEW: drop the `if (!sewing)` guard | process killed, signal 11 (SIGSEGV) | pass | N/A: null C pointer; no kernel call |
+| `isMultipleEdgeNullRawPointerReturnsFalse` | Issue1507SewingNullGuardTests.swift | `OCCTSewingIsMultipleEdge` | NULLSEW | process killed, signal 11 (SIGSEGV) | pass | N/A: null C pointer; no kernel call |
+| `ordinarySewingUnaffected` | Issue1507SewingNullGuardTests.swift | `OCCTSewingPerform / OCCTSewingResult / OCCTSewingNbFreeEdges` | SEWNOPERFORM: skip BRepBuilderAPI_Sewing::Perform | Issue1507SewingNullGuardTests.swift:49 `#require(sewing.result)` | pass | PASS |
+| `directionIsElementaryToRevolution` | Issue1634ConvertToRevolutionDirectionTests.swift | `OCCTShapeCustomConvertToRevolution` | CUSTREV: return the input unconverted | Issue1634ConvertToRevolutionDirectionTests.swift:37 `revolutionFaceCount(converted) == 1` | pass | PASS |
+| `sweptToElementaryReversesIt` | Issue1634ConvertToRevolutionDirectionTests.swift | `OCCTShapeSweptToElementary` | SWEPTNOOP: return the input unconverted | Issue1634ConvertToRevolutionDirectionTests.swift:49 `revolutionFaceCount(back) == 0` | pass | PASS |
+| `volumeIsPreserved` | Issue1634ConvertToRevolutionDirectionTests.swift | `OCCTShapeCustomConvertToRevolution` | CUSTREVNULL: return nullptr (an unconverted input keeps the volume too, so only a lost result turns it red) | Issue1634ConvertToRevolutionDirectionTests.swift:59 `#require(cylinder.withSurfacesAsRevolution())` | pass | PASS |
