@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_SelfIntersection Pair Tests** | noSelfIntersectionOnBox | Self-intersection pairs | Never report a pair |
+| **BRepExtrema_SelfIntersection Pair Tests** | selfIntersectionReturnsArray | Self-intersection pairs | Never report a pair |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| SelfIntersection Pair: noSelfIntersectionOnBox | OCCTShapeSelfIntersectionPairs | Self-intersection pairs | Never report a pair | ✅ | ✅ | strengthened: positive control added; the original stayed green under the injection |
+| SelfIntersection Pair: selfIntersectionReturnsArray | OCCTShapeSelfIntersectionPairs | Self-intersection pairs | Never report a pair | ✅ | ✅ | rewritten: count >= 0 could not fail |
 
 ---
 
@@ -304,5 +308,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| SelfIntersection Pair: noSelfIntersectionOnBox | ✅ | ✅ | ✅ |
+| SelfIntersection Pair: selfIntersectionReturnsArray | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 561 tests
