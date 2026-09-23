@@ -1,0 +1,19 @@
+box edge count=12
+box edges()[0]: type=0 first=0.000000 last=10.000000
+  curvature(mid)=0
+  tangent(mid)=(0.000000, 0.000000, 1.000000)
+  point(mid)=(-5.000000, -5.000000, 0.000000)
+  torsion(mid)=0
+  point(first)=(-5.000000, -5.000000, -5.000000) point(last)=(-5.000000, -5.000000, 5.000000)
+  endpoints start=(-5.000000, -5.000000, -5.000000) end=(-5.000000, -5.000000, 5.000000)
+cylinder edge count=3
+first circle edge is edges()[0]
+cylinder first circle edge: type=1 first=0.000000 last=6.283185
+  curvature(mid)=0.2
+  tangent(mid)=(-0.000000, -1.000000, 0.000000)
+  point(mid)=(-5.000000, 0.000000, 10.000000)
+  normal(mid)=(1.000000, -0.000000, 0.000000)
+  centreOfCurvature(mid)=(0.000000, 0.000000, 10.000000)
+  torsion(mid)=0
+  point(first)=(5.000000, 0.000000, 10.000000) point(last)=(5.000000, -0.000000, 10.000000)
+  endpoints start=(5.000000, -0.000000, 10.000000) end=(5.000000, -0.000000, 10.000000)
