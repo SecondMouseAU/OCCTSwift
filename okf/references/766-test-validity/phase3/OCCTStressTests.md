@@ -288,3 +288,29 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Shape Queries
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Shape Queries | `isValid` | `OCCTShapeIsValid` | OCCTShapeIsValid always false | RED exit 1: StressExhaustiveAPITests.swift:177 Expectation failed: standardBox().isValid | ✔ | MATCH | no |
+| Stress: Shape Queries | `volume` | `OCCTShapeGetVolume` | OCCTShapeGetVolume reports Mass() × 1.5 | RED exit 1: StressExhaustiveAPITests.swift:178 Expectation failed: abs((standardBox().volume ?? 0) - 1000) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Shape Queries | `surfaceArea` | `OCCTShapeGetSurfaceArea` | OCCTShapeGetSurfaceArea × 1.5 | RED exit 1: StressExhaustiveAPITests.swift:179 Expectation failed: abs((standardBox().surfaceArea ?? 0) - 600) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Shape Queries | `bounds` | `OCCTShapeGetBounds` | OCCTShapeGetBounds max.x + 100 | RED exit 1: StressExhaustiveAPITests.swift:184 Expectation failed: abs(b.max.x - 5) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Shape Queries | `faceCount` | `OCCTShapeGetSubShapeCount` | OCCTShapeGetSubShapeCount + 1 | RED exit 1: StressExhaustiveAPITests.swift:186 Expectation failed: standardBox().subShapeCount(ofType: .face) == 6 | ✔ | MATCH | no |
+| Stress: Shape Queries | `edgeCount` | `OCCTShapeGetSubShapeCount` | OCCTShapeGetSubShapeCount + 1 | RED exit 1: StressExhaustiveAPITests.swift:187 Expectation failed: standardBox().subShapeCount(ofType: .edge) == 12 | ✔ | MATCH | no |
+| Stress: Shape Queries | `vertexCount` | `OCCTShapeGetSubShapeCount` | OCCTShapeGetSubShapeCount + 1 | RED exit 1: StressExhaustiveAPITests.swift:188 Expectation failed: standardBox().subShapeCount(ofType: .vertex) == 8 | ✔ | MATCH | no |
+| Stress: Shape Queries | `subShapes` | `OCCTShapeGetSubShapes` | EARLY:OCCTShapeGetSubShapes | RED exit 1: StressExhaustiveAPITests.swift:192 Expectation failed: faces.count == 6 | ✔ | MATCH | no |
+| Stress: Shape Queries | `mesh` | `OCCTShapeCreateMesh` | OCCTShapeCreateMesh returns nil | RED exit 1: StressExhaustiveAPITests.swift:197 Expectation failed: m != nil | ✔ | MATCH | yes |
+| Stress: Shape Queries | `edgePolyline` | `OCCTShapeGetEdgePolyline` | EARLY:OCCTShapeGetEdgePolyline | RED exit 1: StressExhaustiveAPITests.swift:206 Expectation failed: box.edgePolyline(at: 0, deflection: 0.1) | ✔ | MATCH | yes |
+| Stress: Shape Queries | `faces` | `OCCTShapeGetFaces` | EARLY:OCCTShapeGetFaces | RED exit 1: StressExhaustiveAPITests.swift:213 Expectation failed: faces.count == 6 | ✔ | MATCH | no |
+| Stress: Shape Queries | `edges` | `OCCTShapeGetTotalEdgeCount` | EARLY:OCCTShapeGetTotalEdgeCount | RED exit 1: StressExhaustiveAPITests.swift:218 Expectation failed: edges.count == 12 | ✔ | MATCH | no |
+| Stress: Shape Queries | `distance` | `OCCTShapeDistance` | EARLY:OCCTShapeDistance | RED exit 1: StressExhaustiveAPITests.swift:225 Expectation failed: b1.distance(to: b2) | ✔ | MATCH | yes |
+| Stress: Shape Queries | `boundingBoxOptimal` | `OCCTShapeBoundingBoxOptimal` | EARLY:OCCTShapeBoundingBoxOptimal | RED exit 1: StressExhaustiveAPITests.swift:232 Expectation failed: box.boundingBoxOptimal() | ✔ | MATCH | yes |
+| Stress: Shape Queries | `orientedBoundingBox` | `OCCTShapeOrientedBoundingBox` | EARLY:OCCTShapeOrientedBoundingBox | RED exit 1: StressExhaustiveAPITests.swift:240 Expectation failed: box.orientedBoundingBox(optimal: false) | ✔ | MATCH | yes |
+| Stress: Shape Queries | `toleranceValue` | `OCCTShapeToleranceValue` | EARLY:OCCTShapeToleranceValue | RED exit 1: StressExhaustiveAPITests.swift:248 Expectation failed: tol >= 0 | ✔ | MATCH | yes |
+| Stress: Shape Queries | `isBooleanValid` | `OCCTShapeBooleanCheckSingle` | EARLY:OCCTShapeBooleanCheckSingle | RED exit 1: StressExhaustiveAPITests.swift:256 Expectation failed: valid | ✔ | MATCH | no |
+| Stress: Shape Queries | `brepString` | `OCCTShapeToBREPString` | OCCTShapeToBREPString returns nil | RED exit 1: StressExhaustiveAPITests.swift:261 Expectation failed: box.toBREPString() | ✔ | MATCH | yes |
+| Stress: Shape Queries | `typeName` | `OCCTShapeTypeName` | EARLY:OCCTShapeTypeName | RED exit 1: StressExhaustiveAPITests.swift:268 Expectation failed: name != nil | ✔ | MATCH | yes |

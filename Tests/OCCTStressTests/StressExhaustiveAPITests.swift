@@ -1,6 +1,11 @@
 // StressExhaustiveAPITests.swift
 // Category 1: Smoke-call every major public method with standard fixtures.
 // Goal: verify no crash and reasonable output for each API entry point.
+//
+// Epic #766: many of these smoke calls held their result behind `if let` (so a nil result passed)
+// or read it into `_` (so only a crash could fail them). Those now require the result and, where
+// the check was only "positive" or "non-empty", pin the value OCCT gives for the same input,
+// measured by Scripts/repro/766-stress-exhaustive-api/probe.mm (transcript.txt beside it).
 
 import Foundation
 import OCCTSwift
@@ -170,11 +175,13 @@ struct StressShapeTransformTests {
 struct StressShapeQueryTests {
 
     @Test func isValid() { #expect(standardBox().isValid) }
-    @Test func volume() { if let v = standardBox().volume { #expect(v > 0) } }
-    @Test func surfaceArea() { if let a = standardBox().surfaceArea { #expect(a > 0) } }
-    @Test func bounds() {
-        let b = standardBox().bounds!
+    @Test func volume() { #expect(abs((standardBox().volume ?? 0) - 1000) < 1e-9) }
+    @Test func surfaceArea() { #expect(abs((standardBox().surfaceArea ?? 0) - 600) < 1e-9) }
+    @Test func bounds() throws {
+        let b = try #require(standardBox().bounds)
         #expect(b.max.x > b.min.x)
+        #expect(abs(b.min.x - -5) < 1e-6)
+        #expect(abs(b.max.x - 5) < 1e-6)
     }
     @Test func faceCount() { #expect(standardBox().subShapeCount(ofType: .face) == 6) }
     @Test func edgeCount() { #expect(standardBox().subShapeCount(ofType: .edge) == 12) }
@@ -189,12 +196,16 @@ struct StressShapeQueryTests {
         let m = standardBox().mesh(linearDeflection: 0.5)
         #expect(m != nil)
         if let m { #expect(m.vertexCount > 0) }
+        #expect(m?.vertexCount == 24)
+        #expect(m?.triangleCount == 12)
     }
 
-    @Test func edgePolyline() {
+    // Edge 0 is straight: the polyline is its two end points.
+    @Test func edgePolyline() throws {
         let box = standardBox()
-        let pts = box.edgePolyline(at: 0, deflection: 0.1)
-        if let pts { #expect(pts.count >= 2) }
+        let pts = try #require(box.edgePolyline(at: 0, deflection: 0.1))
+        #expect(pts.count >= 2)
+        #expect(pts == [SIMD3(-5, -5, -5), SIMD3(-5, -5, 5)])
     }
 
     @Test func faces() {
@@ -207,32 +218,36 @@ struct StressShapeQueryTests {
         #expect(edges.count == 12)
     }
 
-    @Test func distance() {
+    @Test func distance() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
-        let dist = b1.distance(to: b2)
-        if let d = dist { #expect(d.distance > 0) }
+        // b1 is centred on the origin (x up to 5) and b2 starts at x = 20: 15 apart.
+        let d = try #require(b1.distance(to: b2))
+        #expect(d.distance > 0)
+        #expect(abs(d.distance - 15) < 1e-9)
     }
 
-    @Test func boundingBoxOptimal() {
+    @Test func boundingBoxOptimal() throws {
         let box = standardBox()
-        let opt = box.boundingBoxOptimal()
-        if let o = opt {
-            #expect(o.max.x > o.min.x)
-        }
+        let o = try #require(box.boundingBoxOptimal())
+        #expect(o.max.x > o.min.x)
+        #expect(abs(o.max.x - 5) < 1e-6)
+        #expect(abs(o.min.x - -5) < 1e-6)
     }
 
-    @Test func orientedBoundingBox() {
+    @Test func orientedBoundingBox() throws {
         let box = standardBox()
-        if let obb = box.orientedBoundingBox(optimal: false) {
-            #expect(obb.volume > 0)
-        }
+        let obb = try #require(box.orientedBoundingBox(optimal: false))
+        #expect(obb.volume > 0)
+        #expect(abs(obb.volume - 1000) < 1e-3)
     }
 
     @Test func toleranceValue() {
         let box = standardBox()
         let tol = box.toleranceValue(mode: .average)
         #expect(tol >= 0)
+        // Every sub-shape of a fresh primitive carries Precision::Confusion().
+        #expect(abs(tol - 1e-7) < 1e-12)
     }
 
     @Test func isBooleanValid() {
@@ -241,16 +256,17 @@ struct StressShapeQueryTests {
         #expect(valid)
     }
 
-    @Test func brepString() {
+    @Test func brepString() throws {
         let box = standardBox()
-        let brep = box.toBREPString()
-        if let brep { #expect(!brep.isEmpty) }
+        let brep = try #require(box.toBREPString())
+        #expect(!brep.isEmpty)
     }
 
     @Test func typeName() {
         let box = standardBox()
         let name = box.typeName
         #expect(name != nil)
+        #expect(name == "SOLID")
     }
 }
 
