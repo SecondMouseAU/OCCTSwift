@@ -102,6 +102,10 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BRepCheck Analyzer Tests** | Box passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Sphere passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Cylinder passes analyzer validation | Validity analysis | IsValid result replaced by false |
+| **BRepCheck Analyzer Tests** | Analyzer without geometry checks | Validity analysis | IsValid result replaced by false |
 
 ---
 
@@ -216,6 +220,10 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| Box passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | One injection turns all four tests red; a bridge that always answers true would pass all four (positive-only) |
+| Sphere passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Cylinder passes analyzer validation | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ |  |
+| Analyzer without geometry checks | OCCTBRepCheckAnalyzerIsValid | Validity analysis | IsValid result replaced by false | ✅ | ✅ | Does not detect a bridge that ignores geometryChecks: the box is valid either way |
 
 ---
 
@@ -318,5 +326,9 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Box passes analyzer validation | ✅ | ✅ | ✅ |
+| Sphere passes analyzer validation | ✅ | ✅ | ✅ |
+| Cylinder passes analyzer validation | ✅ | ✅ | ✅ |
+| Analyzer without geometry checks | ✅ | ✅ | ✅ |
 
 **Total**: 559 tests
