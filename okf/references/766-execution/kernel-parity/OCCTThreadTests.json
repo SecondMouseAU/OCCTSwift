@@ -1,94 +1,239 @@
 [
   {
-    "test_name": "threadedHole cuts material from a bored block",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.85,
-        "valid": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.85,
-        "valid": true
-      }
-    },
+    "test_name": "Issue #784: ThreadBuild.boolean removal stays decodable::A legacy {\"boolean\":{}} payload decodes as .direct",
+    "bridge_function": "none (pure Swift: ThreadBuild.init(from:))",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "ThreadBuild is a Swift enum; its Codable conformance never reaches OCCT, so there is no kernel counterpart."
   },
   {
-    "test_name": "threadedShaft cuts helical V-grooves into the shaft",
-    "bridge_function": "Shape.threadedRodSolid (direct build)",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "volume_ratio": 0.82,
-        "valid": true,
-        "build_path": "direct"
-      }
-    },
+    "test_name": "Issue #784: ThreadBuild.boolean removal stays decodable::A legacy payload nested in a container field decodes the same way",
+    "bridge_function": "none (pure Swift: ThreadBuild.init(from:))",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "ThreadBuild is a Swift enum; its Codable conformance never reaches OCCT, so there is no kernel counterpart."
   },
   {
-    "test_name": "threadedHole respects left-handed helix parameter",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
-    "bridge_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
-    "kernel_output": {
-      "type": "shape",
-      "data": {
-        "rh_volume": 42.1,
-        "lh_volume": 42.1,
-        "mirror_symmetric": true
-      }
-    },
+    "test_name": "Issue #784: ThreadBuild.boolean removal stays decodable::The surviving cases still round-trip through encode/decode",
+    "bridge_function": "none (pure Swift: ThreadBuild.encode(to:) / init(from:))",
+    "bridge_output": null,
+    "kernel_output": null,
     "comparison": {
-      "equal": true,
+      "equal": null,
       "differences": []
     },
-    "status": "PASS"
+    "status": "N/A",
+    "note": "ThreadBuild is a Swift enum; its Codable conformance never reaches OCCT, so there is no kernel counterpart."
   },
   {
-    "test_name": "Multi-start thread (starts: 2) removes more material than single-start",
-    "bridge_function": "OCCTShapeBuildThreadCutter",
+    "test_name": "Issue #784: ThreadBuild.boolean removal stays decodable::Encoding never reproduces the retired boolean key",
+    "bridge_function": "none (pure Swift: ThreadBuild.encode(to:))",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadBuild is a Swift enum; its Codable conformance never reaches OCCT, so there is no kernel counterpart."
+  },
+  {
+    "test_name": "Issue #784: ThreadBuild.boolean removal stays decodable::An unrecognised key is still rejected, not silently mapped",
+    "bridge_function": "none (pure Swift: ThreadBuild.init(from:))",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadBuild is a Swift enum; its Codable conformance never reaches OCCT, so there is no kernel counterpart."
+  },
+  {
+    "test_name": "Issue #988: square and buttress come from the trapezoid factory unchanged::square is the limiting trapezoid, to the last bit",
+    "bridge_function": "none (pure Swift: ThreadProfile.trapezoid / .square / .segments)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadProfile vertex and segment arithmetic is pure Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #988: square and buttress come from the trapezoid factory unchanged::buttress keeps its asymmetric DIN 513 vertices, to the last bit",
+    "bridge_function": "none (pure Swift: ThreadProfile.trapezoid / .buttress)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadProfile vertex and segment arithmetic is pure Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #988: square and buttress come from the trapezoid factory unchanged::the symmetric forms are unmoved",
+    "bridge_function": "none (pure Swift: ThreadProfile.trapezoid / .acme29 / .iso60V())",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadProfile vertex and segment arithmetic is pure Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #989: thread designation parsing::every recognised designation keeps its form, diameter and pitch",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadSpec.parse is string parsing in Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #989: thread designation parsing::the same imperial body parses identically as ACME and as Unified",
+    "bridge_function": "none (pure Swift: ThreadSpec.parseInchDesignation)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadSpec.parse is string parsing in Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #989: thread designation parsing::unrecognised input is refused rather than guessed at",
+    "bridge_function": "none (pure Swift: ThreadSpec.parse)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadSpec.parse is string parsing in Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #989: thread designation parsing::measured edge behaviour, pinned",
+    "bridge_function": "none (pure Swift: ThreadSpec.parseMetric / parseAcme)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadSpec.parse is string parsing in Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #990: thread clocking follows the shared gp_Ax2 perpendicular basis::the groove sits on gp_Ax2's own perpendicular for every world axis",
+    "bridge_function": "OCCTShapeClassifyPoint, OCCTShapeGetVolume (measurement); datum from perpendicularBasis(to:).1 compared with gp_Ax2::YDirection",
     "bridge_output": {
-      "type": "shape",
+      "type": "groove_measurement",
       "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
+        "datum_per_axis": {
+          "+X": [
+            0,
+            -1,
+            0
+          ],
+          "-X": [
+            0,
+            -1,
+            0
+          ],
+          "+Y": [
+            1,
+            0,
+            0
+          ],
+          "-Y": [
+            1,
+            0,
+            0
+          ],
+          "+Z": [
+            0,
+            1,
+            0
+          ],
+          "-Z": [
+            0,
+            1,
+            0
+          ]
+        },
+        "groove_degrees_all_axes": -1.8685017585032249,
+        "groove_fraction_all_axes": 0.5555555555555556,
+        "blank_volume": 1130.9733552923256,
+        "threaded_volume": [
+          1003.1466921110966,
+          1003.1466921110967
+        ],
+        "removed_volume": [
+          127.82666318122892,
+          127.82666318122881
+        ]
       }
     },
     "kernel_output": {
-      "type": "shape",
+      "type": "groove_measurement",
       "data": {
-        "single_start_cut": 45.2,
-        "double_start_cut": 89.1,
-        "double_gt_single": true
+        "gp_Ax2_YDirection_per_axis": {
+          "+X": [
+            0,
+            -1,
+            0
+          ],
+          "-X": [
+            0,
+            -1,
+            0
+          ],
+          "+Y": [
+            1,
+            0,
+            0
+          ],
+          "-Y": [
+            1,
+            0,
+            0
+          ],
+          "+Z": [
+            0,
+            1,
+            0
+          ],
+          "-Z": [
+            0,
+            1,
+            0
+          ]
+        },
+        "groove_degrees_all_axes": -1.868502,
+        "groove_fraction_all_axes": 0.555556,
+        "blank_volume": 1130.973355292,
+        "threaded_volume": 1003.146692111,
+        "removed_volume": 127.826663181
       }
     },
     "comparison": {
@@ -96,158 +241,56 @@
       "differences": []
     },
     "status": "PASS",
-    "note": "PLACEHOLDER VALUES - need actual measurement from macOS test run"
+    "note": "Kernel side is Scripts/repro/766-thread-784-991/probe.mm: gp_Ax2 datum for the six axes, then the same 72-point BRepClass3d_SolidClassifier ring and BRepGProp volumes on the solids the Swift run exported to BREP. The threaded solid itself is built by Swift composition (buildThreadedRodDirect), so parity covers the datum and the measurement, not a C++ rebuild of the thread. Datum signs of zero differ in print only."
   },
   {
-    "test_name": "Metric M5x0.8",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
+    "test_name": "Issue #991: the profile owns its own flat widths::flat widths match each form's standard",
+    "bridge_function": "none (pure Swift: ThreadProfile.flatWidthFraction(atDepth:))",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadProfile vertex and segment arithmetic is pure Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #991: the profile owns its own flat widths::a pointed crest measures zero and reports no crest flat",
+    "bridge_function": "none (pure Swift: ThreadProfile.hasCrestFlat / flatWidthFraction / Segment.isFlat)",
+    "bridge_output": null,
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A",
+    "note": "ThreadProfile vertex and segment arithmetic is pure Swift; no OCCT call is made."
+  },
+  {
+    "test_name": "Issue #991: the profile owns its own flat widths::the cut path still sizes its groove from the profile",
+    "bridge_function": "OCCTShapeBuildThreadCutter (cutter, via applyThreadCut); OCCTShapeGetVolume, OCCTShapeIsValid (measurement)",
     "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 5.0,
-        "pitch": 0.8
+        "block_volume": 5981.592412434966,
+        "tapped_volume": 5741.827370224427,
+        "valid": true
       }
     },
     "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "Metric M6 uses coarse pitch",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
-    "bridge_output": {
-      "type": "ThreadSpec",
+      "type": "shape",
       "data": {
-        "form": "iso68",
-        "nominalDiameter": 6.0,
-        "pitch": 1.0
+        "block_volume": 5981.592412435,
+        "tapped_volume": 5741.827370224,
+        "valid": true
       }
     },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
     "comparison": {
       "equal": true,
       "differences": []
     },
-    "status": "PASS"
-  },
-  {
-    "test_name": "UNC 1/4-20 converts to metric",
-    "bridge_function": "ThreadSpec.parse (Swift only)",
-    "bridge_output": {
-      "type": "ThreadSpec",
-      "data": {
-        "form": "unified",
-        "nominalDiameter": 6.35,
-        "pitch": 1.27
-      }
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "Theoretical and cut depths",
-    "bridge_function": "ThreadSpec properties (Swift only)",
-    "bridge_output": {
-      "type": "ThreadSpec",
-      "data": {
-        "theoreticalDepth": 1.299,
-        "cutDepth": 0.8119,
-        "minorDiameter": 8.376
-      }
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ISO-68 crest flat = P/8",
-    "bridge_function": "ThreadSpec.crestFlat (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.1875
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "ISO-68 root flat = P/4",
-    "bridge_function": "ThreadSpec.rootFlat (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.375
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "cutDepth = 5H/8",
-    "bridge_function": "ThreadSpec.cutDepth (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 0.8119
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
-  },
-  {
-    "test_name": "minorDiameter consistent with cut depth",
-    "bridge_function": "ThreadSpec.minorDiameter (Swift only)",
-    "bridge_output": {
-      "type": "double",
-      "data": 8.376
-    },
-    "kernel_output": {
-      "type": "N/A (Swift computation)",
-      "data": {}
-    },
-    "comparison": {
-      "equal": true,
-      "differences": []
-    },
-    "status": "PASS"
+    "status": "PASS",
+    "note": "Kernel side re-measures the Swift-built annulus and tapped solid (exported to BREP) with BRepGProp::VolumeProperties(OnlyClosed) and BRepCheck_Analyzer, the calls OCCTShapeGetVolume and OCCTShapeIsValid make. Tapped/block ratio 0.9599, inside the test's (0.8, 1) band."
   }
 ]
