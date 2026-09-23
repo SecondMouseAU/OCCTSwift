@@ -441,8 +441,8 @@ this issue's own body warns about. At **1.89 MB brotli** it is well under that f
 
 Read it as a floor and not as an answer. It carries no Swift runtime, no Foundation and no bridge,
 and `wasm-ld` pulled only the OCCT that five small cases reach: a box, a volume, a mesh and a
-raise. A module that also reads and writes STEP will pull `TKDESTEP`, `TKXSBase` and the XCAF chain,
-which is 16 MB of archive on its own. #2175's module is the comparable measurement, and #1689's
+raise. A module that also reads and writes STEP will pull from `TKDESTEP`, `TKXSBase` and `TKXCAF`, which
+are 26.8 MB of objects and archives between them. #2175's module is the comparable measurement, and #1689's
 5 MB figure is a target rather than a gate either way.
 
 The header tree is **not** sized here. What the build script now produces is a flat copy of
