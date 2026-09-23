@@ -160,6 +160,7 @@
 | **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
 | **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
 | **v0.114.0 - Mass Properties** | radiusOfGyration | Radius of gyration | Shift axis |
+| **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
 
 ---
 
@@ -320,6 +321,7 @@
 | momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
 | principalAxes | OCCTShapePrincipalAxes | Principal axes of inertia | Read ThirdAxisOfInertia into axis1 | ✅ | ✅ | Rewritten: cube fixture has isotropic inertia, so any frame is principal; now 10x20x30 with unique axes |
 | radiusOfGyration | OCCTShapeRadiusOfGyration | Radius of gyration | Build the axis through (ax + 1, ay, az) | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to sqrt(50/3) |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | OCCTExtremaElCSLinSphere | Line-sphere extrema | Negate surface point z | ✅ | ✅ | rewritten: count > 0 stayed green under the injection |
 
 ---
 
@@ -447,5 +449,6 @@ For each test, run ground-truth C++ comparison:
 | Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
 | Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | ✅ | ✅ | ✅ |
 
-**Total**: 584 tests
+**Total**: 585 tests
