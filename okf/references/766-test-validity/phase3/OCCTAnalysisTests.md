@@ -95,6 +95,13 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BndLib Analytic Bounding Tests** | lineSegmentBounds | Analytic line bounds | Halve p2 in OCCTBndLibLine |
+| **BndLib Analytic Bounding Tests** | circleBounds | Analytic circle bounds | Halve the radius in OCCTBndLibCircle |
+| **BndLib Analytic Bounding Tests** | sphereBounds | Analytic sphere bounds | Halve the radius in OCCTBndLibSphere |
+| **BndLib Analytic Bounding Tests** | cylinderBounds | Analytic cylinder bounds | Halve vmax in OCCTBndLibCylinder |
+| **BndLib Analytic Bounding Tests** | torusBounds | Analytic torus bounds | Halve the minor radius in OCCTBndLibTorus |
+| **BndLib Analytic Bounding Tests** | edgeBounds | Edge curve bounds (rewritten: could not fail) | Replace BndLib_Add3dCurve::Add with a point at the origin in OCCTBndLibEdge |
+| **BndLib Analytic Bounding Tests** | faceBounds | Face surface bounds | Replace BndLib_AddSurface::Add with a point at the origin in OCCTBndLibFace |
 
 ---
 
