@@ -327,3 +327,17 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: Issue1058OuterBoundRefusalTests (7 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-1058-outer-bound/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `cylinderAnswersForItsOwnWire` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBINVERT: the pcurve guard refuses unconditionally | Issue1058OuterBoundRefusalTests.swift:77 `checkOuterBound(wire: own, face: lateral) == false` | pass | PASS |
+| `wireNotOnTheFaceIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBZERO: every refusal returns 0 (the pre-#1058 contract). Removing the pcurve guard alone stays green: the #1073 area guard refuses the same wire (area 0) | Issue1058OuterBoundRefusalTests.swift:93 `== nil` | pass | N/A: refusal is a bridge guard; raw kernel answers false off a zero area |
+| `wrongTypedShapeIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBZERO | Issue1058OuterBoundRefusalTests.swift:109 `checkOuterBound(wire: box, face: panel) == nil` | pass | N/A: type guard in the bridge; no kernel call is made |
+| `nullShapeIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBZERO | Issue1058OuterBoundRefusalTests.swift:124 `checkOuterBound(wire: empty, face: panel) == nil` | pass | N/A: null-shape guard in the bridge; no kernel call is made |
+| `edgelessWireIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBREADY: !IsReady() returns 0 instead of -1 | Issue1058OuterBoundRefusalTests.swift:139 `== nil` | pass | PASS: kernel cannot run the check; bridge refuses |
+| `disconnectedEdgeWireIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBZERO | Issue1058OuterBoundRefusalTests.swift:166 `== nil` | pass | N/A: not probed: without the null-WireAPIMake guard the kernel SIGSEGVs in BRep_Builder::Add |
+| `cylinderWireOnPlanarFaceIsRefused` | Issue1058OuterBoundRefusalTests.swift | `OCCTWireCheckOuterBound` | OBAREA: drop the #1073 area-magnitude guard | Issue1058OuterBoundRefusalTests.swift:191 `== nil` | pass | N/A: raw kernel says true off an area of -1.8e-15; the bridge refuses by design |
