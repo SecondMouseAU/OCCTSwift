@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_Poly** | Polyhedral distance between two shapes | Polyhedral distance | Distance - 0.5; report success unconditionally |
+| **BRepExtrema_Poly** | Polyhedral distance needs a mesh | Polyhedral distance | Report success unconditionally |
 
 ---
 
@@ -202,6 +204,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | OCCTShapePolyhedralDistance | Polyhedral distance | Distance - 0.5; report success unconditionally | ✅ | ✅ | rewritten: 8...12 band stayed green under the injection |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | OCCTShapePolyhedralDistance | Polyhedral distance | Report success unconditionally | ✅ | ✅ | new negative case |
 
 ---
 
@@ -304,5 +308,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance between two shapes | ✅ | ✅ | ✅ |
+| BRepExtrema_Poly: Polyhedral distance needs a mesh | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 561 tests
