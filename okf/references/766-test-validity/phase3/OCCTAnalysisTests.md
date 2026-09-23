@@ -95,6 +95,7 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtElCS Line-Sphere** | lineSphereDistance | Line-sphere extrema | Negate surface point z |
 | **v0.114.0 - Mass Properties** | linearProperties | Linear mass properties | Offset centre of mass |
 | **v0.114.0 - Mass Properties** | momentOfInertia | Volume inertia tensor | Scale Ixx |
 | **v0.114.0 - Mass Properties** | principalAxes | Principal axes of inertia | Swap axes |
@@ -276,6 +277,7 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | OCCTExtremaElCSLinSphere | Line-sphere extrema | Negate surface point z | ✅ | ✅ | rewritten: count > 0 stayed green under the injection |
 | linearProperties | OCCTShapeLinearProperties | Linear mass properties | Write com.X() + 1.0 to *cx | ✅ | ✅ | Rewritten: if-let removed, centre asserted, tolerance 1e-9 (y = -5.55e-17 on both sides) |
 | momentOfInertia | OCCTShapeMomentOfInertia | Volume inertia tensor | Write 2.0 * mat(1, 1) to *ixx | ✅ | ✅ | Rewritten: asserted only > 0; now pinned to m(b^2+c^2)/12 |
 | principalAxes | OCCTShapePrincipalAxes | Principal axes of inertia | Read ThirdAxisOfInertia into axis1 | ✅ | ✅ | Rewritten: cube fixture has isotropic inertia, so any frame is principal; now 10x20x30 with unique axes |
@@ -431,6 +433,7 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Extrema_ExtElCS Line-Sphere: lineSphereDistance | ✅ | ✅ | ✅ |
 | Integration: Assembly Interference: shaftHousingClearanceAndInterference | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
 | Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
@@ -457,4 +460,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 584 tests
+**Total**: 585 tests

@@ -2359,5 +2359,78 @@
       ]
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElCS Line-Sphere::lineSphereDistance",
+    "bridge_function": "OCCTExtremaElCSLinSphere",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 225.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            5.0
+          ]
+        },
+        "far": {
+          "squareDistance": 625.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "near": {
+          "squareDistance": 225.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            5.0
+          ]
+        },
+        "far": {
+          "squareDistance": 625.0,
+          "p1": [
+            0.0,
+            0.0,
+            20.0
+          ],
+          "p2": [
+            0.0,
+            0.0,
+            -5.0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
