@@ -182,5 +182,125 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Quaternion Interpolation::slerpMidpoint",
+    "bridge_function": "OCCTQuaternionSLerp",
+    "bridge_output": {"type": "observed", "data": "(0, 0, 0.38268343236508978, 0.92387953251128696)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 0, 0.38268343236508978, 0.92387953251128696)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns the start quaternion, ignoring t", "failing_expectation": "original: **green**; rewritten: :18 `abs(mid.z - sin(.pi / 8)) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Interpolation::nlerpEndpoints",
+    "bridge_function": "OCCTQuaternionNLerp",
+    "bridge_output": {"type": "observed", "data": "(0, 0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 0, 0, 1)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "parameter reversed (1 - t), so t = 0 gives the end quaternion", "failing_expectation": ":20 `abs(r0.w - 1.0) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Interpolation::transformInterpolate",
+    "bridge_function": "OCCTTrsfInterpolate",
+    "bridge_output": {"type": "observed", "data": "translation (5, 0, 0), rotation identity", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "translation (5, 0, 0), rotation identity", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "end transform built with the start translation x (tx1 for tx2)", "failing_expectation": ":27 `abs(mid.translation.x - 5.0) < 0.5`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::identity",
+    "bridge_function": "OCCTQuaternionCreate",
+    "bridge_output": {"type": "observed", "data": "(0, 0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 0, 0, 1)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "components passed in (w, x, y, z) order", "failing_expectation": ":13 `abs(c.w - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::fromAxisAngle",
+    "bridge_function": "OCCTQuaternionCreateFromAxisAngle",
+    "bridge_output": {"type": "observed", "data": "rotate (1,0,0) -> (2.0e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "rotate (1,0,0) -> (2.0e-16, 1, 0)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "angle halved", "failing_expectation": ":20 `abs(rotated.x) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::fromVectors",
+    "bridge_function": "OCCTQuaternionCreateFromVectors",
+    "bridge_output": {"type": "observed", "data": "rotate (1,0,0) -> (-2.2e-17, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "rotate (1,0,0) -> (-2.2e-17, 1, 0)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "from and to swapped", "failing_expectation": ":27 `abs(rotated.y - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::eulerAngles",
+    "bridge_function": "OCCTQuaternionGetEulerAngles",
+    "bridge_output": {"type": "observed", "data": "alpha 0.78539816339744839, beta 0, gamma 0 (order 8 = gp_Intrinsic_XYZ)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "alpha 0.78539816339744839, beta 0, gamma 0 (order 8 = gp_Intrinsic_XYZ)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "alpha and gamma outputs swapped", "failing_expectation": ":35 `abs(euler.alpha - .pi / 4) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::matrix",
+    "bridge_function": "OCCTQuaternionGetMatrix",
+    "bridge_output": {"type": "observed", "data": "[2.2e-16, -1, 0, 1, 2.2e-16, 0, 0, 0, 1]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "[2.2e-16, -1, 0, 1, 2.2e-16, 0, 0, 0, 1]", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "(1,2) and (2,1) entries swapped (transpose of the rotation part)", "failing_expectation": "original: **green**; rewritten: :45 `zip(m, want).allSatisfy { abs($0 - $1) < 1e-12 }`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::multiply",
+    "bridge_function": "OCCTQuaternionMultiply",
+    "bridge_output": {"type": "observed", "data": "rotate (1,0,0) -> (-1.8e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "rotate (1,0,0) -> (-1.8e-16, 1, 0)", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns q1, dropping q2", "failing_expectation": ":49 `abs(rotated.x) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::axisAngle",
+    "bridge_function": "OCCTQuaternionGetVectorAndAngle",
+    "bridge_output": {"type": "observed", "data": "axis (0, 0, 1), angle 0.52359877559829882", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "axis (0, 0, 1), angle 0.52359877559829882", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "angle output halved", "failing_expectation": ":56 `abs(aa.angle - .pi / 6) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::rotationAngle",
+    "bridge_function": "OCCTQuaternionGetRotationAngle",
+    "bridge_output": {"type": "observed", "data": "1.0471975511965976", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1.0471975511965976", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "angle halved", "failing_expectation": ":62 `abs(q.rotationAngle - .pi / 3) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Quaternion Tests::normalize",
+    "bridge_function": "OCCTQuaternionNormalize",
+    "bridge_output": {"type": "observed", "data": "(0.18257418583505536, 0.36514837167011072, 0.54772255750516607, 0.73029674334022143), norm 0.99999999999999989", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0.18257418583505536, 0.36514837167011072, 0.54772255750516607, 0.73029674334022143), norm 0.99999999999999989", "source": "Scripts/repro/766-math-quaternion/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Normalize() skipped", "failing_expectation": ":70 `abs(norm - 1.0) < 1e-10`"},
+    "green": true
   }
 ]
