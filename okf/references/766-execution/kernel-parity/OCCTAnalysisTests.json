@@ -4283,5 +4283,63 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema ExtFF Tests::Face-face distance between separated boxes",
+    "bridge_function": "OCCTBRepExtremaExtFF",
+    "bridge_output": {
+      "type": "face_face_extrema",
+      "data": {
+        "pair": [
+          1,
+          0
+        ],
+        "distance": 7.5,
+        "solutionCount": 1,
+        "pointOnFace1": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "pointOnFace2": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "face1UV": [
+          0.0,
+          0.0
+        ],
+        "face2UV": [
+          0.0,
+          0.0
+        ],
+        "far_pair_0_0_distance": 12.5,
+        "perpendicular_pair_0_2": null
+      }
+    },
+    "kernel_output": {
+      "type": "face_face_extrema",
+      "data": {
+        "pair": [
+          1,
+          0
+        ],
+        "distance": 7.5,
+        "nbExt": 1,
+        "isParallel": true,
+        "pointOnFace1": "none: ParameterOnFace1(1) throws Standard_OutOfRange",
+        "pointOnFace2": "none",
+        "far_pair_0_0_distance": 12.5,
+        "perpendicular_pair_0_2_nbExt": 0
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "witness points and UV: the kernel has none for parallel faces (ParameterOnFace1 throws); the bridge catches the throw after writing distance/solutionCount and returns (0,0,0)/(0,0) as if measured. Filed as #2249. distance, solutionCount, the far pair and the perpendicular pair all MATCH."
+      ]
+    },
+    "status": "MISMATCH"
   }
 ]
