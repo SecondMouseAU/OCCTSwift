@@ -222,3 +222,26 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: SurfaceSingularityTests.swift, SurfaceSweptTests.swift, SurfaceToBezierTests.swift, SurfaceTransformFamilyParityTests.swift, SurfaceTypePredicatesTests.swift (18 tests), probe Scripts/repro/766-surface-operations-pipe/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Surface Singularity Analysis | Plane has no singularities | `OCCTSurfaceSingularityCount` | count + 1 (INJ_SING) | SurfaceSingularityTests.swift:11 plane.singularityCount() == 0 | ✅ | MATCH | Caught as written |
+| Surface Singularity Analysis | Sphere has singularities at poles | `OCCTSurfaceSingularityCount` | count + 1 (INJ_SING) | SurfaceSingularityTests.swift:21 sphere.singularityCount() == 2 | ✅ | MATCH | Rewritten: `>= 1` passed 3 |
+| Surface Singularity Analysis | Cylinder has no singularities | `OCCTSurfaceSingularityCount` | count + 1 (INJ_SING) | SurfaceSingularityTests.swift:27 !cyl.hasSingularities() | ✅ | MATCH | Caught as written |
+| Surface Singularity Analysis | Degeneration check at sphere pole | `OCCTSurfaceIsDegenerated` | answer inverted (INJ_SING) | SurfaceSingularityTests.swift:38 isDeg | ✅ | MATCH | Rewritten: was `_ = isDeg`, asserting nothing |
+| Surface Swept | Extrusion of line creates ruled surface | `OCCTSurfaceCreateExtrusion` | direction tilted to (0.1, 0, 1) (INJ_SW) | SurfaceSweptTests.swift:19 abs(p.x - 5.0) < 1e-6 | ✅ | MATCH | Caught as written; y pinned too |
+| Surface Swept | Revolution of line creates cylinder-like surface | `OCCTSurfaceCreateRevolution` | axis moved to x = 0.5 (INJ_SW) | SurfaceSweptTests.swift:43 simd_length(rev.point(atU: .pi / 2, v: dom.vMin + 4) - SIMD3(0, 5, 4)) < 1e-12 | ✅ | MATCH | Rewritten: radius alone passed a revolution at the wrong angle |
+| Surface to Bezier Patches | BSpline surface to Bezier patches | `OCCTSurfaceToBezierPatches` | one U patch dropped (INJ_BZP) | SurfaceToBezierTests.swift:21 patches.count == 3 | ✅ | MATCH | Rewritten: NEVER RAN, it converted an untrimmed cylinder, toBSpline() was nil and `if let` skipped it |
+| Surface to Bezier Patches | Bezier surface to patches returns single patch | `OCCTSurfaceToBezierPatches` | one patch too many reported (INJ_BZP_SWIFT, Swift side) | SurfaceToBezierTests.swift:37 patches.count == 1 | ✅ | MATCH | Rewritten: NEVER RAN, an untrimmed plane made toBSpline() nil |
+| Surface Transform Family Parity (#488) | translate vs translated(by:) | `OCCTSurfaceTranslate` | copy-returning translate dy + 1 (INJ_OP_T) | SurfaceTransformFamilyParityTests.swift:46 abs(p.y - q.y) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | rotate vs rotated(axisOrigin:axisDirection:angle:) | `OCCTSurfaceRotate` | copy-returning rotate angle doubled (INJ_OP_ROT) | SurfaceTransformFamilyParityTests.swift:45 abs(p.x - q.x) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | scale vs scaled(center:factor:) | `OCCTSurfaceScale` | copy-returning scale factor + 0.5 (INJ_OP_SCALE) | SurfaceTransformFamilyParityTests.swift:45 abs(p.x - q.x) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | mirrorPoint vs mirrored(acrossPoint:) | `OCCTSurfaceMirrorPoint` | copy-returning mirror point x + 1 (INJ_OP_MP) | SurfaceTransformFamilyParityTests.swift:45 abs(p.x - q.x) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | mirrorAxis vs mirrored(acrossAxis:direction:) | `OCCTSurfaceMirrorAxis` | copy-returning axis mirror done as a plane mirror (INJ_OP_MA) | SurfaceTransformFamilyParityTests.swift:45 abs(p.x - q.x) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | mirrorPlane vs mirrored(planeOrigin:planeNormal:) | `OCCTSurfaceMirrorPlane` | copy-returning plane mirror done as a point mirror (INJ_OP_MPL) | SurfaceTransformFamilyParityTests.swift:45 abs(p.x - q.x) < tolerance | ✅ | MATCH | Caught as written |
+| Surface Transform Family Parity (#488) | Bezier surface: both families agree across all six transform kinds | `OCCTSurfaceTranslate` | each copy-returning injection above in turn | SurfaceTransformFamilyParityTests.swift:46 abs(p.y - q.y) < tolerance (under each) | ✅ | MATCH | Caught as written; a nil copy now records an issue instead of skipping its comparison |
+| v0.137 Surface type predicates | Cylinder predicates | `OCCTSurfaceGetType` | type + 1 (INJ_TYPE_OFF) | SurfaceTypePredicatesTests.swift:17 s.isCylinder | ✅ | MATCH | Caught as written |
+| v0.137 Surface type predicates | Torus predicates | `OCCTSurfaceGetType` | type + 1 (INJ_TYPE_OFF) | SurfaceTypePredicatesTests.swift:33 s.isTorus | ✅ | MATCH | Caught as written |
+| v0.137 Surface type predicates | Analytic surfaces are at least C2 continuous | `OCCTSurfaceGetContinuity` | ordinal - 2 (INJ_SC_CONT) | SurfaceTypePredicatesTests.swift:48 c == .cN | ✅ | MATCH | Rewritten: three accepted answers; pinned to .cN |

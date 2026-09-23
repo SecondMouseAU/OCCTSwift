@@ -6,5 +6,429 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Surface Singularity Analysis::Plane has no singularities",
+    "bridge_function": "OCCTSurfaceSingularityCount",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 0
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt singularities"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Singularity Analysis::Sphere has singularities at poles",
+    "bridge_function": "OCCTSurfaceSingularityCount",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 2
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt singularities"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Singularity Analysis::Cylinder has no singularities",
+    "bridge_function": "OCCTSurfaceSingularityCount",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 0
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt singularities"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Singularity Analysis::Degeneration check at sphere pole",
+    "bridge_function": "OCCTSurfaceIsDegenerated",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "north pole": true,
+        "equator": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "north pole": true,
+        "equator": false
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt singularities"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Swept::Extrusion of line creates ruled surface",
+    "bridge_function": "OCCTSurfaceCreateExtrusion",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(mid,2.5)": [
+          5,
+          0,
+          2.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(mid,2.5)": [
+          5,
+          0,
+          2.5
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt linearExtrusion"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Swept::Revolution of line creates cylinder-like surface",
+    "bridge_function": "OCCTSurfaceCreateRevolution",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(pi/2,4)": [
+          0,
+          5,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "S(0,0)": [
+          5,
+          0,
+          0
+        ],
+        "S(pi/2,4)": [
+          0,
+          5,
+          4
+        ]
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt revolution"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface to Bezier Patches::BSpline surface to Bezier patches",
+    "bridge_function": "OCCTSurfaceToBezierPatches",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "patches": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "patches": 3
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt toBezierPatches trimmedCylinder; the untrimmed cylinder throws \"infinite surface\""
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface to Bezier Patches::Bezier surface to patches returns single patch",
+    "bridge_function": "OCCTSurfaceToBezierPatches",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "patches": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "patches": 1
+      },
+      "source": "Scripts/repro/766-surface-operations-pipe/transcript.txt toBezierPatches plane trimmed to [-5,5]^2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::translate vs translated(by:)",
+    "bridge_function": "OCCTSurfaceTranslate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::rotate vs rotated(axisOrigin:axisDirection:angle:)",
+    "bridge_function": "OCCTSurfaceRotate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::scale vs scaled(center:factor:)",
+    "bridge_function": "OCCTSurfaceScale",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::mirrorPoint vs mirrored(acrossPoint:)",
+    "bridge_function": "OCCTSurfaceMirrorPoint",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::mirrorAxis vs mirrored(acrossAxis:direction:)",
+    "bridge_function": "OCCTSurfaceMirrorAxis",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::mirrorPlane vs mirrored(planeOrigin:planeNormal:)",
+    "bridge_function": "OCCTSurfaceMirrorPlane",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Surface Transform Family Parity (#488)::Bezier surface: both families agree across all six transform kinds",
+    "bridge_function": "OCCTSurfaceTranslate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "agree": true
+      },
+      "source": "compares the in-place and copy-returning bridges on the same Geom_Surface::Transform; no separate kernel value"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Surface type predicates::Cylinder predicates",
+    "bridge_function": "OCCTSurfaceGetType",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": "GeomAbs_Cylinder"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": "GeomAbs_Cylinder"
+      },
+      "source": "GeomAdaptor_Surface::GetType"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Surface type predicates::Torus predicates",
+    "bridge_function": "OCCTSurfaceGetType",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "type": "GeomAbs_Torus"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "type": "GeomAbs_Torus"
+      },
+      "source": "GeomAdaptor_Surface::GetType"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.137 Surface type predicates::Analytic surfaces are at least C2 continuous",
+    "bridge_function": "OCCTSurfaceGetContinuity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": "CN"
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "continuity": "CN"
+      },
+      "source": "Geom_CylindricalSurface::Continuity() = GeomAbs_CN"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
