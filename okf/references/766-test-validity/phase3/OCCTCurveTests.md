@@ -197,3 +197,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.126.0, Curve3D Bezier completions | InsertPoleBefore increases pole count | `OCCTCurve3DBezierInsertPoleBefore` | InsertPoleBefore skipped | `Curve3DBezierCompletionsTests.swift:21 c.poleCount == 3` | ✅ | MATCH | Rewritten: nested `if let` |
+| v0.126.0, Curve3D Bezier completions | Reverse swaps start and end | `OCCTCurve3DBezierReverse` | Reverse skipped | `Curve3DBezierCompletionsTests.swift:32 c.bezierStartPoint == SIMD3(10, 20, 30)` | ✅ | MATCH |  |
+| v0.126.0, Curve3D Bezier completions | SetPoleWithWeight on rational Bezier | `OCCTCurve3DBezierSetPoleWithWeight` | SetPole(index, point, weight) skipped | `Curve3DBezierCompletionsTests.swift:47 c.bezierWeights == [1, 2, 1]` | ✅ | MATCH | Rewritten: checked only the returned Bool |
+| Curve3D BSpline Tests | Create quadratic Bezier | `OCCTCurve3DGetDegree` | Degree() + 1 | `Curve3DBSplineTests.swift:20 bez.degree == 2` | ✅ | MATCH |  |
+| Curve3D BSpline Tests | Poles roundtrip | `OCCTCurve3DGetPoles` | Bezier poles shifted 1 in y | `Curve3DBSplineTests.swift:31 bez.poles == original` | ✅ | MATCH | Fixtures were force-unwrapped |
+| Curve3D BSpline Tests | Interpolate through points | `OCCTCurve3DInterpolate` | first input point moved 0.5 in x | `Curve3DBSplineTests.swift:47 simd_distance(c.point(at: k), p) < 1e-9` | ✅ | MATCH | Rewritten: end points only, to 0.01 |
+| Curve3D BSpline Tests | Interpolate with tangents | `OCCTCurve3DInterpolateWithTangents` | end tangent loaded as the start tangent | `Curve3DBSplineTests.swift:69 simd_distance(t0, simd_normalize(SIMD3(1, 1, 1))) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Curve3D BSpline Tests | Fit points to BSpline | `OCCTCurve3DFitPoints` | tolerance x 1000 | `Curve3DBSplineTests.swift:84 c.degree == 6` | ✅ | MATCH | Rewritten: start point to 0.5 |
+| Curve3D BSpline Tests | Create BSpline with explicit knots | `OCCTCurve3DCreateBSpline` | Degree() + 1 | `Curve3DBSplineTests.swift:102 b.degree == 3` | ✅ | MATCH |  |
