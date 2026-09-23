@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D arc-length accuracy on multi-span curves (#477) | multiSpanLengthMatchesReference | `OCCTCurve3DGetLength` | arclen: length x 1.0001 | `Issue477ArcLengthAccuracyTests.swift:69 relative < 1e-5` | ✅ | MATCH | See the PR note: the old-integrator gap the comment cites does not reproduce on the pinned kernel |
+| Curve3D arc-length accuracy on multi-span curves (#477) | multiSpanRangedLengthMatchesReference | `OCCTCurve3DGetLengthBetween` | arclenbetween: ranged x 1.0001 | `Issue477ArcLengthAccuracyTests.swift:92 relative < 1e-5` | ✅ | MATCH |  |
+| Curve3D arc-length accuracy on multi-span curves (#477) | everyArcLengthSpellingMatchesReference | `OCCTCurve3DGetLength, OCCTCurve3DGetLengthBetween` | totalarc; arcdrift; arclen; arclenbetween | `Issue477ArcLengthAccuracyTests.swift:118 totalArcLength within 1e-5` | ✅ | MATCH | Two nil-skips now record an issue |
+| Curve3D arc-length accuracy on multi-span curves (#477) | interpolatedHelixMatchesReference | `OCCTCurve3DGetLength` | arclen | `Issue477ArcLengthAccuracyTests.swift:147 relative < 1e-8` | ✅ | MATCH |  |
+| Curve3D arc-length accuracy on multi-span curves (#477) | analyticCurvesStayExact | `OCCTCurve3DGetLength, OCCTCurve3DGetLengthBetween` | arclen; arclenbetween | `Issue477ArcLengthAccuracyTests.swift:161 abs(l - 5.0) < 1e-9` | ✅ | MATCH | Three silent skips (factory nil, half-circle nil) now record an issue |
+| Curve3D arc-length accuracy on multi-span curves (#477) | zeroWidthIntervalIsZero | `OCCTCurve3DGetLengthBetween` | zerolen: u1 == u2 answers -1 | `Issue477ArcLengthAccuracyTests.swift:194 == 0.0` | ✅ | N/A |  |
+| Curve3D arc-length accuracy on multi-span curves (#477) | reversedRangeMatchesForward | `OCCTCurve3DGetLengthBetween` | lenrev: reversed range x 1.01 | `Issue477ArcLengthAccuracyTests.swift:210 \|forward - reversed\| < 1e-9` | ✅ | MATCH |  |
+| Curve3D arc-length accuracy on multi-span curves (#477) | outOfDomainParametersClamp | `OCCTCurve3DGetLengthBetween` | noclamp: out-of-domain range x 2; arclen | `Issue477ArcLengthAccuracyTests.swift:234 \|overshot - whole\| < 1e-6` | ✅ | MATCH |  |

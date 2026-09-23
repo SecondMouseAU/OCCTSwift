@@ -302,5 +302,186 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::multiSpanLengthMatchesReference",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-5 of the polyline reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: zigzag 356.25037951382484 (CPnts whole-domain 356.25037939669323)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen: length x 1.0001",
+    "red": "Issue477ArcLengthAccuracyTests.swift:69 relative < 1e-5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt",
+    "note": "See the PR note: the old-integrator gap the comment cites does not reproduce on the pinned kernel"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::multiSpanRangedLengthMatchesReference",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-5 of the reference"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: zigzag [1/3, 2/3] 117.00618367226606"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclenbetween: ranged x 1.0001",
+    "red": "Issue477ArcLengthAccuracyTests.swift:92 relative < 1e-5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::everyArcLengthSpellingMatchesReference",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength, OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "all five within 1e-5"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: whole 356.25037951382484, [1/4, 3/4] 175.90029293500169"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "totalarc; arcdrift; arclen; arclenbetween",
+    "red": "Issue477ArcLengthAccuracyTests.swift:118 totalArcLength within 1e-5",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt",
+    "note": "Two nil-skips now record an issue"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::interpolatedHelixMatchesReference",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "within 1e-8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: helix 192.22708964718808"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen",
+    "red": "Issue477ArcLengthAccuracyTests.swift:147 relative < 1e-8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::analyticCurvesStayExact",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLength, OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "5, 14pi, 7pi"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: segment 5, circle 43.982297150257104"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "arclen; arclenbetween",
+    "red": "Issue477ArcLengthAccuracyTests.swift:161 abs(l - 5.0) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt",
+    "note": "Three silent skips (factory nil, half-circle nil) now record an issue"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::zeroWidthIntervalIsZero",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: the zero-width short-circuit is the bridge's own (occtAdaptorLengthBetween)"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "zerolen: u1 == u2 answers -1",
+    "red": "Issue477ArcLengthAccuracyTests.swift:194 == 0.0",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::reversedRangeMatchesForward",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "equal"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GCPnts_AbscissaPoint::Length: [1/4, 3/4] 175.90029293500169 both directions"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "lenrev: reversed range x 1.01",
+    "red": "Issue477ArcLengthAccuracyTests.swift:210 |forward - reversed| < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D arc-length accuracy on multi-span curves (#477)::outOfDomainParametersClamp",
+    "test_file": "Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "value",
+      "data": "clamped: overshoot == whole, outside == 0"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "CPnts_AbscissaPoint over [f - s, l + s] without clamping: 442165.85815271176 on the zigzag; the clamp is the bridge's"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "noclamp: out-of-domain range x 2; arclen",
+    "red": "Issue477ArcLengthAccuracyTests.swift:234 |overshot - whole| < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-arclength-accuracy/transcript.txt"
   }
 ]
