@@ -197,3 +197,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| CompCurve Tests | concatenate3DCurves | `OCCTConcatenateCurves3D` | second curve not added | `CompCurveTests.swift:26 simd_distance(combined.endPoint, SIMD3(2, 1, 0)) < 1e-12` | ✅ | MATCH | Rewritten: checked only != nil |
+| CompCurve Tests | concatenate2DCurves | `OCCTConcatenateCurves2D` | second curve not added | `CompCurveTests.swift:42 simd_distance(combined.endPoint, SIMD2(2, 1)) < 1e-12` | ✅ | MATCH | Rewritten: checked only != nil |
+| Conical Projection | Project wire onto box from eye point | `OCCTShapeProjectWireConical` | eye z + 5 | `ConicalProjectionTests.swift:34 abs(b.min.x + 4.65) < 1e-6` | ✅ | MATCH | Rewritten: `_ = result` could not fail |
+| Convert Circle Tests | circleArcToBSpline | `OCCTConvertCircleToBSpline2D` | every pole shifted 0.5 in x | `ConvertCircleTests.swift:18 simd_distance(curve.startPoint, SIMD2(10, 0)) < 1e-12` | ✅ | MATCH | Rewritten: checked only != nil |
+| Convert Conic Curves Tests | ellipseArc | `OCCTConvertEllipseToBSpline2D` | every pole shifted 0.5 in x | `ConvertConicCurvesTests.swift:27 simd_distance(curve.startPoint, SIMD2(20, 0)) < 1e-12` | ✅ | MATCH | Rewritten: checked only != nil |
+| Convert Conic Curves Tests | hyperbolaArc | `OCCTConvertHyperbolaToBSpline2D` | every pole shifted 0.5 in x | `ConvertConicCurvesTests.swift:43 simd_distance(curve.startPoint, SIMD2(10 * cosh(-1.0), 5 * sinh(-1.0))) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Convert Conic Curves Tests | parabolaArc | `OCCTConvertParabolaToBSpline2D` | every pole shifted 0.5 in x | `ConvertConicCurvesTests.swift:57 simd_distance(curve.startPoint, SIMD2(0.2, -2)) < 1e-12` | ✅ | MATCH | Rewritten: checked only != nil |
+| CPnts UniformDeflection | Uniform deflection on circle edge | `OCCTCPntsUniformDeflection` | deflection x4 | `CPntsUniformDeflectionTests.swift:30 result.points.count == 24` | ✅ | MATCH | Rewritten: any count above 4 passed |
+| CPnts UniformDeflection | Uniform deflection with range | `OCCTCPntsUniformDeflectionRange` | deflection x4 | `CPntsUniformDeflectionTests.swift:43 Issue recorded (full sampling not 24 points)` | ✅ | MATCH | Rewritten: any ranged count below the full one passed |
