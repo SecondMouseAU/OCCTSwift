@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `GeneralTransform2DTests.swift`, `Geom2dCircleTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| GeneralTransform2D::affinity | `OCCTGTrsf2dAffinity` | ratio + 1 | ✅ | ✅ | MATCH | `matrix.count == 4` passed any matrix |
+| GeneralTransform2D::multiply | `OCCTGTrsf2dMultiply` | return the left operand | ✅ | ✅ | MATCH | `let _ = a.multiplied(by: b)`, no assertion |
+| GeneralTransform2D::invert | `OCCTGTrsf2dInvert` | return the input uninverted | ✅ | ✅ | MATCH | `inverted() != nil` only |
+| GeneralTransform2D::transformPoint | `OCCTGTrsf2dTransformPoint` | result y + 1 | ✅ | ✅ | MATCH | checked only the unchanged x; now y too |
+| GeneralTransform2D::zeroLengthAxisDirectionIsRefused | `OCCTGTrsf2dAffinity` | replace a zero direction with (1, 0) | ✅ | ✅ | MATCH |  |
+| GeneralTransform2D::vanishinglySmallAxisDirectionIsRefused | `OCCTGTrsf2dAffinity` | replace a zero direction with (1, 0) | ✅ | ✅ | MATCH |  |
+| Geom2d_Circle Properties::circle2DRadius | `OCCTCurve2DCircleRadius` | radius + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DSetRadius | `OCCTCurve2DCircleSetRadius` | skip SetRadius() | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DEccentricity | `OCCTCurve2DCircleEccentricity` | eccentricity + 0.1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DCenter | `OCCTCurve2DCircleCenter` | centre x + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Geom2d_Circle Properties::circle2DXAxis | `OCCTCurve2DCircleXAxis` | swap the direction components | ✅ | ✅ | MATCH | nested in `if let c`; checked only the direction x, now position too |

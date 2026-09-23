@@ -94,5 +94,385 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GeneralTransform2D::affinity",
+    "bridge_function": "OCCTGTrsf2dAffinity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          2
+        ],
+        "translation": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          2
+        ],
+        "translation": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "ratio + 1",
+      "red": "GeneralTransform2DTests.swift:16:9: Expectation failed: zip(m, [1.0, 0, 0, 2]).allSatisfy { abs($0 - $1) < 1e-12 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`matrix.count == 4` passed any matrix"
+    }
+  },
+  {
+    "test_name": "GeneralTransform2D::multiply",
+    "bridge_function": "OCCTGTrsf2dMultiply",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return the left operand",
+      "red": "GeneralTransform2DTests.swift:31:9: Expectation failed: zip(r.matrix, [1.0, 0, 0, 1]).allSatisfy { abs($0 - $1) < 1e-12 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`let _ = a.multiplied(by: b)`, no assertion"
+    }
+  },
+  {
+    "test_name": "GeneralTransform2D::invert",
+    "bridge_function": "OCCTGTrsf2dInvert",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          0.5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "matrix": [
+          1,
+          0,
+          0,
+          0.5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return the input uninverted",
+      "red": "GeneralTransform2DTests.swift:41:9: Expectation failed: zip(inv.matrix, [1.0, 0, 0, 0.5]).allSatisfy { abs($0 - $1) < 1e-12 }",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`inverted() != nil` only"
+    }
+  },
+  {
+    "test_name": "GeneralTransform2D::transformPoint",
+    "bridge_function": "OCCTGTrsf2dTransformPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          1,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          1,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "result y + 1",
+      "red": "GeneralTransform2DTests.swift:54:9: Expectation failed: abs(p.y - 2.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "checked only the unchanged x; now y too"
+    }
+  },
+  {
+    "test_name": "GeneralTransform2D::zeroLengthAxisDirectionIsRefused",
+    "bridge_function": "OCCTGTrsf2dAffinity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "replace a zero direction with (1, 0)",
+      "red": "GeneralTransform2DTests.swift:64:9: Expectation failed: GeneralTransform2D.affinity(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "GeneralTransform2D::vanishinglySmallAxisDirectionIsRefused",
+    "bridge_function": "OCCTGTrsf2dAffinity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "replace a zero direction with (1, 0)",
+      "red": "GeneralTransform2DTests.swift:75:9: Expectation failed: GeneralTransform2D.affinity(",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2d_Circle Properties::circle2DRadius",
+    "bridge_function": "OCCTCurve2DCircleRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "Geom2dCircleTests.swift:14:9: Expectation failed: abs(c.circleProperties.radius - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Circle Properties::circle2DSetRadius",
+    "bridge_function": "OCCTCurve2DCircleSetRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "radius": 8,
+        "point(0)": [
+          8,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radius": 8,
+        "point(0)": [
+          8,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip SetRadius()",
+      "red": "Geom2dCircleTests.swift:20:9: Expectation failed: abs(c.circleProperties.radius - 8) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Circle Properties::circle2DEccentricity",
+    "bridge_function": "OCCTCurve2DCircleEccentricity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "eccentricity": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "eccentricity": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "eccentricity + 0.1",
+      "red": "Geom2dCircleTests.swift:26:9: Expectation failed: abs(c.circleProperties.eccentricity) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Circle Properties::circle2DCenter",
+    "bridge_function": "OCCTCurve2DCircleCenter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          3,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "centre": [
+          3,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "centre x + 1",
+      "red": "Geom2dCircleTests.swift:32:9: Expectation failed: abs(ctr.x - 3) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Circle Properties::circle2DXAxis",
+    "bridge_function": "OCCTCurve2DCircleXAxis",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "position": [
+          3,
+          4
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "position": [
+          3,
+          4
+        ],
+        "direction": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "swap the direction components",
+      "red": "Geom2dCircleTests.swift:39:9: Expectation failed: simd_distance(ax.direction, SIMD2(1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let c`; checked only the direction x, now position too"
+    }
   }
 ]
