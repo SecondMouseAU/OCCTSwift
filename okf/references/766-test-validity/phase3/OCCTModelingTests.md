@@ -221,3 +221,29 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `Issue568IndexSkipTests.swift` (13 tests)
+
+Probe: `Scripts/repro/766-modeling-issue568-index-skip/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| draftRejectsWhollyForeignFaceList | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:61 Expectation failed: drafted == nil` | pass | `OCCTShapeDraft` | PASS: the kernel answers an empty draft with the input unchanged, which is the result the refusal prevents |
+| draftRejectsPartiallyForeignFaceList | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:84 Expectation failed: drafted == nil` | pass | `OCCTShapeDraft` | PASS: one own face alone drafts to 12000.000000 on this box, indistinguishable by volume from no draft |
+| draftAcceptsOwnFaces | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s pair loop) refuse every request, resolvable or not | `:100 Expectation failed: drafted != nil` | pass | `OCCTShapeDraft` | PASS |
+| shellRejectsPartiallyForeignFaceList | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:127 Expectation failed: box.shelled(thickness: 2.0, openFaces: [own, foreign]) == nil`, `:128 Expectation failed: box.shelled(thickness: 2.0, openFaces: [foreign]) == nil` | pass | `OCCTShapeShellWithOpenFaces` | PASS: MakeThickSolidByJoin with an empty open-face list reports IsDone, so a skipped foreign face would have come back as a success |
+| shellAcceptsOwnFaces | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s pair loop) refuse every request, resolvable or not | `:137 Expectation failed: shelled != nil`, `:138 Expectation failed: shelled?.isValid == true` | pass | `OCCTShapeShellWithOpenFaces` | PASS |
+| historyChamferRejectsOutOfRangeIndex | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:149 Expectation failed: box.chamferedWithFullHistory(distance: 1.0, edges: [0, 99_999]) == nil` | pass | `OCCTShapeHistoryFromChamferEdges` | PASS |
+| historyChamferAcceptsResolvableIndices | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s pair loop) refuse every request, resolvable or not | `:161 Issue recorded` | pass | `OCCTShapeHistoryFromChamferEdges` | PASS |
+| fillet2DRejectsOutOfRangeVertex | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:179 Expectation failed: face.fillet2D(vertexIndices: [0, 99_999], radii: [3.0, 3.0]) == nil` | pass | `OCCTFace2DFillet` | PASS |
+| fillet2DAcceptsResolvableVertices | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s pair loop) refuse every request, resolvable or not | `:187 Expectation failed: result != nil`, `:189 Expectation failed: result?.edgeCount == 8` | pass | `OCCTFace2DFillet` | PASS |
+| chamfer2DRejectsOutOfRangePairMember | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:199 Expectation failed: face.chamfer2D(edgePairs: [(0, 1), (2, 99_999)], distances: [2.0, 2.0]) == nil`, `:200 Expectation failed: face.chamfer2D(edgePairs: [(0, 1), (99_999, 3)], distances: [2.0, 2.0]) == nil` | pass | `OCCTFace2DChamfer` | PASS |
+| chamfer2DAcceptsResolvablePairs | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s pair loop) refuse every request, resolvable or not | `:208 Expectation failed: result != nil`, `:210 Expectation failed: result?.edgeCount == 6` | pass | `OCCTFace2DChamfer` | PASS |
+| chamfer2DRejectsDuplicatePair | `OCCTFace2DChamfer` silently drops a repeated edge pair instead of refusing the call | `:223 Expectation failed: face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0]) == nil`, `:224 Expectation failed: face.chamfer2D(edgePairs: [(0, 1), (1, 0)], distances: [1.0, 2.0]) == nil`, `:225 Expectation failed: face.chamfer2D(edgePairs: [(0, 1), (0, 1), (0, 1)], distances: [1.0, 1.0, 1.0]) == nil` | pass | `OCCTFace2DChamfer` | PASS: the pinned kernel carries patch 0022 and now fails the repeated pair itself instead of SIGSEGV |
+| chamfer2DAcceptsSharedEdgeAcrossDifferentPairs | `OCCTFace2DChamfer`'s duplicate guard keys on single edge indices instead of on the pair | `:239 Expectation failed: result != nil`, `:241 Expectation failed: result?.edgeCount == 8` | pass | `OCCTFace2DChamfer` | PASS |

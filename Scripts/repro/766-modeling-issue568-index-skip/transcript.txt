@@ -1,0 +1,16 @@
+cutBox: faces=9 boxFaces=6 edges=12
+draftAcceptsOwnFaces: vertical=4 done=1 volume=12024.719178 (box 12000)
+draft, no faces (all-foreign request once skipped): done=1 volume=12000.000000
+draft, one own face (partially-foreign request once skipped): done=1 volume=12000.000000
+shellAcceptsOwnFaces: upward=1 done=1 valid=1 volume=4519.409985
+shell, no open face (all-foreign once skipped): done=1
+historyChamferAcceptsResolvableIndices: both done=1 volume=7980.333333 one done=1 volume=7990.000000
+chamfer with no edge: threw There are no suitable edges for chamfer or fillet
+rectangle face: vertices=4 edges=4
+fillet2DAcceptsResolvableVertices: done=1 edges=8
+fillet2D, vertex 0 only ([0, 99999] once skipped): done=1 edges=5
+chamfer2DAcceptsResolvablePairs: done=1 edges=6
+chamfer2DAcceptsSharedEdgeAcrossDifferentPairs: done=1 edges=8
+chamfer2D, pair (0,1) only ((0,1),(2,99999) once skipped): done=1 edges=5
+duplicate pair (0,1),(0,1) in the pinned kernel: no crash, status=7 done=0
+duplicate pair child: exited=1 signal=0

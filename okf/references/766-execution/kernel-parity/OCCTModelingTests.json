@@ -6,5 +6,316 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::draftRejectsWhollyForeignFaceList",
+    "bridge_function": "OCCTShapeDraft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "drafted": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "draftWithNoFaces": {
+          "IsDone": 1,
+          "volume": 12000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::draftRejectsPartiallyForeignFaceList",
+    "bridge_function": "OCCTShapeDraft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "drafted": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "draftWithTheOneOwnFace": {
+          "IsDone": 1,
+          "volume": 12000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::draftAcceptsOwnFaces",
+    "bridge_function": "OCCTShapeDraft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "vertical": 4,
+        "drafted": "non-nil",
+        "volume": "> 12000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "vertical": 4,
+        "IsDone": 1,
+        "volume": 12024.719178
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::shellRejectsPartiallyForeignFaceList",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ownPlusForeign": null,
+        "foreignOnly": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "noOpenFace": {
+          "IsDone": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::shellAcceptsOwnFaces",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "shelled": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "upward": 1,
+        "IsDone": 1,
+        "valid": 1,
+        "volume": 4519.409985
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::historyChamferRejectsOutOfRangeIndex",
+    "bridge_function": "OCCTShapeHistoryFromChamferEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[0, 99999]": null,
+        "[-1]": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 12,
+        "chamferOfEdge0Alone": {
+          "IsDone": 1,
+          "volume": 7990.0
+        },
+        "noEdge": "throws: There are no suitable edges for chamfer or fillet"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::historyChamferAcceptsResolvableIndices",
+    "bridge_function": "OCCTShapeHistoryFromChamferEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": "bothVolume < oneVolume"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "both": 7980.333333,
+        "one": 7990.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::fillet2DRejectsOutOfRangeVertex",
+    "bridge_function": "OCCTFace2DFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "[0, 99999]": null,
+        "[-1]": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "vertices": 4,
+        "vertex0Alone": {
+          "IsDone": 1,
+          "edges": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::fillet2DAcceptsResolvableVertices",
+    "bridge_function": "OCCTFace2DFillet",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edgeCount": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDone": 1,
+        "edges": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DRejectsOutOfRangePairMember",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "all three requests": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 4,
+        "pair(0,1)Alone": {
+          "IsDone": 1,
+          "edges": 5
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DAcceptsResolvablePairs",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edgeCount": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDone": 1,
+        "edges": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DRejectsDuplicatePair",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "all three requests": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "duplicatePair": {
+          "crash": false,
+          "status": 7,
+          "IsDone": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Sub-Shape Index Skipping (#568)::chamfer2DAcceptsSharedEdgeAcrossDifferentPairs",
+    "bridge_function": "OCCTFace2DChamfer",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edgeCount": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDone": 1,
+        "edges": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
