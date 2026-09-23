@@ -1088,34 +1088,47 @@ struct OSDSharedLibTests {
         #expect(lib != nil)
     }
 
+    // #1987: these three used to run their assertions only `if let lib`, so a SharedLibrary
+    // that failed to construct passed all of them, and libraryName accepted any non-nil name.
     @Test func libraryName() {
-        if let lib = SharedLibrary(name: "libc.dylib") {
-            #expect(lib.name != nil)
+        guard let lib = SharedLibrary(name: "libc.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        #expect(lib.name == "libc.dylib")
     }
 
     @Test func openLibrary() {
-        if let lib = SharedLibrary(name: "libc.dylib") {
-            let ok = lib.open()
-            #expect(ok)
-            lib.close()
+        guard let lib = SharedLibrary(name: "libc.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        let ok = lib.open()
+        #expect(ok)
+        lib.close()
     }
 
     @Test func openNonexistent() {
-        if let lib = SharedLibrary(name: "nonexistent_lib_12345.dylib") {
-            #expect(!lib.open())
+        guard let lib = SharedLibrary(name: "nonexistent_lib_12345.dylib") else {
+            Issue.record("SharedLibrary(name:) returned nil")
+            return
         }
+        #expect(!lib.open())
     }
 }
 
 @Suite("Message_Msg")
 struct MessageMsgTests {
+    // #1987: this asserted `msg != nil || msg == nil`, which nothing can fail. Message_Msg::Get
+    // for a key with no registered text returns OCCT's fixed fallback naming the key; pinned to
+    // what the kernel returns. It deliberately does not call loadDefault(): ShapeExtend::Init()
+    // returns before its messages are registered when a second thread is already inside it
+    // (Scripts/repro/766-foundation-units-msg-lib/race.mm), so two tests calling it in parallel
+    // made loadDefault() below fail.
     @Test func getMessage() {
-        // Key may not exist, but function should not crash
-        let msg = MessageSystem.message(forKey: "test.key")
-        // Returns something (either key itself or error msg)
-        #expect(msg != nil || msg == nil)  // just verify no crash
+        #expect(
+            MessageSystem.message(forKey: "test.key")
+                == "Unknown message invoked with the keyword test.key")
     }
 
     @Test func hasMessage() {
@@ -1148,8 +1161,10 @@ struct MessageMsgTests {
 struct NamedColorCountTests {
 
     @Test func colorCount() {
+        // #1987: `> 500` passed an off-by-one. Quantity_NameOfColor runs from Quantity_NOC_BLACK
+        // (0) to Quantity_NOC_WHITE (508), so the count is exactly 509.
         let count = Color.namedColorCount
-        #expect(count > 500)  // OCCT has ~520 named colors
+        #expect(count == 509)
     }
 }
 
@@ -1176,9 +1191,9 @@ struct UnitsConversionTests {
     }
 
     @Test func dumpUnit() {
+        // #1987: pinned to the exact string UnitsMethods::DumpLengthUnit(Millimeter) returns.
         let name = UnitsConversion.dumpLengthUnit(OCCTLengthUnit.millimeter)
-        #expect(name != nil)
-        if let n = name { #expect(n.contains("mm") || n.contains("illi")) }
+        #expect(name == "mm")
     }
 }
 
@@ -1187,20 +1202,28 @@ struct ColorToolGetAllColorsTests {
 
     @Test("GetAllColors returns added colors")
     func getAllColors() {
-        guard let doc = Document.create() else { return }
-        // Add two colors
+        // #1987: both tests used to `return` silently when Document.create() failed, and this one
+        // accepted any count >= 2 of any ids. XCAFDoc_ColorTool::GetColors on a fresh document
+        // after two AddColor calls returns exactly those two labels, in order.
+        guard let doc = Document.create() else {
+            Issue.record("Document.create() returned nil")
+            return
+        }
         let redId = doc.colorToolAddColor(r: 1.0, g: 0.0, b: 0.0)
         let greenId = doc.colorToolAddColor(r: 0.0, g: 1.0, b: 0.0)
         #expect(redId >= 0)
         #expect(greenId >= 0)
 
         let allColors = doc.colorToolGetAllColors()
-        #expect(allColors.count >= 2)
+        #expect(allColors == [redId, greenId])
     }
 
     @Test("GetAllColors empty for new document")
     func getAllColorsEmpty() {
-        guard let doc = Document.create() else { return }
+        guard let doc = Document.create() else {
+            Issue.record("Document.create() returned nil")
+            return
+        }
         let allColors = doc.colorToolGetAllColors()
         #expect(allColors.isEmpty)
     }

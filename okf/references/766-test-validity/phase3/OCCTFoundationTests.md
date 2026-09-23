@@ -94,3 +94,23 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
+
+## Measured rows, #766 execution (#1987)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|-------|------|-----------------|-----------|-----|-------|--------|-------|
+| OSD_SharedLibrary | createLibrary | `OCCTSharedLibCreate` | Create returns nullptr | ✅ `:1088` `lib != nil` | ✅ | MATCH, OSD_SharedLibrary constructs |  |
+| OSD_SharedLibrary | libraryName | `OCCTSharedLibName` | Create nullptr (A); Name returns nullptr (B) | ✅ A `:1095` (original: green); B `:1098` | ✅ | MATCH "libc.dylib" | Rewritten: `if let lib`, any non-nil name |
+| OSD_SharedLibrary | openLibrary | `OCCTSharedLibOpen` | Create nullptr (A); negate DlOpen (B) | ✅ A `:1103` (original: green); B `:1107` | ✅ | MATCH, DlOpen true | Rewritten: `if let lib` |
+| OSD_SharedLibrary | openNonexistent | `OCCTSharedLibOpen` | Create nullptr (A); negate DlOpen (B) | ✅ A `:1113` (original: green); B `:1116` | ✅ | MATCH, DlOpen false | Rewritten: `if let lib` |
+| Message_Msg | getMessage | `OCCTMessageMsgGet` | return the key instead of Get() | ✅ `:1129` (original: green) | ✅ | MATCH "Unknown message invoked with the keyword test.key" | Rewritten: `msg != nil || msg == nil`. Found: ShapeExtend::Init race (race.mm) |
+| Message_Msg | hasMessage | `OCCTMessageMsgHasMsg` | negate HasMsg | ✅ `:1137` | ✅ | MATCH false |  |
+| Message_Msg | loadDefault | `OCCTMessageMsgFileLoadDefault` | drop ShapeExtend::Init() | ✅ `:1150` `ok` | ✅ | MATCH, HasMsg 0 before, 1 after |  |
+| Message_Msg | loadNonexistent | `OCCTMessageMsgFileLoad` | negate LoadFile | ✅ `:1156` | ✅ | MATCH false |  |
+| v0.114.0 - Named Color Count | colorCount | `OCCTNamedColorCount` | drop the `+ 1` | ✅ `:1167` `count == 509` (original: green) | ✅ | MATCH 509 | Rewritten: `> 500` passed an off-by-one |
+| UnitsConversion | lengthFactor | `OCCTUnitsGetLengthFactor` | factor × 10 | ✅ `:1176` | ✅ | MATCH 1000 |  |
+| UnitsConversion | unitScale | `OCCTUnitsGetLengthUnitScale` | swap from/to | ✅ `:1183` | ✅ | MATCH 1000 |  |
+| UnitsConversion | unitScaleInverse | `OCCTUnitsGetLengthUnitScale` | swap from/to | ✅ `:1190` | ✅ | MATCH 0.001 |  |
+| UnitsConversion | dumpUnit | `OCCTUnitsDumpLengthUnit` | dump Centimeter | ✅ `:1196` | ✅ | MATCH "mm" | Pinned to the exact string |
+| v0.127.0, ColorTool GetAllColors | getAllColors | `OCCTDocumentColorToolGetAllColors` | OCCTDocumentCreate returns nullptr | ✅ `:1209` (original: green) | ✅ | MATCH, 2 labels in AddColor order | Rewritten: silent `return` on nil document, `count >= 2` |
+| v0.127.0, ColorTool GetAllColors | getAllColorsEmpty | `OCCTDocumentColorToolGetAllColors` | OCCTDocumentCreate returns nullptr | ✅ `:1224` (original: green) | ✅ | MATCH 0 | Rewritten: silent `return` on nil document |
