@@ -222,3 +222,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: DrawingSymbolsTests.swift (12 tests), pure-Swift annotation geometry, no kernel counterpart
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| v0.146 Surface finish + GD&T symbols | Surface finish symbol produces check-mark + bar + Ra text + leader | `DrawingAnnotation.surfaceFinish (Swift, no bridge)` | Ra label dropped (INJ_DS_NO_RA) | DrawingSymbolsTests.swift:18 anns.count == 5 | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | Surface finish check-mark arms are genuinely unequal length (ISO 1302 long/short legs) | `DrawingAnnotation.surfaceFinish (Swift, no bridge)` | short arm made as long as the long arm, the #1573 regression (INJ_DS_EQUAL_ARMS) | DrawingSymbolsTests.swift:53 rightLength > leftLength * 1.5 | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | Surface finish .any has no horizontal bar | `DrawingAnnotation.surfaceFinish (Swift, no bridge)` | .any drawn as .machiningRequired (INJ_DS_ANY_AS_REQUIRED) | DrawingSymbolsTests.swift:63 required.count > any.count | ✅ | N/A | Caught as written; exact counts added |
+| v0.146 Surface finish + GD&T symbols | Surface finish .machiningProhibited emits circle as centreline segments | `DrawingAnnotation.surfaceFinish (Swift, no bridge)` | 12 circle segments instead of 24 (INJ_DS_CIRCLE12) | DrawingSymbolsTests.swift:77 anns.count == 28 | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | Feature control frame produces rectangle + dividers + symbol + tolerance | `DrawingAnnotation.featureControlFrame (Swift, no bridge)` | datum dividers dropped (INJ_DS_NO_DATUM_DIVIDERS) | DrawingSymbolsTests.swift:103 lineCount == 8 | ✅ | N/A | Rewritten: `lineCount >= 6` passed the missing dividers |
+| v0.146 Surface finish + GD&T symbols | Datum feature symbol has box + triangle pointer | `DrawingAnnotation.datumFeature (Swift, no bridge)` | leader dropped (INJ_DS_NO_LEADER) | DrawingSymbolsTests.swift:120 lineCount == 8 | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | rectangleCentrelines traces the four box edges in CCW winding | `DrawingAnnotation.rectangleCentrelines (Swift, no bridge)` | corners reversed, clockwise (INJ_DS_CW) | DrawingSymbolsTests.swift:136 lines[0].from == SIMD2(2, 3) && lines[0].to == SIMD2(12, 3) | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | Feature control frame outer box matches the min/max corners exactly | `DrawingAnnotation.featureControlFrame (Swift, no bridge)` | corners reversed, clockwise (INJ_DS_CW) | DrawingSymbolsTests.swift:162 lines[0].from == bottomLeft && ... | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | Datum feature box matches the min/max corners exactly | `DrawingAnnotation.datumFeature (Swift, no bridge)` | corners reversed, clockwise (INJ_DS_CW) | DrawingSymbolsTests.swift:183 lines[0].from == bl && lines[0].to == SIMD2(tr.x, bl.y) | ✅ | N/A | Caught as written |
+| v0.146 Surface finish + GD&T symbols | GDT symbol glyphs are non-empty | `GDTSymbol.glyph (Swift, no bridge)` | .position glyph "POS" (INJ_DS_GLYPH) | DrawingSymbolsTests.swift:193 GDTSymbol.position.glyph == "⌖" | ✅ | N/A | Rewritten: `!isEmpty` passed any glyph |
+| v0.146 Surface finish + GD&T symbols | Break line is a zigzag of 5 segments | `DrawingAnnotation.breakLine (Swift, no bridge)` | amplitude ignored, a straight line (INJ_DS_FLAT_BREAK) | DrawingSymbolsTests.swift:211 lines[1].to == SIMD2(49, 2) | ✅ | N/A | Rewritten: the count alone passed a straight line |
+| v0.146 Surface finish + GD&T symbols | Detail view returns a TransformedDrawing with expected scale | `Drawing.detailView (Swift, no bridge)` | scale ignored (INJ_DS_DETAIL_SCALE) | DrawingSymbolsTests.swift:225 detail.scale == 2.0 | ✅ | N/A | Caught as written |

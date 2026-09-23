@@ -6,5 +6,221 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Surface finish symbol produces check-mark + bar + Ra text + leader",
+    "bridge_function": "DrawingAnnotation.surfaceFinish (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Surface finish check-mark arms are genuinely unequal length (ISO 1302 long/short legs)",
+    "bridge_function": "DrawingAnnotation.surfaceFinish (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Surface finish .any has no horizontal bar",
+    "bridge_function": "DrawingAnnotation.surfaceFinish (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Surface finish .machiningProhibited emits circle as centreline segments",
+    "bridge_function": "DrawingAnnotation.surfaceFinish (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Feature control frame produces rectangle + dividers + symbol + tolerance",
+    "bridge_function": "DrawingAnnotation.featureControlFrame (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Datum feature symbol has box + triangle pointer",
+    "bridge_function": "DrawingAnnotation.datumFeature (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::rectangleCentrelines traces the four box edges in CCW winding",
+    "bridge_function": "DrawingAnnotation.rectangleCentrelines (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Feature control frame outer box matches the min/max corners exactly",
+    "bridge_function": "DrawingAnnotation.featureControlFrame (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Datum feature box matches the min/max corners exactly",
+    "bridge_function": "DrawingAnnotation.datumFeature (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::GDT symbol glyphs are non-empty",
+    "bridge_function": "GDTSymbol.glyph (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Break line is a zigzag of 5 segments",
+    "bridge_function": "DrawingAnnotation.breakLine (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "v0.146 Surface finish + GD&T symbols::Detail view returns a TransformedDrawing with expected scale",
+    "bridge_function": "Drawing.detailView (Swift, no bridge)",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {},
+      "source": "N/A: DrawingSymbols.swift builds these annotations in Swift; no OCCT call is involved"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]
