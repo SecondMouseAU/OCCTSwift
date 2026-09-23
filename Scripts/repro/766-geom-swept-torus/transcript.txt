@@ -1,0 +1,6 @@
+sweptDirection: direction=(0, 0, 1)
+sweptBasisCurve: Geom_Line location=(0, 0, 0) direction=(1, 0, 0) same handle as profile=0
+torusRadii: major=10 minor=2
+torusSetRadii: major after SetMajorRadius(15)=15 minor after SetMinorRadius(3)=3
+torusArea: area=789.5683520871487 (4*pi^2*R*r=789.5683520871487)
+torusVolume: volume=789.56835208714858 (2*pi^2*R*r^2=789.5683520871487)

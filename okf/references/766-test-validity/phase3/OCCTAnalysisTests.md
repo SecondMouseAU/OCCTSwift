@@ -235,6 +235,12 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Geom_SweptSurface Properties** | sweptDirection | Geom_SweptSurface | Direction() |
+| **Geom_SweptSurface Properties** | sweptBasisCurve | Geom_SweptSurface | BasisCurve() |
+| **Geom_ToroidalSurface Properties** | torusRadii | Geom_ToroidalSurface | MajorRadius()/MinorRadius() |
+| **Geom_ToroidalSurface Properties** | torusSetRadii | Geom_ToroidalSurface setters | SetMajorRadius/SetMinorRadius |
+| **Geom_ToroidalSurface Properties** | torusArea | Geom_ToroidalSurface | Area() |
+| **Geom_ToroidalSurface Properties** | torusVolume | Geom_ToroidalSurface | Volume() |
 
 ---
 
@@ -424,6 +430,12 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| sweptDirection | OCCTSurfaceSweptDirection | Geom_SweptSurface | negate dz | ✅ | ✅ | Fixtures now #require'd |
+| sweptBasisCurve | OCCTSurfaceSweptBasisCurve | Geom_SweptSurface | return nullptr | ✅ | ✅ | Rewritten: asserted nothing, a nil basis passed |
+| torusRadii | OCCTSurfaceTorusMajorRadius / OCCTSurfaceTorusMinorRadius | Geom_ToroidalSurface | each + 1 | ✅ | ✅ | Fixture now #require'd |
+| torusSetRadii | OCCTSurfaceTorusSetMajorRadius / OCCTSurfaceTorusSetMinorRadius | Geom_ToroidalSurface setters | skip both setters | ✅ | ✅ | Fixture now #require'd |
+| torusArea | OCCTSurfaceTorusArea | Geom_ToroidalSurface | Area() * 2 | ✅ | ✅ | Fixture now #require'd |
+| torusVolume | OCCTSurfaceTorusVolume | Geom_ToroidalSurface | Volume() * 2 | ✅ | ✅ | Fixture now #require'd |
 
 ---
 

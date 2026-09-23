@@ -4501,5 +4501,195 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_SweptSurface Properties::sweptDirection",
+    "bridge_function": "OCCTSurfaceSweptDirection",
+    "bridge_output": {
+      "type": "direction",
+      "data": {
+        "observed": {
+          "direction_z": 1
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "direction",
+      "data": {
+        "value": {
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
+  },
+  {
+    "test_name": "Geom_SweptSurface Properties::sweptBasisCurve",
+    "bridge_function": "OCCTSurfaceSweptBasisCurve",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "observed": {
+          "basis": "line",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ]
+        },
+        "asserted_within": 1e-12
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "value": {
+          "basis": "Geom_Line",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
+  },
+  {
+    "test_name": "Geom_ToroidalSurface Properties::torusRadii",
+    "bridge_function": "OCCTSurfaceTorusMajorRadius / OCCTSurfaceTorusMinorRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "major": 10,
+          "minor": 2
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "major": 10,
+          "minor": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
+  },
+  {
+    "test_name": "Geom_ToroidalSurface Properties::torusSetRadii",
+    "bridge_function": "OCCTSurfaceTorusSetMajorRadius / OCCTSurfaceTorusSetMinorRadius",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "major_after_set": 15,
+          "minor_after_set": 3
+        },
+        "asserted_within": 1e-06
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "major_after_set": 15,
+          "minor_after_set": 3
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
+  },
+  {
+    "test_name": "Geom_ToroidalSurface Properties::torusArea",
+    "bridge_function": "OCCTSurfaceTorusArea",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "area": 789.5683520871487
+        },
+        "asserted_within": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "area": 789.5683520871487
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
+  },
+  {
+    "test_name": "Geom_ToroidalSurface Properties::torusVolume",
+    "bridge_function": "OCCTSurfaceTorusVolume",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "observed": {
+          "volume": 789.5683520871486
+        },
+        "asserted_within": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": {
+          "volume": 789.5683520871486
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-geom-swept-torus/"
   }
 ]
