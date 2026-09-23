@@ -201,6 +201,8 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **Extrema_ExtElSS Plane-Plane** | parallelPlanesReportTheSquareDistance | Plane-plane extrema | SquareDistance(1) + 1 |
+| **Extrema_ExtElSS Plane-Plane** | crossingPlanesReportNoDistance | Plane-plane extrema | Crossing planes reported as distance 0 |
 | **GProp Weighted Tests** | weightedCentroid | Weighted point-set centroid | OCCTGPropPointSetWeightedCentroid drops the weight (AddPoint(p)) |
 | **GProp Weighted Tests** | barycentre | Point-set barycentre | OCCTGPropBarycentre skips the last point |
 | **Bnd Range Tests** | createAndQuery | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false |
@@ -385,6 +387,8 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| parallelPlanesReportTheSquareDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | SquareDistance(1) + 1 | ✅ | ✅ | Issue #1878 names it parallelPlanes, renamed by #1632; second construction via OCCTExtremaExtPElSPlane |
+| crossingPlanesReportNoDistance | OCCTExtremaElSSPlanePlane | Plane-plane extrema | Crossing planes reported as distance 0 | ✅ | ✅ | Issue #1879 names it intersectingPlanes, renamed by #1632 |
 | createAndQuery | OCCTRangeGetBounds | Bnd_Range construction | OCCTRangeCreate builds a void range; GetBounds returns false | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the bounds assertions under if-let |
 | contains | OCCTRangeContains | Bnd_Range membership | Contains returns true | ✅ | ✅ |  |
 | addValue | OCCTRangeAddValue | Bnd_Range add | Add is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped the only assertion under if-let; lower bound now asserted too |

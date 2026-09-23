@@ -3825,5 +3825,59 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::parallelPlanesReportTheSquareDistance",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": true,
+        "squareDistance": 100,
+        "viaExtPElS": {
+          "count": 1,
+          "squareDistance": 100
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": true,
+        "squareDistance": 100,
+        "viaExtPElS": {
+          "count": 1,
+          "squareDistance": 100
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtElSS Plane-Plane::crossingPlanesReportNoDistance",
+    "bridge_function": "OCCTExtremaElSSPlanePlane",
+    "bridge_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": false,
+        "squareDistance": null
+      }
+    },
+    "kernel_output": {
+      "type": "square_distance",
+      "data": {
+        "isParallel": false,
+        "nbExt": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
