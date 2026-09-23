@@ -40,11 +40,30 @@ Two structural facts make this more tractable than the `platform-expansion.md`
    ObjC-isms" claim in `platform-expansion.md`, the bridge has since been split
    into per-area files and verified clean.)*
 
-2. **OCCT is already configured headless.** `build-occt.sh` ships
-   Visualization / OpenGL / GLES / FreeType / TBB / VTK / Draw all **OFF**; only
-   FoundationClasses, ModelingData, ModelingAlgorithms, DataExchange + RapidJSON
-   are ON. That is precisely the subset that ports to wasm (no GL context, no
-   native threading).
+2. **OCCT is configured headless, and that buys less than it reads.**
+   `build-occt.sh` ships Visualization / OpenGL / GLES / FreeType / TBB / VTK /
+   Draw all **OFF**; only FoundationClasses, ModelingData, ModelingAlgorithms,
+   DataExchange + RapidJSON are ON. No GL context and no TBB is real and it is
+   what makes the port plausible. **The module list is not, and this paragraph
+   used to claim it was "precisely the subset that ports to wasm".** Measured
+   2026-09-23 against the macOS install tree those flags produce: **49 archives
+   across six modules and 5,495 source files**, because OCCT's CMake pulls a
+   dependency in whether or not its module is switched off.
+
+   | Module | `BUILD_MODULE_*` | Toolkits built |
+   |---|---|---|
+   | FoundationClasses | ON | 2 |
+   | ModelingData | ON | 4 |
+   | ModelingAlgorithms | ON | 14 |
+   | DataExchange | ON | 14 |
+   | **ApplicationFramework** | **OFF** | **13** |
+   | **Visualization** | **OFF** | **2** |
+
+   `DataExchange`'s XCAF toolkits need `TKCAF`, `TKLCAF`, `TKCDF`, the
+   `TKBin*`/`TKXml*`/`TKStd*` persistence set and `TKTObj`; those reach
+   `TKService` and `TKV3d`. `TKV3d` alone is 203 source files. So the
+   platform-gap surface #2174 enumerates, and the code the module size pays for,
+   include 682 files from two modules the flags say are off.
 
 3. **Threading is a non-issue for us.** The bridge serialises all OCCT access
    through one `std::recursive_mutex`; single-threaded wasm satisfies that
