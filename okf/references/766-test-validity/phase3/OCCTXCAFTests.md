@@ -99,3 +99,30 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `CurrentTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetCurrentLabel` returns true without setting | :12 `doc.currentLabel() == 510` (rewritten; the old `if let` passed this injection) | passed | `OCCTDocumentGetCurrentLabel` | PASS: tag 510 = 510 |
+| `hasCurrent` | `OCCTDocumentHasCurrentLabel` returns true | :17 Expectation failed: !doc.hasCurrentLabel() | passed | `OCCTDocumentHasCurrentLabel` | PASS: false, then true |
+| `noCurrentReturnsNil` | `OCCTDocumentGetCurrentLabel` returns tag 0 | :24 Expectation failed: doc.currentLabel() == nil | passed | `OCCTDocumentGetCurrentLabel` | PASS: no current label on a fresh document |
+
+### `DimTolToolTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `emptyDocumentCounts` | `OCCTDocumentDimTolDimensionCount` returns 1 (`F2`, the tolerance count returning 1, also red at :11) | :10 Expectation failed: doc.dimTolToolDimensionCount == 0 | passed | `OCCTDocumentDimTolDimensionCount` | PASS: 0 and 0 |
+
+### `DirectoryTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createDirectory` | `OCCTDocumentDirectoryNew` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentDirectoryNew` | PASS: `New(100)` non-null |
+| `findDirectory` | `OCCTDocumentDirectoryFind` returns false | :18 Expectation failed: doc.hasDirectory(at: 100) | passed | `OCCTDocumentDirectoryFind` | PASS: true = true |
+| `addSubDirectory` | `OCCTDocumentDirectoryAddSubDirectory` returns -1 | :26 Expectation failed: childTag != nil | passed | `OCCTDocumentDirectoryAddSubDirectory` | PASS: kernel sub-directory tag 1 |
+| `makeObjectLabel` | `OCCTDocumentDirectoryMakeObjectLabel` returns -1 | :34 Expectation failed: objTag != nil | passed | `OCCTDocumentDirectoryMakeObjectLabel` | PASS: kernel object label tag 2 |

@@ -126,5 +126,185 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDataStd_Current Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetCurrentLabel",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "tag": 510
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "tag": 510
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-current/"
+  },
+  {
+    "test_name": "TDataStd_Current Tests::hasCurrent",
+    "bridge_function": "OCCTDocumentHasCurrentLabel",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "before": false,
+        "after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-current/"
+  },
+  {
+    "test_name": "TDataStd_Current Tests::noCurrentReturnsNil",
+    "bridge_function": "OCCTDocumentGetCurrentLabel",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "tag": null
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "has_current": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-current/"
+  },
+  {
+    "test_name": "XCAFDimTolObjects_Tool Tests::emptyDocumentCounts",
+    "bridge_function": "OCCTDocumentDimTolDimensionCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0,
+        "tolerances": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0,
+        "tolerances": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "TDataStd_Directory Tests::createDirectory",
+    "bridge_function": "OCCTDocumentDirectoryNew",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "new_is_null": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-directory/"
+  },
+  {
+    "test_name": "TDataStd_Directory Tests::findDirectory",
+    "bridge_function": "OCCTDocumentDirectoryFind",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "found": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "found": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-directory/"
+  },
+  {
+    "test_name": "TDataStd_Directory Tests::addSubDirectory",
+    "bridge_function": "OCCTDocumentDirectoryAddSubDirectory",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "tag": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-directory/"
+  },
+  {
+    "test_name": "TDataStd_Directory Tests::makeObjectLabel",
+    "bridge_function": "OCCTDocumentDirectoryMakeObjectLabel",
+    "bridge_output": {
+      "type": "label",
+      "data": {
+        "tag_non_nil": true
+      }
+    },
+    "kernel_output": {
+      "type": "label",
+      "data": {
+        "tag": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-directory/"
   }
 ]
