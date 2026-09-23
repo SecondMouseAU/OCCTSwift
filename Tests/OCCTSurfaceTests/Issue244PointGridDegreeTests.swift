@@ -61,6 +61,11 @@ struct Issue244PointGridDegreeTests {
             return
         }
         #expect(face.isValid)
+        // #766: the clamp caps the degree at samples - 1 = 6. GeomAPI_PointsToBSplineSurface in
+        // the pinned kernel already refuses to exceed it, so removing the clamp leaves this
+        // green; a clamp that caps too low is what these pins catch.
+        // #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
+        #expect(surf.bsplineSurface.uDegree == 6 && surf.bsplineSurface.vDegree == 6)
         let mesh = face.mesh(linearDeflection: 0.1, angularDeflection: 0.3)
         #expect(mesh != nil)
         #expect((mesh?.triangleCount ?? 0) > 0)
@@ -79,6 +84,8 @@ struct Issue244PointGridDegreeTests {
                 continue
             }
             #expect(f.mesh(linearDeflection: 0.1) != nil)
+            // #766: degree min(n - 1, 8) in both directions, the kernel's own choice for these grids.
+            #expect(s.bsplineSurface.uDegree == n - 1 && s.bsplineSurface.vDegree == n - 1, "grid \(n)")
         }
         // Degenerate grid dimension → nil (guard).
         #expect(

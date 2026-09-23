@@ -222,3 +222,14 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: Issue233FaceFromSurfaceWireTests.swift, Issue244PointGridDegreeTests.swift, Issue317PeriodicConicalSingleWireTests.swift (6 tests), probe Scripts/repro/766-issue233-244-266-317/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| Issue #233, face from surface bounded by a wire | UV-polygon trims a cylinder to a non-rectangular footprint | `OCCTShapeCreateFaceFromSurfaceUVPolygon` | UV polygon scaled by 0.9 in u (INJ_233_UVSCALE) | Issue233FaceFromSurfaceWireTests.swift:32 abs(trimmedArea - 39.75) < 1e-6 | ✅ | MATCH | Rewritten: area > 0 and the 0.4-1.0 band against the rectangle passed the scaled polygon; pins the kernel area |
+| Issue #233, face from surface bounded by a wire | UV-polygon needs at least 3 points | `OCCTShapeCreateFaceFromSurfaceUVPolygon` | Swift and bridge 3-point guards lowered to 2 (INJ_233_NOCOUNT) | Issue233FaceFromSurfaceWireTests.swift:48 cyl.toFace(uvBoundary: [SIMD2(0, 0), SIMD2(1, 1)]) == nil | ✅ | N/A |  |
+| Issue #233, face from surface bounded by a wire | 3D wire on the surface trims it (face(from:boundary:)) | `OCCTShapeCreateFaceFromSurfaceWire` | boundary ignored, natural [0, 2] x [0, 6] patch built instead (INJ_FACEWIRE_NATURAL) | Issue233FaceFromSurfaceWireTests.swift:75 abs((face.surfaceArea ?? 0) - 39.75) < 1e-6 | ✅ | MATCH | Rewritten: `if let a { a > 0 }` passed a face that ignored its boundary |
+| Issue #244, fromPointGrid degree clamp keeps surfaces meshable | 7×7 grid with degMax 8 builds a valid, quickly-meshable face | `OCCTPointsToSurfaceBSpline` | clamp caps one degree too low (INJ_244_CLAMP_OFF, Swift) | Issue244PointGridDegreeTests.swift:68 surf.bsplineSurface.uDegree == 6 && surf.bsplineSurface.vDegree == 6 | ✅ | MATCH | Added a degree pin. Removing the clamp entirely stays GREEN: GeomAPI_PointsToBSplineSurface in the pinned kernel already returns degree 6 for [3, 8] on 7 points, so the clamp is redundant there |
+| Issue #244, fromPointGrid degree clamp keeps surfaces meshable | Clamp is well-behaved across grid sizes | `OCCTPointsToSurfaceBSpline` | clamp caps one degree too low (INJ_244_CLAMP_OFF, Swift) | Issue244PointGridDegreeTests.swift:88 s.bsplineSurface.uDegree == n - 1 && ... (n = 4, 5, 7) | ✅ | MATCH | Added a degree pin per grid size; same note as above |
+| Issue #317, single closed wire belting a periodic conical surface | A closed periodic curve edge trimmed to a cone no longer crashes healing | `OCCTShapeCreateFaceFromSurfaceWire` | ShapeFix_Face context not set, the pre-#317 code (INJ_317_NOCONTEXT) | Issue317PeriodicConicalSingleWireTests.swift:53 face.isValid | ✅ | MATCH | Red as an invalid face rather than the original SIGSEGV |

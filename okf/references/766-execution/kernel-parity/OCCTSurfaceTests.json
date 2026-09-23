@@ -6,5 +6,179 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #233, face from surface bounded by a wire::UV-polygon trims a cylinder to a non-rectangular footprint",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceUVPolygon",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 39.75,
+        "rectArea": 60
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 39.75,
+        "rectArea": 60
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 233 uvPolygon"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #233, face from surface bounded by a wire::UV-polygon needs at least 3 points",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceUVPolygon",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "wrapper precondition: with the guards lowered the kernel builds a face from the two-point loop, so the refusal is the wrapper's"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Issue #233, face from surface bounded by a wire::3D wire on the surface trims it (face(from:boundary:))",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWire",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 39.75
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 39.75
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 233 wireBoundary"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #244, fromPointGrid degree clamp keeps surfaces meshable::7×7 grid with degMax 8 builds a valid, quickly-meshable face",
+    "bridge_function": "OCCTPointsToSurfaceBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          6,
+          6
+        ],
+        "poles": [
+          7,
+          7
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degree": [
+          6,
+          6
+        ],
+        "poles": [
+          7,
+          7
+        ]
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 244 n=7"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #244, fromPointGrid degree clamp keeps surfaces meshable::Clamp is well-behaved across grid sizes",
+    "bridge_function": "OCCTPointsToSurfaceBSpline",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "degrees": {
+          "4": [
+            3,
+            3
+          ],
+          "5": [
+            4,
+            4
+          ],
+          "7": [
+            6,
+            6
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "degrees": {
+          "4": [
+            3,
+            3
+          ],
+          "5": [
+            4,
+            4
+          ],
+          "7": [
+            6,
+            6
+          ]
+        }
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 244"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #317, single closed wire belting a periodic conical surface::A closed periodic curve edge trimmed to a cone no longer crashes healing",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWire",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "valid": true
+      },
+      "source": "the fix is the bridge giving ShapeFix_Face a ShapeBuild_ReShape context; with the context removed the pinned kernel no longer crashes here; the call returns a face that fails isValid (the SIGSEGV of #317 was not reproduced)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
