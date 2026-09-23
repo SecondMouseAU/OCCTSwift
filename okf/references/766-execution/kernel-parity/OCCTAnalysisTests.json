@@ -497,5 +497,94 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_DistanceSS::distance between box vertices",
+    "bridge_function": "OCCTBRepExtremaDistanceSS",
+    "bridge_output": {
+      "type": "distance_ss",
+      "data": {
+        "isDone": true,
+        "distance": 10.523782589924593,
+        "solutions": 1,
+        "p1": {
+          "x": -0.5,
+          "y": -0.5,
+          "z": 0.5
+        },
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "distance_ss",
+      "data": {
+        "isDone": true,
+        "distance": 10.523782589924593,
+        "solutions": 1,
+        "p1": {
+          "x": -0.5,
+          "y": -0.5,
+          "z": 0.5
+        },
+        "p2": {
+          "x": 10.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema_DistanceSS::distance between edge and vertex",
+    "bridge_function": "OCCTShapeDistance",
+    "bridge_output": {
+      "type": "dist_shape_shape",
+      "data": {
+        "distance": 7.794228634059948,
+        "solutions": 1,
+        "p1": {
+          "x": -0.5,
+          "y": -0.5,
+          "z": 0.5
+        },
+        "p2": {
+          "x": 5.0,
+          "y": 5.0,
+          "z": 1.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "dist_shape_shape",
+      "data": {
+        "distance": 7.794228634059948,
+        "solutions": 1,
+        "p1": {
+          "x": -0.5,
+          "y": -0.5,
+          "z": 0.5
+        },
+        "p2": {
+          "x": 5.0,
+          "y": 5.0,
+          "z": 1.0
+        },
+        "note": "BRepExtrema_DistanceSS on the same pair: isDone 0, no solution, as the test's comment says"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

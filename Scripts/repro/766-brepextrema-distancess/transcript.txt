@@ -1,0 +1,7 @@
+vertexDistance v1=(-0.5, -0.5, 0.5) v2=(10, 0, 1)
+vertexDistance DistanceSS isDone=1 distance=10.523782589924593 solutions=1
+vertexDistance DistanceSS p1=(-0.5, -0.5, 0.5) p2=(10, 0, 1)
+edgeVertexDistance v=(5, 5, 1)
+edgeVertexDistance DistShapeShape isDone=1 nbSolution=1 distance=7.794228634059948
+edgeVertexDistance DistShapeShape p1=(-0.5, -0.5, 0.5) p2=(5, 5, 1)
+edgeVertexDistance DistanceSS isDone=0 distance=10000000000 solutions=0

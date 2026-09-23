@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_DistanceSS** | distance between box vertices | Vertex-vertex distance | Exchange Seq1Value/Seq2Value witness points |
+| **BRepExtrema_DistanceSS** | distance between edge and vertex | Edge-vertex distance (DistShapeShape) | Exchange PointOnShape1/PointOnShape2 |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
