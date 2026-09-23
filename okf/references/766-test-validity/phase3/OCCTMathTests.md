@@ -109,3 +109,20 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-gc-ellipse-trimmed-direction (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GC_MakeEllipse Tests** | ellipseFromAxisAndRadii | `OCCTGCMakeEllipse` | major and minor swapped: GC refuses, bridge returns nil | red | green | PASS |
+| **GC_MakeEllipse Tests** | ellipseFromFullAx2 | `OCCTGCMakeEllipseFromElips` | major and minor swapped: GC refuses, bridge returns nil | red | green | PASS |
+| **GC_MakeHyperbola Tests** | hyperbolaFromAxisAndRadii | `OCCTGCMakeHyperbola` | radii swapped | red | green | PASS |
+| **GC_MakeTrimmedCone Tests** | trimmedCone2Pts | `OCCTGCMakeTrimmedCone2Pts` | r1 and r2 swapped | red | green | PASS |
+| **GC_MakeTrimmedCone Tests** | trimmedCone4Pts | `OCCTGCMakeTrimmedCone4Pts` | p3 and p4 swapped | red | green | PASS |
+| **GC_MakeTrimmedCylinder Tests** | trimmedCylinderCircle | `OCCTGCMakeTrimmedCylinderCircle` | height doubled | red | green | PASS |
+| **GC_MakeTrimmedCylinder Tests** | trimmedCylinderAxis | `OCCTGCMakeTrimmedCylinderAxis` | radius doubled | red | green | PASS |
+| **GC_MakeTrimmedCylinder Tests** | trimmedCylinder3Pts | `OCCTGCMakeTrimmedCylinder3Pts` | p2 and p3 swapped | red | green | PASS |
+| **GeomDirection Tests** | create unit direction | `OCCTGeomDirectionCoords` | x and z components swapped | red | green | PASS |
+| **GeomDirection Tests** | auto-normalizes | `OCCTGeomDirectionCoords` | x and z components swapped | red | green | PASS |
+| **GeomDirection Tests** | crossed product | `OCCTGeomDirectionCrossed` | operands swapped | red | green | PASS |
+| **GeomDirection Tests** | setCoordinates | `OCCTGeomDirectionSetCoord` | SetCoord skipped | red | green | PASS |

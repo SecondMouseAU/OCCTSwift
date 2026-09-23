@@ -1,0 +1,29 @@
+ellipseFromAxisAndRadii done=1 closed=1 major=10 minor=5
+  P(0) (10, 0, 0)
+  P(pi/2) (6.12323399574e-16, 5, 0)
+ellipseFromFullAx2 done=1 closed=1
+  P(0) (10, 0, 0)
+  P(pi/2) (6.12323399574e-16, 5, 0)
+hyperbolaFromAxisAndRadii done=1 major=10 minor=5
+  P(0) (10, 0, 0)
+  P(1) (15.4308063482, 5.87600596822, 0)
+trimmedCone2Pts done=1 bounds u [0, 6.28318530718] v [0, 10.4403065089]
+  S(u1,v1) (5, 0, 0)
+  S(u1,v2) (2, 0, 10)
+trimmedCone4Pts done=0 status=7
+trimmedCylinderCircle done=1 bounds u [0, 6.28318530718] v [0, 10]
+  S(u1,v1) (5, 0, 0)
+  S(u1,v2) (5, 0, 10)
+trimmedCylinderAxis done=1 bounds u [0, 6.28318530718] v [0, 10]
+  S(u1,v1) (5, 0, 0)
+  S(u1,v2) (5, 0, 10)
+trimmedCylinder3Pts done=1 bounds u [0, 6.28318530718] v [0, 10]
+  S(u1,v1) (12.0710678119, 0, 0)
+  S(u1,v2) (12.0710678119, 0, 10)
+conicalFrom4Pts valid done=1 semiAngle=-0.291456794477867 refRadius=5
+  location (0, 0, 0)
+  S(0,0) (5, 0, 0)
+create (0, 0, 1)
+normalizes (0.6, 0.8, 0)
+crossed (0, 0, 1)
+setCoordinates (0, 1, 0)
