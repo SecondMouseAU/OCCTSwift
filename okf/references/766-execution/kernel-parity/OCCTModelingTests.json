@@ -6,5 +6,148 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Fuse and Blend::fuseBlendBoxes",
+    "bridge_function": "OCCTShapeFuseAndBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "volume": "> 1000",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fuseDone": true,
+        "fuseVolume": 1500,
+        "filletContours": 0,
+        "returned": "the fuse result, unblended",
+        "valid": true,
+        "volume": 1500
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fuse and Blend::fuseBlendBoxCylinder",
+    "bridge_function": "OCCTShapeFuseAndBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fuseDone": true,
+        "fuseVolume": 5079.922475,
+        "filletContours": 5,
+        "filletDone": true,
+        "valid": true,
+        "volume": 5085.86567
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Fuse and Blend::cutBlend",
+    "bridge_function": "OCCTShapeCutAndBlend",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true,
+        "volume": "< 8000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "cutDone": true,
+        "cutVolume": 7803.650459,
+        "filletContours": 5,
+        "filletDone": true,
+        "valid": true,
+        "volume": 7796.570703
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Glue Tests::glueTwoBoxes",
+    "bridge_function": "OCCTShapeGlue",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "isValid": true,
+        "volume": "within 1 of 2000"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "glueFuseAsBridgeCallsIt": "IsDone false, HasErrors (no tools set)",
+        "plainFuseFallback": {
+          "done": true,
+          "valid": true,
+          "volume": 2000,
+          "faces": 10
+        },
+        "glueWithToolsSet": {
+          "done": true,
+          "valid": true,
+          "volume": 2000,
+          "faces": 10
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Half-Space::halfSpaceFromFace",
+    "bridge_function": "OCCTShapeCreateHalfSpace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "halfSpace": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faceDone": true,
+        "MakeHalfSpaceDone": true,
+        "solidNull": false,
+        "state(0,0,5)": "IN",
+        "state(0,0,-5)": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

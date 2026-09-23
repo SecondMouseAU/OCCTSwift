@@ -1,0 +1,7 @@
+glue fuse: done=0 hasErrors=1 null=1
+plain fuse fallback: done=1 valid=1 volume=2000 faces=10
+  variant glue=1 fuzzy=0: done=0 hasErrors=1
+  variant glue=2 fuzzy=1e-06: done=0 hasErrors=1
+  variant glue=2 fuzzy=0: done=0 hasErrors=1
+  variant glue=0 fuzzy=1e-06: done=0 hasErrors=1
+glue with arguments={a} tools={b}: done=1 valid=1 volume=2000 faces=10

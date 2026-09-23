@@ -221,3 +221,35 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `FuseAndBlendTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-fuse-and-blend/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| fuseBlendBoxes | `OCCTShapeFuseAndBlend` returns nullptr | `:16 Expectation failed: result != nil` | pass | `OCCTShapeFuseAndBlend` | PASS: no section or generated edge exists for two boxes sharing coplanar faces, so nothing is blended |
+| fuseBlendBoxCylinder | `OCCTShapeFuseAndBlend` returns nullptr | `:28 Expectation failed: result != nil` | pass | `OCCTShapeFuseAndBlend` | PASS |
+| cutBlend | `OCCTShapeCutAndBlend` returns nullptr | `:37 Expectation failed: result != nil` | pass | `OCCTShapeCutAndBlend` | PASS |
+
+### `GlueTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-glue/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| glueTwoBoxes | `OCCTShapeGlue` returns only the first shape from its plain-fuse fallback | `:24 Expectation failed: abs(gluedVolume - expectedVolume) < 1.0` | pass | `OCCTShapeGlue` | PASS: values match, but OCCTShapeGlue's glue-mode build always fails on this input (both shapes are passed as arguments and none as tools) and the result comes from its plain BRepAlgoAPI_Fuse fallback; see notes |
+
+### `HalfSpaceTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-half-space/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| halfSpaceFromFace | `OCCTShapeCreateHalfSpace` returns nullptr | `:14 Expectation failed: halfSpace != nil` | pass | `OCCTShapeCreateHalfSpace` | PASS |
