@@ -46,5 +46,447 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeBox",
+    "bridge_function": "OCCTShapeCreateBox",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeBox(-10,-10,-10): valid, volume 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeBox(-10,-10,-10): valid, volume 1000",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetVolume reports Mass() × 1.5",
+      "env": "OCCT766=|VOLSCALE|",
+      "red": "StressNullInvalidTests.swift:199 Expectation failed: abs((b.volume ?? 0) - 1000.0) < 1e-6",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeCylinder",
+    "bridge_function": "OCCTShapeCreateCylinder",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeCylinder(-5,-10) throws Standard_ConstructionError -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeCylinder(-5,-10) throws Standard_ConstructionError -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateCylinder: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTShapeCreateCylinder|",
+      "red": "StressNullInvalidTests.swift:205 Expectation failed: cyl == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeSphere",
+    "bridge_function": "OCCTShapeCreateSphere",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeSphere(-5) throws Standard_ConstructionError -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeSphere(-5) throws Standard_ConstructionError -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeCreateSphere: catch returns a wrapper of a null shape instead of nil",
+      "env": "OCCT766=|FAKE:OCCTShapeCreateSphere|",
+      "red": "StressNullInvalidTests.swift:210 Expectation failed: sphere == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeFillet",
+    "bridge_function": "OCCTShapeFillet",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeFillet(r=-1) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeFillet(r=-1) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFillet returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|FILLETPASS|",
+      "red": "StressNullInvalidTests.swift:216 Expectation failed: box.filleted(radius: -1.0) == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeChamfer",
+    "bridge_function": "OCCTShapeChamfer",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeChamfer(d=-1) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeChamfer(d=-1) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeChamfer returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|CHAMFERPASS|",
+      "red": "StressNullInvalidTests.swift:221 Expectation failed: box.chamfered(distance: -1.0) == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::negativeShell",
+    "bridge_function": "OCCTShapeShell",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): MakeThickSolidBySimple(+1) IsDone=0 -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "MakeThickSolidBySimple(+1) IsDone=0 -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeShell returns the input unchanged when not done or on a throw",
+      "env": "OCCT766=|SHELLPASS|",
+      "red": "StressNullInvalidTests.swift:227 Expectation failed: box.shelled(thickness: 1.0) == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::zeroDrill",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): refused by occtValidDrillRadius; unguarded, the r=0 cut IsDone=1 and removes nothing"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "refused by occtValidDrillRadius; unguarded, the r=0 cut IsDone=1 and removes nothing",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeDrillHole: direction/radius guards removed",
+      "env": "OCCT766=|DRILLSKIP|",
+      "red": "StressNullInvalidTests.swift:236 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::zeroDirectionVector",
+    "bridge_function": "OCCTShapeDrillHole",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): refused by occtValidDrillDirection; unguarded, gp_Dir(0,0,0) throws Standard_ConstructionError"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "refused by occtValidDrillDirection; unguarded, gp_Dir(0,0,0) throws Standard_ConstructionError",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeDrillHole: guards removed and the catch returns the input shape",
+      "env": "OCCT766=|DRILLSKIP|DRILLFAKE|",
+      "red": "StressNullInvalidTests.swift:244 Expectation failed: result == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::outOfBoundsSubShapeIndex",
+    "bridge_function": "OCCTShapeGetEdgePolyline",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): box has 12 edges; index 999 has none -> nil"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "box has 12 edges; index 999 has none -> nil",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeGetEdgePolyline wraps an out-of-range index instead of refusing it",
+      "env": "OCCT766=|CLAMP:OCCTShapeGetEdgePolyline|",
+      "red": "StressNullInvalidTests.swift:252 Expectation failed: polyline == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::curveEvalOutsideDomain",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Circle::Value(2pi+10) = (-4.1953576453822627, -2.7201055544468482, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Circle::Value(2pi+10) = (-4.1953576453822627, -2.7201055544468482, 0)",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetPoint clamps u into [First, Last]",
+      "env": "OCCT766=|CLAMP:OCCTCurve3DGetPoint|",
+      "red": "StressNullInvalidTests.swift:261 Expectation failed: abs(pt.x - -4.1953576453822627) < 1e-9",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::surfaceEvalOutsideDomain",
+    "bridge_function": "OCCTSurfaceGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Plane::Value(1e12, -2e12) = (1e12, -2e12, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Plane::Value(1e12, -2e12) = (1e12, -2e12, 0)",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTSurfaceGetPoint evaluates at (v, u)",
+      "env": "OCCT766=|SWAP:OCCTSurfaceGetPoint|",
+      "red": "StressNullInvalidTests.swift:271 Expectation failed: pt.x == 1e12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::wireFromZeroLengthLine",
+    "bridge_function": "OCCTWireCreateLine (Swift guard in Wire.line)",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): refused in Swift; unguarded, MakeEdge on coincident points IsDone=0 (LineThroughIdenticPoints)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "refused in Swift; unguarded, MakeEdge on coincident points IsDone=0 (LineThroughIdenticPoints)",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "Wire.line zero-length guard removed, OCCTWireCreateLine catch returns an empty wire",
+      "env": "OCCT766=|SKIP:WireLine|FAKE:OCCTWireCreateLine|",
+      "red": "StressNullInvalidTests.swift:280 Expectation failed: wire == nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::booleanIdenticalPosition",
+    "bridge_function": "OCCTShapeUnionEx",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): fuse of identical boxes: valid, volume 1000, 6 faces"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "fuse of identical boxes: valid, volume 1000, 6 faces",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "runBooleanEx returns nil after a successful build",
+      "env": "OCCT766=|BOOLNULL|",
+      "red": "StressNullInvalidTests.swift:286 Expectation failed: b1.union(b2)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::mirrorAxisZeroDirection",
+    "bridge_function": "OCCTMakeMirrorAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Dir(0,0,0) throws Standard_ConstructionError \"gp_Dir() - input vector has zero norm\"; caught, matrix left all zero"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir(0,0,0) throws Standard_ConstructionError \"gp_Dir() - input vector has zero norm\"; caught, matrix left all zero",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTMakeMirrorAxis: catch rethrows (the no-catch state #345/#1473 fixed)",
+      "env": "OCCT766=|RETHROW:OCCTMakeMirrorAxis|",
+      "red": "CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir() - input vector has zero norm",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::mirror2dAxisZeroDirection",
+    "bridge_function": "OCCTMakeMirror2dAxis",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Dir2d(0,0) throws Standard_ConstructionError; caught, matrix left all zero"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir2d(0,0) throws Standard_ConstructionError; caught, matrix left all zero",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTMakeMirror2dAxis: catch rethrows (the no-catch state #345/#1473 fixed)",
+      "env": "OCCT766=|RETHROW:OCCTMakeMirror2dAxis|",
+      "red": "CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir2d() - input vector has zero norm",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::mirrorPlaneZeroNormal",
+    "bridge_function": "OCCTMakeMirrorPlane",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): gp_Dir(0,0,0) throws Standard_ConstructionError; caught, matrix left all zero"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "gp_Dir(0,0,0) throws Standard_ConstructionError; caught, matrix left all zero",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTMakeMirrorPlane: catch rethrows (the no-catch state #345/#1473 fixed)",
+      "env": "OCCT766=|RETHROW:OCCTMakeMirrorPlane|",
+      "red": "CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir() - input vector has zero norm",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Invalid Parameters::geomDirectionZeroVector",
+    "bridge_function": "OCCTGeomDirectionCreate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Direction(0,0,0) does NOT throw: coordinates (nan, nan, nan); the bridge fallback (0,0,1) is unreachable"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Direction(0,0,0) does NOT throw: coordinates (nan, nan, nan); the bridge fallback (0,0,1) is unreachable",
+      "source": "Scripts/repro/766-stress-null-invalid/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTGeomDirectionCreate routes a zero vector to its (0,0,1) fallback",
+      "env": "OCCT766=|FIX:OCCTGeomDirectionCreate|",
+      "red": "StressNullInvalidTests.swift:327 Known issue was not recorded",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

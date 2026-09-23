@@ -288,3 +288,27 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressNullInvalidTests: Invalid Parameters
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-null-invalid/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Invalid Parameters | `negativeBox` | `OCCTShapeCreateBox` | OCCTShapeGetVolume reports Mass() × 1.5 | StressNullInvalidTests.swift:199 Expectation failed: abs((b.volume ?? 0) - 1000.0) < 1e-6 | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `negativeCylinder` | `OCCTShapeCreateCylinder` | OCCTShapeCreateCylinder: catch returns a wrapper of a null shape instead of nil | StressNullInvalidTests.swift:205 Expectation failed: cyl == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `negativeSphere` | `OCCTShapeCreateSphere` | OCCTShapeCreateSphere: catch returns a wrapper of a null shape instead of nil | StressNullInvalidTests.swift:210 Expectation failed: sphere == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `negativeFillet` | `OCCTShapeFillet` | OCCTShapeFillet returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:216 Expectation failed: box.filleted(radius: -1.0) == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `negativeChamfer` | `OCCTShapeChamfer` | OCCTShapeChamfer returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:221 Expectation failed: box.chamfered(distance: -1.0) == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `negativeShell` | `OCCTShapeShell` | OCCTShapeShell returns the input unchanged when not done or on a throw | StressNullInvalidTests.swift:227 Expectation failed: box.shelled(thickness: 1.0) == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `zeroDrill` | `OCCTShapeDrillHole` | OCCTShapeDrillHole: direction/radius guards removed | StressNullInvalidTests.swift:236 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `zeroDirectionVector` | `OCCTShapeDrillHole` | OCCTShapeDrillHole: guards removed and the catch returns the input shape | StressNullInvalidTests.swift:244 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `outOfBoundsSubShapeIndex` | `OCCTShapeGetEdgePolyline` | OCCTShapeGetEdgePolyline wraps an out-of-range index instead of refusing it | StressNullInvalidTests.swift:252 Expectation failed: polyline == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `curveEvalOutsideDomain` | `OCCTCurve3DGetPoint` | OCCTCurve3DGetPoint clamps u into [First, Last] | StressNullInvalidTests.swift:261 Expectation failed: abs(pt.x - -4.1953576453822627) < 1e-9 | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `surfaceEvalOutsideDomain` | `OCCTSurfaceGetPoint` | OCCTSurfaceGetPoint evaluates at (v, u) | StressNullInvalidTests.swift:271 Expectation failed: pt.x == 1e12 | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `wireFromZeroLengthLine` | `OCCTWireCreateLine (Swift guard in Wire.line)` | Wire.line zero-length guard removed, OCCTWireCreateLine catch returns an empty wire | StressNullInvalidTests.swift:280 Expectation failed: wire == nil | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `booleanIdenticalPosition` | `OCCTShapeUnionEx` | runBooleanEx returns nil after a successful build | StressNullInvalidTests.swift:286 Expectation failed: b1.union(b2) | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `mirrorAxisZeroDirection` | `OCCTMakeMirrorAxis` | OCCTMakeMirrorAxis: catch rethrows (the no-catch state #345/#1473 fixed) | CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir() - input vector has zero norm | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `mirror2dAxisZeroDirection` | `OCCTMakeMirror2dAxis` | OCCTMakeMirror2dAxis: catch rethrows (the no-catch state #345/#1473 fixed) | CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir2d() - input vector has zero norm | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `mirrorPlaneZeroNormal` | `OCCTMakeMirrorPlane` | OCCTMakeMirrorPlane: catch rethrows (the no-catch state #345/#1473 fixed) | CRASH exit 134: terminating due to uncaught exception of type Standard_ConstructionError: gp_Dir() - input vector has zero norm | ✔ | MATCH | yes |
+| Stress: Invalid Parameters | `geomDirectionZeroVector` | `OCCTGeomDirectionCreate` | OCCTGeomDirectionCreate routes a zero vector to its (0,0,1) fallback | StressNullInvalidTests.swift:327 Known issue was not recorded | ✔ | MATCH | yes |
