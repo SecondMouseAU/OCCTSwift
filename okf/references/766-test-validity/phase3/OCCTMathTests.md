@@ -109,3 +109,16 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-geomlib-interp-planar-tool (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **GeomLib Interpolate Tests** | polynomial interpolation | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y before GeomLib_Interpolate | red | green | PASS |
+| **GeomLib Interpolate Tests** | interpolated curve endpoints | `OCCTGeomLibInterpolate` | first and middle input points shifted +0.5 in Y | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | plane is planar | `OCCTGeomLibIsPlanarSurface` | negate GeomLib_IsPlanarSurface::IsPlanar() | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | get plane from planar surface | `OCCTGeomLibPlanarSurfacePlane` | negate the Z of Plan().Location() | red | green | PASS |
+| **GeomLib IsPlanarSurface Tests** | cylinder is not planar | `OCCTGeomLibIsPlanarSurface` | negate IsPlanar() | red | green | PASS |
+| **GeomLib Tool Tests** | parameter on 3D line | `OCCTGeomLibToolParameter3D` | reported parameter + 1.0 | red | green | PASS |
+| **GeomLib Tool Tests** | parameters on surface | `OCCTGeomLibToolParametersSurface` | swap u and v | red | green | PASS |
+| **GeomLib Tool Tests** | parameter on 2D line | `OCCTGeomLibToolParameter2D` | reported parameter + 1.0 | red | green | PASS |

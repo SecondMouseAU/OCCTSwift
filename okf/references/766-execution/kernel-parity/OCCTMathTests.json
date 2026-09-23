@@ -182,5 +182,85 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GeomLib Interpolate Tests::polynomial interpolation",
+    "bridge_function": "OCCTGeomLibInterpolate",
+    "bridge_output": {"type": "observed", "data": "isDone=1 degree=3 poles=7; C(t_i) = P_i for all five (C(0.5).y = -5.55e-17)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "isDone=1 degree=3 poles=7; C(t_i) = P_i for all five (C(0.5).y = -5.55e-17)", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "first and middle input points shifted +0.5 in Y before GeomLib_Interpolate", "failing_expectation": "original: **green**; rewritten: :21 `simd_length(curve.point(at: t) - p) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Interpolate Tests::interpolated curve endpoints",
+    "bridge_function": "OCCTGeomLibInterpolate",
+    "bridge_output": {"type": "observed", "data": "isDone=1 degree=3 poles=5 domain [0,1]; C(0)=(0,0,0) C(1)=(4,0,0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "isDone=1 degree=3 poles=5 domain [0,1]; C(0)=(0,0,0) C(1)=(4,0,0)", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "first and middle input points shifted +0.5 in Y", "failing_expectation": "original: red; rewritten: :35 `abs(start.x) < 1e-6 && abs(start.y) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::plane is planar",
+    "bridge_function": "OCCTGeomLibIsPlanarSurface",
+    "bridge_output": {"type": "observed", "data": "IsPlanar=1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsPlanar=1", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate GeomLib_IsPlanarSurface::IsPlanar()", "failing_expectation": ":12 `plane.isPlanar()`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::get plane from planar surface",
+    "bridge_function": "OCCTGeomLibPlanarSurfacePlane",
+    "bridge_output": {"type": "observed", "data": "origin=(1,2,3) normal=(0,0,1) x=(1,0,0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "origin=(1,2,3) normal=(0,0,1) x=(1,0,0)", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate the Z of Plan().Location()", "failing_expectation": ":21 `abs(r.origin.z - 3.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib IsPlanarSurface Tests::cylinder is not planar",
+    "bridge_function": "OCCTGeomLibIsPlanarSurface",
+    "bridge_output": {"type": "observed", "data": "IsPlanar=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "IsPlanar=0", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "negate IsPlanar()", "failing_expectation": ":30 `!cyl.isPlanar()`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameter on 3D line",
+    "bridge_function": "OCCTGeomLibToolParameter3D",
+    "bridge_output": {"type": "observed", "data": "ok=1 param=5", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "ok=1 param=5", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":15 `abs(p - 5.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameters on surface",
+    "bridge_function": "OCCTGeomLibToolParametersSurface",
+    "bridge_output": {"type": "observed", "data": "ok=1 u=3 v=4", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "ok=1 u=3 v=4", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "swap u and v", "failing_expectation": ":24 `abs(uv.u - 3.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "GeomLib Tool Tests::parameter on 2D line",
+    "bridge_function": "OCCTGeomLibToolParameter2D",
+    "bridge_output": {"type": "observed", "data": "ok=1 param=7", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "ok=1 param=7", "source": "Scripts/repro/766-math-geomlib-interp-planar-tool/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "reported parameter + 1.0", "failing_expectation": ":34 `abs(p - 7.0) < 1e-6`"},
+    "green": true
   }
 ]
