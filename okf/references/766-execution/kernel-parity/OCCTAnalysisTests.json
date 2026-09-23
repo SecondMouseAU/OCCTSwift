@@ -2069,5 +2069,161 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaRadii",
+    "bridge_function": "OCCTCurve3DHyperbolaMajorRadius",
+    "bridge_output": {
+      "type": "radii",
+      "data": {
+        "major": 5,
+        "minor": 3
+      }
+    },
+    "kernel_output": {
+      "type": "radii",
+      "data": {
+        "major": 5,
+        "minor": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaSetRadii",
+    "bridge_function": "OCCTCurve3DHyperbolaSetMinorRadius",
+    "bridge_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 8,
+        "minor": 4
+      }
+    },
+    "kernel_output": {
+      "type": "radii_after_set",
+      "data": {
+        "major": 8,
+        "minor": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaEccentricity",
+    "bridge_function": "OCCTCurve3DHyperbolaEccentricity",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 1.1661903789690602
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "eccentricity": 1.1661903789690602
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaFocal",
+    "bridge_function": "OCCTCurve3DHyperbolaFocal",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 11.661903789690601
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "focal": 11.661903789690601
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaFocus1",
+    "bridge_function": "OCCTCurve3DHyperbolaFocus1",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "focus1": [
+          5.830951894845301,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "focus1": [
+          5.830951894845301,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Geom_Hyperbola Properties::hyperbolaAsymptote1",
+    "bridge_function": "OCCTCurve3DHyperbolaAsymptote1",
+    "bridge_output": {
+      "type": "axis",
+      "data": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0.8574929257125443,
+          0.5144957554275266,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "axis",
+      "data": {
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "direction": [
+          0.8574929257125443,
+          0.5144957554275266,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
