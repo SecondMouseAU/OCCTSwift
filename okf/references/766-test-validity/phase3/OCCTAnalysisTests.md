@@ -95,6 +95,11 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Bnd_Sphere Tests** | createAndQuery | Bounding sphere construction | Exchange cx and cy in OCCTBndSphereCreate |
+| **Bnd_Sphere Tests** | distanceToPoint | Point distance | SquareDistance in place of Distance |
+| **Bnd_Sphere Tests** | isOutsidePoint | Point containment | IsOut(point) always true |
+| **Bnd_Sphere Tests** | isOutsideSphere | Sphere disjointness | IsOut(sphere) always true |
+| **Bnd_Sphere Tests** | addMerge | Sphere merge | Add() does nothing |
 | **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
 | **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
