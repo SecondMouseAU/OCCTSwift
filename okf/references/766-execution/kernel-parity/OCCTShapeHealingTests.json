@@ -2,9 +2,283 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Advanced Healing Tests::divideCylinder",
+    "bridge_function": "OCCTShapeDivide",
+    "bridge_output": {
+      "type": "object",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {
+        "Perform": false,
+        "resultFaces": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::directFacesBox",
+    "bridge_function": "OCCTShapeDirectFaces",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        },
+        "volume": 1000.0,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        },
+        "volume": 1000.0,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::scaleGeometry",
+    "bridge_function": "OCCTShapeScaleGeometry",
+    "bridge_output": {
+      "type": "volume",
+      "data": 8000.0
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": 8000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::bsplineRestriction",
+    "bridge_function": "OCCTShapeBSplineRestriction",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        },
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        },
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::convertToBSpline",
+    "bridge_function": "OCCTShapeConvertToBSpline",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 6
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::sweptToElementary",
+    "bridge_function": "OCCTShapeSweptToElementary",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": {
+          "plane": 2,
+          "cylinder": 1
+        },
+        "volume": 785.398163397
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::sewFaces",
+    "bridge_function": "OCCTShapeSewSingle",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "type": "solid",
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "sewedShapeType": "shell",
+        "faces": 6,
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Healing Tests::upgradePipeline",
+    "bridge_function": "OCCTShapeUpgrade",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "type": "solid",
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "type": "solid",
+        "volume": 1000.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Analytical Conversion::bsplineCircle",
+    "bridge_function": "OCCTGeomConvertCurveToAnalytical",
+    "bridge_output": {
+      "type": "curve",
+      "data": {
+        "type": "circle",
+        "radius": 10.0,
+        "point_at_0": [
+          10,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve",
+      "data": {
+        "type": "Geom_Circle",
+        "radius": 10.0,
+        "point_at_0": [
+          10,
+          0,
+          0
+        ],
+        "gap": 3.553e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Analytical Conversion::surfaceConversion",
+    "bridge_function": "OCCTGeomConvertSurfToAnalytical",
+    "bridge_output": {
+      "type": "surface",
+      "data": {
+        "untrimmed_toBSpline": null,
+        "type": "cylinder",
+        "point_uv00": [
+          5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface",
+      "data": {
+        "untrimmed_toBSpline": "throws: infinite surface",
+        "type": "Geom_CylindricalSurface",
+        "radius": 5.0,
+        "point_uv00": [
+          5,
+          0,
+          0
+        ],
+        "gap": 3.58e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

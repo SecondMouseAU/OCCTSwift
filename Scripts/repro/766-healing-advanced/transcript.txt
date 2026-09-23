@@ -1,0 +1,20 @@
+input box: type=2 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+input cylinder: type=2 valid=1 faces=3 volume=785.398163397 surfaces: plane=2 cylinder=1
+divide C1 Perform=0
+divide C1 result: type=2 valid=1 faces=3 volume=785.398163397 surfaces: plane=2 cylinder=1
+DirectFaces(box): type=2 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+ScaleShape(box, 2): type=2 valid=1 faces=6 volume=8000.000000000 surfaces: plane=6
+BSplineRestriction(box,0.01,0.01,9,10000,C1,C1,T,T): type=2 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+ConvertToBSpline(box,T,T,T,F): type=2 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+SweptToElementary(cyl): type=2 valid=1 faces=3 volume=785.398163397 surfaces: plane=2 cylinder=1
+Sewing(box,1e-6) SewedShape: type=3 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+Upgrade(box,1e-6): type=2 valid=1 faces=6 volume=1000.000000000 surfaces: plane=6
+circle BSpline: first=0.000000000 last=6.283185307
+CurveToAnaCurve ok=1 null=0 gap=3.553e-15 newFirst=0.000000000 newLast=6.283185307
+  isCircle=1 radius=10.000000000
+  value(0)=(10.000000000, 0.000000000, 0.000000000)
+infinite cylinder SurfaceToBSplineSurface: THROWS GeomConvert::SurfaceToBSplineSurface() - infinite surface
+trimmed cylinder BSpline: null=0
+SurfToAnaSurf null=0 gap=3.580e-15
+  type=Geom_CylindricalSurface isCylinder=1 radius=5.000000000
+  value(0,0)=(5.000000000, -0.000000000, 0.000000000)

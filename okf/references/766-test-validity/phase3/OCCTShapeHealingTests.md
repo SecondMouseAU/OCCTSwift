@@ -327,3 +327,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: AdvancedHealingTests, AnalyticalConversionTests (10 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-advanced/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `divideCylinder` | AdvancedHealingTests.swift | `OCCTShapeDivide` | DIVIDE: ignore Perform()==false and return the undivided shape | AdvancedHealingTests.swift:30 `cyl.divided(at: .c1) == nil` | pass | PASS: Perform() false, bridge nil |
+| `directFacesBox` | AdvancedHealingTests.swift | `OCCTShapeDirectFaces` | DIRECTFACES: return nullptr | AdvancedHealingTests.swift:36 `box.directFaces()` (#require) | pass | PASS |
+| `scaleGeometry` | AdvancedHealingTests.swift | `OCCTShapeScaleGeometry` | SCALE: pass 1.0 instead of the caller's factor | AdvancedHealingTests.swift:48 `abs((scaled.volume ?? 0) - 8000) < 1e-6` | pass | PASS: within 1e-6 |
+| `bsplineRestriction` | AdvancedHealingTests.swift | `OCCTShapeBSplineRestriction` | BSPRESTR: return nullptr after ShapeCustom::BSplineRestriction | AdvancedHealingTests.swift:56 `box.bsplineRestriction()` (#require) | pass | PASS |
+| `convertToBSpline` | AdvancedHealingTests.swift | `OCCTShapeConvertToBSpline` | CONVBSP: planeMode true instead of false | AdvancedHealingTests.swift:68 `surfaceKinds(bspline) == [.plane: 6]` | pass | PASS |
+| `sweptToElementary` | AdvancedHealingTests.swift | `OCCTShapeSweptToElementary` | SWEPT: call ShapeCustom::ConvertToBSpline(all modes) instead of SweptToElementary | AdvancedHealingTests.swift:76 `surfaceKinds(r) == [.plane: 2, .cylinder: 1]` | pass | PASS |
+| `sewFaces` | AdvancedHealingTests.swift | `OCCTShapeSewSingle` | SEWSOLID: skip the closed-shell MakeSolid step | AdvancedHealingTests.swift:86 `sewn.shapeType == .solid` | pass | PASS: kernel sews to a shell; the bridge's documented MakeSolid step makes the solid |
+| `upgradePipeline` | AdvancedHealingTests.swift | `OCCTShapeUpgrade` | UPGRADE: skip the per-body MakeSolid step | AdvancedHealingTests.swift:95 `upgraded.shapeType == .solid` | pass | PASS |
+| `bsplineCircle` | AnalyticalConversionTests.swift | `OCCTGeomConvertCurveToAnalytical` | CURVEANA: hand back the input BSpline instead of the recognised curve | AnalyticalConversionTests.swift:20 `a.curveType == 1` | pass | PASS |
+| `surfaceConversion` | AnalyticalConversionTests.swift | `OCCTGeomConvertSurfToAnalytical` | SURFANA: hand back the input BSpline surface instead of the recognised one | AnalyticalConversionTests.swift:34 `a.surfaceKind == .cylinder` | pass | PASS |
