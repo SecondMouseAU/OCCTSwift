@@ -2,9 +2,572 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::isClosedWithPrecision",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotClosed",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::isPeriodicSA",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsNotPeriodic",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::circleIsPlanar",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Curve Static Method Tests::lineIsPlanar",
+    "bridge_function": "OCCTCurve3DIsClosedWithPreci / OCCTCurve3DIsPeriodicSA / OCCTCurve3DIsPlanar",
+    "bridge_output": {
+      "type": "curve_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "curve_analysis",
+      "data": {
+        "circle": {
+          "IsClosed": true,
+          "IsPeriodic": true,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        "line": {
+          "IsClosed": false,
+          "IsPeriodic": false,
+          "IsPlanar": true,
+          "normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Surface Tests::projectPointOnPlane",
+    "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
+    "bridge_output": {
+      "type": "surface_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface_analysis",
+      "data": {
+        "uv(5,3,0)": [
+          5,
+          3
+        ],
+        "gap": 0.0,
+        "uv(0,0,10)": [
+          0,
+          0
+        ],
+        "gap10": 10.0,
+        "singularities": 0,
+        "UClosed": false,
+        "VClosed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Surface Tests::projectPointOffPlane",
+    "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
+    "bridge_output": {
+      "type": "surface_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface_analysis",
+      "data": {
+        "uv(5,3,0)": [
+          5,
+          3
+        ],
+        "gap": 0.0,
+        "uv(0,0,10)": [
+          0,
+          0
+        ],
+        "gap10": 10.0,
+        "singularities": 0,
+        "UClosed": false,
+        "VClosed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Surface Tests::planeHasNoSingularities",
+    "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
+    "bridge_output": {
+      "type": "surface_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface_analysis",
+      "data": {
+        "uv(5,3,0)": [
+          5,
+          3
+        ],
+        "gap": 0.0,
+        "uv(0,0,10)": [
+          0,
+          0
+        ],
+        "gap10": 10.0,
+        "singularities": 0,
+        "UClosed": false,
+        "VClosed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Surface Tests::planeIsNotClosed",
+    "bridge_function": "OCCTSurfaceProjectPointUV / OCCTSurfaceHasSingularities / OCCTSurfaceIsUClosedSA",
+    "bridge_output": {
+      "type": "surface_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "surface_analysis",
+      "data": {
+        "uv(5,3,0)": [
+          5,
+          3
+        ],
+        "gap": 0.0,
+        "uv(0,0,10)": [
+          0,
+          0
+        ],
+        "gap10": 10.0,
+        "singularities": 0,
+        "UClosed": false,
+        "VClosed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Analysis Tests::analyzeValidBox",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gapCount": 24,
+          "freeEdges": 0,
+          "invalidTopology": false,
+          "totalProblems": 24
+        },
+        "gappyFace": {
+          "gapCount": 2
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gaps": 24,
+          "valid": true
+        },
+        "gappyFace": {
+          "gaps": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Analysis Tests::analyzeForSmallFeatures",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gapCount": 24,
+          "freeEdges": 0,
+          "invalidTopology": false,
+          "totalProblems": 24
+        },
+        "gappyFace": {
+          "gapCount": 2
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gaps": 24,
+          "valid": true
+        },
+        "gappyFace": {
+          "gaps": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Analysis Tests::analysisResultProperties",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gapCount": 24,
+          "freeEdges": 0,
+          "invalidTopology": false,
+          "totalProblems": 24
+        },
+        "gappyFace": {
+          "gapCount": 2
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gaps": 24,
+          "valid": true
+        },
+        "gappyFace": {
+          "gaps": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Shape Analysis Tests::gapCountCountsEachGap",
+    "bridge_function": "OCCTShapeAnalyze",
+    "bridge_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gapCount": 24,
+          "freeEdges": 0,
+          "invalidTopology": false,
+          "totalProblems": 24
+        },
+        "gappyFace": {
+          "gapCount": 2
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "analysis",
+      "data": {
+        "box": {
+          "smallEdges": 0,
+          "smallFaces": 0,
+          "gaps": 24,
+          "valid": true
+        },
+        "gappyFace": {
+          "gaps": 2
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis TransferParametersProj::transferToFace",
+    "bridge_function": "OCCTShapeAnalysisTransferParam",
+    "bridge_output": {
+      "type": "parameter",
+      "data": {
+        "toFace(1.0)": 1.0,
+        "fromFace(1.0)": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "parameter",
+      "data": {
+        "toFace(1.0)": 1.0,
+        "fromFace(1.0)": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis TransferParametersProj::transferFromFace",
+    "bridge_function": "OCCTShapeAnalysisTransferParam",
+    "bridge_output": {
+      "type": "parameter",
+      "data": {
+        "toFace(1.0)": 1.0,
+        "fromFace(1.0)": 1.0
+      }
+    },
+    "kernel_output": {
+      "type": "parameter",
+      "data": {
+        "toFace(1.0)": 1.0,
+        "fromFace(1.0)": 1.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
