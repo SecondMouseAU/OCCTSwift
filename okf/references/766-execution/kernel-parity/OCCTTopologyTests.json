@@ -94,5 +94,275 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::faceStatus",
+    "bridge_function": "OCCTCheckFaceStatus",
+    "bridge_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::edgeStatus",
+    "bridge_function": "OCCTCheckEdgeStatus",
+    "bridge_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::vertexStatus",
+    "bridge_function": "OCCTCheckVertexStatus",
+    "bridge_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "BRepCheck_Status": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::maxTolerance",
+    "bridge_function": "OCCTShapeMaxTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_max": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_max": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::minTolerance",
+    "bridge_function": "OCCTShapeMinTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_min": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_min": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::avgTolerance",
+    "bridge_function": "OCCTShapeAvgTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "edge_min": 1e-07,
+        "edge_avg": 1e-07,
+        "edge_max": 1e-07
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "edge_min": 1e-07,
+        "edge_avg": 1e-07,
+        "edge_max": 1e-07
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::fixTolerance",
+    "bridge_function": "OCCTShapeFixTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_max": 0.01,
+        "vertex_min": 0.01,
+        "edge_max": 0.01
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "vertex_max": 0.01,
+        "vertex_min": 0.01,
+        "edge_max": 0.01
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck extended v0.112::limitMaxTolerance",
+    "bridge_function": "OCCTShapeLimitMaxTolerance",
+    "bridge_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh_box_limited": false,
+        "after_fix_limited": true,
+        "vertex_max": 0.001,
+        "edge_max": 0.001
+      }
+    },
+    "kernel_output": {
+      "type": "tolerance",
+      "data": {
+        "fresh_box_limited": false,
+        "after_fix_limited": true,
+        "vertex_max": 0.001,
+        "edge_max": 0.001
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck SubShape Tests::Check edge validity",
+    "bridge_function": "OCCTCheckEdge",
+    "bridge_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true,
+        "errors": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck SubShape Tests::Check wire validity",
+    "bridge_function": "OCCTCheckWire",
+    "bridge_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true,
+        "errors": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck SubShape Tests::Check shell validity",
+    "bridge_function": "OCCTCheckShell",
+    "bridge_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true,
+        "errors": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepCheck SubShape Tests::Check vertex validity",
+    "bridge_function": "OCCTCheckVertex",
+    "bridge_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "validity",
+      "data": {
+        "isValid": true,
+        "errors": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

@@ -22,6 +22,18 @@
 | **Transient/Persistent Tests** | Transient/Persistent Tests | Transient/persistent | Remove transient/persistent |
 | **History/Mapping Tests** | History/Mapping Tests | History/mapping | Remove history/mapping |
 | **Naming/Label Tests** | Naming/Label Tests | Naming/label | Remove naming/label |
+| **BRepCheck extended v0.112** | faceStatus | BRepCheck face status | OCCTCheckFaceStatus |
+| **BRepCheck extended v0.112** | edgeStatus | BRepCheck edge status | OCCTCheckEdgeStatus |
+| **BRepCheck extended v0.112** | vertexStatus | BRepCheck vertex status | OCCTCheckVertexStatus |
+| **BRepCheck extended v0.112** | maxTolerance | Max vertex tolerance | OCCTShapeMaxTolerance |
+| **BRepCheck extended v0.112** | minTolerance | Min vertex tolerance | OCCTShapeMinTolerance |
+| **BRepCheck extended v0.112** | avgTolerance | Avg edge tolerance | OCCTShapeAvgTolerance |
+| **BRepCheck extended v0.112** | fixTolerance | ShapeFix set tolerance | OCCTShapeFixTolerance |
+| **BRepCheck extended v0.112** | limitMaxTolerance | ShapeFix limit tolerance | OCCTShapeLimitMaxTolerance |
+| **BRepCheck SubShape Tests** | Check edge validity | BRepCheck_Edge Minimum | OCCTCheckEdge |
+| **BRepCheck SubShape Tests** | Check wire validity | BRepCheck_Wire Minimum | OCCTCheckWire |
+| **BRepCheck SubShape Tests** | Check shell validity | BRepCheck_Shell Minimum | OCCTCheckShell |
+| **BRepCheck SubShape Tests** | Check vertex validity | BRepCheck_Vertex Minimum | OCCTCheckVertex |
 
 ---
 
@@ -41,6 +53,18 @@
 | Transient/Persistent Tests | OCCTTransientPersistent | Transient/persistent | Remove transient/persistent | ✅ | ✅ |  |
 | History/Mapping Tests | OCCTHistoryMapping | History/mapping | Remove history/mapping | ✅ | ✅ |  |
 | Naming/Label Tests | OCCTNamingLabel | Naming/label | Remove naming/label | ✅ | ✅ |  |
+| faceStatus | OCCTCheckFaceStatus | BRepCheck face status | status + 1 | ✅ | ✅ |  |
+| edgeStatus | OCCTCheckEdgeStatus | BRepCheck edge status | status + 1 | ✅ | ✅ |  |
+| vertexStatus | OCCTCheckVertexStatus | BRepCheck vertex status | status + 1 | ✅ | ✅ |  |
+| maxTolerance | OCCTShapeMaxTolerance | Max vertex tolerance | result x 2 | ✅ | ✅ | Rewritten: 0 < tol < 1 passed a doubled tolerance |
+| minTolerance | OCCTShapeMinTolerance | Min vertex tolerance | result x 2 | ✅ | ✅ |  |
+| avgTolerance | OCCTShapeAvgTolerance | Avg edge tolerance | result x 2 | ✅ | ✅ |  |
+| fixTolerance | OCCTShapeFixTolerance | ShapeFix set tolerance | skip SetTolerance, still return true | ✅ | ✅ | Rewritten: asserted only the returned true |
+| limitMaxTolerance | OCCTShapeLimitMaxTolerance | ShapeFix limit tolerance | cap passed as maxTol x 10 | ✅ | ✅ | Rewritten: asserted ok || !ok |
+| Check edge validity | OCCTCheckEdge | BRepCheck_Edge Minimum | checkSubShape reports isValid = false | ✅ | ✅ |  |
+| Check wire validity | OCCTCheckWire | BRepCheck_Wire Minimum | checkSubShape reports isValid = false | ✅ | ✅ |  |
+| Check shell validity | OCCTCheckShell | BRepCheck_Shell Minimum | checkSubShape reports isValid = false | ✅ | ✅ |  |
+| Check vertex validity | OCCTCheckVertex | BRepCheck_Vertex Minimum | checkSubShape reports isValid = false | ✅ | ✅ |  |
 
 ---
 
