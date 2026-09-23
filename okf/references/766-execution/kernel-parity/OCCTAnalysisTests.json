@@ -497,5 +497,74 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepExtrema ExtPF Tests::Point-face distance",
+    "bridge_function": "OCCTBRepExtremaExtPF",
+    "bridge_output": {
+      "type": "per_face_extrema",
+      "data": {
+        "faces_answering": 2,
+        "solution_count_each": 1,
+        "nearest": {
+          "distance": 10,
+          "point": [
+            5,
+            5,
+            5
+          ]
+        },
+        "farthest": {
+          "distance": 20,
+          "point": [
+            5,
+            5,
+            -5
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "per_face_extrema",
+      "data": {
+        "nb_ext_by_face": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1
+        ],
+        "face_4": {
+          "distance": 20,
+          "point": [
+            5,
+            5,
+            -5
+          ],
+          "uv": [
+            10,
+            10
+          ]
+        },
+        "face_5": {
+          "distance": 10,
+          "point": [
+            5,
+            5,
+            5
+          ],
+          "uv": [
+            10,
+            10
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
