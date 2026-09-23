@@ -99,3 +99,42 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `OCAFFormatRegistrationTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `registerFormats` | `OCCTDocumentReadingFormats` returns 0 | :16 Expectation failed: formats.count >= 4 | passed | `OCCTDocumentReadingFormats` | PASS: 6 reading formats |
+| `readWriteFormats` | `OCCTDocumentReadingFormats` returns 0 | :25 Expectation failed: !reading.isEmpty | passed | `OCCTDocumentReadingFormats` | PASS: 6 and 6 |
+
+### `OCAFSaveInPlaceTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `saveInPlace` | `OCCTDocumentSaveOCAFInPlace` answers Failure (3) | :24 Expectation failed: status2 == .ok | passed | `OCCTDocumentSaveOCAFInPlace` | PASS: OK, OK |
+| `saveInPlaceFailsWithoutSave` | `OCCTDocumentSaveOCAFInPlace` answers OK | :33 Expectation failed: status != .ok | passed | `OCCTDocumentSaveOCAFInPlace` | PASS: Failure (3), "Document has not been saved yet" |
+
+### `OCAFSaveLoadBinaryTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `saveLoadBinOcaf` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :24 Expectation failed: readStatus == .ok | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, open 0 |
+| `saveLoadBinXCAF` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :46 Expectation failed: readStatus == .ok; :47 Expectation failed: loaded != nil | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, open 0 |
+
+### `OCAFSaveLoadXmlTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `saveLoadXmlOcaf` | `OCCTDocumentLoadOCAF` answers OpenError (3) | :23 Expectation failed: readStatus == .ok; :24 Expectation failed: loaded != nil | passed | `OCCTDocumentLoadOCAF` | PASS: save 0, open 0 |
+
+### `PCDMStatusEnumTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `storeStatusValues` | a compile-time change of `StoreStatus.driverFailure` to 111 and `ReaderStatus.openError` to 113; reverted and rebuilt for green | :14 Expectation failed: StoreStatus.driverFailure.rawValue == 1 | passed | `OCCTDocumentSaveOCAF` | PASS: 0, 1, 2, 3 |
+| `readerStatusValues` | a compile-time change of `StoreStatus.driverFailure` to 111 and `ReaderStatus.openError` to 113; reverted and rebuilt for green | :23 Expectation failed: ReaderStatus.openError.rawValue == 3 | passed | `OCCTDocumentLoadOCAF` | PASS: 0, 1, 3, 12 |
+| `loadNonexistent` | `OCCTDocumentLoadOCAF` answers OK with no document | :31 Expectation failed: status != .ok | passed | `OCCTDocumentLoadOCAF` | PASS: status 18, nothing loaded |
