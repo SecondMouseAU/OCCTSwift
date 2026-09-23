@@ -1,0 +1,11 @@
+IsReady=1 NbEdges=4
+CheckOrder=1 CheckConnected=0 CheckSmall=0 CheckDegenerated=0 CheckClosed=0 CheckGaps3d=1 CheckGaps2d=1
+CheckSelfIntersection=0 CheckEdgeCurves=1 CheckLacking=0
+edge 1: CheckConnected=0 CheckSmall=0 CheckDegenerated=0 CheckGap3d=1
+MinDistance3d=1.414e+01 MaxDistance3d=1.414e+01 MinDistance2d=1.414e+01 MaxDistance2d=1.414e+01
+CheckOuterBound=0
+mapped wire orientation=1 (FORWARD=0 REVERSED=1)
+same wire oriented FORWARD: CheckOrder=1 CheckGaps3d=1 CheckEdgeCurves=1
+wire as explored inside the face (orientation 1): CheckOrder=1 CheckGaps3d=1 CheckEdgeCurves=1
+#263 bowtie profile as a planar face: valid=0 selfIntersectingWire=1
+#263 square profile as a planar face: valid=1 selfIntersectingWire=0

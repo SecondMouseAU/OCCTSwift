@@ -2,9 +2,1672 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeHasCurve3d",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeIsClosed3d",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeHasPCurve",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeIsSeam",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeSameParameter",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithCurve3d",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithCurve3dSentinelDefaultUsesOwnVertexTolerance",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVerticesWithPCurve",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCurve3dWithPCurve",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeFirstLastVertex",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeVertexTolerance",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCheckOverlapping",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeCheckOverlappingDetectsRealOverlap",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeBoundUV",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgeEndTangent2d",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgePCurveRange",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Edge Tests::edgePCurveRangeChecksPCurveDomainNotEdgeTrim",
+    "bridge_function": "OCCTSAEdge*",
+    "bridge_output": {
+      "type": "edge_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "edge_analysis",
+      "data": {
+        "HasCurve3d": true,
+        "IsClosed3d": false,
+        "HasPCurve": true,
+        "IsSeam": false,
+        "CheckSameParameter": false,
+        "maxdev": 0.0,
+        "CheckVerticesWithCurve3d(-1)": false,
+        "CheckVerticesWithCurve3d(1e-6)": false,
+        "CheckVerticesWithPCurve": false,
+        "CheckCurve3dWithPCurve": false,
+        "FirstVertex": [
+          -5,
+          -5,
+          -5
+        ],
+        "LastVertex": [
+          -5,
+          -5,
+          5
+        ],
+        "CheckVertexTolerance": false,
+        "toler": [
+          1e-07,
+          1e-07
+        ],
+        "CheckOverlapping(e0,e1)": false,
+        "CheckOverlapping(e0,e0)": true,
+        "BoundUV": {
+          "first": [
+            0,
+            0
+          ],
+          "last": [
+            10,
+            0
+          ]
+        },
+        "EndTangent2d": {
+          "pos": [
+            0,
+            0
+          ],
+          "tangent": [
+            1,
+            0
+          ]
+        },
+        "CheckPCurveRange(0,10)": true,
+        "#1577 sentinel": "fixed at 1e-6, not at the sentinel",
+        "#1438 CheckPCurveRange": {
+          "0..pi": true,
+          "0..2pi+0.5": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::basicWireChecks",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireEdgeCount",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireDistance3d",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireDistance2d",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireSelfIntersection",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireEdgeCurves",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wirePerEdgeChecks",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::wireGaps2d",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Wire Tests::outerBound",
+    "bridge_function": "OCCTSAWire*",
+    "bridge_output": {
+      "type": "wire_analysis",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "wire_analysis",
+      "data": {
+        "IsReady": true,
+        "NbEdges": 4,
+        "CheckOrder": true,
+        "CheckConnected": false,
+        "CheckSmall": false,
+        "CheckDegenerated": false,
+        "CheckClosed": false,
+        "CheckGaps3d": true,
+        "CheckGaps2d": true,
+        "CheckSelfIntersection": false,
+        "CheckEdgeCurves": true,
+        "CheckLacking": false,
+        "edge1": {
+          "CheckConnected": false,
+          "CheckSmall": false,
+          "CheckDegenerated": false,
+          "CheckGap3d": true
+        },
+        "MinDistance3d": 14.142135624,
+        "MaxDistance3d": 14.142135624,
+        "MinDistance2d": 14.142135624,
+        "MaxDistance2d": 14.142135624,
+        "CheckOuterBound": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::extrudeRefusesSelfIntersecting",
+    "bridge_function": "OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)",
+    "bridge_output": {
+      "type": "guard",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "bowtieFace": {
+          "valid": false,
+          "selfIntersectingWire": true
+        },
+        "squareFace": {
+          "valid": true,
+          "selfIntersectingWire": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::healRefusesSelfIntersecting",
+    "bridge_function": "OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)",
+    "bridge_output": {
+      "type": "guard",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "bowtieFace": {
+          "valid": false,
+          "selfIntersectingWire": true
+        },
+        "squareFace": {
+          "valid": true,
+          "selfIntersectingWire": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Self-Intersecting Profile Crash Guard (#263)::cleanProfileStillWorks",
+    "bridge_function": "OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)",
+    "bridge_output": {
+      "type": "guard",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "guard",
+      "data": {
+        "bowtieFace": {
+          "valid": false,
+          "selfIntersectingWire": true
+        },
+        "squareFace": {
+          "valid": true,
+          "selfIntersectingWire": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

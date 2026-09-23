@@ -327,3 +327,39 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 320 tests
+
+## #766 measured: SAEdgeAnalysis, SAWireAnalysis, SelfIntersectingProfileGuard263 (29 tests)
+
+Red = the failing expectation under the named injection (env-gated `INJ766` token in the bridge, one build); Green = same build, no token. Parity against `Scripts/repro/766-healing-saedge-sawire-263/transcript.txt`.
+
+| Test | File | Bridge function | Injection | Red | Green | Parity |
+|------|------|-----------------|-----------|-----|-------|--------|
+| `edgeHasCurve3d` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:31:9: Expectation failed: EdgeAnalysis.hasCurve3d(edge)` | pass | PASS |
+| `edgeIsClosed3d` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:36:9: Expectation failed: !EdgeAnalysis.isClosed3d(edge)` | pass | PASS |
+| `edgeHasPCurve` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:42:9: Expectation failed: EdgeAnalysis.hasPCurve(edge, face: face)` | pass | PASS |
+| `edgeIsSeam` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:47:9: Expectation failed: !EdgeAnalysis.isSeam(edge, face: face)` | pass | PASS |
+| `edgeSameParameter` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:54:9: Expectation failed: result.ok == false` | pass | PASS |
+| `edgeVerticesWithCurve3d` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:61:9: Expectation failed: !EdgeAnalysis.checkVerticesWithCurve3d(edge)` | pass | PASS |
+| `edgeVerticesWithCurve3dSentinelDefaultUsesOwnVertexTolerance` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | PRECDEFAULT: the -1 sentinel replaced by a fixed 1e-6 precision | `SAEdgeAnalysisTests.swift:89:13: Expectation failed: !EdgeAnalysis.checkVerticesWithCurve3d(edge)` | pass | PASS |
+| `edgeVerticesWithPCurve` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:95:9: Expectation failed: !EdgeAnalysis.checkVerticesWithPCurve(edge, face: face)` | pass | PASS |
+| `edgeCurve3dWithPCurve` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:100:9: Expectation failed: !EdgeAnalysis.checkCurve3dWithPCurve(edge, face: face)` | pass | PASS |
+| `edgeFirstLastVertex` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAESWAP: FirstVertex answers with LastVertex | `SAEdgeAnalysisTests.swift:105:9: Expectation failed: EdgeAnalysis.firstVertex(edge) == SIMD3(-5, -5, -5)` | pass | PASS |
+| `edgeVertexTolerance` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:113:9: Expectation failed: r.ok == false` | pass | PASS |
+| `edgeCheckOverlapping` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:123:9: Expectation failed: !result.overlapping` | pass | PASS |
+| `edgeCheckOverlappingDetectsRealOverlap` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | OVERLAPZERO: overlap tolerance overwritten with 0 | `SAEdgeAnalysisTests.swift:133:9: Expectation failed: result.overlapping` | pass | PASS |
+| `edgeBoundUV` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:139:26: Expectation failed: EdgeAnalysis.boundUV(edge, face: face)` | pass | PASS |
+| `edgeEndTangent2d` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:146:24: Expectation failed: EdgeAnalysis.endTangent2d(edge, face: face, atEnd: false)` | pass | PASS |
+| `edgePCurveRange` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:153:9: Expectation failed: EdgeAnalysis.checkPCurveRange(edge, face: face, first: 0, last: 10)` | pass | PASS |
+| `edgePCurveRangeChecksPCurveDomainNotEdgeTrim` | SAEdgeAnalysisTests.swift | `OCCTSAEdge*` | SAEINV: every ShapeAnalysis_Edge boolean inverted | `SAEdgeAnalysisTests.swift:178:9: Expectation failed: EdgeAnalysis.checkPCurveRange(edge, face: face, first: 0, last: .pi)` | pass | PASS |
+| `basicWireChecks` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWINV: every ShapeAnalysis_Wire check verdict inverted | `SAWireAnalysisTests.swift:27:9: Expectation failed: SAWireAnalysis.checkOrder(wire: wire, face: face) == true` | pass | PASS |
+| `wireEdgeCount` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWCOUNT: NbEdges reported one too many | `SAWireAnalysisTests.swift:37:9: Expectation failed: SAWireAnalysis.edgeCount(wire: wire, face: face) == 4` | pass | PASS |
+| `wireDistance3d` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWDIST: every min/max distance offset by +1.0 | `SAWireAnalysisTests.swift:42:9: Expectation failed: abs(SAWireAnalysis.minDistance3d(wire: wire, face: face) - 14.142135624) < 1e-6` | pass | PASS |
+| `wireDistance2d` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWDIST: every min/max distance offset by +1.0 | `SAWireAnalysisTests.swift:48:9: Expectation failed: abs(SAWireAnalysis.minDistance2d(wire: wire, face: face) - 14.142135624) < 1e-6` | pass | PASS |
+| `wireSelfIntersection` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWINV: every ShapeAnalysis_Wire check verdict inverted | `SAWireAnalysisTests.swift:54:9: Expectation failed: !SAWireAnalysis.checkSelfIntersection(wire: wire, face: face)` | pass | PASS |
+| `wireEdgeCurves` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWINV: every ShapeAnalysis_Wire check verdict inverted | `SAWireAnalysisTests.swift:59:9: Expectation failed: SAWireAnalysis.checkEdgeCurves(wire: wire, face: face) == true` | pass | PASS |
+| `wirePerEdgeChecks` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWINV: every ShapeAnalysis_Wire check verdict inverted | `SAWireAnalysisTests.swift:65:9: Expectation failed: SAWireAnalysis.checkConnectedEdge(wire: wire, face: face, edgeIndex: 1) == false` | pass | PASS |
+| `wireGaps2d` | SAWireAnalysisTests.swift | `OCCTSAWire*` | SAWINV: every ShapeAnalysis_Wire check verdict inverted | `SAWireAnalysisTests.swift:73:9: Expectation failed: SAWireAnalysis.checkGaps2d(wire: wire, face: face) == true` | pass | PASS |
+| `outerBound` | SAWireAnalysisTests.swift | `OCCTSAWire*` | OBVERDICTINV: CheckOuterBound verdict inverted | `SAWireAnalysisTests.swift:81:9: Expectation failed: SAWireAnalysis.checkOuterBound(wire: wire, face: face) == false` | pass | PASS |
+| `extrudeRefusesSelfIntersecting` | SelfIntersectingProfileGuard263.swift | `OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)` | SIFACE: an invalid face no longer counts as self-intersecting | `SelfIntersectingProfileGuard263.swift:35:9: Expectation failed: solid == nil` | pass | PASS |
+| `healRefusesSelfIntersecting` | SelfIntersectingProfileGuard263.swift | `OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)` | SIFACE: an invalid face no longer counts as self-intersecting | `SelfIntersectingProfileGuard263.swift:45:9: Expectation failed: healed == nil` | pass | PASS |
+| `cleanProfileStillWorks` | SelfIntersectingProfileGuard263.swift | `OCCTShapeExtrude / OCCTShapeHeal (wire self-intersection guard)` | SIALWAYS: every profile reported self-intersecting | `SelfIntersectingProfileGuard263.swift:60:21: Expectation failed: Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: 1)` | pass | PASS |
