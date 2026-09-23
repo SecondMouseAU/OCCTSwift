@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Extrema_ExtSS Tests** | parallelPlanes | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS |
+| **Extrema_ExtSS Tests** | sphereDistance | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS; SquareDistance + 1 in OCCTExtremaExtSSPoint |
 | **IntAna LineSphere Tests** | lineThroughSphere | Line-sphere intersection | ParamOnConic + 1 in OCCTIntAnaLineSphere |
 | **IntAna LineSphere Tests** | lineMissesSphere | Line-sphere intersection | count 1 reported for 0 points in OCCTIntAnaLineSphere |
 | **GProp Torus Tests** | torusSurfaceArea | Torus surface area | Short integration range |

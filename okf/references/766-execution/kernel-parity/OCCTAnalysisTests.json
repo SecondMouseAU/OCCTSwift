@@ -2899,5 +2899,63 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtSS Tests::parallelPlanes",
+    "bridge_function": "OCCTExtremaExtSS",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "square_distance": 49.0
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": true,
+        "square_distance": 49.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtSS Tests::sphereDistance",
+    "bridge_function": "OCCTExtremaExtSSPoint",
+    "bridge_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 2,
+        "distances": [
+          5.0,
+          15.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "surface_extrema",
+      "data": {
+        "is_done": true,
+        "is_parallel": false,
+        "count": 2,
+        "distances": [
+          5.0,
+          15.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
