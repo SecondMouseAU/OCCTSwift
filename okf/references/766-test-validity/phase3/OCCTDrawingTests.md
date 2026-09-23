@@ -85,3 +85,23 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| Point Projection Tests | Project point onto box face | `OCCTFaceProjectPoint` | distance and z + 0.005: **green** at the old 0.01 tolerance; tightened to 1e-9 | `:36`, `:37` | ✔ | PASS |
+| Point Projection Tests | Project point onto sphere face with UV | `OCCTFaceProjectPoint` | distance and z + 0.005: **green** at the old 0.1 tolerance; tightened | `:54`, `:58` | ✔ | PASS |
+| Point Projection Tests | All projections returns results | `OCCTFaceProjectPointAll` | distance + 0.05: **green** at the old 0.1 tolerance; tightened, count pinned to 1 | `:83` | ✔ | PASS |
+| Point Projection Tests | Project point onto straight edge | `OCCTEdgeProjectPoint` | distance + 0.4: **green** under the old `0 < d < 3`; pinned to sqrt 2 | `:113` | ✔ | PASS |
+| Point Projection Tests | Project point onto circular edge | `OCCTEdgeProjectPoint` | distance + 0.4: **green** at the old 0.5 tolerance; tightened | `:154` | ✔ | PASS |
+| Polygon-Based HLR | Fast top view of box produces edges | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` | ✔ | PASS |
+| Polygon-Based HLR | Fast isometric view of box | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:23` | ✔ | PASS |
+| Polygon-Based HLR | Fast projection of cylinder | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (y + 0.1; an x tilt is parallel to this view and changes nothing) | `:23` | ✔ | PASS |
+| Polygon-Based HLR | Fast projection has hidden edges | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` | ✔ | PASS |
+| Polygon-Based HLR | Fast vs exact projection both succeed | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` (fast) | ✔ | PASS |
+| Polygon-Based HLR | Custom deflection affects result | `OCCTDrawingCreatePoly` | view tilted: **green** as written (non-nil only); rewritten (x + 0.1) | `:22`, `:23` | ✔ | PASS |
