@@ -94,5 +94,475 @@
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "FontManager Tests::initDatabase",
+    "bridge_function": "OCCTFontMgrInitDatabase",
+    "bridge_output": {
+      "type": "fonts",
+      "data": {
+        "fontCount": 0,
+        "allFontNames": []
+      }
+    },
+    "kernel_output": {
+      "type": "fonts",
+      "data": {
+        "GetAvailableFonts.Size": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "FontManager Tests::fontCount",
+    "bridge_function": "OCCTFontMgrFontCount",
+    "bridge_output": {
+      "type": "fonts",
+      "data": {
+        "fontCount": 0,
+        "fontName(0)": null
+      }
+    },
+    "kernel_output": {
+      "type": "fonts",
+      "data": {
+        "GetAvailableFonts.Size": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "FontManager Tests::aspectToString",
+    "bridge_function": "OCCTFontMgrAspectToString",
+    "bridge_output": {
+      "type": "names",
+      "data": [
+        "regular",
+        "bold",
+        "italic",
+        "bold-italic"
+      ]
+    },
+    "kernel_output": {
+      "type": "names",
+      "data": [
+        "regular",
+        "bold",
+        "italic",
+        "bold-italic"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "FontManager Tests::allFontNames",
+    "bridge_function": "OCCTFontMgrFontName",
+    "bridge_output": {
+      "type": "count",
+      "data": 0
+    },
+    "kernel_output": {
+      "type": "GetAvailableFonts.Size",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "FontManager Tests::fontNameOutOfRange",
+    "bridge_function": "OCCTFontMgrFontName",
+    "bridge_output": {
+      "type": "nil",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "GetAvailableFonts.Size",
+      "data": 0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::createEmpty",
+    "bridge_function": "OCCTImageIsEmpty",
+    "bridge_output": {
+      "type": "isEmpty",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "IsEmpty",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::initTrash",
+    "bridge_function": "OCCTImageInitTrash",
+    "bridge_output": {
+      "type": "image",
+      "data": {
+        "ok": true,
+        "w": 64,
+        "h": 64,
+        "format": 7
+      }
+    },
+    "kernel_output": {
+      "type": "image",
+      "data": {
+        "ok": true,
+        "w": 64,
+        "h": 64,
+        "format": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::initTrashRGB",
+    "bridge_function": "OCCTImageInitTrash",
+    "bridge_output": {
+      "type": "image",
+      "data": {
+        "ok": true,
+        "w": 100,
+        "h": 50,
+        "format": 3
+      }
+    },
+    "kernel_output": {
+      "type": "image",
+      "data": {
+        "ok": true,
+        "w": 100,
+        "h": 50,
+        "format": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::setAndGetPixel",
+    "bridge_function": "OCCTImageSetPixel",
+    "bridge_output": {
+      "type": "rgba",
+      "data": "(0.8, 0.2, 0.5, 1) within 0.02"
+    },
+    "kernel_output": {
+      "type": "rgba",
+      "data": [
+        0.800000012,
+        0.200000003,
+        0.498039216,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::savePPM",
+    "bridge_function": "OCCTImageSave",
+    "bridge_output": {
+      "type": "saved",
+      "data": true
+    },
+    "kernel_output": {
+      "type": "Save",
+      "data": true
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::clear",
+    "bridge_function": "OCCTImageClear",
+    "bridge_output": {
+      "type": "isEmpty",
+      "data": [
+        false,
+        true
+      ]
+    },
+    "kernel_output": {
+      "type": "IsEmpty",
+      "data": [
+        false,
+        true
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::initCopy",
+    "bridge_function": "OCCTImageInitCopy",
+    "bridge_output": {
+      "type": "copy",
+      "data": {
+        "ok": true,
+        "w": 8,
+        "h": 8
+      }
+    },
+    "kernel_output": {
+      "type": "copy",
+      "data": {
+        "ok": true,
+        "w": 8,
+        "h": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::formatBytesPerPixel",
+    "bridge_function": "OCCTImageSizePixelBytes",
+    "bridge_output": {
+      "type": "bytes",
+      "data": [
+        4,
+        3,
+        1
+      ]
+    },
+    "kernel_output": {
+      "type": "bytes",
+      "data": [
+        4,
+        3,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::isTopDownDefault",
+    "bridge_function": "OCCTImageIsTopDownDefault",
+    "bridge_output": {
+      "type": "bool",
+      "data": false
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": false
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "PixMap Tests::grayFormat",
+    "bridge_function": "OCCTImageInitTrash",
+    "bridge_output": {
+      "type": "image",
+      "data": {
+        "format": 1,
+        "isEmpty": false
+      }
+    },
+    "kernel_output": {
+      "type": "image",
+      "data": {
+        "format": 1,
+        "isEmpty": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::mmToM",
+    "bridge_function": "OCCTUnitsAnyToAny",
+    "bridge_output": {
+      "type": "double",
+      "data": 1.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::mToMM",
+    "bridge_function": "OCCTUnitsAnyToAny",
+    "bridge_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::inchToMM",
+    "bridge_function": "OCCTUnitsAnyToAny",
+    "bridge_output": {
+      "type": "double",
+      "data": "25.4 within 0.01"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 25.4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::degToRad",
+    "bridge_function": "OCCTUnitsAnyToAny",
+    "bridge_output": {
+      "type": "double",
+      "data": "pi within 1e-6"
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 3.141592653589793
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::toSI",
+    "bridge_function": "OCCTUnitsAnyToSI",
+    "bridge_output": {
+      "type": "double",
+      "data": 1.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::fromSI",
+    "bridge_function": "OCCTUnitsAnyFromSI",
+    "bridge_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::kgToG",
+    "bridge_function": "OCCTUnitsAnyToAny",
+    "bridge_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1000.0
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "UnitsAPI Tests::localSystem",
+    "bridge_function": "OCCTUnitsSetLocalSystem",
+    "bridge_output": {
+      "type": "system",
+      "data": [
+        ".mdtv",
+        ".si"
+      ]
+    },
+    "kernel_output": {
+      "type": "LocalSystem",
+      "data": [
+        2,
+        1
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
