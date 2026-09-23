@@ -288,3 +288,22 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressBuilderLifecycleTests: FilletBuilder, ChamferBuilder
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-builder-lifecycle/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: FilletBuilder Lifecycle | `buildEmpty` | `OCCTFilletBuilderBuild` | OCCTFilletBuilderBuild: catch returns a wrapper of a null shape instead of nil | RED exit 1: StressBuilderLifecycleTests.swift:26 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: FilletBuilder Lifecycle | `normalCycle` | `OCCTFilletBuilderAddEdge, OCCTFilletBuilderBuild, OCCTFilletBuilderNbContours` | EARLY:OCCTFilletBuilderBuild | RED exit 1: StressBuilderLifecycleTests.swift:36 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: FilletBuilder Lifecycle | `destroyWithoutBuild` | `OCCTFilletBuilderRelease` | CRASH:OCCTFilletBuilderRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: FilletBuilder Lifecycle | `invalidInput` | `OCCTFilletBuilderBuild` | OCCTFilletBuilderBuild: catch returns a wrapper of a null shape instead of nil | RED exit 1: StressBuilderLifecycleTests.swift:66 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: FilletBuilder Lifecycle | `doubleBuild` | `OCCTFilletBuilderBuild` | EARLY:OCCTFilletBuilderBuild | RED exit 1: StressBuilderLifecycleTests.swift:78 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: FilletBuilder Lifecycle | `queryContourDetails` | `OCCTFilletBuilderGetRadius, OCCTFilletBuilderGetLength, OCCTFilletBuilderIsConstant` | EARLY:OCCTFilletBuilderGetRadius | RED exit 1: StressBuilderLifecycleTests.swift:96 Expectation failed: builder.radius(contour: 1) == 1 | ✔ | MATCH | yes |
+| Stress: ChamferBuilder Lifecycle | `buildEmpty` | `OCCTChamferBuilderBuild` | OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil | RED exit 1: StressBuilderLifecycleTests.swift:115 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: ChamferBuilder Lifecycle | `normalCycleSymmetric` | `OCCTChamferBuilderAddEdge, OCCTChamferBuilderBuild` | EARLY:OCCTChamferBuilderBuild | RED exit 1: StressBuilderLifecycleTests.swift:125 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: ChamferBuilder Lifecycle | `destroyWithoutBuild` | `OCCTChamferBuilderRelease` | CRASH:OCCTChamferBuilderRelease | CRASH exit 134: Abort trap: 6 | ✔ | N/A | no |
+| Stress: ChamferBuilder Lifecycle | `invalidInput` | `OCCTChamferBuilderBuild` | OCCTChamferBuilderBuild: catch returns a wrapper of a null shape instead of nil | RED exit 1: StressBuilderLifecycleTests.swift:148 Expectation failed: result == nil | ✔ | MATCH | yes |
+| Stress: ChamferBuilder Lifecycle | `doubleBuild` | `OCCTChamferBuilderBuild` | EARLY:OCCTChamferBuilderBuild | RED exit 1: StressBuilderLifecycleTests.swift:159 Expectation failed: builder.build() | ✔ | MATCH | yes |
+| Stress: ChamferBuilder Lifecycle | `queryContourDetails` | `OCCTChamferBuilderIsSymmetric, OCCTChamferBuilderIsDistAngle, OCCTChamferBuilderIsTwoDists` | EARLY:OCCTChamferBuilderIsSymmetric | RED exit 1: StressBuilderLifecycleTests.swift:176 Expectation failed: builder.isSymmetric(contour: 1) | ✔ | MATCH | yes |

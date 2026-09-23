@@ -1,6 +1,12 @@
 // StressBuilderLifecycleTests.swift
 // Category 6: Builder lifecycle patterns for all 11 builders + 3 fixers.
 // Tests: build empty, normal cycle, reset, destroy without build, invalid input, double build.
+//
+// Epic #766: most results here sat behind `if let` or were read into `_`, so a nil result or a
+// wrong value passed. They now assert what the wrapped OCCT builder gives for the same input,
+// measured by Scripts/repro/766-stress-builder-lifecycle/probe.mm (transcript.txt beside it). The
+// destroy-without-X tests can only fail by crashing when the builder is released, which is their
+// point; they are left as written.
 
 import Foundation
 import OCCTSwift
@@ -11,26 +17,30 @@ import Testing
 @Suite("Stress: FilletBuilder Lifecycle")
 struct StressFilletBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
+    // With no edges added BRepFilletAPI_MakeFillet::Build throws "There are no suitable edges
+    // for chamfer or fillet", which the bridge reports as nil.
+    @Test func buildEmpty() throws {
         let box = standardBox()
-        if let builder = FilletBuilder(shape: box) {
-            let result = builder.build()
-            // Building without adding edges: may return original or nil
-            if let r = result { #expect(r.isValid) }
-        }
+        let builder = try #require(FilletBuilder(shape: box))
+        let result = builder.build()
+        #expect(result == nil)
+        if let r = result { #expect(r.isValid) }
     }
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
-        if let result = builder.build() {
-            #expect(result.isValid)
-            // hasResult may be false even after successful build in some OCCT versions
-            _ = builder.hasResult
-            #expect(builder.contourCount >= 1)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        // hasResult may be false even after successful build in some OCCT versions
+        _ = builder.hasResult
+        #expect(builder.contourCount >= 1)
+        // One r = 1 round on one 10-long edge removes 10·(1 - π/4).
+        #expect(abs((result.volume ?? 0) - 997.8539816) < 1e-6)
+        #expect(builder.contourCount == 1)
     }
 
     @Test func destroyWithoutBuild() {
@@ -43,43 +53,52 @@ struct StressFilletBuilderLifecycleTests {
         // If we reach here, no crash on dealloc
     }
 
-    @Test func invalidInput() {
+    @Test func invalidInput() throws {
         let box = standardBox()
-        guard let builder = FilletBuilder(shape: box) else { return }
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
         guard !edges.isEmpty else { return }
         // Oversized radius should fail gracefully
         builder.addEdge(edges[0], radius: 100.0)
         let result = builder.build()
-        // Either nil or invalid, should not crash
-        if let r = result { _ = r.isValid }
+        // BRepFilletAPI_MakeFillet is not done for r = 100 on a 10-wide box (the old check read
+        // the result into `_`).
+        #expect(result == nil)
     }
 
-    @Test func doubleBuild() {
+    // A second Build() on the same BRepFilletAPI_MakeFillet is done but hands back the box
+    // unrounded (volume 1000, not 997.854); the probe shows the kernel doing the same, so this
+    // pins OCCT's behaviour rather than a bridge defect.
+    @Test func doubleBuild() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
-        let r1 = builder.build()
-        let r2 = builder.build()
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        let r1 = try #require(builder.build())
+        let r2 = try #require(builder.build())
+        #expect(r1.isValid)
+        #expect(r2.isValid)
+        #expect(abs((r1.volume ?? 0) - 997.8539816) < 1e-6)
+        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func queryContourDetails() {
+    @Test func queryContourDetails() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = FilletBuilder(shape: box), edges.count >= 2 else { return }
+        try #require(edges.count >= 2)
+        let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
         builder.addEdge(edges[1], radius: 2.0)
-        if builder.build() != nil {
-            let n = builder.contourCount
-            for c in 1...max(1, n) {
-                _ = builder.radius(contour: c)
-                _ = builder.length(contour: c)
-                _ = builder.isConstant(contour: c)
-            }
-        }
+        try #require(builder.build() != nil)
+        // Two constant-radius contours, one per 10-long edge (all were read into `_` before).
+        #expect(builder.contourCount == 2)
+        #expect(builder.radius(contour: 1) == 1)
+        #expect(builder.radius(contour: 2) == 2)
+        #expect(abs(builder.length(contour: 1) - 10) < 1e-9)
+        #expect(abs(builder.length(contour: 2) - 10) < 1e-9)
+        #expect(builder.isConstant(contour: 1))
+        #expect(builder.isConstant(contour: 2))
     }
 }
 
@@ -88,23 +107,26 @@ struct StressFilletBuilderLifecycleTests {
 @Suite("Stress: ChamferBuilder Lifecycle")
 struct StressChamferBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
+    // As for FilletBuilder: with no edges Build throws, and the bridge reports nil.
+    @Test func buildEmpty() throws {
         let box = standardBox()
-        if let builder = ChamferBuilder(shape: box) {
-            let result = builder.build()
-            if let r = result { #expect(r.isValid) }
-        }
+        let builder = try #require(ChamferBuilder(shape: box))
+        let result = builder.build()
+        #expect(result == nil)
+        if let r = result { #expect(r.isValid) }
     }
 
-    @Test func normalCycleSymmetric() {
+    @Test func normalCycleSymmetric() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 1.0)
-        if let result = builder.build() {
-            #expect(result.isValid)
-            #expect(builder.contourCount >= 1)
-        }
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(builder.contourCount >= 1)
+        // A 1 × 1 chamfer along one 10-long edge removes 5.
+        #expect(abs((result.volume ?? 0) - 995) < 1e-6)
     }
 
     @Test func destroyWithoutBuild() {
@@ -115,40 +137,45 @@ struct StressChamferBuilderLifecycleTests {
         }
     }
 
-    @Test func invalidInput() {
+    @Test func invalidInput() throws {
         let box = standardBox()
-        guard let builder = ChamferBuilder(shape: box) else { return }
+        let builder = try #require(ChamferBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
         builder.addEdge(edges[0], distance: 100.0)
         let result = builder.build()
-        if let r = result { _ = r.isValid }
+        // Not done for d = 100 (the result was read into `_` before).
+        #expect(result == nil)
     }
 
-    @Test func doubleBuild() {
+    // Same kernel behaviour as FilletBuilder.doubleBuild: the second Build() returns the box
+    // unchanged (1000, not 995), in OCCT as well as through the bridge.
+    @Test func doubleBuild() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 1.0)
-        let r1 = builder.build()
-        let r2 = builder.build()
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        let r1 = try #require(builder.build())
+        let r2 = try #require(builder.build())
+        #expect(r1.isValid)
+        #expect(r2.isValid)
+        #expect(abs((r1.volume ?? 0) - 995) < 1e-6)
+        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func queryContourDetails() {
+    // One symmetric contour (all three flags were read into `_` before).
+    @Test func queryContourDetails() throws {
         let box = standardBox()
         let edges = box.edges()
-        guard let builder = ChamferBuilder(shape: box), !edges.isEmpty else { return }
+        try #require(!edges.isEmpty)
+        let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 2.0)
-        if builder.build() != nil {
-            let n = builder.contourCount
-            for c in 1...max(1, n) {
-                _ = builder.isDistanceAngle(contour: c)
-                _ = builder.isSymmetric(contour: c)
-                _ = builder.isTwoDistances(contour: c)
-            }
-        }
+        try #require(builder.build() != nil)
+        #expect(builder.contourCount == 1)
+        #expect(builder.isSymmetric(contour: 1))
+        #expect(!builder.isDistanceAngle(contour: 1))
+        #expect(!builder.isTwoDistances(contour: 1))
     }
 }
 
