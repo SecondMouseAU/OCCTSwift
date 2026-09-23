@@ -95,6 +95,11 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Bnd OBB Tests** | createAndQuery | OBB accessors | OCCTOBBGetHalfSizes writes YHSize into hx |
+| **Bnd OBB Tests** | pointInOut | Point containment | OCCTOBBIsOutPoint negated |
+| **Bnd OBB Tests** | obbOverlap | OBB-OBB separation | OCCTOBBIsOutOBB always false (disjoint case added, #766) |
+| **Bnd OBB Tests** | fromShape | OBB from Bnd_Box | OCCTOBBCreateFromShape enlarges the box by 1 (values pinned, #766) |
+| **Bnd OBB Tests** | enlarge | OBB enlarge | OCCTOBBEnlarge no-op |
 | **Canonical Recognition** | Canonical recognition callable on box | Canonical recognition of a solid | Recognise a solid's first face |
 | **Canonical Recognition** | Canonical recognition callable on cylinder | Canonical recognition of a solid | Recognise a solid's first face |
 | **Extrema_ExtSS Tests** | parallelPlanes | Surface-surface extrema | IsParallel() negated in OCCTExtremaExtSS |
