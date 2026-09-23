@@ -124,3 +124,18 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Wire2DChamferTests.swift`, `Wire2DFilletTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-projlib-wire-tbezier/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Wire 2D Chamfer Tests::Chamfer single vertex of rectangle | `OCCTWireChamfer2D` | distance1 + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::Chamfer all vertices of rectangle | `OCCTWireChamferAll2D` | only every other corner chamfered | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::Asymmetric chamfer | `OCCTWireChamfer2D` | distance1 + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Chamfer Tests::chamferedAll2D pairs edges by true wire connection order, not TopExp::MapShapes insertion order | `OCCTWireChamferAll2D` | only every other corner chamfered | ✅ | ✅ | MATCH |  |
+| Wire 2D Fillet Tests::Fillet single vertex of rectangle | `OCCTWireFillet2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::Fillet all vertices of rectangle | `OCCTWireFilletAll2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::Fillet polygon wire | `OCCTWireFillet2D` | radius + 0.5 | ✅ | ✅ | MATCH | `!= nil` only |
+| Wire 2D Fillet Tests::filletedAll2D falls back to the original wire on a mid-loop failure, not just a last-vertex one | `OCCTWireFilletAll2D` | a failed AddFillet is ignored | ✅ | ✅ | MATCH |  |
