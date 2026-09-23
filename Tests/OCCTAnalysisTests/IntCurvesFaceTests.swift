@@ -35,7 +35,7 @@ struct IntCurvesFaceTests {
         if let h = hits.first {
             #expect(abs(h.point.x) < 1e-9)
             #expect(abs(h.point.y) < 1e-9)
-            #expect(abs(h.point.z - -15) < 1e-9, "cap is at z = -15, got \(h.point.z)")
+            #expect(abs(h.point.z - (-15)) < 1e-9, "cap is at z = -15, got \(h.point.z)")
             // The ray starts 35 units below the cap, so that is the curve parameter.
             #expect(abs(h.parameter - 35) < 1e-9, "expected parameter 35, got \(h.parameter)")
         }

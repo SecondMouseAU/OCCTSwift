@@ -38,9 +38,13 @@ struct ShapeRayIntersectionTests {
         // inside `if let inter`, `if inter.hasMore` and `if let face`, which made the
         // test pass on a bridge reporting no hits at all: returning false from
         // `OCCTCurveSurfaceInterMore` left it green while both sibling tests went red.
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
         guard
             let inter = ShapeRayIntersection(
-                shape: Shape.box(width: 10, height: 10, depth: 10)!,
+                shape: box,
                 originX: 0, originY: 0, originZ: -10,
                 dirX: 0, dirY: 0, dirZ: 1)
         else {
@@ -54,7 +58,7 @@ struct ShapeRayIntersectionTests {
         let hit = inter.currentHit
         #expect(hit.x == 0)
         #expect(hit.y == 0)
-        #expect(abs(hit.z - -5) < 1e-9, "entry face is the z = -5 cap, got z=\(hit.z)")
+        #expect(abs(hit.z - (-5)) < 1e-9, "entry face is the z = -5 cap, got z=\(hit.z)")
 
         guard let face = inter.currentFace else {
             Issue.record("a hit has a face")
