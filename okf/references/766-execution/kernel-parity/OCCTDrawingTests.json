@@ -222,5 +222,145 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "#1173: arrowhead/triangle-pointer shared geometry::arrowheadBasePoints matches a hand-derived diagonal-direction ground truth",
+    "bridge_function": "arrowheadBasePoints",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1173: arrowhead/triangle-pointer shared geometry::emitCuttingPlaneLine's arrowheads match the shared-geometry hand-derived coordinates",
+    "bridge_function": "emitCuttingPlaneLine",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1173: arrowhead/triangle-pointer shared geometry::datumFeature's triangle matches the shared-geometry hand-derived coordinates",
+    "bridge_function": "DrawingAnnotation.datumFeature",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::leftPerpendicular2D rotates 90 degrees counter-clockwise for the four axis directions",
+    "bridge_function": "leftPerpendicular2D",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::leftPerpendicular2D of a named-vector direction matches the independent trig-form identity",
+    "bridge_function": "leftPerpendicular2D",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::breakLine's zigzag kinks toward +perp first, then -perp, for a left-to-right segment",
+    "bridge_function": "DrawingAnnotation.breakLine",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::cosmeticThreadSideView's top line sits on the +perp side of the axis",
+    "bridge_function": "DrawingAnnotation.cosmeticThreadSideView",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::emitLinear stacks the upper tolerance value toward +perp, lower toward -perp",
+    "bridge_function": "emitLinear",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::emitRadial stacks the upper tolerance value toward +perp, lower toward -perp",
+    "bridge_function": "emitRadial",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "#1182: 2D left-perpendicular shared helper::emitDiameter stacks the upper tolerance value toward +perp, lower toward -perp",
+    "bridge_function": "emitDiameter",
+    "bridge_output": {
+      "asserted": "hand-derived coordinates"
+    },
+    "kernel_output": null,
+    "comparison": {
+      "equal": null,
+      "differences": [],
+      "reason": "pure Swift: 2D annotation geometry, no OCCT call"
+    },
+    "status": "N/A"
   }
 ]

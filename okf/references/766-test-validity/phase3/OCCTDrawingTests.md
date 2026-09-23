@@ -85,3 +85,22 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 194 tests
+
+---
+
+## Measured records (#766 execution, #1984)
+
+Rows below were run: the injection turned the test red at the line named, the test was green with Sources/ restored, and parity is against the probe transcript under `Scripts/repro/766-drawing-*/`.
+
+| Suite | Test | Bridge / Swift subject | Injection | Red (failing line) | Green | Parity |
+|-------|------|------------------------|-----------|--------------------|-------|--------|
+| #1173: arrowhead/triangle-pointer shared geometry | arrowheadBasePoints matches a hand-derived diagonal-direction ground truth | `arrowheadBasePoints` | `leftPerpendicular2D` rotates clockwise | `:46` to `:49` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1173: arrowhead/triangle-pointer shared geometry | emitCuttingPlaneLine's arrowheads match the shared-geometry hand-derived coordinates | `emitCuttingPlaneLine` | arrowhead backset `0.4` to `0.5` (the clockwise perpendicular leaves it green: the two base points swap, and the test's line set is symmetric in them) | `:88` (four lines) | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1173: arrowhead/triangle-pointer shared geometry | datumFeature's triangle matches the shared-geometry hand-derived coordinates | `DrawingAnnotation.datumFeature` | `leftPerpendicular2D` rotates clockwise | `:127` to `:129` (one) | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | leftPerpendicular2D rotates 90 degrees counter-clockwise for the four axis directions | `leftPerpendicular2D` | `leftPerpendicular2D` rotates clockwise | `:35` to `:38` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | leftPerpendicular2D of a named-vector direction matches the independent trig-form identity | `leftPerpendicular2D` | `leftPerpendicular2D` rotates clockwise | `:53`, `:54` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | breakLine's zigzag kinks toward +perp first, then -perp, for a left-to-right segment | `DrawingAnnotation.breakLine` | `leftPerpendicular2D` rotates clockwise | `:73`, `:75` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | cosmeticThreadSideView's top line sits on the +perp side of the axis | `DrawingAnnotation.cosmeticThreadSideView` | `leftPerpendicular2D` rotates clockwise | `:97`, `:98` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | emitLinear stacks the upper tolerance value toward +perp, lower toward -perp | `emitLinear` | `leftPerpendicular2D` rotates clockwise | `:120`, `:122`, `:124` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | emitRadial stacks the upper tolerance value toward +perp, lower toward -perp | `emitRadial` | `leftPerpendicular2D` rotates clockwise | `:142`, `:144` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
+| #1182: 2D left-perpendicular shared helper | emitDiameter stacks the upper tolerance value toward +perp, lower toward -perp | `emitDiameter` | `leftPerpendicular2D` rotates clockwise | `:162`, `:164` | ✔ | N/A (pure Swift: 2D annotation geometry, no OCCT call) |
