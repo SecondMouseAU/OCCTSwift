@@ -197,3 +197,18 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.147 Edge.curve3D accessor | Linear edge returns a Curve3D | `OCCTEdgeGetCurve3D` | raw curve trimmed to the edge range | `EdgeCurve3DTests.swift:24 c.domain == -2e100...2e100` | ✅ | MATCH | Rewritten: lowerBound <= upperBound held for any range |
+| v0.147 Edge.curve3D accessor | Cylindrical face's circular edge yields circleProperties | `OCCTEdgeGetCurve3D` | raw curve scaled 1.01 about the origin (and, separately, trimmed) | `EdgeCurve3DTests.swift:40 abs(props.radius - 5.0) < 1e-6` | ✅ | MATCH |  |
+| v0.147 Edge.curve3D accessor | Straight edge's curve3D domain is the underlying Geom_Line's unbounded range, not the edge's own finite span | `OCCTEdgeGetCurve3D` | raw curve trimmed to the edge range | `EdgeCurve3DTests.swift:65 curve.domain.upperBound > 1e100` | ✅ | MATCH | Comment corrected: the range is +-2e100, not +-1.8e308 as it said |
+| v0.147 Edge.curve3D accessor | Circular edge's curve3D domain is the underlying circle's full period, not the arc's own sweep | `OCCTEdgeGetCurve3D` | raw curve trimmed to the edge range | `EdgeCurve3DTests.swift:96 curve.domain.upperBound - curve.domain.lowerBound > 6.0` | ✅ | MATCH |  |
+| Ellipse Arc Tests | Arc of ellipse from angles | `OCCTCurve3DArcOfEllipse` | end angle x 0.9 | `EllipseArcTests.swift:30 simd_distance(arc.endPoint, SIMD3(0, 5, 0)) < 1e-12` | ✅ | MATCH | Rewritten: 0.1 of slack inside `if let` |
+| Ellipse Arc Tests | Arc of ellipse between two points | `OCCTCurve3DArcOfEllipsePoints` | sense inverted | `EllipseArcTests.swift:47 simd_distance(arc.startPoint, SIMD3(10, 0, 0)) < 1e-12` | ✅ | MATCH | Rewritten: end x only, to 0.1; the midpoint now fixes the direction |
+| Ellipse Arc Tests | Full semi-ellipse arc | `OCCTCurve3DArcOfEllipse` | end angle x 0.9 | `EllipseArcTests.swift:70 simd_distance(arc.endPoint, SIMD3(-10, 0, 0)) < 1e-12` | ✅ | MATCH | Rewritten: x only, to 0.1 |
+| Ellipse Arc Tests | Ellipse arc properties | `OCCTCurve3DArcOfEllipse` | end angle x 0.9 | `EllipseArcTests.swift:88 arc.domain == 0...(Double.pi / 2)` | ✅ | MATCH | Rewritten: start.x > 9, end.y > 4 |
