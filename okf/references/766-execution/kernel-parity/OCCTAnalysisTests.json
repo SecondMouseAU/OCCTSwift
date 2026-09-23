@@ -4501,5 +4501,153 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntAna2d_Conic::fromCircle",
+    "bridge_function": "OCCTConic2dFromCircle",
+    "bridge_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          -25
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          -25
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-conic2d/"
+  },
+  {
+    "test_name": "IntAna2d_Conic::fromLine",
+    "bridge_function": "OCCTConic2dFromLine",
+    "bridge_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          0,
+          0,
+          0,
+          0,
+          -1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          0,
+          0,
+          0,
+          0,
+          -1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-conic2d/"
+  },
+  {
+    "test_name": "IntAna2d_Conic::fromEllipse",
+    "bridge_function": "OCCTConic2dFromEllipse",
+    "bridge_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          0.04,
+          0.1111111111111111,
+          0,
+          0,
+          0,
+          -1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "coefficients",
+      "data": {
+        "abcdef": [
+          0.04,
+          0.1111111111111111,
+          0,
+          0,
+          0,
+          -1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-conic2d/"
+  },
+  {
+    "test_name": "IntAna2d_Conic::lineCircleIntersection",
+    "bridge_function": "OCCTConic2dLineCircleIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "points": [
+          [
+            5,
+            0
+          ],
+          [
+            -5,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "points": [
+          [
+            5,
+            0
+          ],
+          [
+            -5,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-conic2d/"
   }
 ]

@@ -235,6 +235,10 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **IntAna2d_Conic** | fromCircle | Implicit conic coefficients | Coefficients |
+| **IntAna2d_Conic** | fromLine | Implicit conic coefficients | Coefficients |
+| **IntAna2d_Conic** | fromEllipse | Implicit conic coefficients | Coefficients |
+| **IntAna2d_Conic** | lineCircleIntersection | Line-circle intersection | Point count |
 
 ---
 
@@ -424,6 +428,10 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| fromCircle | OCCTConic2dFromCircle | Implicit conic coefficients | scale all six by 2 (K_SCALE) | ✅ | ✅ |  |
+| fromLine | OCCTConic2dFromLine | Implicit conic coefficients | scale by 2 (K_SCALE); swap d and e (K_COEF) | ✅ | ✅ | Rewritten: `sum |coef| > 0` passed any non-zero set |
+| fromEllipse | OCCTConic2dFromEllipse | Implicit conic coefficients | scale by 2 (K_SCALE) | ✅ | ✅ | Rewritten: a > 0 or b > 0 passed any positive scaling |
+| lineCircleIntersection | OCCTConic2dLineCircleIntersect | Line-circle intersection | drop the last point (K_LCI) | ✅ | ✅ |  |
 
 ---
 
