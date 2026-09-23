@@ -370,12 +370,21 @@ do_partial_archive() {
 do_archive() {
     echo ""
     echo "===================================================================="
-    echo "ARCHIVE: Libraries/libOCCT-wasm.a"
+    echo "ARCHIVE: the combined library the build script produces"
     echo "===================================================================="
     if [ ! -f "$COMBINED" ]; then
-        echo "  not built; run Scripts/build-occt-wasm.sh" >&2
+        echo "  $COMBINED does not exist." >&2
+        echo "  Scripts/build-occt-wasm.sh writes it only when every toolkit is complete, so while" >&2
+        echo "  a platform gap is open there is nothing here to measure. Use ./run.sh partial." >&2
         return 1
     fi
+    case "$COMBINED" in
+        *-partial.a)
+            echo "  NOTE: this is the -partial archive, not Libraries/libOCCT-wasm.a. The"
+            echo "  per-toolkit rows below come from occt-install-wasm, which does not exist while"
+            echo "  packaging is blocked; ./run.sh partial prints them from the build tree instead."
+            ;;
+    esac
     printf '  path:                     %s\n' "$COMBINED"
     printf '  size:                     %s bytes\n' "$(wc -c < "$COMBINED" | tr -d ' ')"
     printf '  members:                  %s\n' "$("$AR" t "$COMBINED" | wc -l | tr -d ' ')"
