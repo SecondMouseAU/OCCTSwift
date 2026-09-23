@@ -94,5 +94,306 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D Continuity Queries v0.120.0::segmentContinuityClass",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "continuityClass": "cN (6)"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "continuityClass": "cN (6)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report 3 (C1)",
+      "red": "Curve2DContinuityQueriesTests.swift:15:9: Expectation failed: c.continuityClass == .cN",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Queries v0.120.0::isCN",
+    "bridge_function": "OCCTCurve2DIsCN",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "IsCN(0..2)": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsCN(0..2)": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate IsCN()",
+      "red": "Curve2DContinuityQueriesTests.swift:21:9: Expectation failed: c.isCN(0)",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "nested in `if let c`"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Queries v0.120.0::reversedParameter",
+    "bridge_function": "OCCTCurve2DReversedParameter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "rev(0.2)": -0.2,
+        "rev(0.5)": -0.5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "rev(0.2)": -0.2,
+        "rev(0.5)": -0.5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return u unchanged",
+      "red": "Curve2DContinuityQueriesTests.swift:30:9: Expectation failed: abs(c.reversedParameter(0.2) + 0.2) < 1e-15",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`rp.isFinite`; now pins -0.2 and -0.5"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Queries v0.120.0::bezierMaxDegree",
+    "bridge_function": "OCCTCurve2DBezierMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "MaxDegree": 25
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "MaxDegree": 25
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "MaxDegree() - 1",
+      "red": "Curve2DContinuityQueriesTests.swift:35:9: Expectation failed: Curve2D.bezierMaxDegree == 25",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`md >= 25`; now `== 25`"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Queries v0.120.0::bsplineMaxDegree",
+    "bridge_function": "OCCTCurve2DBSplineMaxDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "MaxDegree": 25
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "MaxDegree": 25
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "MaxDegree() - 1",
+      "red": "Curve2DContinuityQueriesTests.swift:39:9: Expectation failed: Curve2D.bsplineMaxDegree == 25",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`md >= 25`; now `== 25`"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Tests::line2DContinuity",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "continuity": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "continuity": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report 3 (C1)",
+      "red": "Curve2DContinuityTests.swift:15:9: Expectation failed: line.continuity == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`c >= 0`; now `== 6` (GeomAbs_CN)"
+    }
+  },
+  {
+    "test_name": "Curve2D Continuity Tests::bspline2DContinuity",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "continuity": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "continuity": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "report 3 (C1)",
+      "red": "Curve2DContinuityTests.swift:25:9: Expectation failed: bsp.continuity == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`c >= 0`; now `== 4` (GeomAbs_C2)"
+    }
+  },
+  {
+    "test_name": "Curve2D Convert Extras Tests::Approximate circle as BSpline",
+    "bridge_function": "OCCTCurve2DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 7,
+        "poles": 13
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 7,
+        "poles": 13,
+        "maxError": 0.000338
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "tolerance x 10",
+      "red": "Curve2DConvertExtrasTests.swift:20:9: Expectation failed: approx.degree == 7",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`degree != nil`; now pins degree 7 and 13 poles"
+    }
+  },
+  {
+    "test_name": "Curve2D Convert Extras Tests::Split BSpline at discontinuities",
+    "bridge_function": "OCCTCurve2DSplitAtDiscontinuities",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C2": [
+          1,
+          2,
+          3
+        ],
+        "C0": [
+          1,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C2": [
+          1,
+          2,
+          3
+        ],
+        "C0": [
+          1,
+          3
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "split at continuity 3 whatever is asked",
+      "red": "Curve2DConvertExtrasTests.swift:32:9: Expectation failed: joined.splitIndicesAtDiscontinuities(continuity: .c0) == [1, 3]",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`indices != nil`; now pins both split lists"
+    }
+  },
+  {
+    "test_name": "Curve2D Convert Extras Tests::Convert to arcs and segments",
+    "bridge_function": "OCCTCurve2DToArcsAndSegments",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "drop the last curve",
+      "red": "Curve2DConvertExtrasTests.swift:40:9: Expectation failed: result.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-continuity-convert/",
+      "rewritten": "`count >= 1`; now `== 2`"
+    }
   }
 ]
