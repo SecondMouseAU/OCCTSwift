@@ -227,5 +227,86 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntCurvesFace Intersection::Line-face intersection",
+    "bridge_function": "OCCTLocOpeCSIntersectLine",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 1,
+        "point": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": -15.0
+        },
+        "parameter": 35.0
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 1,
+        "point": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": -15.0
+        },
+        "parameter": 35.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "IntCurvesFace Intersection::Line parallel to a face does not intersect it",
+    "bridge_function": "OCCTLocOpeCSIntersectLine",
+    "bridge_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "intersection_points",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeRayIntersection Tests::hit face access",
+    "bridge_function": "OCCTCurveSurfaceInterMore",
+    "bridge_output": {
+      "type": "first_hit",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -5.0,
+        "face_area": 100.0
+      }
+    },
+    "kernel_output": {
+      "type": "first_hit",
+      "data": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -5.0,
+        "face_area": 100.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

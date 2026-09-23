@@ -11,6 +11,9 @@
 | Suite | Test | Defect Category | Injection Target |
 |-------|------|-----------------|------------------|
 | **BRepGProp Face Tests** | BRepGProp Face Tests | Face properties | Remove face props |
+| **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
+| **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
+| **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false |
 | **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
 | **Point Cloud Analysis** | Collinear points detected as linear | Point cloud classification | Remove point cloud classification |
@@ -116,6 +119,9 @@
 | Test | Bridge Function | Defect | Injection | Red? | Green? | Notes |
 |------|-----------------|--------|-----------|------|--------|-------|
 | BRepGProp Face Tests | OCCTBRepGPropFace | Face properties | Remove face props | ✅ | ✅ |  |
+| Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
+| Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
+| hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false | ✅ | ✅ |  |
 | Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Coplanar points detected as planar | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | Collinear points detected as linear | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
@@ -215,6 +221,9 @@ For each test, run ground-truth C++ comparison:
 | Test | Red→Green Done | Parity Done | PR Ready |
 |------|----------------|-------------|----------|
 | BRepGProp Face Tests | ✅ | ✅ | ✅ |
+| Line-face intersection | ✅ | ✅ | ✅ |
+| Line parallel to a face does not intersect it | ✅ | ✅ | ✅ |
+| hit face access | ✅ | ✅ | ✅ |
 | Single point detected as point | ✅ | ✅ | ✅ |
 | Coplanar points detected as planar | ✅ | ✅ | ✅ |
 | Collinear points detected as linear | ✅ | ✅ | ✅ |
@@ -297,4 +306,4 @@ For each test, run ground-truth C++ comparison:
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
 
-**Total**: 556 tests
+**Total**: 559 tests
