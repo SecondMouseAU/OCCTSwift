@@ -99,3 +99,26 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `DocumentUndoRedoTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `undoLimit` | `OCCTDocumentGetUndoLimit` returns 0 | :15 Expectation failed: doc.undoLimit == 10 | passed | `OCCTDocumentGetUndoLimit` | PASS: 10 = 10 |
+| `availableUndos` | `OCCTDocumentGetAvailableUndos` returns 0 | :30 Expectation failed: doc.availableUndos == 1 | passed | `OCCTDocumentGetAvailableUndos` | PASS: 0/0, then 1 |
+| `undoRestores` | `OCCTDocumentUndo` returns true without undoing | :58 Expectation failed: doc.availableUndos == 1; :59 Expectation failed: doc.availableRedos == 1 | passed | `OCCTDocumentUndo` | PASS: 2, then undo gives 1/1 |
+| `redoAfterUndo` | `OCCTDocumentRedo` returns true without redoing | :82 Expectation failed: doc.availableUndos == 2; :83 Expectation failed: doc.availableRedos == 0 | passed | `OCCTDocumentRedo` | PASS: redo gives 2/0 |
+| `undoNothing` | `OCCTDocumentUndo` returns true without undoing | :91 Expectation failed: !result | passed | `OCCTDocumentUndo` | PASS: false = false |
+| `multipleUndoRedo` | `OCCTDocumentRedo` returns true without redoing | :115 Expectation failed: doc.availableUndos == 2; :116 Expectation failed: doc.availableRedos == 1 | passed | `OCCTDocumentRedo` | PASS: 3; 0/3; 2/1 |
+| `abortNoUndo` | `OCCTDocumentAbortTransaction` commits instead | :132 Expectation failed: doc.availableUndos == 1 | passed | `OCCTDocumentAbortTransaction` | PASS: 1 = 1 |
+
+### `DriverTableTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `tableExists` | `OCCTDriverTableExists` returns false | :13 Expectation failed: DriverTable.exists | passed | `OCCTDriverTableExists` | PASS: `Get()` never null |
+| `initAndClear` | `OCCTDriverTableClear` calls `abort()` | process crash (the test has no expectation; a crash is the only failure it can report) | passed | `OCCTDriverTableClear` | PASS: both calls return; see the note on this test |
