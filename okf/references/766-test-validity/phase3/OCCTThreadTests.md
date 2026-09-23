@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread::Issue225/232/254 (PR #TBD, files: Issue225ThreadedRodTests.swift, Issue232BoundsTests.swift, Issue254BuildModesTests.swift)
+## Thread::Issue225/232/254 (PR #2321, files: Issue225ThreadedRodTests.swift, Issue232BoundsTests.swift, Issue254BuildModesTests.swift)
 
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`. Rounds combined two or three injections only where their code paths are disjoint (stated per row); each test's red is attributed to the one injection on its path.
 
