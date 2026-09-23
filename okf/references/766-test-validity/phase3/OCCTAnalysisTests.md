@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **IntAna LineSphere Tests** | lineThroughSphere | Line-sphere intersection | ParamOnConic + 1 in OCCTIntAnaLineSphere |
+| **IntAna LineSphere Tests** | lineMissesSphere | Line-sphere intersection | count 1 reported for 0 points in OCCTIntAnaLineSphere |
 | **GProp Torus Tests** | torusSurfaceArea | Torus surface area | Short integration range |
 | **GProp Torus Tests** | torusVolume | Torus volume | Short integration range |
 | **Plane Detection** | Planar wire finds plane | Plane detection | origin z + 1 in OCCTShapeFindPlane |
