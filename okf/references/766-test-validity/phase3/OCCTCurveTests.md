@@ -197,3 +197,24 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D Conversion Tests | Circle to BSpline | `OCCTCurve3DToBSpline` | degree raised by one after conversion | `Curve3DConversionTests.swift:28 b.poleCount == 6` | ✅ | MATCH | Rewritten: poleCount > 0 and degree > 0 |
+| Curve3D Conversion Tests | BSpline to Bezier segments | `OCCTCurve3DBSplineToBeziers` | one arc fewer | `Curve3DConversionTests.swift:40 segs.count == 3` | ✅ | MATCH | Rewritten: count >= 2 |
+| Curve3D Conversion Tests | Join two segments into BSpline | `OCCTCurve3DJoinToBSpline` | later curves not added | `Curve3DConversionTests.swift:56 simd_distance(j.endPoint, SIMD3(10, 5, 0)) < 1e-12` | ✅ | MATCH | Rewritten: end points to 0.1 |
+| Curve3D Conversion Tests | Join returns nil rather than silently dropping a disconnected curve | `OCCTCurve3DJoinToBSpline` | Add() failure ignored | `Curve3DConversionTests.swift:71 Curve3D.join([seg1, seg2]) == nil` | ✅ | MATCH |  |
+| Curve3D Conversion Tests | Approximate curve | `OCCTCurve3DApproximate` | tolerance x 1000 | `Curve3DConversionTests.swift:90 abs(simd_length(p) - 5) < 0.01` | ✅ | MATCH | Rewritten: checked only != nil |
+| Curve3D Draw Tests | Adaptive draw on circle produces points | `OCCTCurve3DDrawAdaptive` | deflections x 4 (and, separately, one point fewer) | `Curve3DDrawTests.swift:23 points.count == 64` | ✅ | MATCH | Rewritten: count >= 10, radius to 0.1 |
+| Curve3D Draw Tests | Uniform draw produces exact count | `OCCTCurve3DDrawUniform` | one point fewer | `Curve3DDrawTests.swift:33 points.count == 32` | ✅ | MATCH |  |
+| Curve3D Draw Tests | Deflection draw produces points | `OCCTCurve3DDrawDeflection` | deflection x 4 | `Curve3DDrawTests.swift:44 points.count == 17` | ✅ | MATCH | Rewritten: count >= 4 |
+| Curve3D Draw Tests | Adaptive draw on segment produces at least 2 points | `OCCTCurve3DDrawAdaptive` | one point fewer | `Curve3DDrawTests.swift:55 points.count == 2` | ✅ | MATCH | Rewritten: count >= 2. The first rewrite compared the last point with == and failed green by 4e-16; it now uses a distance |
+| Curve3D Evaluation v0.110 | evalD0BSpline | `OCCTCurve3DEvalD0` | x + 0.5 | `Curve3DEvalTests.swift:30 simd_length(p) < 1e-12` | ✅ | MATCH | Rewritten: tolerance 1e-3 inside `if let` |
+| Curve3D Evaluation v0.110 | evalD1BSpline | `OCCTCurve3DEvalD1` | D1.y + 0.5 | `Curve3DEvalTests.swift:43 simd_distance(r.d1, Self.d1) < 1e-12` | ✅ | MATCH | Rewritten: \|d1\| > 0.1 |
+| Curve3D Evaluation v0.110 | evalD2BSpline | `OCCTCurve3DEvalD2` | D2.y + 0.5 | `Curve3DEvalTests.swift:51 simd_distance(r.d2, Self.d2) < 1e-12` | ✅ | MATCH | Rewritten: ended in #expect(true) |
+| Curve3D Evaluation v0.110 | evalD3BSpline | `OCCTCurve3DEvalD3` | D3.y + 0.5 | `Curve3DEvalTests.swift:59 simd_distance(r.d3, Self.d3) < 1e-12` | ✅ | MATCH | Rewritten: ended in #expect(true) |
+| Curve3D Evaluation v0.110 | evalD0Circle | `OCCTCurve3DEvalD0` | x + 0.5 | `Curve3DEvalTests.swift:68 curve.evalD0(at: 0) == SIMD3(5, 0, 0)` | ✅ | MATCH |  |
