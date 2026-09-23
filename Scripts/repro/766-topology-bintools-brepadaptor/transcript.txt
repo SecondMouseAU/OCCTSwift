@@ -1,0 +1,7 @@
+writeAndReadBinaryData: bytes=3446
+writeAndReadBinaryData read: null=0 valid=1 volume=6000 faces=6
+writeAndReadBinaryFile read: null=0 valid=1 volume=6000 faces=6
+sphereRoundtrip original: null=0 valid=1 volume=523.59877559829897 faces=1
+sphereRoundtrip read: null=0 valid=1 volume=523.59877559829897 faces=1
+edge1: domain=[0, 10] type=0 value(first)=(-5, -5, -5) value(last)=(-5, -5, 5)
+face1: u=[0, 10] v=[-10, 0] type=0 value(mid)=(-5, 0, 0)

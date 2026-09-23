@@ -94,5 +94,248 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BinTools Shape I/O Tests::writeAndReadBinaryData",
+    "bridge_function": "OCCTBinToolsWriteShape",
+    "bridge_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 6000,
+        "faces": 6,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 6000,
+        "faces": 6,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BinTools Shape I/O Tests::writeAndReadBinaryFile",
+    "bridge_function": "OCCTBinToolsWriteShapeToFile",
+    "bridge_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 6000,
+        "faces": 6,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 6000,
+        "faces": 6,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BinTools Shape I/O Tests::sphereRoundtrip",
+    "bridge_function": "OCCTBinToolsWriteShape",
+    "bridge_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 523.598775598299,
+        "faces": 1,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "shape_roundtrip",
+      "data": {
+        "volume": 523.598775598299,
+        "faces": 1,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::edgeDomain",
+    "bridge_function": "OCCTEdgeAdaptorDomain",
+    "bridge_output": {
+      "type": "range",
+      "data": {
+        "first": 0,
+        "last": 10
+      }
+    },
+    "kernel_output": {
+      "type": "range",
+      "data": {
+        "first": 0,
+        "last": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::edgeValue",
+    "bridge_function": "OCCTEdgeAdaptorValue",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "first": [
+          -5,
+          -5,
+          -5
+        ],
+        "last": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "first": [
+          -5,
+          -5,
+          -5
+        ],
+        "last": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::edgeCurveType",
+    "bridge_function": "OCCTEdgeAdaptorCurveType",
+    "bridge_output": {
+      "type": "enum",
+      "data": {
+        "GeomAbs_CurveType": 0
+      }
+    },
+    "kernel_output": {
+      "type": "enum",
+      "data": {
+        "GeomAbs_CurveType": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::faceBounds",
+    "bridge_function": "OCCTFaceAdaptorBounds",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "u": [
+          0,
+          10
+        ],
+        "v": [
+          -10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "u": [
+          0,
+          10
+        ],
+        "v": [
+          -10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::faceValue",
+    "bridge_function": "OCCTFaceAdaptorValue",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "mid": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "mid": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.115.0 - BRepAdaptor Exposure::faceSurfaceType",
+    "bridge_function": "OCCTFaceAdaptorSurfaceType",
+    "bridge_output": {
+      "type": "enum",
+      "data": {
+        "GeomAbs_SurfaceType": 0
+      }
+    },
+    "kernel_output": {
+      "type": "enum",
+      "data": {
+        "GeomAbs_SurfaceType": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
