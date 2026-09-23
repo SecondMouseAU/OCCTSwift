@@ -197,3 +197,24 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| v0.114.0 - Curve DN | curve3dFirstDerivative | `OCCTCurve3DDN` | DN y + 0.5 | `CurveDNTests.swift:19 line.dn(at: 0, order: 1) == SIMD3(1, 0, 0)` | ✅ | MATCH | Rewritten: \|d1.x\| > 0.5 |
+| v0.114.0 - Curve DN | curve3dSecondDerivative | `OCCTCurve3DDN` | DN y + 0.5 | `CurveDNTests.swift:28 line.dn(at: 0, order: 2) == SIMD3(0, 0, 0)` | ✅ | MATCH |  |
+| v0.114.0 - Curve DN | curve2dFirstDerivative | `OCCTCurve2DDN` | DN y negated | `CurveDNTests.swift:37 simd_distance(d1, SIMD2(1, 1) / 2.0.squareRoot()) < 1e-15` | ✅ | MATCH | Rewritten: \|x\|, \|y\| > 0.1 |
+| v0.114.0 - Curve DN | surfaceDN | `OCCTSurfaceDN` | DN z + 0.5 | `CurveDNTests.swift:47 simd_distance(du, SIMD3(0, 3.5355339059327378, 0)) < 1e-12` | ✅ | MATCH | Rewritten: \|du\| > 0.1 |
+| v0.114.0 - Curve isBounded | lineIsNotBounded | `OCCTCurve3DIsBounded` | answer inverted | `CurveIsBoundedTests.swift:17 !line.isBounded` | ✅ | MATCH | `if let` removed |
+| v0.114.0 - Curve isBounded | bsplineIsBounded | `OCCTCurve3DIsBounded` | answer inverted | `CurveIsBoundedTests.swift:26 curve.isBounded` | ✅ | MATCH | `if let` removed |
+| v0.114.0 - Curve isBounded | line2dIsNotBounded | `OCCTCurve2DIsBounded` | answer inverted | `CurveIsBoundedTests.swift:34 !line.isBounded` | ✅ | MATCH | `if let` removed |
+| v0.114.0 - Curve isBounded | bspline2dIsBounded | `OCCTCurve2DIsBounded` | answer inverted | `CurveIsBoundedTests.swift:43 curve.isBounded` | ✅ | MATCH | `if let` removed |
+| Curve Interpolation Tests | Interpolate through 2 points | `OCCTWireGetLength` | length x 1.01 | `CurveInterpolationTests.swift:24 abs((wire.length ?? 0) - 200.0.squareRoot()) < 1e-9` | ✅ | MATCH | Rewritten: 0.5 of slack, force-unwrapped wire |
+| Curve Interpolation Tests | Interpolate through multiple points | `OCCTWireGetCurveInfo` | isClosed inverted (and, separately, closed flag flipped, length x 1.01) | `CurveInterpolationTests.swift:40 !info.isClosed` | ✅ | MATCH | Rewritten: force-unwraps inside #expect |
+| Curve Interpolation Tests | Interpolate closed curve | `OCCTWireGetCurveInfo` | isClosed inverted (and, separately, closed flag flipped) | `CurveInterpolationTests.swift:61 info.isClosed` | ✅ | MATCH | Rewritten: force-unwraps inside #expect |
+| Curve Interpolation Tests | Interpolate with tangent constraints | `OCCTWireInterpolateWithTangents` | tangent y components swapped | `CurveInterpolationTests.swift:84 simd_distance(midPoint, SIMD3(5, 1.25, 0)) < 1e-9` | ✅ | MATCH | Rewritten: y > 0 with a force-unwrap in #expect |
+| Curve Interpolation Tests | Interpolate 3D curve | `OCCTWireGetPointAt` | point moved 0.5 in z (and, separately, closed flag flipped) | `CurveInterpolationTests.swift:102 simd_distance(midPoint, SIMD3(20, 0, 10)) < 1e-9` | ✅ | MATCH | Rewritten: z > 5 with a force-unwrap in #expect |
+| Curve Interpolation Tests | Interpolate too few points returns nil | `none: Swift guard in Wire.interpolate` | Swift: a lone point is padded to two | `CurveInterpolationTests.swift:111 wire == nil` | ✅ | N/A | No kernel counterpart: the Swift guard rejects the input |

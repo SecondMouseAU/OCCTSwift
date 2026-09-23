@@ -302,5 +302,328 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Curve DN::curve3dFirstDerivative",
+    "test_file": "Tests/OCCTCurveTests/CurveDNTests.swift",
+    "bridge_function": "OCCTCurve3DDN",
+    "bridge_output": {
+      "type": "value",
+      "data": "(1,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line::DN(0,1) = (1,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "DN y + 0.5",
+    "red": "CurveDNTests.swift:19 line.dn(at: 0, order: 1) == SIMD3(1, 0, 0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: |d1.x| > 0.5"
+  },
+  {
+    "test_name": "v0.114.0 - Curve DN::curve3dSecondDerivative",
+    "test_file": "Tests/OCCTCurveTests/CurveDNTests.swift",
+    "bridge_function": "OCCTCurve3DDN",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "DN(0,2) = (0,0,0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "DN y + 0.5",
+    "red": "CurveDNTests.swift:28 line.dn(at: 0, order: 2) == SIMD3(0, 0, 0)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt"
+  },
+  {
+    "test_name": "v0.114.0 - Curve DN::curve2dFirstDerivative",
+    "test_file": "Tests/OCCTCurveTests/CurveDNTests.swift",
+    "bridge_function": "OCCTCurve2DDN",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0.7071, 0.7071)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom2d_Line::DN(0,1) = (0.70710678118654746, 0.70710678118654746)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "DN y negated",
+    "red": "CurveDNTests.swift:37 simd_distance(d1, SIMD2(1, 1) / 2.0.squareRoot()) < 1e-15",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: |x|, |y| > 0.1"
+  },
+  {
+    "test_name": "v0.114.0 - Curve DN::surfaceDN",
+    "test_file": "Tests/OCCTCurveTests/CurveDNTests.swift",
+    "bridge_function": "OCCTSurfaceDN",
+    "bridge_output": {
+      "type": "value",
+      "data": "(0, 3.5355339059327378, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_SphericalSurface::DN(0, pi/4, 1, 0) = (-0, 3.5355339059327378, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "DN z + 0.5",
+    "red": "CurveDNTests.swift:47 simd_distance(du, SIMD3(0, 3.5355339059327378, 0)) < 1e-12",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: |du| > 0.1"
+  },
+  {
+    "test_name": "v0.114.0 - Curve isBounded::lineIsNotBounded",
+    "test_file": "Tests/OCCTCurveTests/CurveIsBoundedTests.swift",
+    "bridge_function": "OCCTCurve3DIsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": "false"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_Line is not a Geom_BoundedCurve"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "answer inverted",
+    "red": "CurveIsBoundedTests.swift:17 !line.isBounded",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "v0.114.0 - Curve isBounded::bsplineIsBounded",
+    "test_file": "Tests/OCCTCurveTests/CurveIsBoundedTests.swift",
+    "bridge_function": "OCCTCurve3DIsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": "true"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "fitted Geom_BSplineCurve is bounded"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "answer inverted",
+    "red": "CurveIsBoundedTests.swift:26 curve.isBounded",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "v0.114.0 - Curve isBounded::line2dIsNotBounded",
+    "test_file": "Tests/OCCTCurveTests/CurveIsBoundedTests.swift",
+    "bridge_function": "OCCTCurve2DIsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": "false"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom2d_Line is not bounded"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "answer inverted",
+    "red": "CurveIsBoundedTests.swift:34 !line.isBounded",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "v0.114.0 - Curve isBounded::bspline2dIsBounded",
+    "test_file": "Tests/OCCTCurveTests/CurveIsBoundedTests.swift",
+    "bridge_function": "OCCTCurve2DIsBounded",
+    "bridge_output": {
+      "type": "value",
+      "data": "true"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "fitted Geom2d_BSplineCurve is bounded"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "answer inverted",
+    "red": "CurveIsBoundedTests.swift:43 curve.isBounded",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "`if let` removed"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate through 2 points",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": "14.142135623730951"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "length 14.142135623730951"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "length x 1.01",
+    "red": "CurveInterpolationTests.swift:24 abs((wire.length ?? 0) - 200.0.squareRoot()) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: 0.5 of slack, force-unwrapped wire"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate through multiple points",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": "open, midpoint (20,0,0), length 47.4135"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "closed=0, value(0.5)=(20, 1.5e-15, 0), length 47.413493009755058"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "isClosed inverted (and, separately, closed flag flipped, length x 1.01)",
+    "red": "CurveInterpolationTests.swift:40 !info.isClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: force-unwraps inside #expect"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate closed curve",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": "closed, midpoint (-10,0,0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "closed=1, value(0.5)=(-10, -1.3e-15, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "isClosed inverted (and, separately, closed flag flipped)",
+    "red": "CurveInterpolationTests.swift:61 info.isClosed",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: force-unwraps inside #expect"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate with tangent constraints",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "OCCTWireInterpolateWithTangents",
+    "bridge_output": {
+      "type": "value",
+      "data": "(5, 1.25, 0)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "value(0.5) = (5.0000000000000009, 1.25, 0)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "tangent y components swapped",
+    "red": "CurveInterpolationTests.swift:84 simd_distance(midPoint, SIMD3(5, 1.25, 0)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: y > 0 with a force-unwrap in #expect"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate 3D curve",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "OCCTWireGetPointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": "(20,0,10)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "value(0.5) = (20, 0, 10)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "point moved 0.5 in z (and, separately, closed flag flipped)",
+    "red": "CurveInterpolationTests.swift:102 simd_distance(midPoint, SIMD3(20, 0, 10)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "Rewritten: z > 5 with a force-unwrap in #expect"
+  },
+  {
+    "test_name": "Curve Interpolation Tests::Interpolate too few points returns nil",
+    "test_file": "Tests/OCCTCurveTests/CurveInterpolationTests.swift",
+    "bridge_function": "none: Swift guard in Wire.interpolate",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the Swift guard before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        "No kernel counterpart: the Swift guard rejects the input"
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: a lone point is padded to two",
+    "red": "CurveInterpolationTests.swift:111 wire == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-dn-interp-bounded/transcript.txt",
+    "note": "No kernel counterpart: the Swift guard rejects the input"
   }
 ]
