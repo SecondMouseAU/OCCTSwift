@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## OCCTThreadTests.swift (PR #PRNUM, files: Tests/OCCTThreadTests/OCCTThreadTests.swift)
+## OCCTThreadTests.swift (PR #2335, files: Tests/OCCTThreadTests/OCCTThreadTests.swift)
 
 Injections are in `Sources/OCCTSwift/ThreadFeatures.swift`, applied in four sets and reverted after
 each. Pure-Swift sets `pure1` (a-f) and `pure2` (g-h) ran against the 8 ThreadSpec tests; each set
