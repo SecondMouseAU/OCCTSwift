@@ -1,6 +1,11 @@
 // StressExhaustiveAPITests.swift
 // Category 1: Smoke-call every major public method with standard fixtures.
 // Goal: verify no crash and reasonable output for each API entry point.
+//
+// Epic #766: many of these smoke calls held their result behind `if let` (so a nil result passed)
+// or read it into `_` (so only a crash could fail them). Those now require the result and, where
+// the check was only "positive" or "non-empty", pin the value OCCT gives for the same input,
+// measured by Scripts/repro/766-stress-exhaustive-api/probe.mm (transcript.txt beside it).
 
 import Foundation
 import OCCTSwift
@@ -284,18 +289,21 @@ struct StressWireAPITests {
     @Test func wireLength() {
         let w = standardWire()
         if let len = w.length { #expect(len > 0) }
+        #expect(abs((w.length ?? 0) - 40) < 1e-9)
     }
 
     @Test func wireEdges() {
         let w = standardWire()
         let edges = w.edges()
         #expect(!edges.isEmpty)
+        #expect(edges.count == 4)
     }
 
-    @Test func wireOffset() {
+    // An inward offset of 1 of the 10 × 10 square is the 8 × 8 square.
+    @Test func wireOffset() throws {
         let w = standardWire()
-        let offset = w.offset(by: -1.0)
-        if let o = offset { if let len = o.length { #expect(len > 0) } }
+        let o = try #require(w.offset(by: -1.0))
+        #expect(abs((o.length ?? 0) - 32) < 1e-9)
     }
 }
 
@@ -304,21 +312,22 @@ struct StressWireAPITests {
 @Suite("Stress: Edge API")
 struct StressEdgeAPITests {
 
-    @Test func edgeFromShape() {
+    @Test func edgeFromShape() throws {
         let box = standardBox()
         let edges = box.edges()
         #expect(!edges.isEmpty)
-        if let edge = edges.first {
-            _ = edge.curveType
-            _ = edge.length
-            _ = edge.length
-        }
+        // Epic #766: both properties were read and discarded. Edge 0 of the box is a straight
+        // 10-long line.
+        let edge = try #require(edges.first)
+        #expect(edge.curveType == .line)
+        #expect(abs(edge.length - 10) < 1e-9)
     }
 
     @Test func edgeFromWire() {
         let wire = standardWire()
         let edges = wire.edges()
         #expect(!edges.isEmpty)
+        #expect(edges.count == 4)
     }
 }
 
@@ -327,14 +336,16 @@ struct StressEdgeAPITests {
 @Suite("Stress: Face API")
 struct StressFaceAPITests {
 
-    @Test func faceNormal() {
+    @Test func faceNormal() throws {
         let box = standardBox()
         let faces = box.faces()
+        #expect(faces.count == 6)
         for face in faces {
-            if let n = face.normal {
-                let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
-                #expect(abs(len - 1.0) < 0.01)
-            }
+            let n = try #require(face.normal)
+            let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
+            #expect(abs(len - 1.0) < 0.01)
+            // Unit length held for any direction; a box face normal is one axis, outward.
+            #expect(abs(abs(n.x) + abs(n.y) + abs(n.z) - 1) < 1e-9)
         }
     }
 
@@ -344,25 +355,33 @@ struct StressFaceAPITests {
         for face in faces {
             let area = face.area()
             #expect(area > 0)
+            #expect(abs(area - 100) < 1e-9)
         }
     }
 
-    @Test func faceBounds() {
+    @Test func faceBounds() throws {
         let box = standardBox()
         let faces = box.faces()
+        // Epic #766: the bounds were read and discarded. Each face is a 10 × 10 square flat in one
+        // axis (width 2e-7, the tolerance gap, in that axis).
+        #expect(faces.count == 6)
         for face in faces {
-            let b = face.bounds!
-            _ = b.min
-            _ = b.max
+            let b = try #require(face.bounds)
+            let size = b.max - b.min
+            let dims = [size.x, size.y, size.z].sorted()
+            #expect(dims[0] < 1e-6)
+            #expect(abs(dims[1] - 10) < 1e-6)
+            #expect(abs(dims[2] - 10) < 1e-6)
         }
     }
 
+    // Epic #766: the type was read and discarded. Every box face is a plane.
     @Test func faceSurfaceType() {
         let box = standardBox()
         let faces = box.faces()
+        #expect(faces.count == 6)
         for face in faces {
-            let st = face.surfaceType
-            _ = st
+            #expect(face.surfaceType == .plane)
         }
     }
 
@@ -378,6 +397,9 @@ struct StressFaceAPITests {
             if face.isVertical() { vert += 1 }
         }
         #expect(up + down + vert == 6)
+        #expect(up == 1)
+        #expect(down == 1)
+        #expect(vert == 4)
     }
 }
 
