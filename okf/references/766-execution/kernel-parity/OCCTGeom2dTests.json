@@ -94,5 +94,299 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom2d_Ellipse Properties::ellipse2DRadii",
+    "bridge_function": "OCCTCurve2DEllipseMajorRadius / OCCTCurve2DEllipseMinorRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 10,
+        "minor": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Geom2dEllipseTests.swift:18:9: Expectation failed: abs(e.ellipseProperties.majorRadius - 10) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let e`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Ellipse Properties::ellipse2DSetRadii",
+    "bridge_function": "OCCTCurve2DEllipseSetMajorRadius",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 20,
+        "minor": 8
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 20,
+        "minor": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "skip SetMajorRadius()",
+      "red": "Geom2dEllipseTests.swift:25:9: Expectation failed: abs(e.ellipseProperties.majorRadius - 20) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "nested in `if let e`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Ellipse Properties::ellipse2DEccentricity",
+    "bridge_function": "OCCTCurve2DEllipseEccentricity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "eccentricity": 0.866025403784
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "eccentricity": 0.866025403784
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "eccentricity + 0.01",
+      "red": "Geom2dEllipseTests.swift:33:9: Expectation failed: abs(e.ellipseProperties.eccentricity - 0.75.squareRoot()) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`> 0`, nested in `if let e`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Ellipse Properties::ellipse2DFocal",
+    "bridge_function": "OCCTCurve2DEllipseFocal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 17.3205080757
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 17.3205080757
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focal + 0.01",
+      "red": "Geom2dEllipseTests.swift:39:9: Expectation failed: abs(e.ellipseProperties.focal - 2 * 75.0.squareRoot()) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`> 0`, nested in `if let e`"
+    }
+  },
+  {
+    "test_name": "Geom2d_Ellipse Properties::ellipse2DFocus1",
+    "bridge_function": "OCCTCurve2DEllipseFocus1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focus1": [
+          8.66025403784,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focus1": [
+          8.66025403784,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate x (report focus 2)",
+      "red": "Geom2dEllipseTests.swift:46:9: Expectation failed: simd_distance(f, SIMD2(75.0.squareRoot(), 0)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`let _ = f`, no assertion"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Archimedean Spiral::spiralD0AtZero",
+    "bridge_function": "OCCTGeom2dEvalArchimedeanSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "initial radius + 1",
+      "red": "Geom2dEvalArchimedeanSpiralTests.swift:13:9: Expectation failed: abs(p.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Archimedean Spiral::spiralD0AtTwoPi",
+    "bridge_function": "OCCTGeom2dEvalArchimedeanSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          6.28318530718,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          6.28318530718,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "initial radius + 1",
+      "red": "Geom2dEvalArchimedeanSpiralTests.swift:21:9: Expectation failed: abs(p.x - 2.0 * .pi) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Archimedean Spiral::spiralD1",
+    "bridge_function": "OCCTGeom2dEvalArchimedeanSpiralD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          0
+        ],
+        "D1": [
+          0.5,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          0
+        ],
+        "D1": [
+          0.5,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "growth rate + 1",
+      "red": "Geom2dEvalArchimedeanSpiralTests.swift:32:9: Expectation failed: simd_distance(r.d1, SIMD2(0.5, 1)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": "`speed > 0`; now D1 = (b, a)"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Archimedean Spiral::spiralWithInitialRadius",
+    "bridge_function": "OCCTGeom2dEvalArchimedeanSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "initial radius + 1",
+      "red": "Geom2dEvalArchimedeanSpiralTests.swift:38:9: Expectation failed: abs(p.x - 2.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-gtrsf-circle-ellipse-spiral/",
+      "rewritten": ""
+    }
   }
 ]
