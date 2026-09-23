@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Geom_Plane Properties** | planeCoefficients | Plane equation coefficients | Drop D |
+| **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planePln | Plane gp_Pln data | Drop location Z |
 | **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
 | **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
 | **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
@@ -242,6 +246,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| planeCoefficients | OCCTSurfacePlaneCoefficients | Plane equation coefficients | Zero *D after Geom_Plane::Coefficients | ✅ | ✅ | Rewritten: fixture moved to z = 2 so D is nonzero; if-let wrapper removed |
+| planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planePln | OCCTSurfacePlanePln | Plane gp_Pln data | Write 0 to *pz | ✅ | ✅ | Rewritten: origin now asserted; if-let wrapper removed |
 | Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
 | Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
 | Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
