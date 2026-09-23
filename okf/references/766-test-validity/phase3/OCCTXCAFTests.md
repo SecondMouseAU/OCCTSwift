@@ -99,3 +99,55 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `XCAFDocLocationTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGetLocation` | `OCCTDocumentHasLocation` returns false | :15 Expectation failed: label.hasLocationAttribute | passed | `OCCTDocumentGetLocationTranslation` | PASS: (10, 20, 30) |
+| `noLocation` | `OCCTDocumentHasLocation` returns true | :28 Expectation failed: !label.hasLocationAttribute | passed | `OCCTDocumentHasLocation` | N/A: none on a fresh label |
+
+### `XCAFDocMaterialTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetMaterialAttrName` returns null | :17 Expectation failed: label.materialAttributeName == "Steel" | passed | `OCCTDocumentGetMaterialAttrName` | PASS: Steel, Carbon steel, 7850 |
+| `noMaterial` | `OCCTDocumentHasMaterialAttr` returns true | :29 Expectation failed: !label.hasMaterialAttribute | passed | `OCCTDocumentHasMaterialAttr` | N/A: none on a fresh label |
+
+### `XCAFDocNoteBalloonTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentSetNoteBalloon` returns false | :11 Expectation failed: label.setNoteBalloon(userName: "User", timeStamp: "2026-03-14", comment: "Balloon text") | passed | `OCCTDocumentSetNoteBalloon` | PASS: created |
+
+### `XCAFDocNoteBinDataTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetNoteBinDataSize` answers 0 | :18 Expectation failed: label.noteBinDataSize == 4 | passed | `OCCTDocumentGetNoteBinDataSize` | PASS: 4 |
+
+### `XCAFDocNoteCommentTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndGet` | `OCCTDocumentGetNoteCommentText` returns null | :15 Expectation failed: label.noteCommentText == "This is a comment" | passed | `OCCTDocumentGetNoteCommentText` | PASS: created |
+
+### `XCAFDocNotesToolTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `createAndCountNotes` | `OCCTDocumentNotesToolNbNotes` answers 0 | :15 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolNbNotes` | PASS: 0, 1 |
+| `createBalloon` | `OCCTDocumentNotesToolCreateBalloon` answers -1 | :24 Expectation failed: note != nil; :25 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBalloon` | PASS: created |
+| `createBinData` | `OCCTDocumentNotesToolCreateBinData` answers -1 | :37 Expectation failed: note != nil; :38 Expectation failed: doc.notesToolNoteCount == 1 | passed | `OCCTDocumentNotesToolCreateBinData` | PASS: created |
+| `deleteAllNotes` | `OCCTDocumentNotesToolDeleteAllNotes` answers 0 | :51 Expectation failed: deleted == 3; :52 Expectation failed: doc.notesToolNoteCount == 0 | passed | `OCCTDocumentNotesToolDeleteAllNotes` | PASS: 3, 3, 0 |
+| `orphanNotes` | `OCCTDocumentNotesToolNbOrphanNotes` answers -1 | :60 Expectation failed: doc.notesToolOrphanNoteCount >= 0 | passed | `OCCTDocumentNotesToolNbOrphanNotes` | PASS: 3 unattached notes |
+
+### `XCAFDocShapeMapToolTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setShapeAndQuery` | `OCCTDocumentShapeMapToolIsSubShape` returns false | :16 Expectation failed: label.shapeMapToolIsSubShape(face) | passed | `OCCTDocumentShapeMapToolIsSubShape` | PASS: extent 33, face is a sub-shape |

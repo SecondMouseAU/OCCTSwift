@@ -126,5 +126,311 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::setAndGetLocation",
+    "bridge_function": "OCCTDocumentGetLocationTranslation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "translation": [
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Location Tests::noLocation",
+    "bridge_function": "OCCTDocumentHasLocation",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetMaterialAttrName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850.0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "Steel",
+        "description": "Carbon steel",
+        "density": 7850
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_Material Tests::noMaterial",
+    "bridge_function": "OCCTDocumentHasMaterialAttr",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "has": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBalloon Tests::setAndGet",
+    "bridge_function": "OCCTDocumentSetNoteBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteBinData Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteBinDataSize",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "size": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NoteComment Tests::setAndGet",
+    "bridge_function": "OCCTDocumentGetNoteCommentText",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "text": "This is a comment",
+        "user": "TestUser"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createAndCountNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "after": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBalloon",
+    "bridge_function": "OCCTDocumentNotesToolCreateBalloon",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::createBinData",
+    "bridge_function": "OCCTDocumentNotesToolCreateBinData",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "note": true,
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "created": true,
+        "size": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::deleteAllNotes",
+    "bridge_function": "OCCTDocumentNotesToolDeleteAllNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 3,
+        "deleted": 3,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_NotesTool Tests::orphanNotes",
+    "bridge_function": "OCCTDocumentNotesToolNbOrphanNotes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "nonnegative": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "orphans": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
+  },
+  {
+    "test_name": "XCAFDoc_ShapeMapTool Tests::setShapeAndQuery",
+    "bridge_function": "OCCTDocumentShapeMapToolIsSubShape",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent_positive": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "sub": true,
+        "extent": 33
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-xcafdoc-vis/"
   }
 ]
