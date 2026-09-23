@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **GProp Cylinder/Cone Tests** | cylinderSurfaceArea | Analytic surface GProps | OCCTGPropCylinderSurface integrates a half revolution |
+| **GProp Cylinder/Cone Tests** | cylinderVolume | Analytic volume GProps | OCCTGPropCylinderVolume integrates a half revolution |
+| **GProp Cylinder/Cone Tests** | coneSurfaceArea | Analytic surface GProps | OCCTGPropConeSurface integrates a half revolution (value pinned, #766) |
+| **GProp Cylinder/Cone Tests** | coneVolume | Analytic volume GProps | OCCTGPropConeVolume integrates a half revolution (value pinned, #766) |
 
 ---
 
