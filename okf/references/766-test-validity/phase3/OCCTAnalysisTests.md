@@ -95,6 +95,15 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Edge Curve Properties Tests** | Parameter bounds of line edge | Edge curve parameter range | Swap first/last |
+| **Edge Curve Properties Tests** | Curvature of circle edge is 1/r | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Curvature of line edge is zero | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Tangent direction of straight edge | Edge curve tangent | Reverse tangent |
+| **Edge Curve Properties Tests** | Normal of circle edge points toward center | Edge curve normal | Reverse normal |
+| **Edge Curve Properties Tests** | Center of curvature of circle matches circle center | Edge curve centre of curvature | Offset centre |
+| **Edge Curve Properties Tests** | Torsion of planar curve is zero | Edge curve torsion | Offset torsion |
+| **Edge Curve Properties Tests** | Curve type detection | Edge curve type | Misclassify lines |
+| **Edge Curve Properties Tests** | Point at parameter matches expected location | Edge curve evaluation | Offset point |
 | **Measurement Tests** | Volume of box | Volume | Volume scaled by 1.01 |
 | **Measurement Tests** | Volume of cylinder | Volume | Volume scaled by 1.01 |
 | **Measurement Tests** | Volume of sphere | Volume | Volume scaled by 1.01 |
@@ -227,6 +236,15 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Parameter bounds of line edge | OCCTEdgeGetParameterBounds | Edge curve parameter range | Write l to *first and f to *last | ✅ | ✅ |  |
+| Curvature of circle edge is 1/r | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Curvature of line edge is zero | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Tangent direction of straight edge | OCCTEdgeGetTangent3D | Edge curve tangent | Reverse the tangent direction | ✅ | ✅ | Direction assertion added; unit length alone passed the reversed tangent |
+| Normal of circle edge points toward center | OCCTEdgeGetNormal3D | Edge curve normal | Reverse the principal normal | ✅ | ✅ | Inward-direction assertion added; unit length alone passed the outward normal |
+| Center of curvature of circle matches circle center | OCCTEdgeGetCenterOfCurvature3D | Edge curve centre of curvature | Add 1.0 to the centre's X | ✅ | ✅ |  |
+| Torsion of planar curve is zero | OCCTEdgeGetTorsion | Edge curve torsion | Add 1.0 to the computed torsion | ✅ | ✅ |  |
+| Curve type detection | OCCTEdgeGetCurveType | Edge curve type | Map GeomAbs_Line to 8 (other) | ✅ | ✅ |  |
+| Point at parameter matches expected location | OCCTEdgeGetPointAtParam | Edge curve evaluation | Add 1.0 to the evaluated point's Z | ✅ | ✅ |  |
 | Measurement Tests: Volume of box | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
 | Measurement Tests: Volume of cylinder | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
 | Measurement Tests: Volume of sphere | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
