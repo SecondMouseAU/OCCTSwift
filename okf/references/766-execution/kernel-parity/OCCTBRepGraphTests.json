@@ -142,5 +142,237 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "packSIMD3 shared helper::exactMapping",
+    "bridge_function": "none (pure Swift: packSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "packSIMD3 shared helper::emptyInputIsEmpty",
+    "bridge_function": "none (pure Swift: packSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": []
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "packSIMD3 shared helper::floatScalarBuffer",
+    "bridge_function": "none (pure Swift: packSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "packSIMD3 shared helper::roundTripsThroughUnpack",
+    "bridge_function": "none (pure Swift: packSIMD3 / unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": "round trip exact"
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "unpackSIMD3 shared helper::exactMapping",
+    "bridge_function": "none (pure Swift: unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          7,
+          8,
+          9
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "unpackSIMD3 shared helper::zeroCountIsEmpty",
+    "bridge_function": "none (pure Swift: unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": []
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "unpackSIMD3 shared helper::stopsAtActualCountNotBufferLength",
+    "bridge_function": "none (pure Swift: unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        [
+          1,
+          2,
+          3
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "unpackSIMD3 shared helper::floatScalarBuffer",
+    "bridge_function": "none (pure Swift: unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "unpackSIMD3 shared helper::unsafeBufferPointerBuffer",
+    "bridge_function": "none (pure Swift: unpackSIMD3)",
+    "bridge_output": {
+      "type": "array",
+      "data": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "array",
+      "data": {
+        "reason": "pure Swift helper, no kernel call"
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
   }
 ]

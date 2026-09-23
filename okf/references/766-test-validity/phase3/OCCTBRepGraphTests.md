@@ -28,6 +28,15 @@
 | **alongEdge on T-branch** | alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord | Edge traversal | Remove alongEdge |
 | **v0.142 ConstructionAxis resolution** | v0.142 ConstructionAxis resolution | Graph axis | Remove axis resolution |
 | **deferredModeToggle()** | deferredModeToggle() | Graph mutation | Remove deferred toggle |
+| **packSIMD3 shared helper** | exactMapping | SIMD3 packing | y/z swapped |
+| **packSIMD3 shared helper** | emptyInputIsEmpty | SIMD3 packing | empty input yields a zero |
+| **packSIMD3 shared helper** | floatScalarBuffer | SIMD3 packing | y/z swapped |
+| **packSIMD3 shared helper** | roundTripsThroughUnpack | SIMD3 packing | y/z swapped in pack, x/y in unpack |
+| **unpackSIMD3 shared helper** | exactMapping | SIMD3 unpacking | x/y swapped |
+| **unpackSIMD3 shared helper** | zeroCountIsEmpty | SIMD3 unpacking | count ignored |
+| **unpackSIMD3 shared helper** | stopsAtActualCountNotBufferLength | SIMD3 unpacking | count ignored |
+| **unpackSIMD3 shared helper** | floatScalarBuffer | SIMD3 unpacking | x/y swapped |
+| **unpackSIMD3 shared helper** | unsafeBufferPointerBuffer | SIMD3 unpacking | x/y swapped |
 
 ---
 
@@ -53,6 +62,15 @@
 | alongEdge T-branch | OCCTBRepGraphAlongEdge | Edge traversal | Remove alongEdge | ✅ | ✅ |  |
 | v0.142 ConstructionAxis | OCCTBRepGraphConstructionAxis | Graph axis | Remove axis resolution | ✅ | ✅ |  |
 | deferredModeToggle | OCCTBRepGraphDeferredModeToggle | Graph mutation | Remove deferred toggle | ✅ | ✅ |  |
+| exactMapping | none (pure Swift: packSIMD3) | SIMD3 packing | append x, z, y | ✅ | ✅ |  |
+| emptyInputIsEmpty | none (pure Swift: packSIMD3) | SIMD3 packing | if values.isEmpty append 0 (Double only) | ✅ | ✅ |  |
+| floatScalarBuffer | none (pure Swift: packSIMD3) | SIMD3 packing | append x, z, y | ✅ | ✅ |  |
+| roundTripsThroughUnpack | none (pure Swift: packSIMD3 / unpackSIMD3) | SIMD3 packing | both helpers' swaps (they do not cancel) | ✅ | ✅ |  |
+| exactMapping | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | count guard removed, reads buffer.count / 3, x/y swapped | ✅ | ✅ |  |
+| zeroCountIsEmpty | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| stopsAtActualCountNotBufferLength | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| floatScalarBuffer | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
+| unsafeBufferPointerBuffer | none (pure Swift: unpackSIMD3) | SIMD3 unpacking | same | ✅ | ✅ |  |
 
 ---
 
