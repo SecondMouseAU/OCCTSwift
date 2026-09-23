@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **GProp Torus Tests** | torusSurfaceArea | Torus surface area | Short integration range |
+| **GProp Torus Tests** | torusVolume | Torus volume | Short integration range |
 | **Plane Detection** | Planar wire finds plane | Plane detection | origin z + 1 in OCCTShapeFindPlane |
 | **Plane Detection** | Non-planar 3D wire returns nil | Plane detection | report a plane when FindPlane finds none |
 | **Plane Detection** | Face shape is planar | Plane detection | origin z + 1 in OCCTShapeFindPlane |
@@ -288,6 +290,8 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| torusSurfaceArea | OCCTGPropTorusSurface | Torus surface area | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.19 off, inside the old tolerance |
+| torusVolume | OCCTGPropTorusVolume | Torus volume | Integrate v over [0, 2 pi - 1e-3] | ✅ | ✅ | Tolerance tightened from 1.0 to 1e-9 relative; the injection is 0.28 off, inside the old tolerance |
 | coneSphereIntersection | OCCTIntAnaConeSphere | Cone-sphere intersection count | Return iqq.NbPnt() in place of iqq.NbCurve() | ✅ | ✅ | Rewritten: asserted count >= 0, which the wrapper guarantees for any non-nil value |
 | coneSphereSamplePoints | OCCTIntAnaConeSpherePoints | Cone-sphere curve sampling | t = first + (last - first) * i / actual | ✅ | ✅ | Rewritten: body never ran (gated on count > 0 for a 0-curve fixture) and asserted pts.count >= 0 |
 | BRepExtrema_Poly: Polyhedral distance between two shapes | OCCTShapePolyhedralDistance | Polyhedral distance | Distance - 0.5; report success unconditionally | ✅ | ✅ | rewritten: 8...12 band stayed green under the injection |

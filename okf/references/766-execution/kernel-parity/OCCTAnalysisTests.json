@@ -2779,5 +2779,49 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "GProp Torus Tests::torusSurfaceArea",
+    "bridge_function": "OCCTGPropTorusSurface",
+    "bridge_output": {
+      "type": "area",
+      "data": {
+        "area": 1184.352528130723
+      }
+    },
+    "kernel_output": {
+      "type": "area",
+      "data": {
+        "area": 1184.352528130723
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GProp Torus Tests::torusVolume",
+    "bridge_function": "OCCTGPropTorusVolume",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1776.5287921960844
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 1776.528792196084
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel printed to 12 decimals; agree to that precision"
+      ]
+    },
+    "status": "PASS"
   }
 ]
