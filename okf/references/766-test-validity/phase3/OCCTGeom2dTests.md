@@ -124,3 +124,19 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DParameterAtLengthTests.swift`, `Curve2DPoint2DIntegrationTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-param-at-length-point2d/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D parameterAtLength Tests::Parameter at full arc length of a circle arc | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested `if let`s and 0.01/0.05 tolerances; now required, to 1e-9 |
+| Curve2D parameterAtLength Tests::Parameter at zero length returns start parameter | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let` |
+| Curve2D parameterAtLength Tests::Parameter at full length of a segment | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let`, 0.01 tolerance |
+| Curve2D parameterAtLength Tests::Parameter at length from non-start parameter | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | nested in `if let`, 0.1 tolerance |
+| Curve2D parameterAtLength Tests::parameterAtLength returns nil on failure | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | `_ = result`, no assertion |
+| Curve2D parameterAtLength Tests::Trim curve to exact arc length using parameterAtLength | `OCCTCurve2DParameterAtLength` | parameter + 0.5 | ✅ | ✅ | MATCH | three nested `if let`s, 0.01 tolerance |
+| Curve2D Point2D Integration::pointAtParameter | `OCCTCurve2DPointAt` | evaluate at t + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |
+| Curve2D Point2D Integration::segmentFromPoints | `OCCTCurve2DSegmentFromPoints` | half-length segment | ✅ | ✅ | MATCH | `guard ... else { return }`; now checks both samples fully |
+| Curve2D Point2D Integration::projectPoint | `OCCTCurve2DProjectPoint2D` | distance + 1 | ✅ | ✅ | MATCH | `guard ... else { return }` and `if let` |

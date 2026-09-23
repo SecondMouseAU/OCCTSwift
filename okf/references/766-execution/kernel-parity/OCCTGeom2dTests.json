@@ -94,5 +94,293 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::Parameter at full arc length of a circle arc",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 15.7079632679,
+        "param(L/2)": 0.785398163397,
+        "point": [
+          7.07106781187,
+          7.07106781187
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 15.7079632679,
+        "param(L/2)": 0.785398163397,
+        "point": [
+          7.07106781187,
+          7.07106781187
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:28:9: Expectation failed: abs(param - .pi / 4) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "nested `if let`s and 0.01/0.05 tolerances; now required, to 1e-9"
+    }
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::Parameter at zero length returns start parameter",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "param": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "param": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:38:9: Expectation failed: abs(param) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "nested in `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::Parameter at full length of a segment",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "param": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "param": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:50:9: Expectation failed: abs(pt.x - 10.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "nested in `if let`, 0.01 tolerance"
+    }
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::Parameter at length from non-start parameter",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "param": 15
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "param": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:61:9: Expectation failed: abs(pt.x - 15.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "nested in `if let`, 0.1 tolerance"
+    }
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::parameterAtLength returns nil on failure",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "param(1000)": 1000,
+        "param(nan)": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "param(1000)": 1000,
+        "param(nan)": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:70:9: Expectation failed: seg.parameterAtLength(1000) == 1000",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "`_ = result`, no assertion"
+    }
+  },
+  {
+    "test_name": "Curve2D parameterAtLength Tests::Trim curve to exact arc length using parameterAtLength",
+    "bridge_function": "OCCTCurve2DParameterAtLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "trimmed_length": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "trimmed_length": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "parameter + 0.5",
+      "red": "Curve2DParameterAtLengthTests.swift:82:9: Expectation failed: abs(len - 7.0) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "three nested `if let`s, 0.01 tolerance"
+    }
+  },
+  {
+    "test_name": "Curve2D Point2D Integration::pointAtParameter",
+    "bridge_function": "OCCTCurve2DPointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "evaluate at t + 1",
+      "red": "Curve2DPoint2DIntegrationTests.swift:17:9: Expectation failed: abs(pt.x - 5.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "`guard ... else { return }` and `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Point2D Integration::segmentFromPoints",
+    "bridge_function": "OCCTCurve2DSegmentFromPoints",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "samples": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            5
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "samples": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            5
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "half-length segment",
+      "red": "Curve2DPoint2DIntegrationTests.swift:28:9: Expectation failed: simd_distance(pts[1], SIMD2(5, 5)) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "`guard ... else { return }`; now checks both samples fully"
+    }
+  },
+  {
+    "test_name": "Curve2D Point2D Integration::projectPoint",
+    "bridge_function": "OCCTCurve2DProjectPoint2D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "distance": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "distance": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "distance + 1",
+      "red": "Curve2DPoint2DIntegrationTests.swift:35:9: Expectation failed: abs(result.distance - 5.0) < 1e-6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-param-at-length-point2d/",
+      "rewritten": "`guard ... else { return }` and `if let`"
+    }
   }
 ]
