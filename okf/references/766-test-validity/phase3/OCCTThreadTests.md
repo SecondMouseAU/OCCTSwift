@@ -5,7 +5,7 @@ captured green. The previous version of this file (12 rows, PR #2022) was remove
 found every row a stub, three of its Red claims impossible given the code, and its parity values
 copied from bridge to kernel. Sections are one per PR.
 
-## Thread::Issue193-222 (PR #TBD, files: Issue193LongThreadTests.swift, Issue196PolyHLRTests.swift, Issue213VProfileTests.swift, Issue219SmoothInternalTests.swift, Issue222EnvelopeTests.swift)
+## Thread::Issue193-222 (PR #2369, files: Issue193LongThreadTests.swift, Issue196PolyHLRTests.swift, Issue213VProfileTests.swift, Issue219SmoothInternalTests.swift, Issue222EnvelopeTests.swift)
 
 Injections are the named entries of the PR body's injection table; every one was applied with `Sources/` otherwise clean and reverted with `git checkout -- Sources` before the green run.
 
