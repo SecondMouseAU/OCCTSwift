@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
 
 ---
 
@@ -202,6 +206,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
+| Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
+| Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
 
 ---
 
@@ -304,5 +312,9 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Shape distance to Wire | ✅ | ✅ | ✅ |
+| Shape intersects Wire | ✅ | ✅ | ✅ |
+| Shape distance to Edge | ✅ | ✅ | ✅ |
+| Shape distance to Face | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 563 tests
