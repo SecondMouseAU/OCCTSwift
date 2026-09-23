@@ -299,27 +299,39 @@ struct LocalPropsParityTests {
         }
     }
 
-    /// The discriminating half: a cone's lateral face sampled approaching its apex. `v` values in
-    /// the `(1e-7, 1e-6)` band are exactly where `surfaceLocalProps`' old `1e-6` called curvature
-    /// undefined and `Face`'s `Precision::Confusion()` entry points called it defined.
+    /// The discriminating half: a cone's lateral face sampled approaching its apex. Points whose
+    /// `|dP/du|` lands in the `(1e-7, 1e-6)` band are exactly where `surfaceLocalProps`' old `1e-6`
+    /// called curvature undefined and `Face`'s `Precision::Confusion()` entry points called it
+    /// defined.
+    ///
+    /// This used to sample `v` in `1e-8...1` and call that approaching the apex, but the lateral
+    /// face's `v = 0` is its radius-5 base circle, not the apex, so every sample was well
+    /// conditioned and restoring the `1e-6` resolution left the test green. The apex is at
+    /// `v = hypot(5, 10)`, the slant height (Scripts/repro/766-local-props-parity), and the band
+    /// runs from about `5e-7` to `2e-6` short of it.
     @Test("Shape.surfaceLocalProps agrees with Face approaching a cone apex")
     func surfaceLocalPropsAgreesNearConeApex() throws {
         let cone = try #require(Shape.cone(bottomRadius: 5, topRadius: 0, height: 10))
         // The lateral face is the one whose curvature varies with v; a planar cap's does not.
-        for faceShape in cone.subShapes(ofType: .face) {
-            let face = try #require(Face(faceShape))
-            for v in [1e-8, 1e-7, 5e-7, 1e-6, 1e-5, 1e-3, 1.0] {
-                let props = faceShape.surfaceLocalProps(u: 0, v: v)
-                let label: Comment = "cone face v=\(v)"
-                #expect(
-                    props.gaussianCurvature == (face.gaussianCurvature(atU: 0, v: v) ?? 0),
-                    label)
-                #expect(props.meanCurvature == (face.meanCurvature(atU: 0, v: v) ?? 0), label)
-                #expect(
-                    (face.principalCurvatures(atU: 0, v: v) != nil) == props.curvatureDefined,
-                    label)
-            }
+        let faceShape = try #require(
+            cone.subShapes(ofType: .face).first { Face($0)?.surfaceType == .cone })
+        let face = try #require(Face(faceShape))
+        let vApex = (5.0 * 5.0 + 10.0 * 10.0).squareRoot()
+        for delta in [1e-8, 1e-7, 5e-7, 1e-6, 2e-6, 1e-5, 1.0] {
+            let v = vApex - delta
+            let props = faceShape.surfaceLocalProps(u: 0, v: v)
+            let label: Comment = "cone face apex - \(delta)"
+            #expect(
+                props.gaussianCurvature == (face.gaussianCurvature(atU: 0, v: v) ?? 0),
+                label)
+            #expect(props.meanCurvature == (face.meanCurvature(atU: 0, v: v) ?? 0), label)
+            #expect(
+                (face.principalCurvatures(atU: 0, v: v) != nil) == props.curvatureDefined,
+                label)
         }
+        // The fixture discriminates only if the band really is defined at the shared resolution:
+        // 1e-6 short of the apex, |dP/du| is about 4.5e-7.
+        #expect(faceShape.surfaceLocalProps(u: 0, v: vApex - 1e-6).curvatureDefined)
     }
 
     // MARK: The RealLast() sentinel

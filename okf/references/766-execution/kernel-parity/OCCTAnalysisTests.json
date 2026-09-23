@@ -4501,5 +4501,326 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Well-conditioned surface points agree",
+    "bridge_function": "OCCTSurfaceLocalCurvatures",
+    "bridge_output": {
+      "type": "curvatures",
+      "data": {
+        "sphere_r5_u0_v0.3": {
+          "kmax": -0.2,
+          "kmin": -0.2
+        },
+        "cylinder_r3_u1.2_v-0.8": {
+          "kmax": 0.0,
+          "kmin": -0.3333333333333333
+        },
+        "apex_cone_v0.01": {
+          "H": -86.60254037844388
+        },
+        "plane": {
+          "defined": true,
+          "umbilic": true
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvatures",
+      "data": {
+        "sphere_r5_u0_v0.3": {
+          "kmax": -0.2,
+          "kmin": -0.2
+        },
+        "cylinder_r3_u1.2_v-0.8": {
+          "kmax": 0.0,
+          "kmin": -0.3333333333333333
+        },
+        "apex_cone_v0.01": {
+          "H": -86.60254037844388
+        },
+        "plane": {
+          "defined": true,
+          "umbilic": true
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Inside the old 1e-10 window the two Surface families agree",
+    "bridge_function": "OCCTSurfaceLocalCurvatures",
+    "bridge_output": {
+      "type": "definedness",
+      "data": {
+        "apex_cone_v_1e-9_1e-8_1e-7": "undefined",
+        "apex_cone_v_3e-7_1e-6": "defined",
+        "sphere_pole_minus_1e-9_1e-8": "undefined",
+        "sphere_pole_minus_1e-7": "defined"
+      }
+    },
+    "kernel_output": {
+      "type": "definedness",
+      "data": {
+        "apex_cone_v_1e-9_1e-8_1e-7": "undefined",
+        "apex_cone_v_3e-7_1e-6": "defined",
+        "sphere_pole_minus_1e-9_1e-8": "undefined",
+        "sphere_pole_minus_1e-7": "defined"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Genuinely degenerate surface points are undefined for both families",
+    "bridge_function": "OCCTSurfaceLocalCurvatures",
+    "bridge_output": {
+      "type": "definedness",
+      "data": {
+        "apex_cone_v0": "undefined",
+        "sphere_poles": "undefined"
+      }
+    },
+    "kernel_output": {
+      "type": "definedness",
+      "data": {
+        "apex_cone_v0": "undefined",
+        "sphere_poles": "undefined"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Well-conditioned curve parameters agree",
+    "bridge_function": "OCCTCurve3DLocalTangent",
+    "bridge_output": {
+      "type": "curve_props",
+      "data": {
+        "circle_r5_u0.7_tangent": [
+          -0.644218,
+          0.764842,
+          0
+        ],
+        "line_curvature": 0,
+        "bezier_u0.25_curvature": 0.6105956290559427
+      }
+    },
+    "kernel_output": {
+      "type": "curve_props",
+      "data": {
+        "circle_r5_u0.7_tangent": [
+          -0.644218,
+          0.764842,
+          0
+        ],
+        "line_curvature": 0,
+        "bezier_u0.25_curvature": 0.6105956290559427
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Inside the old 1e-10 window the two Curve3D families agree",
+    "bridge_function": "OCCTCurve3DLocalTangent",
+    "bridge_output": {
+      "type": "curve_props",
+      "data": {
+        "cusp_spacing_1e-8_tangent": [
+          0.707107,
+          0.707107,
+          0
+        ],
+        "cusp_spacing_1e-7_tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "curve_props",
+      "data": {
+        "cusp_spacing_1e-8_tangent": [
+          0.707107,
+          0.707107,
+          0
+        ],
+        "cusp_spacing_1e-7_tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Shape.curveLocalProps agrees with Edge's per-scalar entry points",
+    "bridge_function": "OCCTGeomLPropCLProps",
+    "bridge_output": {
+      "type": "curve_props",
+      "data": {
+        "circle_edges_curvature": 0.1,
+        "seam_edges_curvature": 0
+      }
+    },
+    "kernel_output": {
+      "type": "curve_props",
+      "data": {
+        "circle_edges_curvature": 0.1,
+        "seam_edges_curvature": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Shape.curveLocalProps agrees with Edge on a cusped edge",
+    "bridge_function": "OCCTGeomLPropCLProps",
+    "bridge_output": {
+      "type": "curve_props",
+      "data": {
+        "spacing_0_to_1e-8": "RealLast",
+        "spacing_1e-7": 666666.6666666667
+      }
+    },
+    "kernel_output": {
+      "type": "curve_props",
+      "data": {
+        "spacing_0_to_1e-8": "RealLast",
+        "spacing_1e-7": 666666.6666666667
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Shape.surfaceLocalProps agrees with Face's per-scalar entry points",
+    "bridge_function": "OCCTGeomLPropSLProps",
+    "bridge_output": {
+      "type": "curvatures",
+      "data": {
+        "lateral_H": -0.05,
+        "caps_H": 0
+      }
+    },
+    "kernel_output": {
+      "type": "curvatures",
+      "data": {
+        "lateral_H": -0.05,
+        "caps_H": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::Shape.surfaceLocalProps agrees with Face approaching a cone apex",
+    "bridge_function": "OCCTGeomLPropSLProps",
+    "bridge_output": {
+      "type": "definedness",
+      "data": {
+        "apex_minus_1e-8_1e-7": "undefined",
+        "apex_minus_5e-7_to_1e-5": "defined",
+        "apex_minus_1e-6_H": -1000000.000613578
+      }
+    },
+    "kernel_output": {
+      "type": "definedness",
+      "data": {
+        "apex_minus_1e-8_1e-7": "undefined",
+        "apex_minus_5e-7_to_1e-5": "defined",
+        "apex_minus_1e-6_H": -1000000.000613578
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::A cusp's infinite curvature yields no centre of curvature, not a NaN one",
+    "bridge_function": "OCCTCurve3DGetCenterOfCurvature",
+    "bridge_output": {
+      "type": "curve_props",
+      "data": {
+        "curvature": "RealLast",
+        "centre": null
+      }
+    },
+    "kernel_output": {
+      "type": "curve_props",
+      "data": {
+        "curvature": "RealLast",
+        "raw_CentreOfCurvature": "(nan, inf, nan), or Standard_ConstructionError at spacing 0"
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH",
+    "probe": "Scripts/repro/766-local-props-parity/"
+  },
+  {
+    "test_name": "Local* local-properties parity (#494)::No local-properties entry point returns a non-finite number",
+    "bridge_function": "OCCTCurve3DLocalCentreOfCurvature",
+    "bridge_output": {
+      "type": "finiteness",
+      "data": {
+        "all_returned_values_finite": true
+      }
+    },
+    "kernel_output": {
+      "type": "finiteness",
+      "data": {
+        "cusp_raw_centre_finite": false,
+        "cusp_curvature": "RealLast"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-local-props-parity/"
   }
 ]

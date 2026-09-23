@@ -235,6 +235,17 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Local* local-properties parity (#494)** | Well-conditioned surface points agree | Local* vs canonical surface curvature | OCCTSurfaceLocalCurvatures |
+| **Local* local-properties parity (#494)** | Inside the old 1e-10 window the two Surface families agree | Local* vs canonical surface definedness | OCCTSurfaceLocalCurvatures |
+| **Local* local-properties parity (#494)** | Genuinely degenerate surface points are undefined for both families | Degenerate surface points | OCCTSurfaceLocalCurvatures |
+| **Local* local-properties parity (#494)** | Well-conditioned curve parameters agree | Local* vs canonical curve props | OCCTCurve3DLocalTangent |
+| **Local* local-properties parity (#494)** | Inside the old 1e-10 window the two Curve3D families agree | Local* vs canonical curve definedness | OCCTCurve3DLocalTangent |
+| **Local* local-properties parity (#494)** | Shape.curveLocalProps agrees with Edge's per-scalar entry points | Aggregate vs per-scalar edge props | OCCTGeomLPropCLProps |
+| **Local* local-properties parity (#494)** | Shape.curveLocalProps agrees with Edge on a cusped edge | Aggregate vs per-scalar edge definedness | OCCTGeomLPropCLProps |
+| **Local* local-properties parity (#494)** | Shape.surfaceLocalProps agrees with Face's per-scalar entry points | Aggregate vs per-scalar face props | OCCTGeomLPropSLProps |
+| **Local* local-properties parity (#494)** | Shape.surfaceLocalProps agrees with Face approaching a cone apex | Aggregate vs per-scalar face definedness | OCCTGeomLPropSLProps |
+| **Local* local-properties parity (#494)** | A cusp's infinite curvature yields no centre of curvature, not a NaN one | RealLast sentinel | OCCTCurve3DGetCenterOfCurvature |
+| **Local* local-properties parity (#494)** | No local-properties entry point returns a non-finite number | RealLast sentinel | OCCTCurve3DLocalCentreOfCurvature |
 
 ---
 
@@ -424,6 +435,17 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Well-conditioned surface points agree | OCCTSurfaceLocalCurvatures | Local* vs canonical surface curvature | local maxCurvature nudged one ULP | ✅ | ✅ | Both families read GeomLProp_SLProps at Precision::Confusion(); the test asserts exact equality between them |
+| Inside the old 1e-10 window the two Surface families agree | OCCTSurfaceLocalCurvatures | Local* vs canonical surface definedness | Local* props back at the pre-#494 1e-10 resolution | ✅ | ✅ | Kernel at 1e-10 calls the undefined points defined (e.g. H = -8.66e7 at cone v = 1e-8), which is the drift the test catches |
+| Genuinely degenerate surface points are undefined for both families | OCCTSurfaceLocalCurvatures | Degenerate surface points | Local* reports an undefined point as defined (zeros) | ✅ | ✅ |  |
+| Well-conditioned curve parameters agree | OCCTCurve3DLocalTangent | Local* vs canonical curve props | local tangent X and Y swapped | ✅ | ✅ | Tangent/normal/centre pairs asserted exactly equal between OCCTCurve3DLocal* and OCCTCurve3DGet* |
+| Inside the old 1e-10 window the two Curve3D families agree | OCCTCurve3DLocalTangent | Local* vs canonical curve definedness | Local* props back at 1e-10 | ✅ | ✅ | At 1e-10 the kernel reports (1, 0, 0) at spacing 1e-10...1e-8, the disagreement the test catches |
+| Shape.curveLocalProps agrees with Edge's per-scalar entry points | OCCTGeomLPropCLProps | Aggregate vs per-scalar edge props | aggregate curvature nudged one ULP | ✅ | ✅ |  |
+| Shape.curveLocalProps agrees with Edge on a cusped edge | OCCTGeomLPropCLProps | Aggregate vs per-scalar edge definedness | aggregate props back at the pre-#494 1e-6 resolution | ✅ | ✅ |  |
+| Shape.surfaceLocalProps agrees with Face's per-scalar entry points | OCCTGeomLPropSLProps | Aggregate vs per-scalar face props | aggregate mean curvature nudged one ULP | ✅ | ✅ |  |
+| Shape.surfaceLocalProps agrees with Face approaching a cone apex | OCCTGeomLPropSLProps | Aggregate vs per-scalar face definedness | aggregate props back at 1e-6 (original: green); mean nudged one ULP | ✅ | ✅ | Rewritten: the old v in 1e-8...1 sampled the base circle (v = 0), not the apex (v = hypot(5, 10)), so the 1e-6 regression passed |
+| A cusp's infinite curvature yields no centre of curvature, not a NaN one | OCCTCurve3DGetCenterOfCurvature | RealLast sentinel | invertibility gate back to |k| > 1e-10, which RealLast passes | ✅ | ✅ | Parity: the kernel's raw centre is non-finite, which the bridge correctly refuses |
+| No local-properties entry point returns a non-finite number | OCCTCurve3DLocalCentreOfCurvature | RealLast sentinel | invertibility gate back to |k| > 1e-10 | ✅ | ✅ | Invariant test; kernel column records the non-finite raw values the bridge must filter |
 
 ---
 
