@@ -2225,5 +2225,139 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::linearProperties",
+    "bridge_function": "OCCTShapeLinearProperties",
+    "bridge_output": {
+      "type": "linear_properties",
+      "data": {
+        "length": 40.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "linear_properties",
+      "data": {
+        "length": 40.0,
+        "centre": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::momentOfInertia",
+    "bridge_function": "OCCTShapeMomentOfInertia",
+    "bridge_output": {
+      "type": "inertia_tensor",
+      "data": {
+        "ixx": 16666.666666666668,
+        "iyy": 16666.666666666664,
+        "izz": 16666.66666666667,
+        "off_diagonal_max": 7.77e-15
+      }
+    },
+    "kernel_output": {
+      "type": "inertia_tensor",
+      "data": {
+        "ixx": 16666.6666667,
+        "iyy": 16666.6666667,
+        "izz": 16666.6666667,
+        "off_diagonal_max": 7.77e-15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel values printed to 12 significant digits; agree to that precision"
+      ]
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::principalAxes",
+    "bridge_function": "OCCTShapePrincipalAxes",
+    "bridge_output": {
+      "type": "principal_axes",
+      "data": {
+        "fixture": "box 10x20x30",
+        "axis1": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "axis2": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "axis3": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "principal_axes",
+      "data": {
+        "fixture": "box 10x20x30",
+        "axis1": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "axis2": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "axis3": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.114.0 - Mass Properties::radiusOfGyration",
+    "bridge_function": "OCCTShapeRadiusOfGyration",
+    "bridge_output": {
+      "type": "radius_of_gyration",
+      "data": {
+        "radius": 4.082482904638631
+      }
+    },
+    "kernel_output": {
+      "type": "radius_of_gyration",
+      "data": {
+        "radius": 4.08248290464
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": [
+        "kernel value printed to 12 significant digits; agree to that precision"
+      ]
+    },
+    "status": "PASS"
   }
 ]
