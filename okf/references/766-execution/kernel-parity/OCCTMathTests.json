@@ -182,5 +182,125 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "CoordinateSystem3D::defaultXYZ",
+    "bridge_function": "OCCTAx3Create",
+    "bridge_output": {"type": "observed", "data": "direct 1, yDirection (0, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "direct 1, yDirection (0, 1, 0)", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Y direction y negated", "failing_expectation": ":13 `abs(cs.yDirection.y - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::fromNormal",
+    "bridge_function": "OCCTAx3CreateFromNormal",
+    "bridge_output": {"type": "observed", "data": "direct 1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "direct 1", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "isDirect inverted", "failing_expectation": ":18 `cs.isDirect`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::angle",
+    "bridge_function": "OCCTAx3Angle",
+    "bridge_output": {"type": "observed", "data": "1.5707963267949", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1.5707963267949", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "a1.Angle(a1) instead of a1.Angle(a2)", "failing_expectation": ":24 `abs(cs1.angle(to: cs2) - .pi / 2) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::isCoplanar",
+    "bridge_function": "OCCTAx3IsCoplanar",
+    "bridge_output": {"type": "observed", "data": "1 (coplanar)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1 (coplanar)", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "second origin built as (x, z, y)", "failing_expectation": ":30 `cs1.isCoplanar(with: cs2)`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::mirrorPoint",
+    "bridge_function": "OCCTAx3MirrorPoint",
+    "bridge_output": {"type": "observed", "data": "origin (-1, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "origin (-1, 0, 0)", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "origin x read from the unmirrored axis", "failing_expectation": ":37 `abs(mirrored.origin.x + 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::rotate",
+    "bridge_function": "OCCTAx3Rotate",
+    "bridge_output": {"type": "observed", "data": "origin (1.1e-16, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "origin (1.1e-16, 1, 0)", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "angle negated", "failing_expectation": ":45 `abs(rotated.origin.y - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::translate",
+    "bridge_function": "OCCTAx3Translate",
+    "bridge_output": {"type": "observed", "data": "origin (1, 2, 3)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "origin (1, 2, 3)", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "vector x and y swapped", "failing_expectation": ":52 `abs(translated.origin.x - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::createWithParallelDirectionAndXDirectionSignalsFailure",
+    "bridge_function": "OCCTAx3Create",
+    "bridge_output": {"type": "observed", "data": "gp_Ax3 throws Standard_ConstructionError; bridge fallback zeros", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Ax3 throws Standard_ConstructionError; bridge fallback zeros", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros", "failing_expectation": ":68 `cs.xDirection == .zero`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::createFromNormalWithZeroDirectionSignalsFailure",
+    "bridge_function": "OCCTAx3CreateFromNormal",
+    "bridge_output": {"type": "observed", "data": "gp_Dir(0,0,0) throws Standard_ConstructionError; bridge fallback zeros", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Dir(0,0,0) throws Standard_ConstructionError; bridge fallback zeros", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "catch falls back to a default (1,0,0)/(0,1,0) frame instead of zeros", "failing_expectation": ":75 `cs.xDirection == .zero`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::mirrorPointWithDegenerateSourceFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3MirrorPoint",
+    "bridge_output": {"type": "observed", "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "catch no longer writes the input point back (pre-#1443 empty catch)", "failing_expectation": ":90 `mirrored.origin == SIMD3(5, 3, 2)`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::rotateWithZeroAxisDirectionFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3Rotate",
+    "bridge_output": {"type": "observed", "data": "gp_Dir(0,0,0) axis throws Standard_ConstructionError; bridge returns the input point", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Dir(0,0,0) axis throws Standard_ConstructionError; bridge returns the input point", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "catch no longer writes the input point back (pre-#1443 empty catch)", "failing_expectation": ":98 `rotated.origin == SIMD3(5, 3, 2)`"},
+    "green": true
+  },
+  {
+    "test_name": "CoordinateSystem3D::translateWithDegenerateSourceFallsBackToUnmoved",
+    "bridge_function": "OCCTAx3Translate",
+    "bridge_output": {"type": "observed", "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "gp_Ax3 throws Standard_ConstructionError; bridge returns the input point", "source": "Scripts/repro/766-math-coordinate-system-3d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "catch no longer writes the input point back (pre-#1443 empty catch)", "failing_expectation": ":106 `translated.origin == SIMD3(5, 3, 2)`"},
+    "green": true
   }
 ]
