@@ -32,14 +32,26 @@ struct Issue1266CrestRadiusSentinelTests {
         #expect(crest == nil, "a failed measurement must report absence, not a sentinel value")
     }
 
-    @Test("the pre-#1266 -1 sentinel would have silently passed the exact assertion every call site used")
+    @Test("a forced mesh failure fails the call sites' crest check instead of passing it")
     func documentsThePreFixSilentPass() {
-        // Not a bug in current code: this is the pre-fix arithmetic, kept as a permanent record of
-        // why `-1` was a silent-pass bug rather than a safe fallback. `-1` is the value the removed
-        // `Issue257MultiStartTests.meshCrestRadius` returned on `Shape.mesh` failure, compared with
-        // `<=` against any positive nominal radius at every one of its three call sites.
-        let preFixSentinelOnFailure = -1.0
-        #expect(preFixSentinelOnFailure <= 5.0 * 1.005)
+        // The removed `Issue257MultiStartTests.meshCrestRadius` returned `-1` on `Shape.mesh`
+        // failure, and its three call sites compared that with `<=` against a positive nominal
+        // radius, which `-1` always satisfies. This test used to assert exactly that arithmetic,
+        // `#expect(-1.0 <= 5.0 * 1.005)`, which no change to any code could turn red (#1990).
+        // It now runs the crest check the way the call sites do today, through the shared helper
+        // with a mesher that fails, and requires the check NOT to pass. Put the sentinel back in
+        // `meshMaxRadialExtent` and the `<=` passes again, which fails this test.
+        guard let s = Shape.cylinder(radius: 5, height: 10) else {
+            Issue.record("cylinder build failed")
+            return
+        }
+        let crestCheckPassed: Bool
+        if let crest = meshMaxRadialExtent(s, deflection: 0.03, mesher: { _, _ in nil }) {
+            crestCheckPassed = crest <= 5.0 * 1.005
+        } else {
+            crestCheckPassed = false
+        }
+        #expect(!crestCheckPassed, "a failed mesh must not satisfy the crest-radius check")
     }
 
     @Test("real geometry still measures a sensible crest radius through the shared helper")

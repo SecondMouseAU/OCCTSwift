@@ -1,0 +1,15 @@
+# ./probe <257 partial n=2 .brep> <1578 nut .brep> <1578 rod .brep>, each written from the Swift result via Shape.toBREPString().
+# OCCT V8_0_1, v4.0.0-kernel.1 asset.
+257 full n=1: type=2 volume=1693.718374724 faces=7 valid=1 crest(0.03)=5.000005245
+  startCount mesh(0.02): clusters@0=1 10.872450  clusters@pi/2=1 11.272161  offset(pi/2 - 0) mod pitch=0.399711 (lead/4 mod pitch=0.375000)
+257 full n=2: type=2 volume=1693.684692337 faces=12 valid=1 crest(0.03)=5.000000954
+  startCount mesh(0.02): clusters@0=2 10.481929 11.968648  clusters@pi/2=2 11.234999 12.729790  offset(pi/2 - 0) mod pitch=0.753070 (lead/4 mod pitch=0.750000)
+257 full n=3: type=2 volume=1693.679586746 faces=17 valid=1 crest(0.03)=5.000000954
+  startCount mesh(0.02): clusters@0=3 10.124656 11.603917 13.150966  clusters@pi/2=3 11.207973 12.754526 14.222409  offset(pi/2 - 0) mod pitch=1.083317 (lead/4 mod pitch=1.125000)
+257 trap n=2: type=2 volume=3521.663516583 faces=12 valid=1 crest(0.03)=6.000001431
+1266 cylinder r=5 h=10 crest(0.05)=5.000000000
+1578 bolt (probe loft): type=2 volume=1377.154160079 faces=7 valid=1 crest(0.02)=8.000009537
+  boltCrest(0.02)=8.000009537 ceiling=(crest+16)/2=12.000004768
+257 partial n=2 (BREP from Swift): type=2 volume=2088.230609817 faces=15 valid=1 crest(0.03)=5.000001431
+1578 nut (BREP from Swift): rootBelow(12.000004768)=8.000001907
+1578 rod (BREP from Swift): stockR=11.247595264 ceiling=9.623797632 rootBelow=8.001458168

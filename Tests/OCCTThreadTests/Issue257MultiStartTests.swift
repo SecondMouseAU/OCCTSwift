@@ -71,7 +71,49 @@ struct Issue257MultiStartTests {
         #expect(s.subShapes(ofType: .face).count < 40)
     }
 
-    /// The thread genuinely has N starts: exactly N crest clusters cross a fixed half-plane per lead.
+    /// Mean Z of each crest cluster crossing the half-plane at polar angle `alpha`.
+    ///
+    /// Counts mesh vertices with r > 4.9 and z in (10, 10 + lead), splitting clusters where
+    /// consecutive crest Zs are more than half a pitch apart.
+    private func crestClusters(
+        _ m: Mesh, alpha: Double, pitch: Double, lead: Double
+    ) -> [Double] {
+        var zs: [Double] = []
+        for v in m.vertices {
+            let ang = atan2(Double(v.y), Double(v.x))
+            let r = Double(((v.x * v.x) + (v.y * v.y)).squareRoot())
+            let z = Double(v.z)
+            if abs(remainder(ang - alpha, 2 * .pi)) < 0.04, r > 4.9, z > 10, z < 10 + lead {
+                zs.append(z)
+            }
+        }
+        zs.sort()
+        var means: [Double] = []
+        var sum = 0.0
+        var count = 0
+        for (i, z) in zs.enumerated() {
+            if i > 0, z - zs[i - 1] > pitch * 0.5 {
+                means.append(sum / Double(count))
+                sum = 0
+                count = 0
+            }
+            sum += z
+            count += 1
+        }
+        if count > 0 { means.append(sum / Double(count)) }
+        return means
+    }
+
+    /// The thread genuinely has N starts.
+    ///
+    /// Counting crest clusters on one half-plane is not enough on its own: a single-start thread
+    /// of the same pitch also crosses a half-plane N times per N pitches, so a build that ignored
+    /// `starts` altogether passed the count (#1990: forcing `nStart = 1` in `threadedRodSolid`
+    /// left the count-only version of this test green). What does tell the two apart is the lead.
+    /// A crest reaches the half-plane a quarter turn on (polar angle pi/2) lead/4 further along
+    /// the axis, so the offset between the two half-planes' crests, modulo the pitch, is
+    /// lead/4 mod pitch: 0.375 mm for 1 start, 0.75 for 2, 1.125 for 3 at P = 1.5, each 0.375 from
+    /// the next. Probed against the kernel in `Scripts/repro/766-thread-257-1578/`.
     @Test("Start count equals the requested number of starts")
     func startCount() {
         for n in [1, 2, 3] {
@@ -83,19 +125,19 @@ struct Issue257MultiStartTests {
                 Issue.record("starts=\(n)")
                 continue
             }
-            var zs: [Double] = []
-            for v in m.vertices {
-                let ang = atan2(Double(v.y), Double(v.x))
-                let r = Double(((v.x * v.x) + (v.y * v.y)).squareRoot())
-                let z = Double(v.z)
-                if abs(ang) < 0.04, r > 4.9, z > 10, z < 10 + lead { zs.append(z) }
+            let atZero = crestClusters(m, alpha: 0, pitch: pitch, lead: lead)
+            let atQuarter = crestClusters(m, alpha: .pi / 2, pitch: pitch, lead: lead)
+            #expect(atZero.count == n, "starts=\(n): found \(atZero.count) crest clusters per lead")
+            guard let z0 = atZero.first, let z90 = atQuarter.first else {
+                Issue.record("starts=\(n): no crest on one of the two half-planes")
+                continue
             }
-            zs.sort()
-            var clusters = zs.isEmpty ? 0 : 1
-            if zs.count > 1 {
-                for i in 1..<zs.count where zs[i] - zs[i - 1] > pitch * 0.5 { clusters += 1 }
-            }
-            #expect(clusters == n, "starts=\(n): found \(clusters) crest clusters per lead")
+            let offset = (z90 - z0).truncatingRemainder(dividingBy: pitch)
+            let expected = (lead / 4).truncatingRemainder(dividingBy: pitch)
+            #expect(
+                abs(remainder(offset - expected, pitch)) < 0.1,
+                "starts=\(n): quarter-turn crest offset \(offset) mod pitch, expected lead/4 = \(expected)"
+            )
         }
     }
 
