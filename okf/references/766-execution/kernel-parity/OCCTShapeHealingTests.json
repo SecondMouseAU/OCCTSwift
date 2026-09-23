@@ -2,9 +2,377 @@
   {
     "test_name": "ShapeHealing domain kernel parity",
     "bridge_function": "OCCTShapeHealingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
+  },
+  {
+    "test_name": "Location Purge::cleanShapePurge",
+    "bridge_function": "OCCTShapePurgeLocations",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box": {
+          "IsDone": true,
+          "faces": 6
+        },
+        "mirroredBox": {
+          "locatedFacesBefore": 0,
+          "IsDone": true,
+          "faces": 6,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Location Purge::mirroredShapePurge",
+    "bridge_function": "OCCTShapePurgeLocations",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": {
+        "faces": 6,
+        "volume": 1000.0
+      }
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box": {
+          "IsDone": true,
+          "faces": 6
+        },
+        "mirroredBox": {
+          "locatedFacesBefore": 0,
+          "IsDone": true,
+          "faces": 6,
+          "volume": 1000.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "ShapeAnalysis_Geom NearestPlane::nearestPlane",
+    "bridge_function": "OCCTShapeNearestPlane",
+    "bridge_output": {
+      "type": "plane",
+      "data": {
+        "maxDeviation": 0.062505859,
+        "normal": [
+          0.002500313,
+          0.007500938,
+          0.999968742
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "plane",
+      "data": {
+        "maxDeviation": 0.062505859,
+        "normal": [
+          0.002500313,
+          0.007500938,
+          0.999968742
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NURBS Conversion::convertBox",
+    "bridge_function": "OCCTShapeConvertToNURBS",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box10x5x3": {
+          "bsplineFaces": 6,
+          "volume": 150.0
+        },
+        "sphere": {
+          "bsplineFaces": 1,
+          "volume": 523.369781
+        },
+        "filletedBox": {
+          "bsplineFaces": 26,
+          "volume": 975.587014
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NURBS Conversion::convertSphere",
+    "bridge_function": "OCCTShapeConvertToNURBS",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box10x5x3": {
+          "bsplineFaces": 6,
+          "volume": 150.0
+        },
+        "sphere": {
+          "bsplineFaces": 1,
+          "volume": 523.369781
+        },
+        "filletedBox": {
+          "bsplineFaces": 26,
+          "volume": 975.587014
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "NURBS Conversion::convertFilleted",
+    "bridge_function": "OCCTShapeConvertToNURBS",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box10x5x3": {
+          "bsplineFaces": 6,
+          "volume": 150.0
+        },
+        "sphere": {
+          "bsplineFaces": 1,
+          "volume": 523.369781
+        },
+        "filletedBox": {
+          "bsplineFaces": 26,
+          "volume": 975.587014
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Remove Locations::removeFromTranslated",
+    "bridge_function": "OCCTShapeRemoveLocations",
+    "bridge_output": {
+      "type": "bounds",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "movedBox": {
+          "bounds": [
+            [
+              95,
+              195,
+              295
+            ],
+            [
+              105,
+              205,
+              305
+            ]
+          ],
+          "volume": 1000.0,
+          "locationAfterIdentity": true
+        },
+        "rotatedCylinderMoved50": {
+          "bounds": [
+            [
+              45,
+              -10.6066,
+              -3.5355
+            ],
+            [
+              55,
+              3.5355,
+              10.6066
+            ]
+          ],
+          "volume": 785.398163
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Remove Locations::removeFromRotated",
+    "bridge_function": "OCCTShapeRemoveLocations",
+    "bridge_output": {
+      "type": "bounds",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "movedBox": {
+          "bounds": [
+            [
+              95,
+              195,
+              295
+            ],
+            [
+              105,
+              205,
+              305
+            ]
+          ],
+          "volume": 1000.0,
+          "locationAfterIdentity": true
+        },
+        "rotatedCylinderMoved50": {
+          "bounds": [
+            [
+              45,
+              -10.6066,
+              -3.5355
+            ],
+            [
+              55,
+              3.5355,
+              10.6066
+            ]
+          ],
+          "volume": 785.398163
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Same Parameter::sameParameterBox",
+    "bridge_function": "OCCTShapeSameParameter",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box": {
+          "valid": true,
+          "volume": 1000.0
+        },
+        "cylinder": {
+          "valid": true,
+          "volume": 785.398163397
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Same Parameter::sameParameterCylinder",
+    "bridge_function": "OCCTShapeSameParameter",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box": {
+          "valid": true,
+          "volume": 1000.0
+        },
+        "cylinder": {
+          "valid": true,
+          "volume": 785.398163397
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Same Parameter::sameParameterPreservesVolume",
+    "bridge_function": "OCCTShapeSameParameter",
+    "bridge_output": {
+      "type": "shape_summary",
+      "data": "as asserted"
+    },
+    "kernel_output": {
+      "type": "shape_summary",
+      "data": {
+        "box": {
+          "valid": true,
+          "volume": 1000.0
+        },
+        "cylinder": {
+          "valid": true,
+          "volume": 785.398163397
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
