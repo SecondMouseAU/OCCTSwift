@@ -7,7 +7,8 @@ release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/
 until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
 for what that takes.
 
-**Numbers are never reused.** Re-pinning to OCCT `V8_0_1` on 2026-08-03 retired ten patches, `0032`
+**Numbers are never reused, with one recorded exception.** Re-pinning to OCCT `V8_0_1` on
+2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
 The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0041.
@@ -16,6 +17,18 @@ the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/re
 renumbering would have silently repointed every one of those citations at a different fix.
 [Retired patches](#retired-patches) below keeps each one's writeup, with the equivalence check that
 justified deleting the file.
+
+**The exception is `0034`, and it is the reason the rule is worth stating.**
+`0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393.patch` held the number from 2026-09-07
+(`19d2f12f`) to 2026-09-08 (`be2d0d77`), and
+`0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515.patch` took it on 2026-09-19 (`f1625673`). It
+was reused because the first `0034` lasted a day and left no citation behind, which is a defensible
+call and still a reuse. The cost showed up in
+[#2190](https://github.com/SecondMouseAU/OCCTSwift/issues/2190): the pinned asset carries the
+retired one, and "the asset has 0034" is now ambiguous between a patch we carry and a patch we
+deleted. `Scripts/check-pinned-asset-patches.py` keys that retired patch `0034-LocOpe` for exactly
+this reason. **Do not reuse a number again, however short the number's life was**, and if you
+somehow must, record it here the way this paragraph does.
 
 ## 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319.patch
 
