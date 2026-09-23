@@ -28,6 +28,15 @@
 | **alongEdge on T-branch** | alongEdge on a T-branch between two non-coaxial cylinders falls back to the chord | Edge traversal | Remove alongEdge |
 | **v0.142 ConstructionAxis resolution** | v0.142 ConstructionAxis resolution | Graph axis | Remove axis resolution |
 | **deferredModeToggle()** | deferredModeToggle() | Graph mutation | Remove deferred toggle |
+| **v0.141 TopologyRef resolver** | literalValid | Literal recipe | literal index + 1 |
+| **v0.141 TopologyRef resolver** | literalInvalid | Literal recipe | validity check removed |
+| **v0.141 TopologyRef resolver** | createdByBasic | createdBy recipe | first replacement dropped |
+| **v0.141 TopologyRef resolver** | createdByMissingOp | createdBy recipe | error names the wrong operation |
+| **v0.141 TopologyRef resolver** | createdByOutOfRange | createdBy recipe | available count inflated |
+| **v0.141 TopologyRef resolver** | createdByForwardWalk | createdBy recipe | first replacement dropped |
+| **v0.141 TopologyRef resolver** | splitOf | splitOf recipe | replacements reversed |
+| **v0.141 TopologyRef resolver** | splitOfOutOfRange | splitOf recipe | available count inflated |
+| **v0.141 TopologyRef resolver** | ancestorMissing | splitOf recipe | ancestor error remapped |
 
 ---
 
@@ -53,6 +62,15 @@
 | alongEdge T-branch | OCCTBRepGraphAlongEdge | Edge traversal | Remove alongEdge | ✅ | ✅ |  |
 | v0.142 ConstructionAxis | OCCTBRepGraphConstructionAxis | Graph axis | Remove axis resolution | ✅ | ✅ |  |
 | deferredModeToggle | OCCTBRepGraphDeferredModeToggle | Graph mutation | Remove deferred toggle | ✅ | ✅ |  |
+| literalValid | none (pure Swift: TopologyRef.literal) | Literal recipe | success(NodeRef(kind:, index: + 1)), validity check removed | ✅ | ✅ |  |
+| literalInvalid | none (pure Swift: TopologyRef.literal) | Literal recipe | same | ✅ | ✅ |  |
+| createdByBasic | OCCTBRepGraphHistoryGetRecordMapping | createdBy recipe | repls.dropFirst() when collecting candidates | ✅ | ✅ |  |
+| createdByMissingOp | OCCTBRepGraphHistoryGetRecordInfo | createdBy recipe | operationNotFound(opName + "?") | ✅ | ✅ |  |
+| createdByOutOfRange | OCCTBRepGraphHistoryGetRecordMapping | createdBy recipe | available: count + 2 (and dropFirst) | ✅ | ✅ |  |
+| createdByForwardWalk | OCCTBRepGraphHistoryFindDerived | createdBy recipe | repls.dropFirst() | ✅ | ✅ |  |
+| splitOf | OCCTBRepGraphHistoryGetRecordMapping | splitOf recipe | element(at:, in: repls.reversed()) | ✅ | ✅ |  |
+| splitOfOutOfRange | OCCTBRepGraphHistoryGetRecordMapping | splitOf recipe | available: count + 2 | ✅ | ✅ |  |
+| ancestorMissing | OCCTBRepGraphHistoryGetRecordInfo | splitOf recipe | resolveAncestor maps to .invalid | ✅ | ✅ |  |
 
 ---
 
