@@ -4501,5 +4501,141 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Asymmetric Chamfer (Two Distances)::Two-distance chamfer on box edge",
+    "bridge_function": "OCCTShapeChamferTwoDistances",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 990.0,
+        "volume_if_symmetric": 995.0
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 990.0,
+        "volume_if_symmetric": 995.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-asymchamfer-cinert-vinert/"
+  },
+  {
+    "test_name": "Asymmetric Chamfer (Two Distances)::Multiple edges with different asymmetric chamfers",
+    "bridge_function": "OCCTShapeChamferTwoDistances",
+    "bridge_output": {
+      "type": "volume",
+      "data": {
+        "volume": 995.196,
+        "volume_if_symmetric": 995.6291666666666
+      }
+    },
+    "kernel_output": {
+      "type": "volume",
+      "data": {
+        "volume": 995.196,
+        "volume_if_symmetric": 995.6291666666666
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-asymchamfer-cinert-vinert/"
+  },
+  {
+    "test_name": "BRepGProp Cinert Tests::edge curve inertia",
+    "bridge_function": "OCCTBRepGPropCinert",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "length": 30,
+        "centre": [
+          -5,
+          -10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "length": 30,
+        "centre": [
+          -5,
+          -10,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-asymchamfer-cinert-vinert/"
+  },
+  {
+    "test_name": "BRepGProp Vinert Tests::face volume inertia",
+    "bridge_function": "OCCTBRepGPropVinert",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "volume": 166.66666666666666,
+        "centre": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "volume": 166.66666666666666,
+        "centre": [
+          -3.75,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-asymchamfer-cinert-vinert/"
+  },
+  {
+    "test_name": "BRepGProp Vinert Tests::face volume inertia with plane",
+    "bridge_function": "OCCTBRepGPropVinertPlane",
+    "bridge_output": {
+      "type": "inertia",
+      "data": {
+        "volume": 0,
+        "centre": null
+      }
+    },
+    "kernel_output": {
+      "type": "inertia",
+      "data": {
+        "volume": 0,
+        "centre": null
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-asymchamfer-cinert-vinert/"
   }
 ]

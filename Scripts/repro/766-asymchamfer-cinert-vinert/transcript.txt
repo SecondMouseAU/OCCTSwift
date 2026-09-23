@@ -1,0 +1,15 @@
+10-cube edge 0: (-5,-5,-5) -> (-5,-5,5)
+10-cube edge 1: (-5,-5,5) -> (-5,5,5)
+twoDistChamfer edge0 face0 d1=1 d2=2: done valid=1 volume=989.99999999999989 faces=7
+twoDistChamfer edge0 face0 d1=1 d2=2 (dist2 := dist1): done valid=1 volume=994.99999999999977 faces=7
+multiEdgeChamfer edges 0,1 face 0: done valid=1 volume=995.19600000000003 faces=8
+multiEdgeChamfer edges 0,1 face 0 (dist2 := dist1): done valid=1 volume=995.62916666666661 faces=8
+Cinert box 10x20x30 edge 0: mass=30 centre=(-5, -10, 0)
+Vinert 10-cube face 0: mass=166.66666666666666 centre=(-3.7500000000000004, 1.6653345369377351e-17, 1.4040826024511044e-16)
+Vinert 10-cube face 0 vs plane z=0: mass=0 centre=(0, 0, 0)
+  face 0: vinert=166.66666666666666 vinertPlaneZ=0
+  face 1: vinert=166.66666666666666 vinertPlaneZ=0
+  face 2: vinert=166.66666666666666 vinertPlaneZ=0
+  face 3: vinert=166.66666666666666 vinertPlaneZ=0
+  face 4: vinert=166.66666666666666 vinertPlaneZ=0
+  face 5: vinert=166.66666666666666 vinertPlaneZ=0
