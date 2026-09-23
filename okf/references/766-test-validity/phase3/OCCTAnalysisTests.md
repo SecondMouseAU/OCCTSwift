@@ -235,6 +235,13 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | Inside the old 1e-6 window the two face families agree | Adaptor/Geom LProp parity | BRepLProp resolution |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | Principal curvatures agree, including about where they stop existing | Adaptor/Geom LProp parity | BRepLProp resolution |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | Ordinary points on a sphere and a cylinder agree | Adaptor/Geom LProp parity | Face mean curvature |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | Inside the old 1e-6 window the two edge families agree | Adaptor/Geom LProp parity | BRepLProp resolution |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | A cusp has no centre of curvature and no normal, and does not fake one | Edge centre of curvature | Invertibility gate |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | A straight edge has no centre of curvature and no normal | Edge curvature | 0 reported as undefined |
+| **BRepLProp/GeomLProp local-properties parity (#529)** | A circular edge's centre of curvature is its centre | Edge centre of curvature | Centre X |
 
 ---
 
@@ -424,6 +431,13 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Inside the old 1e-6 window the two face families agree | OCCTFaceLPropMeanCurvature | Adaptor/Geom LProp parity | occtFaceLocalProps/occtEdgeLocalProps resolution 1e-6 (P_RES); separately negate mean (P_MEANNEG) | ✅ | ✅ |  |
+| Principal curvatures agree, including about where they stop existing | OCCTFaceLPropMaxCurvature | Adaptor/Geom LProp parity | resolution 1e-6 (P_RES) | ✅ | ✅ |  |
+| Ordinary points on a sphere and a cylinder agree | OCCTFaceLPropMeanCurvature | Adaptor/Geom LProp parity | negate mean curvature (P_MEANNEG) | ✅ | ✅ |  |
+| Inside the old 1e-6 window the two edge families agree | OCCTEdgeLPropCurvature | Adaptor/Geom LProp parity | resolution 1e-6 (P_RES) | ✅ | ✅ |  |
+| A cusp has no centre of curvature and no normal, and does not fake one | OCCTEdgeLPropCentreOfCurvature | Edge centre of curvature | drop occtCurveCurvatureIsInvertible gate (P_CUSP) | ✅ | ✅ |  |
+| A straight edge has no centre of curvature and no normal | OCCTEdgeLPropCurvature | Edge curvature | curvature == 0 -> return false (P_STRAIGHT) | ✅ | ✅ |  |
+| A circular edge's centre of curvature is its centre | OCCTEdgeLPropCentreOfCurvature | Edge centre of curvature | centre X + 1 (P_CENTRE) | ✅ | ✅ |  |
 
 ---
 

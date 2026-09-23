@@ -4501,5 +4501,231 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::Inside the old 1e-6 window the two face families agree",
+    "bridge_function": "OCCTFaceLPropMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "cone_u0_v3e-7": {
+          "mean": -2886751.34594813,
+          "gauss": 0
+        },
+        "cone_u0_v1": {
+          "mean": -0.8660254037844388
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "cone_u0_v3e-7": {
+          "mean": -2886751.34594813,
+          "gauss": 0
+        },
+        "cone_u0_v1": {
+          "mean": -0.8660254037844388
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::Principal curvatures agree, including about where they stop existing",
+    "bridge_function": "OCCTFaceLPropMaxCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "cone_u0.4_v5e-7": {
+          "kMin": -3464101.6151377554
+        },
+        "cone_u0.4_v0": {
+          "curvatureDefined": false
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "cone_u0.4_v5e-7": {
+          "kMin": -3464101.6151377554
+        },
+        "cone_u0.4_v0": {
+          "curvatureDefined": false
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::Ordinary points on a sphere and a cylinder agree",
+    "bridge_function": "OCCTFaceLPropMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "sphere_r5": {
+          "mean": -0.2,
+          "gauss": 0.04
+        },
+        "cylinder_r3_lateral": {
+          "mean": -0.16666666666666666,
+          "gauss": 0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "sphere_r5": {
+          "mean": -0.2,
+          "gauss": 0.04
+        },
+        "cylinder_r3_lateral": {
+          "mean": -0.16666666666666666,
+          "gauss": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::Inside the old 1e-6 window the two edge families agree",
+    "bridge_function": "OCCTEdgeLPropCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "bezier_spacing3e-7_u0": {
+          "curvature": 7407407407407.409,
+          "curvature_at_res_1e-6": 1.7976931348623157e+308
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "bezier_spacing3e-7_u0": {
+          "curvature": 7407407407407.409,
+          "curvature_at_res_1e-6": 1.7976931348623157e+308
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::A cusp has no centre of curvature and no normal, and does not fake one",
+    "bridge_function": "OCCTEdgeLPropCentreOfCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "bezier_spacing0..1e-8_u0": {
+          "curvature": 1.7976931348623157e+308,
+          "centre": null,
+          "normal": null
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "bezier_spacing0..1e-8_u0": {
+          "curvature": 1.7976931348623157e+308,
+          "centre": null,
+          "normal": null
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::A straight edge has no centre of curvature and no normal",
+    "bridge_function": "OCCTEdgeLPropCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "box_edges_u5": {
+          "curvature": 0,
+          "centre": null,
+          "normal": null
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "box_edges_u5": {
+          "curvature": 0,
+          "centre": null,
+          "normal": null
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
+  },
+  {
+    "test_name": "BRepLProp/GeomLProp local-properties parity (#529)::A circular edge's centre of curvature is its centre",
+    "bridge_function": "OCCTEdgeLPropCentreOfCurvature",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "circle_c(1,2,0)_r4": {
+          "centre": [
+            1,
+            2,
+            0
+          ],
+          "curvature": 0.25
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "circle_c(1,2,0)_r4": {
+          "centre": [
+            1,
+            2,
+            0
+          ],
+          "curvature": 0.25
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-adaptor-local-props-parity/"
   }
 ]
