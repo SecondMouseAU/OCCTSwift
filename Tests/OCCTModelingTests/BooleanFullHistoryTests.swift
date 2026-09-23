@@ -120,5 +120,24 @@ struct BooleanFullHistoryTests {
         #expect(r1.modified.count == r2.modified.count)
         #expect(r1.generated.count == r2.generated.count)
         #expect(r1.isDeleted == r2.isDeleted)
+
+        // #766: box1's first face (x = -5) lies outside box2, so every count compared above is 0
+        // on both reads and the comparisons hold whatever the history reports, an empty one
+        // included. Face 1 (x = +5) is cut by box2; the kernel
+        // (Scripts/repro/766-modeling-boolean-full-history) reports 1 modified and 3 generated
+        // faces for it, on the first read and the second.
+        let boxFaces = box1.subShapes(ofType: .face)
+        guard boxFaces.count == 6 else {
+            Issue.record("box1 should have 6 faces")
+            return
+        }
+        let c1 = r.history.record(of: boxFaces[1])
+        let c2 = r.history.record(of: boxFaces[1])
+        #expect(c1.modified.count == 1)
+        #expect(c1.generated.count == 3)
+        #expect(c2.modified.count == c1.modified.count)
+        #expect(c2.generated.count == c1.generated.count)
+        #expect(!c1.isDeleted)
+        #expect(!c2.isDeleted)
     }
 }

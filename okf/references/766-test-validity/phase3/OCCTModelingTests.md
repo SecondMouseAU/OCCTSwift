@@ -221,3 +221,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `BooleanFullHistoryTests.swift` (5 tests)
+
+Probe: `Scripts/repro/766-modeling-boolean-full-history/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| unionWithFullHistory | `OCCTBooleanHistoryIsDeleted` inverts the builder's IsDeleted answer | `:23 Expectation failed: !rec.isDeleted` | pass | `OCCTBooleanHistoryIsDeleted` | PASS |
+| subtractedWithFullHistorySplitsFace | `OCCTBooleanHistoryModified` and `OCCTBooleanHistoryGenerated` report an empty list for every input | `:58 Expectation failed: foundSplit` | pass | `OCCTBooleanHistoryModified` | PASS: the slab cuts a 4 mm strip off the +Y side rather than bisecting the box; faces 0, 4, 5 reach modified+generated = 2 |
+| intersectionWithFullHistory | `OCCTBooleanIntersectWithHistory` builds a BRepAlgoAPI_Fuse instead of a BRepAlgoAPI_Common | `:73 Expectation failed: r.result.volume! < box1.volume!` | pass | `OCCTBooleanIntersectWithHistory` | PASS |
+| splitWithFullHistory | `OCCTBooleanHistoryIsDeleted` inverts the builder's IsDeleted answer | `:104 Expectation failed: !rec.isDeleted` | pass | `OCCTBooleanHistoryIsDeleted` | PASS |
+| historyHandleSurvives | `OCCTBooleanHistoryModified` and `OCCTBooleanHistoryGenerated` report an empty list for every input | `:136 Expectation failed: c1.modified.count == 1`, `:137 Expectation failed: c1.generated.count == 3` | pass | `OCCTBooleanHistoryModified` | PASS: strengthened: face 0 is untouched by box2, so its 0 == 0 comparisons held for an empty history too; face 1's counts are now pinned |
