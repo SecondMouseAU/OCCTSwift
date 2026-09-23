@@ -99,3 +99,30 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `GDTDimensionAccessorTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `qualifierRoundTrips` | `OCCTDocumentGetDimensionInfo` reports qualifier 0 | :42 Expectation failed: qualified.qualifier == .max | passed | `OCCTDocumentGetDimensionInfo` | PASS: 0, Max (2), 0; value 20 and simple kept |
+| `angularQualifierRoundTrips` | `OCCTDocumentGetDimensionInfo` reports angular qualifier 0 | :69 Expectation failed: both.angularQualifier == .large | passed | `OCCTDocumentGetDimensionInfo` | PASS: Min (1), Large (2) |
+| `decimalPlacesDistinguishAbsenceFromZero` | `OCCTDocumentGetDimensionInfo` tests decimal-place presence with `&&` instead of `or` | :102 Issue recorded | passed | `OCCTDocumentGetDimensionInfo` | PASS: (2,3), (0,4) and (0,0) read back as written; the bridge maps (0,0) to absent |
+| `modifiersRoundTripInOrder` | `OCCTDocumentGetDimensionModifier` swaps modifier indices 0 and 1 | :123 Expectation failed: doc.dimension(at: index)?.modifiers == written | passed | `OCCTDocumentGetDimensionModifier` | PASS: order 19, 1, 2 kept; cleared to 0 |
+| `typeClassifiersMatchOCCT` | `OCCTDimensionTypeIsDimensionalLocation` returns true | :137 Expectation failed: !Document.DimensionType.sizeDiameter.isDimensionalLocation; :140 Expectation failed: !Document.DimensionType.commonLabel.isDimensionalLocation | passed | `OCCTDimensionTypeIsDimensionalLocation` | PASS: identical, and no type is both |
+| `accessorsAreNotSharedBetweenDimensions` | `OCCTDocumentSetDimensionDecimalPlaces` writes to dimension 0 | :173 Expectation failed: a.decimalPlaces == nil; :177 Expectation failed: b.decimalPlaces?.left == 1 | passed | `OCCTDocumentSetDimensionDecimalPlaces` | PASS: separate objects keep separate values |
+| `outOfRangeIndicesAreRefused` | `OCCTDocumentSetDimensionQualifier` returns true without checking the index | :193 Expectation failed: !doc.setDimensionQualifier(at: 5, .max) | passed | `OCCTDocumentSetDimensionQualifier` | PASS: one dimension label, so index 5 is out of range |
+
+### `GDTDocumentTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `emptyDocDimensions` | `OCCTDocumentGetDimensionCount` returns 1 | :16 Expectation failed: doc.dimensionCount == 0 | passed | `OCCTDocumentGetDimensionCount` | PASS: 0 = 0 |
+| `emptyDocTolerances` | `OCCTDocumentGetGeomToleranceCount` returns 1 | :26 Expectation failed: doc.geomToleranceCount == 0 | passed | `OCCTDocumentGetGeomToleranceCount` | PASS: 0 = 0 |
+| `emptyDocDatums` | `OCCTDocumentGetDatumCount` returns 1 | :36 Expectation failed: doc.datumCount == 0 | passed | `OCCTDocumentGetDatumCount` | PASS: 0 on a fresh document |
+| `dimensionInvalidIndex` | `OCCTDocumentGetDimensionInfo` returns a valid info for any index | :46 Expectation failed: doc.dimension(at: 0) == nil; :47 Expectation failed: doc.dimension(at: -1) == nil | passed | `OCCTDocumentGetDimensionInfo` | PASS: no dimensions, every index out of range |
+| `toleranceInvalidIndex` | `OCCTDocumentGetGeomToleranceInfo` returns a valid info for any index | :57 Expectation failed: doc.geomTolerance(at: 0) == nil; :58 Expectation failed: doc.geomTolerance(at: -1) == nil | passed | `OCCTDocumentGetGeomToleranceInfo` | PASS: no tolerances |
+| `datumInvalidIndex` | `OCCTDocumentGetDatumInfo` returns a valid info and `OCCTDocumentGetDatumName` an empty name for any index | :67 Expectation failed: doc.datum(at: 0) == nil; :68 Expectation failed: doc.datum(at: -1) == nil | passed | `OCCTDocumentGetDatumInfo` | PASS: no datums |
