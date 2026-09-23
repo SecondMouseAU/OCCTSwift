@@ -102,6 +102,7 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **IntAna PlaneSphere Tests** | planeSphereIntersection | Plane-sphere circle | OCCTIntAnaPlaneSphere doubles the circle radius (values pinned, #766) |
 
 ---
 
