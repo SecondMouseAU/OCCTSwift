@@ -182,5 +182,115 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "ElCLib Tests::valueOnLine",
+    "bridge_function": "OCCTElCLibValueOnLine",
+    "bridge_output": {"type": "observed", "data": "(5, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(5, 0, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "u negated", "failing_expectation": ":14 `abs(p.x - 5.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElCLib Tests::valueOnCircle",
+    "bridge_function": "OCCTElCLibValueOnCircle",
+    "bridge_output": {"type": "observed", "data": "u=0 (10, 0, 0); u=pi/2 (6.1e-16, 10, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "u=0 (10, 0, 0); u=pi/2 (6.1e-16, 10, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "x and y outputs swapped", "failing_expectation": ":30 `abs(p.x - expectedX) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElCLib Tests::valueOnEllipse",
+    "bridge_function": "OCCTElCLibValueOnEllipse",
+    "bridge_output": {"type": "observed", "data": "(20, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(20, 0, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "x from the minor radius", "failing_expectation": ":38 `abs(p.x - 20.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElCLib Tests::d1OnCircle",
+    "bridge_function": "OCCTElCLibD1OnCircle",
+    "bridge_output": {"type": "observed", "data": "point (10, 0, 0), tangent (0, 10, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point (10, 0, 0), tangent (0, 10, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "tangent reversed", "failing_expectation": ":45 `abs(result.tangent.y - 10.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElCLib Tests::parameterOnLine",
+    "bridge_function": "OCCTElCLibParameterOnLine",
+    "bridge_output": {"type": "observed", "data": "7", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "7", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "line direction negated", "failing_expectation": ":51 `abs(u - 7.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElCLib Tests::inPeriod",
+    "bridge_function": "OCCTElCLibInPeriod",
+    "bridge_output": {"type": "observed", "data": "0.716814692820414 (7 - 2pi)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "0.716814692820414 (7 - 2pi)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns uFirst", "failing_expectation": "original: **green**; rewritten: :59 `abs(u - (7.0 - 2 * .pi)) < 1e-12`"},
+    "green": true
+  },
+  {
+    "test_name": "ElSLib Tests::valueOnPlane",
+    "bridge_function": "OCCTElSLibValueOnPlane",
+    "bridge_output": {"type": "observed", "data": "(3, 4, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(3, 4, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "u and v swapped", "failing_expectation": ":12 `abs(p.x - 3.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElSLib Tests::valueOnSphere",
+    "bridge_function": "OCCTElSLibValueOnSphere",
+    "bridge_output": {"type": "observed", "data": "(10, 0, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(10, 0, 0)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "radius doubled", "failing_expectation": ":20 `abs(p.x - 10.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElSLib Tests::valueOnCylinder",
+    "bridge_function": "OCCTElSLibValueOnCylinder",
+    "bridge_output": {"type": "observed", "data": "(5, 0, 10)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(5, 0, 10)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "u and v swapped", "failing_expectation": ":26 `abs(p.x - 5.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElSLib Tests::valueOnTorus",
+    "bridge_function": "OCCTElSLibValueOnTorus",
+    "bridge_output": {"type": "observed", "data": "(0,0) (25, 0, 0); (0,pi/2) (20, 0, 5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0,0) (25, 0, 0); (0,pi/2) (20, 0, 5)", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "major and minor radius swapped", "failing_expectation": "original: **green**; rewritten: :41 `simd_length(q - SIMD3(20, 0, 5)) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "ElSLib Tests::parametersOnSphere",
+    "bridge_function": "OCCTElSLibParametersOnSphere",
+    "bridge_output": {"type": "observed", "data": "u=0 v=0", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "u=0 v=0", "source": "Scripts/repro/766-math-elclib-elslib/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "point x and y swapped", "failing_expectation": ":41 `abs(uv.u) < 1e-10`"},
+    "green": true
   }
 ]
