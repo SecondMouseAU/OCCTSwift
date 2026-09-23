@@ -99,3 +99,44 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TDFCopyLabelTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `copyLabelWithName` | `OCCTDocumentCopyLabel` returns true without copying | :20 Expectation failed: dest.name == "Original" | passed | `OCCTDocumentCopyLabel` | PASS: Original copied |
+| `copyLabelWithChildren` | `OCCTDocumentCopyLabel` returns true without copying | :34 Expectation failed: dest.hasChild | passed | `OCCTDocumentCopyLabel` | PASS: copied |
+
+### `TDFLabelNameTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetName` | `OCCTDocumentGetLabelName` returns null | :17 Expectation failed: label.name == "MyPart" | passed | `OCCTDocumentGetLabelName` | PASS: MyPart |
+| `renameLabel` | `OCCTDocumentSetLabelName` ignores every call after the first | :28 Expectation failed: label.name == "Renamed" | passed | `OCCTDocumentSetLabelName` | PASS: Renamed |
+
+### `TDFReferenceTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setGetReference` | `OCCTDocumentLabelGetReference` answers -1 | :27 Issue recorded | passed | `OCCTDocumentLabelGetReference` | PASS: points to the target |
+| `noReference` | `OCCTDocumentLabelGetReference` answers label 0 | :35 Expectation failed: label.referencedLabel == nil | passed | `OCCTDocumentLabelGetReference` | PASS: none |
+
+### `TDFTransactionNamedTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `openNamedTransaction` | `OCCTDocumentOpenNamedTransaction` opens but answers 0 | :15 Expectation failed: txnNum >= 1 | passed | `OCCTDocumentOpenNamedTransaction` | PASS: 1 |
+| `transactionNumber` | `OCCTDocumentGetTransactionNumber` returns 0 | :26 Expectation failed: during == 1 | passed | `OCCTDocumentGetTransactionNumber` | PASS: 0, 1, 0 |
+| `commitWithDelta` | `OCCTDocumentCommitWithDelta` returns null | :40 Expectation failed: delta != nil | passed | `OCCTDocumentCommitWithDelta` | PASS: 2 deltas, 0..1 |
+| `deltaName` | `OCCTDeltaSetName` returns without naming | :60 Expectation failed: delta.name == "MyDelta" | passed | `OCCTDeltaSetName` | PASS: `SetName` sticks |
+
+### `TDocStdXLinkToolTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `xlinkCopy` | `OCCTDocumentXLinkCopy` returns false | :13 `ok`; the value check is now unconditional (`if let` removed) | passed | `OCCTDocumentXLinkCopy` | PASS: 77 copied |
+| `xlinkCopyWithLink` | `OCCTDocumentXLinkCopyWithLink` returns true without copying | `tgt.integer == 88` (rewritten; the old test discarded both the answer and the effect) | passed | `OCCTDocumentXLinkCopyWithLink` | PASS: 88 copied |

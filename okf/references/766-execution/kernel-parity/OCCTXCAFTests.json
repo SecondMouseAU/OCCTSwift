@@ -126,5 +126,284 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TDF CopyLabel::Copy label with name",
+    "bridge_function": "OCCTDocumentCopyLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "name": "Original"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "name": "Original"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF CopyLabel::Copy label with children",
+    "bridge_function": "OCCTDocumentCopyLabel",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "dest_has_child": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Name Set/Get::Set and get label name",
+    "bridge_function": "OCCTDocumentGetLabelName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "MyPart"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "MyPart"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Label Name Set/Get::Rename label",
+    "bridge_function": "OCCTDocumentSetLabelName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "Renamed"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name": "Renamed"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Reference::Set and get reference",
+    "bridge_function": "OCCTDocumentLabelGetReference",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points_to_target": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points_to_target": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Reference::No reference on fresh label",
+    "bridge_function": "OCCTDocumentLabelGetReference",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ref": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "fresh_has_reference": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::openNamedTransaction",
+    "bridge_function": "OCCTDocumentOpenNamedTransaction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "number_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "transaction": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::transactionNumber",
+    "bridge_function": "OCCTDocumentGetTransactionNumber",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "during": 1,
+        "after": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": 0,
+        "open": 1,
+        "after": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::commitWithDelta",
+    "bridge_function": "OCCTDocumentCommitWithDelta",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "delta": true,
+        "attribute_deltas_at_least": 1,
+        "end_ge_begin": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "attribute_deltas": 2,
+        "begin": 0,
+        "end": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDF Transaction Named Tests::deltaName",
+    "bridge_function": "OCCTDeltaSetName",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "name": "MyDelta"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "name_after_SetName": "add part"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-issue970-transactions/"
+  },
+  {
+    "test_name": "TDocStd XLinkTool Tests::xlinkCopy",
+    "bridge_function": "OCCTDocumentXLinkCopy",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "integer": 77
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "integer": 77
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
+  },
+  {
+    "test_name": "TDocStd XLinkTool Tests::xlinkCopyWithLink",
+    "bridge_function": "OCCTDocumentXLinkCopyWithLink",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "integer": 88
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "integer": 88
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-tdataxtd-tdf/"
   }
 ]
