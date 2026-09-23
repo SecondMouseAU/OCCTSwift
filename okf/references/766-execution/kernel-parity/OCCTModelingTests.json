@@ -6,5 +6,116 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "v0.127.0, FilletBuilder History Queries::getBoundsForEvolvingRadius",
+    "bridge_function": "OCCTFilletBuilderGetBounds",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "first": -5,
+        "last": 15
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "GetBounds": true,
+        "first": -5,
+        "last": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, FilletBuilder History Queries::getLawForEvolvingRadius",
+    "bridge_function": "OCCTFilletBuilderGetLaw",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "law": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "lawNull": false,
+        "law(first)": 0.5,
+        "law(last)": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, FilletBuilder History Queries::generated",
+    "bridge_function": "OCCTFilletBuilderGenerated",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "generatedFromEdge": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "Generated(edge).Size": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, FilletBuilder History Queries::modified",
+    "bridge_function": "OCCTFilletBuilderModified",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "facesWithModified": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "facesWithModified": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "v0.127.0, FilletBuilder History Queries::isDeleted",
+    "bridge_function": "OCCTFilletBuilderIsDeleted",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isDeleted": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDeleted(edge)": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

@@ -221,3 +221,21 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `FilletBuilderHistoryTests.swift` (5 tests)
+
+Probe: `Scripts/repro/766-modeling-fillet-builder-history/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| getBoundsForEvolvingRadius | `OCCTFilletBuilderGetBounds` writes first and last into each other's slots | `:19 Expectation failed: bounds.first < bounds.last`, `:21 Expectation failed: abs(bounds.first - -5.0) < 1e-9`, `:22 Expectation failed: abs(bounds.last - 15.0) < 1e-9` | pass | `OCCTFilletBuilderGetBounds` | PASS |
+| getLawForEvolvingRadius | `OCCTFilletBuilderGetLaw` returns nullptr | `:33 Expectation failed: builder.getLaw(contour: 1, edge: edge) != nil` | pass | `OCCTFilletBuilderGetLaw` | PASS |
+| generated | `OCCTFilletBuilderGenerated` returns 0 shapes | `:51 Expectation failed: builder.generated(from: edgeShape).count == 1` | pass | `OCCTFilletBuilderGenerated` | PASS |
+| modified | `OCCTFilletBuilderModified` returns 0 shapes | `:66 Expectation failed: faces.filter { builder.modified(from: $0).count > 0 }.count == 4` | pass | `OCCTFilletBuilderModified` | PASS |
+| isDeleted | `OCCTFilletBuilderIsDeleted` returns false | `:77 Expectation failed: builder.isDeleted(edgeShape)` | pass | `OCCTFilletBuilderIsDeleted` | PASS |

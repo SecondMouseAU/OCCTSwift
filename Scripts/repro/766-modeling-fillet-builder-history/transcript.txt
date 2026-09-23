@@ -1,0 +1,9 @@
+evolving: done=1 contour=1 getBounds=1 first=-5 last=15 lawNull=0 law(first)=0.5 law(last)=2
+constant r=1: done=1 generated(edge)=1 isDeleted(edge)=1
+  face 0: modified=1
+  face 1: modified=0
+  face 2: modified=1
+  face 3: modified=0
+  face 4: modified=1
+  face 5: modified=1
+constant r=1: facesModified=4
