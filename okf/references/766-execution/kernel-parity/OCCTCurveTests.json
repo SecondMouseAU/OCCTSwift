@@ -302,5 +302,271 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A point on the circle but off the arc answers with the arc's end",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:67 abs(Self.distance(arc.point(at: parameter), query) - 4.47213",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A half circle queried from below answers with the near end, not the far side",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:51 abs(parameter - 0) < 1e-9  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::A point past the end is answered, not refused",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:78 segment.nearestParameter(to: SIMD3(100, 0, 0)) == 8  (+2 mor",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::nearestParameter and projectPoint agree on every query",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "see Scripts/repro/766-curve-nearest-point: brute min on the half circle (0,-6,0) 7.81024968 at 0, (3,-4,0) 4.47213595 at 0; segment ends 8 and 3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "npoff: nearestParameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:110 abs(Self.distance(curve.point(at: parameter), query) - proje",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::The locate-from-a-guess primary search stays local, maxima included",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_LocateExtPC on the half circle from pi/2: param pi/2, dist 11, IsMin 0 (a maximum, kept by the primary search)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locoff: locateNearestPoint parameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:166 abs(atFarSide.parameter - .pi / 2) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "nearestParameter reports the nearest point over the range (#615)::The locate-from-a-guess fallback answers over the whole curve, correctly",
+    "test_file": "Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Extrema_LocateExtPC: half circle from 0 finds the far-side maximum (pi/2, 11); segment from 3, 5.5, 8 not done. The (0, 7.81) and (8, 92) answers are the bridge's fallback"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "locoff: locateNearestPoint parameter + 1e-3",
+    "red": "Issue615NearestParameterRangeTests.swift:134 abs(atStart.parameter - 0) < 1e-9  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::A C1 spline reports C1 as ordinal 2, not 1",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:70 c1.continuity == 2  (+1 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::An analytic curve reports CN as ordinal 6, the old encoding's 99 is unreachable",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:38 curve.continuity == 6  (+3 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::A raw threshold of 2 now admits a merely-C1 curve; satisfies(.c2) still refuses it",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:94 c1.continuity >= 2  (+2 more)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::Every measured class round-trips through the raw ordinal",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAbs_Shape ordinals (Scripts/repro/766-curve-continuity-485-486-490): CN 6, C2 4, C1 2"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "contold: the retired hand-mapped encoding",
+    "red": "Issue619ContinuityEncodingTests.swift:141 curve.continuity == Int(curve.continuityClass.rawValue)  (+4",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::The two vocabularies' constants do not line up, which is why the raw form drifted",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: Swift enum raw values and satisfies(); no kernel call"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "satall: satisfies() always true",
+    "red": "Issue619ContinuityEncodingTests.swift:126 !ContinuityClass.c1.satisfies(.c2)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
+  },
+  {
+    "test_name": "Measured continuity encoding after the retirement (#619)::The sibling raw-ordinal accessors use the same encoding, so CN is 6 there too",
+    "test_file": "Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift",
+    "bridge_function": "OCCTCurve3DNearestParameter / OCCTExtremaLocateOnCurve / OCCTCurve3DGetContinuity",
+    "bridge_output": {
+      "type": "value",
+      "data": "as pinned in the test"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "Geom_BezierCurve::Continuity() = 6 = GeomAbs_CN"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "bzcont: bezierContinuity - 2",
+    "red": "Issue619ContinuityEncodingTests.swift:55 bezier.bezierContinuity == 6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-nearest-range-continuity/transcript.txt"
   }
 ]

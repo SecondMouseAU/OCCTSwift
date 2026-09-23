@@ -92,6 +92,8 @@ struct Issue619ContinuityEncodingTests {
         // comparison is true, and the C1 curve is fed to a path that assumes C2. Asserting the
         // trap is *live* is what makes this a regression test rather than a restatement.
         #expect(c1.continuity >= 2)
+        // #766: `>= 2` also held for C2 (4) and CN (6); the C1 fixture measures exactly 2.
+        #expect(c1.continuity == 2)
 
         // The question that line meant to ask. It is false, as it always should have been.
         #expect(!c1.continuityClass.satisfies(.c2))
@@ -101,7 +103,10 @@ struct Issue619ContinuityEncodingTests {
         // than the floor being unreachable.
         if let c2 = bspline(interiorMultiplicity: 1) {
             #expect(c2.continuity >= 2)
+            #expect(c2.continuity == 4)  // #766: pinned; `>= 2` admitted any class above C0
             #expect(c2.continuityClass.satisfies(.c2))
+        } else {
+            Issue.record("could not build the C2 BSpline fixture")  // #766: was a silent skip
         }
     }
 

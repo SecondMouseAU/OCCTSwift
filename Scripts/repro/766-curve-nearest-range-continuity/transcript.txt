@@ -1,0 +1,6 @@
+half circle (0,-6,0) guess 0: done 1 param 1.57079632679 dist 11 IsMin 0
+half circle (0,-6,0) guess 1.5708: done 1 param 1.57079632679 dist 11 IsMin 0
+segment [3,8] (100,0,0) guess 3: done 0
+segment [3,8] (100,0,0) guess 5.5: done 0
+segment [3,8] (100,0,0) guess 8: done 0
+Bezier 3 poles Continuity() 6 (GeomAbs_CN = 6)
