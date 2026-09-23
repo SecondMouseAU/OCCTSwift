@@ -222,3 +222,19 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: GeomFill{Profiler,SectionPlacement,Stretch,Sweep}Tests.swift (11 tests), probes Scripts/repro/766-geomfill-d/ and 766-geomfill-d-empty-profiler/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| GeomFill_Profiler | add curves and perform | `OCCTGeomFillProfilerNbPoles` | NbPoles reports NbKnots (INJ_PROF_NB_SWAP) | GeomFillProfilerTests.swift:20 profiler.poleCount == 15 | ✅ | MATCH | Rewritten: `> 0` counts. Also reaches OCCTGeomFillProfilerDegree / NbKnots / Perform / AddCurve |
+| GeomFill_Profiler | null-handle guard does not block a valid curve (#710 regression) | `OCCTGeomFillProfilerAddCurve` | AddCurve rejects every curve (INJ_PROF_ADD_REJECT) | process died inside the test: perform() on the now-empty profiler SIGSEGVs, test target reported failure | ✅ | MATCH | FINDING: GeomFill_Profiler::Perform on a profiler with no curves SIGSEGVs in the kernel (Scripts/repro/766-geomfill-d-empty-profiler/), and CurveProfiler.create().perform() reaches it with no bridge guard |
+| GeomFill_Profiler | extract poles | `OCCTGeomFillProfilerPoles` | poles read from the other curve (INJ_PROF_POLES_INDEX) | GeomFillProfilerTests.swift:73 simd_length(poles[0] - SIMD3(5, 0, 0)) < 1e-9 | ✅ | MATCH | Rewritten: the count alone passed the other curve's poles |
+| GeomFill_Profiler | knots and multiplicities | `OCCTGeomFillProfilerKnotsAndMults` | multiplicities reported as 1 (INJ_PROF_MULTS_ONE) | GeomFillProfilerTests.swift:95 mults == [15, 15] | ✅ | MATCH | Rewritten: `firstMult > 0` passed 1 |
+| GeomFill_SectionPlacement | place section on path | `OCCTGeomFillSectionPlacement` | Distance() + 1 (INJ_SP_DIST) | GeomFillSectionPlacementTests.swift:20 abs(result.distance - 2) < 1e-9 | ✅ | MATCH | Rewritten: `distance >= 0` passed any distance |
+| GeomFill_SectionPlacement | query placement parameters | `OCCTGeomFillSectionPlacement` | ParameterOnPath() + 1 (INJ_SP_PARAM) | GeomFillSectionPlacementTests.swift:38 abs(result.parameterOnPath) < 1e-9 | ✅ | MATCH | Rewritten: `if isDone` and [0, 10] passed any parameter |
+| GeomFill_SectionPlacement | null-handle guard does not block a valid section (#710 regression) | `OCCTGeomFillSectionPlacement` | section guard rejects every section (INJ_SP_REJECT) | GeomFillSectionPlacementTests.swift:64 Issue recorded (isDone false) | ✅ | MATCH |  |
+| GeomFill_Stretch | stretch fill from 4 boundary point arrays | `OCCTGeomFillStretch` | second and third rows swapped (INJ_STRETCH_SWAP) | GeomFillStretchTests.swift:25 simd_length(result.poles[4] - SIMD3(7.5, 7.5, 3)) < 1e-9 | ✅ | MATCH | Rewritten: `> 0` inside `if let`; rows read in GeomFill_Stretch's own order, pinned as the kernel gives them |
+| GeomFill_Stretch | isRational for linear stretch | `OCCTGeomFillStretch` | isRational negated (INJ_STRETCH_RAT) | GeomFillStretchTests.swift:40 !result.isRational | ✅ | MATCH | Strengthened: a nil result used to pass |
+| GeomFill Sweep | Sweep circle along line | `OCCTGeomFillSweep` | path adaptor trimmed to its first half (INJ_SWEEP_HALF) | GeomFillSweepTests.swift:25 abs((result.surfaceArea ?? 0) - 376.991118431) < 1e-6 | ✅ | MATCH | Rewritten: silent guard, `!= nil` only |
+| GeomFill Sweep | Rejects a sweep that misses its own tolerance instead of reporting it as done (#597) | `OCCTGeomFillSweep` | ErrorOnSurface check removed, the #597 defect (INJ_SWEEP_NOERRCHECK) | GeomFillSweepTests.swift:52 Shape.geomFillSweep(path: pathEdge, section: sectionEdge) == nil | ✅ | MATCH |  |

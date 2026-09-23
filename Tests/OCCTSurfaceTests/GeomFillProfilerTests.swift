@@ -14,9 +14,13 @@ struct GeomFillProfilerTests {
             profiler.addCurve(c1)
             profiler.addCurve(c2)
             profiler.perform()
-            #expect(profiler.degree > 0)
-            #expect(profiler.poleCount > 0)
-            #expect(profiler.knotCount > 0)
+            // #766: `> 0` passed any shape (NbPoles reporting NbKnots included). GeomFill_Profiler
+            // homogenizes the two circles to degree 14, 15 poles, 2 knots, see Scripts/repro/766-geomfill-d/.
+            #expect(profiler.degree == 14)
+            #expect(profiler.poleCount == 15)
+            #expect(profiler.knotCount == 2)
+        } else {
+            Issue.record("failed to build probe curves")
         }
     }
 
@@ -62,6 +66,15 @@ struct GeomFillProfilerTests {
             profiler.perform()
             let poles = profiler.poles(curveIndex: 1)
             #expect(poles.count == profiler.poleCount)
+            // #766: the count alone passed the other curve's poles. Curve 1 is the radius-5 circle
+            // at z = 0; its first two homogenized poles, per GeomFill_Profiler::Poles(1), are
+            // (5, 0, 0) and (5, 2.24399475257, 0), see Scripts/repro/766-geomfill-d/.
+            if poles.count == 15 {
+                #expect(simd_length(poles[0] - SIMD3(5, 0, 0)) < 1e-9)
+                #expect(simd_length(poles[1] - SIMD3(5, 2.24399475257, 0)) < 1e-9)
+            }
+        } else {
+            Issue.record("failed to build probe curves")
         }
     }
 
@@ -77,9 +90,12 @@ struct GeomFillProfilerTests {
             let (knots, mults) = profiler.knotsAndMults()
             #expect(knots.count == profiler.knotCount)
             #expect(mults.count == profiler.knotCount)
-            if let firstMult = mults.first {
-                #expect(firstMult > 0)
-            }
+            // #766: `firstMult > 0` passed a multiplicity of 1. GeomFill_Profiler reports knots
+            // [0, 2 pi] with multiplicities [15, 15], see Scripts/repro/766-geomfill-d/.
+            #expect(mults == [15, 15])
+            #expect(knots.count == 2 && abs((knots.last ?? 0) - 2 * .pi) < 1e-9 && knots.first == 0)
+        } else {
+            Issue.record("failed to build probe curves")
         }
     }
 }
