@@ -99,6 +99,50 @@
 | **CanonicalRecognition Detailed Tests** | recognizeCylinder | Canonical surface recognition | Remove ClearStatus (#1509) |
 | **CanonicalRecognition Detailed Tests** | recognizeSphere | Canonical surface recognition | Remove ClearStatus (#1509) |
 | **CanonicalRecognition Detailed Tests** | recognizeEdgeLine | Canonical curve recognition | Skip IsLine |
+| **Geom_Plane Properties** | planeCoefficients | Plane equation coefficients | Drop D |
+| **Geom_Plane Properties** | planeUIso | Plane U iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planeVIso | Plane V iso-curve | Wrong iso direction |
+| **Geom_Plane Properties** | planePln | Plane gp_Pln data | Drop location Z |
+| **Extrema_ExtCS Tests** | curveSurfaceParallel | Curve-surface extrema | Invert IsParallel() |
+| **Extrema_ExtCS Tests** | curveSurfaceDistance | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
+| **Edge Curve Properties Tests** | Parameter bounds of line edge | Edge curve parameter range | Swap first/last |
+| **Edge Curve Properties Tests** | Curvature of circle edge is 1/r | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Curvature of line edge is zero | Edge curve curvature | Offset curvature |
+| **Edge Curve Properties Tests** | Tangent direction of straight edge | Edge curve tangent | Reverse tangent |
+| **Edge Curve Properties Tests** | Normal of circle edge points toward center | Edge curve normal | Reverse normal |
+| **Edge Curve Properties Tests** | Center of curvature of circle matches circle center | Edge curve centre of curvature | Offset centre |
+| **Edge Curve Properties Tests** | Torsion of planar curve is zero | Edge curve torsion | Offset torsion |
+| **Edge Curve Properties Tests** | Curve type detection | Edge curve type | Misclassify lines |
+| **Edge Curve Properties Tests** | Point at parameter matches expected location | Edge curve evaluation | Offset point |
+| **Measurement Tests** | Volume of box | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of cylinder | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Volume of sphere | Volume | Volume scaled by 1.01 |
+| **Measurement Tests** | Surface area of box | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Surface area of sphere | Surface area | Area scaled by 1.01 |
+| **Measurement Tests** | Center of mass of box at origin | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Center of mass of translated box | Centre of mass | Shift centre x by 1 |
+| **Measurement Tests** | Full shape properties | Mass properties | Ignore density in mass |
+| **Measurement Tests** | Distance between separated boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Distance between touching boxes | Shape distance | Distance + 1 |
+| **Measurement Tests** | Min distance convenience method | Shape distance | Distance + 1 |
+| **Measurement Tests** | Intersects - overlapping shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - separated shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Intersects - touching shapes | Shape intersects | Invert Value() <= tolerance |
+| **Measurement Tests** | Vertex count of box | Vertex enumeration | Count + 1 |
+| **Measurement Tests** | Get all vertices | Vertex enumeration | Write zero coordinates |
+| **Measurement Tests** | Get vertex at index | Vertex enumeration | Read index (i + 1) % 8 |
+| **Measurement Tests** | Vertex out of bounds | Vertex enumeration | Read index (i + 1) % 8 |
+| **Curve3D Local Properties Tests** | Curvature of circle is 1/r | Curve local curvature | Curvature() + 0.5 |
+| **Curve3D Local Properties Tests** | Curvature of line is zero | Curve local curvature | Curvature() + 0.5 |
+| **Curve3D Local Properties Tests** | Tangent of X-axis segment is (1,0,0) | Curve local tangent | Swap tangent X and Y |
+| **Curve3D Local Properties Tests** | Normal of circle points inward | Curve local normal | Negate the normal |
+| **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
+| **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
+| **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
 
 ---
 
@@ -210,6 +254,50 @@
 | recognizeCylinder | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsCylinder | ✅ | ✅ |  |
 | recognizeSphere | OCCTShapeRecognizeCanonicalSurface | Canonical surface recognition | Remove ClearStatus() before IsSphere | ✅ | ✅ |  |
 | recognizeEdgeLine | OCCTShapeRecognizeCanonicalCurve | Canonical curve recognition | if (false && recog.IsLine(...)) | ✅ | ✅ | Rewritten: if-let wrapper removed, all twelve edges asserted |
+| planeCoefficients | OCCTSurfacePlaneCoefficients | Plane equation coefficients | Zero *D after Geom_Plane::Coefficients | ✅ | ✅ | Rewritten: fixture moved to z = 2 so D is nonzero; if-let wrapper removed |
+| planeUIso | OCCTSurfacePlaneUIso | Plane U iso-curve | Call VIso(u) instead of UIso(u) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planeVIso | OCCTSurfacePlaneVIso | Plane V iso-curve | Call UIso(v) instead of VIso(v) | ✅ | ✅ | Rewritten: asserted nothing (let _ = iso.domain) |
+| planePln | OCCTSurfacePlanePln | Plane gp_Pln data | Write 0 to *pz | ✅ | ✅ | Rewritten: origin now asserted; if-let wrapper removed |
+| Extrema_ExtCS: curveSurfaceParallel | OCCTExtremaExtCS | Curve-surface extrema | Invert IsParallel() | ✅ | ✅ |  |
+| Extrema_ExtCS: curveSurfaceDistance | OCCTExtremaExtCSPoint | Curve-surface extrema | Invert IsParallel(); read extrema in reverse order | ✅ | ✅ | rewritten: conditional version stayed green under the injection |
+| Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
+| Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
+| Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Parameter bounds of line edge | OCCTEdgeGetParameterBounds | Edge curve parameter range | Write l to *first and f to *last | ✅ | ✅ |  |
+| Curvature of circle edge is 1/r | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Curvature of line edge is zero | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
+| Tangent direction of straight edge | OCCTEdgeGetTangent3D | Edge curve tangent | Reverse the tangent direction | ✅ | ✅ | Direction assertion added; unit length alone passed the reversed tangent |
+| Normal of circle edge points toward center | OCCTEdgeGetNormal3D | Edge curve normal | Reverse the principal normal | ✅ | ✅ | Inward-direction assertion added; unit length alone passed the outward normal |
+| Center of curvature of circle matches circle center | OCCTEdgeGetCenterOfCurvature3D | Edge curve centre of curvature | Add 1.0 to the centre's X | ✅ | ✅ |  |
+| Torsion of planar curve is zero | OCCTEdgeGetTorsion | Edge curve torsion | Add 1.0 to the computed torsion | ✅ | ✅ |  |
+| Curve type detection | OCCTEdgeGetCurveType | Edge curve type | Map GeomAbs_Line to 8 (other) | ✅ | ✅ |  |
+| Point at parameter matches expected location | OCCTEdgeGetPointAtParam | Edge curve evaluation | Add 1.0 to the evaluated point's Z | ✅ | ✅ |  |
+| Measurement Tests: Volume of box | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of cylinder | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Volume of sphere | OCCTShapeGetVolume | Volume | Volume scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of box | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Surface area of sphere | OCCTShapeGetSurfaceArea | Surface area | Area scaled by 1.01 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of box at origin | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Center of mass of translated box | OCCTShapeGetCenterOfMass | Centre of mass | Shift centre x by 1 | ✅ | ✅ |  |
+| Measurement Tests: Full shape properties | OCCTShapeGetProperties | Mass properties | Ignore density in mass | ✅ | ✅ | strengthened: centre y and z now asserted |
+| Measurement Tests: Distance between separated boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Distance between touching boxes | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Min distance convenience method | OCCTShapeDistance | Shape distance | Distance + 1 | ✅ | ✅ |  |
+| Measurement Tests: Intersects - overlapping shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - separated shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Intersects - touching shapes | OCCTShapeIntersects | Shape intersects | Invert Value() <= tolerance | ✅ | ✅ |  |
+| Measurement Tests: Vertex count of box | OCCTShapeGetVertexCount | Vertex enumeration | Count + 1 | ✅ | ✅ |  |
+| Measurement Tests: Get all vertices | OCCTShapeGetVertices | Vertex enumeration | Write zero coordinates | ✅ | ✅ | rewritten: count-only version stayed green under the injection |
+| Measurement Tests: Get vertex at index | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Measurement Tests: Vertex out of bounds | OCCTShapeGetVertexAt | Vertex enumeration | Read index (i + 1) % 8 | ✅ | ✅ |  |
+| Curvature of circle is 1/r | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
+| Curvature of line is zero | OCCTCurve3DGetCurvature | Curve local curvature | Curvature() + 0.5 | ✅ | ✅ |  |
+| Tangent of X-axis segment is (1,0,0) | OCCTCurve3DGetTangent | Curve local tangent | Swap tangent X and Y | ✅ | ✅ |  |
+| Normal of circle points inward | OCCTCurve3DGetNormal | Curve local normal | Negate the normal | ✅ | ✅ | Rewritten: unit length alone passed an outward normal |
+| Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
+| Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
+| Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
 
 ---
 
@@ -312,5 +400,29 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceParallel | ✅ | ✅ | ✅ |
+| Extrema_ExtCS: curveSurfaceDistance | ✅ | ✅ | ✅ |
+| Shape distance to Wire | ✅ | ✅ | ✅ |
+| Shape intersects Wire | ✅ | ✅ | ✅ |
+| Shape distance to Edge | ✅ | ✅ | ✅ |
+| Shape distance to Face | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of cylinder | ✅ | ✅ | ✅ |
+| Measurement Tests: Volume of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Surface area of sphere | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of box at origin | ✅ | ✅ | ✅ |
+| Measurement Tests: Center of mass of translated box | ✅ | ✅ | ✅ |
+| Measurement Tests: Full shape properties | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between separated boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Distance between touching boxes | ✅ | ✅ | ✅ |
+| Measurement Tests: Min distance convenience method | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - overlapping shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - separated shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Intersects - touching shapes | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex count of box | ✅ | ✅ | ✅ |
+| Measurement Tests: Get all vertices | ✅ | ✅ | ✅ |
+| Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
+| Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 559 tests
+**Total**: 583 tests
