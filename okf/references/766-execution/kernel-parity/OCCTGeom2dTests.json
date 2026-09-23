@@ -94,5 +94,407 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::NaN in first point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:171:9: Expectation failed: bisectorIntersections(a: (Double.nan, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::NaN in second point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:177:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (Double.nan, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::NaN in third point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:184:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.nan), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::NaN in fourth point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "Bisector_Bisec throws (bridge catch returns 0)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:189:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.nan, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in first point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:196:9: Expectation failed: bisectorIntersections(a: (Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in second point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:202:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in third point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:209:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.infinity), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Positive infinity in fourth point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:214:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.infinity, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in first point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:221:9: Expectation failed: bisectorIntersections(a: (-Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in second point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:227:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (-Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in third point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:234:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, -Double.infinity), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Negative infinity in fourth point returns empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:239:9: Expectation failed: bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-Double.infinity, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Large finite coordinates exceeding 1e150 return empty",
+    "bridge_function": "bisectorIntersections (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "unguarded kernel on this input": "hangs (20 s alarm)"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "guard sanitises a refused coordinate to 0 instead of refusing",
+      "red": "Issue1050BisectorDomainTests.swift:250:9: Expectation failed: bisectorIntersections(a: (large, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Issue1085 bisector non-finite coordinates::Coordinates near but below threshold still work",
+    "bridge_function": "OCCTBisectorInterPointPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            0,
+            5
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "points": [
+          [
+            0,
+            5
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "maxSafeMagnitude lowered to 1e148",
+      "red": "Issue1050BisectorDomainTests.swift:276:13: Expectation failed: hits.count == 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bisector-domain-nonfinite/",
+      "rewritten": "asserted nothing (`_ = hits`) on a fixture whose C and D coincide in Double at 1e149; new fixture pinned to (0, 5)"
+    }
   }
 ]

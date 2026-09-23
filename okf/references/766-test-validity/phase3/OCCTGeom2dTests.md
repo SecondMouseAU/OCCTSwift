@@ -124,3 +124,24 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue1050BisectorDomainTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-bisector-domain-nonfinite/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Issue1085 bisector non-finite coordinates::NaN in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::NaN in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Positive infinity in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in first point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in second point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in third point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Negative infinity in fourth point returns empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Large finite coordinates exceeding 1e150 return empty | `bisectorIntersections (Swift guard)` | guard sanitises a refused coordinate to 0 instead of refusing | ✅ | ✅ | MATCH |  |
+| Issue1085 bisector non-finite coordinates::Coordinates near but below threshold still work | `OCCTBisectorInterPointPoint` | maxSafeMagnitude lowered to 1e148 | ✅ | ✅ | MATCH | asserted nothing (`_ = hits`) on a fixture whose C and D coincide in Double at 1e149; new fixture pinned to (0, 5) |
