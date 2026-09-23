@@ -142,5 +142,516 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Stats::boxStats",
+    "bridge_function": "OCCTBRepGraphGetStats",
+    "bridge_output": {
+      "type": "stats",
+      "data": {
+        "solids": 1,
+        "shells": 1,
+        "faces": 6,
+        "wires": 6,
+        "edges": 12,
+        "vertices": 8,
+        "coedges": 24,
+        "compounds": 0,
+        "totalNodes": 58,
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "kernel_output": {
+      "type": "stats",
+      "data": {
+        "solids": 1,
+        "shells": 1,
+        "faces": 6,
+        "wires": 6,
+        "edges": 12,
+        "vertices": 8,
+        "coedges": 24,
+        "compounds": 0,
+        "totalNodes": 58,
+        "surfaces": 6,
+        "curves3d": 12,
+        "curves2d": 24
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::faceDirectVertexAttachCountRemove",
+    "bridge_function": "OCCTBRepGraphFaceNbVertexRefs",
+    "bridge_output": {
+      "type": "sequence",
+      "data": {
+        "before": 0,
+        "uid": 1,
+        "after_add": 1,
+        "remove1": true,
+        "after_remove": 0,
+        "remove2": false
+      }
+    },
+    "kernel_output": {
+      "type": "sequence",
+      "data": {
+        "before": 0,
+        "uid": 1,
+        "after_add": 1,
+        "remove1": true,
+        "after_remove": 0,
+        "remove2": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::edgeInternalVertexAttach",
+    "bridge_function": "OCCTBRepGraphEdgeAddInternalVertex",
+    "bridge_output": {
+      "type": "uid",
+      "data": {
+        "attached": true
+      }
+    },
+    "kernel_output": {
+      "type": "uid",
+      "data": {
+        "attached": true,
+        "uid": 2
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "BRepGraph Supplement Vertices::boxFacesNotNaturalRestriction",
+    "bridge_function": "OCCTBRepGraphFaceIsNaturalRestriction",
+    "bridge_output": {
+      "type": "bool_array",
+      "data": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "kernel_output": {
+      "type": "bool_array",
+      "data": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Transform::translateGraph",
+    "bridge_function": "OCCTBRepGraphTransformTranslation",
+    "bridge_output": {
+      "type": "vertex",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_from": [
+          -5,
+          -5,
+          -5
+        ],
+        "v0_to": [
+          95,
+          195,
+          295
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "vertex",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_from": [
+          -5,
+          -5,
+          -5
+        ],
+        "v0_to": [
+          95,
+          195,
+          295
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Transform::translateLightCopy",
+    "bridge_function": "OCCTBRepGraphTransformTranslation",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "faces": 6,
+        "edges": 12,
+        "vertices": 8,
+        "v0_after_translate_dx10": [
+          -5,
+          -5,
+          -5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "BRepGraph Validate::boxIsValid",
+    "bridge_function": "OCCTBRepGraphValidate",
+    "bridge_output": {
+      "type": "validate",
+      "data": {
+        "isValid": true,
+        "errors": 0
+      }
+    },
+    "kernel_output": {
+      "type": "validate",
+      "data": {
+        "isValid": true,
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "MISMATCH"
+  },
+  {
+    "test_name": "BRepGraph Vertex Geometry::vertexPoint",
+    "bridge_function": "OCCTBRepGraphVertexPoint",
+    "bridge_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -10,
+        -15
+      ]
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": [
+        -5,
+        -10,
+        -15
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Vertex Geometry::vertexTolerance",
+    "bridge_function": "OCCTBRepGraphVertexTolerance",
+    "bridge_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Vertex Queries::vertexEdges",
+    "bridge_function": "OCCTBRepGraphVertexEdgeCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 3
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 3
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleBoxFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "count": 25,
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "K": 0,
+        "H": 0,
+        "p0": [
+          -5,
+          5,
+          -5
+        ],
+        "p24": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "count": 25,
+        "normal": [
+          1,
+          0,
+          0
+        ],
+        "K": 0,
+        "H": 0,
+        "p0": [
+          -5,
+          5,
+          -5
+        ],
+        "p24": [
+          -5,
+          -5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleSphereFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "grid",
+      "data": {
+        "count": 16,
+        "K_interior": 0.04,
+        "K_poles": 0
+      }
+    },
+    "kernel_output": {
+      "type": "grid",
+      "data": {
+        "count": 16,
+        "K_interior": 0.04,
+        "K_poles": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleSinglePoint",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "point",
+      "data": {
+        "count": 1,
+        "p0": [
+          -5,
+          5,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "point",
+      "data": {
+        "count": 1,
+        "p0": [
+          -5,
+          5,
+          -5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleInvalidFace",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "optional",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "optional",
+      "data": {
+        "faces": 6,
+        "face_999_exists": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph UV Grid::sampleZeroCounts",
+    "bridge_function": "OCCTBRepGraphSampleFaceUVGrid",
+    "bridge_output": {
+      "type": "optional",
+      "data": null
+    },
+    "kernel_output": {
+      "type": "optional",
+      "data": {
+        "uSamples": 0,
+        "sampled": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireIsClosed",
+    "bridge_function": "OCCTBRepGraphWireIsClosed",
+    "bridge_output": {
+      "type": "bool_array",
+      "data": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "kernel_output": {
+      "type": "bool_array",
+      "data": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireCoEdgeCount",
+    "bridge_function": "OCCTBRepGraphWireNbCoEdges",
+    "bridge_output": {
+      "type": "int",
+      "data": 4
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 4
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Wire Extended::wireFaces",
+    "bridge_function": "OCCTBRepGraphWireFaceIndices",
+    "bridge_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "faces": [
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "int_array",
+      "data": {
+        "count": 1,
+        "faces": [
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
