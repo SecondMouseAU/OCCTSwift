@@ -57,11 +57,11 @@ struct IntAnaConeSphereTests {
     // legal, so the fix is to special-case it (single sample at the curve's domain start), not
     // reject it, matching `OCCTEdgeGetPoints`'s identical `(count == 1) ? first : ...` guard.
     //
-    // The fixture matters: every other test in this file uses a sphere centered ON the cone's
-    // axis (`SIMD3(0, 0, 5)`), which this specific cone/sphere pair reports as `curveCount == 0`
-    // (measured directly against `IntAna_IntQuadQuad`, not assumed), so `coneSpherePoints` never
-    // even reaches the division and a test built on it would pass vacuously either way. An
-    // off-axis sphere center makes the cone genuinely pierce the sphere (`curveCount == 2`).
+    // The fixture matters: a sphere centered ON the cone's axis (`SIMD3(0, 0, 5)`, radius 3) is
+    // reported as `curveCount == 0` (measured directly against `IntAna_IntQuadQuad`, not assumed),
+    // so `coneSpherePoints` never even reaches the division and a test built on it would pass
+    // vacuously either way. An off-axis sphere center makes the cone genuinely pierce the sphere
+    // (`curveCount == 2`), which is why the two tests above use it too (#1918, #1919).
     @Test func singleSampleIsNotNaN() {
         let count = QuadricIntersection.coneSphere(
             semiAngle: .pi / 4, refRadius: 0,
