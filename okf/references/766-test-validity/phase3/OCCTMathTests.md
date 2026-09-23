@@ -109,3 +109,17 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-roots-cones-coordsys (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **BracketedRoot** | findRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketedRoot** | findSinRoot | `OCCTMathBracketedRoot` | returns bound1 instead of Root() | red | green | PASS |
+| **BracketMinimum** | bracketQuadratic | `OCCTMathBracketMinimum` | fa and fb written to each other | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from axis and angle | `OCCTSurfaceConicalFromAxis` | semi-angle doubled | red | green | PASS |
+| **GC_MakeConicalSurface** | Conical surface from points and radii | `OCCTSurfaceConicalFromPointsRadii` | r1 and r2 swapped | red | green | PASS |
+| **Coordinate System Tests** | zUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | yUpDirection | `OCCTCoordSystemUpDirection` | XDirection() returned instead of Direction() | red | green | PASS |
+| **Coordinate System Tests** | convertWithScaling | `OCCTCoordSystemConvert` | SetInputLengthUnit skipped | red | green | PASS |
+| **Coordinate System Tests** | convertZupToYup | `OCCTCoordSystemConvert` | SetOutputCoordinateSystem skipped | red | green | PASS |

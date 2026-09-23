@@ -182,5 +182,95 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BracketedRoot::findRoot",
+    "bridge_function": "OCCTMathBracketedRoot",
+    "bridge_output": {"type": "observed", "data": "root 2.00000000005126 (9 iterations)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "root 2.00000000005126 (9 iterations)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns bound1 instead of Root()", "failing_expectation": ":14 `abs(r.root - 2.0) < 1e-8`"},
+    "green": true
+  },
+  {
+    "test_name": "BracketedRoot::findSinRoot",
+    "bridge_function": "OCCTMathBracketedRoot",
+    "bridge_output": {"type": "observed", "data": "root 3.14159265354861 (6 iterations)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "root 3.14159265354861 (6 iterations)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns bound1 instead of Root()", "failing_expectation": ":22 `abs(r.root - .pi) < 1e-8`"},
+    "green": true
+  },
+  {
+    "test_name": "BracketMinimum::bracketQuadratic",
+    "bridge_function": "OCCTMathBracketMinimum",
+    "bridge_output": {"type": "observed", "data": "a=-5 b=2 c=13.326238, fa=25 fb=4 fc=177.588619233", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "a=-5 b=2 c=13.326238, fa=25 fb=4 fc=177.588619233", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "fa and fb written to each other", "failing_expectation": ":12 `r.fb <= r.fa && r.fb <= r.fc`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface::Conical surface from axis and angle",
+    "bridge_function": "OCCTSurfaceConicalFromAxis",
+    "bridge_output": {"type": "observed", "data": "S(0,0) (5, 0, 0), S(0,1) (5.5, 0, 0.866025403784), S(pi/2,2) (0, 6, 1.73205080757)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "S(0,0) (5, 0, 0), S(0,1) (5.5, 0, 0.866025403784), S(pi/2,2) (0, 6, 1.73205080757)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "semi-angle doubled", "failing_expectation": "original: **green**; rewritten: :16 `simd_length(surf.point(atU: 0, v: 1) - SIMD3(5.5, 0, 0.866025403784)) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeConicalSurface::Conical surface from points and radii",
+    "bridge_function": "OCCTSurfaceConicalFromPointsRadii",
+    "bridge_output": {"type": "observed", "data": "S(0,0) (5, 0, 0), S(0,sqrt(109)) (2, 0, 10), semiAngle -0.291456794478", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "S(0,0) (5, 0, 0), S(0,sqrt(109)) (2, 0, 10), semiAngle -0.291456794478", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "r1 and r2 swapped", "failing_expectation": "original: **green**; rewritten: :29 `simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::zUpDirection",
+    "bridge_function": "OCCTCoordSystemUpDirection",
+    "bridge_output": {"type": "observed", "data": "(0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 0, 1)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "XDirection() returned instead of Direction()", "failing_expectation": ":11 `abs(up.z - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::yUpDirection",
+    "bridge_function": "OCCTCoordSystemUpDirection",
+    "bridge_output": {"type": "observed", "data": "(0, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0, 1, 0)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "XDirection() returned instead of Direction()", "failing_expectation": ":16 `abs(up.y - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::convertWithScaling",
+    "bridge_function": "OCCTCoordSystemConvert",
+    "bridge_output": {"type": "observed", "data": "(1, 0, 0.5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(1, 0, 0.5)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetInputLengthUnit skipped", "failing_expectation": ":24 `abs(result.x - 1.0) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "Coordinate System Tests::convertZupToYup",
+    "bridge_function": "OCCTCoordSystemConvert",
+    "bridge_output": {"type": "observed", "data": "(1, 3, -2)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(1, 3, -2)", "source": "Scripts/repro/766-math-roots-cones-coordsys/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetOutputCoordinateSystem skipped", "failing_expectation": ":35 `abs(result.y - 3.0) < 1e-6`"},
+    "green": true
   }
 ]
