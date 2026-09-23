@@ -109,3 +109,18 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-period (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Period Tests** | createFromComponents | `OCCTPeriodValues` | swap hours and minutes after Quantity_Period::Values | red | green | PASS |
+| **Period Tests** | createFromSeconds | `OCCTPeriodTotalSeconds` | swap seconds and microseconds out of Values(sec, usec) | red | green | PASS |
+| **Period Tests** | addPeriods | `OCCTPeriodAdd` | p1 - p2 instead of p1 + p2 | red | green | PASS |
+| **Period Tests** | subtractPeriods | `OCCTPeriodSubtract` | p1 + p2 instead of p1 - p2 | red | green | PASS |
+| **Period Tests** | equality | `OCCTPeriodCompare` | never report equal | red | green | PASS |
+| **Period Tests** | comparison | `OCCTPeriodCompare` | invert the < branch | red | green | PASS |
+| **Period Tests** | isValidComponents | `OCCTPeriodIsValid` | negate Quantity_Period::IsValid | red | green | PASS |
+| **Period Tests** | isValidSeconds | `OCCTPeriodIsValidSeconds` | negate Quantity_Period::IsValid(ss, mics) | red | green | PASS |
+| **Period Tests** | withMilliseconds | `OCCTPeriodValues` | swap milliseconds and microseconds after Values | red | green | PASS |
+| **Period Tests** | zeroPeriod | `OCCTPeriodCreateFromSeconds` | reject ss == 0 as invalid | red | green | PASS |
