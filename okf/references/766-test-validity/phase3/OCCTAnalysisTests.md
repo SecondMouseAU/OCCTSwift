@@ -95,6 +95,10 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Wire | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape intersects Wire | Shape intersects overload | Invert Value() <= tolerance |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Edge | Shape distance overload | Distance + 1 |
+| **Shape distance to Wire/Edge/Face** | Shape distance to Face | Shape distance overload | Distance + 1 |
 | **Edge Curve Properties Tests** | Parameter bounds of line edge | Edge curve parameter range | Swap first/last |
 | **Edge Curve Properties Tests** | Curvature of circle edge is 1/r | Edge curve curvature | Offset curvature |
 | **Edge Curve Properties Tests** | Curvature of line edge is zero | Edge curve curvature | Offset curvature |
@@ -236,6 +240,10 @@
 | Make Connected | OCCTMakeConnected | Connected | Remove connected | ✅ | ✅ |  |
 | Linear Rib Feature | OCCTLinearRibFeature | Rib | Remove rib | ✅ | ✅ |  |
 | Glue Tests | OCCTGlueTests | Glue | Remove glue | ✅ | ✅ |  |
+| Shape distance to Wire | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: distance > 0 stayed green under the injection |
+| Shape intersects Wire | OCCTShapeIntersects | Shape intersects overload | Invert Value() <= tolerance | ✅ | ✅ | strengthened: positive case added |
+| Shape distance to Edge | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
+| Shape distance to Face | OCCTShapeDistance | Shape distance overload | Distance + 1 | ✅ | ✅ | rewritten: non-nil-only version stayed green under the injection |
 | Parameter bounds of line edge | OCCTEdgeGetParameterBounds | Edge curve parameter range | Write l to *first and f to *last | ✅ | ✅ |  |
 | Curvature of circle edge is 1/r | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
 | Curvature of line edge is zero | OCCTEdgeGetCurvature3D | Edge curve curvature | Return Curvature() + 0.5 | ✅ | ✅ |  |
@@ -372,6 +380,10 @@ For each test, run ground-truth C++ comparison:
 | Make Connected | ✅ | ✅ | ✅ |
 | Linear Rib Feature | ✅ | ✅ | ✅ |
 | Glue Tests | ✅ | ✅ | ✅ |
+| Shape distance to Wire | ✅ | ✅ | ✅ |
+| Shape intersects Wire | ✅ | ✅ | ✅ |
+| Shape distance to Edge | ✅ | ✅ | ✅ |
+| Shape distance to Face | ✅ | ✅ | ✅ |
 | Measurement Tests: Volume of box | ✅ | ✅ | ✅ |
 | Measurement Tests: Volume of cylinder | ✅ | ✅ | ✅ |
 | Measurement Tests: Volume of sphere | ✅ | ✅ | ✅ |
@@ -391,4 +403,4 @@ For each test, run ground-truth C++ comparison:
 | Measurement Tests: Get vertex at index | ✅ | ✅ | ✅ |
 | Measurement Tests: Vertex out of bounds | ✅ | ✅ | ✅ |
 
-**Total**: 577 tests
+**Total**: 581 tests
