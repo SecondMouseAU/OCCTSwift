@@ -1,0 +1,8 @@
+L wire length 200
+  uniform abscissa 2 -> 2 points
+  uniform abscissa 5 -> 5 points
+  uniform abscissa 21 -> 21 points
+  uniform abscissa 100000 -> 100000 points
+  uniform abscissa 200001 -> 200001 points
+law 150 knots, C2 splits 150, first index 1 last index 150
+law 12 knots, C2 splits 12, first index 1 last index 12

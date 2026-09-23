@@ -197,3 +197,20 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Issue #479: arc-length sampling rejects counts it cannot allocate | absurdSpacingIsEmpty | `none: Sampling.impliedCount` | impl2: over-ceiling spacing answers 2 | `Issue479SampleCountBoundTests.swift:45 points(spacing: 1e-9).isEmpty` | ✅ | N/A |  |
+| Issue #479: arc-length sampling rejects counts it cannot allocate | nonFiniteSpacing | `none: Sampling.impliedCount` | infnil: infinite spacing rejected; spcoff | `Issue479SampleCountBoundTests.swift:64 points(spacing: .infinity).count == 2` | ✅ | N/A |  |
+| Issue #479: arc-length sampling rejects counts it cannot allocate | countPastCeilingIsEmpty | `none: Sampling.requested` | req2: over-ceiling count answers 2 | `Issue479SampleCountBoundTests.swift:73 points(count: max + 1).isEmpty` | ✅ | N/A |  |
+| Issue #479: arc-length sampling rejects counts it cannot allocate | ceilingValue | `none: Sampling.maximumSampleCount` | ceilval: ceiling 10_000_001 | `Issue479SampleCountBoundTests.swift:83 == 10_000_000` | ✅ | N/A |  |
+| Issue #479: arc-length sampling rejects counts it cannot allocate | ordinaryCountsStillWork | `OCCTCompCurveSampleUniform, OCCTEdgeCurve*` | sampmin: counts below 2 clamped (also crashes the Int.max case) | `Issue479SampleCountBoundTests.swift:98 points(count: 1).isEmpty` | ✅ | MATCH |  |
+| Issue #479: arc-length sampling rejects counts it cannot allocate | ordinarySpacingStillWorks | `OCCTCompCurveSampleUniform` | spcoff: implied count + 1 | `Issue479SampleCountBoundTests.swift:109 pts.count == 21` | ✅ | MATCH |  |
+| LawFunction knot splitting truncation (#481) | indexAndParameterCountsAgreeWhenLarge | `OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams` | ktrunc: no retry past 100; lawnone | `Issue481LawKnotSplittingTruncationTests.swift:41 indices.count == params.count` | ✅ | MATCH |  |
+| LawFunction knot splitting truncation (#481) | indicesAreAscendingBeyondTheBuffer | `OCCTLawBSplineKnotSplitting` | ktrunc; lawnone | `Issue481LawKnotSplittingTruncationTests.swift:61 indices.last == 150` | ✅ | MATCH |  |
+| LawFunction knot splitting truncation (#481) | smallLawIsUnaffected | `OCCTLawBSplineKnotSplitting, OCCTLawBSplineKnotSplitParams` | lawnone: knot splitting -1 | `Issue481LawKnotSplittingTruncationTests.swift:72 indices.count == 12` | ✅ | MATCH |  |
+| LawFunction knot splitting truncation (#481) | nonBSplineLawReturnsEmptyIndices | `OCCTLawBSplineKnotSplitting` | lawall: non-BSpFunc law answers 2 indices | `Issue481LawKnotSplittingTruncationTests.swift:82 isEmpty` | ✅ | MATCH |  |
