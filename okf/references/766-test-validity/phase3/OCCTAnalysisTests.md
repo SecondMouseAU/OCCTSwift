@@ -14,14 +14,14 @@
 | **IntCurvesFace Intersection** | Line-face intersection | Curve-face intersection | Return no intersection points |
 | **IntCurvesFace Intersection** | Line parallel to a face does not intersect it | Curve-face intersection | Report a spurious point |
 | **ShapeRayIntersection Tests** | hit face access | Ray-shape hit iteration | More() returns false |
-| **Point Cloud Analysis** | Single point detected as point | Point cloud classification | Remove point cloud classification |
-| **Point Cloud Analysis** | Coplanar points detected as planar | Point cloud classification | Remove point cloud classification |
-| **Point Cloud Analysis** | Collinear points detected as linear | Point cloud classification | Remove point cloud classification |
-| **Point Cloud Analysis** | Coincident points detected as point | Point cloud classification | Remove point cloud classification |
+| **Point Cloud Analysis** | Coincident points detected as point | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) |
+| **Point Cloud Analysis** | Collinear points detected as linear | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) |
+| **Point Cloud Analysis** | Coplanar points detected as planar | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) |
+| **Point Cloud Analysis** | 3D dispersed points detected as space | GProp_PEquation classification | the space branch returns false |
+| **Point Cloud Analysis** | Empty points returns nil | Empty input rejection | drop the isEmpty guard in Shape.analyzePointCloud AND the pointCount < 1 / null-coords guard in OCCTAnalyzePointCloud |
+| **Point Cloud Analysis** | Single point detected as point | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) |
 | **ShapeRayIntersection Tests** | line intersection with box | Line-shape intersection | Remove line-shape intersection |
 | **ShapeRayIntersection Tests** | curve intersection with sphere | Curve-shape intersection | Remove curve-shape intersection |
-| **Point Cloud Analysis** | Empty points returns nil | Point cloud classification | Remove point cloud classification |
-| **Point Cloud Analysis** | 3D dispersed points detected as space | Point cloud classification | Remove point cloud classification |
 | **ShapeAnalysis_Edge Tests** | ShapeAnalysis_Edge Tests | Edge analysis | Remove edge analysis |
 | **ShapeAnalysis_Wire Tests** | ShapeAnalysis_Wire Tests | Wire analysis | Remove wire analysis |
 | **ShapeAnalysis_ShapeTolerance** | ShapeAnalysis_ShapeTolerance | Shape tolerance | Remove tolerance |
@@ -128,14 +128,14 @@
 | Line-face intersection | OCCTLocOpeCSIntersectLine | Curve-face intersection | Return no intersection points | ✅ | ✅ |  |
 | Line parallel to a face does not intersect it | OCCTLocOpeCSIntersectLine | Curve-face intersection | Report a spurious point | ✅ | ✅ |  |
 | hit face access | OCCTCurveSurfaceInterMore | Ray-shape hit iteration | More() returns false | ✅ | ✅ |  |
-| Single point detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
-| Coplanar points detected as planar | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
-| Collinear points detected as linear | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
-| Coincident points detected as point | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
+| Coincident points detected as point | OCCTAnalyzePointCloud | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:22 `Bool(false)` (Expected .point). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
+| Collinear points detected as linear | OCCTAnalyzePointCloud | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:39 `Bool(false)` (Expected .linear). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
+| Coplanar points detected as planar | OCCTAnalyzePointCloud | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:54 `Bool(false)` (Expected .planar). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
+| 3D dispersed points detected as space | OCCTAnalyzePointCloud | GProp_PEquation classification | the space branch returns false | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:64 `result != nil` and :68 `Bool(false)` (Expected .space). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
+| Empty points returns nil | OCCTAnalyzePointCloud | Empty input rejection | drop the isEmpty guard in Shape.analyzePointCloud AND the pointCount < 1 / null-coords guard in OCCTAnalyzePointCloud | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:75 `result == nil`. Parity MATCH (see note), `Scripts/repro/766-point-cloud-analysis/`. Either guard alone keeps it green (the other catches it); with both removed the kernel classifies an empty array as space. Bridge nil vs unguarded kernel space is the intended difference, not a mismatch. |
+| Single point detected as point | OCCTAnalyzePointCloud | GProp_PEquation classification | skip the IsPoint/IsLinear/IsPlanar branches (all input reported as space) | ✅ | ✅ | Red: PointCloudAnalysisTests.swift:85 `Bool(false)` (Expected .point). Parity MATCH, `Scripts/repro/766-point-cloud-analysis/`. |
 | line intersection with box | OCCTCurveSurfaceInterCreateLine | Line-shape intersection | Remove line-shape intersection | ✅ | ✅ |  |
 | curve intersection with sphere | OCCTCurveSurfaceInterCreateCurve | Curve-shape intersection | Remove curve-shape intersection | ✅ | ✅ |  |
-| Empty points returns nil | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
-| 3D dispersed points detected as space | OCCTAnalyzePointCloud | Point cloud classification | Remove point cloud classification | ✅ | ✅ |  |
 | ShapeAnalysis_Edge Tests | OCCTShapeAnalysisEdge | Edge analysis | Remove edge analysis | ✅ | ✅ |  |
 | ShapeAnalysis_Wire Tests | OCCTShapeAnalysisWire | Wire analysis | Remove wire analysis | ✅ | ✅ |  |
 | ShapeAnalysis_ShapeTolerance | OCCTShapeAnalysisShapeTolerance | Shape tolerance | Remove tolerance | ✅ | ✅ |  |
@@ -237,14 +237,14 @@ For each test, run ground-truth C++ comparison:
 | Line-face intersection | ✅ | ✅ | ✅ |
 | Line parallel to a face does not intersect it | ✅ | ✅ | ✅ |
 | hit face access | ✅ | ✅ | ✅ |
-| Single point detected as point | ✅ | ✅ | ✅ |
-| Coplanar points detected as planar | ✅ | ✅ | ✅ |
-| Collinear points detected as linear | ✅ | ✅ | ✅ |
 | Coincident points detected as point | ✅ | ✅ | ✅ |
+| Collinear points detected as linear | ✅ | ✅ | ✅ |
+| Coplanar points detected as planar | ✅ | ✅ | ✅ |
+| 3D dispersed points detected as space | ✅ | ✅ | ✅ |
+| Empty points returns nil | ✅ | ✅ | ✅ |
+| Single point detected as point | ✅ | ✅ | ✅ |
 | line intersection with box | ✅ | ✅ | ✅ |
 | curve intersection with sphere | ✅ | ✅ | ✅ |
-| Empty points returns nil | ✅ | ✅ | ✅ |
-| 3D dispersed points detected as space | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Edge Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_Wire Tests | ✅ | ✅ | ✅ |
 | ShapeAnalysis_ShapeTolerance | ✅ | ✅ | ✅ |
