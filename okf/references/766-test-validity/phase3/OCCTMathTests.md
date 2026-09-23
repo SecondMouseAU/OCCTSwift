@@ -109,3 +109,15 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-trsfmod-uzawa-vector2d (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **BRepTools_TrsfModification** | apply translation via modifier | `OCCTShapeTrsfModification` | translation column (a14, a24, a34) dropped | red | green | PASS |
+| **BRepTools_TrsfModification** | apply rotation via modifier | `OCCTShapeTrsfModification` | a12 and a21 swapped (rotation by -90 deg) | red | green | PASS |
+| **Uzawa** | constrainedOptimization | `OCCTMathUzawa` | constraint right-hand side negated | red | green | PASS |
+| **Vector2DMath** | modulus | `OCCTXYModulus` | SquareModulus() returned | red | green | PASS |
+| **Vector2DMath** | cross | `OCCTXYCrossed` | operands reversed | red | green | PASS |
+| **Vector2DMath** | dot | `OCCTXYDot` | y term dropped | red | green | PASS |
+| **Vector2DMath** | normalize | `OCCTXYNormalize` | normalized x and y swapped | red | green | PASS |

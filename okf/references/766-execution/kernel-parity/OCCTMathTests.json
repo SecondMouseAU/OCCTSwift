@@ -182,5 +182,75 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepTools_TrsfModification::apply translation via modifier",
+    "bridge_function": "OCCTShapeTrsfModification",
+    "bridge_output": {"type": "observed", "data": "volume 6000; min (94.9999999, 189.9999999, 284.9999999), max (105.0000001, 210.0000001, 315.0000001)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "volume 6000; min (94.9999999, 189.9999999, 284.9999999), max (105.0000001, 210.0000001, 315.0000001)", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "translation column (a14, a24, a34) dropped", "failing_expectation": "original: **green**; rewritten: :38 `simd_distance(bb.min, SIMD3<Double>(95, 190, 285)) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "BRepTools_TrsfModification::apply rotation via modifier",
+    "bridge_function": "OCCTShapeTrsfModification",
+    "bridge_output": {"type": "observed", "data": "10x20x30 at (1,0,0): min (-20.0000001, 0.9999999, -1e-7), max (1e-7, 11.0000001, 30.0000001); the original centred cube maps to itself", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "10x20x30 at (1,0,0): min (-20.0000001, 0.9999999, -1e-7), max (1e-7, 11.0000001, 30.0000001); the original centred cube maps to itself", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "a12 and a21 swapped (rotation by -90 deg)", "failing_expectation": "original: **green**; rewritten: :68 `simd_distance(bb.min, SIMD3<Double>(-20, 1, 0)) < 1e-6`"},
+    "green": true
+  },
+  {
+    "test_name": "Uzawa::constrainedOptimization",
+    "bridge_function": "OCCTMathUzawa",
+    "bridge_output": {"type": "observed", "data": "done, x = (0.5, 0.5), 1 iteration", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "done, x = (0.5, 0.5), 1 iteration", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "constraint right-hand side negated", "failing_expectation": ":17 `abs(r.result[0] - 0.5) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::modulus",
+    "bridge_function": "OCCTXYModulus",
+    "bridge_output": {"type": "observed", "data": "5", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "5", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SquareModulus() returned", "failing_expectation": ":10 `abs(Vector2DMath.modulus(SIMD2(3, 4)) - 5.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::cross",
+    "bridge_function": "OCCTXYCrossed",
+    "bridge_output": {"type": "observed", "data": "1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "1", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "operands reversed", "failing_expectation": ":14 `abs(Vector2DMath.cross(SIMD2(1, 0), SIMD2(0, 1)) - 1.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::dot",
+    "bridge_function": "OCCTXYDot",
+    "bridge_output": {"type": "observed", "data": "11", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "11", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "y term dropped", "failing_expectation": ":18 `abs(Vector2DMath.dot(SIMD2(1, 2), SIMD2(3, 4)) - 11.0) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Vector2DMath::normalize",
+    "bridge_function": "OCCTXYNormalize",
+    "bridge_output": {"type": "observed", "data": "(0.59999999999999998, 0.80000000000000004), modulus 1", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "(0.59999999999999998, 0.80000000000000004), modulus 1", "source": "Scripts/repro/766-math-trsfmod-uzawa-vector2d/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "normalized x and y swapped", "failing_expectation": "original: **green**; rewritten: :28 `abs(n.x - 0.6) < 1e-12`"},
+    "green": true
   }
 ]
