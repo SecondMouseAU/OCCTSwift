@@ -6,5 +6,361 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::UVFromIso refines (u,v) for a point on a cylinder",
+    "bridge_function": "OCCTSurfaceUVFromIso",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "gap": 0,
+        "u": 0,
+        "v": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "gap": 0,
+        "u": 0,
+        "v": 3
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 uvFromIso"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::singularity detail at a cone apex",
+    "bridge_function": "OCCTSurfaceSingularityDetail",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "apex": [
+          0,
+          0,
+          -9.15243860856
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "apex": [
+          0,
+          0,
+          -9.15243860856
+        ]
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 cone"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::out-of-range singularity index returns nil",
+    "bridge_function": "OCCTSurfaceSingularityDetail",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "singularity(99)": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "singularity(99)": null
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 cone Singularity(99) ok=0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::domain-restricted projection lands inside the domain",
+    "bridge_function": "OCCTSurfaceProjectPointUVInDomain",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uv": [
+          0,
+          2
+        ],
+        "gap": 0
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uv": [
+          0,
+          2
+        ],
+        "gap": 0
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 projectInDomain"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::BRepGProp_Face integration orders + U knots on a planar face",
+    "bridge_function": "OCCTBRepGPropFaceUKnots",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "orders": [
+          8,
+          8
+        ],
+        "uKnots": [
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "orders": [
+          8,
+          8
+        ],
+        "uKnots": [
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 integration"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::tangent plane is two-sided: TangentU and TangentV both defined and independent",
+    "bridge_function": "OCCTFaceLPropTangentV",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "tu": [
+          1,
+          0,
+          0
+        ],
+        "tv": [
+          0,
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "tu": [
+          1,
+          0,
+          0
+        ],
+        "tv": [
+          0,
+          1,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 tangents (D1U, D1V)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::BRepGProp_Face V knots + surface-integration params",
+    "bridge_function": "OCCTBRepGPropFaceSurfaceIntegration",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "order": 3,
+        "uSubs": 1,
+        "vSubs": 1
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "order": 3,
+        "uSubs": 1,
+        "vSubs": 1
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 integration"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::BRepGProp_Face boundary integration on a face edge",
+    "bridge_function": "OCCTBRepGPropFaceBoundaryIntegration",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "order": 9,
+        "subs": 1,
+        "knots": [
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "order": 9,
+        "subs": 1,
+        "knots": [
+          0,
+          10
+        ]
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 boundary edge 0 (knots from 766-issue1433-1502-1515)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266 follow-up, surface analysis extras::FaceFixer tolerance clamps run without crashing",
+    "bridge_function": "OCCTFaceFixerResult",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "valid": true,
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "valid": true,
+        "area": 100
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 faceFixer"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266, face from surface with holes::outer + one hole yields a valid face with the window removed",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWireWithHoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 84
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 84
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 holes one"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266, face from surface with holes::empty innerWires gives the plain trimmed face (full area)",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWireWithHoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 100
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 100
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 holes none"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266, face from surface with holes::multiple holes each become an opening",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWireWithHoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "area": 87
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "area": 87
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 holes two"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Issue #266, face from surface with holes::a hole off the surface fails rather than producing garbage",
+    "bridge_function": "OCCTShapeCreateFaceFromSurfaceWireWithHoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "valid face": true,
+        "area": 84
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "valid face": true,
+        "area": 84
+      },
+      "source": "Scripts/repro/766-issue233-244-266-317/transcript.txt 266 holes off-surface: ok=1 area=84"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

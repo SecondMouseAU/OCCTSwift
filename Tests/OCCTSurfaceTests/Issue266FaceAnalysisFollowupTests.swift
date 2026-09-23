@@ -42,6 +42,9 @@ struct Issue266FaceAnalysisFollowupTests {
         #expect(abs(s.point.x) < 1e-6)
         #expect(abs(s.point.y) < 1e-6)
         #expect(simd_distance(s.firstUV, s.lastUV) > 0)  // a real degenerate iso, not a point
+        // #766: the apex is 5 / tan(0.5) below the reference circle.
+        // #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
+        #expect(abs(s.point.z - (-9.15243860856)) < 1e-9)
     }
 
     @Test("out-of-range singularity index returns nil")
@@ -69,6 +72,9 @@ struct Issue266FaceAnalysisFollowupTests {
         }
         #expect(r.gap < 1e-3)
         #expect(r.uv.y >= -1e-6 && r.uv.y <= 10 + 1e-6)  // v within the requested domain
+        // #766: the domain check alone passed a v off by 1; the point projects to (0, 2).
+        #expect(abs(r.uv.x) < 1e-9)
+        #expect(abs(r.uv.y - 2) < 1e-9)
     }
 
     @Test("BRepGProp_Face integration orders + U knots on a planar face")
@@ -84,10 +90,12 @@ struct Issue266FaceAnalysisFollowupTests {
             return
         }
         // Orders are defined (planar ⇒ small/zero), and the U-knot span covers at least [uMin,uMax].
-        #expect(face.faceIntegrationOrders != nil)
+        // #766: pinned to BRepGProp_Face on the same face; `!= nil` and `count >= 2` passed any
+        // order and any knots. #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
+        #expect(face.faceIntegrationOrders?.u == 8)
+        #expect(face.faceIntegrationOrders?.v == 8)
         let knots = face.faceIntegrationKnotsU()
-        #expect(knots.count >= 2)
-        if knots.count >= 2 { #expect(knots.first! <= knots.last!) }
+        #expect(knots == [0, 10])
     }
 
     // A 10×10 planar face on z=0.
@@ -116,6 +124,9 @@ struct Issue266FaceAnalysisFollowupTests {
         // On a plane the two tangents span the plane, not parallel.
         let cross = simd_cross(tu, tv)
         #expect(simd_length(cross) > 0.5)  // ~unit (orthonormal axes) ⇒ well clear of parallel
+        // #766: the plane's D1U and D1V are the X and Y axes.
+        #expect(simd_length(tu - SIMD3(1, 0, 0)) < 1e-12)
+        #expect(simd_length(tv - SIMD3(0, 1, 0)) < 1e-12)
     }
 
     @Test("BRepGProp_Face V knots + surface-integration params")
@@ -129,9 +140,10 @@ struct Issue266FaceAnalysisFollowupTests {
             Issue.record("surfaceIntegration nil")
             return
         }
-        #expect(si.order >= 1)  // some Gauss order
-        #expect(si.uSubs >= 1)
-        #expect(si.vSubs >= 1)
+        // #766: pinned to BRepGProp_Face's SIntOrder / SUIntSubs / SVIntSubs for this face.
+        #expect(si.order == 3)
+        #expect(si.uSubs == 1)
+        #expect(si.vSubs == 1)
     }
 
     @Test("BRepGProp_Face boundary integration on a face edge")
@@ -144,9 +156,10 @@ struct Issue266FaceAnalysisFollowupTests {
             Issue.record("boundaryIntegration nil")
             return
         }
-        #expect(bi.order >= 1)
-        #expect(bi.subs >= 1)
-        #expect(bi.knots.count >= 1)
+        // #766: pinned to BRepGProp_Face's LIntOrder / LIntSubs / LKnots on edge 0.
+        #expect(bi.order == 9)
+        #expect(bi.subs == 1)
+        #expect(bi.knots == [0, 10])
         // An out-of-range edge index fails cleanly.
         #expect(face.faceBoundaryIntegration(edgeIndex: 99) == nil)
     }
@@ -160,6 +173,12 @@ struct Issue266FaceAnalysisFollowupTests {
         fixer.setMinTolerance(1e-7)
         fixer.setMaxTolerance(1e-2)
         fixer.perform()
-        if let r = fixer.result { #expect(r.isValid) }
+        // #766: `if let r` passed a fixer that produced nothing. ShapeFix_Face on the same face
+        // with the same clamps returns a valid face of area 100.
+        #expect(fixer.result != nil)
+        if let r = fixer.result {
+            #expect(r.isValid)
+            #expect(abs((r.surfaceArea ?? 0) - 100) < 1e-6)
+        }
     }
 }
