@@ -126,5 +126,248 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "TFunction DriverTable Tests::hasDriverUnknown",
+    "bridge_function": "OCCTFunctionDriverTableHasDriver",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "v": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction DriverTable Tests::clear",
+    "bridge_function": "OCCTFunctionDriverTableClear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Function Attribute::Create function attribute",
+    "bridge_function": "OCCTDocumentFunctionIsFailed",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "failed": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "failed": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction Function Attribute::Function failure mode",
+    "bridge_function": "OCCTDocumentFunctionGetFailure",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "failed": true,
+        "failure": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "failed": true,
+        "failure": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::Create graph node and set status",
+    "bridge_function": "OCCTDocumentGraphNodeGetStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "statuses": [
+          "notExecuted",
+          "succeeded"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "NotExecuted": 1,
+        "Succeeded": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::Graph node dependencies",
+    "bridge_function": "OCCTDocumentGraphNodeAddNext",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "add_next": true,
+        "add_previous": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "add_next": true,
+        "add_previous": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction GraphNode::All execution statuses",
+    "bridge_function": "OCCTDocumentGraphNodeGetStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "every_status_round_trips": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "SetStatus_GetStatus": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::newFunction",
+    "bridge_function": "OCCTDocumentNewFunction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::deleteFunction",
+    "bridge_function": "OCCTDocumentDeleteFunction",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::functionExecStatus",
+    "bridge_function": "OCCTDocumentFunctionSetExecStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "statuses": [
+          "wrongDefinition",
+          "succeeded"
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
+  },
+  {
+    "test_name": "TFunction IFunction Tests::noFunction",
+    "bridge_function": "OCCTDocumentFunctionGetExecStatus",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "status": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {}
+    },
+    "comparison": {
+      "equal": false,
+      "differences": []
+    },
+    "status": "N/A",
+    "probe": "Scripts/repro/766-xcaf-textlabel-function/"
   }
 ]
