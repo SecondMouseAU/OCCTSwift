@@ -46,5 +46,473 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::box",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (10, 10, 10), 12 triangles"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (10, 10, 10), 12 triangles",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:144 Caught error: .importFailed(\"Failed to import STL file: occt-stress-12EECDD7-AEEB-47C0-A4D2-1731518C15B4.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::cylinder",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (10, 9.92709, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (10, 9.92709, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:145 Caught error: .importFailed(\"Failed to import STL file: occt-stress-9AA60B35-0025-4B8B-A610-8F9CCC15148A.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::sphere",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (9.91697, 9.97669, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (9.91697, 9.97669, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:146 Caught error: .importFailed(\"Failed to import STL file: occt-stress-3C2D71B4-5345-4D7F-88F4-985847744BE7.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::cone",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (10, 9.92709, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (10, 9.92709, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:147 Caught error: .importFailed(\"Failed to import STL file: occt-stress-62804DF2-B0EF-4BF2-B632-6C202B02E294.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::torus",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (26, 26, 5.95625)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (26, 26, 5.95625)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:148 Caught error: .importFailed(\"Failed to import STL file: occt-stress-C3B660CB-EDF7-42B5-8019-604FB6F0A0FC.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip STL::filletedBoxShape",
+    "bridge_function": "OCCTExportSTLWithMode, OCCTImportSTL",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): StlAPI round trip at deflection 0.1: size (10, 10, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "StlAPI round trip at deflection 0.1: size (10, 10, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTL returns nil",
+      "env": "OCCT766=|NULL:OCCTImportSTL|",
+      "red": "StressFormatRoundTripTests.swift:149 Caught error: .importFailed(\"Failed to import STL file: occt-stress-CD30EE27-230D-4116-BB62-6DE1F8736891.stl\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip OBJ::box",
+    "bridge_function": "OCCTExportOBJ, OCCTImportOBJ",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): RWObj round trip: 1 face, 12 triangles, size (10, 10, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "RWObj round trip: 1 face, 12 triangles, size (10, 10, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportOBJ returns nil",
+      "env": "OCCT766=|NULL:OCCTImportOBJ|",
+      "red": "StressFormatRoundTripTests.swift:175 Caught error: .importFailed(\"Failed to import OBJ file: occt-stress-1B7092A0-1AF1-4049-8A6C-2131B56A526D.obj\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip OBJ::cylinder",
+    "bridge_function": "OCCTExportOBJ, OCCTImportOBJ",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): RWObj round trip: 1 face, 100 triangles, size (10, 9.92709, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "RWObj round trip: 1 face, 100 triangles, size (10, 9.92709, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportOBJ returns nil",
+      "env": "OCCT766=|NULL:OCCTImportOBJ|",
+      "red": "StressFormatRoundTripTests.swift:178 Caught error: .importFailed(\"Failed to import OBJ file: occt-stress-B1EC3B1D-6653-4721-BF00-97356118DD9D.obj\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip OBJ::sphere",
+    "bridge_function": "OCCTExportOBJ, OCCTImportOBJ",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): RWObj round trip: 1 face, 516 triangles, size (9.91697, 9.97669, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "RWObj round trip: 1 face, 516 triangles, size (9.91697, 9.97669, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportOBJ returns nil",
+      "env": "OCCT766=|NULL:OCCTImportOBJ|",
+      "red": "StressFormatRoundTripTests.swift:181 Caught error: .importFailed(\"Failed to import OBJ file: occt-stress-07C5D802-5BE0-46F0-BEE9-34BDE9E20824.obj\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip OBJ::filletedBoxShape",
+    "bridge_function": "OCCTExportOBJ, OCCTImportOBJ",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): RWObj round trip: 1 face, 628 triangles, size (10, 10, 10)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "RWObj round trip: 1 face, 628 triangles, size (10, 10, 10)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportOBJ returns nil",
+      "env": "OCCT766=|NULL:OCCTImportOBJ|",
+      "red": "StressFormatRoundTripTests.swift:184 Caught error: .importFailed(\"Failed to import OBJ file: occt-stress-7A077629-A41A-46A0-A4A9-D74C9D4457D5.obj\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip IGES::box",
+    "bridge_function": "OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): IGESControl round trip: 6 faces, 0 solids, no volume"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IGESControl round trip: 6 faces, 0 solids, no volume",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTExportIGES returns false",
+      "env": "OCCT766=|FAIL:OCCTExportIGES|",
+      "red": "StressFormatRoundTripTests.swift:211 Caught error: .exportFailed(\"IGES export to occt-stress-F290632F-1B46-47CF-A05E-E541AF2FA898.iges failed\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip IGES::cylinder",
+    "bridge_function": "OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): IGESControl round trip: 3 faces, 0 solids, no volume"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IGESControl round trip: 3 faces, 0 solids, no volume",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTExportIGES returns false",
+      "env": "OCCT766=|FAIL:OCCTExportIGES|",
+      "red": "StressFormatRoundTripTests.swift:212 Caught error: .exportFailed(\"IGES export to occt-stress-0D69672B-8C65-4EB1-B2EB-70E2479A4009.iges failed\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip IGES::sphere",
+    "bridge_function": "OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): IGESControl round trip: 1 face, 0 solids, no volume"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IGESControl round trip: 1 face, 0 solids, no volume",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTExportIGES returns false",
+      "env": "OCCT766=|FAIL:OCCTExportIGES|",
+      "red": "StressFormatRoundTripTests.swift:213 Caught error: .exportFailed(\"IGES export to occt-stress-FEC2DEA2-6D6A-4E96-A788-845324514659.iges failed\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip IGES::cone",
+    "bridge_function": "OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): IGESControl round trip: 3 faces, 0 solids, no volume"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IGESControl round trip: 3 faces, 0 solids, no volume",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTExportIGES returns false",
+      "env": "OCCT766=|FAIL:OCCTExportIGES|",
+      "red": "StressFormatRoundTripTests.swift:214 Caught error: .exportFailed(\"IGES export to occt-stress-443669D8-2EC5-4AFF-BAC8-21516D8F74E8.iges failed\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Round-Trip IGES::torus",
+    "bridge_function": "OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): IGESControl round trip: 1 face, 0 solids, no volume"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "IGESControl round trip: 1 face, 0 solids, no volume",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTExportIGES returns false",
+      "env": "OCCT766=|FAIL:OCCTExportIGES|",
+      "red": "StressFormatRoundTripTests.swift:215 Caught error: .exportFailed(\"IGES export to occt-stress-A8980DFD-812A-41CB-BD13-E71A83707583.iges failed\")",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Cross-Format Consistency::boxAllBRepFormats",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTExportBREPWithTriangles, OCCTExportIGES, OCCTImportIGESProgress",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP 1000, BREP 1000, IGES 6 loose faces sewn to 1000"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP 1000, BREP 1000, IGES 6 loose faces sewn to 1000",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportBREP: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportBREP|",
+      "red": "StressFormatRoundTripTests.swift:259 Expectation failed: abs(vBREP - origVol) / origVol < 0.001",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Cross-Format Consistency::cylinderSTEPvsBREP",
+    "bridge_function": "OCCTExportSTEPWithMode, OCCTImportSTEPProgress, OCCTImportBREP",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): STEP and BREP both 785.3981634"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "STEP and BREP both 785.3981634",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTImportSTEPProgress: import returns only the first face",
+      "env": "OCCT766=|DROPFACE:OCCTImportSTEPProgress|",
+      "red": "StressFormatRoundTripTests.swift:283 Expectation failed: abs(vSTEP - origVol) / origVol < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Cross-Format Consistency::allShapesBREPString",
+    "bridge_function": "OCCTShapeToBREPString, OCCTShapeFromBREPString",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): every fixture restores valid (see BREP string rows)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "every fixture restores valid (see BREP string rows)",
+      "source": "Scripts/repro/766-stress-format-round-trip/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTShapeFromBREPString returns nil",
+      "env": "OCCT766=|NULL:OCCTShapeFromBREPString|",
+      "red": "StressFormatRoundTripTests.swift:293 Expectation failed: Bool(false)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]
