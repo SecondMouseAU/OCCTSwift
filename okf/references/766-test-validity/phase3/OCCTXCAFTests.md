@@ -99,3 +99,34 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `TObjApplicationTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `getInstance` | `OCCTTObjApplicationGetInstance` returns null | :10 Expectation failed: app != nil | passed | `OCCTTObjApplicationGetInstance` | PASS: non-null |
+| `verboseFlag` | `OCCTTObjApplicationIsVerbose` returns false | :21 Expectation failed: app.isVerbose | passed | `OCCTTObjApplicationIsVerbose` | PASS: true, false |
+| `createDocument` | `OCCTTObjApplicationCreateDocument` returns null | :32 Expectation failed: doc != nil | passed | `OCCTTObjApplicationCreateDocument` | PASS: created |
+
+### `UAttributeTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setAndHas` | `OCCTUAttributeHas` returns false | :13 Expectation failed: doc.hasUAttribute(tag: 300, guid: guid) | passed | `OCCTUAttributeHas` | PASS: true |
+| `differentGUID` | `OCCTUAttributeHas` returns true | :22 Expectation failed: !doc.hasUAttribute(tag: 301, guid: guid2) | passed | `OCCTUAttributeHas` | PASS: g1 yes, g2 no |
+| `getID` | `OCCTUAttributeGetID` returns null | :30 Expectation failed: retrieved != nil | passed | `OCCTUAttributeGetID` | N/A: the GUID string is the one passed in; not probed in this pass, so no kernel value is claimed |
+
+### `VariableTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `setVariable` | `OCCTDocumentVariableSet` returns false | :11 Expectation failed: ok | passed | `OCCTDocumentVariableSet` | PASS: set |
+| `setAndGetName` | `OCCTDocumentVariableGetName` returns null | :20 Expectation failed: name == "velocity" | passed | `OCCTDocumentVariableGetName` | PASS: velocity |
+| `setAndGetValue` | `OCCTDocumentVariableGetValue` answers 0 | :30 Expectation failed: abs(val - 42.5) < 1e-10 | passed | `OCCTDocumentVariableGetValue` | PASS: 42.5 |
+| `unitString` | `OCCTDocumentVariableGetUnit` returns null | :39 Expectation failed: unit == "m/s" | passed | `OCCTDocumentVariableGetUnit` | PASS: m/s |
+| `constantFlag` | `OCCTDocumentVariableIsConstant` returns true | :49 Expectation failed: !doc.variableIsConstant(at: 1) | passed | `OCCTDocumentVariableIsConstant` | PASS: true, false |
+| `assignAndDesassignExpression` | `OCCTDocumentVariableIsAssigned` returns false | :58 Expectation failed: doc.variableIsAssigned(at: 1) | passed | `OCCTDocumentVariableIsAssigned` | PASS: true, false |
