@@ -94,5 +94,365 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::knotCount",
+    "bridge_function": "OCCTCurve2DBSplineKnotCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "knotCount": 4
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "knotCount": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "NbKnots() + 1",
+      "red": "BSplineCurve2DManipulationTests.swift:24:9: Expectation failed: bsp.bspline.knotCount == 4",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`nk > 0`, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::poleCount",
+    "bridge_function": "OCCTCurve2DBSplinePoleCount",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "poleCount": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "poleCount": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "NbPoles() + 1",
+      "red": "BSplineCurve2DManipulationTests.swift:29:9: Expectation failed: bsp.bspline.poleCount == 6",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`np >= 4`, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::degree",
+    "bridge_function": "OCCTCurve2DBSplineDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 3
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "Degree() + 1",
+      "red": "BSplineCurve2DManipulationTests.swift:34:9: Expectation failed: bsp.bspline.degree == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`deg >= 1`, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::isRational",
+    "bridge_function": "OCCTCurve2DBSplineIsRational",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isRational": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "isRational": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "negate IsRational()",
+      "red": "BSplineCurve2DManipulationTests.swift:39:9: Expectation failed: !bsp.bspline.isRational",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`let _ = bsp.bspline.isRational`, no assertion"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::setPole",
+    "bridge_function": "OCCTCurve2DBSplineSetPole",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "pole(2)": [
+          3,
+          6
+        ],
+        "point(mid)": [
+          4.48048559535,
+          3.8185952988
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "pole(2)": [
+          3,
+          6
+        ],
+        "point(mid)": [
+          4.48048559535,
+          3.8185952988
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "store y + 1",
+      "red": "BSplineCurve2DManipulationTests.swift:48:9: Expectation failed: abs(p.y - 6.0) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "the pole read-back was nested in `if let bsp`, so a nil curve passed; now also pins the moved midpoint"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::resolution",
+    "bridge_function": "OCCTCurve2DBSplineResolution",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "resolution(0.001)": 0.000456398889492
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "resolution(0.001)": 0.000456398889492
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "double the resolution",
+      "red": "BSplineCurve2DManipulationTests.swift:57:9: Expectation failed: abs(res - 0.000456398889492) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`res > 0`, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::insertKnot",
+    "bridge_function": "OCCTCurve2DBSplineInsertKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "knotCount": 5,
+        "knot(3)": 6.53884361523,
+        "poleCount": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "knotCount": 5,
+        "knot(3)": 6.53884361523,
+        "poleCount": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without inserting",
+      "red": "BSplineCurve2DManipulationTests.swift:66:9: Expectation failed: bsp.bspline.knotCount == 5",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "only the returned Bool, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::segment",
+    "bridge_function": "OCCTCurve2DBSplineSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          3.26942180762,
+          9.80826542285
+        ],
+        "start": [
+          1.68164527884,
+          3.67817687899
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          3.26942180762,
+          9.80826542285
+        ],
+        "start": [
+          1.68164527884,
+          3.67817687899
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without segmenting",
+      "red": "BSplineCurve2DManipulationTests.swift:80:9: Expectation failed: abs(bsp.domain.lowerBound - u1) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "only the returned Bool, nested in `if let bsp`, so a nil curve passed"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::increaseDegree",
+    "bridge_function": "OCCTCurve2DBSplineIncreaseDegree",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degree": 4,
+        "mults": [
+          5,
+          2,
+          2,
+          5
+        ],
+        "poleCount": 9
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degree": 4,
+        "mults": [
+          5,
+          2,
+          2,
+          5
+        ],
+        "poleCount": 9
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without raising the degree",
+      "red": "BSplineCurve2DManipulationTests.swift:91:9: Expectation failed: bsp.bspline.degree == oldDeg + 1",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "nested in `if let bsp`, so a nil curve passed; now also pins the multiplicities and pole count"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::setWeight",
+    "bridge_function": "OCCTCurve2DBSplineSetWeight",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isRational_after": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "isRational_after": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without setting the weight",
+      "red": "BSplineCurve2DManipulationTests.swift:100:9: Expectation failed: bsp.bspline.isRational",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`let _ = setWeight(...)`, no assertion"
+    }
+  },
+  {
+    "test_name": "BSpline Curve 2D Manipulation Tests::removeKnot",
+    "bridge_function": "OCCTCurve2DBSplineRemoveKnot",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "returned": true,
+        "knotCount": 3,
+        "knot(2)": 9.472135955,
+        "poleCount": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "returned": true,
+        "knotCount": 3,
+        "knot(2)": 9.472135955,
+        "poleCount": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "return true without removing",
+      "red": "BSplineCurve2DManipulationTests.swift:107:9: Expectation failed: bsp.bspline.knotCount == 3",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-bspline-manipulation/",
+      "rewritten": "`let _ = removeKnot(...)`, no assertion"
+    }
   }
 ]
