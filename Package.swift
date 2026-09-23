@@ -51,22 +51,30 @@ let occtTarget: Target = isWASI
     // WASI: Use locally built static library from Scripts/build-occt-wasm.sh
     // The library and headers are at Libraries/libOCCT-wasm.a and Libraries/occt-headers-wasm/
     // The `path: "Libraries"` sets the base for headerSearchPath("occt-headers-wasm") -> Libraries/occt-headers-wasm/
-    // dummy.c is required by SwiftPM (targets must have at least one source file)
+    // dummy.c is required by SwiftPM (targets must have at least one source file), and
+    // include/ is required too: SwiftPM refuses to LOAD a package whose target has no
+    // public-headers directory ("public headers (\"include\") directory path for 'OCCT' is
+    // invalid or not contained in the target"). Both are force-added past the `Libraries/` line
+    // in .gitignore, so a consumer's checkout has them.
+    //
+    // NO .unsafeFlags HERE, and none anywhere on this path. SwiftPM refuses to build any package
+    // that has them once it is resolved by VERSION, which is how an application consumes a
+    // published package; path and branch dependencies are exempt, a version requirement is not.
+    // Measured, with Scripts/repro/2048/run.sh. Everything that has no safe spelling, which is
+    // the -L for this archive, the exception flags and the SjLj flag, comes from a toolset the
+    // consumer passes to `swift build`; `Scripts/make-wasi-toolset.py` writes one.
     ? .target(
         name: "OCCT",
         path: "Libraries",
         sources: ["dummy.c"], // Required by SwiftPM; file can be empty
         cxxSettings: [
             .headerSearchPath("occt-headers-wasm"),
-            .define("__wasi__"),
             .define("OCCT_NO_DEPRECATED"),
-            .define("_WASI_EMULATED_PROCESS_CLOCKS"),
-            .define("_WASI_EMULATED_GETPID"),
         ],
         linkerSettings: [
-            .linkedLibrary("OCCT-wasm"), // links libOCCT-wasm.a from Libraries/
-            // Build directory is .build/<config>/OCCT.build/, so ../../Libraries reaches package root
-            .unsafeFlags(["-L", "../../Libraries"])
+            // The NAME is a safe setting; the -L that finds libOCCT-wasm.a is not expressible at
+            // all and is the toolset's job.
+            .linkedLibrary("OCCT-wasm"),
         ]
     )
     : useLocalXCFramework
@@ -401,17 +409,47 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             cxxSettings: [
                 // Use WASI-built OCCT headers
                 .headerSearchPath("../../Libraries/occt-headers-wasm"),
+                // The threading shim, for a bridge source that includes it by name under an
+                // `#if defined(__wasi__)` guard. A guarded `#include` needs no build setting of
+                // any kind, which is why it is preferred over the `-include` flag
+                // Scripts/build-occt-wasm.sh uses for OCCT's own sources: a flag would have to
+                // come from the toolset, and a consumer who forgets it gets six errors naming
+                // std::mutex. Both mechanisms were measured to work, in
+                // Scripts/repro/2048/run.sh cases 4 and 8.
+                .headerSearchPath("../../Scripts/wasm-shims"),
                 .define("OCCT_AVAILABLE", to: "1"),
                 .define("OCCT_NO_DEPRECATED"),
-                .define("__wasi__"),
-                // WASI doesn't have full POSIX; guard Foundation imports in headers
-                .define("_WASI_EMULATED_PROCESS_CLOCKS"),
-                .define("_WASI_EMULATED_GETPID"),
+                // __wasi__ is NOT defined here: clang predefines it for this triple, measured
+                // with `clang -target wasm32-unknown-wasip1 -dM -E`, in both C and C++.
+                //
+                // Neither is _WASI_EMULATED_PROCESS_CLOCKS or _WASI_EMULATED_GETPID.
+                // Scripts/build-occt-wasm.sh passes NO emulation define (docs/WASI_GUARD_SITES.md,
+                // "CMake flags: none are passed"), and defining one here would compile the same
+                // OCCT headers under a different macro set from the archive this links against.
+                // #2179 measured the specific harm for the process clocks: the define is what
+                // broke wasi-osd-chronometer.patch, and guarding the include removed the need.
             ],
             linkerSettings: [
-                .linkedLibrary("c++"),
+                // Library NAMES are a safe setting and stay in the manifest. The -L directories
+                // that find them are not expressible at all and come from the toolset.
+                // Measured in Scripts/repro/2048/run.sh case 4: of these, only -lunwind and the
+                // kernel archive need a -L. libsetjmp.a and libwasi-emulated-getpid.a are in the
+                // Swift SDK's own WASI.sdk, which is already the link's sysroot, and libc++abi.a
+                // is there too but is the NO-EXCEPTIONS flavour, so the toolset's -L into
+                // wasi-sdk's lib/wasm32-wasip1/eh has to precede the sysroot rather than merely
+                // be present.
                 .linkedLibrary("OCCT-wasm"),
-                .unsafeFlags(["-L", "../../Libraries"])
+                .linkedLibrary("c++"),
+                .linkedLibrary("c++abi"),
+                .linkedLibrary("unwind"),
+                // -fwasm-exceptions does nothing for setjmp. OCCT's own CMake defines
+                // OCC_CONVERT_SIGNALS, so OCC_CATCH_SIGNALS expands to a real setjmp inside OCCT
+                // and six TKernel objects reference __wasm_setjmp (#2172, #2188).
+                .linkedLibrary("setjmp"),
+                // OSD_Directory::BuildTemporary() and OSD_Process::ProcessId() both call getpid(),
+                // which wasi-libc declares and does not define (docs/WASI_GUARD_SITES.md). The
+                // define is deliberately absent above; the library is what the link needs.
+                .linkedLibrary("wasi-emulated-getpid"),
             ]
         )
         // Native platforms: source build with XCFramework header search paths

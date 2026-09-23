@@ -1,0 +1,59 @@
+# Recorded run of Scripts/repro/2048/run.sh, 2026-09-23, on the pinned toolchain.
+# Absolute paths to the temporary work directory are as produced; nothing is edited.
+
+>>> Swift toolchain : /Library/Developer/Toolchains/swift-6.4.0-RELEASE.xctoolchain/usr/bin
+>>> Swift SDK       : swift-6.4.0-RELEASE_wasm (wasm32-unknown-wasip1)
+>>> wasi-sdk        : /Users/elb/Projects/OCCTSwift/Libraries/wasi-sdk-34.0-arm64-macos
+>>> EH flags        : -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false
+>>> work directory  : /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.L8byhegW6W
+
+
+=== case 1: unsafeFlags, consumed as a VERSIONED dependency (what #1689's app does) ===
+    ok   refused: 'consumer': the target 'StubBridge' in product 'StubOCCT' contains unsafe build flags
+
+=== case 2: the same unsafeFlags, consumed as a PATH dependency (what a checkout does) ===
+    ok   accepted, and the build reached the LINK, so the refusal is about the requirement
+         (a version), not about the flag
+
+=== case 3: safe settings only, no threading shim, no toolset ===
+    ok   compile failed on std::mutex, so the shim is load-bearing rather than belt and braces
+
+=== case 4: shim by a guarded #include (safe settings only), still no toolset ===
+    ok   compiled, so the shim needs no build setting at all. The LINK then failed:
+         unable to find library -lSTUBKERNEL-wasm
+         unable to find library -lunwind
+         The library NAMES reached wasm-ld from .linkedLibrary; the -L that finds them
+         has no safe spelling at all.
+
+=== case 5: toolset with the library paths but WITHOUT the exception flags ===
+      Error: wasm exception (payload: [WasmTypes.Value.i32(1293280)])
+    ok   built clean with no diagnostic, and the outermost catch (...) did not fire (module exit 1)
+
+=== case 6: setjmp in the graph, exception flags on, but no -mllvm -wasm-enable-sjlj ===
+    ok   refused, and the diagnostic names setjmp, so that flag is separate from the EH pair
+
+=== case 7: toolset with the library paths, the exception flags AND the sjlj flag (the recommendation) ===
+      ok   kernel archive on the link line: 801 (expected 801)
+      ok   serialising lock compiles and locks: 801 (expected 801)
+      ok   outermost catch (...) fires: 22 (expected 22)
+      ok   getpid linked: 1 (expected 1)
+      ok   setjmp/longjmp round trip: 7 (expected 7)
+      consumer: all cases passed
+    ok   a VERSIONED dependency built for wasm32-unknown-wasip1 and every case passed
+
+=== case 8: the same, with the shim force-included by the toolset instead of by the source ===
+      ok   kernel archive on the link line: 801 (expected 801)
+      ok   serialising lock compiles and locks: 801 (expected 801)
+      ok   outermost catch (...) fires: 22 (expected 22)
+      ok   getpid linked: 1 (expected 1)
+      ok   setjmp/longjmp round trip: 7 (expected 7)
+      consumer: all cases passed
+    ok   -include from a toolset works too, so the shim has two viable mechanisms
+
+=== case 9: Objective-C++ plus -fwasm-exceptions, compiled directly (no SwiftPM) ===
+    ok   the same file compiles as C++ and CRASHES clang as Objective-C++, in the
+         WebAssembly Exception Information pass. The bridge is 33 .mm files, so the
+         recommendation below is blocked on that until they compile as C++.
+
+All cases produced the outcome they assert. See README.md for what each one means.
+EXIT=0

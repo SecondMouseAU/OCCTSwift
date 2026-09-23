@@ -280,6 +280,95 @@ and the bridge in. The measurement logs are
 [`Scripts/repro/2172/README.md`](../Scripts/repro/2172/README.md) and
 [`Scripts/repro/2173/README.md`](../Scripts/repro/2173/README.md).
 
+## How a wasm application consumes this package (#2048)
+
+The consumer is a SwiftWasm application using JavaScriptKit, and it reaches OCCTSwift with
+`.package(url:, from: "…")`. That single detail decides the whole WASI configuration, because
+**SwiftPM refuses to build any package that uses `.unsafeFlags` once it is resolved by version**.
+
+Measured in [`Scripts/repro/2048/`](../Scripts/repro/2048/README.md), which puts OCCTSwift's target
+shape and none of its content through a real dependency graph, and therefore needs no OCCT:
+
+| How the dependency is declared | `.unsafeFlags` in it |
+|---|---|
+| `.package(path:)` | accepted |
+| `.package(url:, branch:)` | accepted |
+| `.package(url:, from: "1.0.0")` | **refused** |
+
+A `.when(platforms: [.wasi])` condition does not exempt it, so the flags cannot be hidden behind a
+condition. The restriction is on the requirement, not the flag.
+
+### Where each flag lives now
+
+`PackageDescription` offers `headerSearchPath`, `define` and four warning controls for C and C++,
+and `linkedLibrary` / `linkedFramework` for the linker. That list is the whole answer to what can
+be expressed safely.
+
+**In the manifest, because they have a safe spelling**: every library NAME
+(`-lOCCT-wasm`, `-lc++`, `-lc++abi`, `-lunwind`, `-lsetjmp`, `-lwasi-emulated-getpid`) as
+`.linkedLibrary`, and every define and header search path.
+
+**In a toolset the consumer passes**, because nothing else can carry them:
+`-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false`, `-mllvm -wasm-enable-sjlj`, the `-L` into
+wasi-sdk's `lib/wasm32-wasip1/eh`, and the `-L` for `libOCCT-wasm.a`.
+`Scripts/make-wasi-toolset.py` writes one, reading the exception flags from
+`Scripts/wasm-toolchain-versions.txt` so a toolset cannot drift away from the flags the kernel was
+built with:
+
+```bash
+python3 Scripts/make-wasi-toolset.py --wasi-sdk "$WASI_SDK_PREFIX" \
+    --occt-lib-dir <where libOCCT-wasm.a is> -o toolset.json
+OCCTSWIFT_WASI=1 TOOLCHAINS=swift swift build --toolset toolset.json \
+    --swift-sdk swift-6.4.0-RELEASE_wasm --triple wasm32-unknown-wasip1
+```
+
+Only `-lunwind` and the kernel archive actually need a `-L`. `libsetjmp.a` and
+`libwasi-emulated-getpid.a` are in the Swift SDK's own `WASI.sdk`, which is already the link's
+sysroot. `libc++abi.a` is there too, which is worse than absent: it is the no-exceptions flavour,
+so the `-L` into wasi-sdk's `eh` directory has to **precede** the sysroot, not merely be present.
+
+**In the source, because a guarded `#include` needs no setting at all**: the threading shim. A
+bridge source that includes `wasi-std-threading.hpp` under `#if defined(__wasi__)` needs only the
+header search path the manifest already has. The toolset's `-include` works too, and was measured
+to; the `#include` is preferred because a consumer who forgets a toolset entry gets six errors
+naming `std::mutex`, while a consumer who forgets nothing cannot forget this.
+
+### The alternatives, and why not
+
+- **A SwiftPM build plugin** returns `[Command]`, each a process producing files. There is no API
+  by which a plugin changes another target's compiler flags.
+- **A prebuilt binary artefact.** `binaryTarget` takes an `xcframework`, which is Apple-only, or an
+  `artifactbundle`, which holds executables. Neither is a static library for a wasm triple.
+- **More in `Scripts/cmake/wasi-swift-sdk.cmake`.** That file compiles OCCT and reaches nothing
+  SwiftPM builds, so it cannot carry a flag the bridge or the link needs.
+
+### How far it gets today
+
+With the manifest above and a generated toolset, SwiftPM loads the manifest, plans the WASI graph,
+builds the `OCCT` target and starts compiling `Sources/OCCTBridge/src`. Nothing in the manifest is
+the obstacle any more. The first failure is in the bridge header, 19 instances of one cause,
+`unknown type name 'int32_t'`: #2049 wrapped that header's `#import <Foundation/Foundation.h>` in
+`#if !defined(__wasi__)`, and Foundation was what transitively supplied `<stdint.h>`. One guarded
+`#include <stdint.h>` is the fix.
+
+### What still blocks the end to end
+
+Three things, none of them about SwiftPM.
+
+**No `libOCCT-wasm.a` exists**, which is #2174. Until it does, the manifest above is verified on a
+stub and on nothing else.
+
+**The bridge header needs `<stdint.h>`**, as above.
+
+**The bridge's 33 `.mm` files cannot carry `-fwasm-exceptions`.** The pinned toolchain's clang
+crashes in its `WebAssembly Exception Information` pass on Objective-C++ with that flag, under
+either exception encoding and with `-fno-objc-exceptions`, while the identical file compiles as
+C++. Building the bridge without the flag is not an alternative: that is exactly the configuration
+[#2171](https://github.com/SecondMouseAU/OCCTSwift/issues/2171) measured, where every outermost
+`catch (...)` stops firing and nothing says so. The bridge's sources have to reach the compiler as
+C++ before any of this links.
+
+
 ## Plan
 
 ### Phase 0. Decision spike (gates everything)
@@ -315,9 +404,10 @@ before porting 3,500 operations.
 
 - Add a wasm target to `build-occt.sh` (or a sibling `build-occt-wasm.sh`) for the
   chosen toolchain. `xcframework` packaging is Apple-only, so wasm needs its own
-  distribution path (a checked-in/release-asset `.a` + headers, or vendored
-  sources, consumed via SwiftPM `linkerSettings`/unsafeFlags, there is no
-  `binaryTarget` for wasm).
+  distribution path (a release-asset `.a` + headers, consumed through
+  `.linkedLibrary` plus a consumer-side toolset; there is no `binaryTarget` for
+  wasm, and `unsafeFlags` is not available to a package consumed by version, see
+  [How a wasm application consumes this package](#how-a-wasm-application-consumes-this-package-2048)).
 - Drop the `#import <Foundation/Foundation.h>` from the bridge header (or guard it)
   so the bridge compiles under the wasm toolchain.
 
