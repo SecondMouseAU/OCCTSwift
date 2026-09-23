@@ -124,3 +124,21 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Geom2dEvalCircleInvolutePlacementTests.swift`, `Geom2dEvalCircleInvoluteTests.swift`, `Geom2dEvalLogSpiralTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-eval-involute-logspiral/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementAtOrigin | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementTranslated | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementRotated | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute with Placement::involuteD0PlacementDiffersFromIdentity | `OCCTGeom2dEvalCircleInvoluteD0WithPlacement` | origin x + 1 | ✅ | ✅ | MATCH | "differ" only; now both points pinned |
+| Geom2dEval — Circle Involute with Placement::involuteD1WithPlacement | `OCCTGeom2dEvalCircleInvoluteD1WithPlacement` | radius + 1 | ✅ | ✅ | MATCH | `speed > 0`; now |D1| = R t and D1 pinned |
+| Geom2dEval — Circle Involute::involuteD0AtZero | `OCCTGeom2dEvalCircleInvoluteD0` | radius + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Circle Involute::involuteGrows | `OCCTGeom2dEvalCircleInvoluteD0` | radius + 1 | ✅ | ✅ | MATCH | `r2 > r1` only |
+| Geom2dEval — Circle Involute::involuteD1 | `OCCTGeom2dEvalCircleInvoluteD1` | radius + 1 | ✅ | ✅ | MATCH | `speed > 0` only |
+| Geom2dEval — Logarithmic Spiral::logSpiralD0AtZero | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH |  |
+| Geom2dEval — Logarithmic Spiral::logSpiralGrows | `OCCTGeom2dEvalLogSpiralD0` | scale + 1 | ✅ | ✅ | MATCH | `r2 > r1` only |
+| Geom2dEval — Logarithmic Spiral::logSpiralD1 | `OCCTGeom2dEvalLogSpiralD1` | growth exponent + 0.1 | ✅ | ✅ | MATCH | `speed > 0` only |

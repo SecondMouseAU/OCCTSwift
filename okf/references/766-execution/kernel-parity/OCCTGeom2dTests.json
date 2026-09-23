@@ -94,5 +94,411 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementAtOrigin",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Geom2dEvalCircleInvolutePlacementTests.swift:15:9: Expectation failed: abs(p.x - 2.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementTranslated",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          12,
+          20
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          12,
+          20
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Geom2dEvalCircleInvolutePlacementTests.swift:24:9: Expectation failed: abs(p.x - 12.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute with Placement::involuteD0WithPlacementRotated",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0,
+          2
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Geom2dEvalCircleInvolutePlacementTests.swift:34:9: Expectation failed: abs(p.x) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute with Placement::involuteD0PlacementDiffersFromIdentity",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "identity": [
+          2.76354658135,
+          0.60233735788
+        ],
+        "placed": [
+          4.39766264212,
+          7.76354658135
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "identity": [
+          2.76354658135,
+          0.60233735788
+        ],
+        "placed": [
+          4.39766264212,
+          7.76354658135
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "origin x + 1",
+      "red": "Geom2dEvalCircleInvolutePlacementTests.swift:49:9: Expectation failed: simd_distance(pPlaced, SIMD2(4.39766264212, 7.76354658135)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "\"differ\" only; now both points pinned"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute with Placement::involuteD1WithPlacement",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD1WithPlacement",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          12.7635465814,
+          20.6023373579
+        ],
+        "D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          12.7635465814,
+          20.6023373579
+        ],
+        "D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "Geom2dEvalCircleInvolutePlacementTests.swift:57:9: Expectation failed: abs(speed - 2) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "`speed > 0`; now |D1| = R t and D1 pinned"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute::involuteD0AtZero",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "Geom2dEvalCircleInvoluteTests.swift:13:9: Expectation failed: abs(p.x - 2.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute::involuteGrows",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "C(1)": [
+          2.76354658135,
+          0.60233735788
+        ],
+        "C(5)": [
+          -9.0219183757,
+          -4.75447040396
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "C(1)": [
+          2.76354658135,
+          0.60233735788
+        ],
+        "C(5)": [
+          -9.0219183757,
+          -4.75447040396
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "Geom2dEvalCircleInvoluteTests.swift:24:9: Expectation failed: simd_distance(p1, SIMD2(2.76354658135, 0.60233735788)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "`r2 > r1` only"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Circle Involute::involuteD1",
+    "bridge_function": "OCCTGeom2dEvalCircleInvoluteD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          1.08060461174,
+          1.68294196962
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1",
+      "red": "Geom2dEvalCircleInvoluteTests.swift:31:9: Expectation failed: abs(speed - 2) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "`speed > 0` only"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Logarithmic Spiral::logSpiralD0AtZero",
+    "bridge_function": "OCCTGeom2dEvalLogSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "scale + 1",
+      "red": "Geom2dEvalLogSpiralTests.swift:13:9: Expectation failed: abs(p.x - 1.0) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Logarithmic Spiral::logSpiralGrows",
+    "bridge_function": "OCCTGeom2dEvalLogSpiralD0",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P(10)": [
+          -6.19994659936,
+          -4.01980250736
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P(10)": [
+          -6.19994659936,
+          -4.01980250736
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "scale + 1",
+      "red": "Geom2dEvalLogSpiralTests.swift:26:9: Expectation failed: simd_distance(p2, SIMD2(-6.19994659936, -4.01980250736)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "`r2 > r1` only"
+    }
+  },
+  {
+    "test_name": "Geom2dEval — Logarithmic Spiral::logSpiralD1",
+    "bridge_function": "OCCTGeom2dEvalLogSpiralD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0.659926726628,
+          1.02777498176
+        ],
+        "D1": [
+          -0.895789636431,
+          0.865481722979
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "P": [
+          0.659926726628,
+          1.02777498176
+        ],
+        "D1": [
+          -0.895789636431,
+          0.865481722979
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "growth exponent + 0.1",
+      "red": "Geom2dEvalLogSpiralTests.swift:33:9: Expectation failed: simd_distance(r.point, SIMD2(0.659926726628, 1.02777498176)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-eval-involute-logspiral/",
+      "rewritten": "`speed > 0` only"
+    }
   }
 ]
