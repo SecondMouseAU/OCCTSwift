@@ -102,6 +102,12 @@
 | **Curve3D Local Properties Tests** | Center of curvature of circle is at origin | Curve centre of curvature | centre X + 1 |
 | **Curve3D Local Properties Tests** | Torsion of planar circle is zero | Curve torsion | torsion + 1 |
 | **Curve3D Local Properties Tests** | Bounding box of segment | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 |
+| **BndLib Extra Tests** | ellipseBounds | Analytic bounds, ellipse | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | coneBounds | Analytic bounds, cone | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | circleArcBounds | Analytic bounds, circle arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | ellipseArcBounds | Analytic bounds, ellipse arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | parabolaArcBounds | Analytic bounds, parabola arc | fillBounds6 max + 1 on every axis |
+| **BndLib Extra Tests** | hyperbolaArcBounds | Analytic bounds, hyperbola arc | fillBounds6 max + 1 on every axis |
 
 ---
 
@@ -216,6 +222,12 @@
 | Center of curvature of circle is at origin | OCCTCurve3DGetCenterOfCurvature | Curve centre of curvature | centre X + 1 | ✅ | ✅ |  |
 | Torsion of planar circle is zero | OCCTCurve3DGetTorsion | Curve torsion | torsion + 1 | ✅ | ✅ |  |
 | Bounding box of segment | OCCTCurve3DGetBoundingBox | Curve bounding box | BndLib_Add3dCurve gap 0.01 -> 1.0 | ✅ | ✅ | Rewritten: one-sided x bounds passed a box of any size |
+| ellipseBounds | OCCTBndLibEllipse | Analytic bounds, ellipse | fillBounds6 max + 1 on every axis | ✅ | ✅ |  |
+| coneBounds | OCCTBndLibCone | Analytic bounds, cone | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.z >= min.z |
+| circleArcBounds | OCCTBndLibCircleArc | Analytic bounds, circle arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max >= min on x and y |
+| ellipseArcBounds | OCCTBndLibEllipseArc | Analytic bounds, ellipse arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
+| parabolaArcBounds | OCCTBndLibParabolaArc | Analytic bounds, parabola arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
+| hyperbolaArcBounds | OCCTBndLibHyperbolaArc | Analytic bounds, hyperbola arc | fillBounds6 max + 1 on every axis | ✅ | ✅ | Rewritten: asserted only max.x >= min.x |
 
 ---
 
