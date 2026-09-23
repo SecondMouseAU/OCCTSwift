@@ -109,3 +109,13 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 342 tests
+
+### 766-math-geometry-construction (#1983, measured)
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity |
+|-------|------|-----------------|-----------|-----|-------|--------|
+| **Geometry Construction Tests** | Create face from rectangular wire | `OCCTShapeCreateFaceFromWire` | OCCTShapeCreateFaceFromWire returns nullptr after MakeFace | red | green | PASS |
+| **Geometry Construction Tests** | Create face from circular wire | `OCCTShapeCreateFaceFromWire` | OCCTShapeCreateFaceFromWire returns nullptr after MakeFace | red | green | PASS |
+| **Geometry Construction Tests** | Create face with hole | `OCCTShapeCreateFaceWithHoles` | hole wires never added to BRepBuilderAPI_MakeFace (area becomes 400) | red | green | PASS |
+| **Geometry Construction Tests** | Create face with multiple holes | `OCCTShapeCreateFaceWithHoles` | hole wires never added (area becomes 900) | red | green | PASS |
+| **Geometry Construction Tests** | Extrude face to create solid | `OCCTShapeCreateExtrusion` | prism vector doubled (volume 300) | red | green | PASS |

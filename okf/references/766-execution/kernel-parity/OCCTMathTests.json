@@ -182,5 +182,55 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Geometry Construction Tests::Create face from rectangular wire",
+    "bridge_function": "OCCTShapeCreateFaceFromWire",
+    "bridge_output": {"type": "observed", "data": "valid=1 area=50.0000000000", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "valid=1 area=50.0000000000", "source": "Scripts/repro/766-math-geometry-construction/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "OCCTShapeCreateFaceFromWire returns nullptr after MakeFace", "failing_expectation": "original: red; rewritten: :18 `Shape.face(from: rect)`"},
+    "green": true
+  },
+  {
+    "test_name": "Geometry Construction Tests::Create face from circular wire",
+    "bridge_function": "OCCTShapeCreateFaceFromWire",
+    "bridge_output": {"type": "observed", "data": "valid=1 area=78.5398163397", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "valid=1 area=78.5398163397", "source": "Scripts/repro/766-math-geometry-construction/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "OCCTShapeCreateFaceFromWire returns nullptr after MakeFace", "failing_expectation": "original: red; rewritten: :30 `Shape.face(from: circle)`"},
+    "green": true
+  },
+  {
+    "test_name": "Geometry Construction Tests::Create face with hole",
+    "bridge_function": "OCCTShapeCreateFaceWithHoles",
+    "bridge_output": {"type": "observed", "data": "valid=1 area=321.4601836603", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "valid=1 area=321.4601836603", "source": "Scripts/repro/766-math-geometry-construction/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "hole wires never added to BRepBuilderAPI_MakeFace (area becomes 400)", "failing_expectation": "original: red; rewritten: :52 `abs(area - expectedArea) < 0.5`"},
+    "green": true
+  },
+  {
+    "test_name": "Geometry Construction Tests::Create face with multiple holes",
+    "bridge_function": "OCCTShapeCreateFaceWithHoles",
+    "bridge_output": {"type": "observed", "data": "valid=1 area=843.4513322354", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "valid=1 area=843.4513322354", "source": "Scripts/repro/766-math-geometry-construction/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "hole wires never added (area becomes 900)", "failing_expectation": "original: red; rewritten: :71 `abs(area - expectedArea) < 0.5`"},
+    "green": true
+  },
+  {
+    "test_name": "Geometry Construction Tests::Extrude face to create solid",
+    "bridge_function": "OCCTShapeCreateExtrusion",
+    "bridge_output": {"type": "observed", "data": "valid=1 volume=150.0000000000", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "valid=1 volume=150.0000000000", "source": "Scripts/repro/766-math-geometry-construction/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "prism vector doubled (volume 300)", "failing_expectation": "original: red; rewritten: :85 `abs(volume - 150.0) < 0.1`"},
+    "green": true
   }
 ]
