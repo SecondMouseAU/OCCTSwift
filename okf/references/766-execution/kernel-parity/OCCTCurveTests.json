@@ -302,5 +302,269 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::maxDegreeIsNotSwappedWithMaxSegments",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "seg 40 deg 5 and seg 5 deg 40 differ; both entry points agree"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: seg 40 deg 5 -> degree 5, 87 poles; seg 5 deg 40 -> degree 14, 15 poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "apswap: approximated swaps maxSegments and maxDegree",
+    "red": "Issue491Curve3DApproxParityTests.swift:135 a.degree == withDetails.degree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::successAgrees",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "both succeed on all 8 requests"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: IsDone 1 HasResult 1 on all 8 fixtures"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "apnil: approximated nil at maxSegments 1",
+    "red": "Issue491Curve3DApproxParityTests.swift:167 (plain != nil) == (detailed.curve != nil)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::geometryMatches",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "same degree, poles, samples"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: e.g. circle defaults degree 7, 13 poles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "apswap",
+    "red": "Issue491Curve3DApproxParityTests.swift:193 plain.degree == withDetails.degree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::maxErrorDescribesTheSharedFit",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTGeomConvertApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "sampled deviation within maxError"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: MaxError e.g. 5.10851 (circle 1 seg), 24.1927 (ellipse 1 seg)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "aperr: maxError x 1e-3",
+    "red": "Issue491Curve3DApproxParityTests.swift:229 deviation <= maxError + 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::hasResultMatchesTheCurve",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTGeomConvertApproxCurve",
+    "bridge_output": {
+      "type": "value",
+      "data": "agree on all 8"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: HasResult 1 with a curve on all 8"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "aphas: hasResult forced false",
+    "red": "Issue491Curve3DApproxParityTests.swift:246 hasResult == (curve != nil)",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D approximation parity: approximated vs approxWithDetails (#491)::overToleranceFitIsReturnedNotDropped",
+    "test_file": "Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift",
+    "bridge_function": "OCCTGeomConvertApproxCurve, OCCTCurve3DApproximate",
+    "bridge_output": {
+      "type": "value",
+      "data": "hasResult, maxError > 1e-9"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomConvert_ApproxCurve: circle 1 seg deg 3 tol 1e-9: IsDone 1 HasResult 1 MaxError 5.10851"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "apnil; aphas",
+    "red": "Issue491Curve3DApproxParityTests.swift:264 detailed.hasResult",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::defaultToleranceMatches",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "same curve"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: square: periodic, closed, domain [0, 40]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ipshift: periodic entry point shifts points 1e-6",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:38 |pa.x - pb.x| < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::customToleranceIsReachable",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "same curve"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: square at each tolerance: done"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ipshift",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:38 same curve at 1e-3/1e-4/1e-8",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::twoPointFloorMatches",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "periodic, closed"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: two points: periodic, closed, domain [0, 20]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ip3: periodic rejects count < 3",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:26 a != nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::singlePointRejectedByBoth",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: one point throws (BSplCLib::Interpolate)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ip1: periodic answers a line for one point",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:80 == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::toleranceChangesTheOutcome",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "1e-6, 1e-9 built; 1e-2 nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: near-coincident: 1e-6 and 1e-9 done, 1e-2 throws"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "iptol: periodic ignores its tolerance",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:95 interpolatePeriodic(tol 1e-2) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
+  },
+  {
+    "test_name": "Curve3D periodic interpolation entry points agree (#493)::nonPlanarLoopMatches",
+    "test_file": "Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift",
+    "bridge_function": "OCCTCurve3DInterpolate (shared)",
+    "bridge_output": {
+      "type": "value",
+      "data": "same curve"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "GeomAPI_Interpolate periodic: non-planar: periodic, domain [0, 29.393876913398138]"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "ipflat: periodic flattens z",
+    "red": "Issue493InterpolatePeriodicParityTests.swift:32 domain upper bounds agree",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-approx-interp-parity/transcript.txt"
   }
 ]

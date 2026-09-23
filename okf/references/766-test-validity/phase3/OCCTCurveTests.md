@@ -197,3 +197,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | maxDegreeIsNotSwappedWithMaxSegments | `OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve` | apswap: approximated swaps maxSegments and maxDegree | `Issue491Curve3DApproxParityTests.swift:135 a.degree == withDetails.degree` | ✅ | MATCH |  |
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | successAgrees | `OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve` | apnil: approximated nil at maxSegments 1 | `Issue491Curve3DApproxParityTests.swift:167 (plain != nil) == (detailed.curve != nil)` | ✅ | MATCH |  |
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | geometryMatches | `OCCTCurve3DApproximate, OCCTGeomConvertApproxCurve` | apswap | `Issue491Curve3DApproxParityTests.swift:193 plain.degree == withDetails.degree` | ✅ | MATCH |  |
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | maxErrorDescribesTheSharedFit | `OCCTGeomConvertApproxCurve` | aperr: maxError x 1e-3 | `Issue491Curve3DApproxParityTests.swift:229 deviation <= maxError + 1e-6` | ✅ | MATCH |  |
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | hasResultMatchesTheCurve | `OCCTGeomConvertApproxCurve` | aphas: hasResult forced false | `Issue491Curve3DApproxParityTests.swift:246 hasResult == (curve != nil)` | ✅ | MATCH |  |
+| Curve3D approximation parity: approximated vs approxWithDetails (#491) | overToleranceFitIsReturnedNotDropped | `OCCTGeomConvertApproxCurve, OCCTCurve3DApproximate` | apnil; aphas | `Issue491Curve3DApproxParityTests.swift:264 detailed.hasResult` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | defaultToleranceMatches | `OCCTCurve3DInterpolate (shared)` | ipshift: periodic entry point shifts points 1e-6 | `Issue493InterpolatePeriodicParityTests.swift:38 \|pa.x - pb.x\| < 1e-9` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | customToleranceIsReachable | `OCCTCurve3DInterpolate (shared)` | ipshift | `Issue493InterpolatePeriodicParityTests.swift:38 same curve at 1e-3/1e-4/1e-8` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | twoPointFloorMatches | `OCCTCurve3DInterpolate (shared)` | ip3: periodic rejects count < 3 | `Issue493InterpolatePeriodicParityTests.swift:26 a != nil` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | singlePointRejectedByBoth | `OCCTCurve3DInterpolate (shared)` | ip1: periodic answers a line for one point | `Issue493InterpolatePeriodicParityTests.swift:80 == nil` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | toleranceChangesTheOutcome | `OCCTCurve3DInterpolate (shared)` | iptol: periodic ignores its tolerance | `Issue493InterpolatePeriodicParityTests.swift:95 interpolatePeriodic(tol 1e-2) == nil` | ✅ | MATCH |  |
+| Curve3D periodic interpolation entry points agree (#493) | nonPlanarLoopMatches | `OCCTCurve3DInterpolate (shared)` | ipflat: periodic flattens z | `Issue493InterpolatePeriodicParityTests.swift:32 domain upper bounds agree` | ✅ | MATCH |  |
