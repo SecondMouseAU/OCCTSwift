@@ -126,5 +126,206 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "OBJ Document I/O::Load OBJ into document",
+    "bridge_function": "OCCTDocumentLoadOBJ",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "document": true,
+        "shapes_at_least": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "perform": true,
+        "free_shapes": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OBJ Document I/O::Load OBJ with single precision",
+    "bridge_function": "OCCTDocumentLoadOBJWithOptions",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "perform": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OBJ Document I/O::Write OBJ from document",
+    "bridge_function": "OCCTDocumentWriteOBJ",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "file": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "writer_perform": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OBJ Document I/O::Load OBJ with coordinate system",
+    "bridge_function": "OCCTDocumentLoadOBJWithCS",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "document": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "perform": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OCAF Document Metadata::Document storage format",
+    "bridge_function": "OCCTDocumentGetStorageFormat",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "format": "BinOcaf"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "format": "BinOcaf"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OCAF Document Metadata::Change storage format",
+    "bridge_function": "OCCTDocumentSetStorageFormat",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "format": "XmlOcaf"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "format": "XmlOcaf"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OCAF Document Metadata::Document not saved initially",
+    "bridge_function": "OCCTDocumentIsSaved",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "saved": false
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "saved": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OCAF Document Metadata::Document count",
+    "bridge_function": "OCCTDocumentNbDocuments",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
+  },
+  {
+    "test_name": "OCAF Document Metadata::Create with XCAF format",
+    "bridge_function": "OCCTDocumentGetStorageFormat",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "format": "BinXCAF"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "format": "BinXCAF"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-obj-ocaf/"
   }
 ]

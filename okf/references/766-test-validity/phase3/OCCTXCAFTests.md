@@ -99,3 +99,26 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `OBJDocumentIOTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `loadOBJ` | `OCCTDocumentLoadOBJ` returns null | :20 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJ` | PASS: `RWObj_CafReader` reads one free shape |
+| `loadOBJSinglePrecision` | `OCCTDocumentLoadOBJWithOptions` returns null | :36 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithOptions` | PASS: reads |
+| `writeOBJ` | `OCCTDocumentWriteOBJ` returns false | :49 Expectation failed: ok; :50 Expectation failed: FileManager.default.fileExists(atPath: outPath) | passed | `OCCTDocumentWriteOBJ` | PASS: `RWObj_CafWriter` writes |
+| `loadOBJWithCS` | `OCCTDocumentLoadOBJWithCS` returns null | :65 Expectation failed: doc != nil | passed | `OCCTDocumentLoadOBJWithCS` | PASS: reads |
+
+### `OCAFDocumentMetadataTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `storageFormat` | `OCCTDocumentGetStorageFormat` answers `XmlXCAF` | :14 Expectation failed: doc.storageFormat == "BinOcaf" | passed | `OCCTDocumentGetStorageFormat` | PASS: BinOcaf |
+| `changeFormat` | `OCCTDocumentSetStorageFormat` returns true without setting | :21 Expectation failed: doc.storageFormat == "XmlOcaf" | passed | `OCCTDocumentSetStorageFormat` | PASS: XmlOcaf |
+| `notSavedInitially` | `OCCTDocumentIsSaved` returns true | :27 Expectation failed: !doc.isSaved | passed | `OCCTDocumentIsSaved` | PASS: false |
+| `documentCount` | `OCCTDocumentNbDocuments` returns 2 | :36 Expectation failed: doc.documentCount == 1 | passed | `OCCTDocumentNbDocuments` | PASS: 1 |
+| `createXCAF` | `OCCTDocumentGetStorageFormat` answers `XmlXCAF` | :44 Expectation failed: doc.storageFormat == "BinXCAF" | passed | `OCCTDocumentGetStorageFormat` | PASS: BinXCAF |
