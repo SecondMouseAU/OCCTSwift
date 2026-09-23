@@ -99,3 +99,22 @@ For each test, run ground-truth C++ comparison:
 | XCAF Note/Annotation Tests | ✅ | ✅ | ✅ |
 
 **Total**: 424 tests
+
+## Measured records (#766 execution, per test file)
+
+Each row below was run: the injection applied behind an `OCCT_INJ` environment switch, the test run red, the switch removed and the test run green, and the kernel value taken from the committed probe under `Scripts/repro/766-xcaf-*`. Rows are appended per test file; the audited stub matrices above are left for the orchestrator's cleanup.
+
+### `GDTUnifiedReadTests.swift`
+
+| Test | Injection (env-gated, reverted) | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| `populatedDocumentReadsThroughOneFamily` | `OCCTDocumentGetDimensionInfo` reports the type ordinal plus 1 | :44 Expectation failed: single.type == .sizeDiameter | passed | `OCCTDocumentGetDimensionInfo` | PASS: one of each; Size_Diameter is ordinal 15 |
+| `rangeDimensionKeepsItsBounds` | `OCCTDocumentGetDimensionInfo` reports the first value slot as the value (the #996 defect) | :94 Expectation failed: dim.value.map { abs($0 - 11.0) < 1e-9 } == true | passed | `OCCTDocumentGetDimensionInfo` | PASS: range 10..12, `GetValue()` 11 (first slot 10, the #996 value) |
+| `plusMinusDimensionKeepsToleranceOrder` | `OCCTDocumentGetDimensionInfo` reads the upper tolerance as the lower | :129 Expectation failed: dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7); :130 Expectation failed: dim.lowerTolerance == -0.3 | passed | `OCCTDocumentGetDimensionInfo` | PASS: -0.3 / +0.7, value 20 |
+| `simpleDimensionHasNoBoundsOrTolerances` | `OCCTDocumentGetDimensionInfo` reports a simple dimension as unset | :160 Expectation failed: dim.bounds == .simple; :161 Expectation failed: dim.value.map { abs($0 - 3.5) < 1e-9 } == true | passed | `OCCTDocumentGetDimensionInfo` | PASS: one value 3.5, no range, no tolerance, no class |
+| `classOfToleranceIsReadBack` | `OCCTDocumentGetDimensionInfo` reports the grade ordinal plus 1 | :199 Expectation failed: cls.grade == .it7 | passed | `OCCTDocumentGetDimensionInfo` | PASS: hole, H (11), IT7 (8) |
+| `rangeDimensionCanCarryAClassOfTolerance` | `OCCTDocumentGetDimensionInfo` reports the grade ordinal plus 1 | :235 Expectation failed: dim.classOfTolerance?.grade == .it9 | passed | `OCCTDocumentGetDimensionInfo` | PASS: shaft, JS (12), IT9 (10), still a range |
+| `toleranceOnARangeDimensionIsRefused` | `OCCTDocumentSetDimensionTolerance` returns true without checking anything | :257 Expectation failed: doc.setDimensionTolerance(at: idx, lower: -0.3, upper: 0.7) == false | passed | `OCCTDocumentSetDimensionTolerance` | PASS: the kernel refuses both writes on a range and keeps 10..12 |
+| `mutatorsRejectAnOutOfRangeIndex` | `OCCTDocumentSetDimensionTolerance` returns true without checking anything | :269 Expectation failed: doc.setDimensionTolerance(at: 0, lower: -0.1, upper: 0.1) == false | passed | `OCCTDocumentSetDimensionTolerance` | PASS: no dimensions, so index 0 is out of range |
+| `formVarianceEnumComplete` | a compile-time extra case (`injected766 = 9999`) added to the Swift enum; removed and rebuilt for green | :279 Expectation failed: Document.DimensionFormVariance.allCases.count == 29 | passed | `OCCTDocumentGetDimensionInfo` | PASS: 29 = 29 (Swift `Document.DimensionFormVariance`) |
+| `gradeEnumComplete` | a compile-time extra case (`injected766 = 9999`) added to the Swift enum; removed and rebuilt for green | :284 Expectation failed: Document.DimensionGrade.allCases.count == 20 | passed | `OCCTDocumentGetDimensionInfo` | PASS: 20 = 20 (Swift `Document.DimensionGrade`) |

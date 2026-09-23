@@ -126,5 +126,259 @@
     "kernel_output": {"type": "string", "data": ""},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::A populated document reads back through counts, singulars and plurals alike",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "dimensions": 1,
+        "tolerances": 1,
+        "datums": 1,
+        "dim_type": "sizeDiameter"
+      }
+    },
+    "kernel_output": {
+      "type": "ordinal",
+      "data": {
+        "size_diameter": 15
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::A 10..12 range dimension reads back as a range, not as a plain 10",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "bounds": "range(10, 12)",
+        "value": 11.0,
+        "tolerances": null
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "range": true,
+        "first_slot": 10,
+        "value": 11,
+        "lower": 10,
+        "upper": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::A plus/minus dimension keeps lower and upper tolerance the right way round",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20.0
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "lowerTol": -0.3,
+        "upperTol": 0.7,
+        "value": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::A simple dimension reports .simple and no bounds or tolerances",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "dimension",
+      "data": {
+        "bounds": "simple",
+        "value": 3.5
+      }
+    },
+    "kernel_output": {
+      "type": "dimension",
+      "data": {
+        "range": false,
+        "plusMinus": false,
+        "nvals": 1,
+        "value": 3.5,
+        "class_": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::An H7 hole dimension reports its ISO 286 class of tolerance",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "class",
+      "data": {
+        "isHole": true,
+        "formVariance": "h",
+        "grade": "it7"
+      }
+    },
+    "kernel_output": {
+      "type": "class",
+      "data": {
+        "isHole": true,
+        "formVariance": 11,
+        "grade": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::A range dimension can also carry a class of tolerance",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "class",
+      "data": {
+        "isHole": false,
+        "formVariance": "js",
+        "grade": "it9",
+        "bounds": "range(10, 12)"
+      }
+    },
+    "kernel_output": {
+      "type": "class",
+      "data": {
+        "isHole": false,
+        "formVariance": 12,
+        "grade": 10,
+        "range": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::Setting a tolerance on a range dimension is refused, not silently ignored",
+    "bridge_function": "OCCTDocumentSetDimensionTolerance",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "refused": true,
+        "bounds": "range(10, 12)"
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "SetLowerTolValue": false,
+        "SetUpperTolValue": false,
+        "range_kept": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::The dimension mutators reject an out-of-range index",
+    "bridge_function": "OCCTDocumentSetDimensionTolerance",
+    "bridge_output": {
+      "type": "refused",
+      "data": {
+        "index": 0,
+        "dimensions": 0
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "dimensions": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-dim-tol-tool/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::DimensionFormVariance enum covers all 29 cases",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "cases": 29
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "cases": 29,
+        "last": "XCAFDimTolObjects_DimensionFormVariance_ZC"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
+  },
+  {
+    "test_name": "GD&T unified read surface (#996)::DimensionGrade enum covers all 20 cases",
+    "bridge_function": "OCCTDocumentGetDimensionInfo",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "cases": 20
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "cases": 20,
+        "last": "XCAFDimTolObjects_DimensionGrade_IT18"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-xcaf-gdt-unified-read/"
   }
 ]
