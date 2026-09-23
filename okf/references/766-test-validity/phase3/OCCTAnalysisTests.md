@@ -95,6 +95,8 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **BRepExtrema_ExtCF Tests** | Edge to sphere face distance | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
+| **BRepExtrema_ExtCF Tests** | Box edge to box face | Edge-face extrema (rewritten: could not fail) | distance + 1 in OCCTBRepExtremaExtCF; empty result |
 | **Bnd OBB Tests** | createAndQuery | OBB accessors | OCCTOBBGetHalfSizes writes YHSize into hx |
 | **Bnd OBB Tests** | pointInOut | Point containment | OCCTOBBIsOutPoint negated |
 | **Bnd OBB Tests** | obbOverlap | OBB-OBB separation | OCCTOBBIsOutOBB always false (disjoint case added, #766) |
