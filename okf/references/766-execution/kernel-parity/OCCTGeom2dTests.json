@@ -94,5 +94,739 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve2D Tests::Create segment and verify endpoints",
+    "bridge_function": "OCCTCurve2DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "end x + 1",
+      "red": "Curve2DTests.swift:25:9: Expectation failed: abs(end.x - 10) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`if let`; now `#require`"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Segment degenerate returns nil",
+    "bridge_function": "OCCTCurve2DCreateSegment",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "coincident end nudged apart",
+      "red": "Curve2DTests.swift:32:9: Expectation failed: seg == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Create circle and verify closed/periodic",
+    "bridge_function": "OCCTCurve2DGetPeriod",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "period": 6.28318530717959
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "period": 6.28318530717959
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "period + 1",
+      "red": "Curve2DTests.swift:41:9: Expectation failed: abs(period - 2 * .pi) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`period != nil` inside `if let`; now 2 pi"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Circle zero radius returns nil",
+    "bridge_function": "OCCTCurve2DCreateCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r-1": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "r0": "nil",
+        "r-1": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "non-positive radius replaced by 1",
+      "red": "Curve2DTests.swift:47:9: Expectation failed: circle == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Arc of circle is not closed",
+    "bridge_function": "OCCTCurve2DCreateArcOfCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "end angle doubled",
+      "red": "Curve2DTests.swift:60:9: Expectation failed: simd_distance(arc.endPoint, SIMD2(0, 5)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!isClosed` inside `if let`; now endpoints"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Arc through 3 points",
+    "bridge_function": "OCCTCurve2DCreateArcThrough",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "end": [
+          10,
+          0
+        ],
+        "mid": [
+          5,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "middle point y + 1",
+      "red": "Curve2DTests.swift:71:9: Expectation failed: simd_distance(arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2), SIMD2(5, 5)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`if let`, start only; now end and mid"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Create ellipse and verify closed",
+    "bridge_function": "OCCTCurve2DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "value(0)": [
+          10,
+          0
+        ],
+        "value(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "value(0)": [
+          10,
+          0
+        ],
+        "value(pi/2)": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Curve2DTests.swift:79:9: Expectation failed: simd_distance(ell.point(at: 0), SIMD2(10, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "flags inside `if let`; now points"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Ellipse minor > major returns nil",
+    "bridge_function": "OCCTCurve2DCreateEllipse",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "nil"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radii reordered instead of refused",
+      "red": "Curve2DTests.swift:86:9: Expectation failed: ell == nil",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Infinite line",
+    "bridge_function": "OCCTCurve2DCreateLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "value(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "value(3)": [
+          3,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "point y + 1",
+      "red": "Curve2DTests.swift:93:9: Expectation failed: simd_distance(line.point(at: 3), SIMD2(3, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!isClosed` inside `if let`"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Parabola creation",
+    "bridge_function": "OCCTCurve2DCreateParabola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "focal": 1,
+        "focus": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "focal": 1,
+        "focus": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "focus x + 1",
+      "red": "Curve2DTests.swift:100:9: Expectation failed: simd_distance(p.parabolaProperties.focus, SIMD2(1, 0)) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Hyperbola creation",
+    "bridge_function": "OCCTCurve2DCreateHyperbola",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "major": 5,
+        "value(0)": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "major": 5,
+        "value(0)": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "major radius + 1",
+      "red": "Curve2DTests.swift:106:9: Expectation failed: abs(h.hyperbolaProperties.majorRadius - 5) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Evaluate segment midpoint",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "mid": [
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "mid": [
+          5,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Curve2DTests.swift:116:9: Expectation failed: abs(p.x - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Circle point at 0 and pi/2",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "p0": [
+          5,
+          0
+        ],
+        "pi/2": [
+          0,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "p0": [
+          5,
+          0
+        ],
+        "pi/2": [
+          0,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "x + 1e-3",
+      "red": "Curve2DTests.swift:125:9: Expectation failed: abs(p0.x - 5) < 1e-10",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::D1 returns non-zero tangent",
+    "bridge_function": "OCCTCurve2DD1",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0.894427190999916,
+          0.447213595499958
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D1": [
+          0.894427190999916,
+          0.447213595499958
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D1 x + 1e-3",
+      "red": "Curve2DTests.swift:139:9: Expectation failed: simd_distance(result.tangent, SIMD2(10, 5) / 125.0.squareRoot()) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`|D1| > 0`; now the unit direction"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::D2 second derivative of a circle points from the curve back to its own center",
+    "bridge_function": "OCCTCurve2DD2",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "D2": "-P"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "D2": "-P"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "D2 x + 1e-3",
+      "red": "Curve2DTests.swift:152:9: Expectation failed: abs(result.d2.x - (-result.point.x)) < 1e-9",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Adaptive draw on circle produces at least 10 points",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 64
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 64
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:161:9: Expectation failed: points.count == 64",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 10`; now 64"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw produces exact count",
+    "bridge_function": "OCCTCurve2DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 32
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 32
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:168:9: Expectation failed: points.count == 32",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw stays within the requested count on an overshooting ellipse",
+    "bridge_function": "OCCTCurve2DDrawUniform",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": "as requested"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": "as requested"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:185:13: Expectation failed: points.count == count",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Uniform draw rejects counts below two",
+    "bridge_function": "Curve2D.drawUniform (Swift guard)",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "result": "empty"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "counts below two raised to two",
+      "red": "Curve2DTests.swift:196:13: Expectation failed: circle.drawUniform(pointCount: count).isEmpty",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": ""
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Deflection draw produces points",
+    "bridge_function": "OCCTCurve2DDrawDeflection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 17
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 17
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "deflection doubled",
+      "red": "Curve2DTests.swift:205:9: Expectation failed: points.count == 17",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 4`; now 17"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Adaptive draw on segment produces at least 2 points",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:212:9: Expectation failed: points.count == 2",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 2`; now exactly 2"
+    }
+  },
+  {
+    "test_name": "Curve2D Tests::Draw arc of ellipse",
+    "bridge_function": "OCCTCurve2DDrawAdaptive",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "count": 43,
+        "ends": [
+          [
+            10,
+            0
+          ],
+          [
+            -10,
+            0
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "count": 43,
+        "ends": [
+          [
+            10,
+            0
+          ],
+          [
+            -10,
+            0
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "one point dropped",
+      "red": "Curve2DTests.swift:222:9: Expectation failed: points.count == 43",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-curve2d-basics/",
+      "rewritten": "`>= 3` inside `if let`; now 43 and the ends"
+    }
   }
 ]

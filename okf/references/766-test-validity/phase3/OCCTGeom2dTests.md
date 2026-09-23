@@ -124,3 +124,32 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Curve2DTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D Tests::Create segment and verify endpoints | `OCCTCurve2DCreateSegment` | end x + 1 | ✅ | ✅ | MATCH | `if let`; now `#require` |
+| Curve2D Tests::Segment degenerate returns nil | `OCCTCurve2DCreateSegment` | coincident end nudged apart | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Create circle and verify closed/periodic | `OCCTCurve2DGetPeriod` | period + 1 | ✅ | ✅ | MATCH | `period != nil` inside `if let`; now 2 pi |
+| Curve2D Tests::Circle zero radius returns nil | `OCCTCurve2DCreateCircle` | non-positive radius replaced by 1 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Arc of circle is not closed | `OCCTCurve2DCreateArcOfCircle` | end angle doubled | ✅ | ✅ | MATCH | `!isClosed` inside `if let`; now endpoints |
+| Curve2D Tests::Arc through 3 points | `OCCTCurve2DCreateArcThrough` | middle point y + 1 | ✅ | ✅ | MATCH | `if let`, start only; now end and mid |
+| Curve2D Tests::Create ellipse and verify closed | `OCCTCurve2DCreateEllipse` | major radius + 1 | ✅ | ✅ | MATCH | flags inside `if let`; now points |
+| Curve2D Tests::Ellipse minor > major returns nil | `OCCTCurve2DCreateEllipse` | radii reordered instead of refused | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Infinite line | `OCCTCurve2DCreateLine` | point y + 1 | ✅ | ✅ | MATCH | `!isClosed` inside `if let` |
+| Curve2D Tests::Parabola creation | `OCCTCurve2DCreateParabola` | focus x + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| Curve2D Tests::Hyperbola creation | `OCCTCurve2DCreateHyperbola` | major radius + 1 | ✅ | ✅ | MATCH | `!= nil` only |
+| Curve2D Tests::Evaluate segment midpoint | `OCCTCurve2DGetPoint` | x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Circle point at 0 and pi/2 | `OCCTCurve2DGetPoint` | x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::D1 returns non-zero tangent | `OCCTCurve2DD1` | D1 x + 1e-3 | ✅ | ✅ | MATCH | `|D1| > 0`; now the unit direction |
+| Curve2D Tests::D2 second derivative of a circle points from the curve back to its own center | `OCCTCurve2DD2` | D2 x + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Adaptive draw on circle produces at least 10 points | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 10`; now 64 |
+| Curve2D Tests::Uniform draw produces exact count | `OCCTCurve2DDrawUniform` | one point dropped | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Uniform draw stays within the requested count on an overshooting ellipse | `OCCTCurve2DDrawUniform` | one point dropped | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Uniform draw rejects counts below two | `Curve2D.drawUniform (Swift guard)` | counts below two raised to two | ✅ | ✅ | MATCH |  |
+| Curve2D Tests::Deflection draw produces points | `OCCTCurve2DDrawDeflection` | deflection doubled | ✅ | ✅ | MATCH | `>= 4`; now 17 |
+| Curve2D Tests::Adaptive draw on segment produces at least 2 points | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 2`; now exactly 2 |
+| Curve2D Tests::Draw arc of ellipse | `OCCTCurve2DDrawAdaptive` | one point dropped | ✅ | ✅ | MATCH | `>= 3` inside `if let`; now 43 and the ends |
