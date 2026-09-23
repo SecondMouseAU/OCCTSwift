@@ -124,3 +124,18 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue965Curve2DPropertyLifetimeTests.swift`, `Issue999Curve2DParametersTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-issue-regressions-b/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D *Properties views keep their parent alive (#965)::every Curve2D *Properties accessor keeps its parent alive | `Curve2D.circleProperties (Swift)` | view built on a different owner, so the parent is released | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent still reads the right values | `Curve2D.circleProperties (Swift)` | view built on a different owner | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a view outliving its parent survives 400 intervening allocations | `Curve2D.circleProperties (Swift)` | view built on a different owner | ✅ | ✅ | MATCH |  |
+| Curve2D *Properties views keep their parent alive (#965)::a setter called through a view is visible on the parent | `OCCTCurve2DCircleSetRadius` | setRadius reports success without setting | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::Each parameterisation gives a structurally different B-spline | `OCCTCurve2DToBSpline` | requested parameterisation ignored (always TgtThetaOver2) | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::Every parameterisation but polynomial reproduces the circle exactly | `OCCTCurve2DToBSpline` | requested parameterisation ignored | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::A parameterisation OCCT rejects for this arc returns nil rather than a wrong curve | `OCCTCurve2DToBSpline` | requested parameterisation ignored | ✅ | ✅ | MATCH |  |
+| Curve2D conversion and bisector parameters are live (#999)::The trimming distance bounds the bisector, and a longer one extends it | `OCCTCurve2DBisectorPC` | maxDistance ignored (always 500) | ✅ | ✅ | MATCH |  |
