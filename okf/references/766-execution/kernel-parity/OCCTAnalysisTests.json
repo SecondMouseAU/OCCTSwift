@@ -497,5 +497,75 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Circle::pointToCircle",
+    "bridge_function": "OCCTExtremaExtPElCCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          25.0,
+          225.0
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-extrema-extpelc-circ/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Extrema_ExtPElC Point-Circle::pointOnCircle",
+    "bridge_function": "OCCTExtremaExtPElCCirc",
+    "bridge_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          0.0,
+          100.0
+        ],
+        "first_point": [
+          5.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "extrema",
+      "data": {
+        "count": 2,
+        "square_distances": [
+          0.0,
+          100.0
+        ],
+        "first_point": [
+          5.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "kernel_probe": "Scripts/repro/766-extrema-extpelc-circ/probe.mm",
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
