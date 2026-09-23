@@ -182,5 +182,105 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "GC_MakeArcOfHyperbola::Arc of hyperbola between parameters",
+    "bridge_function": "OCCTCurve3DArcOfHyperbola",
+    "bridge_output": {"type": "observed", "data": "start (7.71540317408, -3.52560358093, 0), end (7.71540317408, 3.52560358093, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "start (7.71540317408, -3.52560358093, 0), end (7.71540317408, 3.52560358093, 0)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "major and minor radius swapped into gp_Hypr", "failing_expectation": ":22 `abs(start.x - expectedX) < 0.1`"},
+    "green": true
+  },
+  {
+    "test_name": "GC_MakeArcOfParabola::Arc of parabola between parameters",
+    "bridge_function": "OCCTCurve3DArcOfParabola",
+    "bridge_output": {"type": "observed", "data": "point(0) (0, 0, 0), ends (1.125, -3, 0) and (1.125, 3, 0), domain [-3, 3]", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "point(0) (0, 0, 0), ends (1.125, -3, 0) and (1.125, 3, 0), domain [-3, 3]", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "focal distance doubled (original test green; vertex offset +1 in x also turned the original red)", "failing_expectation": "original: **green**; rewritten: :26 `simd_length(start - SIMD3(1.125, -3, 0)) < 1e-9`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::create and read",
+    "bridge_function": "OCCTAxis1PlacementLocation",
+    "bridge_output": {"type": "observed", "data": "location (1, 2, 3), direction (0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "location (1, 2, 3), direction (0, 0, 1)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "location x + 1", "failing_expectation": ":12 `abs(ax.location.x - 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::reverse",
+    "bridge_function": "OCCTAxis1PlacementReverse",
+    "bridge_output": {"type": "observed", "data": "direction (0, 0, -1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "direction (0, 0, -1)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Reverse() skipped", "failing_expectation": ":20 `abs(ax.direction.z + 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::reversed copy",
+    "bridge_function": "OCCTAxis1PlacementReversed",
+    "bridge_output": {"type": "observed", "data": "copy (0, -1, 0), original (0, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "copy (0, -1, 0), original (0, 1, 0)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "returns an unreversed copy", "failing_expectation": ":27 `abs(rev.direction.y + 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis1Placement Tests::setDirection and setLocation",
+    "bridge_function": "OCCTAxis1PlacementSetDirection / OCCTAxis1PlacementSetLocation",
+    "bridge_output": {"type": "observed", "data": "direction (0, 1, 0), location (5, 5, 5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "direction (0, 1, 0), location (5, 5, 5)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetDirection skipped; SetLocation skipped (each red on its own line)", "failing_expectation": ":36 `abs(ax.direction.y - 1) < 1e-10`; :37 `abs(ax.location.x - 5) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::create and read directions",
+    "bridge_function": "OCCTAxis2PlacementYDirection",
+    "bridge_output": {"type": "observed", "data": "x (1, 0, 0), y (0, 1, 0), main (0, 0, 1)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x (1, 0, 0), y (0, 1, 0), main (0, 0, 1)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "Y direction y negated", "failing_expectation": ":14 `abs(ax.yDirection.y - 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::location",
+    "bridge_function": "OCCTAxis2PlacementLocation",
+    "bridge_output": {"type": "observed", "data": "location (5, 5, 5)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "location (5, 5, 5)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "location x + 1", "failing_expectation": ":22 `abs(ax.location.x - 5) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::setDirection",
+    "bridge_function": "OCCTAxis2PlacementSetDirection",
+    "bridge_output": {"type": "observed", "data": "main direction (0, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "main direction (0, 1, 0)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetDirection skipped", "failing_expectation": ":30 `abs(ax.mainDirection.y - 1) < 1e-10`"},
+    "green": true
+  },
+  {
+    "test_name": "Axis2Placement Tests::setXDirection",
+    "bridge_function": "OCCTAxis2PlacementSetXDirection",
+    "bridge_output": {"type": "observed", "data": "x direction (0, 1, 0)", "source": "pinned by the assertions of the green test run"},
+    "kernel_output": {"type": "probe", "data": "x direction (0, 1, 0)", "source": "Scripts/repro/766-math-arcs-axes/transcript.txt"},
+    "comparison": {"equal": true, "differences": []},
+    "status": "PASS",
+    "red": {"injection": "SetXDirection skipped", "failing_expectation": ":38 `abs(ax.xDirection.y - 1) < 1e-10`"},
+    "green": true
   }
 ]
