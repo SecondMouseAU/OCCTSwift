@@ -94,5 +94,137 @@
     "kernel_output": {"type": "bool", "data": true},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskSizeMatchesStatvfsInKB",
+    "bridge_function": "OCCTDiskSize",
+    "bridge_output": {
+      "type": "kilobytes",
+      "data": {
+        "equals": "statvfs f_blocks * (f_frsize/512) / 2 exactly"
+      }
+    },
+    "kernel_output": {
+      "type": "kilobytes",
+      "data": {
+        "OSD_Disk(\"/\").DiskSize()/2": 971350180,
+        "statvfs totalKB": 971350180
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskFreeMatchesStatvfsInKB",
+    "bridge_function": "OCCTDiskFree",
+    "bridge_output": {
+      "type": "kilobytes",
+      "data": {
+        "within": "10% of statvfs f_bavail KB"
+      }
+    },
+    "kernel_output": {
+      "type": "kilobytes",
+      "data": {
+        "OSD_Disk(\"/\").DiskFree()/2": 116267292,
+        "statvfs freeKB": 116267292
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::twoByteRangeCodeUnitIsUTF8Encoded",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "code_units",
+      "data": [
+        "U+0041",
+        "U+00E9",
+        "U+0042"
+      ]
+    },
+    "kernel_output": {
+      "type": "code_units",
+      "data": [
+        "U+0041",
+        "U+00E9",
+        "U+0042"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::threeByteRangeCodeUnitIsUTF8Encoded",
+    "bridge_function": "OCCTUnicodeConvertToUnicode",
+    "bridge_output": {
+      "type": "code_units",
+      "data": [
+        "U+3042"
+      ]
+    },
+    "kernel_output": {
+      "type": "code_units",
+      "data": [
+        "U+3042"
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidAcceptsRealPath",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "/": true
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "OSD_Disk(\"/\").Failed()": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)::diskIsValidRejectsNonexistentPath",
+    "bridge_function": "OCCTDiskIsValid",
+    "bridge_output": {
+      "type": "bool",
+      "data": {
+        "nonexistent": false
+      }
+    },
+    "kernel_output": {
+      "type": "bool",
+      "data": {
+        "OSD_Disk(nonexistent).Failed()": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

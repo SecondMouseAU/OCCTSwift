@@ -94,3 +94,22 @@
 | ... | ... |  |  |  |  |
 
 **Total**: 200 tests
+
+---
+
+## Measured runs (#1987)
+
+Rows below were run: each test was turned red by the injection named, the injection was reverted, and the test was re-run green. Parity is against the probe named in each section.
+
+### OCCTBridge_IO_OSDUtilities disk size/free/valid + Unicode UTF-8 (#1442), Issue1442DiskUnicodeOSDUtilitiesTests.swift, 6 tests
+
+Probe: `Scripts/repro/766-issue1442-disk-unicode/` (`OSD_Disk(const char*)` and `Resource_Unicode::ConvertFormatToUnicode`). Injections, applied together, restore the three #1442 defects: `OCCTDiskSize`/`OCCTDiskFree` return the raw 512-byte block count, `OCCTUnicodeConvertToUnicode` skips every code unit >= 0x80, `OCCTDiskIsValid` returns `Failed()` instead of `!Failed()`. Every test failed on the line listed. Disk figures are this machine's at probe time.
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity |
+|---|---|---|---|---|---|---|
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskSizeMatchesStatvfsInKB | `OCCTDiskSize` | return DiskSize() undivided (raw 512-byte blocks) | Issue1442DiskUnicodeOSDUtilitiesTests.swift:56 actual == expectedKB | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskFreeMatchesStatvfsInKB | `OCCTDiskFree` | return DiskFree() undivided (raw 512-byte blocks) | Issue1442DiskUnicodeOSDUtilitiesTests.swift:80 abs(actual - expectedKB) <= tolerance | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | twoByteRangeCodeUnitIsUTF8Encoded | `OCCTUnicodeConvertToUnicode` | skip code units >= 0x80 | Issue1442DiskUnicodeOSDUtilitiesTests.swift:99 result == "A\u{00E9}B" | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | threeByteRangeCodeUnitIsUTF8Encoded | `OCCTUnicodeConvertToUnicode` | skip code units >= 0x80 | Issue1442DiskUnicodeOSDUtilitiesTests.swift:117 result == "\u{3042}" | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskIsValidAcceptsRealPath | `OCCTDiskIsValid` | return Failed() instead of !Failed() | Issue1442DiskUnicodeOSDUtilitiesTests.swift:126 DiskInfo.isValid(path: "/") == true | passed (22/22 with the two sibling files) | MATCH |
+| OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442) | diskIsValidRejectsNonexistentPath | `OCCTDiskIsValid` | return Failed() instead of !Failed() | Issue1442DiskUnicodeOSDUtilitiesTests.swift:132 DiskInfo.isValid(path: bogus) == false | passed (22/22 with the two sibling files) | MATCH |
