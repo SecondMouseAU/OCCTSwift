@@ -197,3 +197,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 530 tests
+
+## Measured records (#766 execution)
+
+Rows appended per PR, each run red under the named injection and green once it was reverted.
+
+| Suite | Test | Bridge function | Injection | Red (first failing line) | Green | Parity | Note |
+|---|---|---|---|---|---|---|---|
+| HelixGeom Build | basicHelixBuild | `OCCTHelixBuild` | pitch x 1.1 | `HelixGeomBuildTests.swift:24 simd_distance(end, SIMD3(10, 0, 5)) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil and a tolerance bound |
+| HelixGeom Build | taperedHelix | `OCCTHelixBuild` | pitch x 1.1 | `HelixGeomBuildTests.swift:37 simd_distance(r.curve.endPoint, SIMD3(10.437443317629619, 0, 5)) < 1e-6` | ✅ | MATCH | Rewritten: checked only != nil |
+| HelixGeom Build | helixWithCustomPosition | `OCCTHelixBuild` | pitch x 1.1 | `HelixGeomBuildTests.swift:49 simd_distance(r.curve.endPoint, SIMD3(9, 2, 7)) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| HelixGeom Build | coilBuild | `OCCTHelixCoilBuild` | pitch x 1.1 | `HelixGeomBuildTests.swift:58 simd_distance(r.curve.endPoint, SIMD3(5, 0, 12)) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Helix Curves | Create basic helix | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Helix Curves | Helix with custom origin and axis | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:48 abs(abs(b.z - a.z) - 10) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Helix Curves | Helix clockwise vs counter-clockwise | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:65 abs(ae.z - (-2)) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil. Finding: the counterclockwise helix descends along its axis |
+| Helix Curves | Invalid helix parameters return nil | `none: Swift guard in Wire.helix` | Swift: parameters clamped to 0.1 instead of rejected | `HelixTests.swift:71 Wire.helix(radius: 0, pitch: 2, turns: 1) == nil` | ✅ | N/A |  |
+| Helix Curves | Helix can be used as sweep path | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:85 abs((helix.length ?? 0) - 189.09141569499593) < 1e-6` | ✅ | MATCH | Rewritten: force-unwrap inside #expect; path pinned |
+| Helix Curves | Create tapered helix | `OCCTWireCreateHelixTapered` | Swift: end radius x 1.1 | `HelixTests.swift:108 abs(simd_length(SIMD2(b.x, b.y)) - 3) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Helix Curves | Invalid tapered helix returns nil | `none: Swift guard in Wire.helixTapered` | Swift: radii clamped to 0.1 instead of rejected | `HelixTests.swift:114 Wire.helixTapered(startRadius: 0, endRadius: 5, pitch: 2, turns: 1) == nil` | ✅ | N/A |  |
+| Helix Curves | Helix with fractional turns | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |
+| Helix Curves | Helix with many turns | `OCCTWireCreateHelix` | Swift: pitch x 1.1 (and, separately, radius x 1.2) | `HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9` | ✅ | MATCH | Rewritten: checked only != nil |

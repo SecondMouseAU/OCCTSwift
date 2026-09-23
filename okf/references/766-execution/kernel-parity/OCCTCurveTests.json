@@ -302,5 +302,306 @@
     "kernel_output": {"type": "double", "data": 0.0},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "HelixGeom Build::basicHelixBuild",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "(10,0,0) -> (10,0,5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixGeom_BuilderHelix: tolReached 6.76e-4, (10,0,0) -> (10,0,5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:24 simd_distance(end, SIMD3(10, 0, 5)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil and a tolerance bound"
+  },
+  {
+    "test_name": "HelixGeom Build::taperedHelix",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "end (10.437, 0, 5)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "end (10.437443317629619, -2.7e-15, 5)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:37 simd_distance(r.curve.endPoint, SIMD3(10.437443317629619, 0, 5)) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "HelixGeom Build::helixWithCustomPosition",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "(9,2,3) -> (9,2,7)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(9, 2, 3) -> (9, 2, 7)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:49 simd_distance(r.curve.endPoint, SIMD3(9, 2, 7)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "HelixGeom Build::coilBuild",
+    "test_file": "Tests/OCCTCurveTests/HelixGeomBuildTests.swift",
+    "bridge_function": "OCCTHelixCoilBuild",
+    "bridge_output": {
+      "type": "value",
+      "data": "end (5,0,12)"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixGeom_BuilderHelixCoil: end (5, 5.3e-15, 12)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "pitch x 1.1",
+    "red": "HelixGeomBuildTests.swift:58 simd_distance(r.curve.endPoint, SIMD3(5, 0, 12)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Create basic helix",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 6, length 94.4385"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "HelixBRep_BuilderHelix: (-5,0,0) -> (-5,0,-6), length 94.438520381886207"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix with custom origin and axis",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "start (0,20,30), rise 10, length 126.06"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(0,20,30) -> (0,20,20), length 126.06094379666393"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:48 abs(abs(b.z - a.z) - 10) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix clockwise vs counter-clockwise",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "ccw (-5,0,0) -> z -2; cw (5,0,0) -> z 2"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "ccw (-5,0,0) -> (-5,0,-2); cw (5,0,0) -> (5,0,2)"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:65 abs(ae.z - (-2)) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil. Finding: the counterclockwise helix descends along its axis"
+  },
+  {
+    "test_name": "Helix Curves::Invalid helix parameters return nil",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "none: Swift guard in Wire.helix",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil for all four"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the Swift guard before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: parameters clamped to 0.1 instead of rejected",
+    "red": "HelixTests.swift:71 Wire.helix(radius: 0, pitch: 2, turns: 1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt"
+  },
+  {
+    "test_name": "Helix Curves::Helix can be used as sweep path",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "path length 189.0914, sweep valid"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-10,0,0) -> (-10,0,-15), length 189.09141569499593"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:85 abs((helix.length ?? 0) - 189.09141569499593) < 1e-6",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: force-unwrap inside #expect; path pinned"
+  },
+  {
+    "test_name": "Helix Curves::Create tapered helix",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelixTapered",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 10 -> 3, rise 16"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-10,0,0) -> (-3,0,-16), length 164.40120079758572"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: end radius x 1.1",
+    "red": "HelixTests.swift:108 abs(simd_length(SIMD2(b.x, b.y)) - 3) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Invalid tapered helix returns nil",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "none: Swift guard in Wire.helixTapered",
+    "bridge_output": {
+      "type": "value",
+      "data": "nil"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A: rejected by the Swift guard before the kernel"
+    },
+    "comparison": {
+      "equal": false,
+      "differences": [
+        ""
+      ]
+    },
+    "status": "N/A",
+    "injection": "Swift: radii clamped to 0.1 instead of rejected",
+    "red": "HelixTests.swift:114 Wire.helixTapered(startRadius: 0, endRadius: 5, pitch: 2, turns: 1) == nil",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt"
+  },
+  {
+    "test_name": "Helix Curves::Helix with fractional turns",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 5, length 16.4845"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-5,0,0) -> (5,0,-5), length 16.484533267150862"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
+  },
+  {
+    "test_name": "Helix Curves::Helix with many turns",
+    "test_file": "Tests/OCCTCurveTests/HelixTests.swift",
+    "bridge_function": "OCCTWireCreateHelix",
+    "bridge_output": {
+      "type": "value",
+      "data": "radius 5, rise 20, length 628.636"
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "(-5,0,0) -> (-5,0,-20), length 628.63641255844379"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "injection": "Swift: pitch x 1.1 (and, separately, radius x 1.2)",
+    "red": "HelixTests.swift:22 abs(abs(b.z - a.z) - rise) < 1e-9",
+    "green": "passed",
+    "probe": "Scripts/repro/766-curve-helix/transcript.txt",
+    "note": "Rewritten: checked only != nil"
   }
 ]
