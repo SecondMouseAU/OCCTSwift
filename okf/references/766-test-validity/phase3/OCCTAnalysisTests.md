@@ -235,6 +235,11 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Fast 3D Polygon** | Closed square polygon | Polygon wire | Closed edge count |
+| **Fast 3D Polygon** | Open triangle polygon | Polygon wire | Open edge count |
+| **Fast 3D Polygon** | 3D polygon wire (non-planar) | Polygon wire | Closed edge count |
+| **Fast 3D Polygon** | Minimum points (2) makes a single edge | Polygon wire | Edge count |
+| **Fast 3D Polygon** | Single point returns nil | Polygon wire | Refusal |
 
 ---
 
@@ -424,6 +429,11 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| Closed square polygon | OCCTWireCreateFastPolygon | Polygon wire | Skip poly.Close() (red :20); WireExplorer count starts at 1 (red :20) | ✅ | ✅ |  |
+| Open triangle polygon | OCCTWireExplorerEdgeCount | Polygon wire | WireExplorer count starts at 1 | ✅ | ✅ |  |
+| 3D polygon wire (non-planar) | OCCTWireCreateFastPolygon | Polygon wire | Skip poly.Close() (red :45); WireExplorer count starts at 1 | ✅ | ✅ |  |
+| Minimum points (2) makes a single edge | OCCTWireExplorerEdgeCount | Polygon wire | WireExplorer count starts at 1 | ✅ | ✅ |  |
+| Single point returns nil | OCCTWireCreateFastPolygon | Polygon wire | Drop the < 2 guards (Swift and bridge) and return an empty wire | ✅ | ✅ |  |
 
 ---
 

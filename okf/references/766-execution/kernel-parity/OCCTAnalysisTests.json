@@ -4501,5 +4501,115 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Fast 3D Polygon::Closed square polygon",
+    "bridge_function": "OCCTWireCreateFastPolygon",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-fast3dpolygon/"
+  },
+  {
+    "test_name": "Fast 3D Polygon::Open triangle polygon",
+    "bridge_function": "OCCTWireExplorerEdgeCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "edges": 2
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "edges": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-fast3dpolygon/"
+  },
+  {
+    "test_name": "Fast 3D Polygon::3D polygon wire (non-planar)",
+    "bridge_function": "OCCTWireCreateFastPolygon",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "edges": 4
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "edges": 4
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-fast3dpolygon/"
+  },
+  {
+    "test_name": "Fast 3D Polygon::Minimum points (2) makes a single edge",
+    "bridge_function": "OCCTWireExplorerEdgeCount",
+    "bridge_output": {
+      "type": "count",
+      "data": {
+        "edges": 1
+      }
+    },
+    "kernel_output": {
+      "type": "count",
+      "data": {
+        "edges": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-fast3dpolygon/"
+  },
+  {
+    "test_name": "Fast 3D Polygon::Single point returns nil",
+    "bridge_function": "OCCTWireCreateFastPolygon",
+    "bridge_output": {
+      "type": "refusal",
+      "data": {
+        "wire": null
+      }
+    },
+    "kernel_output": {
+      "type": "refusal",
+      "data": {
+        "BRepBuilderAPI_MakePolygon": "one point, Close(): throws BRep_API: command not done"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-fast3dpolygon/"
   }
 ]
