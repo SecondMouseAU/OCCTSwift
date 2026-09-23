@@ -124,3 +124,20 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `BatchCurve2DTests.swift`, `BisectorBisecAnaTests.swift`, `BisectorIntersectionTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-batch-bisector/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Batch Curve2D Evaluation::Evaluate grid on circle | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Evaluate grid D1 on circle | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Empty parameters returns empty | `OCCTCurve2DEvaluateGrid` | Swift wrapper returns one zero point for an empty parameter list instead of [] | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid evaluation matches individual evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Grid D1 matches individual D1 | `OCCTCurve2DEvaluateGridD1` | swap the D1 components | ✅ | ✅ | MATCH |  |
+| Batch Curve2D Evaluation::Segment batch evaluation | `OCCTCurve2DEvaluateGrid` | swap x and y in each evaluated point | ✅ | ✅ | MATCH |  |
+| Bisector_BisecAna::Bisector between two lines | `OCCTBisectorBisecAnaCurveCurve` | return the second input line instead of the bisector | ✅ | ✅ | MATCH | asserted only `bisector != nil` inside `if let`; now pins two points of the returned line |
+| Bisector_BisecAna::Bisector between two points | `OCCTBisectorBisecAnaPointPoint` | move the second point 2 along x | ✅ | ✅ | MATCH | asserted only `bisector != nil`; now pins x = 5 at two parameters |
+| Bisector Intersection Tests::perpendicular bisectors of right angle | `OCCTBisectorInterPointPoint` | move B 2 along x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now uses the pair order whose half-lines meet and pins (5, 5) |
+| Bisector Intersection Tests::collinear point bisectors | `OCCTBisectorInterPointPoint` | swap C and D, turning the second half-line to +x | ✅ | ✅ | MATCH | `let _ = results`, no assertion; now pins the empty result of the diverging half-lines |
