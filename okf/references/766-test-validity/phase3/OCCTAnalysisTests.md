@@ -95,6 +95,11 @@
 | **Make Connected** | Make Connected | Connected | Remove connected |
 | **Linear Rib Feature** | Linear Rib Feature | Rib | Remove rib |
 | **Glue Tests** | Glue Tests | Glue | Remove glue |
+| **Bnd_Sphere Tests** | createAndQuery | Bounding sphere construction | Exchange cx and cy in OCCTBndSphereCreate |
+| **Bnd_Sphere Tests** | distanceToPoint | Point distance | SquareDistance in place of Distance |
+| **Bnd_Sphere Tests** | isOutsidePoint | Point containment | IsOut(point) always true |
+| **Bnd_Sphere Tests** | isOutsideSphere | Sphere disjointness | IsOut(sphere) always true |
+| **Bnd_Sphere Tests** | addMerge | Sphere merge | Add() does nothing |
 | **Extrema_LocateExtCC Tests** | localExtremum | Local curve-curve extremum | Report sqrt(SquareDistance()) as the square distance |
 | **LProp3dCurve** | tangentOfCircle | Curve local tangent | OCCTCurve3DLocalTangent reverses the tangent (value pinned, #766) |
 | **LProp3dCurve** | normalOfCircle | Curve principal normal | OCCTCurve3DLocalNormal reverses the normal (value pinned, #766) |

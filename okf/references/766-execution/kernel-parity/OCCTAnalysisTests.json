@@ -4148,5 +4148,140 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::createAndQuery",
+    "bridge_function": "OCCTBndSphereCreate",
+    "bridge_output": {
+      "type": "sphere",
+      "data": {
+        "radius": 5.0,
+        "center": {
+          "x": 1.0,
+          "y": 2.0,
+          "z": 3.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "sphere",
+      "data": {
+        "radius": 5.0,
+        "center": {
+          "x": 1.0,
+          "y": 2.0,
+          "z": 3.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::distanceToPoint",
+    "bridge_function": "OCCTBndSphereDistance",
+    "bridge_output": {
+      "type": "distance",
+      "data": {
+        "to_10_0_0": 10.0,
+        "to_0_3_4": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "distance",
+      "data": {
+        "to_10_0_0": 10.0,
+        "to_0_3_4": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::isOutsidePoint",
+    "bridge_function": "OCCTBndSphereIsOut",
+    "bridge_output": {
+      "type": "is_out_point",
+      "data": {
+        "p_100_0_0": true,
+        "p_6_0_0": true,
+        "p_1_0_0": false,
+        "p_0_0_0": false
+      }
+    },
+    "kernel_output": {
+      "type": "is_out_point",
+      "data": {
+        "p_100_0_0": true,
+        "p_6_0_0": true,
+        "p_1_0_0": false,
+        "p_0_0_0": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::isOutsideSphere",
+    "bridge_function": "OCCTBndSphereIsOutSphere",
+    "bridge_output": {
+      "type": "is_out_sphere",
+      "data": {
+        "far": true,
+        "overlapping": false
+      }
+    },
+    "kernel_output": {
+      "type": "is_out_sphere",
+      "data": {
+        "far": true,
+        "overlapping": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd_Sphere Tests::addMerge",
+    "bridge_function": "OCCTBndSphereAdd",
+    "bridge_output": {
+      "type": "merged_sphere",
+      "data": {
+        "radius": 10.0,
+        "center": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "merged_sphere",
+      "data": {
+        "radius": 10.0,
+        "center": {
+          "x": 5.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
