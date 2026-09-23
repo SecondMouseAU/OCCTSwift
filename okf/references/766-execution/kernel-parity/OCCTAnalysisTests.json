@@ -3622,5 +3622,147 @@
       ]
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::createAndQuery",
+    "bridge_function": "OCCTRangeGetBounds",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 1.0,
+        "last": 5.0,
+        "is_void": false,
+        "delta": 4.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 1.0,
+        "last": 5.0,
+        "is_void": false,
+        "delta": 4.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::contains",
+    "bridge_function": "OCCTRangeContains",
+    "bridge_output": {
+      "type": "contains",
+      "data": {
+        "contains_3": true,
+        "contains_6": false
+      }
+    },
+    "kernel_output": {
+      "type": "contains",
+      "data": {
+        "contains_3": true,
+        "contains_6": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::addValue",
+    "bridge_function": "OCCTRangeAddValue",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 2.0,
+        "last": 6.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 2.0,
+        "last": 6.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::common",
+    "bridge_function": "OCCTRangeCommon",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 5.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 5.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::trimFromTo",
+    "bridge_function": "OCCTRangeTrimFrom",
+    "bridge_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 7.0
+      }
+    },
+    "kernel_output": {
+      "type": "bounds",
+      "data": {
+        "first": 3.0,
+        "last": 7.0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Bnd Range Tests::voidRange",
+    "bridge_function": "OCCTRangeCreateVoid",
+    "bridge_output": {
+      "type": "void",
+      "data": {
+        "is_void": true,
+        "get_bounds": false
+      }
+    },
+    "kernel_output": {
+      "type": "void",
+      "data": {
+        "is_void": true,
+        "get_bounds": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
