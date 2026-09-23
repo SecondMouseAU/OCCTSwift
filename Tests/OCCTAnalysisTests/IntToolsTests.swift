@@ -21,9 +21,12 @@ struct IntToolsTests {
         #expect(IntTools.computeVV(v1, v2) != 0)
     }
 
+    /// `IntTools_Tools::IntermediatePoint` is not the midpoint: it samples at OCCT's fixed ratio
+    /// 0.43213918 of the range, measured in `Scripts/repro/766-inttools-intf-integration/`. A bridge
+    /// answering the plain midpoint would still lie strictly between the ends.
     @Test func intermediatePoint() {
         let mid = IntTools.intermediatePoint(first: 0.0, last: 1.0)
-        #expect(mid > 0.0 && mid < 1.0)
+        #expect(abs(mid - 0.43213918) < 1e-15)
     }
 
     @Test func isDirsCoinside() {
@@ -31,8 +34,10 @@ struct IntToolsTests {
         #expect(!IntTools.isDirsCoinside(dx1: 1, dy1: 0, dz1: 0, dx2: 0, dy2: 1, dz2: 0))
     }
 
+    /// The kernel's own figure for these tolerances and angle, measured in
+    /// `Scripts/repro/766-inttools-intf-integration/`. Any positive number used to pass.
     @Test func computeIntRange() {
         let range = IntTools.computeIntRange(tol1: 0.001, tol2: 0.001, angle: .pi / 4)
-        #expect(range > 0)
+        #expect(abs(range - 0.0024142135623730953) < 1e-15)
     }
 }

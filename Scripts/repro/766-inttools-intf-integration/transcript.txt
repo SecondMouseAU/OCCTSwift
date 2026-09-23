@@ -1,0 +1,22 @@
+IntTools_Tools::ComputeVV coincident=0 distant=-1
+IntTools_Tools::IntermediatePoint(0, 1)=0.43213918000000001
+IntTools_Tools::IsDirsCoinside X,X=1 X,Y=0
+IntTools_Tools::ComputeIntRange(0.001, 0.001, pi/4)=0.0024142135623730953
+Intf_Tool::LinBox clipLineToBox (0,0,-10)+Z: NbSegments=1
+  segment 1: BeginParam=10 EndParam=20
+Intf_Tool::LinBox segmentParameters (5,5,-10)+Z: NbSegments=1
+  segment 1: BeginParam=10 EndParam=20
+Intf_Tool::LinBox lineParallelToFace (5,5,5)+X: NbSegments=1
+  segment 1: BeginParam=-5 EndParam=5
+Intf_Tool::LinBox lineMissesBox (100,100,100)+Y: NbSegments=0
+Intf_Tool::LinBox lineThroughCenter (5,5,-100)+Z: NbSegments=1
+  segment 1: BeginParam=100 EndParam=110
+fuse IsDone=1 valid=1
+section at z=6: edges=1 wires=1
+  wire 1 BRepGProp length=94.247779607693801 GCPnts_AbscissaPoint::Length=94.247779607693786
+  total length=94.247779607693801 (2*pi*15=94.247779607693786)
+sphere r10 (0.0, 0.5): defined=1 gaussian=0.0099999999999999967 mean=-0.099999999999999992
+sphere r10 (1.0, 0.5): defined=1 gaussian=0.0099999999999999985 mean=-0.099999999999999992
+sphere r10 (0.5, 1.0): defined=1 gaussian=0.009999999999999995 mean=-0.099999999999999978
+sphere r10 (1.5, 0.3): defined=1 gaussian=0.010000000000000002 mean=-0.10000000000000002
+sphere r10 (2.0, 1.0): defined=1 gaussian=0.0099999999999999967 mean=-0.099999999999999992

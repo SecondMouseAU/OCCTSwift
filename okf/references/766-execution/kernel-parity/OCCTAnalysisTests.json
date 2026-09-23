@@ -4501,5 +4501,303 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "IntTools Tests::computeVV",
+    "bridge_function": "OCCTIntToolsComputeVV",
+    "bridge_output": {
+      "type": "status",
+      "data": {
+        "computeVV": 0
+      }
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "computeVV": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "IntTools Tests::computeVVDistant",
+    "bridge_function": "OCCTIntToolsComputeVV",
+    "bridge_output": {
+      "type": "status",
+      "data": {
+        "computeVV": -1
+      }
+    },
+    "kernel_output": {
+      "type": "status",
+      "data": {
+        "computeVV": -1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "IntTools Tests::intermediatePoint",
+    "bridge_function": "OCCTIntToolsIntermediatePoint",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "value": 0.43213918
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": 0.43213918
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "IntTools Tests::isDirsCoinside",
+    "bridge_function": "OCCTIntToolsIsDirsCoinside",
+    "bridge_output": {
+      "type": "flags",
+      "data": {
+        "XX": true,
+        "XY": false
+      }
+    },
+    "kernel_output": {
+      "type": "flags",
+      "data": {
+        "XX": true,
+        "XY": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "IntTools Tests::computeIntRange",
+    "bridge_function": "OCCTIntToolsComputeIntRange",
+    "bridge_output": {
+      "type": "scalar",
+      "data": {
+        "value": 0.0024142135623730953
+      }
+    },
+    "kernel_output": {
+      "type": "scalar",
+      "data": {
+        "value": 0.0024142135623730953
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Integration: Profile Contouring::boxWithBossSection",
+    "bridge_function": "OCCTShapeSectionWiresAtZ",
+    "bridge_output": {
+      "type": "wires",
+      "data": {
+        "wires": 1,
+        "length": 94.24777960769379
+      }
+    },
+    "kernel_output": {
+      "type": "wires",
+      "data": {
+        "wires": 1,
+        "length": 94.24777960769379
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Integration: Surface Curvature Analysis::sphereCurvatureIsConstant",
+    "bridge_function": "OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature",
+    "bridge_output": {
+      "type": "curvature",
+      "data": {
+        "gaussian_at_5_points": [
+          0.009999999999999997,
+          0.009999999999999998,
+          0.009999999999999995,
+          0.010000000000000002,
+          0.009999999999999997
+        ],
+        "mean": -0.1
+      }
+    },
+    "kernel_output": {
+      "type": "curvature",
+      "data": {
+        "gaussian_at_5_points": [
+          0.009999999999999997,
+          0.009999999999999998,
+          0.009999999999999995,
+          0.010000000000000002,
+          0.009999999999999997
+        ],
+        "mean": -0.1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Intf_Tool v0.112::clipLineToBox",
+    "bridge_function": "OCCTIntfToolLinBox",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 10,
+        "end": 20
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 10,
+        "end": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Intf_Tool v0.112::segmentParameters",
+    "bridge_function": "OCCTIntfToolLinBox / OCCTIntfToolBeginParam / OCCTIntfToolEndParam",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 10,
+        "end": 20
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 10,
+        "end": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Intf_Tool v0.112::lineParallelToFace",
+    "bridge_function": "OCCTIntfToolLinBox",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": -5,
+        "end": 5
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": -5,
+        "end": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Intf_Tool v0.112::lineMissesBox",
+    "bridge_function": "OCCTIntfToolLinBox",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "n": 0
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "n": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
+  },
+  {
+    "test_name": "Intf_Tool v0.112::lineThroughCenter",
+    "bridge_function": "OCCTIntfToolLinBox / OCCTIntfToolBeginParam / OCCTIntfToolEndParam",
+    "bridge_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 100,
+        "end": 110
+      }
+    },
+    "kernel_output": {
+      "type": "segments",
+      "data": {
+        "n": 1,
+        "begin": 100,
+        "end": 110
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-inttools-intf-integration/"
   }
 ]
