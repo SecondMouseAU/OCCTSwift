@@ -4501,5 +4501,271 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Oriented Bounding Box::OBB of axis-aligned box",
+    "bridge_function": "OCCTShapeOrientedBoundingBox",
+    "bridge_output": {
+      "type": "obb",
+      "data": {
+        "half": [
+          1.5000001,
+          5.0000001,
+          2.5000001
+        ],
+        "volume": 150.000019
+      }
+    },
+    "kernel_output": {
+      "type": "obb",
+      "data": {
+        "half": [
+          1.5000001,
+          5.0000001,
+          2.5000001
+        ],
+        "volume": 150.000019
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Oriented Bounding Box::OBB of rotated box is tighter than AABB",
+    "bridge_function": "OCCTShapeOrientedBoundingBox",
+    "bridge_output": {
+      "type": "obb",
+      "data": {
+        "volume": 40.0000088,
+        "aabb_volume": 144.000021188
+      }
+    },
+    "kernel_output": {
+      "type": "obb",
+      "data": {
+        "volume": 40.0000088,
+        "aabb_volume": 144.000021188
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Oriented Bounding Box::OBB corners count",
+    "bridge_function": "OCCTOrientedBoundingBoxCorners",
+    "bridge_output": {
+      "type": "corners",
+      "data": {
+        "count": 8,
+        "corner_to_centre": 8.66025421105
+      }
+    },
+    "kernel_output": {
+      "type": "corners",
+      "data": {
+        "count": 8,
+        "corner_to_centre": 8.66025421105
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Oriented Bounding Box::OBB of sphere",
+    "bridge_function": "OCCTShapeOrientedBoundingBox",
+    "bridge_output": {
+      "type": "obb",
+      "data": {
+        "dims": [
+          10.0000002,
+          10.0000002,
+          10.0000002
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "obb",
+      "data": {
+        "dims": [
+          10.0000002,
+          10.0000002,
+          10.0000002
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Oriented Bounding Box::Optimal OBB",
+    "bridge_function": "OCCTShapeOrientedBoundingBox",
+    "bridge_output": {
+      "type": "obb",
+      "data": {
+        "volume": 150.000019
+      }
+    },
+    "kernel_output": {
+      "type": "obb",
+      "data": {
+        "volume": 150.000019
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Point inside box",
+    "bridge_function": "OCCTClassifyPointInSolid",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Point outside box",
+    "bridge_function": "OCCTClassifyPointInSolid",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Point on box face",
+    "bridge_function": "OCCTClassifyPointInSolid",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "ON"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "ON"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Point inside sphere",
+    "bridge_function": "OCCTClassifyPointInSolid",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "state": "IN"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Face classify: point on face",
+    "bridge_function": "OCCTClassifyPointOnFace",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "centre_(-5,0,0)": "IN",
+        "off_face_(-5,20,0)": "OUT"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "centre_(-5,0,0)": "IN",
+        "off_face_(-5,20,0)": "OUT"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
+  },
+  {
+    "test_name": "Point Classification Tests::Face classify UV: center of face",
+    "bridge_function": "OCCTClassifyPointOnFaceUV",
+    "bridge_output": {
+      "type": "state",
+      "data": {
+        "uv_centre_(1.5,-2.5)": "IN"
+      }
+    },
+    "kernel_output": {
+      "type": "state",
+      "data": {
+        "uv_centre_(1.5,-2.5)": "IN"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-obb-point-classification/"
   }
 ]

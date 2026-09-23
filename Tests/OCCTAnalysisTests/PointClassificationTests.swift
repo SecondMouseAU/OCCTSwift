@@ -40,26 +40,25 @@ struct PointClassificationTests {
     }
 
     @Test("Face classify: point on face")
-    func faceClassifyPoint() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let faces = box.faces()
-        #expect(!faces.isEmpty)
-
-        // Find a face and classify a point on it
-        let face = faces[0]
-        let normal = face.normal
-        #expect(normal != nil)
+    func faceClassifyPoint() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // The box is centred on the origin, so one face lies in the plane x = -5.
+        let face = try #require(
+            box.faces().first { f in
+                guard let n = f.normal else { return false }
+                return abs(abs(n.x) - 1) < 1e-9 && (f.bounds?.max.x ?? 0) < -4.9
+            })
+        // The face's own centre is inside it; a point on the same plane beyond its edges is not.
+        #expect(face.classify(point: SIMD3(-5, 0, 0)) == .inside)
+        #expect(face.classify(point: SIMD3(-5, 20, 0)) == .outside)
     }
 
     @Test("Face classify UV: center of face")
-    func faceClassifyUV() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
-        let faces = box.faces()
-        #expect(!faces.isEmpty)
-
-        let face = faces[0]
+    func faceClassifyUV() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
+        let face = try #require(box.faces().first)
         // Get UV bounds and classify at the center
-        let uvb = face.uvBounds!
+        let uvb = try #require(face.uvBounds)
         let uMid = (uvb.uMin + uvb.uMax) / 2.0
         let vMid = (uvb.vMin + uvb.vMax) / 2.0
         let result = face.classify(u: uMid, v: vMid, tolerance: 1e-6)

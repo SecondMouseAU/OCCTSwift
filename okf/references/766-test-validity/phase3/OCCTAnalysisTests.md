@@ -235,6 +235,17 @@
 | **Issue943 bounds: void versus zero-size** | pointVertexAtOriginReportsAMeasuredBox | Zero-size box at origin | OCCTShapeBoundingBox reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | zeroLengthEdgeAtOriginReportsAMeasuredBox | Zero-length edge bounds | OCCTEdgeGetBounds reports void when all six values are within 1e-6 of zero |
 | **Issue943 bounds: void versus zero-size** | faceBoundsAreMeasuredAndAAGKeepsEveryFace | Face bounds and AAG node count | OCCTFaceGetBoundsExact always reports void |
+| **Oriented Bounding Box** | OBB of axis-aligned box | Oriented bounding box | OCCTShapeOrientedBoundingBox |
+| **Oriented Bounding Box** | OBB of rotated box is tighter than AABB | Oriented bounding box | OCCTShapeOrientedBoundingBox |
+| **Oriented Bounding Box** | OBB corners count | Oriented bounding box | OCCTOrientedBoundingBoxCorners |
+| **Oriented Bounding Box** | OBB of sphere | Oriented bounding box | OCCTShapeOrientedBoundingBox |
+| **Oriented Bounding Box** | Optimal OBB | Oriented bounding box | OCCTShapeOrientedBoundingBox |
+| **Point Classification Tests** | Point inside box | Point classification | OCCTClassifyPointInSolid |
+| **Point Classification Tests** | Point outside box | Point classification | OCCTClassifyPointInSolid |
+| **Point Classification Tests** | Point on box face | Point classification | OCCTClassifyPointInSolid |
+| **Point Classification Tests** | Point inside sphere | Point classification | OCCTClassifyPointInSolid |
+| **Point Classification Tests** | Face classify: point on face | Point classification | OCCTClassifyPointOnFace |
+| **Point Classification Tests** | Face classify UV: center of face | Point classification | OCCTClassifyPointOnFaceUV |
 
 ---
 
@@ -424,6 +435,17 @@
 | common | OCCTRangeCommon | Bnd_Range intersection | Common is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let |
 | trimFromTo | OCCTRangeTrimFrom | Bnd_Range trim | TrimFrom is a no-op | ✅ | ✅ | Hardened (#766), the original stayed green under an injected defect: GetBounds returning false skipped every assertion under if-let; also reaches OCCTRangeTrimTo |
 | voidRange | OCCTRangeCreateVoid | Bnd_Range void | CreateVoid builds Bnd_Range(0, 0) | ✅ | ✅ | Could already fail; now also asserts a void range reports no bounds |
+| OBB of axis-aligned box | OCCTShapeOrientedBoundingBox | Oriented bounding box | half-sizes x 1.5 | ✅ | ✅ | Force-unwraps inside #expect replaced with #require; tolerance tightened to the probed value |
+| OBB of rotated box is tighter than AABB | OCCTShapeOrientedBoundingBox | Oriented bounding box | half-sizes x 1.5; axis-aligned box returned instead | ✅ | ✅ | Force-unwraps inside #expect replaced with #require; tolerance tightened to the probed value; volume now pinned to 40 (< 60 passed an OBB half again too big) |
+| OBB corners count | OCCTOrientedBoundingBoxCorners | Oriented bounding box | Z half-size dropped from the corners | ✅ | ✅ | Rewritten: count == 8 is fixed by the Swift loop and passed flattened corners; now pins the corner distances |
+| OBB of sphere | OCCTShapeOrientedBoundingBox | Oriented bounding box | half-sizes x 1.5 | ✅ | ✅ | Force-unwraps inside #expect replaced with #require; tolerance tightened to the probed value |
+| Optimal OBB | OCCTShapeOrientedBoundingBox | Oriented bounding box | half-sizes x 1.5 | ✅ | ✅ | Force-unwraps inside #expect replaced with #require; tolerance tightened to the probed value |
+| Point inside box | OCCTClassifyPointInSolid | Point classification | IN and OUT swapped | ✅ | ✅ |  |
+| Point outside box | OCCTClassifyPointInSolid | Point classification | IN and OUT swapped | ✅ | ✅ |  |
+| Point on box face | OCCTClassifyPointInSolid | Point classification | ON reported as IN | ✅ | ✅ |  |
+| Point inside sphere | OCCTClassifyPointInSolid | Point classification | IN and OUT swapped | ✅ | ✅ |  |
+| Face classify: point on face | OCCTClassifyPointOnFace | Point classification | IN and OUT swapped | ✅ | ✅ | Rewritten: it only checked face.normal != nil and never classified anything |
+| Face classify UV: center of face | OCCTClassifyPointOnFaceUV | Point classification | IN and OUT swapped | ✅ | ✅ |  |
 
 ---
 
