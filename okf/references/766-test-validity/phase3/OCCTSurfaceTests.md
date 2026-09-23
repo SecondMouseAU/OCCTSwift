@@ -222,3 +222,22 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 552 tests
+
+### Measured: BSplineSurfaceKnotTests.swift, BSplineSurfaceLocalEvalTests.swift (14 tests), probe Scripts/repro/766-bspline-knots-local-eval/
+
+| Suite | Test | Bridge function | Injection | Red (failing expectation) | Green | Parity | Notes |
+|-------|------|-----------------|-----------|---------------------------|-------|--------|-------|
+| BSplineSurface Knot Queries | LocateU returns valid span | `OCCTSurfaceBSplineLocateU` | I1 + 1 (INJ_BS_LOCATE_OFF) | BSplineSurfaceKnotTests.swift:26 span.i1 == 2 | ✅ | MATCH | Rewritten: `> 0` passed an off-by-one |
+| BSplineSurface Knot Queries | LocateV returns valid span | `OCCTSurfaceBSplineLocateV` | I1 + 1 (INJ_BS_LOCATE_OFF) | BSplineSurfaceKnotTests.swift:38 span.i1 == 2 | ✅ | MATCH | Rewritten: `> 0` passed an off-by-one |
+| BSplineSurface Knot Queries | UKnot and VKnot return values | `OCCTSurfaceBSplineUKnot` | index + 1 (INJ_BS_KNOT_INDEX) | BSplineSurfaceKnotTests.swift:49 uk == 0 | ✅ | MATCH | Rewritten: `isFinite` passed any knot; also reaches OCCTSurfaceBSplineVKnot |
+| BSplineSurface Knot Queries | UMultiplicity and VMultiplicity | `OCCTSurfaceBSplineUMultiplicity` | index + 1 (INJ_BS_MULT_INDEX) | BSplineSurfaceKnotTests.swift:60 vm == 3 | ✅ | MATCH | Rewritten: `> 0` passed any multiplicity. U stays green under this injection (knot 2 is also x2); V goes red. Also reaches OCCTSurfaceBSplineVMultiplicity |
+| BSplineSurface Knot Queries | UKnotDistribution and VKnotDistribution | `OCCTSurfaceBSplineUKnotDistribution` | U and V swapped (INJ_BS_DIST_SWAP) | BSplineSurfaceKnotTests.swift:69 ud == 0 | ✅ | MATCH | Rewritten: `0...3` accepted every enum value |
+| BSplineSurface Knot Queries | Bounds returns valid range | `OCCTSurfaceBSplineBounds` | Bounds out-arguments in the wrong order (INJ_BS_BOUNDS_ORDER) | BSplineSurfaceKnotTests.swift:78 b.u1 == 0 && b.u2 == 2 * Double.pi | ✅ | MATCH | Rewritten: `u2 > u1` passed wrong bounds |
+| BSplineSurface Knot Queries | IsUClosed and IsVClosed | `OCCTSurfaceBSplineIsUClosed` | U and V swapped (INJ_BS_CLOSED_SWAP) | BSplineSurfaceKnotTests.swift:88 bs.bsplineIsUClosed | ✅ | MATCH | Rewritten: `uc || !uc` could not fail; also reaches OCCTSurfaceBSplineIsVClosed |
+| BSplineSurface Knot Queries | BSpline GetPoles bulk | `OCCTSurfaceBSplineGetPoles` | poles read transposed (INJ_BS_POLES_TRANSPOSE) | BSplineSurfaceKnotTests.swift:105 (0..<5).allSatisfy { poles[$0] == grid.pole(uIndex: 1, vIndex: $0 + 1) } | ✅ | MATCH | Rewritten: count and a non-zero first pole passed a transposed grid |
+| BSplineSurface Local Evaluation | LocalD0 matches global D0 | `OCCTSurfaceBSplineLocalD0` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:37 simd_length(localPt - globalPt) < 1e-10 | ✅ | MATCH | Caught as written; its span guard `if` made unconditional |
+| BSplineSurface Local Evaluation | LocalD1 returns point and derivatives | `OCCTSurfaceBSplineLocalD1` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:49 simd_length(r.d1u - SIMD3(0, -5.5132889542179191, 0)) < 1e-9 | ✅ | MATCH | Rewritten: `|d1u| > 0` passed any derivative |
+| BSplineSurface Local Evaluation | LocalD2 returns second derivatives | `OCCTSurfaceBSplineLocalD2` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:59 simd_length(r.point - SIMD3(-5, 0, 0)) < 1e-9 | ✅ | MATCH | Rewritten: `|point| > 0` passed any point |
+| BSplineSurface Local Evaluation | LocalD3 returns third derivatives | `OCCTSurfaceBSplineLocalD3` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:71 simd_length(r.point - SIMD3(-5, 0, 0)) < 1e-9 | ✅ | MATCH | Rewritten: `|point| > 0` passed any point |
+| BSplineSurface Local Evaluation | LocalDN derivative | `OCCTSurfaceBSplineLocalDN` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:84 simd_length(v - SIMD3(0, -5.5132889542179191, 0)) < 1e-9 | ✅ | MATCH | Rewritten: `|v| > 0` passed any vector |
+| BSplineSurface Local Evaluation | LocalValue matches global | `OCCTSurfaceBSplineLocalValue` | u and v swapped before the Local* call (INJ_BS_LOCAL_UV) | BSplineSurfaceLocalEvalTests.swift:94 simd_length(localPt - globalPt) < 1e-10 | ✅ | MATCH | Caught as written; its span guard `if` made unconditional |

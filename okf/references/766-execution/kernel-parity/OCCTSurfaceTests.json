@@ -6,5 +6,423 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::LocateU returns valid span",
+    "bridge_function": "OCCTSurfaceBSplineLocateU",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "I1": 2,
+        "I2": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "I1": 2,
+        "I2": 3
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt locateU"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::LocateV returns valid span",
+    "bridge_function": "OCCTSurfaceBSplineLocateV",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "I1": 2,
+        "I2": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "I1": 2,
+        "I2": 2
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt locateV"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::UKnot and VKnot return values",
+    "bridge_function": "OCCTSurfaceBSplineUKnot",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UKnot(1)": 0,
+        "VKnot(1)": -1.5707963267948966
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UKnot(1)": 0,
+        "VKnot(1)": -1.5707963267948966
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt knotValues"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::UMultiplicity and VMultiplicity",
+    "bridge_function": "OCCTSurfaceBSplineUMultiplicity",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "UMultiplicity(1)": 2,
+        "VMultiplicity(1)": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "UMultiplicity(1)": 2,
+        "VMultiplicity(1)": 3
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt multiplicity"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::UKnotDistribution and VKnotDistribution",
+    "bridge_function": "OCCTSurfaceBSplineUKnotDistribution",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "U": 0,
+        "V": 3
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "U": 0,
+        "V": 3
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt knotDistribution"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::Bounds returns valid range",
+    "bridge_function": "OCCTSurfaceBSplineBounds",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          -1.5707963267948966,
+          1.5707963267948966
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "bounds": [
+          0,
+          6.283185307179586,
+          -1.5707963267948966,
+          1.5707963267948966
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt bounds"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::IsUClosed and IsVClosed",
+    "bridge_function": "OCCTSurfaceBSplineIsUClosed",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "IsUClosed": true,
+        "IsVClosed": false
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "IsUClosed": true,
+        "IsVClosed": false
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt closedQueries"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Knot Queries::BSpline GetPoles bulk",
+    "bridge_function": "OCCTSurfaceBSplineGetPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "count": 30,
+        "first": [
+          0,
+          0,
+          -5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "count": 30,
+        "first": [
+          0,
+          0,
+          -5
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt getPoles"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalD0 matches global D0",
+    "bridge_function": "OCCTSurfaceBSplineLocalD0",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "LocalD0(pi,0)": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "LocalD0(pi,0)": [
+          -5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalD1 returns point and derivatives",
+    "bridge_function": "OCCTSurfaceBSplineLocalD1",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D1U": [
+          0,
+          -5.513288954217919,
+          0
+        ],
+        "D1V": [
+          0,
+          0,
+          4.50158158078553
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D1U": [
+          0,
+          -5.513288954217919,
+          0
+        ],
+        "D1V": [
+          0,
+          0,
+          4.50158158078553
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalD2 returns second derivatives",
+    "bridge_function": "OCCTSurfaceBSplineLocalD2",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D2U": [
+          6.079271018540265,
+          0,
+          0
+        ],
+        "D2V": [
+          4.05284734569351,
+          0,
+          -1.6787443368140527
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D2U": [
+          6.079271018540265,
+          0,
+          0
+        ],
+        "D2V": [
+          4.05284734569351,
+          0,
+          -1.6787443368140527
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalD3 returns third derivatives",
+    "bridge_function": "OCCTSurfaceBSplineLocalD3",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "D3U": [
+          0,
+          10.055033326864551,
+          0
+        ],
+        "D3V": [
+          -4.5342027512700955,
+          0,
+          -4.534202751270093
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "D3U": [
+          0,
+          10.055033326864551,
+          0
+        ],
+        "D3V": [
+          -4.5342027512700955,
+          0,
+          -4.534202751270093
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalDN derivative",
+    "bridge_function": "OCCTSurfaceBSplineLocalDN",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "DN(1,0)": [
+          0,
+          -5.513288954217919,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "DN(1,0)": [
+          0,
+          -5.513288954217919,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BSplineSurface Local Evaluation::LocalValue matches global",
+    "bridge_function": "OCCTSurfaceBSplineLocalValue",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "LocalValue(pi,0)": [
+          -5,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "LocalValue(pi,0)": [
+          -5,
+          0,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-bspline-knots-local-eval/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
