@@ -124,3 +124,22 @@ From `check-null-handle-guards.py` ALLOWED table - 8 Curve2D entry points need `
 | ... | ... |  |  |  |  |
 
 **Total**: 545 tests
+
+### #1979 executed: `Issue478Curve2DTransformParityTests.swift`
+
+Probe: `Scripts/repro/766-geom2d-transform-split-continuity/`. Every row was run red with the injection applied and green after it was reverted.
+
+| Test | Bridge function | Injection | Red | Green | Parity | Notes |
+|---|---|---|---|---|---|---|
+| Curve2D Transform Family Parity (#478)::translate vs translated(by:) | `OCCTCurve2DTransform vs OCCTCurve2DTranslate` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::rotate vs rotated(around:angle:) | `OCCTCurve2DTransform vs OCCTCurve2DRotate` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::scale vs scaled(from:factor:) about a non-origin centre | `OCCTCurve2DTransform vs OCCTCurve2DScale` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::scale parity holds for a negative factor | `OCCTCurve2DTransform vs OCCTCurve2DScale` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::mirrorPoint vs mirrored(acrossPoint:) | `OCCTCurve2DTransform vs OCCTCurve2DMirrorPoint` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Family Parity (#478)::mirrorAxis vs mirrored(acrossLine:direction:) | `OCCTCurve2DTransform vs OCCTCurve2DMirrorAxis` | in-place dispatcher only: first transform parameter + 1e-3 | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::translation moves both endpoints by the delta | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::rotation turns both endpoints about the centre | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::scale moves both endpoints away from the centre, not the origin | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::a negative scale factor reflects through the centre | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::point mirror reflects both endpoints through the point | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
+| Curve2D Transform Absolute Geometry (#478)::axis mirror reflects both endpoints across the line | `buildTrsf2D (both families)` | shared builder: first transform parameter + 1e-3 (parity tests stay green) | ✅ | ✅ | MATCH |  |
