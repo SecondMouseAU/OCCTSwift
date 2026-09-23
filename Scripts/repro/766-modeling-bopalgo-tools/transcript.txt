@@ -1,0 +1,2 @@
+edgesToWires: status=0 wires=1
+wiresToFaces: ok=1 faces=1 area=100

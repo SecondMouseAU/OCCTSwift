@@ -6,5 +6,345 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "BOPAlgo_BuilderFace Tests::buildFaceFromEdges",
+    "bridge_function": "OCCTBOPAlgoBuilderFace",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "count": ">=1"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 4,
+        "hasErrors": false,
+        "areas": 1,
+        "totalArea": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo_BuilderSolid Tests::buildSolidFromFaces",
+    "bridge_function": "OCCTBOPAlgoBuilderSolid",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "count": ">=1",
+        "firstValid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "hasErrors": false,
+        "areas": 1,
+        "firstValid": true,
+        "firstVolume": 1000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo CellsBuilder::createCellsBuilder",
+    "bridge_function": "OCCTCellsBuilderCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "builder": "non-nil"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo CellsBuilder::addRemoveAll",
+    "bridge_function": "OCCTCellsBuilderRemoveAllFromResult",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "afterAddAll": {
+          "valid": true,
+          "solids": 2,
+          "volume": 16000
+        },
+        "afterRemoveAll": {
+          "solids": 0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "afterAddAll": {
+          "valid": true,
+          "solids": 2,
+          "volume": 16000
+        },
+        "afterRemoveAll": {
+          "solids": 0,
+          "volume": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo CellsBuilder::removeInternalBoundaries",
+    "bridge_function": "OCCTCellsBuilderRemoveInternalBoundaries",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "before": {
+          "solids": 2
+        },
+        "after": {
+          "valid": true,
+          "solids": 1,
+          "volume": 16000
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "before": {
+          "solids": 2
+        },
+        "after": {
+          "valid": true,
+          "solids": 1,
+          "volume": 16000
+        },
+        "addAllToResultUpdateTrue": {
+          "solidsBeforeRemove": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo Section::sectionBoxSphere",
+    "bridge_function": "OCCTBOPAlgoSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "type": "COMPOUND",
+        "edges": 7,
+        "vertices": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo Section::sectionTwoBoxes",
+    "bridge_function": "OCCTBOPAlgoSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "shapeType": "compound",
+        "edges": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "type": "COMPOUND",
+        "edges": 1,
+        "vertices": 2
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo Section::staticSection",
+    "bridge_function": "OCCTBOPAlgoSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 7
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "type": "COMPOUND",
+        "edges": 7,
+        "vertices": 7
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo_ShellSplitter Tests::splitSingleShell",
+    "bridge_function": "OCCTBOPAlgoShellSplitter",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "shells": 1,
+        "firstFaces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "shells": 1,
+        "firstFaces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo Splitter::splitBoxes",
+    "bridge_function": "OCCTBOPAlgoSplit",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "isValid": true,
+        "solidCount": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "valid": true,
+        "solids": 1,
+        "volume": 8000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo Splitter::splitProducesMultipleSolids",
+    "bridge_function": "OCCTBOPAlgoSplit",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "solidCount": 2
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasErrors": false,
+        "valid": true,
+        "solids": 2,
+        "volume": 8000
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo_Tools Tests::edgesToWires",
+    "bridge_function": "OCCTBOPAlgoEdgesToWires",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "wires": ">=1"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "status": 0,
+        "wires": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BOPAlgo_Tools Tests::wiresToFaces",
+    "bridge_function": "OCCTBOPAlgoWiresToFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "result": "non-nil",
+        "faces": ">=1"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "ok": true,
+        "faces": 1,
+        "area": 100
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

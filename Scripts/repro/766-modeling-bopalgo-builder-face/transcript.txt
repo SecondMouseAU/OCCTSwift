@@ -1,0 +1,1 @@
+buildFaceFromEdges: edges=4 hasErrors=0 areas=1 totalArea=100

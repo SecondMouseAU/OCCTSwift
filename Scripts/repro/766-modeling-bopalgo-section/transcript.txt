@@ -1,0 +1,3 @@
+sectionBoxSphere: hasErrors=0 type=0 edges=7 vertices=7
+sectionTwoBoxes: hasErrors=0 type=0 edges=1 vertices=2
+staticSection: hasErrors=0 type=0 edges=7 vertices=7

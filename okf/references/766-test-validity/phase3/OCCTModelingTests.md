@@ -221,3 +221,71 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `BOPAlgoBuilderFaceTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-builder-face/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| buildFaceFromEdges | `OCCTBOPAlgoBuilderFace` returns false | `:17 Expectation failed: result != nil` | pass | `OCCTBOPAlgoBuilderFace` | PASS |
+
+### `BOPAlgoBuilderSolidTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-builder-solid/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| buildSolidFromFaces | `OCCTBOPAlgoBuilderSolid` returns false | `:14 Expectation failed: result != nil` | pass | `OCCTBOPAlgoBuilderSolid` | PASS |
+
+### `BOPAlgoCellsBuilderTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-cells-builder/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| createCellsBuilder | `OCCTCellsBuilderCreate` returns nullptr | `:17 Expectation failed: builder != nil` | pass | `OCCTCellsBuilderCreate` | PASS |
+| addRemoveAll | `OCCTCellsBuilderRemoveAllFromResult` does nothing | `:50 Expectation failed: result2?.solids.count == 0` | pass | `OCCTCellsBuilderRemoveAllFromResult` | PASS: rewritten: all assertions sat inside if-let of the builder, and non-nil held after a no-op RemoveAll |
+| removeInternalBoundaries | `OCCTCellsBuilderRemoveInternalBoundaries` does nothing | `:81 Expectation failed: result.solids.count == 1` | pass | `OCCTCellsBuilderRemoveInternalBoundaries` | PASS: rewritten: AddAllToResult(update: true) already merges, so the old fixture could not observe RemoveInternalBoundaries |
+
+### `BOPAlgoSectionTests.swift` (3 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-section/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| sectionBoxSphere | `OCCTBOPAlgoSection` returns nullptr | `:21 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten: asserted only inside if-let of the result |
+| sectionTwoBoxes | `OCCTBOPAlgoSection` returns nullptr | `:34 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten; the boxes only touch along the line x = y = 5 |
+| staticSection | `OCCTBOPAlgoSection` returns nullptr | `:47 Issue recorded` | pass | `OCCTBOPAlgoSection` | PASS: rewritten: asserted only inside if-let of the result |
+
+### `BOPAlgoShellSplitterTests.swift` (1 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-shell-splitter/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| splitSingleShell | `OCCTBOPAlgoShellSplitter` returns false | `:15 Expectation failed: result != nil` | pass | `OCCTBOPAlgoShellSplitter` | PASS |
+
+### `BOPAlgoSplitterTests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-splitter/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| splitBoxes | `OCCTBOPAlgoSplit` returns nullptr | `:21 Issue recorded` | pass | `OCCTBOPAlgoSplit` | PASS: rewritten; the tool shares only the face x = 10 with the object, so nothing is split |
+| splitProducesMultipleSolids | `OCCTBOPAlgoSplit` never adds its tools to the BOPAlgo_Splitter | `:40 Issue recorded` | pass | `OCCTBOPAlgoSplit` | PASS: rewritten: asserted only inside if-let of the result |
+
+### `BOPAlgoToolsTests.swift` (2 tests)
+
+Probe: `Scripts/repro/766-modeling-bopalgo-tools/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| edgesToWires | `OCCTBOPAlgoEdgesToWires` returns nullptr | `:18 Expectation failed: result != nil` | pass | `OCCTBOPAlgoEdgesToWires` | PASS |
+| wiresToFaces | `OCCTBOPAlgoWiresToFaces` returns nullptr | `:40 Expectation failed: result != nil` | pass | `OCCTBOPAlgoWiresToFaces` | PASS |

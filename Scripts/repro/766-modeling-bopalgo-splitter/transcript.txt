@@ -1,0 +1,2 @@
+splitBoxes: hasErrors=0 valid=1 solids=1 volume=8000
+splitProducesMultipleSolids: hasErrors=0 valid=1 solids=2 volume=8000
