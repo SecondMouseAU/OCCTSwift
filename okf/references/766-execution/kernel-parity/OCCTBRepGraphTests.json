@@ -142,5 +142,444 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Wires CoEdges::edgeWires",
+    "bridge_function": "OCCTBRepGraphEdgeWireIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Wires CoEdges::edgeCoEdges",
+    "bridge_function": "OCCTBRepGraphEdgeCoEdgeIndices",
+    "bridge_output": {
+      "type": "indices",
+      "data": [
+        [
+          0,
+          9
+        ],
+        [
+          1,
+          16
+        ],
+        [
+          2,
+          13
+        ],
+        [
+          3,
+          20
+        ],
+        [
+          4,
+          11
+        ],
+        [
+          5,
+          18
+        ],
+        [
+          6,
+          15
+        ],
+        [
+          7,
+          22
+        ],
+        [
+          8,
+          17
+        ],
+        [
+          10,
+          21
+        ],
+        [
+          12,
+          19
+        ],
+        [
+          14,
+          23
+        ]
+      ]
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": [
+        [
+          0,
+          9
+        ],
+        [
+          1,
+          16
+        ],
+        [
+          2,
+          13
+        ],
+        [
+          3,
+          20
+        ],
+        [
+          4,
+          11
+        ],
+        [
+          5,
+          18
+        ],
+        [
+          6,
+          15
+        ],
+        [
+          7,
+          22
+        ],
+        [
+          8,
+          17
+        ],
+        [
+          10,
+          21
+        ],
+        [
+          12,
+          19
+        ],
+        [
+          14,
+          23
+        ]
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Edge Wires CoEdges::edgeFindCoEdge",
+    "bridge_function": "OCCTBRepGraphEdgeFindCoEdge",
+    "bridge_output": {
+      "type": "indices",
+      "data": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        12,
+        14
+      ]
+    },
+    "kernel_output": {
+      "type": "indices",
+      "data": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        12,
+        14
+      ]
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Explorers::childExplorer",
+    "bridge_function": "OCCTBRepGraphChildCount",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "roots": 1,
+        "faces": 6
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "roots": 1,
+        "faces": 6
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Explorers::parentExplorer",
+    "bridge_function": "OCCTBRepGraphParentCount",
+    "bridge_output": {
+      "type": "int",
+      "data": 2
+    },
+    "kernel_output": {
+      "type": "int",
+      "data": 2
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Def Details::faceWireCount",
+    "bridge_function": "OCCTBRepGraphFaceNbWires",
+    "bridge_output": {
+      "type": "counts",
+      "data": "all 6 faces: 1"
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": "all 6 faces: 1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Def Details::faceVertexRefCount",
+    "bridge_function": "OCCTBRepGraphFaceNbVertexRefs",
+    "bridge_output": {
+      "type": "counts",
+      "data": {
+        "before": "all 0",
+        "afterAttach": {
+          "face0": 1,
+          "face1": 0
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "counts",
+      "data": {
+        "before": "all 0",
+        "afterAttach": {
+          "face0": 1,
+          "face1": 0
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Geometry::faceTolerance",
+    "bridge_function": "OCCTBRepGraphFaceTolerance",
+    "bridge_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "kernel_output": {
+      "type": "double",
+      "data": 1e-07
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Geometry::faceHasSurface",
+    "bridge_function": "OCCTBRepGraphFaceHasSurface",
+    "bridge_output": {
+      "type": "bools",
+      "data": "all 6 true"
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": "all 6 true"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Geometry::faceNaturalRestriction",
+    "bridge_function": "OCCTBRepGraphFaceIsNaturalRestriction",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "box": false,
+        "sphere": false
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "boxNbWires": 1,
+        "sphereNbWires": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "BRepGraph Face Geometry::faceHasTriangulation",
+    "bridge_function": "OCCTBRepGraphFaceHasTriangulation",
+    "bridge_output": {
+      "type": "bools",
+      "data": {
+        "unmeshed": false,
+        "meshed": true
+      }
+    },
+    "kernel_output": {
+      "type": "bools",
+      "data": {
+        "unmeshed": false,
+        "meshed": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
