@@ -46,5 +46,395 @@
     "kernel_result": {"status": "success", "result": "unified shape", "note": "Kernel patch 0013 guards null pcurves in ShapeUpgrade_UnifySameDomain::IntUnifyFaces"},
     "bridge_result": {"status": "success", "result": "unified shape", "note": "Bridge calls kernel which now handles null pcurves safely"},
     "comparison": {"equal": true, "differences": [], "note": "Kernel patch 0013 (upstream OCCT#1392) fixes the crash; bridge parity maintained"}
+  },
+  {
+    "test_name": "Stress: Curve3D API::circle",
+    "bridge_function": "OCCTCurve3DCreateCircle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom_Circle r=5"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom_Circle r=5",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DCreateCircle",
+      "env": "OCCT766=|EARLY:OCCTCurve3DCreateCircle|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:396 Expectation failed: c != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::interpolate",
+    "bridge_function": "OCCTCurve3DInterpolate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomAPI_Interpolate through 3 points, domain [0, 14.142135623730951]"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomAPI_Interpolate through 3 points, domain [0, 14.142135623730951]",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DInterpolate",
+      "env": "OCCT766=|EARLY:OCCTCurve3DInterpolate|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:401 Expectation failed: c != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::pointEval",
+    "bridge_function": "OCCTCurve3DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Value(π) = (-5, 6.1e-16, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Value(π) = (-5, 6.1e-16, 0)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OFFSET:OCCTCurve3DGetPoint",
+      "env": "OCCT766=|OFFSET:OCCTCurve3DGetPoint|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:410 Expectation failed: abs(pt.x - -5) < 1e-12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::domainAndClosed",
+    "bridge_function": "OCCTCurve3DGetDomain",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): domain [0, 6.2831853071795862]"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "domain [0, 6.2831853071795862]",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DGetDomain",
+      "env": "OCCT766=|EARLY:OCCTCurve3DGetDomain|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:417 Expectation failed: domain.upperBound > domain.lowerBound",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::localCurvature",
+    "bridge_function": "OCCTCurve3DGetCurvature",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomLProp_CLProps curvature 0.2"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomLProp_CLProps curvature 0.2",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve3DGetCurvature × 1.5",
+      "env": "OCCT766=|SCALE:OCCTCurve3DGetCurvature|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:427 Expectation failed: abs((k ?? 0) - 0.2) < 1e-12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::localTangent",
+    "bridge_function": "OCCTCurve3DLocalTangent",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): tangent at 0 = (0, 1, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "tangent at 0 = (0, 1, 0)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DLocalTangent",
+      "env": "OCCT766=|EARLY:OCCTCurve3DLocalTangent|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:432 Expectation failed: c.localTangent(at: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::localNormal",
+    "bridge_function": "OCCTCurve3DLocalNormal",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): normal at 0 = (-1, 0, 0)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "normal at 0 = (-1, 0, 0)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DLocalNormal",
+      "env": "OCCT766=|EARLY:OCCTCurve3DLocalNormal|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:439 Expectation failed: c.localNormal(at: 0)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::continuity",
+    "bridge_function": "OCCTCurve3DGetContinuity, OCCTCurve3DIsCN",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomAbs_CN"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomAbs_CN",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DIsCN",
+      "env": "OCCT766=|EARLY:OCCTCurve3DIsCN|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:449 Expectation failed: c.isCN(2)",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::bsplineProperties",
+    "bridge_function": "OCCTCurve3DBSplinePoleCount, OCCTCurve3DBSplineKnotCount, OCCTCurve3DBSplineDegree",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): 7 poles, 5 knots, degree 3"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "7 poles, 5 knots, degree 3",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DBSplinePoleCount",
+      "env": "OCCT766=|EARLY:OCCTCurve3DBSplinePoleCount|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:455 Expectation failed: props.poleCount > 0",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve3D API::arcLength",
+    "bridge_function": "OCCTCurve3DGetLengthBetween",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GCPnts_AbscissaPoint::Length(0, π) = 15.707963267948966"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GCPnts_AbscissaPoint::Length(0, π) = 15.707963267948966",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve3DGetLengthBetween",
+      "env": "OCCT766=|EARLY:OCCTCurve3DGetLengthBetween|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:467 Expectation failed: abs(len - 5.0 * .pi) < 0.01",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve2D API::circle",
+    "bridge_function": "OCCTCurve2DCreateCircle",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom2d_Circle r=5"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom2d_Circle r=5",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve2DCreateCircle",
+      "env": "OCCT766=|EARLY:OCCTCurve2DCreateCircle|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:479 Expectation failed: c != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve2D API::line",
+    "bridge_function": "OCCTCurve2DCreateLine",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom2d_Line through origin along (1,1)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom2d_Line through origin along (1,1)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve2DCreateLine",
+      "env": "OCCT766=|EARLY:OCCTCurve2DCreateLine|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:484 Expectation failed: c != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve2D API::interpolate",
+    "bridge_function": "OCCTCurve2DInterpolate",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Geom2dAPI_Interpolate through 3 points"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Geom2dAPI_Interpolate through 3 points",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve2DInterpolate",
+      "env": "OCCT766=|EARLY:OCCTCurve2DInterpolate|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:489 Expectation failed: c != nil",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": false
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve2D API::pointEval",
+    "bridge_function": "OCCTCurve2DGetPoint",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): Value(π) = (-5, 6.1e-16)"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "Value(π) = (-5, 6.1e-16)",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "OCCTCurve2DGetPoint x + 1",
+      "env": "OCCT766=|OFFSET:OCCTCurve2DGetPoint|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:497 Expectation failed: abs(pt.x - -5) < 1e-12",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
+  },
+  {
+    "test_name": "Stress: Curve2D API::continuity",
+    "bridge_function": "OCCTCurve2DGetContinuity",
+    "bridge_output": {
+      "type": "observed",
+      "data": "Swift test asserts the kernel value below and passes (green): GeomAbs_CN"
+    },
+    "kernel_output": {
+      "type": "probe",
+      "data": "GeomAbs_CN",
+      "source": "Scripts/repro/766-stress-exhaustive-api/transcript.txt"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "red_green": {
+      "injection": "EARLY:OCCTCurve2DGetContinuity",
+      "env": "OCCT766=|EARLY:OCCTCurve2DGetContinuity|",
+      "red": "RED exit 1: StressExhaustiveAPITests.swift:506 Expectation failed: c.continuityClass == .cN",
+      "green": "passes with the injection off and Sources/ reverted",
+      "strengthened": true
+    },
+    "epic": "#766 execution, measured (Stress)"
   }
 ]

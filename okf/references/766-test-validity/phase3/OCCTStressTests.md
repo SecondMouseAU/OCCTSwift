@@ -288,3 +288,25 @@ swift build --target OCCTStressTests
 | Stress: Builder Lifecycles (8 builders) | 60 |  |  |  |  |
 
 **Total**: 366 tests
+
+## Epic #766 execution, measured: StressExhaustiveAPITests: Curve3D and Curve2D API
+
+Appended by the #1974 execution run (2026-09-24). Every row was run, not planned: Red is the failing expectation (or the crash) captured with the named defect injected behind an `OCCT766` environment switch in `Sources/`, Green is the same test passing with `Sources/` reverted and rebuilt. Parity is against `Scripts/repro/766-stress-exhaustive-api/probe.mm` and its `transcript.txt`. The six records above committed in 96e7cf39 carry no run output and no probe, and are left for the orchestrator to remove.
+
+| Suite | Test | Bridge function | Injection | Red | Green | Parity | Strengthened |
+|---|---|---|---|---|---|---|---|
+| Stress: Curve3D API | `circle` | `OCCTCurve3DCreateCircle` | EARLY:OCCTCurve3DCreateCircle | RED exit 1: StressExhaustiveAPITests.swift:396 Expectation failed: c != nil | ✔ | MATCH | no |
+| Stress: Curve3D API | `interpolate` | `OCCTCurve3DInterpolate` | EARLY:OCCTCurve3DInterpolate | RED exit 1: StressExhaustiveAPITests.swift:401 Expectation failed: c != nil | ✔ | MATCH | no |
+| Stress: Curve3D API | `pointEval` | `OCCTCurve3DGetPoint` | OFFSET:OCCTCurve3DGetPoint | RED exit 1: StressExhaustiveAPITests.swift:410 Expectation failed: abs(pt.x - -5) < 1e-12 | ✔ | MATCH | yes |
+| Stress: Curve3D API | `domainAndClosed` | `OCCTCurve3DGetDomain` | EARLY:OCCTCurve3DGetDomain | RED exit 1: StressExhaustiveAPITests.swift:417 Expectation failed: domain.upperBound > domain.lowerBound | ✔ | MATCH | yes |
+| Stress: Curve3D API | `localCurvature` | `OCCTCurve3DGetCurvature` | OCCTCurve3DGetCurvature × 1.5 | RED exit 1: StressExhaustiveAPITests.swift:427 Expectation failed: abs((k ?? 0) - 0.2) < 1e-12 | ✔ | MATCH | yes |
+| Stress: Curve3D API | `localTangent` | `OCCTCurve3DLocalTangent` | EARLY:OCCTCurve3DLocalTangent | RED exit 1: StressExhaustiveAPITests.swift:432 Expectation failed: c.localTangent(at: 0) | ✔ | MATCH | yes |
+| Stress: Curve3D API | `localNormal` | `OCCTCurve3DLocalNormal` | EARLY:OCCTCurve3DLocalNormal | RED exit 1: StressExhaustiveAPITests.swift:439 Expectation failed: c.localNormal(at: 0) | ✔ | MATCH | yes |
+| Stress: Curve3D API | `continuity` | `OCCTCurve3DGetContinuity, OCCTCurve3DIsCN` | EARLY:OCCTCurve3DIsCN | RED exit 1: StressExhaustiveAPITests.swift:449 Expectation failed: c.isCN(2) | ✔ | MATCH | no |
+| Stress: Curve3D API | `bsplineProperties` | `OCCTCurve3DBSplinePoleCount, OCCTCurve3DBSplineKnotCount, OCCTCurve3DBSplineDegree` | EARLY:OCCTCurve3DBSplinePoleCount | RED exit 1: StressExhaustiveAPITests.swift:455 Expectation failed: props.poleCount > 0 | ✔ | MATCH | yes |
+| Stress: Curve3D API | `arcLength` | `OCCTCurve3DGetLengthBetween` | EARLY:OCCTCurve3DGetLengthBetween | RED exit 1: StressExhaustiveAPITests.swift:467 Expectation failed: abs(len - 5.0 * .pi) < 0.01 | ✔ | MATCH | no |
+| Stress: Curve2D API | `circle` | `OCCTCurve2DCreateCircle` | EARLY:OCCTCurve2DCreateCircle | RED exit 1: StressExhaustiveAPITests.swift:479 Expectation failed: c != nil | ✔ | MATCH | no |
+| Stress: Curve2D API | `line` | `OCCTCurve2DCreateLine` | EARLY:OCCTCurve2DCreateLine | RED exit 1: StressExhaustiveAPITests.swift:484 Expectation failed: c != nil | ✔ | MATCH | no |
+| Stress: Curve2D API | `interpolate` | `OCCTCurve2DInterpolate` | EARLY:OCCTCurve2DInterpolate | RED exit 1: StressExhaustiveAPITests.swift:489 Expectation failed: c != nil | ✔ | MATCH | no |
+| Stress: Curve2D API | `pointEval` | `OCCTCurve2DGetPoint` | OCCTCurve2DGetPoint x + 1 | RED exit 1: StressExhaustiveAPITests.swift:497 Expectation failed: abs(pt.x - -5) < 1e-12 | ✔ | MATCH | yes |
+| Stress: Curve2D API | `continuity` | `OCCTCurve2DGetContinuity` | EARLY:OCCTCurve2DGetContinuity | RED exit 1: StressExhaustiveAPITests.swift:506 Expectation failed: c.continuityClass == .cN | ✔ | MATCH | yes |

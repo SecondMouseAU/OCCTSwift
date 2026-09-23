@@ -1,6 +1,11 @@
 // StressExhaustiveAPITests.swift
 // Category 1: Smoke-call every major public method with standard fixtures.
 // Goal: verify no crash and reasonable output for each API entry point.
+//
+// Epic #766: many of these smoke calls held their result behind `if let` (so a nil result passed)
+// or read it into `_` (so only a crash could fail them). Those now require the result and, where
+// the check was only "positive" or "non-empty", pin the value OCCT gives for the same input,
+// measured by Scripts/repro/766-stress-exhaustive-api/probe.mm (transcript.txt beside it).
 
 import Foundation
 import OCCTSwift
@@ -401,12 +406,17 @@ struct StressCurve3DAPITests {
         let domain = c.domain
         let pt = c.point(at: (domain.lowerBound + domain.upperBound) / 2.0)
         #expect(pt.x.isFinite)
+        // Half way round the radius-5 circle.
+        #expect(abs(pt.x - -5) < 1e-12)
+        #expect(abs(pt.y) < 1e-12)
     }
 
     @Test func domainAndClosed() {
         let c = standardCurve3D()
         let domain = c.domain
         #expect(domain.upperBound > domain.lowerBound)
+        #expect(domain.lowerBound == 0)
+        #expect(abs(domain.upperBound - 2 * .pi) < 1e-15)
     }
 
     @Test func localCurvature() {
@@ -414,18 +424,21 @@ struct StressCurve3DAPITests {
         // #595: localCurvature is deprecated onto curvature(at:), which reports definedness.
         let k = c.curvature(at: 0)
         #expect(k?.isFinite == true)
+        #expect(abs((k ?? 0) - 0.2) < 1e-12)
     }
 
-    @Test func localTangent() {
+    @Test func localTangent() throws {
         let c = standardCurve3D()
-        let t = c.localTangent(at: 0)
-        #expect(t != nil)
+        let t = try #require(c.localTangent(at: 0))
+        #expect(abs(t.x) < 1e-12)
+        #expect(abs(t.y - 1) < 1e-12)
     }
 
-    @Test func localNormal() {
+    @Test func localNormal() throws {
         let c = standardCurve3D()
-        let n = c.localNormal(at: 0)
-        #expect(n != nil)
+        let n = try #require(c.localNormal(at: 0))
+        #expect(abs(n.x - -1) < 1e-12)
+        #expect(abs(n.y) < 1e-12)
     }
 
     @Test func continuity() {
@@ -442,6 +455,10 @@ struct StressCurve3DAPITests {
         #expect(props.poleCount > 0)
         #expect(props.knotCount > 0)
         #expect(props.degree > 0)
+        // GeomAPI_Interpolate through five points: a cubic with 7 poles and 5 knots.
+        #expect(props.poleCount == 7)
+        #expect(props.knotCount == 5)
+        #expect(props.degree == 3)
     }
 
     @Test func arcLength() {
@@ -477,11 +494,16 @@ struct StressCurve2DAPITests {
         let domain = c.domain
         let pt = c.point(at: (domain.lowerBound + domain.upperBound) / 2.0)
         #expect(pt.x.isFinite)
+        #expect(abs(pt.x - -5) < 1e-12)
+        #expect(abs(pt.y) < 1e-12)
     }
 
+    // Epic #766: `allCases.contains(...)` was true for every value it could return. A circle is
+    // infinitely continuous (GeomAbs_CN).
     @Test func continuity() {
         let c = standardCurve2D()
         #expect(ContinuityClass.allCases.contains(c.continuityClass))
+        #expect(c.continuityClass == .cN)
     }
 }
 
