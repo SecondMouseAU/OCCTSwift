@@ -6,5 +6,194 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::duplicatedEdgeReportsOneOverwrittenEntry",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "overwritten": [
+          0
+        ],
+        "declined": [],
+        "volume": "equals blendedEdges([(0,5)])"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "duplicatedVolume": 946.349540849,
+        "lastOnlyVolume": 946.349540849,
+        "firstOnlyVolume": 991.415926536
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::tripleDuplicateReportsTwoOverwrittenEntries",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "overwritten": [
+          0,
+          0
+        ],
+        "volume": "equals blendedEdges([(0,5)])"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tripleVolume": 946.349540849
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::distinctIndicesReportNoOverwrites",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "overwritten": [],
+        "declined": []
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDone": 1,
+        "declined": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::declinedEdgesAreNamedOnAnOpenShell",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "edges": 12,
+        "declined": [
+          6,
+          9,
+          10,
+          11
+        ],
+        "area": "equals blendedEdges"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 12,
+        "declined": [
+          6,
+          9,
+          10,
+          11
+        ],
+        "area": 465.097335529
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::duplicateAndDeclineAreReportedIndependently",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "overwritten": [
+          "accepted"
+        ],
+        "declined": [
+          6,
+          9,
+          10,
+          11
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "accepted": 0,
+        "declined": [
+          6,
+          9,
+          10,
+          11
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::rejectsTheSameInputsBlendedEdgesRejects",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "empty": null,
+        "outOfRange": null,
+        "zeroRadius": null
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": "N/A"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "blendedEdges reports overwritten duplicates (#633)::emptyReportsOnAClosedSolid",
+    "bridge_function": "OCCTShapeBlendEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "declined": [],
+        "overwritten": []
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "IsDone": 1,
+        "declined": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]

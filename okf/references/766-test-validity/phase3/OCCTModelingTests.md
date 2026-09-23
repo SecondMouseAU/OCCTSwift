@@ -221,3 +221,23 @@ Per `upstream-occt-patch-process.md`:
 | ... | ... |  |  |  |  |
 
 **Total**: 654 tests
+
+---
+
+## Measured Red→Green and kernel parity (#766 re-execution, appended per file)
+
+Every row below was run: the injection applied through an environment switch in one build, the named test run red, then the whole suite run green with the switch off. Parity comes from the probe named in each section, whose transcript is committed beside it.
+
+### `Issue633BlendedEdgesDuplicateReportTests.swift` (7 tests)
+
+Probe: `Scripts/repro/766-modeling-issue633-blended-edges-duplicate-report/`.
+
+| Test | Injection | Red (failing expectation) | Green | Bridge function | Parity |
+|---|---|---|---|---|---|
+| duplicatedEdgeReportsOneOverwrittenEntry | `Shape.overwrittenDuplicateIndices(in:)` reports nothing | `:41 Expectation failed: report.overwrittenDuplicateIndices == [0]` | pass | `OCCTShapeBlendEdges` | PASS: the overwritten list itself is Swift bookkeeping; the kernel half is that the last Add(R, E) wins |
+| tripleDuplicateReportsTwoOverwrittenEntries | `Shape.overwrittenDuplicateIndices(in:)` de-duplicates to distinct edge indices | `:72 Expectation failed: report.overwrittenDuplicateIndices == [0, 0]` | pass | `OCCTShapeBlendEdges` | PASS |
+| distinctIndicesReportNoOverwrites | `occtFilletWriteDeclined` reports every requested index as declined | `:94 Expectation failed: report.declinedEdgeIndices.isEmpty` | pass | `OCCTShapeBlendEdges` | PASS |
+| declinedEdgesAreNamedOnAnOpenShell | `occtFilletWriteDeclined` reports no declined index | `:113 Expectation failed: Set(report.declinedEdgeIndices) == Set(FilletTestFixtures.declinedIndices)` | pass | `OCCTShapeBlendEdges` | PASS |
+| duplicateAndDeclineAreReportedIndependently | `Shape.overwrittenDuplicateIndices(in:)` reports nothing | `:148 Expectation failed: report.overwrittenDuplicateIndices == [accepted]` | pass | `OCCTShapeBlendEdges` | PASS |
+| rejectsTheSameInputsBlendedEdgesRejects | `occtUseSubShapesByIndex` (and `OCCTFace2DChamfer`'s own pair lookup) skip an index naming no sub-shape instead of refusing the call (the pre-#568 behaviour) | `:161 Expectation failed: box.blendedEdgesWithReport([(0, 1.0), (99_999, 2.0)]) == nil` | pass | `OCCTShapeBlendEdges` | N/A: three precondition refusals made before any OCCT call (Swift empty/radius guard, index resolution); the kernel is never reached |
+| emptyReportsOnAClosedSolid | `occtFilletWriteDeclined` reports every requested index as declined | `:178 Expectation failed: report.declinedEdgeIndices.isEmpty` | pass | `OCCTShapeBlendEdges` | PASS |
