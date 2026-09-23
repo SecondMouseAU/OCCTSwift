@@ -6,5 +6,551 @@
     "kernel_output": {"type": "object", "data": {}},
     "comparison": {"equal": null, "differences": []},
     "status": "PENDING"
+  },
+  {
+    "test_name": "GeomFill_AppSurf::approximate surface from sections",
+    "bridge_function": "OCCTGeomFillAppSurf",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "uDegree": 14,
+        "vDegree": 1,
+        "nbUPoles": 15,
+        "nbVPoles": 2,
+        "nbUKnots": 2,
+        "nbVKnots": 2
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "uDegree": 14,
+        "vDegree": 1,
+        "nbUPoles": 15,
+        "nbVPoles": 2,
+        "nbUKnots": 2,
+        "nbVKnots": 2
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt appSurf"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill_AppSurf::rejects a single curve (#644)",
+    "bridge_function": "OCCTGeomFillAppSurf",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt n/a: the kernel SIGSEGVs on one section (#644); refusal is the wrapper guard"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill_AppSurf::rejects an empty curve list (#644)",
+    "bridge_function": "OCCTGeomFillAppSurf",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "result": null
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt n/a: refusal is the wrapper guard (#644)"
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "GeomFill_AppSurf::still accepts two curves after the arity guard (#644 regression)",
+    "bridge_function": "OCCTGeomFillAppSurf",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isDone": true
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt appSurf IsDone=1"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill BoundWithSurf::boundaryWithSurface",
+    "bridge_function": "OCCTGeomFillBoundWithSurfEvaluate",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "value(0.5)": [
+          0.5,
+          0.5,
+          0
+        ],
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "value(0.5)": [
+          0.5,
+          0.5,
+          0
+        ],
+        "normal": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt boundaryWithSurface"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill CoonsAlgPatch::Coons algorithmic patch from edges",
+    "bridge_function": "OCCTGeomFillCoonsAlgPatchEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "[0]": [
+          -5,
+          -5,
+          -5
+        ],
+        "[12]": [
+          -5,
+          0,
+          0
+        ],
+        "[24]": [
+          -5,
+          5,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "[0]": [
+          -5,
+          -5,
+          -5
+        ],
+        "[12]": [
+          -5,
+          0,
+          0
+        ],
+        "[24]": [
+          -5,
+          5,
+          5
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt coonsAlgPatch box edges 0..3"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill CoonsAlgPatch::Center of a non-unit-scale square patch is the real center, not a raw-parameter artifact",
+    "bridge_function": "OCCTGeomFillCoonsAlgPatchEval",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "[4]": [
+          5,
+          5,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "[4]": [
+          5,
+          5,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt centerLandsAtRealCenter"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Coons::Coons filling from boundaries",
+    "bridge_function": "OCCTGeomFillCoonsPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 5,
+        "nbV": 5,
+        "poles[0]": [
+          0,
+          10,
+          0
+        ],
+        "poles[8]": [
+          -2.5,
+          2.5,
+          0
+        ],
+        "poles[24]": [
+          10,
+          10,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 5,
+        "nbV": 5,
+        "poles[0]": [
+          0,
+          10,
+          0
+        ],
+        "poles[8]": [
+          -2.5,
+          2.5,
+          0
+        ],
+        "poles[24]": [
+          10,
+          10,
+          0
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt coonsFilling"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill Curved::Curved filling from boundaries",
+    "bridge_function": "OCCTGeomFillCurvedPoles",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 5,
+        "nbV": 5,
+        "poles[12]": [
+          5,
+          5,
+          1.125
+        ],
+        "poles[22]": [
+          5,
+          10,
+          2
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbU": 5,
+        "nbV": 5,
+        "poles[12]": [
+          5,
+          5,
+          1.125
+        ],
+        "poles[22]": [
+          5,
+          10,
+          2
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt curvedFilling"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill CorrectedFrenet::Corrected Frenet on edge",
+    "bridge_function": "OCCTGeomFillCorrectedFrenet",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt correctedFrenet edge 0 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill DegeneratedBound::degeneratedBoundaryValue",
+    "bridge_function": "OCCTGeomFillDegeneratedBoundValue",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "value(0.5)": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "value(0.5)": [
+          1,
+          2,
+          3
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt degeneratedBound"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill DegeneratedBound::isDegenerated",
+    "bridge_function": "OCCTGeomFillDegeneratedBoundIsDegenerated",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "isDegenerated": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "isDegenerated": true
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt degeneratedBound"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill DiscreteTrihedron::Discrete trihedron on edge",
+    "bridge_function": "OCCTGeomFillDiscreteTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          1,
+          0
+        ],
+        "N": [
+          -1,
+          0,
+          0
+        ],
+        "B": [
+          0,
+          0,
+          1
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt discreteTrihedron edge 0 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill DraftTrihedron::Draft trihedron on circle edge",
+    "bridge_function": "OCCTGeomFillDraftTrihedron",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          -1,
+          0
+        ],
+        "N": [
+          0.866025403784,
+          0,
+          -0.5
+        ],
+        "B": [
+          0.5,
+          0,
+          0.866025403784
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "T": [
+          0,
+          -1,
+          0
+        ],
+        "N": [
+          0.866025403784,
+          0,
+          -0.5
+        ],
+        "B": [
+          0.5,
+          0,
+          0.866025403784
+        ]
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt draftTrihedron edge 0 at 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "GeomFill EvolvedSection::Evolved section info on circle edge",
+    "bridge_function": "OCCTGeomFillEvolvedSectionInfo",
+    "bridge_output": {
+      "type": "measurement",
+      "data": {
+        "nbPoles": 6,
+        "nbKnots": 2,
+        "degree": 6,
+        "isRational": true
+      }
+    },
+    "kernel_output": {
+      "type": "measurement",
+      "data": {
+        "nbPoles": 6,
+        "nbKnots": 2,
+        "degree": 6,
+        "isRational": true
+      },
+      "source": "Scripts/repro/766-geomfill-a/transcript.txt evolvedSectionInfo edge 0"
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
   }
 ]
