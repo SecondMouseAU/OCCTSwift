@@ -44,6 +44,13 @@ all.
 is on the STEP writer's own path, so a STEP module does not link and the real `libOCCT-wasm.a`
 cannot be written yet. That gap is recorded here and handed on, not patched here.
 
+> **Closed by [#2266](https://github.com/SecondMouseAU/OCCTSwift/issues/2266), 2026-09-24.**
+> `wasi-stepconstruct-ap203context.patch` compiles that file, the 49-toolkit build is 5,488 of
+> 5,488, `Libraries/libOCCT-wasm.a` and `Libraries/occt-headers-wasm/` exist, and `probe-step.wasm`
+> links, runs and writes an AP203 STEP file. See [Closed by #2266](#closed-by-2266) below. Every
+> number above this line is #2174's and is left as it was measured; the numbers that moved are
+> restated there rather than edited in place.
+
 Six defects turned up on the way, five of them in merged code and each invisible to every check
 that existed. The sixth is in this issue's own new code and the build caught it within the hour.
 
@@ -324,7 +331,8 @@ other case with it.
 
 ### `probe-step.wasm`, which does not link
 
-Covered above: it is the measurement of what the one uncompiled file costs.
+Covered above: it is the measurement of what the one uncompiled file costs. #2266 closed the gap
+and turned this case into an assertion; see [Closed by #2266](#closed-by-2266).
 
 ## The three risks #2171 left open
 
@@ -470,6 +478,9 @@ The wasm script now does the same, and counts the files on both sides rather tha
 any arrived.
 
 ## What this does not establish
+
+**The first two items are #2174's and #2266 closed both**; they are left here because the
+measurements above were taken under them.
 
 - **`libOCCT-wasm.a` itself does not exist yet**, and neither does `occt-headers-wasm/`. The
   packaging step is gated on the census and the census is one file short. Everything above is
