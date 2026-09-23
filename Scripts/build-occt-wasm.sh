@@ -2,7 +2,16 @@
 #
 # Build OpenCASCADE for WebAssembly (WASI)
 #
-# Usage: ./build-occt-wasm.sh
+# Usage: ./build-occt-wasm.sh [--toolkit NAME]
+#
+#   --toolkit NAME   Build and archive ONE OCCT toolkit instead of everything, e.g.
+#                    `--toolkit TKernel`. The configure step is unchanged, so the narrow loop and
+#                    the full build share a build tree and a cache; only the build target and the
+#                    packaging step differ. This exists because the full build is 30-60 minutes and
+#                    a platform-porting loop that long gets tested by guessing. It also builds with
+#                    `-k`, so one pass reports EVERY file that fails rather than stopping at the
+#                    first, which is the difference between a complete guard-site list and a list
+#                    discovered one error at a time (#2172).
 #
 # This script downloads OCCT source and builds it as static libraries
 # for wasm32-wasip1 using wasi-sdk.
@@ -20,14 +29,43 @@
 
 set -e
 
+# --------------------
+# Arguments
+# --------------------
+BUILD_TOOLKIT=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --toolkit)
+            [ $# -ge 2 ] || { echo "ERROR: --toolkit needs a toolkit name, e.g. --toolkit TKernel." >&2; exit 1; }
+            BUILD_TOOLKIT="$2"
+            shift 2
+            ;;
+        --toolkit=*)
+            BUILD_TOOLKIT="${1#--toolkit=}"
+            shift
+            ;;
+        -h|--help)
+            sed -n '2,40p' "$0"
+            exit 0
+            ;;
+        *)
+            echo "ERROR: unknown argument '$1'. Usage: $0 [--toolkit NAME]" >&2
+            exit 1
+            ;;
+    esac
+done
+
 OCCT_VERSION="8.0.1"
 OCCT_RC=""
-# Pre-release tags use format V8.0.0-rc5 / V8.0.0-beta2 (with dash)
-# GA releases use V8.0.1 (with dots)
+# Underscores, not dots, matching Scripts/build-occt.sh. Upstream carries BOTH V8.0.1 and V8_0_1
+# and they are the same commit, so the clone worked either way; `git describe --tags
+# --exact-match` resolves the underscore spelling, so the dotted form here made the reuse check
+# below reject every tree this script had itself cloned, on every second run. The two scripts
+# building the same kernel must also name it the same way.
 if [ -n "$OCCT_RC" ]; then
-    OCCT_TAG="V${OCCT_VERSION}-${OCCT_RC}"
+    OCCT_TAG="V${OCCT_VERSION//./_}_${OCCT_RC}"
 else
-    OCCT_TAG="V${OCCT_VERSION}"
+    OCCT_TAG="V${OCCT_VERSION//./_}"
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -65,6 +103,10 @@ if [ ! -f "$PINS_FILE" ]; then
     exit 1
 fi
 WASI_SDK_VERSION="$(pin WASI_SDK_VERSION)"
+SWIFT_TOOLCHAIN_VERSION="$(pin SWIFT_TOOLCHAIN_VERSION)"
+SWIFT_WASM_SDK_ID="$(pin SWIFT_WASM_SDK_ID)"
+SWIFT_WASM_TRIPLE="$(pin SWIFT_WASM_TRIPLE)"
+WASM_CXX_EH_FLAGS="$(pin WASM_CXX_EH_FLAGS)"
 
 # wasi-sdk location. Libraries/ is gitignored and already holds occt-src, so the toolchain sits
 # beside the source it compiles; WASI_SDK_PREFIX overrides for an install kept elsewhere.
@@ -75,6 +117,54 @@ if [ ! -d "$WASI_SDK_PREFIX" ]; then
     echo "         Scripts/install-wasm-toolchain.sh" >&2
     echo "       Or set WASI_SDK_PREFIX to an existing wasi-sdk $WASI_SDK_VERSION install." >&2
     exit 1
+fi
+
+# --------------------
+# The Swift toolchain and the Swift SDK's WASI sysroot (#2172)
+# --------------------
+# OCCT is compiled against the SWIFT SDK's WASI.sdk, with the swift.org toolchain's clang, and
+# wasi-sdk contributes exactly one thing: the exception-enabled libc++abi and libunwind in its
+# lib/wasm32-wasip1/eh directory. Why, and what was measured, is in Scripts/cmake/wasi-swift-sdk.cmake
+# and docs/wasm-feasibility.md. The short form: the two sysroots disagree about _LIBCPP_HAS_THREADS
+# and are two libc++ major versions apart, and the Swift side links WASI.sdk's copy either way.
+SWIFT_TOOLCHAIN_BIN="${SWIFT_TOOLCHAIN_BIN:-/Library/Developer/Toolchains/swift-${SWIFT_TOOLCHAIN_VERSION}.xctoolchain/usr/bin}"
+if [ ! -x "$SWIFT_TOOLCHAIN_BIN/clang++" ]; then
+    echo "ERROR: no swift.org toolchain clang++ at '$SWIFT_TOOLCHAIN_BIN/clang++'." >&2
+    echo "       Install Swift $SWIFT_TOOLCHAIN_VERSION from swift.org, or set SWIFT_TOOLCHAIN_BIN." >&2
+    echo "       Xcode's toolchain is not a substitute: it has no wasm-ld." >&2
+    exit 1
+fi
+
+# The Swift SDK is installed with `swift sdk install`, which unpacks the artifact bundle under
+# ~/.swiftpm/swift-sdks (or SWIFTPM_HOME). `swift sdk configure --show-configuration` reports paths
+# only for SDKs that have been reconfigured, so the layout is resolved directly.
+SWIFT_SDKS_DIR="${SWIFT_SDKS_DIR:-$HOME/.swiftpm/swift-sdks}"
+SWIFT_WASI_SYSROOT="${SWIFT_WASI_SYSROOT:-$SWIFT_SDKS_DIR/${SWIFT_WASM_SDK_ID}.artifactbundle/${SWIFT_WASM_SDK_ID}/${SWIFT_WASM_TRIPLE}/WASI.sdk}"
+if [ ! -f "$SWIFT_WASI_SYSROOT/include/c++/v1/__config_site" ]; then
+    echo "ERROR: the Swift wasm SDK's WASI sysroot is not at '$SWIFT_WASI_SYSROOT'." >&2
+    echo "       Install the pinned SDK, which puts it there:" >&2
+    echo "         Scripts/install-wasm-toolchain.sh" >&2
+    echo "       Or set SWIFT_WASI_SYSROOT to an existing $SWIFT_WASM_SDK_ID install." >&2
+    exit 1
+fi
+
+# wasi-sdk's exception-enabled C++ runtime. Not used to compile anything; it is where the link step
+# (#2174) gets __cxa_throw, which WASI.sdk's libc++abi.a does not define.
+WASI_SDK_EH_LIBDIR="$WASI_SDK_PREFIX/share/wasi-sysroot/lib/wasm32-wasip1/eh"
+if [ ! -f "$WASI_SDK_EH_LIBDIR/libc++abi.a" ]; then
+    echo "ERROR: wasi-sdk's exception-enabled runtime is not at '$WASI_SDK_EH_LIBDIR'." >&2
+    echo "       This build needs its libc++abi.a and libunwind.a; the Swift SDK ships neither." >&2
+    exit 1
+fi
+
+# The wasm32 compiler-rt builtins ship inside the Swift SDK bundle rather than in the swift.org
+# toolchain, so the link step has to be told where they are. Compiling and archiving does not need
+# them, which is why a missing directory is a note and not an error.
+WASI_SWIFT_BUILTINS_DIR="${WASI_SWIFT_BUILTINS_DIR:-$SWIFT_SDKS_DIR/${SWIFT_WASM_SDK_ID}.artifactbundle/${SWIFT_WASM_SDK_ID}/${SWIFT_WASM_TRIPLE}/swift.xctoolchain/usr/lib/clang/lib/wasip1}"
+if [ ! -d "$WASI_SWIFT_BUILTINS_DIR" ]; then
+    echo ">>> Note: no wasm32 compiler-rt builtins at '$WASI_SWIFT_BUILTINS_DIR'." >&2
+    echo "    Compiling and archiving is unaffected; linking a module will need them." >&2
+    WASI_SWIFT_BUILTINS_DIR=""
 fi
 
 # Parallelism (cross-platform)
@@ -177,7 +267,11 @@ apply_patch_dir "$SCRIPT_DIR/patches-wasi" "WASI-only OCCT patches"
 # --------------------
 # Clean stale install prefixes
 # --------------------
-rm -rf occt-install-wasm occt-build-wasm
+# A --toolkit run keeps the build tree, because a narrow loop that reconfigures from scratch every
+# time is not a narrow loop. Delete occt-build-wasm by hand to force a fresh configure.
+if [ -z "$BUILD_TOOLKIT" ]; then
+    rm -rf occt-install-wasm occt-build-wasm
+fi
 
 # --------------------
 # The std threading shim (#2170)
@@ -238,9 +332,31 @@ CMAKE_COMMON_OPTS=(
     -DINSTALL_TEST_CASES=OFF
     -DINSTALL_DOC_Overview=OFF
     -DCMAKE_CXX_STANDARD=17
+    # Three things, and every one of them has to reach EVERY translation unit.
+    #
+    # -include <shim>        the std threading stand-ins (#2170). See the block above.
+    #
+    # $WASM_CXX_EH_FLAGS     -fwasm-exceptions plus -mllvm -wasm-use-legacy-eh=false, from
+    #                        Scripts/wasm-toolchain-versions.txt. #2171 measured that a TU compiled
+    #                        WITHOUT these still lets an exception propagate through it, but its
+    #                        stack cleanup never runs and a try/catch written inside it silently
+    #                        never fires, with no diagnostic at compile or link time. OCCT catches
+    #                        Standard_Failure internally to set IsDone() == false, so an OCCT built
+    #                        without them has IsDone() quietly stop working. That is why this is a
+    #                        whole-build flag and not the bridge's alone.
+    #
+    # -mllvm -wasm-enable-sjlj  setjmp is a separate mechanism and a separate flag. On wasip1
+    #                        setjmp/longjmp are not libc functions; libsetjmp.a defines
+    #                        __wasm_setjmp/__wasm_setjmp_test/__wasm_longjmp and only this flag
+    #                        lowers a setjmp pair into them. Without it the compile is silent and
+    #                        the LINK fails on undefined `setjmp`/`longjmp`, so -lsetjmp goes on the
+    #                        link line too (#2174's, not this script's, while it only archives).
+    #                        #2047's claim that -fwasm-exceptions covers setjmp is wrong; #2171
+    #                        measured both halves.
+    #
     # Quoted inside the flag value so a checkout path containing a space still reaches the
     # compiler as one argument. CMake inserts this string into the build command verbatim.
-    "-DCMAKE_CXX_FLAGS=-include \"$WASI_THREADING_SHIM\""
+    "-DCMAKE_CXX_FLAGS=-include \"$WASI_THREADING_SHIM\" $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj"
 )
 
 # --------------------
@@ -257,27 +373,25 @@ echo "Parallel jobs: $JOBS"
 echo "wasi-sdk: $WASI_SDK_PREFIX"
 echo ""
 
-rm -rf occt-build-wasm
+[ -z "$BUILD_TOOLKIT" ] && rm -rf occt-build-wasm
 mkdir -p occt-build-wasm
 cd occt-build-wasm
 
-# wasi-sdk ships the CMake toolchain file for this target, one per WASI preview; p1 is ours.
-# An earlier version of this script preferred a swift-wasi-sdk.cmake inside the prefix and treated
-# wasi-sdk's own file as a fallback. No such file exists in either the wasi-sdk tarball or the
-# Swift SDK's WASI.sdk, so that branch could never be taken.
-WASI_TOOLCHAIN="$WASI_SDK_PREFIX/share/cmake/wasi-sdk-p1.cmake"
+# --------------------
+# The CMake toolchain file (#2172)
+# --------------------
+# This repo's own, not wasi-sdk's. An earlier version of this script preferred a
+# `swift-wasi-sdk.cmake` inside the wasi-sdk prefix and treated `wasi-sdk-p1.cmake` as a fallback.
+# No such file exists in either the wasi-sdk tarball or the Swift SDK's artifact bundle, so the
+# fallback was what always ran, which silently compiled OCCT with wasi-sdk's clang against
+# wasi-sdk's sysroot: a libc++ two major versions from the one the Swift side links, and one that
+# sets _LIBCPP_HAS_THREADS to 1 where the Swift SDK sets it to 0. Scripts/cmake/wasi-swift-sdk.cmake
+# holds the measurements and the reasoning.
+WASI_TOOLCHAIN="$SCRIPT_DIR/cmake/wasi-swift-sdk.cmake"
 if [ ! -f "$WASI_TOOLCHAIN" ]; then
     echo "ERROR: no WASI CMake toolchain file at '$WASI_TOOLCHAIN'." >&2
-    echo "       '$WASI_SDK_PREFIX' does not look like a wasi-sdk $WASI_SDK_VERSION install." >&2
     exit 1
 fi
-
-# Exception handling is not settled here. OCCT throws Standard_Failure pervasively, and the
-# exception-enabled C++ runtime lives in $WASI_SDK_PREFIX/share/wasi-sysroot/lib/wasm32-wasip1/eh,
-# not in the Swift SDK's sysroot; the compile flags that make it usable under the pinned runtime
-# are WASM_CXX_EH_FLAGS in Scripts/wasm-toolchain-versions.txt. Which of those OCCT's own build
-# needs is #2171's spike, so nothing is asserted in CMAKE_COMMON_OPTS above. See
-# Scripts/repro/2169/README.md for what has actually been measured.
 
 # --------------------
 # Preflight: does the threading shim match the libc++ this toolchain selects? (#2170)
@@ -286,77 +400,156 @@ fi
 # defensible against a libc++ that really is missing them. That is a property of the SYSROOT, and
 # the two sysroots in play disagree:
 #
-#   * the Swift SDK's WASI.sdk sets _LIBCPP_HAS_THREADS 0, which is what #2170 measured and what
-#     the shim exists for;
+#   * the Swift SDK's WASI.sdk sets _LIBCPP_HAS_THREADS 0, which is what #2170 measured, what the
+#     shim exists for, and what this script now selects;
 #   * wasi-sdk 34.0's own wasm32-wasip1 sysroot sets it to 1, in both the eh and noeh flavours,
 #     and supplies all eight names itself.
 #
-# Which one this build uses is decided by the toolchain file above and is #2172's open question.
-# Without this check the mismatch surfaces as CMake's "the C++ compiler is not able to compile a
-# simple test program", with the shim's own explanation buried in CMakeError.log.
-# Read the compiler, triple and sysroot straight out of the toolchain file CMake is about to use,
-# so the preflight asks the same libc++ the build will.
-toolchain_setting() {
-    local value
-    value="$(sed -n "s/^[[:space:]]*set($1[[:space:]]\{1,\}\([^)]*\))[[:space:]]*\$/\1/p" "$WASI_TOOLCHAIN" | head -1)"
-    value="${value%\"}"
-    value="${value#\"}"
-    value="${value//\$\{WASI_SDK_PREFIX\}/$WASI_SDK_PREFIX}"
-    value="${value//\$\{WASI_HOST_EXE_SUFFIX\}/}"
-    printf '%s' "$value"
-}
-
-PREFLIGHT_CXX=""
-PREFLIGHT_TRIPLE=""
-PREFLIGHT_SYSROOT=""
-if [ -f "$WASI_TOOLCHAIN" ]; then
-    PREFLIGHT_CXX="$(toolchain_setting CMAKE_CXX_COMPILER)"
-    PREFLIGHT_TRIPLE="$(toolchain_setting triple)"
-    PREFLIGHT_SYSROOT="$(toolchain_setting CMAKE_SYSROOT)"
-fi
-if [ -n "$PREFLIGHT_CXX" ] && [ -x "$PREFLIGHT_CXX" ]; then
-    PREFLIGHT_SRC="$(mktemp -t occt-wasm-shim-preflight).cpp"
-    printf '#include <version>\nint main() { return 0; }\n' > "$PREFLIGHT_SRC"
-    PREFLIGHT_TARGET_OPT=()
-    [ -n "$PREFLIGHT_TRIPLE" ] && PREFLIGHT_TARGET_OPT+=(--target="$PREFLIGHT_TRIPLE")
-    [ -n "$PREFLIGHT_SYSROOT" ] && PREFLIGHT_TARGET_OPT+=(--sysroot="$PREFLIGHT_SYSROOT")
-    if ! PREFLIGHT_OUT="$("$PREFLIGHT_CXX" "${PREFLIGHT_TARGET_OPT[@]}" -std=c++17 -fsyntax-only \
-            -include "$WASI_THREADING_SHIM" "$PREFLIGHT_SRC" 2>&1)"; then
-        rm -f "$PREFLIGHT_SRC"
-        echo "ERROR: the std threading shim does not apply to the libc++ this toolchain selects." >&2
-        echo "" >&2
-        echo "  toolchain file: $WASI_TOOLCHAIN" >&2
-        echo "  compiler:       $PREFLIGHT_CXX" >&2
-        echo "" >&2
-        printf '%s\n' "$PREFLIGHT_OUT" >&2
-        echo "" >&2
-        echo "       Two causes, and they want opposite fixes." >&2
-        echo "" >&2
-        echo "       1. This sysroot's libc++ HAS threads, so the eight names are already there and" >&2
-        echo "          the shim is not merely unnecessary, it is a redefinition. wasi-sdk's own" >&2
-        echo "          wasm32-wasip1 sysroot is in this category. Building OCCT against it while" >&2
-        echo "          the Swift side links the Swift SDK's threadless libc++ is the mismatch" >&2
-        echo "          #2172 exists to settle; do not paper over it by dropping the shim." >&2
-        echo "" >&2
-        echo "       2. The pinned Swift SDK itself gained threads. Then the shim has served its" >&2
-        echo "          purpose: remove this preflight and the -include, and delete" >&2
-        echo "          Scripts/wasm-shims/ and Scripts/repro/2170/." >&2
-        exit 1
-    fi
+# Without this check a mismatch surfaces as CMake's "the C++ compiler is not able to compile a
+# simple test program", with the shim's own explanation buried in CMakeError.log. It asks exactly
+# the compiler, triple and sysroot the toolchain file above sets, so it cannot drift from the build.
+PREFLIGHT_CXX="$SWIFT_TOOLCHAIN_BIN/clang++"
+PREFLIGHT_SRC="$(mktemp -t occt-wasm-shim-preflight).cpp"
+printf '#include <version>\nint main() { return 0; }\n' > "$PREFLIGHT_SRC"
+if ! PREFLIGHT_OUT="$("$PREFLIGHT_CXX" --target="$SWIFT_WASM_TRIPLE" --sysroot="$SWIFT_WASI_SYSROOT" \
+        -std=c++17 -fsyntax-only -include "$WASI_THREADING_SHIM" "$PREFLIGHT_SRC" 2>&1)"; then
     rm -f "$PREFLIGHT_SRC"
-    echo ">>> Threading shim preflight passed: $(basename "$WASI_THREADING_SHIM")"
-else
-    echo ">>> Threading shim preflight skipped: no CMAKE_CXX_COMPILER found in $WASI_TOOLCHAIN." >&2
-    echo "    CMake will still apply the shim, and a mismatch will surface as a failed compiler" >&2
-    echo "    check with the detail in CMakeError.log." >&2
+    echo "ERROR: the std threading shim does not apply to the libc++ this toolchain selects." >&2
+    echo "" >&2
+    echo "  toolchain file: $WASI_TOOLCHAIN" >&2
+    echo "  compiler:       $PREFLIGHT_CXX" >&2
+    echo "  sysroot:        $SWIFT_WASI_SYSROOT" >&2
+    echo "" >&2
+    printf '%s\n' "$PREFLIGHT_OUT" >&2
+    echo "" >&2
+    echo "       Two causes, and they want opposite fixes." >&2
+    echo "" >&2
+    echo "       1. SWIFT_WASI_SYSROOT has been pointed at a sysroot whose libc++ HAS threads, so" >&2
+    echo "          the eight names are already there and the shim is not merely unnecessary, it is" >&2
+    echo "          a redefinition. wasi-sdk's own wasm32-wasip1 sysroot is in this category, and" >&2
+    echo "          #2172 settled that OCCT is NOT built against it. Point it back." >&2
+    echo "" >&2
+    echo "       2. The pinned Swift SDK itself gained threads. Then the shim has served its" >&2
+    echo "          purpose: remove this preflight and the -include, and delete" >&2
+    echo "          Scripts/wasm-shims/ and Scripts/repro/2170/." >&2
+    exit 1
 fi
+rm -f "$PREFLIGHT_SRC"
+echo ">>> Threading shim preflight passed: $(basename "$WASI_THREADING_SHIM")"
+
+# --------------------
+# Preflight: do the exception flags actually produce a landing pad? (#2171, #2172)
+# --------------------
+# #2171's finding is that WASM_CXX_EH_FLAGS failing to reach a translation unit is SILENT: no
+# error, no warning, and the only symptom is that a try/catch inside that unit never fires. A flag
+# whose absence is silent needs an assertion, so this compiles a catch and reads the object back.
+#
+# The observable is the undefined symbol __cxa_begin_catch, which a compiled handler must call.
+# Measured 2026-09-23 with the pinned toolchain on this exact source: WITH the flags the object
+# references __cxa_begin_catch, __cxa_end_catch and __cxa_throw; WITHOUT them clang emits no
+# handler at all and the only __cxa_* reference left is __cxa_throw. So the check distinguishes
+# the two states rather than merely confirming the compiler runs.
+EH_PREFLIGHT_SRC="$(mktemp -t occt-wasm-eh-preflight).cpp"
+EH_PREFLIGHT_OBJ="${EH_PREFLIGHT_SRC%.cpp}.o"
+cat > "$EH_PREFLIGHT_SRC" <<'EH_PREFLIGHT_EOF'
+struct Failure {};
+void raise() { throw Failure(); }
+int caught() {
+  try { raise(); } catch (const Failure&) { return 1; }
+  return 0;
+}
+EH_PREFLIGHT_EOF
+if ! "$PREFLIGHT_CXX" --target="$SWIFT_WASM_TRIPLE" --sysroot="$SWIFT_WASI_SYSROOT" \
+        -std=c++17 $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj \
+        -c "$EH_PREFLIGHT_SRC" -o "$EH_PREFLIGHT_OBJ" 2>/dev/null \
+   || ! "$SWIFT_TOOLCHAIN_BIN/llvm-nm" --undefined-only "$EH_PREFLIGHT_OBJ" 2>/dev/null \
+        | grep -q '__cxa_begin_catch'; then
+    rm -f "$EH_PREFLIGHT_SRC" "$EH_PREFLIGHT_OBJ"
+    echo "ERROR: the exception flags did not produce a catch handler." >&2
+    echo "" >&2
+    echo "  flags: $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj" >&2
+    echo "" >&2
+    echo "       A translation unit compiled without working exception flags still lets an" >&2
+    echo "       exception propagate through it, but its stack cleanup does not run and a" >&2
+    echo "       try/catch written inside it never fires, silently (#2171). OCCT catches" >&2
+    echo "       Standard_Failure internally to set IsDone() == false, so this is the difference" >&2
+    echo "       between a kernel that reports failures and one that quietly stops reporting them." >&2
+    echo "       Check WASM_CXX_EH_FLAGS in Scripts/wasm-toolchain-versions.txt." >&2
+    exit 1
+fi
+rm -f "$EH_PREFLIGHT_SRC" "$EH_PREFLIGHT_OBJ"
+echo ">>> Exception preflight passed: $WASM_CXX_EH_FLAGS -mllvm -wasm-enable-sjlj"
+
+# Exported as well as passed with -D: CMake re-includes the toolchain file inside every try_compile
+# sub-project, and a -D cache entry does not reach one.
+export SWIFT_TOOLCHAIN_BIN SWIFT_WASI_SYSROOT WASI_SDK_EH_LIBDIR WASI_SWIFT_BUILTINS_DIR
 
 cmake ../occt-src \
     -G "Unix Makefiles" \
     "${CMAKE_COMMON_OPTS[@]}" \
     -DCMAKE_TOOLCHAIN_FILE="$WASI_TOOLCHAIN" \
+    -DSWIFT_TOOLCHAIN_BIN="$SWIFT_TOOLCHAIN_BIN" \
+    -DSWIFT_WASI_SYSROOT="$SWIFT_WASI_SYSROOT" \
+    -DWASI_SDK_EH_LIBDIR="$WASI_SDK_EH_LIBDIR" \
+    -DWASI_SWIFT_BUILTINS_DIR="$WASI_SWIFT_BUILTINS_DIR" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=../occt-install-wasm
+
+if [ -n "$BUILD_TOOLKIT" ]; then
+    # The narrow loop. `-k` so one pass reports every file that fails instead of stopping at the
+    # first: a platform port needs the whole list at once, and discovering it one error at a time
+    # is what makes a guard-site list untrustworthy. The build is therefore ALLOWED to fail here,
+    # and the archive check below is what decides whether anything was produced.
+    echo ""
+    echo ">>> Building toolkit '$BUILD_TOOLKIT' only, with -k (keep going)."
+    set +e
+    cmake --build . --parallel "$JOBS" --target "$BUILD_TOOLKIT" -- -k
+    TOOLKIT_STATUS=$?
+    set -e
+
+    TOOLKIT_OBJ_DIR="$(find . -type d -name "${BUILD_TOOLKIT}.dir" -print -quit)"
+    if [ -z "$TOOLKIT_OBJ_DIR" ]; then
+        echo "" >&2
+        echo "ERROR: no ${BUILD_TOOLKIT}.dir under $(pwd); is '$BUILD_TOOLKIT' a toolkit this" >&2
+        echo "       configure builds? Nothing was compiled and nothing was archived." >&2
+        exit 1
+    fi
+
+    # Counted, never estimated. The denominator is every object CMake has a rule for and the
+    # numerator is every object on disk, so both come from the build tree rather than from a
+    # glob of the source directory that might disagree with what this configure selected.
+    TOOLKIT_EXPECTED=$(grep -oE "CMakeFiles/${BUILD_TOOLKIT}\.dir/[A-Za-z0-9_/]+\.(cxx|c)\.obj" \
+        "$TOOLKIT_OBJ_DIR/build.make" | sort -u | wc -l | tr -d ' ')
+    TOOLKIT_ACTUAL=$(find "$TOOLKIT_OBJ_DIR" -name '*.obj' | wc -l | tr -d ' ')
+
+    TOOLKIT_LIB="$(find . -name "lib${BUILD_TOOLKIT}.a" -print -quit)"
+    if [ -z "$TOOLKIT_LIB" ]; then
+        # No complete archive, because at least one file did not compile. Archive what did anyway,
+        # under a name that cannot be mistaken for the real thing: a partial archive is what makes
+        # the toolchain, the shim and the exception flags inspectable at kernel scale while the
+        # platform gaps are still open, and the alternative is having nothing to check at all.
+        TOOLKIT_LIB="$(pwd)/lib${BUILD_TOOLKIT}-partial.a"
+        rm -f "$TOOLKIT_LIB"
+        # shellcheck disable=SC2046
+        (cd "$TOOLKIT_OBJ_DIR" && "$SWIFT_TOOLCHAIN_BIN/llvm-ar" rcs "$TOOLKIT_LIB" \
+            $(find . -name '*.obj' | sort))
+    fi
+
+    echo ""
+    echo ">>> $BUILD_TOOLKIT: $TOOLKIT_ACTUAL of $TOOLKIT_EXPECTED source files compiled."
+    echo ">>> Archive: $TOOLKIT_LIB"
+    echo "    members: $("$SWIFT_TOOLCHAIN_BIN/llvm-ar" t "$TOOLKIT_LIB" | wc -l | tr -d ' ')"
+    echo "    Inspect it with $SWIFT_TOOLCHAIN_BIN/llvm-nm, not the host's nm: there is no llvm-nm"
+    echo "    on the default macOS PATH and host nm misreads a wasm object."
+    if [ "$TOOLKIT_STATUS" -ne 0 ]; then
+        echo "" >&2
+        echo ">>> INCOMPLETE. $((TOOLKIT_EXPECTED - TOOLKIT_ACTUAL)) file(s) did not compile; every" >&2
+        echo "    one is in the log above, in a single pass. The archive named above holds only the" >&2
+        echo "    files that did. Scripts/repro/2172/run.sh turns that log into the guard-site list." >&2
+        exit "$TOOLKIT_STATUS"
+    fi
+    exit 0
+fi
 
 # Build libraries (fail on compilation errors)
 cmake --build . --parallel "$JOBS"
@@ -383,11 +576,10 @@ if [ ${#static_libs[@]} -eq 0 ]; then
     exit 1
 fi
 
-# Use llvm-ar from wasi-sdk (cross-platform)
-AR_TOOL="$WASI_SDK_PREFIX/bin/llvm-ar"
-if [ ! -x "$AR_TOOL" ]; then
-    AR_TOOL="$(command -v llvm-ar || command -v ar)"
-fi
+# llvm-ar from the swift.org toolchain, the one that compiled these objects. Not the host's `ar`:
+# there is no llvm-nm or llvm-ar on the default macOS PATH, and the host tools do not read wasm
+# objects, which has already produced one wrong conclusion in this initiative.
+AR_TOOL="$SWIFT_TOOLCHAIN_BIN/llvm-ar"
 
 # Build combined library incrementally to avoid ARG_MAX and overwriting issues
 rm -f libOCCT-wasm.a

@@ -94,17 +94,19 @@ bookkeeping.
 Whether the eight names are missing is a property of the sysroot, and the two in play disagree.
 wasi-sdk 34.0's own `wasm32-wasip1` sysroot sets `_LIBCPP_HAS_THREADS 1` in both its `eh` and
 `noeh` `__config_site` and supplies all eight itself; the Swift SDK's `WASI.sdk` sets it to 0.
-`Scripts/build-occt-wasm.sh` resolves `swift-wasi-sdk.cmake` first and falls back to
-`wasi-sdk-p1.cmake`, and no `swift-wasi-sdk.cmake` exists in either the wasi-sdk install or the
-Swift SDK artifact bundle, so the fallback is what runs today and it selects wasi-sdk's compiler
-and default sysroot.
 
-Which sysroot the kernel should be built against is
-[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172)'s, and it reaches past this shim:
-the Swift side links the Swift SDK's threadless libc++, so a kernel built against a libc++ with
-threads meets it across the ABI. What #2170 adds is that the mismatch cannot pass unnoticed, and
-that the answer to the preflight's error is never "drop the shim" by reflex. The preflight names
-both causes and their opposite fixes.
+**Settled by [#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172): OCCT is compiled
+against the Swift SDK's `WASI.sdk`, so the shim applies and is required.** wasi-sdk contributes one
+thing, the exception-enabled `libc++abi` and `libunwind` in `lib/wasm32-wasip1/eh`, and compiles
+nothing. The threads row is the smaller half of the argument; the larger half is that the two
+sysroots ship libc++ 21 and libc++ 23, so building OCCT against wasi-sdk's would put two libc++
+implementations under one set of mangled names in a module whose Swift half links `WASI.sdk`'s
+copy either way. `Scripts/cmake/wasi-swift-sdk.cmake` is the mechanism and carries the measurements.
+
+Until #2172, `Scripts/build-occt-wasm.sh` resolved a `swift-wasi-sdk.cmake` that exists in neither
+install and fell back to `wasi-sdk-p1.cmake`, so wasi-sdk's compiler and default sysroot were what
+always ran. The preflight remains, because the answer to its error is never "drop the shim" by
+reflex: it names both causes and their opposite fixes.
 
 ### Rejected: shadowing `__config_site` with `-I`
 
@@ -168,21 +170,47 @@ this section's rule rather than an exception to it.
 `_WASI_EMULATED_GETPID` remains genuinely open, with `getpid()` in the directory patch as the one
 concrete candidate. Nothing should be added to the build script on the strength of this page.
 
+What the script **does** pass, since #2172, is the exception and setjmp flags: `WASM_CXX_EH_FLAGS`
+from `Scripts/wasm-toolchain-versions.txt` plus `-mllvm -wasm-enable-sjlj`, in `CMAKE_CXX_FLAGS`,
+reaching every translation unit. Those are not emulation defines and this section's rule does not
+cover them. They are there because #2171 measured that their absence is silent, and because 44 of
+the 119 `TKernel` objects that compile carry a compiled catch handler and 6 carry a lowered `setjmp`
+pair. A preflight asserts they produce a handler before CMake starts.
+
 ## Gaps that are known and not yet closed
 
-Not a checklist, and not complete: the authority on what is missing is a compile, which is what
-[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172) exists to run. What has been seen so
-far, outside the threading class, all of it under `src/FoundationClasses/TKernel/OSD/`:
+**Complete for `TKernel`, and measured rather than noticed.**
+[#2172](https://github.com/SecondMouseAU/OCCTSwift/issues/2172) compiled all 127 of its source
+files against the pinned toolchain in one pass: 119 compiled and 8 did not. Not one threading
+diagnostic appears anywhere in the 127. The eight are below, with every diagnostic each one
+produces at `-ferror-limit=0`, which is what makes this a list rather than a sample. They are the
+subject of [#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173), which writes them one
+file per patch. `Scripts/repro/2172/run.sh guards` regenerates the list.
 
-- `OSD_File.cxx`: `mkstemp()`, and `fcntl` record locking (`F_WRLCK`, `F_RDLCK`, `F_SETLKW`,
-  `F_UNLCK`, `F_SETLK`).
-- `OSD_Process.cxx`: `<pwd.h>` and the `getpwuid(getuid())` call that uses it.
-- `OSD_signal.cxx`: POSIX signal handling.
-- `OSD_Host.cxx`: `<netdb.h>` and `gethostbyname()`.
-- `OSD_Path.cxx`: `struct utsname` and `uname()`.
+| File | Symbol or header at fault |
+|---|---|
+| `Message/Message_PrinterSystemLog.cxx` | `<syslog.h>` at `:89` |
+| `OSD/OSD_File.cxx` | `mkstemp` at `:767`; `fcntl` record locking `F_WRLCK` `:1394`, `F_RDLCK` `:1397`, `F_SETLKW` `:1404`, `F_UNLCK` `:1509`, `F_SETLK` `:1510` |
+| `OSD/OSD_Host.cxx` | `<netdb.h>` at `:29` |
+| `OSD/OSD_Path.cxx` | `struct utsname` incomplete at `:44` |
+| `OSD/OSD_Process.cxx` | `<pwd.h>` at `:44` |
+| `OSD/OSD_signal.cxx` | `<signal.h>` refuses without `_WASI_EMULATED_SIGNAL`; then `struct sigaction` `:799` `:1053` `:1099`, `sigemptyset` `:823`, `sigaddset` `:850` `:866`, `SIG_UNBLOCK` `:851` `:867`, `SIG_DFL` `:1068` `:1097`, and `SIGHUP` `SIGINT` `SIGQUIT` `SIGILL` `SIGKILL` `SIGBUS` `SIGSEGV` `SIGFPE` `SIGSYS` throughout |
+| `Standard/Standard_MMgrOpt.cxx` | `<sys/mman.h>` refuses without `_WASI_EMULATED_MMAN`; then `PROT_READ` `PROT_WRITE` `MAP_PRIVATE` `:766`, `MAP_FAILED` `:767`, `munmap` `:873` |
+| `Standard/Standard_StackTrace.cxx` | `<execinfo.h>` at `:34` |
 
-These are the subject of [#2173](https://github.com/SecondMouseAU/OCCTSwift/issues/2173), which
-writes them one file per patch.
+`Message/Message_PrinterSystemLog.cxx` was on no list before this compile, which is the argument
+for running one.
+
+**`Standard/Standard_MMgrOpt.cxx` needs no source change.** Recompiled with `-D_WASI_EMULATED_MMAN`
+and nothing else altered, it produces zero errors. That is a candidate for the emulation define the
+section above reserves for evidence, and the evidence is in `Scripts/repro/2172/README.md`; the link
+half, `-lwasi-emulated-mman`, cannot be verified until #2174. At the other end, `_WASI_EMULATED_SIGNAL`
+leaves `OSD/OSD_signal.cxx` with seventeen errors, because it supplies the `SIG*` constants and no
+`struct sigaction`, `sigemptyset`, `sigaddset` or `SIG_UNBLOCK`, and OCCT's handling there is
+`sigaction`-based throughout.
+
+The modules beyond `TKernel` have not been compiled. Their gaps are #2174's to enumerate the same
+way.
 
 ## How a new guard is written
 
