@@ -7,7 +7,7 @@
 # where the rest can come from.
 #
 # This script builds a stub with OCCTSwift's target shape and no OCCT in it, publishes it as a git
-# repository with a tag, and consumes it from a second package. Seven cases, each printed with the
+# repository with a tag, and consumes it from a second package. Nine cases, each printed with the
 # verdict it produced. Exits non-zero if any case did not produce the outcome it is asserting.
 #
 # Nothing here needs libOCCT-wasm.a, which is #2174's work and does not exist yet.
@@ -91,8 +91,9 @@ cp "$REPO_ROOT/Scripts/wasm-shims/wasi-std-threading.hpp" "$STUB/shims/"
 cp "$STUB/kernel-src/stubkernel.hpp" "$STUB/Libraries/stub-headers-wasm/"
 : > "$STUB/Libraries/dummy.c"
 
-# Built exactly the way Scripts/build-occt-wasm.sh builds OCCT: the exception flags on, the shim
-# force-included, against the wasi-sdk sysroot. The kernel is NOT the variable in any case below.
+# Built the way Scripts/build-occt-wasm.sh builds OCCT: the exception flags on and the shim
+# force-included. The sysroot is the SWIFT SDK's WASI.sdk, for the reason given just above, not
+# wasi-sdk's own. The kernel is NOT the variable in any case below.
 # shellcheck disable=SC2086
 "$SWIFT_BIN/clang++" --target="$SWIFT_WASM_TRIPLE" --sysroot="$SWIFT_WASI_SYSROOT" -O1 -c $EH_FLAGS \
   -include "$STUB/shims/wasi-std-threading.hpp" \
@@ -238,7 +239,12 @@ if grep -qi "error:" <<<"$OUT"; then
 else
   run_module
   echo "$RUN" | sed 's/^/      /'
-  if grep -q "outermost catch (...) fires: 22" <<<"$RUN"; then
+  if [ "$MODULE_STATUS" = 127 ]; then
+    # This case asserts a NEGATIVE, so a module that never ran would satisfy it for the wrong
+    # reason: no module means no catch, and the case would report the #2171 finding it did not
+    # measure. 127 is run_module's "nothing to run".
+    verdict bad "no module was produced, so this case measured nothing"
+  elif grep -q "outermost catch (...) fires: 22" <<<"$RUN"; then
     verdict bad "the catch fired without the exception flags, which would retire gap 2"
   else
     verdict ok "built clean with no diagnostic, and the outermost catch (...) did not fire (module exit $MODULE_STATUS)"
@@ -251,10 +257,14 @@ export STUB_SJLJ=1
 say 6 "setjmp in the graph, exception flags on, but no -mllvm -wasm-enable-sjlj"
 emit_toolset "$WORK/toolset-eh-nosjlj.json" eh nosjlj no-include-shim
 OUT="$(STUB_SHIM_VIA_INCLUDE=1 build_consumer --toolset "$WORK/toolset-eh-nosjlj.json")"
-if grep -qi "error" <<<"$OUT" && grep -qi "setjmp" <<<"$OUT"; then
+# One line has to carry both words. Two independent greps over the whole output would also be
+# satisfied by any unrelated failure that merely mentions setjmp somewhere, `wasm-ld: error:
+# unable to find library -lsetjmp` among them, and the case would report a diagnostic it never saw.
+if grep -qi "error.*setjmp" <<<"$OUT"; then
   verdict ok "refused, and the diagnostic names setjmp, so that flag is separate from the EH pair"
+  grep -im1 "error.*setjmp" <<<"$OUT" | sed 's/^/         /'
 else
-  verdict bad "expected a setjmp diagnostic, got:"; tail -8 <<<"$OUT"
+  verdict bad "expected one diagnostic naming both an error and setjmp, got:"; tail -8 <<<"$OUT"
 fi
 
 say 7 "toolset with the library paths, the exception flags AND the sjlj flag (the recommendation)"
@@ -299,13 +309,23 @@ OBJCXX_OK=1
 "$SWIFT_BIN/clang++" -x c++ --target="$SWIFT_WASM_TRIPLE" --sysroot="$SWIFT_WASI_SYSROOT" \
   -c $EH_FLAGS "$WORK/objcxx.mm" -o "$WORK/objcxx-cpp.o" >/dev/null 2>&1 || OBJCXX_OK=0
 OBJCXX_MM=1
+# The output is kept rather than discarded: the verdict below names a specific clang crash, and an
+# exit status alone cannot tell a crash from an ordinary diagnostic. If the toolchain ever turns
+# this into a plain "unsupported option" error, the case has to say so rather than keep reporting
+# a crash it no longer sees.
 # shellcheck disable=SC2086
-"$SWIFT_BIN/clang++" -x objective-c++ --target="$SWIFT_WASM_TRIPLE" --sysroot="$SWIFT_WASI_SYSROOT" \
-  -c $EH_FLAGS "$WORK/objcxx.mm" -o "$WORK/objcxx-mm.o" >/dev/null 2>&1 || OBJCXX_MM=0
-if [ "$OBJCXX_OK" = 1 ] && [ "$OBJCXX_MM" = 0 ]; then
+MM_OUT="$("$SWIFT_BIN/clang++" -x objective-c++ --target="$SWIFT_WASM_TRIPLE" \
+  --sysroot="$SWIFT_WASI_SYSROOT" -c $EH_FLAGS "$WORK/objcxx.mm" -o "$WORK/objcxx-mm.o" 2>&1)" \
+  || OBJCXX_MM=0
+if [ "$OBJCXX_OK" = 1 ] && [ "$OBJCXX_MM" = 0 ] \
+   && grep -q "WebAssembly Exception Information" <<<"$MM_OUT"; then
   verdict ok "the same file compiles as C++ and CRASHES clang as Objective-C++, in the"
   printf '         WebAssembly Exception Information pass. The bridge is 33 .mm files, so the\n'
   printf '         recommendation below is blocked on that until they compile as C++.\n'
+elif [ "$OBJCXX_OK" = 1 ] && [ "$OBJCXX_MM" = 0 ]; then
+  verdict bad "Objective-C++ still fails, but not in the WebAssembly Exception Information pass,"
+  printf '         so the note about this blocker no longer describes what happens:\n'
+  tail -5 <<<"$MM_OUT" | sed 's/^/         /'
 elif [ "$OBJCXX_MM" = 1 ]; then
   verdict bad "Objective-C++ now compiles with the exception flags, so this blocker is gone and"
   printf '         the note about it should be deleted rather than left standing.\n'

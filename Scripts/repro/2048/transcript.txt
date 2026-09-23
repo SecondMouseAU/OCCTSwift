@@ -1,11 +1,11 @@
-# Recorded run of Scripts/repro/2048/run.sh, 2026-09-23, on the pinned toolchain.
+# Recorded run of Scripts/repro/2048/run.sh, 2026-09-24, on the pinned toolchain.
 # Absolute paths to the temporary work directory are as produced; nothing is edited.
 
 >>> Swift toolchain : /Library/Developer/Toolchains/swift-6.4.0-RELEASE.xctoolchain/usr/bin
 >>> Swift SDK       : swift-6.4.0-RELEASE_wasm (wasm32-unknown-wasip1)
 >>> wasi-sdk        : /Users/elb/Projects/OCCTSwift/Libraries/wasi-sdk-34.0-arm64-macos
 >>> EH flags        : -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false
->>> work directory  : /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.L8byhegW6W
+>>> work directory  : /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.jDq140G4TF
 
 
 === case 1: unsafeFlags, consumed as a VERSIONED dependency (what #1689's app does) ===
@@ -31,6 +31,7 @@
 
 === case 6: setjmp in the graph, exception flags on, but no -mllvm -wasm-enable-sjlj ===
     ok   refused, and the diagnostic names setjmp, so that flag is separate from the EH pair
+         /private/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.jDq140G4TF/consumer/Package.swift: consumer-product: wasm-ld: error: /private/var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/tmp.jDq140G4TF/consumer/.build/out/Products/Debug-webassembly-wasm32/StubSjLj.objlib/stubsjlj.o: undefined symbol: setjmp
 
 === case 7: toolset with the library paths, the exception flags AND the sjlj flag (the recommendation) ===
       ok   kernel archive on the link line: 801 (expected 801)

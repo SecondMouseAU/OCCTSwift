@@ -51,8 +51,9 @@ SHIM = REPO_ROOT / "Scripts" / "wasm-shims" / "wasi-std-threading.hpp"
 
 # Separate from WASM_CXX_EH_FLAGS deliberately: `-fwasm-exceptions` does nothing for setjmp, and
 # these two are what turn a setjmp/longjmp pair into the __wasm_setjmp / __wasm_longjmp that
-# libsetjmp defines. See #2172 and Scripts/repro/2048/run.sh case 6, where their absence is a
-# compile error naming setjmp.
+# libsetjmp defines. See #2172 and Scripts/repro/2048/run.sh case 6, where their absence is a LINK
+# error naming setjmp: without them the compiler emits a plain call to `setjmp`, which nothing in
+# the sysroot defines, and `wasm-ld: error: ... undefined symbol: setjmp` is what the build says.
 SJLJ_FLAGS = ["-mllvm", "-wasm-enable-sjlj"]
 
 
@@ -70,6 +71,13 @@ def read_pin(name: str, pins_file: Path = PINS_FILE) -> str:
             continue
         key, _, value = line.partition("=")
         if key == name:
+            # A present-but-empty value is refused rather than returned. A blank
+            # WASM_CXX_EH_FLAGS would otherwise emit a toolset carrying no exception flags at
+            # all, which is measured case 5: the build stays green, nothing is diagnosed, and
+            # every outermost catch stops firing. "The pin is what the toolset reads" is only a
+            # guarantee if an unreadable pin stops the script.
+            if not value.strip():
+                raise SystemExit(f"error: {pins_file} defines {name} with no value")
             return value
     raise SystemExit(f"error: {pins_file} has no {name}")
 
@@ -119,13 +127,20 @@ def self_test() -> int:
     doc = build_toolset(Path("/wasi"), Path("/libs"), Path("/shim.hpp"), eh)
     cxx = doc["cxxCompiler"]["extraCLIOptions"]
 
+    # The two loops below iterate the pin, so they check nothing at all if the pin went empty.
+    # Assert the flag by name here, once, so that emptying or gutting WASM_CXX_EH_FLAGS fails this
+    # script instead of quietly producing case 5's green build with no exception support.
+    if "-fwasm-exceptions" not in cxx:
+        failures.append("-fwasm-exceptions does not reach the C++ compiler")
+
     # Every pinned exception flag reaches the C++ compiler. Dropping one is what #2171 measured as
     # a silent failure: the build stays green and every outermost catch stops firing.
     for flag in eh:
         if flag not in cxx:
             failures.append(f"cxxCompiler is missing the pinned flag {flag}")
 
-    # The sjlj pair is separate from the exception flags and is a hard compile error without it.
+    # The sjlj pair is separate from the exception flags, and without it the link fails outright
+    # on an undefined `setjmp` (measured, run.sh case 6), so it is never a silent loss.
     c_opts = doc["cCompiler"]["extraCLIOptions"]
     if "-wasm-enable-sjlj" not in cxx or "-wasm-enable-sjlj" not in c_opts:
         failures.append("-wasm-enable-sjlj must reach both the C and the C++ compiler")
@@ -135,6 +150,19 @@ def self_test() -> int:
     for flag in eh:
         if flag not in c_opts:
             failures.append(f"cCompiler is missing the pinned flag {flag}")
+
+    # `-mllvm` passes the NEXT argument through to LLVM, so membership is not enough: an option
+    # list that carries `-wasm-use-legacy-eh=false` without the `-mllvm` in front of it is an
+    # unknown driver argument, and one that ends on a bare `-mllvm` swallows whatever SwiftPM
+    # appends after it.
+    for tool in ("cCompiler", "cxxCompiler"):
+        opts = doc[tool]["extraCLIOptions"]
+        for index, opt in enumerate(opts):
+            if opt == "-mllvm" and index + 1 >= len(opts):
+                failures.append(f"{tool} ends on a bare -mllvm, which would swallow "
+                                f"whatever follows it")
+            if opt.startswith("-wasm-") and (index == 0 or opts[index - 1] != "-mllvm"):
+                failures.append(f"{tool}'s {opt} is not preceded by -mllvm")
 
     # The shim is force-included when one is named, and not otherwise.
     if ["-include", "/shim.hpp"] != cxx[-2:]:
@@ -189,6 +217,14 @@ def main(argv: list[str]) -> int:
 
     occt_lib_dir = Path(args.occt_lib_dir).resolve() if args.occt_lib_dir \
         else (REPO_ROOT / "Libraries")
+    # Checked here rather than left to the link, for the same reason the wasi-sdk prefix is. The
+    # DEFAULT is the one that bites: `Libraries/` is gitignored apart from dummy.c and include/,
+    # so a fresh checkout has the directory and not the archive, and a -L into it produces
+    # `wasm-ld: error: unable to find library -lOCCT-wasm` at the end of a full build instead of
+    # here, before one starts.
+    if not (occt_lib_dir / "libOCCT-wasm.a").is_file():
+        raise SystemExit(f"error: no libOCCT-wasm.a in {occt_lib_dir}. Pass --occt-lib-dir, or "
+                         f"build the kernel with Scripts/build-occt-wasm.sh.")
 
     shim = None if args.no_shim else SHIM
     if shim is not None and not shim.is_file():

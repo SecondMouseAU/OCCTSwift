@@ -32,10 +32,11 @@ let useUnsafeFlags = ProcessInfo.processInfo.environment["STUB_UNSAFE_FLAGS"] ==
 /// source, which needs only a `.define` and a `.headerSearchPath`, both safe.
 let shimViaInclude = ProcessInfo.processInfo.environment["STUB_SHIM_VIA_INCLUDE"] == "1"
 
-/// setjmp/longjmp is its own gap with its own flag, and clang REFUSES to compile a `setjmp` for
-/// wasm without `-mllvm -wasm-enable-sjlj`. That refusal is loud, so the target is included only
-/// in the cases whose subject it is, rather than failing every earlier case before it reaches its
-/// own measurement.
+/// setjmp/longjmp is its own gap with its own flag. Without `-mllvm -wasm-enable-sjlj` the
+/// compiler emits a plain call to `setjmp`, which nothing in the sysroot defines, and the build
+/// fails at the LINK with `undefined symbol: setjmp`. That failure is loud and it takes the whole
+/// module with it, so the target is included only in the cases whose subject it is, rather than
+/// failing every earlier case before it reaches its own measurement.
 let withSjLj = ProcessInfo.processInfo.environment["STUB_SJLJ"] == "1"
 
 var bridgeCXX: [CXXSetting] = [

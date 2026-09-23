@@ -80,7 +80,7 @@ the link's sysroot. `libc++abi.a` is there too, which is worse than it being abs
 no-exceptions flavour, so the toolset's `-L` into wasi-sdk's `lib/wasm32-wasip1/eh` has to
 **precede** the sysroot rather than merely be present.
 
-## The recommendation, and the two it beats
+## The recommendation, and the three it beats
 
 **A toolset file, written by `Scripts/make-wasi-toolset.py` and passed as
 `swift build --toolset toolset.json`.** It is the consumer's file rather than the package's, so the
@@ -112,7 +112,7 @@ asserts, which is the point of asserting rather than printing.
 | 3 | safe settings only, no shim, no toolset | compile fails on `std::mutex`, so the shim is load-bearing |
 | 4 | shim by a guarded `#include`, no toolset | compiles with no setting at all; the link then fails on exactly `-lSTUBKERNEL-wasm` and `-lunwind` |
 | 5 | toolset with the `-L`s but **no** exception flags | **builds clean, and the outermost `catch (...)` does not fire** |
-| 6 | setjmp present, exception flags on, no `-wasm-enable-sjlj` | refused, and the diagnostic names setjmp |
+| 6 | setjmp present, exception flags on, no `-wasm-enable-sjlj` | refused at the LINK, `undefined symbol: setjmp` |
 | 7 | toolset with the `-L`s, the exception flags and the sjlj flag | a versioned dependency builds for wasm and every case passes |
 | 8 | the same, shim force-included by the toolset | also works, so the shim has two viable mechanisms |
 | 9 | Objective-C++ plus `-fwasm-exceptions`, compiled directly | **clang crashes**, see below |
