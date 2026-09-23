@@ -94,5 +94,307 @@
     "kernel_output": {"type": "shape", "data": {}},
     "comparison": {"equal": true, "differences": []},
     "status": "PASS"
+  },
+  {
+    "test_name": "ProjLib::lineOnPlane",
+    "bridge_function": "OCCTProjLibPlaneProjectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "direction x + 1e-3",
+      "red": "ProjLibTests.swift:19:9: Expectation failed: abs(r.directionX - 1) < 1e-12 && abs(r.directionY) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` and `|dir| > 0.5`; now location and direction"
+    }
+  },
+  {
+    "test_name": "ProjLib::circleOnPlane",
+    "bridge_function": "OCCTProjLibPlaneProjectCircle",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "center": [
+          0,
+          0
+        ],
+        "r": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "center": [
+          0,
+          0
+        ],
+        "r": 5
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "radius + 1e-3",
+      "red": "ProjLibTests.swift:29:9: Expectation failed: abs(r.radius - 5.0) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`if let`; now `#require` and centre pinned"
+    }
+  },
+  {
+    "test_name": "ProjLib::lineOnCylinder",
+    "bridge_function": "OCCTProjLibCylinderProjectLine",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "loc": [
+          0,
+          0
+        ],
+        "dir": [
+          0,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "location x + 1e-3",
+      "red": "ProjLibTests.swift:40:9: Expectation failed: abs(r.locationX) < 1e-12 && abs(r.locationY) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "`!= nil` only"
+    }
+  },
+  {
+    "test_name": "ProjLib ComputeApprox::Project edge onto cylinder face",
+    "bridge_function": "OCCTProjLibComputeApprox",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "projected edges": 3,
+        "seam": {
+          "x": 10,
+          "z": [
+            0,
+            20
+          ]
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "projected edges": 3,
+        "seam": {
+          "x": 10,
+          "z": [
+            0,
+            20
+          ]
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns nullptr",
+      "red": "ProjLibComputeApproxTests.swift:22:30: Expectation failed: edge.projectOntoSurface(cylFaces[0])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "returned at the first success, silently if none"
+    }
+  },
+  {
+    "test_name": "ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face",
+    "bridge_function": "OCCTProjLibComputeApproxOnPolarSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "max x": 13.439,
+        "z": [
+          6.685,
+          6.731
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "radial projection": {
+          "r": 13.4164,
+          "z": 6.7082
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "returns nullptr",
+      "red": "ProjLibComputeApproxOnPolarSurfaceTests.swift:20:26: Expectation failed: edge.projectOntoPolarSurface(faces[0])",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "\"may or may not succeed\": nothing asserted on failure"
+    }
+  },
+  {
+    "test_name": "ProjLib_ProjectOnSurface Tests::projectLineOnCylinder",
+    "bridge_function": "OCCTProjLibProjectOnSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          10
+        ],
+        "start": [
+          4.08248290464,
+          2.88675134595,
+          3.53553390593
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "value(5)": [
+          0,
+          0,
+          0
+        ],
+        "value(10)": [
+          0,
+          0,
+          0
+        ],
+        "poles": 17,
+        "degree": 8
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "trim end halved",
+      "red": "ProjLibProjectOnSurfaceTests.swift:21:9: Expectation failed: abs(domain.lowerBound) < 1e-12 && abs(domain.upperBound - 10) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "two `if let`s, `upper > lower`; now domain and start pinned"
+    }
+  },
+  {
+    "test_name": "Geom2dEval TBezier 2D Curve::createAndEval",
+    "bridge_function": "OCCTGeom2dEvalTBezierCurveCreate",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3.14159265359
+        ],
+        "start": [
+          2,
+          0
+        ],
+        "mid": [
+          1,
+          1
+        ],
+        "end": [
+          -2,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "domain": [
+          0,
+          3.14159265359
+        ],
+        "start": [
+          2,
+          0
+        ],
+        "mid": [
+          1,
+          1
+        ],
+        "end": [
+          -2,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "evidence": {
+      "injection": "alpha + 0.5",
+      "red": "TBezierCurve2DTests.swift:20:9: Expectation failed: abs(domain.upperBound - .pi) < 1e-12",
+      "green": "passed after revert (Sources/ clean)",
+      "probe": "Scripts/repro/766-geom2d-projlib-wire-tbezier/",
+      "rewritten": "domain signs only"
+    }
   }
 ]
