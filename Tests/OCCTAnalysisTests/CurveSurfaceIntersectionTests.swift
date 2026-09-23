@@ -41,12 +41,21 @@ struct CurveSurfaceIntersectionTests {
         }
     }
 
+    /// `GeomAPI_IntCS` reports the tangency once, at (0, 5, 0), curve parameter 10
+    /// (`Scripts/repro/766-curve-surface-intersection/`). `count >= 1` also passed a duplicated
+    /// or displaced point, so the count and the point are both pinned.
     @Test("Line tangent to sphere produces one point")
     func lineTangentToSphere() {
         let line = Curve3D.segment(from: SIMD3(-10, 5, 0), to: SIMD3(10, 5, 0))!
         let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)!
         let results = line.intersections(with: sphere)
-        #expect(results.count >= 1)
+        #expect(results.count == 1)
+        if let only = results.first {
+            #expect(abs(only.point.x) < 1e-9)
+            #expect(abs(only.point.y - 5.0) < 1e-9)
+            #expect(abs(only.point.z) < 1e-9)
+            #expect(abs(only.curveParameter - 10.0) < 1e-9)
+        }
     }
 
     @Test("Line missing sphere produces no points")

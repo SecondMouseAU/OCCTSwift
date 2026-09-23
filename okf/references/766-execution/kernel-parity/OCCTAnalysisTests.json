@@ -4501,5 +4501,241 @@
       "differences": []
     },
     "status": "PASS"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line intersects sphere",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            0,
+            0,
+            5
+          ],
+          [
+            0,
+            0,
+            -5
+          ]
+        ],
+        "curve_params": [
+          25,
+          15
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            0,
+            0,
+            5
+          ],
+          [
+            0,
+            0,
+            -5
+          ]
+        ],
+        "curve_params": [
+          25,
+          15
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line parallel to plane doesn't intersect",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line through sphere produces two points (X-axis)",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ],
+        "curve_params": [
+          15,
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 2,
+        "points": [
+          [
+            5,
+            0,
+            0
+          ],
+          [
+            -5,
+            0,
+            0
+          ]
+        ],
+        "curve_params": [
+          15,
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line tangent to sphere produces one point",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 1,
+        "points": [
+          [
+            0,
+            5,
+            0
+          ]
+        ],
+        "curve_params": [
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 1,
+        "points": [
+          [
+            0,
+            5,
+            0
+          ]
+        ],
+        "curve_params": [
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line missing sphere produces no points",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 0
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
+  },
+  {
+    "test_name": "Curve-Surface Intersection::Line through plane produces one point",
+    "bridge_function": "OCCTCurveSurfaceIntersect",
+    "bridge_output": {
+      "type": "points",
+      "data": {
+        "count": 1,
+        "points": [
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "curve_params": [
+          5
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "points",
+      "data": {
+        "count": 1,
+        "points": [
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "curve_params": [
+          5
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "probe": "Scripts/repro/766-curve-surface-intersection/"
   }
 ]
